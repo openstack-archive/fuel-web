@@ -15,8 +15,14 @@
 #    under the License.
 
 import copy
+import datetime
+import hashlib
+import json
+import jsonschema
+
 from itertools import cycle
 from itertools import ifilter
+
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -26,6 +32,7 @@ from nailgun.errors import errors
 from nailgun import consts
 
 from nailgun.db import NoCacheQuery
+from nailgun.db.sqlalchemy.models import ActionLog
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.openstack.common import jsonutils
@@ -579,3 +586,48 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
         task_obj = objects.Task.get_by_uuid(task.uuid)
         self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
+
+
+class TestActionLogObject(BaseIntegrationTest):
+
+    def _create_log_entry(self, object_data):
+        object_data['actor_id'] = hashlib.sha256('actionlog_test').hexdigest()
+        object_data['start_timestamp'] = datetime.datetime.now()
+        object_data['end_timestamp'] = \
+            object_data['start_timestamp'] + datetime.timedelta(hours=1)
+
+        return ActionLog(**object_data)
+
+    def test_validate_json_schema(self):
+        object_data = {
+            'id': 1,
+            'action_group': 'test_group',
+            'action_name': 'test_action_one',
+            'action_type': 'http_request',
+            'additional_info': {},
+            'is_sent': False,
+            'cluster_id': 1
+        }
+
+        al = self._create_log_entry(object_data)
+
+        instance_to_validate = json.loads(objects.ActionLog.to_json(al))
+        self.assertNotRaises(jsonschema.ValidationError, jsonschema.validate,
+                             instance_to_validate, objects.ActionLog.schema)
+
+    def test_validate_json_schema_failure(self):
+        object_data = {
+            'id': 1,
+            'action_group': 'test_group',
+            'action_name': 'test_action_one',
+            'action_type': 'http_request',
+            'additional_info': '',  # validation should fail because of this
+            'is_sent': False,
+            'cluster_id': 1
+        }
+
+        al = self._create_log_entry(object_data)
+
+        instance_to_validate = json.loads(objects.ActionLog.to_json(al))
+        self.assertRaises(jsonschema.ValidationError, jsonschema.validate,
+                          instance_to_validate, objects.ActionLog.schema)

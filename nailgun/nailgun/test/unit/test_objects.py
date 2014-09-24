@@ -15,8 +15,14 @@
 #    under the License.
 
 import copy
+import datetime
+import hashlib
+import json
+import jsonschema
+
 from itertools import cycle
 from itertools import ifilter
+
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -26,6 +32,7 @@ from nailgun.errors import errors
 from nailgun import consts
 
 from nailgun.db import NoCacheQuery
+from nailgun.db.sqlalchemy.models import ActionLogs
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.openstack.common import jsonutils
@@ -579,3 +586,44 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
         task_obj = objects.Task.get_by_uuid(task.uuid)
         self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
+
+
+class TestActionLogObject(BaseIntegrationTest):
+
+    def _create_log_entry(self):
+        actor_id = hashlib.sha256('actionlog_test').hexdigest()
+        start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(hours=1)
+        action_logs_kwargs = {
+            'actor_id': actor_id,
+            'action_group': 'test_group',
+            'action_name': 'test_action_one',
+            'request_data': {
+                'url': 'some/test/url',
+                'message': None,
+                'data': {},
+                'http_method': 'DELETE'
+            },
+            'response_data': {
+                'message': None,
+                'data': {},
+                'status': '200 OK'
+            },
+            'start_timestamp': start_time,
+            'end_timestamp': end_time
+        }
+
+        return ActionLogs(**action_logs_kwargs)
+
+    def test_validate_json_schema(self):
+        al = self._create_log_entry()
+
+        self.db.add(al)
+        self.db.flush()
+
+        instance_to_validate = json.loads(objects.ActionLog.to_json(al))
+        self.assertNotRaises(jsonschema.ValidationError, jsonschema.validate,
+                             instance_to_validate, objects.ActionLog.schema)
+
+        self.db.delete(al)
+        self.db.commit()

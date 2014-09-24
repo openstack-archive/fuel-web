@@ -13,6 +13,8 @@
 #    under the License.
 
 
+from nailgun.db.sqlalchemy.models.action_logs import ActionLogs
+
 from nailgun.db.sqlalchemy.models.base import CapacityLog
 
 from nailgun.db.sqlalchemy.models.cluster import Attributes

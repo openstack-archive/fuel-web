@@ -14,8 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 from nailgun.objects.base import NailgunObject
 from nailgun.objects.base import NailgunCollection
+
+from nailgun.objects.action_log import ActionLog
 
 from nailgun.objects.release import Release
 from nailgun.objects.release import ReleaseCollection

@@ -16,267 +16,182 @@
 define(['jquery', 'underscore', 'react'], function($, _, React) {
     'use strict';
 
-    var controls = {};
+    var controls = {},
+        cx = React.addons.classSet;
 
-    var InputMixin = {
+    var tooltipMixin = {
+        componentDidMount: function() {
+            if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip();
+        },
+        componentWillUnmount: function() {
+            if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip('destroy');
+        },
+        renderTooltipIcon: function() {
+            return this.props.tooltipText ? (
+                <i key='tooltip' ref='tooltip' className='icon-attention text-warning' data-toggle='tooltip' title={this.props.tooltipText} />
+            ) : null;
+        }
+    };
+
+// inspired by https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
+    controls.Input = React.createClass({
+        mixins: [tooltipMixin],
         propTypes: {
-            type: React.PropTypes.oneOf(['checkbox', 'radio', 'text', 'password', 'dropdown']),
-            name: React.PropTypes.string.isRequired,
-            value: React.PropTypes.oneOfType([
+            // props used by <input />
+            type: React.PropTypes.string.isRequired,
+            name: React.PropTypes.string,
+            defaultValue: React.PropTypes.oneOfType([
                 React.PropTypes.string,
                 React.PropTypes.number,
                 React.PropTypes.bool
             ]),
-            label: React.PropTypes.string,
-            description: React.PropTypes.string,
-            onChange: React.PropTypes.func.isRequired,
-            validate: React.PropTypes.func,
+            defaultChecked: React.PropTypes.bool,
             disabled: React.PropTypes.bool,
-            warnings: React.PropTypes.renderable,
-            cs: React.PropTypes.objectOf(React.PropTypes.string)
+            onKeyDown: React.PropTypes.func,
+            maxLength: React.PropTypes.renderable,
+            // other props
+            label: React.PropTypes.renderable,
+            description: React.PropTypes.renderable,
+            wrapperClassName: React.PropTypes.renderable,
+            labelClassName: React.PropTypes.renderable,
+            descriptionClassName: React.PropTypes.renderable,
+            tooltipText: React.PropTypes.renderable,
+            toggleable: React.PropTypes.bool
         },
         getInitialState: function() {
-            return {value: this.getValue()};
+            return {visible: false};
         },
-        isRadioButton: function() {
-            return this.props.key ? _.find(this.props.values, {data: this.props.key}) : null;
+        togglePassword: function() {
+            if (this.props.disabled) return;
+            this.setState({visible: !this.state.visible});
         },
-        getValue: function() {
-            var radioButton = this.isRadioButton();
-            return radioButton ? radioButton.data : this.props.value;
+        isCheckboxOrRadio: function() {
+            return this.props.type == 'radio' || this.props.type == 'checkbox';
         },
-        getError: function() {
-            return this.props.validate && this.props.validate(this.props.name);
+        onChange: function() {
+            var input = this.refs.input.getDOMNode();
+            return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
         },
-        onChange: function(e) {
-            if (this.isRadioButton()) { return; }
-            this.props.onChange(this.props.name, e.target.type == 'checkbox' ? e.target.checked : e.target.value);
-        },
-        renderInput: function(type) {
-            type = type || this.props.type;
-            var radioButton = this.isRadioButton();
-            return (<input
-                className={this.getError() && 'error'}
-                type={type}
-                name={this.props.name}
-                value={this.getValue()}
-                checked={radioButton ? radioButton.data == this.props.value : this.props.value}
-                disabled={this.props.disabled}
-                onChange={this.onChange} />);
-        },
-        renderLabel: function() {
-            var radioButton = this.isRadioButton(),
-                labelClass = this.props.type == 'radio' && !radioButton ? this.props.cs.radioGrouplabel : this.props.cs.label;
-            return (
-                <div className={labelClass + ' enable-selection'}>
-                    {radioButton ? radioButton.label : this.props.label}
-                    {!!this.props.warnings.length &&
-                        <controls.TooltipIcon warnings={this.props.warnings} />
-                    }
+        renderInput: function() {
+            var input = null,
+                className = 'parameter-input';
+            switch (this.props.type) {
+                case 'select':
+                    input = (<select ref='input' key='input' className={className} onChange={this.onChange}>{this.props.children}</select>);
+                    break;
+                case 'textarea':
+                    input = <textarea ref='input' key='input' className={className} onChange={this.onChange} />;
+                    break;
+                case 'password':
+                    var type = (this.props.toggleable && this.state.visible) ? 'text' : 'password';
+                    input = <input ref='input' key='input' className={className} type={type} onChange={this.onChange} />;
+                    break;
+                default:
+                    input = <input ref='input' key='input' className={className} onChange={this.onChange} />;
+            }
+            return this.isCheckboxOrRadio() ? (
+                <div key='input-wrapper' className='custom-tumbler'>
+                    {this.transferPropsTo(input)}
+                    <span>&nbsp;</span>
                 </div>
-            );
+            ) : this.transferPropsTo(input);
+        },
+        renderToggleablePasswordAddon: function() {
+            return this.props.toggleable ? (
+                <span key='add-on' className='add-on' onClick={this.togglePassword}>
+                    <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
+                </span>
+            ) : null;
+        },
+        renderLabel: function(children) {
+            var classes = {
+                'parameter-name enable-selection': true,
+                'input-append': this.props.toggleable
+            };
+            classes[this.props.labelClassName] = this.props.labelClassName;
+            return this.props.label ? (
+                <label key='label' className={cx(classes)} htmlFor={this.props.id}>
+                    {!this.isCheckboxOrRadio() &&
+                        <div className='input-label'>
+                            <span>{this.props.label}</span>
+                        </div>
+                    }
+                    {children}
+                    {this.isCheckboxOrRadio() &&
+                        <div className='label-wrapper'>
+                            {this.props.label}
+                            {this.renderTooltipIcon()}
+                        </div>
+                    }
+                </label>
+            ) : children;
         },
         renderDescription: function() {
-            var error = this.getError(),
-                radioButton = this.isRadioButton();
-            return error ?
-                (<div className={this.props.cs.description + ' validation-error'}>{error}</div>)
-                :
-                (<div className={this.props.cs.description + ' description'}>
-                    {radioButton ? radioButton.description : this.props.description}
-                </div>);
-        }
-    };
-
-    controls.Checkbox = React.createClass({
-        mixins: [InputMixin],
-        getDefaultProps: function() {
-            return {type: 'checkbox'};
+            var error = !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
+                classes = {'parameter-description enable-selection': true};
+            classes[this.props.descriptionClassName] = this.props.descriptionClassName;
+            return error || this.props.description ? (
+                <div key='description' className={cx(classes)}>
+                    {error ? this.props.error : this.props.description}
+                </div>
+            ) : null;
+        },
+        renderWrapper: function(children) {
+            var classes = {
+                'parameter-box': true,
+                clearfix: !this.isCheckboxOrRadio(),
+                'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error)
+            };
+            classes[this.props.wrapperClassName] = this.props.wrapperClassName;
+            return (<div className={cx(classes)}>{children}</div>);
         },
         render: function() {
-            return (
-                <div className={this.props.cs.common}>
-                    <label className='parameter-box'>
-                        <div className='parameter-control'>
-                            <div className='custom-tumbler'>
-                                {this.renderInput()}
-                                <span>&nbsp;</span>
-                            </div>
-                        </div>
-                        {this.renderLabel()}
-                        {this.renderDescription()}
-                    </label>
-                </div>
-            );
-        }
-    });
-
-    controls.SelectAllCheckbox = React.createClass({
-        mixins: [InputMixin],
-        getDefaultProps: function() {
-            return {type: 'checkbox'};
-        },
-        render: function() {
-            return (
-                <div className={this.props.cs.common}>
-                    <label className={this.props.cs.label}>
-                        {this.renderInput()}
-                        <span>&nbsp;</span>
-                        <span>{$.t('common.select_all_button')}</span>
-                    </label>
-                </div>
-            );
-        }
-    });
-
-    controls.Dropdown = React.createClass({
-        mixins: [InputMixin],
-        propTypes: {
-            values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
-        },
-        getDefaultProps: function() {
-            return {type: 'dropdown'};
-        },
-        render: function() {
-            return (
-                <div className={this.props.cs.common + ' parameter-box clearfix'}>
-                    {this.renderLabel()}
-                    <div className='parameter-control'>
-                        <select
-                            name={this.props.name}
-                            defaultValue={this.props.value}
-                            disabled={this.props.disabled}
-                            onChange={this.onChange}
-                        >
-                            {_.map(this.props.values, function(value) {
-                                if (!_.contains(this.props.hiddenValues, value.data)) {
-                                    return <option
-                                        key={value.data}
-                                        value={value.data}
-                                        disabled={_.contains(this.props.disabledValues, value.data)}
-                                    >
-                                        {value.label}
-                                    </option>;
-                                }
-                            }, this)}
-                        </select>
-                    </div>
-                    {this.renderDescription()}
-                </div>
-            );
+            return this.renderWrapper([
+                this.renderLabel([
+                    this.renderInput(),
+                    this.renderToggleablePasswordAddon()
+                ]),
+                this.renderDescription()
+            ]);
         }
     });
 
     controls.RadioGroup = React.createClass({
-        mixins: [InputMixin],
+        mixins: [tooltipMixin],
         propTypes: {
+            name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-            hiddenValues: React.PropTypes.arrayOf(React.PropTypes.string),
-            disabledValues: React.PropTypes.arrayOf(React.PropTypes.string),
-            valueWarnings: React.PropTypes.object
+            label: React.PropTypes.renderable,
+            labelClassName: React.PropTypes.renderable,
+            tooltipText: React.PropTypes.renderable
         },
         render: function() {
+            var labelClasses = {'parameter-name': true};
+            labelClasses[this.props.labelClassName] = this.props.labelClassName;
             return (
-                <div className={this.props.cs.common}>
-                    {this.renderLabel()}
-                    <form onChange={this.onChange}>
-                        {_.map(this.props.values, function(value) {
-                            if (!_.contains(this.props.hiddenValues, value.data)) {
-                                return this.transferPropsTo(
-                                    <controls.RadioButton
-                                        key={value.data}
-                                        value={this.props.value}
-                                        disabled={this.props.disabled || _.contains(this.props.disabledValues, value.data)}
-                                        warnings={this.props.valueWarnings[value.data]} />
-                                );
-                            }
-                        }, this)}
-                    </form>
+                <div className='radio-group'>
+                    {this.props.label &&
+                        <label className={cx(labelClasses)}>
+                            {this.props.label}
+                            {this.renderTooltipIcon()}
+                        </label>
+                    }
+                    {_.map(this.props.values, function(value) {
+                        return this.transferPropsTo(
+                            <controls.Input
+                                key={value.data}
+                                type='radio'
+                                value={value.data}
+                                defaultChecked={value.checked}
+                                label={value.label}
+                                description={value.description}
+                                disabled={value.disabled}
+                                tooltipText={value.tooltipText}
+                            />
+                        );
+                    }, this)}
                 </div>
             );
-        }
-    });
-
-    controls.RadioButton = React.createClass({
-        mixins: [InputMixin],
-        propTypes: {
-            key: React.PropTypes.string.isRequired,
-            values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
-        },
-        getDefaultProps: function() {
-            return {type: 'radio'};
-        },
-        render: function() {
-            return (
-                <label className='parameter-box clearfix'>
-                    <div className='parameter-control'>
-                        <div className='custom-tumbler'>
-                            {this.renderInput()}
-                            <span>&nbsp;</span>
-                        </div>
-                    </div>
-                    {this.renderLabel()}
-                    {this.renderDescription()}
-                </label>
-            );
-        }
-    });
-
-    controls.TextField = React.createClass({
-        mixins: [InputMixin],
-        getDefaultProps: function() {
-            return {type: 'text'};
-        },
-        render: function() {
-            return (
-                <div className={this.props.cs.common + ' parameter-box clearfix'}>
-                    {this.renderLabel()}
-                    <div className='parameter-control'>
-                        {this.renderInput()}
-                    </div>
-                    {this.renderDescription()}
-                </div>
-            );
-        }
-    });
-
-    controls.PasswordField = React.createClass({
-        mixins: [InputMixin],
-        getInitialState: function() {
-            return {visible: false};
-        },
-        getDefaultProps: function() {
-            return {type: 'password'};
-        },
-        togglePassword: function() {
-            if (this.props.disabled) { return; }
-            this.setState({visible: !this.state.visible});
-        },
-        render: function() {
-            return (
-                <div className={this.props.cs.common + ' parameter-box clearfix'}>
-                    {this.renderLabel()}
-                    <div className='parameter-control input-append'>
-                        {this.renderInput(this.state.visible ? 'text' : 'password')}
-                        <span className='add-on' onClick={this.togglePassword}>
-                            <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
-                        </span>
-                    </div>
-                    {this.renderDescription()}
-                </div>
-            );
-        }
-    });
-
-    controls.TooltipIcon = React.createClass({
-        componentDidMount: function() {
-            $(this.getDOMNode()).tooltip();
-        },
-        componentWillUnmount: function() {
-            $(this.getDOMNode()).tooltip('destroy');
-        },
-        render: function() {
-            return (<i className='icon-attention text-warning' data-toggle='tooltip' title={this.props.warnings.join(' ')}></i>);
         }
     });
 
@@ -293,14 +208,22 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
     });
 
     controls.Table = React.createClass({
+        propTypes: {
+            tableClassName: React.PropTypes.string,
+            head: React.PropTypes.array,
+            body: React.PropTypes.array
+        },
         render: function() {
-            var tableClass = 'table table-bordered table-striped ' + this.props.className;
+            var tableClasses = {'table table-bordered table-striped': true};
+            tableClasses[this.props.tableClassName] = this.props.tableClassName;
             return (
-                <table className={tableClass}>
+                <table className={cx(tableClasses)}>
                     <thead>
                         <tr>
                             {_.map(this.props.head, function(column, index) {
-                                return <th key={index} className={column.className || ''}>{column.label}</th>;
+                                var classes = {};
+                                classes[column.className] = column.className;
+                                return <th key={index} className={cx(classes)}>{column.label}</th>;
                             })}
                         </tr>
                     </thead>

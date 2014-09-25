@@ -4,7 +4,7 @@
             "language": "EN",
             "common": {
                 "title": "Fuel Dashboard",
-                "select_all_button": "Select All",
+                "select_all": "Select All",
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
                 "apply_button": "Apply",
@@ -616,7 +616,7 @@
             "language": "CN",
             "common": {
                 "title": "Fuel Dashboard",
-                "select_all_button": "选择全部",
+                "select_all": "选择全部",
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
                 "apply_button": "应用",
@@ -1161,7 +1161,7 @@
             "language": "JA",
             "common": {
                 "title": "Fuel ダッシュボード",
-                "select_all_button": "全部選択",
+                "select_all": "全部選択",
                 "load_defaults_button": "ディフォルトロード",
                 "cancel_changes_button": "変更取り消し",
                 "apply_button": "適用",
@@ -1646,7 +1646,7 @@
             "language": "KO",
             "common": {
                 "title": "Fuel 대시보드",
-                "select_all_button": "모두선택",
+                "select_all": "모두선택",
                 "load_defaults_button": "초기설정로드",
                 "cancel_changes_button": "변경취소",
                 "apply_button": "적용",

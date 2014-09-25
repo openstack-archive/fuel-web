@@ -59,37 +59,34 @@ function(React, models, componentMixins, controls) {
     var LicenseUsage = React.createClass({
         render: function() {
             var capacityReport = this.props.capacityLog.get('report'),
-                tableClassName =  'releases-table',
+                tableClassName = 'releases-table',
                 headClassName = 'name';
             return (
                 <div>
                     <h4>{$.t('capacity_page.license_usage')}</h4>
                     <controls.Table
-                        head = {[{label: $.t('capacity_page.fuel_version'), className: headClassName},
+                        head={[{label: $.t('capacity_page.fuel_version'), className: headClassName},
                                 {label: $.t('capacity_page.fuel_uuid')}]}
-                        body = {[[capacityReport.fuel_data.release, capacityReport.fuel_data.uuid]]}
-                        className= {tableClassName} />
-
+                        body={[[capacityReport.fuel_data.release, capacityReport.fuel_data.uuid]]}
+                        tableClassName={tableClassName}
+                    />
                     <controls.Table
-                        head = {[{label: $.t('capacity_page.env_name'),  className: headClassName},
+                        head={[{label: $.t('capacity_page.env_name'),  className: headClassName},
                             {label: $.t('capacity_page.node_count')}]}
-                        body = {_.map(capacityReport.environment_stats, _.values)}
-                        className= {tableClassName} />
-
+                        body={_.map(capacityReport.environment_stats, _.values)}
+                        tableClassName={tableClassName} />
                     <controls.Table
-                        head = {[{label: $.t('capacity_page.total_number_alloc_nodes'), className: headClassName},
+                        head={[{label: $.t('capacity_page.total_number_alloc_nodes'), className: headClassName},
                                 {label: $.t('capacity_page.total_number_unalloc_nodes')}]}
-                        body = {[[capacityReport.allocation_stats.allocated,
+                        body={[[capacityReport.allocation_stats.allocated,
                                 capacityReport.allocation_stats.unallocated]] }
-                        className = {tableClassName} />
-
+                        tableClassName={tableClassName} />
                     <controls.Table
-                        head = {[{label: $.t('capacity_page.node_role'),  className: headClassName},
+                        head={[{label: $.t('capacity_page.node_role'),  className: headClassName},
                                 {label: $.t('capacity_page.nodes_with_config')}]}
-                        body = {_.zip(_.keys(capacityReport.roles_stat),
+                        body={_.zip(_.keys(capacityReport.roles_stat),
                             _.values(capacityReport.roles_stat))}
-                        className = {tableClassName} />
-
+                        tableClassName={tableClassName} />
                     <a href='/api/capacity/csv'  target='_blank' className='btn btn-info'>
                         <i className='icon-install'></i>
                         <span>{$.t('capacity_page.download_report')}</span>

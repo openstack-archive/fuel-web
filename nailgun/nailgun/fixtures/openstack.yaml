@@ -343,10 +343,10 @@
             label: "Hypervisor type"
             weight: 30
             type: "radio"
-          start_guests_on_host_boot:
+          resume_guests_state_on_host_boot:
             value: true
-            label: "Start guests on host boot"
-            description: "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots."
+            label: "Resume guests state on host boot"
+            description: "Whether to resume previous guests state when the host reboots. If enabled, this option causes guests assigned to the host to resume their previous state. If the guest was running a restart will be attempted when nova-compute starts. If the guest was not running previously, a restart will not be attempted."
             weight: 60
             type: "checkbox"
           use_cow_images:

@@ -23,7 +23,6 @@ define(
     'jsx!component_mixins',
     'text!templates/dialogs/base_dialog.html',
     'text!templates/dialogs/discard_changes.html',
-    'text!templates/dialogs/display_changes.html',
     'text!templates/dialogs/remove_cluster.html',
     'text!templates/dialogs/stop_deployment.html',
     'text!templates/dialogs/reset_environment.html',
@@ -32,7 +31,7 @@ define(
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, discardChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var cx = React.addons.classSet;
@@ -128,28 +127,104 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         }
     });
 
-    views.DisplayChangesDialog = views.Dialog.extend({
-        template: _.template(displayChangesDialogTemplate),
-        events: {
-            'click .start-deployment-btn:not(.disabled)': 'deployCluster'
+    views.DeployChangesDialog = React.createClass({
+        mixins: [componentMixins.dialogMixin],
+        getDefaultProps: function() {
+            return {title: $.t('dialog.display_changes.title')};
+        },
+        getInitialState: function() {
+            var cluster = this.props.cluster,
+                nodes = cluster.get('nodes');
+            return {
+                actionIsInProgress: false,
+                // FIXME: the following amount restrictions shoud be described in configuration file
+                notEnoughControllers: nodes.nodesAfterDeploymentWithRole('controller') < 1,
+                notEnoughMongoNodes: cluster.get('settings').get('additional_components.ceilometer.value') && nodes.nodesAfterDeploymentWithRole('mongo') < this.getRequiredMongoNodesAmount()
+            };
+        },
+        getRequiredMongoNodesAmount: function() {
+            return this.props.cluster.get('mode') == 'ha_compact' ? 3 : 1;
         },
         deployCluster: function() {
-            this.$('.btn').addClass('disabled');
+            this.setState({actionIsInProgress: true});
             app.page.removeFinishedDeploymentTasks();
             var task = new models.Task();
-            task.save({}, {url: _.result(this.model, 'url') + '/changes', type: 'PUT'})
+            task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
                 .done(_.bind(function() {
-                    this.$el.modal('hide');
                     app.page.deploymentTaskStarted();
+                    this.close();
                 }, this))
-                .fail(_.bind(this.displayError, this));
+                .fail(_.bind(function() {
+                    this.displayError();
+                    this.setState({actionIsInProgress: false});
+                }, this));
         },
-        render: function() {
-            this.constructor.__super__.render.call(this, {
-                cluster: this.model,
-                size: 1
-            });
-            return this;
+        renderChangedNodeAmount: function(nodes, dictKey) {
+            return nodes.length ? <div key={dictKey} className='deploy-task-name'>
+                {$.t('dialog.display_changes.' + dictKey, {count: nodes.length})}
+            </div> : null;
+        },
+        renderChange: function(change, nodeIds) {
+            var nodes = this.props.cluster.get('nodes');
+            return (
+                <div key={change}>
+                    <div className='deploy-task-name'>{$.t('dialog.display_changes.settings_changes.' + change)}</div>
+                    <ul>
+                        {_.map(nodeIds, function(id) {
+                            var node = nodes.get(id);
+                            return node ? <li key={change + id}>{node.get('name')}</li> : null;
+                        })}
+                    </ul>
+                </div>
+            );
+        },
+        renderBody: function() {
+            var ns = 'dialog.display_changes.',
+                cluster = this.props.cluster,
+                nodes = cluster.get('nodes');
+            return (
+                <div className='display-changes-dialog'>
+                    {(cluster.get('status') == 'new' || cluster.needsRedeployment()) &&
+                        <div>
+                            <div className='deploy-task-notice text-warning'>
+                                <i className='icon-attention' />
+                                <span>{$.t(ns + (cluster.get('status') == 'new' ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
+                            </div>
+                            <hr className='slim' />
+                        </div>
+                    }
+                    {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
+                    {this.renderChangedNodeAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                    {this.renderChangedNodeAmount(nodes.filter(function(node) {
+                        return !node.get('pending_addition') && !node.get('pending_deletion') && node.get('pending_roles').length;
+                    }), 'reconfigured_node')}
+                    {_.map(_.groupBy(cluster.get('changes'), function(change) { return change.name; }), function(nodes, change) {
+                        return this.renderChange(change, _.compact(_.pluck(nodes, 'node_id')));
+                    }, this)}
+                    {(this.state.notEnoughControllers || this.state.notEnoughMongoNodes) &&
+                        <div>
+                            <hr className='slim' />
+                            {this.state.notEnoughControllers &&
+                                <div className='alert alert-error'>{$.t(ns + 'warnings.controller')}</div>
+                            }
+                            {this.state.notEnoughMongoNodes &&
+                                <div className='alert alert-error'>{$.t(ns + 'warnings.mongo', {count: this.getRequiredMongoNodesAmount()})}</div>
+                            }
+                        </div>
+                    }
+                </div>
+            );
+        },
+        renderFooter: function() {
+            var forbiddenDeploy = this.state.notEnoughControllers || this.state.notEnoughMongoNodes;
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionIsInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='deploy'
+                    className={'btn btn-' + (forbiddenDeploy ? 'danger' : 'success')}
+                    disabled={this.state.actionIsInProgress || forbiddenDeploy}
+                    onClick={this.deployCluster}
+                >{$.t('dialog.display_changes.deploy')}</button>
+            ]);
         }
     });
 

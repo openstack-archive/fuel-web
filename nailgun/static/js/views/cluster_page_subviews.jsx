@@ -103,19 +103,18 @@ function(React, utils, dialogs) {
                 renderOn: 'add remove change'
             })
         ],
-        displayDialog: function(Constructor) {
+        showDialog: function(Constructor) {
             this.props.page.registerSubView(new Constructor({model: this.props.model})).render();
         },
         onDeployRequest: function() {
-            var page = this.props.page,
-                displayChanges = _.bind(this.displayDialog, this, dialogs.DisplayChangesDialog);
+            var page = this.props.page;
             if (_.result(page.tab, 'hasChanges')) {
                 page.discardSettingsChanges({cb: function() {
                     page.tab.revertChanges();
-                    displayChanges();
+                    utils.showDialog(dialogs.DeployChangesDialog({cluster: this.props.model}));
                 }});
             } else {
-                displayChanges();
+                utils.showDialog(dialogs.DeployChangesDialog({cluster: this.props.model}));
             }
         },
         render: function() {
@@ -135,7 +134,7 @@ function(React, utils, dialogs) {
                                         <button
                                             className='btn btn-danger stop-deployment-btn'
                                             title={$.t('cluster_page.stop_deployment_button')}
-                                            onClick={_.bind(this.displayDialog, this, dialogs.StopDeploymentDialog)}
+                                            onClick={_.bind(this.showDialog, this, dialogs.StopDeploymentDialog)}
                                         >
                                             <i className='icon-cancel-circle' />
                                         </button>
@@ -170,7 +169,7 @@ function(React, utils, dialogs) {
                                 <button
                                     className='btn rollback'
                                     title={$.t('cluster_page.discard_changes')}
-                                    onClick={_.bind(this.displayDialog, this, dialogs.DiscardChangesDialog)}
+                                    onClick={_.bind(this.showDialog, this, dialogs.DiscardChangesDialog)}
                                 >
                                     <i className='icon-back-in-time' />
                                 </button>

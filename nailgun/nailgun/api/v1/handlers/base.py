@@ -14,21 +14,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from datetime import datetime
-from decorator import decorator
-
-from sqlalchemy import exc as sa_exc
+import gprof2dot
+import os
+import pyprof2calltree
+import time
 import web
 
+from cProfile import Profile
+from datetime import datetime
+from decorator import decorator
+from pstats import Stats
+from sqlalchemy import exc as sa_exc
+
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun import consts
 from nailgun.db import db
-
-from nailgun.objects.serializers.base import BasicSerializer
-
 from nailgun.errors import errors
 from nailgun.logger import logger
-
 from nailgun import objects
+from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.openstack.common import jsonutils
 
 
@@ -89,6 +93,12 @@ def load_db_driver(handler):
 
 @decorator
 def content_json(func, *args, **kwargs):
+    # run profiling when LoadTests are running
+    profiler = None
+    if os.environ.get('LoadTest'):
+        handler_name = args[0].__str__().replace('<', '').split()[0]
+        profiler = Profiler(func.__name__, handler_name)
+
     try:
         data = func(*args, **kwargs)
     except web.notmodified:
@@ -99,6 +109,10 @@ def content_json(func, *args, **kwargs):
             http_error.data = build_json_response(http_error.data)
         raise
     web.header('Content-Type', 'application/json')
+
+    if os.environ.get('LoadTest'):
+        profiler.save_data()
+
     return build_json_response(data)
 
 
@@ -107,6 +121,58 @@ def build_json_response(data):
     if type(data) in (dict, list):
         return jsonutils.dumps(data)
     return data
+
+
+class Profiler(object):
+    """Run profiler and save profile
+    """
+    def __init__(self, method='', handler_name=''):
+        self.method = method
+        self.handler_name = handler_name
+        if not os.path.exists(consts.LOAD_TESTS_PATHS.last_load_test):
+            os.makedirs(consts.LOAD_TESTS_PATHS.last_load_test)
+        self.profiler = Profile()
+        self.profiler.enable()
+        self.start = time.time()
+
+    def save_data(self):
+        self.profiler.disable()
+        elapsed = time.time() - self.start
+        pref_filename = os.path.join(consts.LOAD_TESTS_PATHS.last_load_test,
+                                     '%s.%s.%06dms.%d.' % (
+                                         self.method,
+                                         self.handler_name or 'root',
+                                         elapsed * 1000.0,
+                                         time.time()))
+        tree_file = pref_filename + 'prof'
+        stats_file = pref_filename + 'txt'
+        callgraph_file = pref_filename + 'dot'
+
+        # write callgraph in dot format
+        parser = gprof2dot.PstatsParser(self.profiler)
+
+        def get_function_name((filename, line, name)):
+            module = os.path.splitext(filename)[0]
+            module_pieces = module.split(os.path.sep)
+            return "%s:%d:%s" % ("/".join(module_pieces[-4:]), line, name)
+
+        parser.get_function_name = get_function_name
+        gprof = parser.parse()
+
+        with open(callgraph_file, 'w') as file_o:
+            dot = gprof2dot.DotWriter(file_o)
+            theme = gprof2dot.TEMPERATURE_COLORMAP
+            dot.graph(gprof, theme)
+
+        # write pstats
+        with file(stats_file, 'w') as file_o:
+            stats = Stats(self.profiler, stream=file_o)
+            stats.sort_stats('name').print_stats()
+
+        # write calltree
+        call_tree = pyprof2calltree.CalltreeConverter(stats)
+        with file(tree_file, 'wb') as file_o:
+            call_tree.output(file_o)
 
 
 class BaseHandler(object):
@@ -129,7 +195,7 @@ class BaseHandler(object):
 
         :param status_code: the HTTP status code as an integer
         :param message: the message to send along, as a string
-        :param headers: the headeers to send along, as a dictionary
+        :param headers: the headers to send along, as a dictionary
         """
         class _nocontent(web.HTTPError):
             message = 'No Content'

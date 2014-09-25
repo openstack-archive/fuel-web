@@ -48,6 +48,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             propTypes: {
                 modalClass: React.PropTypes.renderable
             },
+            getInitialState: function() {
+                return {actionInProgress: false};
+            },
             componentDidMount: function() {
                 var $el = $(this.getDOMNode());
                 var modalOptions = _.clone(this.props.modalOptions) || {};

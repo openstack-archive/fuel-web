@@ -37,6 +37,7 @@ requirejs.config({
         cocktail: 'js/libs/bower/cocktail/Cocktail',
         bootstrap: 'js/libs/custom/bootstrap.min',
         text: 'js/libs/bower/requirejs-text/js/text',
+        json: 'js/libs/bower/requirejs-plugins/json',
         i18next: 'js/libs/bower/i18next/js/i18next-1.7.1',
         underscore: 'js/libs/bower/lodash/js/lodash',
         deepModel: 'js/libs/bower/backbone-deep-model/js/deep-model',
@@ -80,10 +81,10 @@ requirejs.config({
             deps: ['jquery']
         },
         i18next: {
-            deps: ['text!i18n/translation.json', 'jquery'],
+            deps: ['json!i18n/translation.json', 'jquery'],
             init: function(translation, $) {
                 'use strict';
-                $.i18n.init({resStore: JSON.parse(translation), fallbackLng: 'en-US'});
+                $.i18n.init({resStore: translation, fallbackLng: 'en-US'});
             }
         },
         'jquery-checkbox': {

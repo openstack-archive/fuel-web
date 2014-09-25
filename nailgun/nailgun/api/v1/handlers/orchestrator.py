@@ -177,7 +177,8 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         nodes = self.get_nodes(cluster)
-
+        if nodes is None:
+            nodes = []
         try:
             task_manager = self.task_manager(cluster_id=cluster.id)
             task = task_manager.execute(nodes)

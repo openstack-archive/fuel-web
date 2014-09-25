@@ -16,7 +16,8 @@
 define(['jquery', 'underscore', 'react'], function($, _, React) {
     'use strict';
 
-    var controls = {};
+    var controls = {},
+        cx = React.addons.classSet;
 
     var InputMixin = {
         propTypes: {
@@ -56,11 +57,11 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             type = type || this.props.type;
             var radioButton = this.isRadioButton();
             return (<input
-                className={this.getError() && 'error'}
+                className={cx({error: this.getError()})}
                 type={type}
                 name={this.props.name}
-                value={this.getValue()}
-                checked={radioButton ? radioButton.data == this.props.value : this.props.value}
+                defaultValue={this.getValue()}
+                defaultChecked={radioButton ? radioButton.data == this.props.value : this.props.value}
                 disabled={this.props.disabled}
                 onChange={this.onChange} />);
         },

@@ -190,3 +190,21 @@ LOG_RECORD_SEND_STATUS = Enum(
     'existed',
     'failed'
 )
+
+LOAD_TESTS_PATHS = Enum(
+    '/tmp/nailgun_load_tests/tests/',
+    '/tmp/nailgun_load_tests/tests/last/',
+    '/tmp/nailgun_load_tests/results/',
+    names=(
+        'load_tests_base',
+        'last_load_test',
+        'load_tests_results',
+    )
+)
+
+TEST_VARIABLES = Enum(
+    'NAILGUN_LOAD_TEST',
+    names=(
+        'run_profiler',
+    )
+)

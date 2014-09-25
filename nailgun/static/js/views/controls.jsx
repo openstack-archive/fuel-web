@@ -16,7 +16,8 @@
 define(['jquery', 'underscore', 'react'], function($, _, React) {
     'use strict';
 
-    var controls = {};
+    var controls = {},
+        cx = React.addons.classSet;
 
     var InputMixin = {
         propTypes: {
@@ -32,11 +33,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             onChange: React.PropTypes.func.isRequired,
             validate: React.PropTypes.func,
             disabled: React.PropTypes.bool,
-            warnings: React.PropTypes.renderable,
-            cs: React.PropTypes.objectOf(React.PropTypes.string)
-        },
-        getInitialState: function() {
-            return {value: this.getValue()};
+            tooltipText: React.PropTypes.renderable,
+            cs: React.PropTypes.objectOf(React.PropTypes.object)
         },
         isRadioButton: function() {
             return this.props.key ? _.find(this.props.values, {data: this.props.key}) : null;
@@ -46,7 +44,14 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return radioButton ? radioButton.data : this.props.value;
         },
         getError: function() {
-            return this.props.validate && this.props.validate(this.props.name);
+            var validationResult  = this.props.validate && this.props.validate(this.props.name) || false;
+            if (_.isBoolean(validationResult)) {
+                return {
+                    result: validationResult,
+                    message: ''
+                };
+            }
+            return validationResult;
         },
         onChange: function(e) {
             if (this.isRadioButton()) { return; }
@@ -55,23 +60,28 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         renderInput: function(type) {
             type = type || this.props.type;
             var radioButton = this.isRadioButton();
+            this.props.cs = this.props.cs || {};
             return (<input
-                className={this.getError() && 'error'}
+                id={this.props.id}
+                className={cx(_.extend({error: this.getError().result}, this.props.cs.input))}
                 type={type}
                 name={this.props.name}
-                value={this.getValue()}
-                checked={radioButton ? radioButton.data == this.props.value : this.props.value}
+                defaultValue={this.getValue()}
+                defaultChecked={radioButton ? radioButton.data == this.props.value : this.props.value}
                 disabled={this.props.disabled}
-                onChange={this.onChange} />);
+                onChange={this.onChange}
+                maxLength={this.props.maxLength}
+                onKeyDown={this.props.onKeyDown}
+            />);
         },
         renderLabel: function() {
             var radioButton = this.isRadioButton(),
                 labelClass = this.props.type == 'radio' && !radioButton ? this.props.cs.radioGrouplabel : this.props.cs.label;
             return (
-                <div className={labelClass + ' enable-selection'}>
+                <div className={cx(_.extend({'enable-selection': true}, labelClass))}>
                     {radioButton ? radioButton.label : this.props.label}
-                    {!!this.props.warnings.length &&
-                        <controls.TooltipIcon warnings={this.props.warnings} />
+                    {this.props.tooltipText &&
+                        <controls.TooltipIcon tooltipText={this.props.tooltipText} />
                     }
                 </div>
             );
@@ -79,33 +89,46 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         renderDescription: function() {
             var error = this.getError(),
                 radioButton = this.isRadioButton();
-            return error ?
-                (<div className={this.props.cs.description + ' validation-error'}>{error}</div>)
-                :
-                (<div className={this.props.cs.description + ' description'}>
-                    {radioButton ? radioButton.description : this.props.description}
-                </div>);
+            return (
+                <div className={cx(_.extend({'validation-error': error.result, description: !error.result}, this.props.cs.description))}>
+                    {error.result ? error.message : radioButton ? radioButton.description : this.props.description}
+                </div>
+            );
         }
     };
 
     controls.Checkbox = React.createClass({
         mixins: [InputMixin],
+        propTypes: {
+            controlOnly: React.PropTypes.bool
+        },
         getDefaultProps: function() {
             return {type: 'checkbox'};
         },
+        renderControl: function() {
+            return (
+                <div className='custom-tumbler'>
+                    {this.renderInput()}
+                    <span>&nbsp;</span>
+                </div>
+            );
+        },
         render: function() {
             return (
-                <div className={this.props.cs.common}>
-                    <label className='parameter-box'>
-                        <div className='parameter-control'>
-                            <div className='custom-tumbler'>
-                                {this.renderInput()}
-                                <span>&nbsp;</span>
-                            </div>
-                        </div>
-                        {this.renderLabel()}
-                        {this.renderDescription()}
-                    </label>
+                <div>
+                    {this.props.controlOnly ?
+                        this.renderControl()
+                    :
+                        (<div className={this.props.cs.common}>
+                            <label className='parameter-box'>
+                                <div className='parameter-control'>
+                                    {this.renderControl()}
+                                </div>
+                                {this.renderLabel()}
+                                {this.renderDescription()}
+                            </label>
+                        </div>)
+                    }
                 </div>
             );
         }
@@ -118,8 +141,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         render: function() {
             return (
-                <div className={this.props.cs.common}>
-                    <label className={this.props.cs.label}>
+                <div className={cx(_.extend({'select-all': true}, this.props.cs.common))}>
+                    <label className={cx(this.props.cs.label)}>
                         {this.renderInput()}
                         <span>&nbsp;</span>
                         <span>{$.t('common.select_all_button')}</span>
@@ -132,14 +155,16 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
     controls.Dropdown = React.createClass({
         mixins: [InputMixin],
         propTypes: {
-            values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+            values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+            hiddenValues: React.PropTypes.arrayOf(React.PropTypes.string),
+            disabledValues: React.PropTypes.arrayOf(React.PropTypes.string)
         },
         getDefaultProps: function() {
             return {type: 'dropdown'};
         },
         render: function() {
             return (
-                <div className={this.props.cs.common + ' parameter-box clearfix'}>
+                <div className={cx(_.extend({'parameter-box': true, clearfix: true}, this.props.cs.common))}>
                     {this.renderLabel()}
                     <div className='parameter-control'>
                         <select
@@ -177,7 +202,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         render: function() {
             return (
-                <div className={this.props.cs.common}>
+                <div className={cx(this.props.cs.common)}>
                     {this.renderLabel()}
                     <form onChange={this.onChange}>
                         {_.map(this.props.values, function(value) {
@@ -187,7 +212,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                                         key={value.data}
                                         value={this.props.value}
                                         disabled={this.props.disabled || _.contains(this.props.disabledValues, value.data)}
-                                        warnings={this.props.valueWarnings[value.data]} />
+                                        tooltipText={this.props.valueWarnings[value.data].join(' ')}
+                                    />
                                 );
                             }
                         }, this)}
@@ -200,8 +226,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
     controls.RadioButton = React.createClass({
         mixins: [InputMixin],
         propTypes: {
-            key: React.PropTypes.string.isRequired,
-            values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+            key: React.PropTypes.string.isRequired
         },
         getDefaultProps: function() {
             return {type: 'radio'};
@@ -229,7 +254,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         render: function() {
             return (
-                <div className={this.props.cs.common + ' parameter-box clearfix'}>
+                <div className={cx(_.extend({'parameter-box': true, clearfix: true}, this.props.cs.common))}>
                     {this.renderLabel()}
                     <div className='parameter-control'>
                         {this.renderInput()}
@@ -242,6 +267,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
 
     controls.PasswordField = React.createClass({
         mixins: [InputMixin],
+        propTypes: {
+            toggleable: React.PropTypes.bool
+        },
         getInitialState: function() {
             return {visible: false};
         },
@@ -254,13 +282,15 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         render: function() {
             return (
-                <div className={this.props.cs.common + ' parameter-box clearfix'}>
+                <div className={cx(_.extend({'parameter-box': true, clearfix: true}, this.props.cs.common))}>
                     {this.renderLabel()}
-                    <div className='parameter-control input-append'>
+                    <div className={cx({'parameter-control': true, 'input-append': this.props.toggleable})}>
                         {this.renderInput(this.state.visible ? 'text' : 'password')}
-                        <span className='add-on' onClick={this.togglePassword}>
-                            <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
-                        </span>
+                        {this.props.toggleable &&
+                            <span className='add-on' onClick={this.togglePassword}>
+                                <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
+                            </span>
+                        }
                     </div>
                     {this.renderDescription()}
                 </div>
@@ -276,7 +306,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             $(this.getDOMNode()).tooltip('destroy');
         },
         render: function() {
-            return (<i className='icon-attention text-warning' data-toggle='tooltip' title={this.props.warnings.join(' ')}></i>);
+            return (<i className='icon-attention text-warning' data-toggle='tooltip' title={this.props.tooltipText}></i>);
         }
     });
 
@@ -294,9 +324,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
 
     controls.Table = React.createClass({
         render: function() {
-            var tableClass = 'table table-bordered table-striped ' + this.props.className;
+            var tableClasses = {
+                table: true,
+                'table-bordered': true,
+                'table-striped': true
+            };
             return (
-                <table className={tableClass}>
+                <table className={cx(_.extend(tableClasses, this.props.cs.table))}>
                     <thead>
                         <tr>
                             {_.map(this.props.head, function(column, index) {

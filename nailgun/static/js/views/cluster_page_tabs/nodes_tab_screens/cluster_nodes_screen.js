@@ -32,7 +32,6 @@ function(utils, models, NodeListScreen) {
             this.nodes.fetch = function(options) {
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: clusterId}}, options));
             };
-            this.nodes.on('change:checked', this.updateBatchActionsButtons, this);
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').bindToView(this, [{group: ['deployment', 'network']}], function(task) {
                 task.on('change:status', this.render, this);

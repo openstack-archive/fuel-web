@@ -58,7 +58,7 @@ class NodesFilterMixin(object):
                 node_ids
             )
 
-        return self.get_default_nodes(cluster)
+        return self.get_default_nodes(cluster) or []
 
 
 class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):

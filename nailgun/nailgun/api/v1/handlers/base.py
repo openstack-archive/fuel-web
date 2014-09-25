@@ -16,19 +16,15 @@
 
 from datetime import datetime
 from decorator import decorator
-
 from sqlalchemy import exc as sa_exc
 import web
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.db import db
-
-from nailgun.objects.serializers.base import BasicSerializer
-
 from nailgun.errors import errors
 from nailgun.logger import logger
-
 from nailgun import objects
+from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.openstack.common import jsonutils
 
 
@@ -89,6 +85,7 @@ def load_db_driver(handler):
 
 @decorator
 def content_json(func, *args, **kwargs):
+
     try:
         data = func(*args, **kwargs)
     except web.notmodified:
@@ -99,6 +96,7 @@ def content_json(func, *args, **kwargs):
             http_error.data = build_json_response(http_error.data)
         raise
     web.header('Content-Type', 'application/json')
+
     return build_json_response(data)
 
 
@@ -129,7 +127,7 @@ class BaseHandler(object):
 
         :param status_code: the HTTP status code as an integer
         :param message: the message to send along, as a string
-        :param headers: the headeers to send along, as a dictionary
+        :param headers: the headers to send along, as a dictionary
         """
         class _nocontent(web.HTTPError):
             message = 'No Content'

@@ -2470,7 +2470,10 @@ hr.slim {
 }
 
 .display-changes-dialog {
-  ul { margin-left: 35px; }
+  ul {
+    margin-left: 35px;
+    &:empty { display: none; }
+  }
   .deploy-task-name {
     padding: 8px 10px 1px 10px;
     &.header {

@@ -36,11 +36,11 @@ module.exports = function(grunt) {
                     },
                     map: {
                         '*': {
-                            'JSXTransformer': 'empty:'
+                            JSXTransformer: 'empty:'
                         }
                     },
                     paths: {
-                        'react': 'js/libs/bower/react/js/react-with-addons.min'
+                        react: 'js/libs/bower/react/js/react-with-addons.min'
                     },
                     modules: [
                         {
@@ -150,8 +150,14 @@ module.exports = function(grunt) {
         },
         less: {
             all: {
-                src: 'static/css/styles.less',
-                dest: staticBuildPreparationDir + '/static/css/styles.css',
+                files: [
+                    {
+                        expand: true,
+                        src: ['static/**/styles.less'],
+                        dest: staticBuildPreparationDir,
+                        ext: '.css'
+                    }
+                ]
             }
         },
         bower: {
@@ -212,7 +218,11 @@ module.exports = function(grunt) {
                 ],
                 options: {
                     process: function (content, path) {
+                        // use CSS loader instead LESS loader - styles are precompiled
+                        content = content.replace(/less!/g, 'css!');
+                        // remove explicit calls to JSX loader plugin
                         content = content.replace(/jsx!/g, '');
+                        // add header required for JSXTransformer to all .jsx files
                         if (/\.jsx$/.test(path)) {
                             content = '/** @jsx React.DOM */\n' + content;
                         }
@@ -243,7 +253,7 @@ module.exports = function(grunt) {
                     '!js/main.js',
                     '!js/libs/bower/requirejs/js/require.js',
                     '**/*.css',
-                    '!css/styles.css',
+                    '!**/styles.css',
                     'templates',
                     'i18n'
                 ]

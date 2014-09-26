@@ -21,7 +21,7 @@ from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
-class TestHandlers(BaseIntegrationTest):
+class TestNodeCollectionNICsHandler(BaseIntegrationTest):
 
     def test_put_handler_with_one_node(self):
         cluster = self.env.create_cluster(api=True)
@@ -93,3 +93,54 @@ class TestHandlers(BaseIntegrationTest):
             cluster['changes']
         )
         self.assertEquals(1, len(changes))
+
+
+class TestNodeCollectionNICsDefaultHandler(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNodeCollectionNICsDefaultHandler, self).setUp()
+
+        # two nodes in one cluster
+        self.cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'mac': '01:01:01:01:01:01'},
+                {'roles': ['compute'], 'mac': '02:02:02:02:02:02'}])
+
+        # one node in another cluster
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'mac': '03:03:03:03:03:03'}])
+
+    def test_get_w_cluster_id(self):
+        # get nics of cluster and check that response is ok
+        resp = self.app.get(
+            '{url}?cluster_id={cluster_id}'.format(
+                url=reverse('NodeCollectionNICsDefaultHandler'),
+                cluster_id=self.cluster['id']),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        # check response
+        resp = jsonutils.loads(resp.body)
+        self.assertEqual(len(resp), 2)
+
+        macs = [iface['mac'] for node in resp for iface in node]
+        self.assertTrue('01:01:01:01:01:01' in macs)
+        self.assertTrue('02:02:02:02:02:02' in macs)
+        self.assertFalse('03:03:03:03:03:03' in macs)
+
+    def test_get_wo_cluster_id(self):
+        # get nics of cluster and check that response is ok
+        resp = self.app.get(
+            reverse('NodeCollectionNICsDefaultHandler'),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        # check response
+        resp = jsonutils.loads(resp.body)
+        self.assertEqual(len(resp), 3)
+
+        macs = [iface['mac'] for node in resp for iface in node]
+        self.assertTrue('01:01:01:01:01:01' in macs)
+        self.assertTrue('02:02:02:02:02:02' in macs)
+        self.assertTrue('03:03:03:03:03:03' in macs)

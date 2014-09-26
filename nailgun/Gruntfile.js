@@ -36,11 +36,11 @@ module.exports = function(grunt) {
                     },
                     map: {
                         '*': {
-                            'JSXTransformer': 'empty:'
+                            JSXTransformer: 'empty:'
                         }
                     },
                     paths: {
-                        'react': 'js/libs/bower/react/js/react-with-addons.min'
+                        react: 'js/libs/bower/react/js/react-with-addons.min'
                     },
                     modules: [
                         {
@@ -212,7 +212,11 @@ module.exports = function(grunt) {
                 ],
                 options: {
                     process: function (content, path) {
+                        // use CSS loader instead LESS loader - styles are precompiled
+                        content = content.replace(/less!/g, 'css!');
+                        // remove explicit calls to JSX loader plugin
                         content = content.replace(/jsx!/g, '');
+                        // add header required for JSXTransformer to all .jsx files
                         if (/\.jsx$/.test(path)) {
                             content = '/** @jsx React.DOM */\n' + content;
                         }

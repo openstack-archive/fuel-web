@@ -225,8 +225,7 @@ class NodeNICsDefaultHandler(BaseHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(objects.Node, node_id)
-        default_nets = self.get_default(node)
-        return default_nets
+        return self.get_default(node)
 
     def get_default(self, node):
         if node.cluster:
@@ -248,23 +247,16 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
 
         :returns: Collection of JSONized Nodes interfaces.
         :http: * 200 (OK)
-               * 404 (node not found in db)
         """
         cluster_id = web.input(cluster_id=None).cluster_id
-        if cluster_id == '':
-            nodes = self.get_object_or_404(objects.Node, cluster_id=None)
-        elif cluster_id:
-            nodes = self.get_object_or_404(
-                objects.Node,
-                cluster_id=cluster_id
-            )
+
+        if cluster_id:
+            nodes = \
+                objects.NodeCollection.filter_by(None, cluster_id=cluster_id)
         else:
-            nodes = self.get_object_or_404(objects.Node)
-        def_net_nodes = []
-        for node in nodes:
-            rendered_node = self.get_default(self.render(node))
-            def_net_nodes.append(rendered_node)
-        return map(self.render, nodes)
+            nodes = objects.NodeCollection.all()
+
+        return filter(lambda x: x is not None, map(self.get_default, nodes))
 
 
 class NodesAllocationStatsHandler(BaseHandler):

@@ -134,7 +134,7 @@ function(React, utils, dialogs) {
                                     <div className={itemClass}>
                                         <button
                                             className='btn btn-danger stop-deployment-btn'
-                                            title='{$.t("cluster_page.stop_deployment_button")}'
+                                            title={$.t('cluster_page.stop_deployment_button')}
                                             onClick={_.bind(this.displayDialog, this, dialogs.StopDeploymentDialog)}
                                         >
                                             <i className='icon-cancel-circle' />
@@ -169,7 +169,7 @@ function(React, utils, dialogs) {
                             <div className={itemClass}>
                                 <button
                                     className='btn rollback'
-                                    title='{$.t("cluster_page.discard_changes")}'
+                                    title={$.t('cluster_page.discard_changes')}
                                     onClick={_.bind(this.displayDialog, this, dialogs.DiscardChangesDialog)}
                                 >
                                     <i className='icon-back-in-time' />

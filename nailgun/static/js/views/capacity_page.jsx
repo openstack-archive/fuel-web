@@ -59,11 +59,7 @@ function(React, models, componentMixins, controls) {
     var LicenseUsage = React.createClass({
         render: function() {
             var capacityReport = this.props.capacityLog.get('report'),
-                tableCS = {
-                    table: {
-                        'releases-table': true
-                    }
-                },
+                tableClassName = 'releases-table',
                 headClassName = 'name';
             return (
                 <div>
@@ -72,25 +68,25 @@ function(React, models, componentMixins, controls) {
                         head={[{label: $.t('capacity_page.fuel_version'), className: headClassName},
                                 {label: $.t('capacity_page.fuel_uuid')}]}
                         body={[[capacityReport.fuel_data.release, capacityReport.fuel_data.uuid]]}
-                        cs={tableCS}
+                        tableClassName={tableClassName}
                     />
                     <controls.Table
                         head={[{label: $.t('capacity_page.env_name'),  className: headClassName},
                             {label: $.t('capacity_page.node_count')}]}
                         body={_.map(capacityReport.environment_stats, _.values)}
-                        cs={tableCS} />
+                        tableClassName={tableClassName} />
                     <controls.Table
                         head={[{label: $.t('capacity_page.total_number_alloc_nodes'), className: headClassName},
                                 {label: $.t('capacity_page.total_number_unalloc_nodes')}]}
                         body={[[capacityReport.allocation_stats.allocated,
                                 capacityReport.allocation_stats.unallocated]] }
-                        cs={tableCS} />
+                        tableClassName={tableClassName} />
                     <controls.Table
                         head={[{label: $.t('capacity_page.node_role'),  className: headClassName},
                                 {label: $.t('capacity_page.nodes_with_config')}]}
                         body={_.zip(_.keys(capacityReport.roles_stat),
                             _.values(capacityReport.roles_stat))}
-                        cs={tableCS} />
+                        tableClassName={tableClassName} />
                     <a href='/api/capacity/csv'  target='_blank' className='btn btn-info'>
                         <i className='icon-install'></i>
                         <span>{$.t('capacity_page.download_report')}</span>

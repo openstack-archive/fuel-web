@@ -41,8 +41,9 @@ requirejs.config({
         i18next: 'js/libs/bower/i18next/js/i18next-1.7.1',
         underscore: 'js/libs/bower/lodash/js/lodash',
         deepModel: 'js/libs/bower/backbone-deep-model/js/deep-model',
-        less: 'js/libs/bower/less/js/less-1.5.1',
+        lessLibrary: 'js/libs/bower/less/js/less-1.5.1',
         'require-css': 'js/libs/bower/require-css',
+        'require-less': 'js/require-less',
         app: 'js/app',
         styles: 'js/styles',
         models: 'js/models',
@@ -102,7 +103,8 @@ requirejs.config({
     },
     map: {
         '*': {
-            css: 'require-css/css'
+            css: 'require-css/css',
+            less: 'require-less'
         }
     },
     jsx: {
@@ -126,11 +128,11 @@ require([
     'jquery-timeout',
     'jquery-ui',
     'jquery-autoNumeric',
-    'styles',
     'text',
 //>>excludeStart("compressed", pragmas.compressed);
     'jsx',
 //>>excludeEnd("compressed");
+    'less!/static/css/styles',
     'app'
 ], function() {
     'use strict';

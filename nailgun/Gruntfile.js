@@ -36,7 +36,8 @@ module.exports = function(grunt) {
                     },
                     map: {
                         '*': {
-                            'JSXTransformer': 'empty:'
+                            'JSXTransformer': 'empty:',
+                            'less': 'css'
                         }
                     },
                     paths: {

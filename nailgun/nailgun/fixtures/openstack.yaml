@@ -823,11 +823,102 @@
             type: "checkbox"
             restrictions:
               - "settings:common.libvirt_type.value == 'vcenter'"
+          images_vcenter:
+            value: false
+            label: "VMWare vCenter/ESXi datastore for images (Glance)"
+            description: "Configures Glance to use the vCenter/ESXi backend to store images. If enabled, this option will prevent Swift from installing."
+            weight: 35
+            type: "checkbox"
+            restrictions:
+              - "settings:common.libvirt_type.value != 'vcenter'"
+          vc_images_is_esx:
+            value: false
+            type: "checkbox"
+            label: "ESXi datastore for images (Glance)"
+            description: "Select if you want to use ESXi host as datastore. If not selected, vCenter will be used."
+            weight: 40
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == false"
+              - condition: "settings:common.libvirt_type.value != 'vcenter'"
+                action: "hide"
+          vc_host:
+            value: ""
+            label: "vCenter/ESXi IP"
+            description: "IP Address of vCenter/ESXi"
+            weight: 45
+            type: "text"
+            regex:
+              source: *ipv4_regex
+              error: 'Specify valid IPv4 address'
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == false or settings:common.libvirt_type.value != 'vcenter'"
+                action: "hide"
+          vc_user:
+            value: ""
+            label: "Username"
+            description: "vCenter/ESXi admin username"
+            weight: 50
+            type: "text"
+            regex:
+              source: *non_empty_string
+              error: 'Empty username'
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == false or settings:common.libvirt_type.value != 'vcenter'"
+                action: "hide"
+          vc_password:
+            value: ""
+            label: "Password"
+            description: "vCenter/ESXi admin password"
+            weight: 55
+            type: "password"
+            regex:
+              source: *non_empty_string
+              error: "Empty password"
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == false or settings:common.libvirt_type.value != 'vcenter'"
+                action: "hide"
+          vc_datastore:
+            value: ""
+            label: "Datastore name"
+            description: "Datastore associated with the datacenter."
+            weight: 60
+            type: "text"
+            regex:
+              source: *non_empty_string
+              error: 'Empty datastore'
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == false or settings:common.libvirt_type.value != 'vcenter'"
+                action: "hide"
+          vc_datacenter:
+            value: ""
+            label: "Datacenter name"
+            description: "Inventory path to a datacenter."
+            weight: 65
+            type: "text"
+            regex:
+              source: *non_empty_string
+              error: 'Empty datacenter'
+            restrictions:
+              - condition: "settings:storage.vc_images_is_esx.value == true or settings:storage.images_vcenter.value == false"
+              - condition: "settings:common.libvirt_type.value != 'vcenter'"
+                action: "hide"
+          vc_image_dir:
+            value: "/openstack_glance"
+            label: "Datastore Images directory"
+            description: "The name of the directory where the glance images will be stored in the VMware datastore."
+            weight: 70
+            type: "text"
+            regex:
+              source: *non_empty_string
+              error: 'Empty images directory'
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == false or settings:common.libvirt_type.value != 'vcenter'"
+                action: "hide"
           ephemeral_ceph:
             value: false
             label: "Ceph RBD for ephemeral volumes (Nova)"
             description: "Configures Nova to store ephemeral volumes in RBD. This works best if Ceph is enabled for volumes and images, too. Enables live migration of all types of Ceph backed VMs (without this option, live migration will only work with VMs launched from Cinder volumes)."
-            weight: 35
+            weight: 75
             type: "checkbox"
             restrictions:
               - "settings:common.libvirt_type.value == 'vcenter'"
@@ -835,7 +926,7 @@
             value: false
             label: "Ceph RadosGW for objects (Swift API)"
             description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
-            weight: 40
+            weight: 80
             type: "checkbox"
             restrictions:
               - "settings:storage.images_ceph.value == false"
@@ -843,7 +934,7 @@
             value: "2"
             label: "Ceph object replication factor"
             description: "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes."
-            weight: 70
+            weight: 85
             type: "text"
             restrictions:
               - "settings:common.libvirt_type.value == 'vcenter'"
@@ -1027,6 +1118,12 @@
                 - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.glance_vcenter_alert"
               bind:
                 - "settings:storage.images_ceph.value": true
+            - data: "vcenter"
+              label: "dialog.create_cluster_wizard.storage.vcenter"
+              restrictions:
+                - "Compute.hypervisor != 'vcenter'"
+              bind:
+                - "settings:storage.images_vcenter.value": true
       AdditionalServices:
         sahara:
           type: "checkbox"

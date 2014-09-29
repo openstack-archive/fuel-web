@@ -477,7 +477,8 @@
                         "cinder": "Cinder",
                         "cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.",
                         "glance": "Glance",
-                        "glance_help": "By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes."
+                        "glance_help": "By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes.",
+                        "vcenter": "VMWare vCenter/ESXi"
                     },
                     "additional": {
                         "title": "Additional Services",

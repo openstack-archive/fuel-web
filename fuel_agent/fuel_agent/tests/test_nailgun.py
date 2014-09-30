@@ -490,7 +490,7 @@ class TestNailgun(test_base.BaseTestCase):
             expected_images.append(image.Image(
                 uri=i_data['uri'],
                 target_device=fs.device,
-                image_format=i_data['format'],
+                format=i_data['format'],
                 container=i_data['container'],
             ))
         expected_images = sorted(expected_images, key=lambda x: x.uri)
@@ -498,8 +498,8 @@ class TestNailgun(test_base.BaseTestCase):
             self.assertEqual(img.uri, expected_images[i].uri)
             self.assertEqual(img.target_device,
                              expected_images[i].target_device)
-            self.assertEqual(img.image_format,
-                             expected_images[i].image_format)
+            self.assertEqual(img.format,
+                             expected_images[i].format)
             self.assertEqual(img.container,
                              expected_images[i].container)
 

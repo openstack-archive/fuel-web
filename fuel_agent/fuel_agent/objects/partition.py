@@ -37,8 +37,13 @@ class Parted(object):
         # try to calculate it based on size kwarg or
         # raise KeyError
         # (kwargs.pop['size'] will raise error if size is not set)
+        # There are some reasons why we add 5M to a size of every partition.
+        # Parted aligns partition boundaries so they are not always that size
+        # we suppose they to be. Besides, lvm by default uses 4M extensions
+        # and we need to be sure that volume group has enough extensions
+        # to create a logical volume of given size.
         kwargs['end'] = kwargs.get('end') or \
-            kwargs['begin'] + kwargs.pop('size')
+            kwargs['begin'] + kwargs.pop('size') + 5
         # if partition_type is given use its value else
         # try to calculate it automatically
         kwargs['partition_type'] = \
@@ -120,9 +125,10 @@ class Partition(object):
 
 
 class Pv(object):
-    def __init__(self, name):
+    def __init__(self, name, metadatasize=32, metadatacopies=2):
         self.name = name
-
+        self.metadatasize = metadatasize
+        self.metadatacopies = metadatacopies
 
 class Vg(object):
     def __init__(self, name, pvnames=None):
@@ -194,8 +200,8 @@ class PartitionScheme(object):
         self.parteds.append(parted)
         return parted
 
-    def add_pv(self, name):
-        pv = Pv(name=name)
+    def add_pv(self, **kwargs):
+        pv = Pv(**kwargs)
         self.pvs.append(pv)
         return pv
 

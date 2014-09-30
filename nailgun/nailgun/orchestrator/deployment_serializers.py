@@ -75,8 +75,9 @@ class DeploymentMultinodeSerializer(object):
 
     critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
 
-    def __init__(self, priority_serializer):
+    def __init__(self, priority_serializer, neutron_serializer):
         self.priority = priority_serializer
+        self.neutron_serializer = neutron_serializer
 
     def serialize(self, cluster, nodes, ignore_customized=False):
         """Method generates facts which
@@ -303,7 +304,7 @@ class DeploymentMultinodeSerializer(object):
         if cluster.net_provider == 'nova_network':
             return NovaNetworkDeploymentSerializer
         else:
-            return NeutronNetworkDeploymentSerializer
+            return self.neutron_serializer
 
     def set_primary_node(self, nodes, role, primary_node_index):
         """Set primary node for role if it not set yet.
@@ -450,13 +451,6 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
         raise NotImplementedError()
-
-    @classmethod
-    def get_net_provider_serializer(cls, cluster):
-        if cluster.net_provider == 'nova_network':
-            return NovaNetworkDeploymentSerializer
-        else:
-            return NeutronNetworkDeploymentSerializer
 
     @classmethod
     def network_ranges(cls, cluster):
@@ -781,11 +775,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     def neutron_attrs(cls, cluster):
         """Network configuration for Neutron
         """
-        nm = objects.Cluster.get_network_manager(cluster)
         attrs = {}
-        attrs['L3'] = nm.generate_l3(cluster)
-        attrs['L2'] = nm.generate_l2(cluster)
-        attrs['predefined_networks'] = nm.generate_predefined_networks(cluster)
+        attrs['L3'] = cls.generate_l3(cluster)
+        attrs['L2'] = cls.generate_l2(cluster)
+        attrs['predefined_networks'] = \
+            cls.generate_predefined_networks(cluster)
 
         if cluster.release.operating_system == 'RHEL':
             attrs['amqp'] = {'provider': 'qpid-rh'}
@@ -987,6 +981,110 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         return iface_attrs
 
+    @classmethod
+    def _generate_external_network(cls, cluster):
+        public_cidr, public_gw = db().query(
+            NetworkGroup.cidr,
+            NetworkGroup.gateway
+        ).filter_by(
+            cluster_id=cluster.id,
+            name='public'
+        ).first()
+        join_range = lambda r: (":".join(map(str, r)) if r else None)
+        return {
+            "L3": {
+                "subnet": public_cidr,
+                "gateway": public_gw,
+                "nameservers": [],
+                "floating": join_range(
+                    cluster.network_config.floating_ranges[0]),
+                "enable_dhcp": False
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": True,
+                "physnet": "physnet1"
+            },
+            "tenant": "admin",
+            "shared": False
+        }
+
+    @classmethod
+    def _generate_internal_network(cls, cluster):
+        return {
+            "L3": {
+                "subnet": cluster.network_config.internal_cidr,
+                "gateway": cluster.network_config.internal_gateway,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "floating": None,
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": cluster.network_config.segmentation_type,
+                "segment_id": None,
+                "router_ext": False,
+                "physnet": "physnet2"
+                if cluster.network_config.segmentation_type == "vlan" else None
+            },
+            "tenant": "admin",
+            "shared": False
+        }
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        return {
+            "net04_ext": cls._generate_external_network(cluster),
+            "net04": cls._generate_internal_network(cluster)
+        }
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        join_range = lambda r: (":".join(map(str, r)) if r else None)
+        res = {
+            "base_mac": cluster.network_config.base_mac,
+            "segmentation_type": cluster.network_config.segmentation_type,
+            "phys_nets": {
+                "physnet1": {
+                    "bridge": "br-ex",
+                    "vlan_range": None
+                }
+            }
+        }
+        if cluster.network_config.segmentation_type == 'gre':
+            res["tunnel_id_ranges"] = join_range(
+                cluster.network_config.gre_id_range)
+        elif cluster.network_config.segmentation_type == 'vlan':
+            res["phys_nets"]["physnet2"] = {
+                "bridge": "br-prv",
+                "vlan_range": join_range(cluster.network_config.vlan_range)
+            }
+
+        # Set non-default ml2 configurations
+        attrs = Cluster.get_attributes(cluster).editable
+        if 'neutron_mellanox' in attrs and \
+                        attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
+            res['mechanism_drivers'] = 'mlnx,openvswitch'
+            seg_type = cluster.network_config.segmentation_type
+            res['tenant_network_types'] = seg_type
+            res['type_drivers'] = '{0},flat,local'.format(seg_type)
+
+        return res
+
+    @classmethod
+    def generate_l3(cls, cluster):
+        l3 = {
+            "use_namespaces": True
+        }
+        attrs = Cluster.get_attributes(cluster).editable
+        if 'nsx_plugin' in attrs and \
+                attrs['nsx_plugin']['metadata']['enabled']:
+            dhcp_attrs = l3.setdefault('dhcp_agent', {})
+            dhcp_attrs['enable_isolated_metadata'] = True
+            dhcp_attrs['enable_metadata_network'] = True
+
+        return l3
+
 
 class DeploymentMultinodeSerializer51(DeploymentMultinodeSerializer):
     """For multinode we just use the base serializer."""
@@ -995,6 +1093,28 @@ class DeploymentMultinodeSerializer51(DeploymentMultinodeSerializer):
 
 class DeploymentHASerializer51(DeploymentHASerializer):
     pass
+
+
+class NeutronNetworkDeploymentSerializer51(NeutronNetworkDeploymentSerializer):
+
+    @classmethod
+    def _generate_external_network(cls, cluster):
+        ext_netw = super(NeutronNetworkDeploymentSerializer51, cls).\
+            _generate_external_network(cluster)
+        ext_netw["L2"] = {
+            "network_type": "local",
+            "segment_id": None,
+            "router_ext": True,
+            "physnet": None
+        }
+        return ext_netw
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(NeutronNetworkDeploymentSerializer51, cls).\
+            generate_l2(cluster)
+        l2["phys_nets"].pop("physnet1")
+        return l2
 
 
 def create_serializer(cluster):
@@ -1008,31 +1128,37 @@ def create_serializer(cluster):
         '5.0': {
             'multinode': (
                 DeploymentMultinodeSerializer,
-                ps.PriorityMultinodeSerializer50
+                ps.PriorityMultinodeSerializer50,
+                NeutronNetworkDeploymentSerializer,
             ),
             'ha': (
                 DeploymentHASerializer,
-                ps.PriorityHASerializer50
+                ps.PriorityHASerializer50,
+                NeutronNetworkDeploymentSerializer
             ),
         },
         '5.1': {
             'multinode': (
                 DeploymentMultinodeSerializer51,
-                ps.PriorityMultinodeSerializer51
+                ps.PriorityMultinodeSerializer51,
+                NeutronNetworkDeploymentSerializer51
             ),
             'ha': (
                 DeploymentHASerializer51,
-                ps.PriorityHASerializer51
+                ps.PriorityHASerializer51,
+                NeutronNetworkDeploymentSerializer51
             ),
         },
         '6.0': {
             'multinode': (
                 DeploymentMultinodeSerializer51,
-                ps.PriorityMultinodeSerializer51
+                ps.PriorityMultinodeSerializer51,
+                NeutronNetworkDeploymentSerializer51
             ),
             'ha': (
                 DeploymentHASerializer51,
-                ps.PriorityHASerializer51
+                ps.PriorityHASerializer51,
+                NeutronNetworkDeploymentSerializer51
             ),
         },
     }
@@ -1043,13 +1169,13 @@ def create_serializer(cluster):
     # choose serializer
     for version, serializers in six.iteritems(serializers_map):
         if env_version.startswith(version):
-            serializer, priority = serializers[env_mode]
+            serializer, priority, neutron = serializers[env_mode]
             if cluster.pending_release_id:
                 priority = {
                     'ha': ps.PriorityHASerializerPatching,
                     'multinode': ps.PriorityMultinodeSerializerPatching,
                 }.get(env_mode)
-            return serializer(priority())
+            return serializer(priority(), neutron)
 
     raise errors.UnsupportedSerializer()
 

@@ -22,10 +22,6 @@ define(
     'view_mixins',
     'jsx!component_mixins',
     'text!templates/dialogs/base_dialog.html',
-    'text!templates/dialogs/discard_changes.html',
-    'text!templates/dialogs/display_changes.html',
-    'text!templates/dialogs/remove_cluster.html',
-    'text!templates/dialogs/stop_deployment.html',
     'text!templates/dialogs/reset_environment.html',
     'text!templates/dialogs/update_environment.html',
     'text!templates/dialogs/show_node.html',
@@ -33,7 +29,7 @@ define(
     'text!templates/dialogs/delete_nodes.html',
     'jsx!views/controls'
 ],
-function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, controls) {
+function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, controls) {
     'use strict';
 
     var cx = React.addons.classSet;
@@ -86,27 +82,21 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         }
     });
 
-    views.DiscardChangesDialog = views.Dialog.extend({
-        template: _.template(discardChangesDialogTemplate),
-        events: {
-            'click .discard-btn:not(.disabled)': 'discardChanges'
+    views.DiscardNodeChangesDialog = React.createClass({
+        mixins: [componentMixins.dialogMixin],
+        getDefaultProps: function() {
+            return {title: $.t('dialog.discard_changes.title')};
         },
-        discardChanges: function() {
-            this.$('.discard-btn').addClass('disabled');
-            var pendingNodes = this.model.get('nodes').filter(function(node) {
-                return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
-            });
-            var nodes = new models.Nodes(pendingNodes);
+        discardNodeChanges: function() {
+            this.setState({actionInProgress: true});
+            var cluster = this.props.cluster,
+                nodes = new models.Nodes(cluster.get('nodes').filter(function(node) {
+                    return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
+                }));
             nodes.each(function(node) {
-                node.set({pending_roles: []}, {silent: true});
-                if (node.get('pending_addition')) {
-                    node.set({
-                        cluster_id: null,
-                        pending_addition: false
-                    }, {silent: true});
-                } else {
-                    node.set({pending_deletion: false}, {silent: true});
-                }
+                var data = {pending_roles: [], pending_addition: false, pending_deletion: false};
+                if (node.get('pending_addition')) data.cluster_id = null;
+                node.set(data, {silent: true});
             });
             nodes.toJSON = function() {
                 return this.map(function(node) {
@@ -115,77 +105,158 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             };
             Backbone.sync('update', nodes)
                 .done(_.bind(function() {
-                    this.$el.modal('hide');
-                    this.model.get('nodes').fetch({data: {cluster_id: this.model.id}});
+                    this.close();
+                    cluster.get('nodes').fetch({data: {cluster_id: cluster.id}});
                     // we set node flags silently, so trigger resize event to redraw node list
-                    this.model.get('nodes').trigger('resize');
+                    cluster.get('nodes').trigger('resize');
                     app.navbar.refresh();
                 }, this))
-                .fail(_.bind(this.displayError, this));
+                .fail(_.bind(function() {
+                    this.displayError();
+                    this.setState({actionInProgress: false});
+                }, this));
         },
-        render: function() {
-            this.constructor.__super__.render.call(this, {cluster: this.model});
-            return this;
+        renderChangedNodeAmount: function(nodes, dictKey) {
+            return nodes.length ? <div key={dictKey} className='deploy-task-name'>
+                {$.t('dialog.display_changes.' + dictKey, {count: nodes.length})}
+            </div> : null;
+        },
+        renderBody: function() {
+            var nodes = this.props.cluster.get('nodes');
+            return (
+                <div>
+                    {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
+                    {this.renderChangedNodeAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                    {this.renderChangedNodeAmount(nodes.filter(function(node) {
+                        return !node.get('pending_addition') && !node.get('pending_deletion') && node.get('pending_roles').length;
+                    }), 'reconfigured_node')}
+                    <hr className='slim' />
+                    <div className='text-error deploy-task-notice'><i className='icon-attention' /> {$.t('dialog.discard_changes.alert_text')}</div>
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='discard' className='btn btn-danger' disabled={this.state.actionInProgress} onClick={this.discardNodeChanges}>{$.t('dialog.discard_changes.discard_button')}</button>
+            ]);
         }
     });
 
-    views.DisplayChangesDialog = views.Dialog.extend({
-        template: _.template(displayChangesDialogTemplate),
-        events: {
-            'click .start-deployment-btn:not(.disabled)': 'deployCluster'
+    views.DeployChangesDialog = React.createClass({
+        mixins: [componentMixins.dialogMixin],
+        getDefaultProps: function() {
+            return {title: $.t('dialog.display_changes.title')};
+        },
+        getInitialState: function() {
+            // FIXME: the following amount restrictions shoud be described declaratively in configuration file
+            var nodes = this.props.cluster.get('nodes'),
+                requiredNodeAmount = this.getRequiredNodeAmount();
+            return {
+                amountRestrictions: {
+                    controller: nodes.nodesAfterDeploymentWithRole('controller') < requiredNodeAmount,
+                    compute: !nodes.nodesAfterDeploymentWithRole('compute'),
+                    mongo: this.props.cluster.get('settings').get('additional_components.ceilometer.value') && nodes.nodesAfterDeploymentWithRole('mongo') < requiredNodeAmount
+                }
+            };
+        },
+        getRequiredNodeAmount: function() {
+            return this.props.cluster.get('mode') == 'ha_compact' ? 3 : 1;
         },
         deployCluster: function() {
-            this.$('.btn').addClass('disabled');
+            this.setState({actionInProgress: true});
             app.page.removeFinishedDeploymentTasks();
             var task = new models.Task();
-            task.save({}, {url: _.result(this.model, 'url') + '/changes', type: 'PUT'})
+            task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
                 .done(_.bind(function() {
-                    this.$el.modal('hide');
                     app.page.deploymentTaskStarted();
+                    this.close();
                 }, this))
-                .fail(_.bind(this.displayError, this));
+                .fail(_.bind(function() {
+                    this.displayError();
+                    this.setState({actionInProgress: false});
+                }, this));
         },
-        render: function() {
-            this.constructor.__super__.render.call(this, {
-                cluster: this.model,
-                size: 1
-            });
-            return this;
+        renderChangedNodeAmount: function(nodes, dictKey) {
+            return nodes.length ? <div key={dictKey} className='deploy-task-name'>
+                {$.t('dialog.display_changes.' + dictKey, {count: nodes.length})}
+            </div> : null;
+        },
+        renderChange: function(change, nodeIds) {
+            var nodes = this.props.cluster.get('nodes');
+            return (
+                <div key={change}>
+                    <div className='deploy-task-name'>{$.t('dialog.display_changes.settings_changes.' + change)}</div>
+                    <ul>
+                        {_.map(nodeIds, function(id) {
+                            var node = nodes.get(id);
+                            return node ? <li key={change + id}>{node.get('name')}</li> : null;
+                        })}
+                    </ul>
+                </div>
+            );
+        },
+        renderBody: function() {
+            var ns = 'dialog.display_changes.',
+                cluster = this.props.cluster,
+                nodes = cluster.get('nodes'),
+                requiredNodeAmount = this.getRequiredNodeAmount();
+            return (
+                <div className='display-changes-dialog'>
+                    {(cluster.get('status') == 'new' || cluster.needsRedeployment()) &&
+                        <div>
+                            <div className='deploy-task-notice text-warning'>
+                                <i className='icon-attention' />
+                                <span>{$.t(ns + (cluster.get('status') == 'new' ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
+                            </div>
+                            <hr className='slim' />
+                        </div>
+                    }
+                    {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
+                    {this.renderChangedNodeAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                    {this.renderChangedNodeAmount(nodes.filter(function(node) {
+                        return !node.get('pending_addition') && !node.get('pending_deletion') && node.get('pending_roles').length;
+                    }), 'reconfigured_node')}
+                    {_.map(_.groupBy(cluster.get('changes'), function(change) {return change.name;}), function(nodes, change) {
+                        return this.renderChange(change, _.compact(_.pluck(nodes, 'node_id')));
+                    }, this)}
+                    <div className='amount-restrictions'>
+                        {this.state.amountRestrictions.controller &&
+                            <div className='alert alert-error'>{$.t(ns + 'warnings.controller', {count: requiredNodeAmount})}</div>
+                        }
+                        {this.state.amountRestrictions.compute &&
+                            <div className='alert alert-error'>{$.t(ns + 'warnings.compute')}</div>
+                        }
+                        {this.state.amountRestrictions.mongo &&
+                            <div className='alert alert-error'>{$.t(ns + 'warnings.mongo', {count: requiredNodeAmount})}</div>
+                        }
+                    </div>
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='deploy'
+                    className={'btn start-deployment-btn btn-' + (_.compact(_.values(this.state.amountRestrictions)).length ? 'danger' : 'success')}
+                    disabled={this.state.actionInProgress}
+                    onClick={this.deployCluster}
+                >{$.t('dialog.display_changes.deploy')}</button>
+            ]);
         }
     });
 
-    views.RemoveClusterDialog = views.Dialog.extend({
-        template: _.template(removeClusterDialogTemplate),
-        events: {
-            'click .remove-cluster-btn:not(.disabled)': 'removeCluster'
-        },
-        removeCluster: function() {
-            this.$('.remove-cluster-btn').addClass('disabled');
-            this.model.destroy({wait: true})
-                .done(_.bind(function() {
-                    this.$el.modal('hide');
-                    app.navbar.refresh();
-                    app.navigate('#clusters', {trigger: true});
-                }, this))
-                .fail(_.bind(this.displayError, this));
-        },
-        render: function() {
-            this.constructor.__super__.render.call(this, {cluster: this.model});
-            return this;
-        }
-    });
-
-    views.StopDeploymentDialog = views.Dialog.extend({
-        template: _.template(stopDeploymentDialogTemplate),
-        events: {
-            'click .stop-deployment-btn:not(:disabled)': 'stopDeployment'
+    views.StopDeploymentDialog = React.createClass({
+        mixins: [componentMixins.dialogMixin],
+        getDefaultProps: function() {
+            return {title: $.t('dialog.stop_deployment.title')};
         },
         stopDeployment: function() {
-            this.$('.stop-deployment-btn').attr('disabled', true);
+            this.setState({actionInProgress: true});
             var task = new models.Task();
-            task.save({}, {url: _.result(this.model, 'url') + '/stop_deployment', type: 'PUT'})
+            task.save({}, {url: _.result(this.props.cluster, 'url') + '/stop_deployment', type: 'PUT'})
                 .done(_.bind(function() {
-                    this.$el.modal('hide');
+                    this.close();
                     app.page.deploymentTaskStarted();
                 }, this))
                 .fail(_.bind(function(response) {
@@ -193,11 +264,56 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                         title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
                         message: utils.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
                     });
+                    this.setState({actionInProgress: false});
                 }, this));
         },
-        render: function() {
-            this.constructor.__super__.render.call(this, {cluster: this.model});
-            return this;
+        renderBody: function() {
+            return (
+                <div className='msg-error'>
+                    <span className='label label-important'>{$.t('common.important')}</span>
+                    {$.t('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='deploy' className='btn stop-deployment-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.stopDeployment}>{$.t('common.stop_button')}</button>
+            ]);
+        }
+    });
+
+    views.RemoveClusterDialog = React.createClass({
+        mixins: [componentMixins.dialogMixin],
+        getDefaultProps: function() {
+            return {title: $.t('dialog.remove_cluster.title')};
+        },
+        removeCluster: function() {
+            this.setState({actionInProgress: true});
+            this.props.cluster.destroy({wait: true})
+                .done(_.bind(function() {
+                    this.close();
+                    app.navbar.refresh();
+                    app.navigate('#clusters', {trigger: true});
+                }, this))
+                .fail(_.bind(function() {
+                    this.displayError();
+                    this.setState({actionInProgress: false});
+                }, this));
+        },
+        renderBody: function() {
+            return (
+                <div className='msg-error'>
+                    <span className='label label-important'>{$.t('common.important')}</span>
+                    {$.t('dialog.remove_cluster.' + (this.props.cluster.tasks({status: 'running'}).length ? 'incomplete_actions_text' : 'node_returned_text'))}
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='deploy' className='btn remove-cluster-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.removeCluster}>{$.t('common.delete_button')}</button>
+            ]);
         }
     });
 
@@ -429,7 +545,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 confirmationPassword: '',
                 newPassword: '',
                 validationError: false,
-                locked: false
+                actionInProgress: false
             };
         },
         getError: function(name) {
@@ -457,7 +573,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                             maxLength='50'
                             onChange={this.handleChange.bind(this, (name == 'currentPassword'))}
                             onKeyDown={this.handleKeyDown}
-                            disabled={this.state.locked}
+                            disabled={this.state.actionInProgress}
                             toggleable={name == 'currentPassword'}
                             defaultValue={this.state[name]}
                             error={this.getError(name)}
@@ -468,11 +584,11 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         },
         renderFooter: function() {
             return [
-                <button key='cancel' className='btn' onClick={this.close} disabled={this.state.locked}>
+                <button key='cancel' className='btn' onClick={this.close} disabled={this.state.actionInProgress}>
                     {$.t('common.cancel_button')}
                 </button>,
                 <button key='apply' className='btn btn-success' onClick={this.changePassword}
-                    disabled={this.state.locked || !this.isPasswordChangeAvailable()}>
+                    disabled={this.state.actionInProgress || !this.isPasswordChangeAvailable()}>
                     {$.t('common.apply_button')}
                 </button>
             ];
@@ -501,14 +617,14 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         },
         changePassword: function() {
             if (this.isPasswordChangeAvailable()) {
-                this.setState({locked: true});
+                this.setState({actionInProgress: true});
                 app.keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
                     .done(_.bind(function() {
                         app.user.set({password: app.keystoneClient.password});
                         this.close();
                     }, this))
                     .fail(_.bind(function() {
-                        this.setState({validationError: true, locked: false});
+                        this.setState({validationError: true, actionInProgress: false});
                         $(this.refs.currentPassword.refs.input.getDOMNode()).focus();
                     }, this));
             }

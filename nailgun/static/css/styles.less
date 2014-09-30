@@ -2483,19 +2483,23 @@ hr.slim {
 }
 
 .display-changes-dialog {
-  ul { margin-left: 35px; }
+  ul {
+    margin-left: 35px;
+    &:empty { display: none; }
+  }
   .deploy-task-name {
     padding: 8px 10px 1px 10px;
     &.header {
       font-weight: bold;
     }
   }
-  .deploy-task-notice {
-    .indent-mixin(0, 0px 10px);
-    .font-layout-mixin(@font-style: italic);
-    text-align: center;
-  }
   .alert { margin: 10px 0; }
+}
+
+.deploy-task-notice {
+  .indent-mixin(0, 0px 10px);
+  .font-layout-mixin(@font-style: italic);
+  text-align: center;
 }
 
 .radio-checkbox-group {

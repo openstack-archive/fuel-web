@@ -26,11 +26,12 @@ class TestConfigDriveScheme(test_base.BaseTestCase):
         self.cd_scheme = configdrive.ConfigDriveScheme()
 
     def test_template_names(self):
+        self.cd_scheme._profile = 'pro_fi-le'
         actual = self.cd_scheme.template_names('what')
         expected = [
-            'what_%s.jinja2' % self.cd_scheme._profile,
-            'what_%s.jinja2' % self.cd_scheme._profile.split('_')[0],
-            'what_%s.jinja2' % self.cd_scheme._profile.split('-')[0],
+            'what_pro_fi-le.jinja2',
+            'what_pro.jinja2',
+            'what_pro_fi.jinja2',
             'what.jinja2'
         ]
         self.assertEqual(expected, actual)

@@ -2,6 +2,10 @@
 disable_ec2_metadata: true
 disable_root: false
 
+# password: RANDOM
+# chpasswd: { expire: True }
+
+ssh_pwauth: True
 ssh_authorized_keys:
   - {{ common.ssh_auth_key }}
 
@@ -23,7 +27,6 @@ resolv_conf:
 #  options:
 #    rotate: true
 #    timeout: 1
-
 
 # add entries to rsyslog configuration
 rsyslog:
@@ -53,12 +56,12 @@ write_files:
 
 
 yum_repos:
-    {% for repo in common.ks_repos %}
-        {{ repo.name }}:
-          baseurl: {{ repo.url }}
-          enabled: true
-          gpgcheck: false
-    {% endfor %}
+{% for reponame, repourl in common.ks_repos.items() %}
+  {{ reponame }}:
+    baseurl: {{ repourl }}
+    enabled: true
+    gpgcheck: false
+{% endfor %}
 
 
 mcollective:

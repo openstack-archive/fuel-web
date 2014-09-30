@@ -18,7 +18,7 @@ from fuel_agent import errors
 class ConfigDriveCommon(object):
     def __init__(self, ssh_auth_key, hostname, fqdn, name_servers,
                  search_domain, master_ip, master_url, udevrules, admin_mac,
-                 admin_ip, admin_mask, admin_iface_name, timezone):
+                 admin_ip, admin_mask, admin_iface_name, timezone, ks_repos):
         self.ssh_auth_key = ssh_auth_key
         self.hostname = hostname
         self.fqdn = fqdn
@@ -32,6 +32,7 @@ class ConfigDriveCommon(object):
         self.admin_mask = admin_mask
         self.admin_iface_name = admin_iface_name
         self.timezone = timezone
+        self.ks_repos = ks_repos
 
 
 class ConfigDrivePuppet(object):
@@ -90,6 +91,10 @@ class ConfigDriveScheme(object):
         return self._profile
 
     def template_names(self, what):
+        # such a complicated scheme is used to cover a range of profile names
+        # which might be either dash or underline separated
+        # ubuntu_1204_x86_64
+        # centos-65_x86_64
         return [
             '%s_%s.jinja2' % (what, self._profile),
             '%s_%s.jinja2' % (what, self._profile.split('_')[0]),

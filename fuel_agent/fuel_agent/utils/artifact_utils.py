@@ -18,6 +18,10 @@ import tarfile
 import tempfile
 import zlib
 
+from fuel_agent.openstack.common import log as logging
+
+LOG = logging.getLogger(__name__)
+
 
 class Target(object):
     __metaclass__ = abc.ABCMeta
@@ -37,7 +41,10 @@ class Target(object):
 
 class LocalFile(Target):
     def __init__(self, filename):
-        self.filename = str(filename)
+        if filename.startswith('file://'):
+            self.filename = filename[7:]
+        else:
+            self.filename = filename
         self.fileobj = None
 
     def next(self):
@@ -163,6 +170,7 @@ class Chain(object):
             # if next_proc is just a string we assume it is a filename
             # and we save stream into a file
             if isinstance(next_proc, (str, unicode)):
+                LOG.debug('Processor target: %s' % next_proc)
                 proc.target(next_proc)
                 return LocalFile(next_proc)
             # if next_proc is not a string we return new instance

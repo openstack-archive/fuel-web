@@ -7,13 +7,6 @@
 # Parititoning data driver (string value)
 #partition_data_driver=ks_spaces
 
-# Get data driver (string value)
-#get_data_driver=read_file
-
-
-#
-# Options defined in fuel_agent.drivers.read_file
-#
 
 # Provision data file (string value)
 #provision_data_file=/tmp/provision.json

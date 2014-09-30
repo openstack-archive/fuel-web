@@ -26,11 +26,12 @@ class TestConfigDriveScheme(test_base.BaseTestCase):
         self.cd_scheme = configdrive.ConfigDriveScheme()
 
     def test_template_names(self):
+        self.cd_scheme._profile = 'pro_fi-le'
         actual = self.cd_scheme.template_names('what')
         expected = [
-            'what_%s.jinja2' % self.cd_scheme._profile,
-            'what_%s.jinja2' % self.cd_scheme._profile.split('_')[0],
-            'what_%s.jinja2' % self.cd_scheme._profile.split('-')[0],
+            'what_pro_fi-le.jinja2',
+            'what_pro.jinja2',
+            'what_pro_fi.jinja2',
             'what.jinja2'
         ]
         self.assertEqual(expected, actual)
@@ -44,10 +45,10 @@ class TestConfigDriveScheme(test_base.BaseTestCase):
             'ssh_auth_key', 'hostname', 'fqdn', 'name_servers',
             'search_domain', 'master_ip', 'master_url', 'udevrules',
             'admin_mac', 'admin_ip', 'admin_mask', 'admin_iface_name',
-            'timezone')
-        cd_puppet = configdrive.ConfigDrivePuppet('master')
+            'timezone', {'repo1': 'repo1_url', 'repo2': 'repo2_url'})
+        cd_puppet = configdrive.ConfigDrivePuppet('master', 0)
         cd_mcollective = configdrive.ConfigDriveMcollective(
-            'pskey', 'vhost', 'host', 'user', 'password', 'connector')
+            'pskey', 'vhost', 'host', 'user', 'password', 'connector', 1)
         self.cd_scheme.common = cd_common
         self.cd_scheme.puppet = cd_puppet
         self.cd_scheme.mcollective = cd_mcollective

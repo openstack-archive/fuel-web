@@ -47,6 +47,11 @@ class TestManager(test_base.BaseTestCase):
         self.assertFalse(self.mgr.configdrive_scheme is None)
         self.assertFalse(self.mgr.image_scheme is None)
 
+    @mock.patch.object(utils, 'execute')
+    @mock.patch.object(mu, 'mdclean_all')
+    @mock.patch.object(lu, 'lvremove_all')
+    @mock.patch.object(lu, 'vgremove_all')
+    @mock.patch.object(lu, 'pvremove_all')
     @mock.patch.object(fu, 'make_fs')
     @mock.patch.object(lu, 'lvcreate')
     @mock.patch.object(lu, 'vgcreate')
@@ -59,7 +64,8 @@ class TestManager(test_base.BaseTestCase):
     @mock.patch.object(hu, 'list_block_devices')
     def test_do_partitioning(self, mock_hu_lbd, mock_pu_ml, mock_pu_mp,
                              mock_pu_spf, mock_pu_sgt, mock_mu_m, mock_lu_p,
-                             mock_lu_v, mock_lu_l, mock_fu_mf):
+                             mock_lu_v, mock_lu_l, mock_fu_mf, mock_pvr,
+                             mock_vgr, mock_lvr, mock_mdr, mock_exec):
         mock_hu_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         self.mgr.do_parsing()
         self.mgr.do_partitioning()
@@ -101,10 +107,11 @@ class TestManager(test_base.BaseTestCase):
                                               '/dev/sdc3')]
         self.assertEqual(mock_mu_m_expected_calls, mock_mu_m.call_args_list)
 
-        mock_lu_p_expected_calls = [mock.call('/dev/sda5'),
-                                    mock.call('/dev/sda6'),
-                                    mock.call('/dev/sdb4'),
-                                    mock.call('/dev/sdc4')]
+        mock_lu_p_expected_calls = [
+            mock.call('/dev/sda5', metadatasize=16, metadatacopies=2),
+            mock.call('/dev/sda6', metadatasize=16, metadatacopies=2),
+            mock.call('/dev/sdb4', metadatasize=16, metadatacopies=2),
+            mock.call('/dev/sdc4', metadatasize=16, metadatacopies=2)]
         self.assertEqual(mock_lu_p_expected_calls, mock_lu_p.call_args_list)
 
         mock_lu_v_expected_calls = [mock.call('os', '/dev/sda5'),
@@ -135,18 +142,21 @@ class TestManager(test_base.BaseTestCase):
         self.mgr.do_configdrive()
         mock_u_ras_expected_calls = [
             mock.call(CONF.nc_template_path,
-                      ['cloud_config_ubuntu_1204_x86_64.jinja2',
-                       'cloud_config_ubuntu.jinja2',
+                      ['cloud_config_pro_fi-le.jinja2',
+                       'cloud_config_pro.jinja2',
+                       'cloud_config_pro_fi.jinja2',
                        'cloud_config.jinja2'],
                       mock.ANY, '%s/%s' % (CONF.tmp_path, 'cloud_config.txt')),
             mock.call(CONF.nc_template_path,
-                      ['boothook_ubuntu_1204_x86_64.jinja2',
-                       'boothook_ubuntu.jinja2',
+                      ['boothook_pro_fi-le.jinja2',
+                       'boothook_pro.jinja2',
+                       'boothook_pro_fi.jinja2',
                        'boothook.jinja2'],
                       mock.ANY, '%s/%s' % (CONF.tmp_path, 'boothook.txt')),
             mock.call(CONF.nc_template_path,
-                      ['meta-data_ubuntu_1204_x86_64.jinja2',
-                       'meta-data_ubuntu.jinja2',
+                      ['meta-data_pro_fi-le.jinja2',
+                       'meta-data_pro.jinja2',
+                       'meta-data_pro_fi.jinja2',
                        'meta-data.jinja2'],
                       mock.ANY, '%s/%s' % (CONF.tmp_path, 'meta-data'))]
         self.assertEqual(mock_u_ras_expected_calls, mock_u_ras.call_args_list)
@@ -169,7 +179,7 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual('file://%s' % CONF.config_drive_path, cf_drv_img.uri)
         self.assertEqual('/dev/sda7',
                          self.mgr.partition_scheme.configdrive_device())
-        self.assertEqual('iso9660', cf_drv_img.image_format)
+        self.assertEqual('iso9660', cf_drv_img.format)
         self.assertEqual('raw', cf_drv_img.container)
 
     @mock.patch.object(partition.PartitionScheme, 'configdrive_device')

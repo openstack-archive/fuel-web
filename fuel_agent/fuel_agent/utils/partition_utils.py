@@ -12,8 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 from fuel_agent import errors
+from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import utils
+
+LOG = logging.getLogger(__name__)
 
 
 def parse_partition_info(output):
@@ -48,11 +53,16 @@ def info(dev):
                            'unit', 'MiB',
                            'print', 'free',
                            check_exit_code=[0, 1])[0]
-    return parse_partition_info(output)
+    LOG.debug('Info output: \n%s' % output)
+    result = parse_partition_info(output)
+    LOG.debug('Info result: %s' % result)
+    return result
 
 
 def wipe(dev):
     # making an empty new table is equivalent to wiping the old one
+    LOG.debug('Wiping partition table on %s (we assume it is equal '
+              'to creating a new one)' % dev)
     make_label(dev)
 
 
@@ -64,11 +74,15 @@ def make_label(dev, label='gpt'):
 
     :returns: None
     """
+    LOG.debug('Trying to create %s partition table on device %s' %
+              (label, dev))
     if label not in ('gpt', 'msdos'):
         raise errors.WrongPartitionLabelError(
             'Wrong partition label type: %s' % label)
-    utils.execute('parted', '-s', dev, 'mklabel', label,
-                  check_exit_code=[0])
+    out, err = utils.execute('parted', '-s', dev, 'mklabel', label,
+                             check_exit_code=[0])
+    LOG.debug('Parted output: \n%s' % out)
+    reread_partitions(out, dev)
 
 
 def set_partition_flag(dev, num, flag, state='on'):
@@ -82,6 +96,8 @@ def set_partition_flag(dev, num, flag, state='on'):
 
     :returns: None
     """
+    LOG.debug('Trying to set partition flag: dev=%s num=%s flag=%s state=%s' %
+              (dev, num, flag, state))
     # parted supports more flags but we are interested in
     # setting only this subset of them.
     # not all of these flags are compatible with one another.
@@ -91,8 +107,10 @@ def set_partition_flag(dev, num, flag, state='on'):
     if state not in ('on', 'off'):
         raise errors.WrongPartitionSchemeError(
             'Wrong partition flag state: %s' % state)
-    utils.execute('parted', '-s', dev, 'set', str(num),
-                  flag, state, check_exit_code=[0])
+    out, err = utils.execute('parted', '-s', dev, 'set', str(num),
+                             flag, state, check_exit_code=[0, 1])
+    LOG.debug('Parted output: \n%s' % out)
+    reread_partitions(out, dev)
 
 
 def set_gpt_type(dev, num, type_guid):
@@ -107,11 +125,15 @@ def set_gpt_type(dev, num, type_guid):
     :returns: None
     """
     # TODO(kozhukalov): check whether type_guid is valid
+    LOG.debug('Setting partition GUID: dev=%s num=%s guid=%s' %
+              (dev, num, type_guid))
     utils.execute('sgdisk', '--typecode=%s:%s' % (num, type_guid),
                   dev, check_exit_code=[0])
 
 
 def make_partition(dev, begin, end, ptype):
+    LOG.debug('Trying to create a partition: dev=%s begin=%s end=%s' %
+              (dev, begin, end))
     if ptype not in ('primary', 'logical'):
         raise errors.WrongPartitionSchemeError(
             'Wrong partition type: %s' % ptype)
@@ -126,15 +148,39 @@ def make_partition(dev, begin, end, ptype):
                end <= x['end'] for x in info(dev)['parts']):
         raise errors.WrongPartitionSchemeError(
             'Invalid boundaries: begin and end '
-            'are not inside available free space'
-        )
+            'are not inside available free space')
 
-    utils.execute('parted', '-a', 'optimal', '-s', dev, 'unit', 'MiB',
-                  'mkpart', ptype, str(begin), str(end), check_exit_code=[0])
+    out, err = utils.execute(
+        'parted', '-a', 'optimal', '-s', dev, 'unit', 'MiB',
+        'mkpart', ptype, str(begin), str(end), check_exit_code=[0, 1])
+    LOG.debug('Parted output: \n%s' % out)
+    reread_partitions(out, dev)
 
 
 def remove_partition(dev, num):
+    LOG.debug('Trying to remove partition: dev=%s num=%s' % (dev, num))
     if not any(x['fstype'] != 'free' and x['num'] == num
                for x in info(dev)['parts']):
         raise errors.PartitionNotFoundError('Partition %s not found' % num)
     utils.execute('parted', '-s', dev, 'rm', str(num), check_exit_code=[0])
+
+
+def reread_partitions(out, dev, timeout=30):
+    # The reason for this method to exist is that old versions of parted
+    # use ioctl(fd, BLKRRPART, NULL) to tell Linux to re-read partitions.
+    # This system call does not work sometimes. So we try to re-read partition
+    # table several times. Besides artprobe uses BLKPG instead, which
+    # is better than BLKRRPART for this case. BLKRRPART tells Linux to re-read
+    # partitions which BLKPG tells Linux which partitions are available
+    begin = time.time()
+    while 'Device or resource busy' in out:
+        if time.time() > begin + timeout:
+            raise errors.BaseError('Unable to re-read partition table on'
+                                   'device %s' % dev)
+        LOG.debug('Last time output contained "Device or resource busy". '
+                  'Trying to re-read partition table on device %s' % dev)
+        out, err = utils.execute('partprobe', dev, check_exit_code=[0, 1])
+        LOG.debug('Partprobe output: \n%s' % out)
+        pout, perr = utils.execute('partx', '-a', dev, check_exit_code=[0, 1])
+        LOG.debug('Partx output: \n%s' % pout)
+        time.sleep(1)

@@ -20,7 +20,7 @@ define(
     'models',
     'jsx!views/dialogs'
 ],
-function(React, utils, models, dialogViews) {
+function(React, utils, models, dialogs) {
     'use strict';
 
     var releases = new models.Releases();
@@ -164,7 +164,7 @@ function(React, utils, models, dialogViews) {
         },
         applyAction: function(e) {
             e.preventDefault();
-            (new dialogViews.ResetEnvironmentDialog({model: this.props.cluster})).render();
+            (new dialogs.ResetEnvironmentDialog({model: this.props.cluster})).render();
         },
         render: function() {
             var isLocked = this.isLocked();
@@ -188,9 +188,8 @@ function(React, utils, models, dialogViews) {
     });
 
     var DeleteEnvironmentAction = React.createClass({
-        applyAction: function(e) {
-            e.preventDefault();
-            (new dialogViews.RemoveClusterDialog({model: this.props.cluster})).render();
+        applyAction: function() {
+            utils.showDialog(dialogs.RemoveClusterDialog({cluster: this.props.cluster}));
         },
         render: function() {
             return (
@@ -240,7 +239,7 @@ function(React, utils, models, dialogViews) {
         updateEnvironmentAction: function() {
             var cluster = this.props.cluster,
                 isDowngrade = _.contains(cluster.get('release').get('can_update_from_versions'), this.props.releases.findWhere({id: parseInt(this.state.pendingReleaseId) || cluster.get('release_id')}).get('version'));
-            (new dialogViews.UpdateEnvironmentDialog({
+            (new dialogs.UpdateEnvironmentDialog({
                 cluster: cluster,
                 action: this.getAction(),
                 isDowngrade: isDowngrade,
@@ -249,10 +248,10 @@ function(React, utils, models, dialogViews) {
         },
         retryUpdateEnvironmentAction: function() {
             var cluster = this.props.cluster;
-            (new dialogViews.UpdateEnvironmentDialog({cluster: cluster, pendingReleaseId: cluster.get('pending_release_id'), action: 'retry'})).render();
+            (new dialogs.UpdateEnvironmentDialog({cluster: cluster, pendingReleaseId: cluster.get('pending_release_id'), action: 'retry'})).render();
         },
         rollbackEnvironmentAction: function() {
-            (new dialogViews.UpdateEnvironmentDialog({cluster: this.props.cluster, action: 'rollback'})).render();
+            (new dialogs.UpdateEnvironmentDialog({cluster: this.props.cluster, action: 'rollback'})).render();
         },
         getPendingReleaseId: function() {
             var release = _.find(releases.models, this.isAvailableForUpdate, this);

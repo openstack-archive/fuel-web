@@ -280,6 +280,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                             }, this))
                             .done(_.bind(function() {
                                 this.$el.modal('hide');
+                                app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
                             }, this))
                             .fail(_.bind(function() {
                                 this.displayError({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});

@@ -35,10 +35,11 @@ casper.then(function() {
         this.click('.finish-btn');
     });
     this.test.assertSelectorDisappears('.modal', 'Cluster creation dialog closes after from submission');
-    this.test.assertSelectorAppears('.cluster-list a.clusterbox', 'Created cluster appears in list');
     this.then(function() {
-        this.test.assertSelectorHasText('.cluster-list a.clusterbox .cluster-name', name, 'Created cluster has specified name');
-    })
+        // redirect should be made to the cluster page
+
+        this.test.assertUrlMatch(/#cluster\/\d+\/nodes/, 'Redirect to cluster page');
+    });
 });
 
 casper.run(function() {

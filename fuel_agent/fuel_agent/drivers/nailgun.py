@@ -295,11 +295,14 @@ class Nailgun(object):
             admin_mask=admin_interface['netmask'],
             admin_iface_name=admin_interface['name'],
             timezone=data['ks_meta']['timezone'],
+            ks_repos=dict(item.split('=') for item in
+                          data['ks_meta']['repo_metadata'].split(','))
         )
 
         LOG.debug('Adding puppet parameters')
         configdrive_scheme.set_puppet(
-            master=data['ks_meta']['puppet_master']
+            master=data['ks_meta']['puppet_master'],
+            enable=data['ks_meta']['puppet_enable']
         )
 
         LOG.debug('Adding mcollective parameters')
@@ -309,7 +312,8 @@ class Nailgun(object):
             host=data['ks_meta']['mco_host'],
             user=data['ks_meta']['mco_user'],
             password=data['ks_meta']['mco_password'],
-            connector=data['ks_meta']['mco_connector']
+            connector=data['ks_meta']['mco_connector'],
+            enable=data['ks_meta']['mco_enable']
         )
 
         LOG.debug('Setting configdrive profile %s' % data['profile'])
@@ -338,9 +342,9 @@ class Nailgun(object):
             image_scheme.add_image(
                 uri=image_data['uri'],
                 target_device=fs.device,
-                # In the future we will get image_format and container format
+                # In the future we will get format and container
                 # from provision.json, but currently it is hard coded.
-                image_format=image_data['format'],
+                format=image_data['format'],
                 container=image_data['container'],
             )
         return image_scheme

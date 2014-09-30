@@ -118,7 +118,7 @@ localhost.localdomain)
 
         mu.mdcreate('/dev/md0', 'mirror', '/dev/fake1', '/dev/fake2')
         mock_exec.assert_called_once_with(
-            'mdadm', '--create', '--force', '/dev/md0', '-e1.2',
+            'mdadm', '--create', '--force', '/dev/md0', '-e0.90',
             '--level=mirror',
             '--raid-devices=2', '/dev/fake1', '/dev/fake2',
             check_exit_code=[0])

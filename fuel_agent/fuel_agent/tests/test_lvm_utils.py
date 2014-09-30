@@ -66,34 +66,34 @@ class TestLvmUtils(test_base.BaseTestCase):
     @mock.patch.object(lu, 'pvdisplay')
     @mock.patch.object(utils, 'execute')
     def test_pvcreate_ok(self, mock_exec, mock_pvdisplay):
-        # should set metadatasize=64 and metadatacopies=2 if they are not set
+        # should set metadatasize=32 and metadatacopies=2 if they are not set
         # should run pvcreate command
         mock_pvdisplay.return_value = [{'name': '/dev/another'}]
 
-        lu.pvcreate('/dev/fake1', metadatasize=32, metadatacopies=1)
+        lu.pvcreate('/dev/fake1', metadatasize=16, metadatacopies=1)
         lu.pvcreate('/dev/fake2', metadatacopies=1)
-        lu.pvcreate('/dev/fake3', metadatasize=32)
+        lu.pvcreate('/dev/fake3', metadatasize=16)
         lu.pvcreate('/dev/fake4')
 
         expected_calls = [
             mock.call('pvcreate',
                       '--metadatacopies', '1',
-                      '--metadatasize', '32m',
+                      '--metadatasize', '16m',
                       '/dev/fake1',
                       check_exit_code=[0]),
             mock.call('pvcreate',
                       '--metadatacopies', '1',
-                      '--metadatasize', '64m',
+                      '--metadatasize', '32m',
                       '/dev/fake2',
                       check_exit_code=[0]),
             mock.call('pvcreate',
                       '--metadatacopies', '2',
-                      '--metadatasize', '32m',
+                      '--metadatasize', '16m',
                       '/dev/fake3',
                       check_exit_code=[0]),
             mock.call('pvcreate',
                       '--metadatacopies', '2',
-                      '--metadatasize', '64m',
+                      '--metadatasize', '32m',
                       '/dev/fake4',
                       check_exit_code=[0])
         ]
@@ -289,16 +289,17 @@ class TestLvmUtils(test_base.BaseTestCase):
     @mock.patch.object(lu, 'lvdisplay')
     @mock.patch.object(utils, 'execute')
     def test_lvremove_ok(self, mock_exec, mock_lvdisplay):
-        mock_lvdisplay.return_value = [{'name': 'lvname'}, {'name': 'some'}]
-        lu.lvremove('lvname')
-        mock_exec.assert_called_once_with('lvremove', '-f', 'lvname',
+        mock_lvdisplay.return_value = [{'path': '/dev/vg/lv'},
+                                       {'path': '/dev/vg2/lv2'}]
+        lu.lvremove('/dev/vg/lv')
+        mock_exec.assert_called_once_with('lvremove', '-f', '/dev/vg/lv',
                                           check_exit_code=[0])
 
     @mock.patch.object(lu, 'lvdisplay')
     @mock.patch.object(utils, 'execute')
     def test_lvremove_not_found(self, mock_exec, mock_lvdisplay):
-        mock_lvdisplay.return_value = [{'name': 'some'}]
-        self.assertRaises(errors.LVNotFoundError, lu.lvremove, 'lvname')
+        mock_lvdisplay.return_value = [{'path': '/dev/vg/lv'}]
+        self.assertRaises(errors.LVNotFoundError, lu.lvremove, '/dev/vg/lv2')
 
     @mock.patch.object(lu, 'vgdisplay')
     @mock.patch.object(lu, 'lvdisplay')

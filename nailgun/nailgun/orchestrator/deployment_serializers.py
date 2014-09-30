@@ -43,371 +43,11 @@ from nailgun.utils import extract_env_version
 from nailgun.volumes import manager as volume_manager
 
 
-class Priority(object):
-    """Node with priority 0 will be deployed first.
-    We have step equal 100 because we want to allow
-    user redefine deployment order and he can use free space
-    between prioriries.
-    """
-
-    def __init__(self):
-        self.step = 100
-        self.priority = 0
-
-    @property
-    def next(self):
-        self.priority += self.step
-        return self.priority
-
-    @property
-    def current(self):
-        return self.priority
-
-
 def get_nodes_not_for_deletion(cluster):
     """All clusters nodes except nodes for deletion."""
     return db().query(Node).filter(
         and_(Node.cluster == cluster,
              False == Node.pending_deletion)).order_by(Node.id)
-
-
-class DeploymentMultinodeSerializer(object):
-
-    critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
-
-    def __init__(self, priority_serializer):
-        self.priority = priority_serializer
-
-    def serialize(self, cluster, nodes, ignore_customized=False):
-        """Method generates facts which
-        through an orchestrator passes to puppet
-        """
-        serialized_nodes = []
-        keyfunc = lambda node: bool(node.replaced_deployment_info)
-        for customized, node_group in groupby(nodes, keyfunc):
-            if customized and not ignore_customized:
-                serialized_nodes.extend(
-                    self.serialize_customized(cluster, node_group))
-            else:
-                serialized_nodes.extend(self.serialize_generated(
-                    cluster, node_group))
-        return serialized_nodes
-
-    def serialize_generated(self, cluster, nodes):
-        nodes = self.serialize_nodes(nodes)
-        common_attrs = self.get_common_attrs(cluster)
-
-        self.set_deployment_priorities(nodes)
-        self.set_critical_nodes(nodes)
-
-        return [dict_merge(node, common_attrs) for node in nodes]
-
-    def serialize_customized(self, cluster, nodes):
-        serialized = []
-        release_data = objects.Release.get_orchestrator_data_dict(
-            self.current_release(cluster))
-        for node in nodes:
-            for role_data in node.replaced_deployment_info:
-                role_data.update(release_data)
-                serialized.append(role_data)
-        return serialized
-
-    def get_common_attrs(self, cluster):
-        """Cluster attributes."""
-        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
-        release = self.current_release(cluster)
-
-        attrs['deployment_mode'] = cluster.mode
-        attrs['deployment_id'] = cluster.id
-        attrs['openstack_version_prev'] = getattr(
-            self.previous_release(cluster), 'version', None)
-        attrs['openstack_version'] = release.version
-        attrs['fuel_version'] = cluster.fuel_version
-        attrs.update(
-            objects.Release.get_orchestrator_data_dict(release)
-        )
-        attrs['nodes'] = self.node_list(get_nodes_not_for_deletion(cluster))
-
-        for node in attrs['nodes']:
-            if node['role'] in 'cinder':
-                attrs['use_cinder'] = True
-
-        self.set_storage_parameters(cluster, attrs)
-        self.set_primary_mongo(attrs['nodes'])
-
-        attrs = dict_merge(
-            attrs,
-            self.get_net_provider_serializer(cluster).get_common_attrs(cluster,
-                                                                       attrs))
-
-        return attrs
-
-    def current_release(self, cluster):
-        """Actual cluster release."""
-        return objects.Release.get_by_uid(cluster.pending_release_id) \
-            if cluster.status == consts.CLUSTER_STATUSES.update \
-            else cluster.release
-
-    def previous_release(self, cluster):
-        """Returns previous release.
-
-        :param cluster: a ``Cluster`` instance to retrieve release from
-        :returns: a ``Release`` instance of previous release or ``None``
-            in case there's no previous release (fresh deployment).
-        """
-        if cluster.status == consts.CLUSTER_STATUSES.update:
-            return cluster.release
-        return None
-
-    def set_storage_parameters(self, cluster, attrs):
-        """Generate pg_num as the number of OSDs across the cluster
-        multiplied by 100, divided by Ceph replication factor, and
-        rounded up to the nearest power of 2.
-        """
-        osd_num = 0
-        nodes = db().query(Node). \
-            filter(or_(
-                Node.role_list.any(name='ceph-osd'),
-                Node.pending_role_list.any(name='ceph-osd'))). \
-            filter(Node.cluster == cluster). \
-            options(joinedload('attributes'))
-        for node in nodes:
-            for disk in node.attributes.volumes:
-                for part in disk.get('volumes', []):
-                    if part.get('name') == 'ceph' and part.get('size', 0) > 0:
-                        osd_num += 1
-        if osd_num > 0:
-            repl = int(attrs['storage']['osd_pool_size'])
-            pg_num = 2 ** int(math.ceil(math.log(osd_num * 100.0 / repl, 2)))
-        else:
-            pg_num = 128
-        attrs['storage']['pg_num'] = pg_num
-
-    def node_list(self, nodes):
-        """Generate nodes list. Represents
-        as "nodes" parameter in facts.
-        """
-        node_list = []
-
-        for node in nodes:
-            for role in sorted(node.all_roles):
-                node_list.append({
-                    'uid': node.uid,
-                    'fqdn': node.fqdn,
-                    'name': objects.Node.make_slave_name(node),
-                    'role': role})
-
-        return node_list
-
-    def by_role(self, nodes, role):
-        return filter(lambda node: node['role'] == role, nodes)
-
-    def not_roles(self, nodes, roles):
-        return filter(lambda node: node['role'] not in roles, nodes)
-
-    def set_deployment_priorities(self, nodes):
-        """Set priorities of deployment."""
-        self.priority.set_deployment_priorities(nodes)
-
-    def set_critical_nodes(self, nodes):
-        """Set behavior on nodes deployment error
-        during deployment process.
-        """
-        for n in nodes:
-            n['fail_if_error'] = n['role'] in self.critical_roles
-
-    def serialize_nodes(self, nodes):
-        """Serialize node for each role.
-        For example if node has two roles then
-        in orchestrator will be passed two serialized
-        nodes.
-        """
-        serialized_nodes = []
-        for node in nodes:
-            for role in sorted(node.all_roles):
-                serialized_nodes.append(self.serialize_node(node, role))
-        self.set_primary_mongo(serialized_nodes)
-        return serialized_nodes
-
-    def serialize_node(self, node, role):
-        """Serialize node, then it will be
-        merged with common attributes
-        """
-        node_attrs = {
-            # Yes, uid is really should be a string
-            'uid': node.uid,
-            'fqdn': node.fqdn,
-            'status': node.status,
-            'role': role,
-            # TODO (eli): need to remove, requried
-            # for the fake thread only
-            'online': node.online
-        }
-
-        node_attrs.update(self.get_net_provider_serializer(
-            node.cluster).get_node_attrs(node))
-        node_attrs.update(self.get_image_cache_max_size(node))
-        node_attrs.update(self.generate_test_vm_image_data(node))
-        return node_attrs
-
-    def get_image_cache_max_size(self, node):
-        images_ceph = (node.cluster.attributes['editable']['storage']
-                       ['images_ceph']['value'])
-        if images_ceph:
-            image_cache_max_size = '0'
-        else:
-            image_cache_max_size = volume_manager.calc_glance_cache_size(
-                node.attributes.volumes)
-        return {'glance': {'image_cache_max_size': image_cache_max_size}}
-
-    def generate_test_vm_image_data(self, node):
-        # Instantiate all default values in dict.
-        image_data = {
-            'container_format': 'bare',
-            'public': 'true',
-            'disk_format': 'qcow2',
-            'img_name': 'TestVM',
-            'img_path': '',
-            'os_name': 'cirros',
-            'min_ram': 64,
-            'glance_properties': '',
-        }
-        # Generate a right path to image.
-        c_attrs = node.cluster.attributes
-        if 'ubuntu' in c_attrs['generated']['cobbler']['profile']:
-            img_dir = '/usr/share/cirros-testvm/'
-        else:
-            img_dir = '/opt/vm/'
-        image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
-        # Add default Glance property for Murano.
-        glance_properties = [
-            """--property murano_image_info="""
-            """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
-        ]
-
-        # Alternate VMWare specific values.
-        if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':
-            image_data.update({
-                'disk_format': 'vmdk',
-                'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
-            })
-            glance_properties.append('--property vmware_disktype=sparse')
-            glance_properties.append('--property vmware_adaptertype=ide')
-            glance_properties.append('--property hypervisor_type=vmware')
-
-        image_data['glance_properties'] = ' '.join(glance_properties)
-
-        return {'test_vm_image': image_data}
-
-    def get_net_provider_serializer(self, cluster):
-        if cluster.net_provider == 'nova_network':
-            return NovaNetworkDeploymentSerializer
-        else:
-            return NeutronNetworkDeploymentSerializer
-
-    def set_primary_node(self, nodes, role, primary_node_index):
-        """Set primary node for role if it not set yet.
-        primary_node_index defines primary node position in nodes list
-        """
-        sorted_nodes = sorted(
-            nodes, key=lambda node: int(node['uid']))
-
-        primary_role = 'primary-{0}'.format(role)
-        primary_node = self.filter_by_roles(
-            sorted_nodes, [primary_role])
-        if primary_node:
-            return
-
-        result_nodes = self.filter_by_roles(
-            sorted_nodes, [role])
-        if result_nodes:
-            result_nodes[primary_node_index]['role'] = primary_role
-
-    def set_primary_mongo(self, nodes):
-        """Set primary mongo for the last mongo node
-        node if it not set yet
-        """
-        self.set_primary_node(nodes, 'mongo', 0)
-
-    def filter_by_roles(self, nodes, roles):
-        return filter(
-            lambda node: node['role'] in roles, nodes)
-
-
-class DeploymentHASerializer(DeploymentMultinodeSerializer):
-    """Serializer for ha mode."""
-
-    critical_roles = ['primary-controller',
-                      'primary-mongo',
-                      'primary-swift-proxy',
-                      'ceph-osd']
-
-    def serialize_nodes(self, nodes):
-        """Serialize nodes and set primary-controller
-        """
-        serialized_nodes = super(
-            DeploymentHASerializer, self).serialize_nodes(nodes)
-        self.set_primary_controller(serialized_nodes)
-        return serialized_nodes
-
-    def set_primary_controller(self, nodes):
-        """Set primary controller for the first controller
-        node if it not set yet
-        """
-        self.set_primary_node(nodes, 'controller', 0)
-
-    def get_last_controller(self, nodes):
-        sorted_nodes = sorted(
-            nodes, key=lambda node: int(node['uid']))
-
-        controller_nodes = self.filter_by_roles(
-            sorted_nodes, ['controller', 'primary-controller'])
-
-        last_controller = None
-        if len(controller_nodes) > 0:
-            last_controller = controller_nodes[-1]['name']
-
-        return {'last_controller': last_controller}
-
-    def node_list(self, nodes):
-        """Node list
-        """
-        node_list = super(
-            DeploymentHASerializer,
-            self
-        ).node_list(nodes)
-
-        for node in node_list:
-            node['swift_zone'] = node['uid']
-
-        return node_list
-
-    def get_common_attrs(self, cluster):
-        """Common attributes for all facts
-        """
-        common_attrs = super(
-            DeploymentHASerializer,
-            self
-        ).get_common_attrs(cluster)
-
-        net_manager = objects.Cluster.get_network_manager(cluster)
-
-        for ng in cluster.network_groups:
-            if ng.meta.get("assign_vip"):
-                common_attrs[ng.name + '_vip'] = net_manager.assign_vip(
-                    cluster.id, ng.name)
-
-        common_attrs['mp'] = [
-            {'point': '1', 'weight': '1'},
-            {'point': '2', 'weight': '2'}]
-
-        last_controller = self.get_last_controller(common_attrs['nodes'])
-        common_attrs.update(last_controller)
-
-        # Assign primary controller in nodes list
-        self.set_primary_controller(common_attrs['nodes'])
-
-        return common_attrs
 
 
 class NetworkDeploymentSerializer(object):
@@ -450,13 +90,6 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
         raise NotImplementedError()
-
-    @classmethod
-    def get_net_provider_serializer(cls, cluster):
-        if cluster.net_provider == 'nova_network':
-            return NovaNetworkDeploymentSerializer
-        else:
-            return NeutronNetworkDeploymentSerializer
 
     @classmethod
     def network_ranges(cls, cluster):
@@ -781,11 +414,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     def neutron_attrs(cls, cluster):
         """Network configuration for Neutron
         """
-        nm = objects.Cluster.get_network_manager(cluster)
         attrs = {}
-        attrs['L3'] = nm.generate_l3(cluster)
-        attrs['L2'] = nm.generate_l2(cluster)
-        attrs['predefined_networks'] = nm.generate_predefined_networks(cluster)
+        attrs['L3'] = cls.generate_l3(cluster)
+        attrs['L2'] = cls.generate_l2(cluster)
+        attrs['predefined_networks'] = \
+            cls.generate_predefined_networks(cluster)
 
         if cluster.release.operating_system == 'RHEL':
             attrs['amqp'] = {'provider': 'qpid-rh'}
@@ -987,14 +620,485 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         return iface_attrs
 
+    @classmethod
+    def _generate_external_network(cls, cluster):
+        public_cidr, public_gw = db().query(
+            NetworkGroup.cidr,
+            NetworkGroup.gateway
+        ).filter_by(
+            cluster_id=cluster.id,
+            name='public'
+        ).first()
+        join_range = lambda r: (":".join(map(str, r)) if r else None)
+        return {
+            "L3": {
+                "subnet": public_cidr,
+                "gateway": public_gw,
+                "nameservers": [],
+                "floating": join_range(
+                    cluster.network_config.floating_ranges[0]),
+                "enable_dhcp": False
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": True,
+                "physnet": "physnet1"
+            },
+            "tenant": "admin",
+            "shared": False
+        }
+
+    @classmethod
+    def _generate_internal_network(cls, cluster):
+        return {
+            "L3": {
+                "subnet": cluster.network_config.internal_cidr,
+                "gateway": cluster.network_config.internal_gateway,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "floating": None,
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": cluster.network_config.segmentation_type,
+                "segment_id": None,
+                "router_ext": False,
+                "physnet": "physnet2"
+                if cluster.network_config.segmentation_type == "vlan" else None
+            },
+            "tenant": "admin",
+            "shared": False
+        }
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        return {
+            "net04_ext": cls._generate_external_network(cluster),
+            "net04": cls._generate_internal_network(cluster)
+        }
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        join_range = lambda r: (":".join(map(str, r)) if r else None)
+        res = {
+            "base_mac": cluster.network_config.base_mac,
+            "segmentation_type": cluster.network_config.segmentation_type,
+            "phys_nets": {
+                "physnet1": {
+                    "bridge": "br-ex",
+                    "vlan_range": None
+                }
+            }
+        }
+        if cluster.network_config.segmentation_type == 'gre':
+            res["tunnel_id_ranges"] = join_range(
+                cluster.network_config.gre_id_range)
+        elif cluster.network_config.segmentation_type == 'vlan':
+            res["phys_nets"]["physnet2"] = {
+                "bridge": "br-prv",
+                "vlan_range": join_range(cluster.network_config.vlan_range)
+            }
+
+        # Set non-default ml2 configurations
+        attrs = Cluster.get_attributes(cluster).editable
+        if 'neutron_mellanox' in attrs and \
+                attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
+            res['mechanism_drivers'] = 'mlnx,openvswitch'
+            seg_type = cluster.network_config.segmentation_type
+            res['tenant_network_types'] = seg_type
+            res['type_drivers'] = '{0},flat,local'.format(seg_type)
+
+        return res
+
+    @classmethod
+    def generate_l3(cls, cluster):
+        l3 = {
+            "use_namespaces": True
+        }
+        attrs = Cluster.get_attributes(cluster).editable
+        if 'nsx_plugin' in attrs and \
+                attrs['nsx_plugin']['metadata']['enabled']:
+            dhcp_attrs = l3.setdefault('dhcp_agent', {})
+            dhcp_attrs['enable_isolated_metadata'] = True
+            dhcp_attrs['enable_metadata_network'] = True
+
+        return l3
+
+
+class NeutronNetworkDeploymentSerializer51(NeutronNetworkDeploymentSerializer):
+
+    @classmethod
+    def _generate_external_network(cls, cluster):
+        ext_netw = super(NeutronNetworkDeploymentSerializer51, cls).\
+            _generate_external_network(cluster)
+        ext_netw["L2"] = {
+            "network_type": "local",
+            "segment_id": None,
+            "router_ext": True,
+            "physnet": None
+        }
+        return ext_netw
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(NeutronNetworkDeploymentSerializer51, cls).\
+            generate_l2(cluster)
+        l2["phys_nets"].pop("physnet1")
+        return l2
+
+
+class DeploymentMultinodeSerializer(object):
+
+    nova_network_serializer = NovaNetworkDeploymentSerializer
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer
+
+    critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
+
+    def __init__(self, priority_serializer):
+        self.priority = priority_serializer
+
+    def serialize(self, cluster, nodes, ignore_customized=False):
+        """Method generates facts which
+        through an orchestrator passes to puppet
+        """
+        serialized_nodes = []
+        keyfunc = lambda node: bool(node.replaced_deployment_info)
+        for customized, node_group in groupby(nodes, keyfunc):
+            if customized and not ignore_customized:
+                serialized_nodes.extend(
+                    self.serialize_customized(cluster, node_group))
+            else:
+                serialized_nodes.extend(self.serialize_generated(
+                    cluster, node_group))
+        return serialized_nodes
+
+    def serialize_generated(self, cluster, nodes):
+        nodes = self.serialize_nodes(nodes)
+        common_attrs = self.get_common_attrs(cluster)
+
+        self.set_deployment_priorities(nodes)
+        self.set_critical_nodes(nodes)
+
+        return [dict_merge(node, common_attrs) for node in nodes]
+
+    def serialize_customized(self, cluster, nodes):
+        serialized = []
+        release_data = objects.Release.get_orchestrator_data_dict(
+            self.current_release(cluster))
+        for node in nodes:
+            for role_data in node.replaced_deployment_info:
+                role_data.update(release_data)
+                serialized.append(role_data)
+        return serialized
+
+    def get_common_attrs(self, cluster):
+        """Cluster attributes."""
+        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
+        release = self.current_release(cluster)
+
+        attrs['deployment_mode'] = cluster.mode
+        attrs['deployment_id'] = cluster.id
+        attrs['openstack_version_prev'] = getattr(
+            self.previous_release(cluster), 'version', None)
+        attrs['openstack_version'] = release.version
+        attrs['fuel_version'] = cluster.fuel_version
+        attrs.update(
+            objects.Release.get_orchestrator_data_dict(release)
+        )
+        attrs['nodes'] = self.node_list(get_nodes_not_for_deletion(cluster))
+
+        for node in attrs['nodes']:
+            if node['role'] in 'cinder':
+                attrs['use_cinder'] = True
+
+        self.set_storage_parameters(cluster, attrs)
+        self.set_primary_mongo(attrs['nodes'])
+
+        attrs = dict_merge(
+            attrs,
+            self.get_net_provider_serializer(cluster).get_common_attrs(cluster,
+                                                                       attrs))
+
+        return attrs
+
+    def current_release(self, cluster):
+        """Actual cluster release."""
+        return objects.Release.get_by_uid(cluster.pending_release_id) \
+            if cluster.status == consts.CLUSTER_STATUSES.update \
+            else cluster.release
+
+    def previous_release(self, cluster):
+        """Returns previous release.
+
+        :param cluster: a ``Cluster`` instance to retrieve release from
+        :returns: a ``Release`` instance of previous release or ``None``
+            in case there's no previous release (fresh deployment).
+        """
+        if cluster.status == consts.CLUSTER_STATUSES.update:
+            return cluster.release
+        return None
+
+    def set_storage_parameters(self, cluster, attrs):
+        """Generate pg_num as the number of OSDs across the cluster
+        multiplied by 100, divided by Ceph replication factor, and
+        rounded up to the nearest power of 2.
+        """
+        osd_num = 0
+        nodes = db().query(Node). \
+            filter(or_(
+                Node.role_list.any(name='ceph-osd'),
+                Node.pending_role_list.any(name='ceph-osd'))). \
+            filter(Node.cluster == cluster). \
+            options(joinedload('attributes'))
+        for node in nodes:
+            for disk in node.attributes.volumes:
+                for part in disk.get('volumes', []):
+                    if part.get('name') == 'ceph' and part.get('size', 0) > 0:
+                        osd_num += 1
+        if osd_num > 0:
+            repl = int(attrs['storage']['osd_pool_size'])
+            pg_num = 2 ** int(math.ceil(math.log(osd_num * 100.0 / repl, 2)))
+        else:
+            pg_num = 128
+        attrs['storage']['pg_num'] = pg_num
+
+    def node_list(self, nodes):
+        """Generate nodes list. Represents
+        as "nodes" parameter in facts.
+        """
+        node_list = []
+
+        for node in nodes:
+            for role in sorted(node.all_roles):
+                node_list.append({
+                    'uid': node.uid,
+                    'fqdn': node.fqdn,
+                    'name': objects.Node.make_slave_name(node),
+                    'role': role})
+
+        return node_list
+
+    def by_role(self, nodes, role):
+        return filter(lambda node: node['role'] == role, nodes)
+
+    def not_roles(self, nodes, roles):
+        return filter(lambda node: node['role'] not in roles, nodes)
+
+    def set_deployment_priorities(self, nodes):
+        """Set priorities of deployment."""
+        self.priority.set_deployment_priorities(nodes)
+
+    def set_critical_nodes(self, nodes):
+        """Set behavior on nodes deployment error
+        during deployment process.
+        """
+        for n in nodes:
+            n['fail_if_error'] = n['role'] in self.critical_roles
+
+    def serialize_nodes(self, nodes):
+        """Serialize node for each role.
+        For example if node has two roles then
+        in orchestrator will be passed two serialized
+        nodes.
+        """
+        serialized_nodes = []
+        for node in nodes:
+            for role in sorted(node.all_roles):
+                serialized_nodes.append(self.serialize_node(node, role))
+        self.set_primary_mongo(serialized_nodes)
+        return serialized_nodes
+
+    def serialize_node(self, node, role):
+        """Serialize node, then it will be
+        merged with common attributes
+        """
+        node_attrs = {
+            # Yes, uid is really should be a string
+            'uid': node.uid,
+            'fqdn': node.fqdn,
+            'status': node.status,
+            'role': role,
+            # TODO (eli): need to remove, requried
+            # for the fake thread only
+            'online': node.online
+        }
+
+        node_attrs.update(self.get_net_provider_serializer(
+            node.cluster).get_node_attrs(node))
+        node_attrs.update(self.get_image_cache_max_size(node))
+        node_attrs.update(self.generate_test_vm_image_data(node))
+        return node_attrs
+
+    def get_image_cache_max_size(self, node):
+        images_ceph = (node.cluster.attributes['editable']['storage']
+                       ['images_ceph']['value'])
+        if images_ceph:
+            image_cache_max_size = '0'
+        else:
+            image_cache_max_size = volume_manager.calc_glance_cache_size(
+                node.attributes.volumes)
+        return {'glance': {'image_cache_max_size': image_cache_max_size}}
+
+    def generate_test_vm_image_data(self, node):
+        # Instantiate all default values in dict.
+        image_data = {
+            'container_format': 'bare',
+            'public': 'true',
+            'disk_format': 'qcow2',
+            'img_name': 'TestVM',
+            'img_path': '',
+            'os_name': 'cirros',
+            'min_ram': 64,
+            'glance_properties': '',
+        }
+        # Generate a right path to image.
+        c_attrs = node.cluster.attributes
+        if 'ubuntu' in c_attrs['generated']['cobbler']['profile']:
+            img_dir = '/usr/share/cirros-testvm/'
+        else:
+            img_dir = '/opt/vm/'
+        image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
+        # Add default Glance property for Murano.
+        glance_properties = [
+            """--property murano_image_info="""
+            """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
+        ]
+
+        # Alternate VMWare specific values.
+        if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':
+            image_data.update({
+                'disk_format': 'vmdk',
+                'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
+            })
+            glance_properties.append('--property vmware_disktype=sparse')
+            glance_properties.append('--property vmware_adaptertype=ide')
+            glance_properties.append('--property hypervisor_type=vmware')
+
+        image_data['glance_properties'] = ' '.join(glance_properties)
+
+        return {'test_vm_image': image_data}
+
+    def get_net_provider_serializer(self, cluster):
+        if cluster.net_provider == 'nova_network':
+            return self.nova_network_serializer
+        else:
+            return self.neutron_network_serializer
+
+    def set_primary_node(self, nodes, role, primary_node_index):
+        """Set primary node for role if it not set yet.
+        primary_node_index defines primary node position in nodes list
+        """
+        sorted_nodes = sorted(
+            nodes, key=lambda node: int(node['uid']))
+
+        primary_role = 'primary-{0}'.format(role)
+        primary_node = self.filter_by_roles(
+            sorted_nodes, [primary_role])
+        if primary_node:
+            return
+
+        result_nodes = self.filter_by_roles(
+            sorted_nodes, [role])
+        if result_nodes:
+            result_nodes[primary_node_index]['role'] = primary_role
+
+    def set_primary_mongo(self, nodes):
+        """Set primary mongo for the last mongo node
+        node if it not set yet
+        """
+        self.set_primary_node(nodes, 'mongo', 0)
+
+    def filter_by_roles(self, nodes, roles):
+        return filter(
+            lambda node: node['role'] in roles, nodes)
+
+
+class DeploymentHASerializer(DeploymentMultinodeSerializer):
+    """Serializer for ha mode."""
+
+    critical_roles = ['primary-controller',
+                      'primary-mongo',
+                      'primary-swift-proxy',
+                      'ceph-osd']
+
+    def serialize_nodes(self, nodes):
+        """Serialize nodes and set primary-controller
+        """
+        serialized_nodes = super(
+            DeploymentHASerializer, self).serialize_nodes(nodes)
+        self.set_primary_controller(serialized_nodes)
+        return serialized_nodes
+
+    def set_primary_controller(self, nodes):
+        """Set primary controller for the first controller
+        node if it not set yet
+        """
+        self.set_primary_node(nodes, 'controller', 0)
+
+    def get_last_controller(self, nodes):
+        sorted_nodes = sorted(
+            nodes, key=lambda node: int(node['uid']))
+
+        controller_nodes = self.filter_by_roles(
+            sorted_nodes, ['controller', 'primary-controller'])
+
+        last_controller = None
+        if len(controller_nodes) > 0:
+            last_controller = controller_nodes[-1]['name']
+
+        return {'last_controller': last_controller}
+
+    def node_list(self, nodes):
+        """Node list
+        """
+        node_list = super(
+            DeploymentHASerializer,
+            self
+        ).node_list(nodes)
+
+        for node in node_list:
+            node['swift_zone'] = node['uid']
+
+        return node_list
+
+    def get_common_attrs(self, cluster):
+        """Common attributes for all facts
+        """
+        common_attrs = super(
+            DeploymentHASerializer,
+            self
+        ).get_common_attrs(cluster)
+
+        net_manager = objects.Cluster.get_network_manager(cluster)
+
+        for ng in cluster.network_groups:
+            if ng.meta.get("assign_vip"):
+                common_attrs[ng.name + '_vip'] = net_manager.assign_vip(
+                    cluster.id, ng.name)
+
+        common_attrs['mp'] = [
+            {'point': '1', 'weight': '1'},
+            {'point': '2', 'weight': '2'}]
+
+        last_controller = self.get_last_controller(common_attrs['nodes'])
+        common_attrs.update(last_controller)
+
+        # Assign primary controller in nodes list
+        self.set_primary_controller(common_attrs['nodes'])
+
+        return common_attrs
+
 
 class DeploymentMultinodeSerializer51(DeploymentMultinodeSerializer):
-    """For multinode we just use the base serializer."""
-    pass
+
+    nova_network_serializer = NovaNetworkDeploymentSerializer
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer51
 
 
 class DeploymentHASerializer51(DeploymentHASerializer):
-    pass
+
+    nova_network_serializer = NovaNetworkDeploymentSerializer
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer51
 
 
 def create_serializer(cluster):
@@ -1008,21 +1112,21 @@ def create_serializer(cluster):
         '5.0': {
             'multinode': (
                 DeploymentMultinodeSerializer,
-                ps.PriorityMultinodeSerializer50
+                ps.PriorityMultinodeSerializer50,
             ),
             'ha': (
                 DeploymentHASerializer,
-                ps.PriorityHASerializer50
+                ps.PriorityHASerializer50,
             ),
         },
         '5.1': {
             'multinode': (
                 DeploymentMultinodeSerializer51,
-                ps.PriorityMultinodeSerializer51
+                ps.PriorityMultinodeSerializer51,
             ),
             'ha': (
                 DeploymentHASerializer51,
-                ps.PriorityHASerializer51
+                ps.PriorityHASerializer51,
             ),
         },
     }

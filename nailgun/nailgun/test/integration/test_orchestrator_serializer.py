@@ -25,6 +25,9 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.openstack.common import jsonutils
+
+from nailgun.orchestrator.deployment_serializers import\
+    create_serializer
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers import\
@@ -703,7 +706,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def serialize_env_w_version(self, version):
         self.new_env_release_version = version
         cluster = self.create_env(mode='ha_compact')
-        return self.serializer.serialize(cluster, cluster.nodes)
+        return create_serializer(cluster).serialize(cluster, cluster.nodes)
 
     def assert_roles_flattened(self, nodes):
         self.assertEqual(len(nodes), 6)
@@ -741,8 +744,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 node_db, serialized_node['role'])
             self.assertEqual(serialized_node, expected_node)
 
-    def test_serialize_neutron_attrs_on_5_1_env(self):
-        serialized_nodes = self.serialize_env_w_version("2014.1.1-5.1")
+    def check_5x_60_neutron_attrs(self, version):
+        serialized_nodes = self.serialize_env_w_version(version)
         for node in serialized_nodes:
             self.assertEqual(
                 {
@@ -758,8 +761,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'physnet1' in node['quantum_settings']['L2']['phys_nets']
             )
 
-    def test_serialize_neutron_attrs_on_5_0_2_env(self):
-        serialized_nodes = self.serialize_env_w_version("2014.1.1-5.0.2")
+    def test_serialize_neutron_attrs_on_6_0_env(self):
+        self.check_5x_60_neutron_attrs("2014.2-6.0")
+
+    def test_serialize_neutron_attrs_on_5_1_env(self):
+        self.check_5x_60_neutron_attrs("2014.1.1-5.1")
+
+    def check_50x_neutron_attrs(self, version):
+        serialized_nodes = self.serialize_env_w_version(version)
         for node in serialized_nodes:
             self.assertEqual(
                 {
@@ -778,6 +787,15 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 },
                 node['quantum_settings']['L2']['phys_nets']['physnet1']
             )
+
+    def test_serialize_neutron_attrs_on_5_0_2_env(self):
+        self.check_50x_neutron_attrs("2014.1.1-5.0.2")
+
+    def test_serialize_neutron_attrs_on_5_0_1_env(self):
+        self.check_50x_neutron_attrs("2014.1.1-5.0.1")
+
+    def test_serialize_neutron_attrs_on_5_0_env(self):
+        self.check_50x_neutron_attrs("2014.1")
 
     def test_serialize_node(self):
         node = self.env.create_node(

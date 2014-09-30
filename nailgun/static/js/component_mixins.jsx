@@ -45,6 +45,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             };
         },
         dialogMixin: {
+            getInitialState: function() {
+                return {actionInProgress: false};
+            },
             componentDidMount: function() {
                 var $el = $(this.getDOMNode());
                 var modalOptions = _.clone(this.props.modalOptions) || {};

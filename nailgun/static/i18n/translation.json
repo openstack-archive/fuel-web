@@ -519,21 +519,18 @@
                     "reconfigured_node": "Reconfigured roles of  __count__ node.",
                     "reconfigured_node_plural": "Reconfigured roles of  __count__ nodes.",
                     "settings_changes": {
-                        "attrs": "OpenStack settings.",
-                        "networks": "network settings.",
-                        "disks": "disk configuration of the following nodes:",
-                        "interfaces": "interface configuration of the following nodes:"
+                        "attributes": "Changed OpenStack settings.",
+                        "networks": "Changed network settings.",
+                        "disks": "Changed disk configuration of the following nodes:",
+                        "interfaces": "Changed interface configuration of the following nodes:"
                     },
                     "warnings": {
-                        "controller": "Environment should have __nodeSize__ controller node",
-                        "controller_plural": "Environment should have __nodeSize__ controller nodes",
-                        "mongo": "When Ceilometer is enabled, environment should have Telemetry - MongoDB node",
-                        "mongo_ha": "When Ceilometer is enabled, environment should have at least 3 Telemetry - MongoDB nodes",
+                        "controller": "The environment should have Controller node",
+                        "controller_plural": "At least __count__ controllers are required to provide High Availability of the environment",
+                        "mongo": "When Ceilometer is enabled, the environment should have Telemetry - MongoDB node",
+                        "mongo_plural": "At least __count__ MongoDB nodes are required to provide High Availability of the environment",
                         "compute": "Compute nodes are recommended for deployment"
                     },
-                    "changed_task_name": "Changed __item__",
-                    "changed": "Changed",
-                    "deleted": "Deleted",
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",
                     "locked_settings_alert": "Please note that environment settings and node configuration will be locked after deployment."
@@ -1087,18 +1084,15 @@
                     "reconfigured_node": "__nodesCount__个节点重置角色。",
                     "reconfigured_node_plural": "__nodesCount__个节点重置角色。",
                     "settings_changes": {
-                        "attrs": "OpenStack设置",
+                        "attributes": "OpenStack设置",
                         "networks": "网络设置",
                         "disks": "以下节点的磁盘配置变更："
                     },
                     "warnings": {
-                        "controller": "环境应该有__nodeSize__个控制节点。",
-                        "controller_plural": "环境应该有__nodeSize__个控制节点",
+                        "controller": "环境应该有__count__个控制节点。",
+                        "controller_plural": "环境应该有__count__个控制节点",
                         "compute": "建议部署计算节点。"
                     },
-                    "changed_task_name": "__item__已变更",
-                    "changed": "已变更",
-                    "deleted": "已删除",
                     "deploy": "部署",
                     "redeployment_needed": "某些节点配置后状态错误，需要重新部署。"
                 },
@@ -1578,18 +1572,15 @@
                     "reconfigured_node": "__nodesCount__ノードの役割を再設定しました。",
                     "reconfigured_node_plural": "__nodesCount__複数ノードの役割を再設定しました。",
                     "settings_changes": {
-                        "attrs": "OpenStack 設定",
+                        "attributes": "OpenStack 設定",
                         "networks": "ネットワーク 設定",
                         "disks": "以下のノードのディスク設定："
                     },
                     "warnings": {
-                        "controller": "環境は、__nodeSize__コントローラノードを持っている必要があります。",
-                        "controller_plural": "環境は、__nodeSize__複数コントローラノードを持っている必要があります。",
+                        "controller": "環境は、__count__コントローラノードを持っている必要があります。",
+                        "controller_plural": "環境は、__count__複数コントローラノードを持っている必要があります。",
                         "compute": "Computeノードは、デプロイのために進まれています。"
                     },
-                    "changed_task_name": "__item__を変更しました。",
-                    "changed": "変更しました。",
-                    "deleted": "削除しました。",
                     "deploy": "デプロイしました。",
                     "redeployment_needed": "一部のノードは、デプロイ後のエラーになりました。再デプロイが必要です。"
                 },
@@ -2082,18 +2073,15 @@
                     "reconfigured_node": "__nodesCount__ 노드의 역할을 다시 설정합니다",
                     "reconfigured_node_plural": "__nodesCount__ 노드들의 역할을 다시 설정합니다",
                     "settings_changes": {
-                        "attrs": "OpenStack 설정",
+                        "attributes": "OpenStack 설정",
                         "networks": "네트워크 설정",
                         "disks": "다음 노드들의 디스크 설정:"
                     },
                     "warnings": {
-                        "controller": "환경은 __nodeSize__ 컨트롤러 노드가 있어야합니다",
-                        "controller_plural": "환경은 __nodeSize__ 컨트롤러 노드들이 있어야합니다",
+                        "controller": "환경은 __count__ 컨트롤러 노드가 있어야합니다",
+                        "controller_plural": "환경은 __count__ 컨트롤러 노드들이 있어야합니다",
                         "compute": "Compute 노드가 배치를 위해 권장됩니다"
                     },
-                    "changed_task_name": "__item__가 변경되었읍니다",
-                    "changed": "변경되었읍니다",
-                    "deleted": "삭제되었읍니다",
                     "deploy": "배치되었읍니다",
                     "redeployment_needed": "일부 노드는 배치후 오류상태가 있습니다. 재배치가 필요합니다."
                 },

@@ -98,7 +98,7 @@ def mdcreate(mdname, level, device, *args):
 
     # cleaning md metadata from devices
     map(mdclean, devices)
-    utils.execute('mdadm', '--create', '--force', mdname, '-e1.2',
+    utils.execute('mdadm', '--create', '--force', mdname, '-e0.90',
                   '--level=%s' % level,
                   '--raid-devices=%s' % len(devices), *devices,
                   check_exit_code=[0])

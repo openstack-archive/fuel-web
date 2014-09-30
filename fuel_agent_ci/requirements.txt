@@ -5,3 +5,4 @@ xmlbuilder>=1.0
 PyYAML>=3.11
 # pygit2>=0.20.3
 venvgit2>=0.20.3.0
+requests>=1.2.3

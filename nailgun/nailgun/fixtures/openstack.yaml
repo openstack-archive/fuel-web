@@ -1143,10 +1143,10 @@
       method: "image"
       image_data:
         /:
-          uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_x86_64.img.gz"
+          uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64.img.gz"
           format: "ext4"
           container: "gzip"
         /boot:
-          uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_x86_64-boot.img.gz"
+          uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64-boot.img.gz"
           format: "ext2"
           container: "gzip"

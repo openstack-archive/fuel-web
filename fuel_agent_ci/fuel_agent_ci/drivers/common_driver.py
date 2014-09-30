@@ -19,12 +19,17 @@ from fuel_agent_ci import utils
 
 
 def artifact_get(artifact):
+    artifact_dir = os.path.dirname(
+        os.path.join(artifact.env.envdir, artifact.path))
+    if not os.path.exists(artifact_dir):
+        os.makedirs(artifact_dir)
     with open(os.path.join(artifact.env.envdir, artifact.path), 'wb') as f:
         for chunk in requests.get(
                 artifact.url, stream=True).iter_content(1048576):
             f.write(chunk)
         f.flush()
-    utils.execute(artifact.unpack, cwd=artifact.env.envdir)
+    if artifact.unpack:
+        utils.execute(artifact.unpack, cwd=artifact.env.envdir)
 
 
 def artifact_clean(artifact):

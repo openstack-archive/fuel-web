@@ -2,8 +2,11 @@
 disable_ec2_metadata: true
 disable_root: false
 
+ssh_pwauth: True
 ssh_authorized_keys:
-  - {{ common.ssh_auth_key }}
+{% for key in common.ssh_auth_keys %}
+  - {{ key }}
+{% endfor %}
 
 # set the locale to a given locale
 # default: en_US.UTF-8
@@ -33,9 +36,6 @@ rsyslog:
       *.* @{{ common.master_ip }};LogToMaster
 
 
-#TODO(agordeev):
-#mounts: fill /etc/fstab
-
 # that module's missing in 0.6.3, but existent for >= 0.7.3
 write_files:
  -   content: |
@@ -49,8 +49,9 @@ write_files:
 
 
 apt_sources:
- - source: deb http://{{ common.master_ip }}:8080/ubuntu/fuelweb/x86_64 precise main
-
+{% for reponame, repourl in common.ks_repos.items() %}
+  - source: deb {{ repourl }} precise main
+{% endfor %}
 
 mcollective:
   conf:
@@ -59,12 +60,19 @@ mcollective:
     libdir: /usr/share/mcollective/plugins
     logfile: /var/log/mcollective.log
     loglevel: debug
-    daemonize: 1
-    direct_addressing: 0
+    daemonize: 0
+    direct_addressing: 1
     ttl: 4294957
     securityprovider: psk
     plugin.psk: {{ mcollective.pskey }}
-    connector: {{ mcollective.connector }}
+{% if mcollective.connector == 'stomp' %}
+    connector = stomp
+    plugin.stomp.host: {{ mcollective.host }}
+    plugin.stomp.port: {{ mcollective.port|default(61613) }}
+    plugin.stomp.user: {{ mcollective.user }}
+    plugin.stomp.password: {{ mcollective.password }}
+{% else %}
+    connector: rabbitmq
     plugin.rabbitmq.vhost: {{ mcollective.vhost }}
     plugin.rabbitmq.pool.size: 1
     plugin.rabbitmq.pool.1.host: {{ mcollective.host }}
@@ -72,9 +80,9 @@ mcollective:
     plugin.rabbitmq.pool.1.user: {{ mcollective.user }}
     plugin.rabbitmq.pool.1.password: {{ mcollective.password }}
     plugin.rabbitmq.heartbeat_interval: 30
+{% endif %}
     factsource: yaml
     plugin.yaml: /etc/mcollective/facts.yaml
-
 
 puppet:
   conf:
@@ -90,5 +98,16 @@ puppet:
       report: false
       configtimeout: 600
 
+runcmd:
+{% if puppet.enable != 1 %}
+ - /usr/sbin/invoke-rc.d puppet stop
+ - /usr/sbin/update-rc.d -f puppet remove
+{% endif %}
+{% if mcollective.enable != 1 %}
+ - /usr/sbin/invoke-rc.d mcollective stop
+ - /usr/sbin/update-rc.d -f mcollective remove
+{% endif %}
+ - iptables -t filter -F INPUT
+ - iptables -t filter -F FORWARD
 
 final_message: "YAY! The system is finally up, after $UPTIME seconds"

@@ -19,14 +19,14 @@ class Image(object):
     SUPPORTED_CONTAINERS = ['raw', 'gzip']
 
     def __init__(self, uri, target_device,
-                 image_format, container, size=None):
+                 format, container, size=None):
         # uri is something like
         # http://host:port/path/to/image.img or
         # file:///tmp/image.img
         self.uri = uri
         self.target_device = target_device
         # this must be one of 'iso9660', 'ext[234]', 'xfs'
-        self.image_format = image_format
+        self.format = format
         if container not in self.SUPPORTED_CONTAINERS:
             raise errors.WrongImageDataError(
                 'Error while image initialization: '

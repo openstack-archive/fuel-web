@@ -114,6 +114,9 @@ class ProvisioningSerializer(object):
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
                 'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                'authorized_keys': [
+                    "\"%s\"" % key for key in settings.AUTHORIZED_KEYS
+                ],
                 'timezone': settings.TIMEZONE,
                 'master_ip': settings.MASTER_IP,
             }}

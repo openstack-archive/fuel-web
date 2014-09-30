@@ -51,7 +51,7 @@ def pvdisplay_parse(output):
     return pvs
 
 
-def pvcreate(pvname, metadatasize=64, metadatacopies=2):
+def pvcreate(pvname, metadatasize=32, metadatacopies=2):
     # check if pv already exists
     if filter(lambda x: x['name'] == pvname, pvdisplay()):
         raise errors.PVAlreadyExistsError(
@@ -204,9 +204,10 @@ def lvcreate(vgname, lvname, size):
             'Error while creating vg: vg %s not found' % vgname)
     # check if enough space is available
     if vg[0]['free'] < size:
-        raise errors.NotEnoughSpaceError(
-            'Error while creating lv: vg %s has only %s m of free space, '
-            'but at least %s m is needed' % (vgname, vg[0]['free'], size))
+        message = 'Error while creating lv: vg %s has only %s m of free space'\
+            ', but at least %s m is needed' % (vgname, vg[0]['free'], size)
+        LOG.error(message)
+        raise errors.NotEnoughSpaceError(message)
     # check if lv already exists
     if filter(lambda x: x['name'] == lvname, lvdisplay()):
         raise errors.LVAlreadyExistsError(
@@ -215,9 +216,24 @@ def lvcreate(vgname, lvname, size):
                   vgname, check_exit_code=[0])
 
 
-def lvremove(lvname):
+def lvremove(lvpath):
     # check if lv exists
-    if not filter(lambda x: x['name'] == lvname, lvdisplay()):
+    if not filter(lambda x: x['path'] == lvpath, lvdisplay()):
         raise errors.LVNotFoundError(
-            'Error while removing lv: lv %s not found' % lvname)
-    utils.execute('lvremove', '-f', lvname, check_exit_code=[0])
+            'Error while removing lv: lv %s not found' % lvpath)
+    utils.execute('lvremove', '-f', lvpath, check_exit_code=[0])
+
+
+def lvremove_all():
+    for lv in lvdisplay():
+        lvremove(lv['path'])
+
+
+def vgremove_all():
+    for vg in vgdisplay():
+        vgremove(vg['name'])
+
+
+def pvremove_all():
+    for pv in pvdisplay():
+        pvremove(pv['name'])

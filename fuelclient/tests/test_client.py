@@ -158,14 +158,6 @@ class TestHandlers(BaseTestCase):
             check_errors=True
         )
         self.check_all_in_msg(
-            "task -t 1 --delete --debug",
-            [
-                "DELETE http://127.0.0.1",
-                "/api/v1/tasks/1/?force=0"
-            ],
-            check_errors=True
-        )
-        self.check_all_in_msg(
             "task --tid 1 --delete --debug",
             [
                 "DELETE http://127.0.0.1",

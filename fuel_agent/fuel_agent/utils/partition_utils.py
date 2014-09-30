@@ -13,7 +13,10 @@
 # limitations under the License.
 
 from fuel_agent import errors
+from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import utils
+
+LOG = logging.getLogger(__name__)
 
 
 def parse_partition_info(output):
@@ -48,7 +51,10 @@ def info(dev):
                            'unit', 'MiB',
                            'print', 'free',
                            check_exit_code=[0, 1])[0]
-    return parse_partition_info(output)
+    LOG.debug('Info output: \n%s' % output)
+    result = parse_partition_info(output)
+    LOG.debug('Info result: %s' % result)
+    return result
 
 
 def wipe(dev):

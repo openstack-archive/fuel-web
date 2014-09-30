@@ -13,7 +13,10 @@
 # limitations under the License.
 
 from fuel_agent import errors
+from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import utils
+
+LOG = logging.getLogger(__name__)
 
 
 def parse_partition_info(output):
@@ -48,11 +51,16 @@ def info(dev):
                            'unit', 'MiB',
                            'print', 'free',
                            check_exit_code=[0, 1])[0]
-    return parse_partition_info(output)
+    LOG.debug('Info output: \n%s' % output)
+    result = parse_partition_info(output)
+    LOG.debug('Info result: %s' % result)
+    return result
 
 
 def wipe(dev):
     # making an empty new table is equivalent to wiping the old one
+    LOG.debug('Wiping partition table on %s (we assume it is equal '
+              'to creating a new one)' % dev)
     make_label(dev)
 
 
@@ -64,6 +72,8 @@ def make_label(dev, label='gpt'):
 
     :returns: None
     """
+    LOG.debug('Trying to create %s partition table on device %s' %
+              (label, dev))
     if label not in ('gpt', 'msdos'):
         raise errors.WrongPartitionLabelError(
             'Wrong partition label type: %s' % label)
@@ -82,6 +92,8 @@ def set_partition_flag(dev, num, flag, state='on'):
 
     :returns: None
     """
+    LOG.debug('Trying to set partition flag: dev=%s num=%s flag=%s state=%s' %
+              (dev, num, flag, state))
     # parted supports more flags but we are interested in
     # setting only this subset of them.
     # not all of these flags are compatible with one another.
@@ -107,11 +119,15 @@ def set_gpt_type(dev, num, type_guid):
     :returns: None
     """
     # TODO(kozhukalov): check whether type_guid is valid
+    LOG.debug('Setting partition GUID: dev=%s num=%s guid=%s' %
+              (dev, num, type_guid))
     utils.execute('sgdisk', '--typecode=%s:%s' % (num, type_guid),
                   dev, check_exit_code=[0])
 
 
 def make_partition(dev, begin, end, ptype):
+    LOG.debug('Trying to create a partition: dev=%s begin=%s end=%s' %
+              (dev, begin, end))
     if ptype not in ('primary', 'logical'):
         raise errors.WrongPartitionSchemeError(
             'Wrong partition type: %s' % ptype)
@@ -126,14 +142,14 @@ def make_partition(dev, begin, end, ptype):
                end <= x['end'] for x in info(dev)['parts']):
         raise errors.WrongPartitionSchemeError(
             'Invalid boundaries: begin and end '
-            'are not inside available free space'
-        )
+            'are not inside available free space')
 
     utils.execute('parted', '-a', 'optimal', '-s', dev, 'unit', 'MiB',
                   'mkpart', ptype, str(begin), str(end), check_exit_code=[0])
 
 
 def remove_partition(dev, num):
+    LOG.debug('Trying to remove partition: dev=%s num=%s' % (dev, num))
     if not any(x['fstype'] != 'free' and x['num'] == num
                for x in info(dev)['parts']):
         raise errors.PartitionNotFoundError('Partition %s not found' % num)

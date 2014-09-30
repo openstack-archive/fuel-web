@@ -51,7 +51,7 @@ def pvdisplay_parse(output):
     return pvs
 
 
-def pvcreate(pvname, metadatasize=64, metadatacopies=2):
+def pvcreate(pvname, metadatasize=32, metadatacopies=2):
     # check if pv already exists
     if filter(lambda x: x['name'] == pvname, pvdisplay()):
         raise errors.PVAlreadyExistsError(
@@ -204,9 +204,10 @@ def lvcreate(vgname, lvname, size):
             'Error while creating vg: vg %s not found' % vgname)
     # check if enough space is available
     if vg[0]['free'] < size:
-        raise errors.NotEnoughSpaceError(
-            'Error while creating lv: vg %s has only %s m of free space, '
-            'but at least %s m is needed' % (vgname, vg[0]['free'], size))
+        message = 'Error while creating lv: vg %s has only %s m of free space'\
+            ', but at least %s m is needed' % (vgname, vg[0]['free'], size)
+        LOG.error(message)
+        raise errors.NotEnoughSpaceError(message)
     # check if lv already exists
     if filter(lambda x: x['name'] == lvname, lvdisplay()):
         raise errors.LVAlreadyExistsError(

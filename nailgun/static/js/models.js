@@ -88,7 +88,7 @@ define(['utils', 'deepModel'], function(utils) {
             return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').currentNodes().length);
         },
         needsRedeployment: function() {
-            return this.get('nodes').where({pending_addition: false, status: 'error'}).length && (this.get('status') != 'update_error');
+            return !!this.get('nodes').where({pending_addition: false, status: 'error'}).length && this.get('status') != 'update_error';
         },
         availableModes: function() {
             return ['ha_compact', 'multinode'];
@@ -174,7 +174,7 @@ define(['utils', 'deepModel'], function(utils) {
             return this.filter(function(node) {return node.get('pending_addition') || !node.get('pending_deletion');});
         },
         nodesAfterDeploymentWithRole: function(role) {
-            return _.filter(this.nodesAfterDeployment(), function(node) {return _.contains(_.union(node.get('roles'), node.get('pending_roles')), role);}).length;
+            return _.filter(this.nodesAfterDeployment(), function(node) {return node.hasRole(role);}).length;
         },
         resources: function(resourceName) {
             var resources = this.map(function(node) {return node.resource(resourceName);});

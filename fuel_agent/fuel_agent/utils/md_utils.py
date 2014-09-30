@@ -17,7 +17,6 @@ from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import hardware_utils as hu
 from fuel_agent.utils import utils
 
-
 LOG = logging.getLogger(__name__)
 
 
@@ -57,11 +56,15 @@ def mddisplay(names=None):
     mdnames = names or get_mdnames()
     mds = []
     for mdname in mdnames:
-        output = utils.execute('mdadm', '--detail', mdname,
-                               check_exit_code=[0])[0]
         md = {'name': mdname}
-        md.update(mddetail_parse(output))
-        mds.append(md)
+        try:
+            output = utils.execute('mdadm', '--detail', mdname,
+                                   check_exit_code=[0])[0]
+            md.update(mddetail_parse(output))
+        except errors.ProcessExecutionError:
+            continue
+        finally:
+            mds.append(md)
     LOG.debug('Found md devices: {0}'.format(mds))
     return mds
 
@@ -98,20 +101,17 @@ def mdcreate(mdname, level, device, *args):
 
     # cleaning md metadata from devices
     map(mdclean, devices)
-    utils.execute('mdadm', '--create', '--force', mdname, '-e1.2',
+    utils.execute('mdadm', '--create', '--force', mdname, '-e0.90',
                   '--level=%s' % level,
                   '--raid-devices=%s' % len(devices), *devices,
                   check_exit_code=[0])
 
 
 def mdremove(mdname):
-    mds = mddisplay()
-
     # check if md exists
-    if not filter(lambda x: x['name'] == mdname, mds):
+    if mdname not in get_mdnames():
         raise errors.MDNotFoundError(
             'Error while removing md: md %s not found' % mdname)
-
     utils.execute('mdadm', '--stop', mdname, check_exit_code=[0])
     utils.execute('mdadm', '--remove', mdname, check_exit_code=[0, 1])
 
@@ -120,3 +120,11 @@ def mdclean(device):
     # we don't care if device actually exists or not
     utils.execute('mdadm', '--zero-superblock', '--force', device,
                   check_exit_code=[0])
+
+
+def mdclean_all():
+    LOG.debug('Trying to wipe out all md devices')
+    for md in mddisplay():
+        mdremove(md['name'])
+        for dev in md.get('devices', []):
+            mdclean(dev)

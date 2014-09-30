@@ -33,6 +33,7 @@ class TestPartitionUtils(test_base.BaseTestCase):
     def test_make_label(self, mock_exec):
         # should run parted OS command
         # in order to create label on a device
+        mock_exec.return_value = ('', '')
 
         # gpt by default
         pu.make_label('/dev/fake')
@@ -56,19 +57,20 @@ class TestPartitionUtils(test_base.BaseTestCase):
     def test_set_partition_flag(self, mock_exec):
         # should run parted OS command
         # in order to set flag on a partition
+        mock_exec.return_value = ('', '')
 
         # default state is 'on'
         pu.set_partition_flag('/dev/fake', 1, 'boot')
         mock_exec.assert_called_once_with(
             'parted', '-s', '/dev/fake', 'set', '1', 'boot', 'on',
-            check_exit_code=[0])
+            check_exit_code=[0, 1])
         mock_exec.reset_mock()
 
         # if state argument is given use it
         pu.set_partition_flag('/dev/fake', 1, 'boot', state='off')
         mock_exec.assert_called_once_with(
             'parted', '-s', '/dev/fake', 'set', '1', 'boot', 'off',
-            check_exit_code=[0])
+            check_exit_code=[0, 1])
 
     @mock.patch.object(utils, 'execute')
     def test_set_partition_flag_wrong_flag(self, mock_exec):
@@ -91,6 +93,8 @@ class TestPartitionUtils(test_base.BaseTestCase):
     def test_make_partition(self, mock_exec, mock_info):
         # should run parted OS command
         # in order to create new partition
+        mock_exec.return_value = ('', '')
+
         mock_info.return_value = {
             'parts': [
                 {'begin': 0, 'end': 1000, 'fstype': 'free'},
@@ -103,7 +107,7 @@ class TestPartitionUtils(test_base.BaseTestCase):
             '-s', '/dev/fake',
             'unit', 'MiB',
             'mkpart', 'primary', '100', '200',
-            check_exit_code=[0])
+            check_exit_code=[0, 1])
 
     @mock.patch.object(utils, 'execute')
     def test_make_partition_wrong_ptype(self, mock_exec):

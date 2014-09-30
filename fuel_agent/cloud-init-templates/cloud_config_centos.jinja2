@@ -2,6 +2,10 @@
 disable_ec2_metadata: true
 disable_root: false
 
+# password: RANDOM
+# chpasswd: { expire: True }
+
+ssh_pwauth: True
 ssh_authorized_keys:
   - {{ common.ssh_auth_key }}
 
@@ -24,7 +28,6 @@ resolv_conf:
 #    rotate: true
 #    timeout: 1
 
-
 # add entries to rsyslog configuration
 rsyslog:
   - filename: 10-log2master.conf
@@ -32,15 +35,16 @@ rsyslog:
       $template LogToMaster, "<%%PRI%>1 %$NOW%T%TIMESTAMP:8:$%Z %HOSTNAME% %APP-NAME% %PROCID% %MSGID% -%msg%\n"
       *.* @{{ common.master_ip }};LogToMaster
 
-
-#TODO(agordeev):
-#mounts: fill /etc/fstab
-
-
 runcmd:
- - sed -i /etc/rc.d/init.d/mcollective -e 's/\(# chkconfig:\s\+[-0-6]\+\) [0-9]\+ \([0-9]\+\)/\1 81 \2/'
- - /sbin/chkconfig mcollective on
-
+{% if puppet.enable != 1 %}
+ - service puppet stop
+ - chkconfig puppet off
+{% endif %}
+{% if mcollective.enable != 1 %}
+ - service mcollective stop
+ - chkconfig mcollective off
+{% endif %}
+ - iptables -t filter -F INPUT
 
 # that module's missing in 0.6.3, but existent for >= 0.7.3
 write_files:
@@ -53,28 +57,34 @@ write_files:
 
 
 yum_repos:
-    {% for repo in common.ks_repos %}
-        {{ repo.name }}:
-          baseurl: {{ repo.url }}
-          enabled: true
-          gpgcheck: false
-    {% endfor %}
+{% for reponame, repourl in common.ks_repos.items() %}
+  {{ reponame }}:
+    baseurl: {{ repourl }}
+    enabled: true
+    gpgcheck: false
+{% endfor %}
 
 
 mcollective:
   conf:
     main_collective: mcollective
     collectives: mcollective
-    libdir: /usr/share/mcollective/plugins
+    libdir: /usr/libexec/mcollective
     logfile: /var/log/mcollective.log
     loglevel: debug
     daemonize: 1
-    #NOTE: direct_addressing is 1 for ubuntu
     direct_addressing: 1
     ttl: 4294957
     securityprovider: psk
     plugin.psk: {{ mcollective.pskey }}
-    connector: {{ mcollective.connector }}
+{% if mcollective.connector == 'stomp' %}
+    connector = stomp
+    plugin.stomp.host: {{ mcollective.host }}
+    plugin.stomp.port: {{ mcollective.port|default(61613) }}
+    plugin.stomp.user: {{ mcollective.user }}
+    plugin.stomp.password: {{ mcollective.password }}
+{% else %}
+    connector: rabbitmq
     plugin.rabbitmq.vhost: {{ mcollective.vhost }}
     plugin.rabbitmq.pool.size: 1
     plugin.rabbitmq.pool.1.host: {{ mcollective.host }}
@@ -82,9 +92,9 @@ mcollective:
     plugin.rabbitmq.pool.1.user: {{ mcollective.user }}
     plugin.rabbitmq.pool.1.password: {{ mcollective.password }}
     plugin.rabbitmq.heartbeat_interval: 30
+{% endif %}
     factsource: yaml
     plugin.yaml: /etc/mcollective/facts.yaml
-
 
 puppet:
   conf:
@@ -102,4 +112,3 @@ puppet:
 
 
 final_message: "YAY! The system is finally up, after $UPTIME seconds"
-

@@ -203,6 +203,8 @@ class CustomHTTPServer(object):
 
 
 def http_start(http):
+    if not os.path.exists(os.path.join(http.env.envdir, http.http_root)):
+        os.makedirs(os.path.join(http.env.envdir, http.http_root))
     def start():
         server = CustomHTTPServer(
             http.env.net_by_name(http.network).ip, http.port,

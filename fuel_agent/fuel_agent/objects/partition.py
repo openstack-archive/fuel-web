@@ -120,8 +120,10 @@ class Partition(object):
 
 
 class Pv(object):
-    def __init__(self, name):
+    def __init__(self, name, metadatasize=16, metadatacopies=2):
         self.name = name
+        self.metadatasize = metadatasize
+        self.metadatacopies = metadatacopies
 
 
 class Vg(object):
@@ -194,8 +196,8 @@ class PartitionScheme(object):
         self.parteds.append(parted)
         return parted
 
-    def add_pv(self, name):
-        pv = Pv(name=name)
+    def add_pv(self, **kwargs):
+        pv = Pv(**kwargs)
         self.pvs.append(pv)
         return pv
 

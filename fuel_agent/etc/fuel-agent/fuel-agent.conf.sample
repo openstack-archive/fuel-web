@@ -7,17 +7,9 @@
 # Parititoning data driver (string value)
 #partition_data_driver=ks_spaces
 
-# Get data driver (string value)
-#get_data_driver=read_file
-
-
-#
-# Options defined in fuel_agent.drivers.read_file
-#
 
 # Provision data file (string value)
 #provision_data_file=/tmp/provision.json
-
 
 #
 # Options defined in fuel_agent.openstack.common.log
@@ -90,7 +82,7 @@ logging_debug_format_suffix=
 # (Optional) Name of log file to output to. If no default is
 # set, logging will go to stdout. (string value)
 # Deprecated group/name - [DEFAULT]/logfile
-log_file=/tmp/fuel-agent.log
+log_file=/var/log/fuel-agent.log
 
 # (Optional) The base directory used for relative --log-file
 # paths. (string value)
@@ -100,7 +92,7 @@ log_file=/tmp/fuel-agent.log
 # Use syslog for logging. Existing syslog format is DEPRECATED
 # during I, and will change in J to honor RFC5424. (boolean
 # value)
-use_syslog=true
+#use_syslog=true
 
 # (Optional) Enables or disables syslog rfc5424 format for
 # logging. If enabled, prefixes the MSG part of the syslog
@@ -110,6 +102,6 @@ use_syslog=true
 #use_syslog_rfc_format=false
 
 # Syslog facility to receive log lines. (string value)
-syslog_log_facility=local7
+#syslog_log_facility=user
 
 

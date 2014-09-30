@@ -338,9 +338,9 @@ class Nailgun(object):
             image_scheme.add_image(
                 uri=image_data['uri'],
                 target_device=fs.device,
-                # In the future we will get image_format and container format
+                # In the future we will get format and container
                 # from provision.json, but currently it is hard coded.
-                image_format=image_data['format'],
+                format=image_data['format'],
                 container=image_data['container'],
             )
         return image_scheme

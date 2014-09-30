@@ -90,6 +90,10 @@ class ConfigDriveScheme(object):
         return self._profile
 
     def template_names(self, what):
+        # such a complicated scheme is used to cover a range of profile names
+        # which might be either dash or underline separated
+        # ubuntu_1204_x86_64
+        # centos-65_x86_64
         return [
             '%s_%s.jinja2' % (what, self._profile),
             '%s_%s.jinja2' % (what, self._profile.split('_')[0]),

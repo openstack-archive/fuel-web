@@ -32,12 +32,11 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
         release_from_db = self.db.query(Release).one()
         self.db.refresh(release_from_db)
         self.assertEqual('5.1', release_from_db.version)
-        self.assertEqual('5.1', response['version'])
-        self.assertEqual('modified release', response['name'])
+        self.assertEqual('5.1', resp.json_body['version'])
+        self.assertEqual('modified release', resp.json_body['name'])
 
     def test_release_put_returns_400_if_no_body(self):
         release = self.env.create_release(api=False)
@@ -78,9 +77,7 @@ class TestHandlers(BaseIntegrationTest):
                 }),
                 headers=self.default_headers)
             self.assertEqual(200, resp.status_code)
-            response = jsonutils.loads(resp.body)
-
-            self.assertEqual(response['is_deployable'], deployable)
+            self.assertEqual(resp.json_body['is_deployable'], deployable)
 
     def test_release_deployable_in_experimental(self):
         # make sure that we have experimental mode
@@ -103,5 +100,4 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(response['is_deployable'], True)
+        self.assertEqual(resp.json_body['is_deployable'], True)

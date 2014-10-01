@@ -52,7 +52,7 @@ class TestVersionHandler(BaseIntegrationTest):
             )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(
-            jsonutils.loads(resp.body),
+            resp.json_body,
             {
                 "release": "0.1b",
                 "nailgun_sha": "12345",

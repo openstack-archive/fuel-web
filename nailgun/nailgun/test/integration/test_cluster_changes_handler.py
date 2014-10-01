@@ -848,8 +848,9 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = jsonutils.loads(
-            self.env.neutron_networks_get(self.env.clusters[0].id).body)
+        net_data = self.env.neutron_networks_get(
+            self.env.clusters[0].id
+        ).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.13'],
@@ -857,8 +858,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -888,8 +888,9 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = jsonutils.loads(
-            self.env.neutron_networks_get(self.env.clusters[0].id).body)
+        net_data = self.env.neutron_networks_get(
+            self.env.clusters[0].id
+        ).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.12'],
@@ -897,8 +898,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -925,8 +925,9 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = jsonutils.loads(
-            self.env.neutron_networks_get(self.env.clusters[0].id).body)
+        net_data = self.env.neutron_networks_get(
+            self.env.clusters[0].id
+        ).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.10.10', '172.16.10.122']],
@@ -937,8 +938,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -964,16 +964,16 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = jsonutils.loads(
-            self.env.neutron_networks_get(self.env.clusters[0].id).body)
+        net_data = self.env.neutron_networks_get(
+            self.env.clusters[0].id
+        ).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.11']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         task = self.env.launch_deployment()
 
@@ -1148,7 +1148,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster_id = self.env.clusters[0].id
 
         resp = self.env.nova_networks_get(cluster_id)
-        nets = jsonutils.loads(resp.body)
+        nets = resp.json_body
         for net in nets["networks"]:
             if net["name"] in ["management", ]:
                 net["vlan_start"] = None

@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -23,7 +22,7 @@ class TestHandlers(BaseIntegrationTest):
     def _get_allocation_stats(self):
         resp = self.app.get(
             reverse('NodesAllocationStatsHandler'))
-        return jsonutils.loads(resp.body)
+        return resp.json_body
 
     def test_allocation_stats_unallocated(self):
         self.env.create_node(api=False)

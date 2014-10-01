@@ -27,8 +27,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual([], response)
+        self.assertEqual([], resp.json_body)
 
     def test_release_creation(self):
         resp = self.app.post(
@@ -256,6 +255,5 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(1, len(response))
-        self.assertEqual(orch_data, response[0]["orchestrator_data"])
+        self.assertEqual(1, len(resp.json_body))
+        self.assertEqual(orch_data, resp.json_body[0]["orchestrator_data"])

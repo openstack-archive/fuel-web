@@ -22,6 +22,7 @@ from nailgun.api.v1.validators.json_schema.assignment \
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
+from nailgun.expression import Expression
 from nailgun import objects
 
 
@@ -117,24 +118,10 @@ class NodeAssignmentValidator(AssignmentValidator):
             if "depends" in roles_metadata[role]:
                 depends = roles_metadata[role]['depends']
                 for condition in depends:
-                    search_key = condition['condition'].keys()[0]
-                    if not search_key.startswith('settings:'):
-                        errors.InvalidData('Incorrect settings path')
-                    setting_path = search_key[search_key.find(':') + 1:]
-                    setting = cls._search_in_settings(settings,
-                                                      setting_path)
-                    if setting != condition['condition'].values()[0]:
-                        raise errors.InvalidData(condition['warning'])
+                    expression = condition['condition']
 
-    @classmethod
-    def _search_in_settings(cls, settings, pattern):
-        setting = pattern.split('.')
-        if len(setting):
-            if len(setting) == 1:
-                return settings[setting[0]]
-            if setting[0] in settings:
-                return cls._search_in_settings(settings[setting[0]],
-                                               '.'.join(setting[1:]))
+                    if not Expression(expression, settings).evaluate():
+                        raise errors.InvalidData(condition['warning'])
 
 
 class NodeUnassignmentValidator(AssignmentValidator):

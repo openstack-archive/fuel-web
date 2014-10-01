@@ -857,8 +857,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -897,8 +896,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -937,8 +935,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         self.env.launch_deployment()
 
@@ -972,8 +969,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
 
         task = self.env.launch_deployment()
 
@@ -1148,7 +1144,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster_id = self.env.clusters[0].id
 
         resp = self.env.nova_networks_get(cluster_id)
-        nets = jsonutils.loads(resp.body)
+        nets = resp.json_body
         for net in nets["networks"]:
             if net["name"] in ["management", ]:
                 net["vlan_start"] = None

@@ -23,6 +23,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.utils import expression_parser
 
 
 class AssignmentValidator(BasicValidator):
@@ -93,9 +94,13 @@ class NodeAssignmentValidator(AssignmentValidator):
         roles_metadata = release.roles_metadata
         if roles_metadata:
             cls.check_roles_for_conflicts(roles, roles_metadata)
-            cls.check_roles_requirement(roles,
-                                        roles_metadata,
-                                        cluster.attributes.editable)
+            cls.check_roles_requirement(
+                roles,
+                roles_metadata,
+                {
+                    'settings': cluster.attributes.editable,
+                    'cluster': cluster,
+                })
 
     @classmethod
     def check_roles_for_conflicts(cls, roles, roles_metadata):
@@ -112,29 +117,15 @@ class NodeAssignmentValidator(AssignmentValidator):
                     )
 
     @classmethod
-    def check_roles_requirement(cls, roles, roles_metadata, settings):
+    def check_roles_requirement(cls, roles, roles_metadata, models):
         for role in roles:
             if "depends" in roles_metadata[role]:
                 depends = roles_metadata[role]['depends']
                 for condition in depends:
-                    search_key = condition['condition'].keys()[0]
-                    if not search_key.startswith('settings:'):
-                        errors.InvalidData('Incorrect settings path')
-                    setting_path = search_key[search_key.find(':') + 1:]
-                    setting = cls._search_in_settings(settings,
-                                                      setting_path)
-                    if setting != condition['condition'].values()[0]:
-                        raise errors.InvalidData(condition['warning'])
+                    expression = condition['condition']
 
-    @classmethod
-    def _search_in_settings(cls, settings, pattern):
-        setting = pattern.split('.')
-        if len(setting):
-            if len(setting) == 1:
-                return settings[setting[0]]
-            if setting[0] in settings:
-                return cls._search_in_settings(settings[setting[0]],
-                                               '.'.join(setting[1:]))
+                    if not expression_parser.evaluate(expression, models):
+                        raise errors.InvalidData(condition['warning'])
 
 
 class NodeUnassignmentValidator(AssignmentValidator):

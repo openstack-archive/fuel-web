@@ -24,7 +24,6 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
-from nailgun.openstack.common import jsonutils
 from nailgun.rpc import receiver as rcvr
 from nailgun.settings import settings
 from nailgun.task import helpers
@@ -157,7 +156,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 200)
-        task = jsonutils.loads(resp.body)
+        task = resp.json_body
         self.assertEqual(task['status'], "error")
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',
                         'name': node1.name, 'absent_vlans': [104],

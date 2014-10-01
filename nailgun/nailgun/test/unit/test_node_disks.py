@@ -51,7 +51,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(200, resp.status_code)
-        return jsonutils.loads(resp.body)
+        return resp.json_body
 
     def put(self, node_id, data, expect_errors=False):
         resp = self.app.put(
@@ -62,7 +62,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         if not expect_errors:
             self.assertEqual(200, resp.status_code)
-            return jsonutils.loads(resp.body)
+            return resp.json_body
         else:
             return resp
 
@@ -328,7 +328,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(200, resp.status_code)
-        return jsonutils.loads(resp.body)
+        return resp.json_body
 
     def test_node_disk_amount_regenerates_volumes_info_if_new_disk_added(self):
         cluster = self.env.create_cluster(api=True)
@@ -384,7 +384,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(200, resp.status_code)
-        return jsonutils.loads(resp.body)
+        return resp.json_body
 
     def create_node(self, role):
         self.env.create(

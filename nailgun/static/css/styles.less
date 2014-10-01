@@ -354,6 +354,11 @@ button {
   font-family: @font-family-base;
 }
 
+.cleared {
+  clear: both;
+  padding-top: 20px;
+}
+
 .btn {
   padding: 4px 12px 4px;
 }
@@ -388,7 +393,6 @@ label {cursor: default;}
 .page-sub-title {
   margin-top: 10px;
   margin-bottom: 19px;
-  .select-all {margin-top: 12px;}
   .action-btn {margin-top: 7px;}
 }
 
@@ -896,13 +900,15 @@ label {cursor: default;}
   text-align: right;
 }
 
-.select-all label {
-  padding: 0;
-  margin-top: 0;
-  margin-right: 20px;
-  display: inline-block;
+.select-all {
+  .label-wrapper {
+    margin: 5px;
+  }
   &.disabled {
     cursor: default;
+  }
+  .custom-tumbler {
+    float: left
   }
 }
 
@@ -1934,9 +1940,6 @@ label {cursor: default;}
     text-transform: capitalize;
     margin: 10px 0 0;
   }
-  label {
-    margin-top: 10px;
-  }
 }
 
 .deployment-result { margin-top: 5px; }
@@ -2323,6 +2326,9 @@ input.error:focus {
   &.hide {
     display: none;
   }
+  span:first-of-type {
+    font-size: 14px;
+  }
 }
 
 .modal .parameter-name {
@@ -2442,16 +2448,28 @@ legend {
   legend { margin: 0 0 10px; }
   .parameter-box {
     margin-left: 0 !important;
+      .input-label {
+        width: 115px;
+        float: left;
+        margin: 7px 14px 0 0;
+      }
     .parameter-control {
       margin-bottom: 5px;
       input { margin: 0; }
     }
+    .parameter-description {
+      margin-top: 10px;
+    }
   }
   .note { margin-bottom: 10px; }
-  .settings-group {
+  .settings-group,
+  .healthcheck-group {
     background-color: @fuel-light-5;
     padding: 20px 40px 20px 40px;
     border: 1px dotted @fuel-base-color;
+  }
+  .input-append {
+    margin-top: 0px;
   }
 }
 
@@ -3164,7 +3182,29 @@ input.input-append {
 .healthcheck-status-stopped, .healthcheck-status-unknown, .healthcheck-status-wait_running {color: @fuel-base-color;}
 .healthcheck-status-success {color: #2e8701;}
 .healthcheck-status-failure, .healthcheck-status-error {color: #890000;}
+.healthcheck {
+  &.credentials {
+    input[name=password] {
+      width: 175px;
+    }
+  }
+  .parameter-description.healthcheck-password {
+    margin-top: 4px;
+  }
+}
 
+.healthcheck-title {
+  width: 502px;
+}
+
+.ostf-controls.select-all {
+  .custom-tumbler input[type=checkbox] + span {
+    cursor: pointer;
+  }
+  .custom-tumbler input[type=checkbox][disabled] + span {
+    cursor: not-allowed;
+  }
+}
 // Cluster toolbar
 // -------------------------
 

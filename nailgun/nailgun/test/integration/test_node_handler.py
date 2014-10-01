@@ -33,21 +33,20 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             headers=self.default_headers)
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(node.id, response['id'])
-        self.assertEqual(node.name, response['name'])
-        self.assertEqual(node.mac, response['mac'])
+        self.assertEqual(node.id, resp.json_body['id'])
+        self.assertEqual(node.name, resp.json_body['name'])
+        self.assertEqual(node.mac, resp.json_body['mac'])
         self.assertEqual(
-            node.pending_addition, response['pending_addition'])
+            node.pending_addition, resp.json_body['pending_addition'])
         self.assertEqual(
-            node.pending_deletion, response['pending_deletion'])
-        self.assertEqual(node.status, response['status'])
+            node.pending_deletion, resp.json_body['pending_deletion'])
+        self.assertEqual(node.status, resp.json_body['status'])
         self.assertEqual(
             node.meta['cpu']['total'],
-            response['meta']['cpu']['total']
+            resp.json_body['meta']['cpu']['total']
         )
-        self.assertEqual(node.meta['disks'], response['meta']['disks'])
-        self.assertEqual(node.meta['memory'], response['meta']['memory'])
+        self.assertEqual(node.meta['disks'], resp.json_body['meta']['disks'])
+        self.assertEqual(node.meta['memory'], resp.json_body['meta']['memory'])
 
     def test_node_creation_with_id(self):
         node_id = '080000000003'

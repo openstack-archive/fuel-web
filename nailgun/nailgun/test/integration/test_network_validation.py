@@ -21,7 +21,6 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 
 
@@ -54,7 +53,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         resp = self.env.cluster_changes_put(cluster_id,
                                             expect_errors=True)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
+        task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], 'deploy')
@@ -65,7 +64,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         resp = self.env.nova_networks_put(cluster_id, nets,
                                           expect_errors=True)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
+        task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], 'check_networks')
@@ -75,7 +74,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_nova_networks_success(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
+        task = resp.json_body
         self.assertEqual(task['status'], 'ready')
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], 'check_networks')
@@ -85,7 +84,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(cluster_id, nets,
                                              expect_errors=True)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
+        task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], 'check_networks')
@@ -95,7 +94,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_neutron_networks_success(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets)
         self.assertEqual(resp.status_code, 202)
-        task = jsonutils.loads(resp.body)
+        task = resp.json_body
         self.assertEqual(task['status'], 'ready')
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], 'check_networks')
@@ -120,7 +119,7 @@ class TestNovaHandlers(TestNetworkChecking):
         )
         self.cluster = self.env.clusters[0]
         resp = self.env.nova_networks_get(self.cluster.id)
-        self.nets = jsonutils.loads(resp.body)
+        self.nets = resp.json_body
 
     def test_network_checking(self):
         self.update_nova_networks_success(self.cluster.id, self.nets)
@@ -413,7 +412,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         )
         self.cluster = self.env.clusters[0]
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.nets = jsonutils.loads(resp.body)
+        self.nets = resp.json_body
 
     def test_network_checking(self):
         self.update_neutron_networks_success(self.cluster.id, self.nets)
@@ -557,7 +556,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         self.update_neutron_networks_success(self.cluster.id, self.nets)
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.nets = jsonutils.loads(resp.body)
+        self.nets = resp.json_body
         self.assertEqual(self.find_net_by_name('public')['cidr'],
                          '172.16.0.0/25')
 
@@ -715,7 +714,7 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
         )
         self.cluster = self.env.clusters[0]
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.nets = jsonutils.loads(resp.body)
+        self.nets = resp.json_body
 
     def test_network_checking(self):
         self.update_neutron_networks_success(self.cluster.id, self.nets)

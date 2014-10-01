@@ -45,7 +45,7 @@ class TestFuelKeyHandler(BaseTestCase):
 
         self.assertEqual(200, resp.status_code)
 
-        response = jsonutils.loads(resp.body)
+        response = resp.json_body
         self.assertEqual(
             response,
             {"key": base64.b64encode(jsonutils.dumps(key_data))}

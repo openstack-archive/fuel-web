@@ -157,7 +157,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 200)
-        task = jsonutils.loads(resp.body)
+        task = resp.json_body
         self.assertEqual(task['status'], "error")
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',
                         'name': node1.name, 'absent_vlans': [104],

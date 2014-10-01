@@ -115,6 +115,8 @@ define(['utils', 'deepModel'], function(utils) {
             var resource = 0;
             try {
                 if (resourceName == 'cores') {
+                    resource = this.get('meta').cpu.real;
+                } else if (resourceName == 'ht_cores') {
                     resource = this.get('meta').cpu.total;
                 } else if (resourceName == 'hdd') {
                     resource = _.reduce(this.get('meta').disks, function(hdd, disk) {return _.isNumber(disk.size) ?  hdd + disk.size : hdd;}, 0);

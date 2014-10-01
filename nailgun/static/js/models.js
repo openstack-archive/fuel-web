@@ -341,7 +341,7 @@ define(['utils', 'deepModel'], function(utils) {
             _.each(attrs, function(group, groupName) {
                 if (group.metadata && (group.metadata.disabled || !group.metadata.visible)) { return; }
                 _.each(group, function(setting, settingName) {
-                    if (!(setting.regex && setting.regex.source) || setting.disabled) { return; }
+                    if (!(setting.regex && setting.regex.source) || setting.disabled || !setting.visible) { return; }
                     var regExp = new RegExp(setting.regex.source);
                     if (!setting.value.match(regExp)) {
                         errors.push({

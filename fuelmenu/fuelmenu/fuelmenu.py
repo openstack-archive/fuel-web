@@ -363,6 +363,8 @@ def save_only(iface):
             "cobbler/user": "cobbler",
             "cobbler/password": pwgen.password(),
             "keystone/admin_token": pwgen.password(),
+            "keystone/ostf_password": pwgen.password(),
+            "keystone/nailgun_password": pwgen.password(),
             "mcollective/user": "mcollective",
             "mcollective/password": pwgen.password(),
             "postgres/keystone_dbname": "keystone",

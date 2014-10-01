@@ -44,10 +44,9 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(cluster.id, response['id'])
-        self.assertEqual(cluster.name, response['name'])
-        self.assertEqual(cluster.release.id, response['release_id'])
+        self.assertEqual(cluster.id, resp.json_body['id'])
+        self.assertEqual(cluster.name, resp.json_body['name'])
+        self.assertEqual(cluster.release.id, resp.json_body['release_id'])
 
     def test_cluster_creation(self):
         release = self.env.create_release(api=False)
@@ -61,9 +60,8 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(201, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(yet_another_cluster_name, response['name'])
-        self.assertEqual(release.id, response['release_id'])
+        self.assertEqual(yet_another_cluster_name, resp.json_body['name'])
+        self.assertEqual(release.id, resp.json_body['release_id'])
 
     def test_cluster_update(self):
         updated_name = u'Updated cluster'

@@ -56,7 +56,7 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(get_resp.status_code, 200)
-        self.datadiff(orchestrator_data, jsonutils.loads(get_resp.body))
+        self.datadiff(orchestrator_data, get_resp.json_body)
 
         # deleting provisioning info
         delete_resp = self.app.delete(
@@ -119,7 +119,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(3, len(jsonutils.loads(resp.body)))
+        self.assertEqual(3, len(resp.json_body))
 
     def test_default_provisioning_handler(self):
         resp = self.app.get(
@@ -128,7 +128,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(3, len(jsonutils.loads(resp.body)['nodes']))
+        self.assertEqual(3, len(resp.json_body['nodes']))
 
     def test_default_provisioning_handler_for_selected_nodes(self):
         node_ids = [node.uid for node in self.cluster.nodes][:2]
@@ -139,7 +139,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         resp = self.app.get(url, headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        data = jsonutils.loads(resp.body)['nodes']
+        data = resp.json_body['nodes']
         self.assertEqual(2, len(data))
         actual_uids = [node['uid'] for node in data]
         self.assertItemsEqual(actual_uids, node_ids)
@@ -153,9 +153,8 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         resp = self.app.get(url, headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        data = jsonutils.loads(resp.body)
-        self.assertEqual(2, len(data))
-        actual_uids = [node['uid'] for node in data]
+        self.assertEqual(2, len(resp.json_body))
+        actual_uids = [node['uid'] for node in resp.json_body]
         self.assertItemsEqual(actual_uids, node_ids)
 
     def test_cluster_provisioning_customization(self):

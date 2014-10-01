@@ -76,8 +76,8 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(response, settings.LOGS)
+
+        self.assertEqual(resp.json_body, settings.LOGS)
 
     def test_log_source_by_node_collection_handler(self):
         node_ip = '40.30.20.10'
@@ -89,7 +89,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
+        response = resp.json_body
         self.assertEqual(response, [])
 
         log_entry = ['date111', 'level222', 'text333']
@@ -100,8 +100,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(response, [settings.LOGS[1]])
+        self.assertEqual(resp.json_body, [settings.LOGS[1]])
 
     def test_log_entry_collection_handler(self):
         node_ip = '10.20.30.40'
@@ -128,7 +127,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
+        response = resp.json_body
         response['entries'].reverse()
         self.assertEqual(response['entries'], log_entries)
 
@@ -138,7 +137,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
+        response = resp.json_body
         response['entries'].reverse()
         self.assertEqual(response['entries'], log_entries)
 
@@ -170,7 +169,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
+        response = resp.json_body
         response['entries'].reverse()
         self.assertEqual(response['entries'], log_entries)
         settings.LOGS[0]['multiline'] = False

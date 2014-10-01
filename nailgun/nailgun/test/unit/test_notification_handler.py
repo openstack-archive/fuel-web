@@ -31,13 +31,12 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertIsNone(response.get('cluster'))
+        self.assertIsNone(resp.json_body.get('cluster'))
         self.assertEqual(notification.status, 'unread')
-        self.assertEqual(notification.id, response['id'])
-        self.assertEqual(notification.status, response['status'])
-        self.assertEqual(notification.topic, response['topic'])
-        self.assertEqual(notification.message, response['message'])
+        self.assertEqual(notification.id, resp.json_body['id'])
+        self.assertEqual(notification.status, resp.json_body['status'])
+        self.assertEqual(notification.topic, resp.json_body['topic'])
+        self.assertEqual(notification.message, resp.json_body['message'])
 
     def test_notification_datetime(self):
         self.env.create_node(
@@ -48,7 +47,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        notif_api = jsonutils.loads(resp.body)[0]
+        notif_api = resp.json_body[0]
         self.assertIn('date', notif_api)
         self.assertNotEqual(notif_api['date'], '')
         self.assertIn('time', notif_api)
@@ -65,13 +64,12 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(response.get('cluster'), cluster.id)
+        self.assertEqual(resp.json_body.get('cluster'), cluster.id)
         self.assertEqual(notification.status, 'unread')
-        self.assertEqual(notification.id, response['id'])
-        self.assertEqual(notification.status, response['status'])
-        self.assertEqual(notification.topic, response['topic'])
-        self.assertEqual(notification.message, response['message'])
+        self.assertEqual(notification.id, resp.json_body['id'])
+        self.assertEqual(notification.status, resp.json_body['status'])
+        self.assertEqual(notification.topic, resp.json_body['topic'])
+        self.assertEqual(notification.message, resp.json_body['message'])
 
     def test_notification_update(self):
         notification = self.env.create_notification()
@@ -86,11 +84,10 @@ class TestHandlers(BaseIntegrationTest):
             jsonutils.dumps(notification_update),
             headers=self.default_headers
         )
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(notification.id, response['id'])
-        self.assertEqual('read', response['status'])
-        self.assertEqual(notification.topic, response['topic'])
-        self.assertEqual(notification.message, response['message'])
+        self.assertEqual(notification.id, resp.json_body['id'])
+        self.assertEqual('read', resp.json_body['status'])
+        self.assertEqual(notification.topic, resp.json_body['topic'])
+        self.assertEqual(notification.message, resp.json_body['message'])
 
     def test_notification_not_found(self):
         notification = self.env.create_notification()

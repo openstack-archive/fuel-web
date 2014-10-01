@@ -32,7 +32,7 @@ class TestRoles(BaseIntegrationTest):
         )
         test_role_name = "testrole"
 
-        release_json = jsonutils.loads(resp.body)[0]
+        release_json = resp.json_body[0]
         old_roles = set(release_json["roles"])
         release_json["roles"].append(test_role_name)
 
@@ -42,7 +42,7 @@ class TestRoles(BaseIntegrationTest):
             jsonutils.dumps(release_json),
             headers=self.default_headers
         )
-        new_roles = jsonutils.loads(resp.body)["roles"]
+        new_roles = resp.json_body["roles"]
         self.assertIn(test_role_name, new_roles)
         self.assertLessEqual(old_roles, set(new_roles))
 
@@ -54,7 +54,7 @@ class TestRoles(BaseIntegrationTest):
         )
         test_role_name = "testrole"
 
-        release_json = jsonutils.loads(resp.body)[0]
+        release_json = resp.json_body[0]
         old_roles = release_json["roles"]
         release_json["roles"].append(test_role_name)
         release_json["roles"].remove(old_roles[0])
@@ -66,7 +66,7 @@ class TestRoles(BaseIntegrationTest):
             jsonutils.dumps(release_json),
             headers=self.default_headers
         )
-        new_roles = jsonutils.loads(resp.body)["roles"]
+        new_roles = resp.json_body["roles"]
         self.assertEqual(expected_roles, new_roles)
 
     def test_roles_add_duplicated_through_handler(self):
@@ -77,7 +77,7 @@ class TestRoles(BaseIntegrationTest):
         )
         test_role_name = "testrole"
 
-        release_json = jsonutils.loads(resp.body)[0]
+        release_json = resp.json_body[0]
         old_roles = release_json["roles"]
         release_json["roles"].append(test_role_name)
         expected_roles = list(release_json["roles"])
@@ -90,7 +90,7 @@ class TestRoles(BaseIntegrationTest):
             jsonutils.dumps(release_json),
             headers=self.default_headers
         )
-        new_roles = jsonutils.loads(resp.body)["roles"]
+        new_roles = resp.json_body["roles"]
         self.assertEqual(expected_roles, new_roles)
 
     def test_roles_add_duplicated_to_db_directly(self):
@@ -99,7 +99,7 @@ class TestRoles(BaseIntegrationTest):
             reverse('ReleaseCollectionHandler'),
             headers=self.default_headers
         )
-        release_json = jsonutils.loads(resp.body)[0]
+        release_json = resp.json_body[0]
         old_roles = list(release_json["roles"])
 
         role = Role(name=old_roles[0],
@@ -117,7 +117,7 @@ class TestRoles(BaseIntegrationTest):
             reverse('ReleaseCollectionHandler'),
             headers=self.default_headers
         )
-        release_json = jsonutils.loads(resp.body)[0]
+        release_json = resp.json_body[0]
         new_roles = list(release_json["roles"])
         self.assertEqual(old_roles, new_roles)
 
@@ -128,7 +128,7 @@ class TestRoles(BaseIntegrationTest):
             headers=self.default_headers
         )
 
-        release_json = jsonutils.loads(resp.body)[0]
+        release_json = resp.json_body[0]
         old_roles = release_json["roles"]
         removed_role = release_json["roles"][0]
         release_json["roles"] = release_json["roles"][1:]
@@ -139,7 +139,7 @@ class TestRoles(BaseIntegrationTest):
             jsonutils.dumps(release_json),
             headers=self.default_headers
         )
-        new_roles = jsonutils.loads(resp.body)["roles"]
+        new_roles = resp.json_body["roles"]
         self.assertLess(len(new_roles), len(old_roles))
         self.assertNotIn(removed_role, new_roles)
 
@@ -154,7 +154,7 @@ class TestRoles(BaseIntegrationTest):
             headers=self.default_headers
         )
 
-        release_json = jsonutils.loads(resp.body)[0]
+        release_json = resp.json_body[0]
 
         old_roles = set(release_json["roles"])
         old_roles.remove("controller")

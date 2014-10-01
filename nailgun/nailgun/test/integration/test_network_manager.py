@@ -32,7 +32,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.nova_network import NovaNetworkManager
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -152,8 +151,7 @@ class TestNetworkManager(BaseIntegrationTest):
         networks_data = \
             {'networking_parameters': {'net_manager': 'VlanManager'}}
         resp = self.env.nova_networks_put(cluster['id'], networks_data)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')
         network_data = self.env.network_manager.get_node_networks(
             self.env.nodes[0]
         )

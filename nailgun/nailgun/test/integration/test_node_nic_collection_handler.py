@@ -33,28 +33,27 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
 
-        resp = self.app.get(
+        resp1 = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
-        response = jsonutils.loads(resp.body)
+        self.assertEqual(resp1.status_code, 200)
+
         a_nets = filter(lambda nic: nic['mac'] == mac,
-                        response)[0]['assigned_networks']
-        for resp_nic in response:
+                        resp1.json_body)[0]['assigned_networks']
+        for resp_nic in resp1.json_body:
             if resp_nic['mac'] == mac:
                 resp_nic['assigned_networks'] = []
             else:
                 resp_nic['assigned_networks'].extend(a_nets)
                 resp_nic['assigned_networks'].sort()
-        nodes_list = [{'id': node['id'], 'interfaces': response}]
+        nodes_list = [{'id': node['id'], 'interfaces': resp1.json_body}]
 
-        resp = self.app.put(
+        resp2 = self.app.put(
             reverse('NodeCollectionNICsHandler'),
             jsonutils.dumps(nodes_list),
             headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
-        new_response = jsonutils.loads(resp.body)
-        self.assertEqual(new_response, nodes_list)
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(resp2.json_body, nodes_list)
 
     @fake_tasks()
     def test_interface_changes_added(self):
@@ -84,9 +83,9 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         node_id = self.env.nodes[0].id
         # Getting nics
         resp = self.env.node_nics_get(node_id)
-        interfaces = jsonutils.loads(resp.body)
+
         # Updating nics
-        self.env.node_nics_put(node_id, interfaces)
+        self.env.node_nics_put(node_id, resp.json_body)
         # Checking 'interfaces' change in cluster changes
         changes = filter_changes(
             consts.CLUSTER_CHANGES.interfaces,
@@ -124,10 +123,9 @@ class TestNodeCollectionNICsDefaultHandler(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         # check response
-        resp = jsonutils.loads(resp.body)
-        self.assertEqual(len(resp), 2)
+        self.assertEqual(len(resp.json_body), 2)
 
-        macs = [iface['mac'] for node in resp for iface in node]
+        macs = [iface['mac'] for node in resp.json_body for iface in node]
         self.assertTrue('01:01:01:01:01:01' in macs)
         self.assertTrue('02:02:02:02:02:02' in macs)
         self.assertFalse('03:03:03:03:03:03' in macs)
@@ -140,10 +138,9 @@ class TestNodeCollectionNICsDefaultHandler(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         # check response
-        resp = jsonutils.loads(resp.body)
-        self.assertEqual(len(resp), 3)
+        self.assertEqual(len(resp.json_body), 3)
 
-        macs = [iface['mac'] for node in resp for iface in node]
+        macs = [iface['mac'] for node in resp.json_body for iface in node]
         self.assertTrue('01:01:01:01:01:01' in macs)
         self.assertTrue('02:02:02:02:02:02' in macs)
         self.assertTrue('03:03:03:03:03:03' in macs)

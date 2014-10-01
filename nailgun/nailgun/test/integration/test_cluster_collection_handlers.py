@@ -42,8 +42,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual([], response)
+        self.assertEqual([], resp.json_body)
 
     def test_cluster_create(self):
         release_id = self.env.create_release(api=False).id
@@ -199,5 +198,4 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
         self.assertEqual(202, resp.status_code)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')

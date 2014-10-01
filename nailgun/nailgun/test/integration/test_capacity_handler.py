@@ -20,7 +20,6 @@ from mock import patch
 from StringIO import StringIO
 
 from nailgun.db.sqlalchemy.models import Task
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -43,7 +42,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('CapacityLogHandler'),
             headers=self.default_headers
         )
-        return jsonutils.loads(resp.body)
+        return resp.json_body
 
     @fake_tasks()
     def test_capacity_log_handler(self):

@@ -21,7 +21,6 @@ import unittest2
 from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -65,7 +64,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        nets = jsonutils.loads(resp.body)
+        nets = resp.json_body
 
         nets['networks'][-1]["vlan_start"] = 500
         task = self.env.launch_verify_networks(nets)
@@ -82,7 +81,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        nets = jsonutils.loads(resp.body)
+        nets = resp.json_body
 
         admin_ng = self.env.network_manager.get_admin_network_group()
 
@@ -108,7 +107,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        nets = jsonutils.loads(resp.body)
+        nets = resp.json_body
 
         for net in nets['networks']:
             if net['name'] in ('storage',):
@@ -138,7 +137,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        nets = jsonutils.loads(resp.body)
+        nets = resp.json_body
 
         task = self.env.launch_verify_networks(nets)
         self.db.refresh(task)
@@ -165,7 +164,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
                 ),
                 headers=self.default_headers
             )
-            nets = jsonutils.loads(resp.body)
+            nets = resp.json_body
 
             task = self.env.launch_verify_networks(nets)
             self.db.refresh(task)
@@ -317,9 +316,9 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
                     kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
-        data = jsonutils.loads(resp.body)
+
         admin_nic, other_nic, empty_nic = None, None, None
-        for nic in data:
+        for nic in resp.json_body:
             net_names = [n['name'] for n in nic['assigned_networks']]
             if 'fuelweb_admin' in net_names:
                 admin_nic = nic
@@ -328,14 +327,14 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             else:
                 empty_nic = nic
         self.assertTrue(admin_nic and other_nic and empty_nic)
-        return data, admin_nic, other_nic, empty_nic
+        return resp.json_body, admin_nic, other_nic, empty_nic
 
     def verify_bonds(self, node):
         resp = self.env.node_nics_get(node["id"])
         self.assertEqual(resp.status_code, 200)
-        data = jsonutils.loads(resp.body)
+
         bond = filter(lambda nic: nic["type"] == NETWORK_INTERFACE_TYPES.bond,
-                      data)
+                      resp.json_body)
         self.assertEqual(len(bond), 1)
         self.assertEqual(bond[0]["name"], "ovs-bond0")
 
@@ -374,9 +373,8 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(202, resp.status_code)
-        data = jsonutils.loads(resp.body)
         self.assertEqual(
-            data['result'],
+            resp.json_body['result'],
             {u'warning': [u"Node '{0}': interface 'ovs-bond0' slave NICs have "
                           u"different or unrecognized speeds".format(
                               self.env.nodes[0].name)]})
@@ -440,7 +438,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                             headers=self.default_headers)
         self.assertEqual(200, resp.status_code)
         priv_nics = {}
-        for node in jsonutils.loads(resp.body):
+        for node in resp.json_body:
             for net in node['network_data']:
                 if net['name'] == 'private':
                     priv_nics[node['id']] = net['dev']

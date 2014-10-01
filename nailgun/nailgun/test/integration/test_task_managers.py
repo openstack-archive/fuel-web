@@ -33,7 +33,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
-from nailgun.openstack.common import jsonutils
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -293,7 +292,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster_id}),
             headers=self.default_headers
         )
-        deploy_uuid = jsonutils.loads(resp.body)['uuid']
+        deploy_uuid = resp.json_body['uuid']
         self.app.delete(
             reverse(
                 'ClusterHandler',

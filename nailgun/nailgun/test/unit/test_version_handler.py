@@ -20,7 +20,6 @@ from mock import patch
 
 from contextlib import nested
 
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -52,7 +51,7 @@ class TestVersionHandler(BaseIntegrationTest):
             )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(
-            jsonutils.loads(resp.body),
+            resp.json_body,
             {
                 "release": "0.1b",
                 "nailgun_sha": "12345",

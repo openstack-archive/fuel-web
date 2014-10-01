@@ -83,7 +83,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     input = <input ref='input' key='input' className={className} type={type} onChange={this.onChange} />;
                     break;
                 default:
-                    input = <input ref='input' key='input' className={className} onChange={this.onChange} />;
+                    input = <input ref='input' key='input' className={className} onChange={this.onChange} value={this.props.value} />;
             }
             return this.isCheckboxOrRadio() ? (
                 <div key='input-wrapper' className='custom-tumbler'>

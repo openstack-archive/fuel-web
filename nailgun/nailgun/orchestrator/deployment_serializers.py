@@ -29,13 +29,14 @@ import six
 
 from nailgun import objects
 
+from nailgun.plugins.hooks import rpc as rpc_hooks
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects import Cluster
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
@@ -140,9 +141,16 @@ class NetworkDeploymentSerializer(object):
         admin_ip = network_manager.get_admin_ip_for_node(node)
         admin_ip = IPNetwork(admin_ip)
 
+<<<<<<< HEAD
         # Assign prefix from admin network
         admin_net = IPNetwork(network_manager.get_admin_network_group().cidr)
         admin_ip.prefixlen = admin_net.prefixlen
+=======
+        # plugins hooks
+        attrs = rpc_hooks.process_cluster_attrs(cluster, attrs)
+
+        return attrs
+>>>>>>> 6609905... Basic plugins implementation (Ceph in core)
 
         return str(admin_ip)
 
@@ -167,9 +175,19 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         interfaces = cls.configure_interfaces(node)
         cls.__add_hw_interfaces(interfaces, node.meta['interfaces'])
 
+<<<<<<< HEAD
         # Interfaces assignment
         attrs = {'network_data': interfaces}
         attrs.update(cls.interfaces_list(network_data))
+=======
+        for node in nodes:
+            for role in sorted(objects.Node.get_all_roles(node)):
+                node_list.append({
+                    'uid': node.uid,
+                    'fqdn': node.fqdn,
+                    'name': objects.Node.make_slave_name(node),
+                    'role': role})
+>>>>>>> 6609905... Basic plugins implementation (Ceph in core)
 
         if cluster.network_config.net_manager == 'VlanManager':
             attrs.update(cls.add_vlan_interfaces(node))
@@ -205,20 +223,44 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """Assign fixed_interfaces and vlan_interface.
         They should be equal.
         """
+<<<<<<< HEAD
         net_manager = objects.Node.get_network_manager(node)
         fixed_interface = net_manager._get_interface_by_network_name(
             node.id, 'fixed')
+=======
+        serialized_nodes = []
+        for node in nodes:
+            for role in sorted(objects.Node.get_all_roles(node)):
+                serialized_nodes.append(self.serialize_node(node, role))
+        self.set_primary_mongo(serialized_nodes)
+        return serialized_nodes
+>>>>>>> 6609905... Basic plugins implementation (Ceph in core)
 
         attrs = {'fixed_interface': fixed_interface.name,
                  'vlan_interface': fixed_interface.name}
         return attrs
 
+<<<<<<< HEAD
     @classmethod
     def configure_interfaces(cls, node):
         """Configure interfaces
         """
         network_data = node.network_data
         interfaces = {}
+=======
+        node_attrs.update(
+            self.get_net_provider_serializer(
+                node.cluster
+            ).get_node_attrs(node)
+        )
+        node_attrs.update(self.get_image_cache_max_size(node))
+        node_attrs.update(self.generate_test_vm_image_data(node))
+
+        # plugins hooks
+        node_attrs = rpc_hooks.process_node_attrs(node, node_attrs)
+
+        return node_attrs
+>>>>>>> 6609905... Basic plugins implementation (Ceph in core)
 
         for network in network_data:
             network_name = network['name']
@@ -761,6 +803,7 @@ class DeploymentMultinodeSerializer(object):
         """Method generates facts which
         through an orchestrator passes to puppet
         """
+<<<<<<< HEAD
         serialized_nodes = []
         keyfunc = lambda node: bool(node.replaced_deployment_info)
         for customized, node_group in groupby(nodes, keyfunc):
@@ -775,6 +818,18 @@ class DeploymentMultinodeSerializer(object):
     def serialize_generated(self, cluster, nodes):
         nodes = self.serialize_nodes(nodes)
         common_attrs = self.get_common_attrs(cluster)
+=======
+        # Get Mellanox data
+        neutron_mellanox_data =  \
+            objects.Cluster.get_attributes(node.cluster).editable\
+            .get('neutron_mellanox', {})
+
+        # Get storage data
+        storage_data = \
+            objects.Cluster.get_attributes(
+                node.cluster
+            ).editable.get('storage', {})
+>>>>>>> 6609905... Basic plugins implementation (Ceph in core)
 
         self.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
@@ -929,6 +984,7 @@ class DeploymentMultinodeSerializer(object):
         node_attrs.update(self.generate_test_vm_image_data(node))
         return node_attrs
 
+<<<<<<< HEAD
     def get_image_cache_max_size(self, node):
         images_ceph = (node.cluster.attributes['editable']['storage']
                        ['images_ceph']['value'])
@@ -973,6 +1029,12 @@ class DeploymentMultinodeSerializer(object):
             glance_properties.append('--property vmware_disktype=sparse')
             glance_properties.append('--property vmware_adaptertype=ide')
             glance_properties.append('--property hypervisor_type=vmware')
+=======
+        cluster_attrs = objects.Cluster.get_attributes(cluster).editable
+        if 'nsx_plugin' in cluster_attrs and \
+                cluster_attrs['nsx_plugin']['metadata']['enabled']:
+            attrs['L2']['provider'] = 'nsx'
+>>>>>>> 6609905... Basic plugins implementation (Ceph in core)
 
         image_data['glance_properties'] = ' '.join(glance_properties)
 

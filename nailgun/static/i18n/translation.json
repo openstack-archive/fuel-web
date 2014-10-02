@@ -388,8 +388,8 @@
                     "credentials_description": "If you changed the credentials after deployment, you need to provide new ones to run the checks. The credentials won't be stored anywhere.",
                     "password_label": "Password",
                     "password_description": "Password for Administrator",
-                    "username_label": "Username",
-                    "username_description": "Username for Administrator",
+                    "user_label": "Username",
+                    "user_description": "Username for Administrator",
                     "tenant_label": "Tenant",
                     "tenant_description": "Tenant (project) name for Administrator"
                 },

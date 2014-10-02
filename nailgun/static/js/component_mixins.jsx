@@ -26,8 +26,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                         this.activeTimeout = $.timeout(updateInterval).done(_.bind(this.startPolling, this));
                     }
                 },
-                startPolling: function() {
-                    var shouldDataBeFetched = !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
+                startPolling: function(force) {
+                    var shouldDataBeFetched = force || !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
                     if (shouldDataBeFetched) {
                         this.stopPolling();
                         this.fetchData().always(_.bind(this.scheduleDataFetch, this));

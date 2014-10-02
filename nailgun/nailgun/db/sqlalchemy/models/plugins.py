@@ -13,15 +13,18 @@
 #    under the License.
 
 from sqlalchemy import Column
+from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
 
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 
+from nailgun import consts
+
 from nailgun.db.sqlalchemy.models.base import Base
-from nailgun.db.sqlalchemy.models.fields import JSON
 
 
 class ClusterPlugins(Base):
@@ -50,3 +53,14 @@ class Plugin(Base):
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")
+
+
+class PluginRecord(Base):
+    __tablename__ = 'plugin_records'
+    id = Column(Integer, primary_key=True)
+    plugin = Column(String(150))
+    record_type = Column(
+        Enum(*consts.PLUGIN_RECORD_TYPES, name='record_type'),
+        nullable=False
+    )
+    data = Column(JSON, default={})

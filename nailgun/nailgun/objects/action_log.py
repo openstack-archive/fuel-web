@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 
 from nailgun import consts
@@ -49,9 +50,51 @@ class ActionLog(NailgunObject):
             "end_timestamp": {"type": "string"},
             "additional_info": {"type": "object"},
             "is_sent": {"type": "boolean"},
-            "cluster_id": {"type": ["number", "null"]}
+            "cluster_id": {"type": ["number", "null"]},
+            "task_uuid": {"type": ["string", "null"]}
         }
     }
+
+    @classmethod
+    def update(cls, instance, data):
+        """Form additional info for further instance update.
+
+        Extend corresponding method of the parent class.
+
+        Side effects:
+        overrides already present keys of additional_info attribute
+        of instance if this attribute is present in data argument
+
+        Arguments:
+        instance - instance of ActionLog class that is processed
+        data - dictionary containing keyword arguments for entity to be
+        updated
+
+        return - returned by parent class method value
+        """
+
+        # kinda hack for extending additional_info attribute of instance
+        # one should take precaution as such construction overrides keys
+        # that are already present in additional_info
+        if data.get('additional_info'):
+            data['additional_info'].update(instance.additional_info)
+
+        return super(ActionLog, cls).update(instance, data)
+
+    @classmethod
+    def get_by_task_uuid(cls, task_uuid):
+        """Get action_log entry by task_uuid.
+
+        Arguments:
+        task_uuid - uuid of task, using which row is retrieved
+
+        return - matching instance of action_log entity
+        """
+        instance = db().query(models.ActionLog)\
+            .filter_by(task_uuid=task_uuid)\
+            .first()
+
+        return instance
 
 
 class ActionLogCollection(NailgunCollection):

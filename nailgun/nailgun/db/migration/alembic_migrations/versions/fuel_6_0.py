@@ -106,6 +106,11 @@ def upgrade_schema():
                         sa.Integer,
                         nullable=True
                     ),
+                    sa.Column(
+                        'task_uuid',
+                        sa.String(36),
+                        nullable=True
+                    ),
                     sa.PrimaryKeyConstraint('id'))
 
 

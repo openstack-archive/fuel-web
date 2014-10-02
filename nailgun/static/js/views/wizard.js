@@ -42,7 +42,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         template: _.template(createClusterWizardTemplate),
         modalOptions: {backdrop: 'static'},
         events: {
-            keydown: 'onInputKeydown',
+            keydown: 'onKeydown',
+            keyup: 'onKeyup',
             'click .next-pane-btn': 'nextPane',
             'click .prev-pane-btn': 'prevPane',
             'click .wizard-step.available': 'onStepClick',
@@ -201,8 +202,13 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             }, this);
             return result;
         },
-        onInputKeydown: function(e) {
-            if (e.which == 13) {
+// fix to work with input suggestions (morale)
+        onKeyup: function(e) {
+// arrow up and downm page up and down key codes
+            this.previouslySuggestionSelected = (_.contains([28, 40, 33, 34], e.which));
+        },
+        onKeydown: function(e) {
+            if ((e.which == 13) && !this.previouslySuggestionSelected) {
                 e.preventDefault();
                 this.nextPane();
             }

@@ -43,6 +43,14 @@ class TaskManager(object):
         if cluster_id:
             self.cluster = db().query(Cluster).get(cluster_id)
 
+    def create_action_log(self, task_instance, operation_nodes):
+        create_kwargs = TaskHelper.prepare_action_log_kwargs(
+            task_instance,
+            operation_nodes
+        )
+
+        objects.ActionLog.create(create_kwargs)
+
     def _call_silently(self, task, instance, *args, **kwargs):
         method = getattr(instance, kwargs.pop('method_name', 'execute'))
         if task.status == TASK_STATUSES.error:
@@ -166,6 +174,9 @@ class ApplyChangesTaskManager(TaskManager):
             task_deletion = supertask.create_subtask(TASK_NAMES.node_deletion,
                                                      weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
+
+            self.create_action_log(task_deletion, nodes_to_delete)
+
             # we should have task committed for processing in other threads
             db().commit()
             self._call_silently(task_deletion, tasks.DeletionTask)
@@ -184,6 +195,9 @@ class ApplyChangesTaskManager(TaskManager):
             task_weight = 0.4
             task_provision = supertask.create_subtask(TASK_NAMES.provision,
                                                       weight=task_weight)
+
+            self.create_action_log(task_provision, nodes_to_provision)
+
             # we should have task committed for processing in other threads
             db().commit()
             provision_message = self._call_silently(
@@ -216,6 +230,9 @@ class ApplyChangesTaskManager(TaskManager):
             logger.debug("There are nodes to deploy: %s",
                          " ".join([n.fqdn for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(TASK_NAMES.deployment)
+
+            self.create_action_log(task_deployment, nodes_to_deploy)
+
             # we should have task committed for processing in other threads
             db().commit()
             deployment_message = self._call_silently(

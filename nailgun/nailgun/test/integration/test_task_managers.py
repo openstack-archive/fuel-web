@@ -23,6 +23,7 @@ from mock import patch
 
 from nailgun import objects
 
+from nailgun.consts import ACTION_TYPES
 from nailgun.consts import NODE_STATUSES
 from nailgun.consts import TASK_NAMES
 from nailgun.consts import TASK_STATUSES
@@ -89,6 +90,28 @@ class TestTaskManagers(BaseIntegrationTest):
         ):
             self.assertEqual(n.status, NODE_STATUSES.ready)
             self.assertEqual(n.progress, 100)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=True)
+    def test_write_action_logs(self, _):
+        #self.skipTest('')
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+                {"pending_addition": True},
+                {"pending_deletion": True}
+            ]
+        )
+
+        deployment_task = self.env.launch_deployment()
+
+        for subtask in deployment_task.subtasks:
+            action_log = objects.ActionLog.get_by_task_uuid(subtask.uuid)
+
+            self.assertIsNotNone(action_log)
+            self.assertEqual(subtask.parent_id,
+                             action_log.additional_info['parent_task_id'])
+            self.assertIn(action_log.action_name, TASK_NAMES)
+            self.assertEqual(action_log.action_type, ACTION_TYPES.nailgun_task)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

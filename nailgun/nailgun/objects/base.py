@@ -132,6 +132,31 @@ class NailgunObject(object):
         db().flush()
 
     @classmethod
+    def get_instance_field(cls, instance, name):
+        """Basic fieldgetter which is used in case of
+        serializing current object (model) instance
+
+        :param instance: object (model) instance
+        :param name: field name
+        :returns: object (model) field by given name
+        """
+        value = getattr(instance, name)
+        if value is None:
+            return value
+
+        f = getattr(instance.__class__, name)
+        if hasattr(f, "impl"):
+            rel = f.impl.__class__.__name__
+            if rel == 'ScalarObjectAttributeImpl':
+                return value.id
+            elif rel == 'CollectionAttributeImpl':
+                return [v.id for v in value]
+            else:
+                return value
+        else:
+            return value
+
+    @classmethod
     def save(cls, instance=None):
         """Save current changes for instance in DB.
         Current transaction will be commited
@@ -152,7 +177,11 @@ class NailgunObject(object):
         :param fields: exact fields to serialize
         :returns: serialized object (model) as dictionary
         """
-        return cls.serializer.serialize(instance, fields=fields)
+        return cls.serializer.serialize(
+            instance,
+            fields=fields,
+            fieldgetter=cls.get_instance_field
+        )
 
     @classmethod
     def to_json(cls, instance, fields=None):

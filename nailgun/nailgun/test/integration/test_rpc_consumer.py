@@ -14,7 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import random
+import six
 import uuid
 
 from nailgun.db.sqlalchemy.models import Attributes
@@ -31,6 +33,8 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
 from nailgun import consts
+
+from nailgun import objects
 
 
 class TestVerifyNetworks(BaseIntegrationTest):
@@ -838,6 +842,58 @@ class TestConsumer(BaseIntegrationTest):
         self.db.refresh(task)
 
         self.assertEqual(task.progress, 50)
+
+    def test_action_log_updating(self):
+        #self.skipTest('')
+        self.env.create(
+            nodes_kwargs=[
+                {'api': False},
+                {'api': False}
+            ]
+        )
+
+        node, node2 = self.env.nodes
+
+        task = Task(
+            name='provision',
+            cluster_id=self.env.clusters[0].id)
+
+        self.db.add(task)
+        self.db.flush()
+
+        action_log_kwargs = {
+            'action_group': 'test_cluster_changes',
+            'action_name': 'test_provision_action',
+            'action_type': consts.ACTION_TYPES.nailgun_task,
+            'additional_info': {},
+            'is_sent': False,
+            'cluster_id': task.cluster.id,
+            'task_uuid': task.uuid,
+            'start_timestamp': datetime.datetime.now()
+        }
+
+        al = objects.ActionLog.create(action_log_kwargs)
+
+        kwargs = {
+            'task_uuid': task.uuid,
+            'status': 'ready',
+            'nodes': [
+                {'uid': node.id,
+                 'status': 'provisioned',
+                 'progress': 100},
+                {'uid': node2.id,
+                 'status': 'provisioned',
+                 'progress': 100}
+            ]
+        }
+        self.receiver.provision_resp(**kwargs)
+        self.db.flush()
+
+        self.db.refresh(al)
+
+        # check that action_log entry was updated in receiver's methods' code
+        self.assertIsNotNone(al.end_timestamp)
+        self.assertIn('nodes_from_resp', six.iterkeys(al.additional_info))
 
     def test_task_progress(self):
         self.env.create_cluster()

@@ -26,8 +26,10 @@ down_revision = '52924111f7d8'
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from nailgun.utils.migration import upgrade_release_fill_orchestrator_data
+from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_release_set_deployable_false
 
 
@@ -53,6 +55,20 @@ def upgrade_schema():
             server_default='true',
         )
     )
+    op.create_table(
+        'plugin_records',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('plugin', sa.String(length=150), nullable=True),
+        sa.Column('record_type', sa.Enum(
+            'role',
+            'pending_role',
+            'volume',
+            'cluster_attribute',
+            name='record_type'
+        ), nullable=False),
+        sa.Column('data', postgresql.JSON(), nullable=True),
+        sa.PrimaryKeyConstraint('id')
+    )
 
 
 def upgrade_data():
@@ -71,6 +87,8 @@ def upgrade_data():
 
 
 def downgrade_schema():
+    op.drop_table('plugin_records')
+    drop_enum('record_type')
     op.drop_column('releases', 'is_deployable')
 
 

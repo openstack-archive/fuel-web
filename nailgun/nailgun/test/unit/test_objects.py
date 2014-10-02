@@ -18,6 +18,8 @@ import copy
 import datetime
 import hashlib
 import jsonschema
+import six
+import uuid
 
 from itertools import cycle
 from itertools import ifilter
@@ -709,7 +711,7 @@ class TestActionLogObject(BaseIntegrationTest):
             'id': 1,
             'action_group': 'test_group',
             'action_name': 'test_action_one',
-            'action_type': 'http_request',
+            'action_type': consts.ACTION_TYPES.http_request,
             'additional_info': '',  # validation should fail because of this
             'is_sent': False,
             'cluster_id': 1
@@ -720,3 +722,51 @@ class TestActionLogObject(BaseIntegrationTest):
         instance_to_validate = jsonutils.loads(objects.ActionLog.to_json(al))
         self.assertRaises(jsonschema.ValidationError, jsonschema.validate,
                           instance_to_validate, objects.ActionLog.schema)
+
+    def test_get_by_uuid_method(self):
+        object_data = {
+            'id': 1,
+            'action_group': 'test_group',
+            'action_name': 'test_action',
+            'action_type': consts.ACTION_TYPES.nailgun_task,
+            'additional_info': {},
+            'is_sent': False,
+            'cluster_id': 1,
+            'task_uuid': str(uuid.uuid4())
+        }
+
+        al = self._create_log_entry(object_data)
+        self.db.add(al)
+        self.db.commit()
+
+        al_db = objects.ActionLog.get_by_task_uuid(object_data['task_uuid'])
+
+        self.assertIsNotNone(al_db)
+
+        self.db.delete(al)
+        self.db.commit()
+
+    def test_update_method(self):
+        object_data = {
+            'id': 1,
+            'action_group': 'test_group',
+            'action_name': 'test_action',
+            'action_type': consts.ACTION_TYPES.nailgun_task,
+            'additional_info': {'already_present_data': None},
+            'is_sent': False,
+            'cluster_id': 1,
+            'task_uuid': str(uuid.uuid4())
+        }
+
+        al = self._create_log_entry(object_data)
+
+        update_kwargs = {
+            'additional_info': {'new_data': []}
+        }
+
+        al = objects.ActionLog.update(al, update_kwargs)
+
+        self.assertIn('new_data', six.iterkeys(al.additional_info))
+        self.assertIn('already_present_data', six.iterkeys(al.additional_info))
+
+        self.db.rollback()

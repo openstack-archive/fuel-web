@@ -8,10 +8,12 @@ AUTH:
   # - keystone - authentication enabled.
   AUTHENTICATION_METHOD: "fake"
   # use only if AUTHENTICATION_METHOD is set to "keystone"
-  admin_token: "ADMIN"
   auth_host: "127.0.0.1"
   auth_protocol: "http"
   auth_version: "v2.0"
+  admin_user: "nailgun"
+  admin_password: "nailgun"
+  admin_tenant_name: "services"
 
 VERSION:
   release: "5.0"

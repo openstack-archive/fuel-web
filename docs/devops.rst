@@ -18,59 +18,57 @@ For sources please refer to `fuel-devops repository on github <https://github.co
 
 Dependencies ::
 
-    sudo apt-get install postgresql \
-    python-psycopg2 \
-    python-ipaddr \
-    python-libvirt \
-    python-paramiko \
-    python-django \
-    git \
-    python-xmlbuilder \
-    python-libvirt \
-    python-django-south
+    sudo apt-get install git \
+    postgresql \
+    postgresql-server-dev-all \
+    libyaml-dev \
+    libffi-dev \
+    python-dev \
+    python-libvirt 
 
-**NOTE** Depending from your distro some of these packages may not exists in your distro upstream repositories. In this case please refer to *Devops installation in virtualenv* chapter.
+**NOTE** Tested on Ubuntu 14.04. Depending from your distro some of these packages may not exists in your distro upstream repositories. In this case please refer to *Devops installation in virtualenv* chapter.
 
-Devops Installation from packages
+Devops installation
 ---------------------------------
+ There are two way to install devpos:
+  - in virtualenv 
+  - from packages
+ 
+   In virtualenv
+     First install ::
 
-Install dependencies first ::
+       sudo apt-get python-virtualenv
 
-    sudo apt-get install postgresql \
-    python-psycopg2 \
-    python-ipaddr \
-    python-libvirt \
-    python-paramiko \
-    python-django \
-    git \
-    python-xmlbuilder \
-    python-libvirt \
-    python-django-south
+     Then create virtualenv ::
+       
+       	virtualenv --system-site-packages <path>/devops-venv
 
-then clone fuel-devops repo and run setup.py ::
+     And install devops inside it ::
 
-	git clone git://github.com/stackforge/fuel-devops.git
-	cd fuel-devops
-	python ./setup.py install
+       source <path>/devops-venv/bin/activate
+       pip install git+https://github.com/stackforge/fuel-devops.git --upgrade
 
-Devops installation in virtualenv
----------------------------------
+   From packages
+     Add reposytory ::
 
-First let's install packages required for that way ::
+       wget -qO - http://mirror.fuel-infra.org/devops/ubuntu/Release.key | sudo apt-key add -
+       sudo add-apt-repository  "deb http://mirror.fuel-infra.org/devops/ubuntu /"
 
-	apt-get install postgresql-server-dev-all python-libvirt python-dev python-django
+     Install dependencies ::
 
-Then create virtualenv ::
+       sudo apt-get install python-psycopg2 \
+       python-ipaddr \
+       python-libvirt \
+       python-paramiko \
+       python-django \
+       python-libvirt \
+       python-django-south \
+       python-xmlbuilder \
+       python-mock \
+       python-devops 
 
-	virtualenv --system-site-packages devops-venv
-
-And install devops inside it ::
-
-	. devops-venv/bin/activate
-	pip install git+https://github.com/stackforge/fuel-devops.git --upgrade
-
-setup.py in fuel-devops repository does everything required.
-
+       sudo pip install PyYAML 
+       
 System wide settings required for devops
 ----------------------------------------
 
@@ -102,7 +100,7 @@ Alive Postgresql database with grants and devops schema
 
 Set local peers to be trusted by default and load fixtures ::
 
-    sudo sed -ir 's/peer/trust/' /etc/postgresql/9.1/main/pg_hba.conf
+    sudo sed -ir 's/peer/trust/' /etc/postgresql/<version.number>/main/pg_hba.conf
     sudo service postgresql restart
     django-admin.py syncdb --settings=devops.settings
     django-admin.py migrate devops --settings=devops.settings
@@ -140,10 +138,16 @@ Clone fuel-main ::
     git clone https://github.com/stackforge/fuel-main
     cd fuel-main/
 
-Install requirements ::
+Install requirements
+  
+  - If you use virtualenv ::
+     
+       source <path>/devops-venv/bin/activate
+       pip install -r ./fuelweb_test/requirements.txt --upgrade
 
-    . devops-venv/bin/activate
-    pip install -r ./fuelweb_test/requirements.txt --upgrade
+  - If you do not use virtualenv just ::
+
+       sudo pip install -r ./fuelweb_test/requirements.txt --upgrade
 
 If you don't have a Fuel ISO and wanna build it please refer to 
 `Building Fuel ISO <develop/env.html#building-the-fuel-iso>`_
@@ -158,9 +162,14 @@ Alternatively, you can edit this file to set them as a default values ::
 
     fuelweb_test/settings.py
 
+If you use virtualenv installation - provide the virtualenv path by setting variable (see below) or -V option ( utils/jenkins/system_tests.sh -h )::
+
+     export VENV_PATH=<path_to_venv> 
+
 Start tests by running this command ::
 
     export PYTHONPATH=$(pwd)
+
     ./utils/jenkins/system_tests.sh -t test -w $(pwd) -j fuelweb_test -i $ISO_PATH -o --group=setup
 
 For more information about how tests work, read the usage information ::

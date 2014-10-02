@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from nailgun.db.sqlalchemy import models
 
 from nailgun import consts
@@ -52,6 +54,14 @@ class ActionLog(NailgunObject):
             "cluster_id": {"type": ["number", "null"]}
         }
     }
+
+    @classmethod
+    def update(cls, instance, data):
+        additional_info = copy.deepcopy(instance.additional_info)
+        additional_info['nodes_from_resp'] = data.pop('nodes_from_resp')
+        instance.additional_info = additional_info
+
+        super(ActionLog, cls).update(instance, data)
 
 
 class ActionLogCollection(NailgunCollection):

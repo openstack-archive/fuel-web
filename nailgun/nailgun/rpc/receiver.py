@@ -16,6 +16,7 @@
 
 import collections
 import copy
+import datetime
 import itertools
 import os
 import traceback
@@ -29,6 +30,7 @@ from nailgun.settings import settings
 
 from nailgun.consts import TASK_STATUSES
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import ActionLog
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
@@ -136,6 +138,15 @@ class NailgunReceiver(object):
             error_msg = ". ".join([success_msg, err_msg])
         data = {'status': status, 'progress': progress, 'message': error_msg}
         objects.Task.update(task, data)
+
+        # update action_log entry
+        if status in (consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error):
+            al = db().query(ActionLog).filter_by(task_uuid=task_uuid).first()
+
+            if al:
+                data = {'end_timestamp': datetime.datetime.now(),
+                        'nodes_from_resp': nodes}
+                objects.ActionLog.update(al, data)
 
     @classmethod
     def remove_cluster_resp(cls, **kwargs):
@@ -288,6 +299,15 @@ class NailgunReceiver(object):
             data = {'status': status, 'progress': progress, 'message': message}
             objects.Task.update(task, data)
 
+        # update action_log entry
+        if status in (consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error):
+            al = db().query(ActionLog).filter_by(task_uuid=task_uuid).first()
+
+            if al:
+                data = {'end_timestamp': datetime.datetime.now(),
+                        'nodes_from_resp': nodes}
+                objects.ActionLog.update(al, data)
+
     @classmethod
     def provision_resp(cls, **kwargs):
         logger.info(
@@ -337,6 +357,15 @@ class NailgunReceiver(object):
 
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
+
+        # update action_log entry
+        if status in (consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error):
+            al = db().query(ActionLog).filter_by(task_uuid=task_uuid).first()
+
+            if al:
+                data = {'end_timestamp': datetime.datetime.now(),
+                        'nodes_from_resp': nodes}
+                objects.ActionLog.update(al, data)
 
     @classmethod
     def _generate_error_message(cls, task, error_types, names_only=False):

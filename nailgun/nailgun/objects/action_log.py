@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 
 from nailgun import consts
@@ -52,6 +53,21 @@ class ActionLog(NailgunObject):
             "cluster_id": {"type": ["number", "null"]}
         }
     }
+
+    @classmethod
+    def update(cls, instance, data):
+        if data.get('additional_info'):
+            data['additional_info'].update(instance.additional_info)
+
+        super(ActionLog, cls).update(instance, data)
+
+    @classmethod
+    def get_by_task_uuid(cls, task_uuid):
+        instance = db().query(models.ActionLog)\
+            .filter_by(task_uuid=task_uuid)\
+            .first()
+
+        return instance
 
 
 class ActionLogCollection(NailgunCollection):

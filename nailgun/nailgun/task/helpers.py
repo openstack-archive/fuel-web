@@ -14,8 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import os
 import shutil
+
+import web
 
 from sqlalchemy import or_
 
@@ -27,6 +30,18 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
+
+
+tasks_names_actions_groups_mapping = dict(
+    [
+        (task_name, 'cluster_changes') for task_name in
+        (
+            consts.TASK_NAMES.deployment,
+            consts.TASK_NAMES.provision,
+            consts.TASK_NAMES.node_deletion,
+        )
+    ]
+)
 
 
 class TaskHelper(object):
@@ -299,3 +314,38 @@ class TaskHelper(object):
             db().commit()
             full_err_msg = u"\n".join(err_messages)
             raise errors.NetworkCheckError(full_err_msg)
+
+    @classmethod
+    def prepare_action_log_kwargs(self, task, nodes):
+        """Prepares kwargs dict for ActionLog db model class
+
+        :param task: task instance to be processed
+        :param nodes: list of nodes to be processed by given task
+        :returns: kwargs dict
+        """
+        create_kwargs = {
+            'task_uuid': task.uuid,
+            'cluster_id': task.cluster.id,
+            'action_group': tasks_names_actions_groups_mapping[task.name],
+            'action_name': task.name,
+            'action_type': consts.ACTION_TYPES.nailgun_task,
+            'start_timestamp': datetime.datetime.now()
+        }
+
+        # actor_id passed from ConnectionMonitor middleware and is
+        # needed for binding task execution event with particular
+        # actor
+        actor_id = web.ctx.env.get('fuel.action.actor_id')
+        create_kwargs['actor_id'] = actor_id
+
+        additional_info = {
+            'parent_task_id': task.parent_id,
+            'subtasks_ids': [t.id for t in task.subtasks],
+            'nodes_to_change': {
+                'nodes': [n.id for n in nodes],
+                'operation': task.name
+            }
+        }
+        create_kwargs['additional_info'] = additional_info
+
+        return create_kwargs

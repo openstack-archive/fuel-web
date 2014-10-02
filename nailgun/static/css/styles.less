@@ -2115,13 +2115,16 @@ select[name=release] option {
   overflow: hidden;
 }
 
-input.error, .control-group select.error {
+input.error,
+.control-group select.error,
+.has-error input {
   border-color: @fuel-deep-red;
   color: @fuel-deep-red;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
 }
 
-input.error:focus {
+input.error:focus,
+.has-error .parameter-name input:focus {
   border-color: @fuel-deep-red;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #d59392;
 }
@@ -2311,6 +2314,14 @@ input.error:focus {
 .parameter-name {
   .float-mixin;
   .box-sizing-mixin;
+  span:first-of-type {
+    font-size: 14px;
+  };
+  .input-label {
+    width: 160px;
+    float: left;
+    margin: 7px 14px 0 0;
+  }
   min-width: 120px;
   font-weight: bold;
   margin: 7px 14px 0 0;
@@ -2340,6 +2351,12 @@ input.error:focus {
   &.validation-error { color: @fuel-deep-red; }
 }
 
+.has-error {
+  .parameter-description {
+    color: @fuel-deep-red;
+  }
+}
+
 .parameter-spacer {
   height: 8px;
 }
@@ -2363,7 +2380,7 @@ input.error:focus {
   > .tablerow-wrapper {
     display: table-row;
     height:40px;
-    .parameter-name {
+    .change {
       display: table-cell;
       word-break: break-word !important;
       vertical-align: middle;
@@ -3515,7 +3532,20 @@ i.btn-cluster-details {
   }
 }
 
-.change-password-form {
-  margin: 0;
-  .parameter-name { width: 130px; }
+.change-password {
+  width: 470px;
+  .change-password-form {
+    .parameter-box {
+      .parameter-name { overflow: visible; }
+      .parameter-description { margin: 0 0 0 175px; }
+      input {
+        margin-bottom: 0;
+        width: 237px;
+      }
+      .input-append {
+        margin-bottom: 0;
+        input { width: 207px; }
+      }
+    }
+  }
 }

@@ -41,3 +41,4 @@ class ActionLog(Base):
     is_sent = Column(Boolean, default=False)
     additional_info = Column(JSON, nullable=False)
     cluster_id = Column(Integer, nullable=True)
+    task_uuid = Column(String(36), nullable=True)

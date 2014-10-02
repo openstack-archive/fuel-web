@@ -88,6 +88,12 @@ class ConnectionMonitorMiddleware(object):
                 # Prepare arguments for ActionLog instance creation
                 create_kwargs = {}
 
+                actor_id = self._get_actor_id(env)
+                create_kwargs['actor_id'] = actor_id
+
+                # save actor_id in env for further processing
+                env['actor_id'] = actor_id
+
                 create_kwargs['start_timestamp'] = datetime.datetime.now()
                 response = self.app(env, save_headers_start_response)
                 create_kwargs['end_timestamp'] = datetime.datetime.now()
@@ -98,8 +104,6 @@ class ConnectionMonitorMiddleware(object):
                 # propagate further on middleware stack
                 response_to_analyse, response_to_propagate = \
                     itertools.tee(response)
-
-                create_kwargs['actor_id'] = self._get_actor_id(env)
 
                 create_kwargs['action_name'] = \
                     compiled_urls_actions_mapping[url_matcher]['action_name']

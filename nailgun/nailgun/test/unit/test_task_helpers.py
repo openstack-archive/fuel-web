@@ -42,7 +42,10 @@ class TestTaskHelpers(BaseTestCase):
         return DeploymentHASerializer
 
     def filter_by_role(self, nodes, role):
-        return filter(lambda node: role in node.all_roles, nodes)
+        return filter(
+            lambda node: role in objects.Node.get_all_roles(node),
+            nodes
+        )
 
     def test_redeploy_all_controller_if_single_controller_failed(self):
         cluster = self.create_env([

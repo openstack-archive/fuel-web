@@ -42,7 +42,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         template: _.template(createClusterWizardTemplate),
         modalOptions: {backdrop: 'static'},
         events: {
-            keydown: 'onInputKeydown',
+            keydown: 'onKeydown',
+            keyup: 'onKeyup',
             'click .next-pane-btn': 'nextPane',
             'click .prev-pane-btn': 'prevPane',
             'click .wizard-step.available': 'onStepClick',
@@ -201,8 +202,13 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             }, this);
             return result;
         },
-        onInputKeydown: function(e) {
-            if (e.which == 13) {
+// fix to work with input suggestions (morale)
+        onKeyup: function(e) {
+            var keycode = e.keyCode || e.which;
+            this.previousDownKeyPressed = e.key ? (e.key == 'Down') : (keycode == 40);
+        },
+        onKeydown: function(e) {
+            if ((e.key == 'Enter' || e.which == 13) && !this.previousDownKeyPressed) {
                 e.preventDefault();
                 this.nextPane();
             }

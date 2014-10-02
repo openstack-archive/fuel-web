@@ -482,11 +482,11 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 (this.state.newPassword == this.state.confirmationPassword);
         },
         handleKeyDown: function(e) {
-            if (e.key == 'Enter') {
+            if (e.key == 'Enter' || e.which == 13) {
                 e.preventDefault();
                 this.changePassword();
             }
-            if (e.key == ' ') {
+            if (e.key == ' ' || e.which == 32) {
                 e.preventDefault();
                 return false;
             }

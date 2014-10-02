@@ -31,8 +31,6 @@ from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
-from nailgun.task.helpers import TaskHelper
-
 
 class Task(NailgunObject):
 
@@ -118,6 +116,8 @@ class Task(NailgunObject):
 
     @classmethod
     def _update_parent_instance(cls, instance):
+        from nailgun.task.helpers import TaskHelper
+
         subtasks = instance.subtasks
         if len(subtasks):
             data = dict()
@@ -184,6 +184,8 @@ class Task(NailgunObject):
 
     @classmethod
     def _update_cluster_data(cls, instance):
+        from nailgun.task.helpers import TaskHelper
+
         cluster = instance.cluster
 
         if instance.name == 'deploy':

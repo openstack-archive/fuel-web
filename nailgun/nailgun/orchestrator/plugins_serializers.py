@@ -20,6 +20,7 @@
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import objects
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
 from nailgun.plugins.manager import PluginManager
 
@@ -124,7 +125,9 @@ class BasePluginDeploymentHooksSerializer(object):
         for task in tasks:
             if isinstance(task['role'], list):
                 for node in self.nodes:
-                    required_for_node = set(task['role']) & set(node.all_roles)
+                    required_for_node = set(task['role']) & set(
+                        objects.Node.get_all_roles(node)
+                    )
                     if required_for_node:
                         uids.append(node.id)
             elif task['role'] == '*':

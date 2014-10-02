@@ -47,5 +47,7 @@ from nailgun.db.sqlalchemy.models.notification import Notification
 
 from nailgun.db.sqlalchemy.models.task import Task
 
+from nailgun.db.sqlalchemy.models.plugins import PluginRecord
+
 from nailgun.db.sqlalchemy.models.master_node_settings \
     import MasterNodeSettings

@@ -73,7 +73,7 @@ function process_options {
 }
 
 # settings
-ROOT=$(dirname `readlink -f $0`)
+ROOT=$(dirname `greadlink -f $0`)
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"

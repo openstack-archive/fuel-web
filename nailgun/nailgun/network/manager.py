@@ -208,7 +208,7 @@ class NetworkManager(object):
             if network_name == 'public' and \
                     not objects.Node.should_have_public(node):
                 continue
-            group_id = node.group_id or cluster.default_group
+            group_id = node.group_id or node.cluster.default_group
 
             network = network_groups.filter(
                 or_(
@@ -287,8 +287,8 @@ class NetworkManager(object):
 
         group_id = None
         for node in cluster.nodes:
-            if 'controller' in node.all_roles or \
-               'primary-controller' in node.all_roles:
+            if 'controller' in objects.Node.get_all_roles(node) or \
+               'primary-controller' in objects.Node.get_all_roles(node):
                 group_id = node.group_id
                 break
 
@@ -426,7 +426,9 @@ class NetworkManager(object):
                 key=lambda x: x[1]))[0]
         )
         ng_ids = set(ng.id for ng in ngs)
-        ng_wo_admin_ids = ng_ids ^ set([cls.get_admin_network_group_id(node.id)])
+        ng_wo_admin_ids = ng_ids ^ set(
+            [cls.get_admin_network_group_id(node.id)]
+        )
         for nic in node.nic_interfaces:
             nic_dict = {
                 "id": nic.id,
@@ -529,7 +531,7 @@ class NetworkManager(object):
         net_cidr = IPNetwork(net.cidr)
         ip_addr = cls.get_admin_ip_for_node(node)
         if ip_addr:
-            ip_addr =  "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
+            ip_addr = "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
 
         return {
             'name': net.name,
@@ -1119,14 +1121,18 @@ class NetworkManager(object):
     @classmethod
     def get_default_gateway(cls, node_id):
         return cls.get_admin_network_group(node_id).gateway \
-                or settings.MASTER_IP
+            or settings.MASTER_IP
 
     @classmethod
     def get_networks_not_on_node(cls, node):
-        node_net = [(n['name'], n['cidr'])
-                for n in cls.get_node_networks(node) if n.get('cidr')]
-        all_nets = [(n.name, n.cidr)
-                for n in node.cluster.network_groups if n.cidr]
+        node_net = [
+            (n['name'], n['cidr'])
+            for n in cls.get_node_networks(node) if n.get('cidr')
+        ]
+        all_nets = [
+            (n.name, n.cidr)
+            for n in node.cluster.network_groups if n.cidr
+        ]
 
         if node.group_id != node.cluster.default_group:
             admin_net = cls.get_admin_network_group()

@@ -17,6 +17,7 @@
 
 import nailgun
 import nailgun.rpc as rpc
+import six
 import time
 
 from mock import patch
@@ -474,3 +475,29 @@ class TestTaskManagers(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
         self.assertEqual(self.env.db.query(Node).count(), 0)
+
+    @fake_tasks()
+    def test_action_logs_writing(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+                {"pending_addition": True},
+                {"pending_deletion": True}
+            ]
+        )
+
+        supertask = self.env.launch_deployment()
+        subtasks_uuids = [subt.uuid for subt in supertask.subtasks]
+
+        self.env.wait_ready(supertask)
+
+        for task_uuid in subtasks_uuids:
+            al = objects.ActionLog.get_by_task_uuid(task_uuid)
+
+            self.assertEqual(al.action_type, 'nailgun_task')
+            self.assertIn(al.action_name, TASK_NAMES)
+            self.assertIsNotNone(al.end_timestamp)
+            self.assertIn('nodes_from_resp', six.iterkeys(al.additional_info))
+            self.assertIsNotNone(al.additional_info.get('nodes_to_change'))
+            self.assertEqual(al.additional_info.get('parent_task_id'),
+                             supertask.id)

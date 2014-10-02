@@ -166,6 +166,12 @@ class ApplyChangesTaskManager(TaskManager):
             task_deletion = supertask.create_subtask(TASK_NAMES.node_deletion,
                                                      weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
+
+            objects.ActionLog.create(
+                TaskHelper.prepare_action_log_kwargs(task_deletion,
+                                                     nodes_to_delete)
+            )
+
             # we should have task committed for processing in other threads
             db().commit()
             self._call_silently(task_deletion, tasks.DeletionTask)
@@ -184,6 +190,12 @@ class ApplyChangesTaskManager(TaskManager):
             task_weight = 0.4
             task_provision = supertask.create_subtask(TASK_NAMES.provision,
                                                       weight=task_weight)
+
+            objects.ActionLog.create(
+                TaskHelper.prepare_action_log_kwargs(task_provision,
+                                                     nodes_to_provision)
+            )
+
             # we should have task committed for processing in other threads
             db().commit()
             provision_message = self._call_silently(
@@ -216,6 +228,12 @@ class ApplyChangesTaskManager(TaskManager):
             logger.debug("There are nodes to deploy: %s",
                          " ".join([n.fqdn for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(TASK_NAMES.deployment)
+
+            objects.ActionLog.create(
+                TaskHelper.prepare_action_log_kwargs(task_deployment,
+                                                     nodes_to_deploy)
+            )
+
             # we should have task committed for processing in other threads
             db().commit()
             deployment_message = self._call_silently(

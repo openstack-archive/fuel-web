@@ -18,51 +18,23 @@ For sources please refer to `fuel-devops repository on github <https://github.co
 
 Dependencies ::
 
-    sudo apt-get install postgresql \
-    python-psycopg2 \
-    python-ipaddr \
+    sudo apt-get install git \
+    postgresql \
+    postgresql-server-dev-all \
+    libyaml-dev \
+    libffi-dev \
+    python-dev \
     python-libvirt \
-    python-paramiko \
-    python-django \
-    git \
-    python-xmlbuilder \
-    python-libvirt \
-    python-django-south
+    python-virtualenv 
 
 **NOTE** Depending from your distro some of these packages may not exists in your distro upstream repositories. In this case please refer to *Devops installation in virtualenv* chapter.
-
-Devops Installation from packages
----------------------------------
-
-Install dependencies first ::
-
-    sudo apt-get install postgresql \
-    python-psycopg2 \
-    python-ipaddr \
-    python-libvirt \
-    python-paramiko \
-    python-django \
-    git \
-    python-xmlbuilder \
-    python-libvirt \
-    python-django-south
-
-then clone fuel-devops repo and run setup.py ::
-
-	git clone git://github.com/stackforge/fuel-devops.git
-	cd fuel-devops
-	python ./setup.py install
 
 Devops installation in virtualenv
 ---------------------------------
 
-First let's install packages required for that way ::
-
-	apt-get install postgresql-server-dev-all python-libvirt python-dev python-django
-
 Then create virtualenv ::
 
-	virtualenv --system-site-packages devops-venv
+	virtualenv --system-site-packages <path>/devops-venv
 
 And install devops inside it ::
 
@@ -102,7 +74,7 @@ Alive Postgresql database with grants and devops schema
 
 Set local peers to be trusted by default and load fixtures ::
 
-    sudo sed -ir 's/peer/trust/' /etc/postgresql/9.1/main/pg_hba.conf
+    sudo sed -ir 's/peer/trust/' /etc/postgresql/<version.number>/main/pg_hba.conf
     sudo service postgresql restart
     django-admin.py syncdb --settings=devops.settings
     django-admin.py migrate devops --settings=devops.settings
@@ -142,7 +114,7 @@ Clone fuel-main ::
 
 Install requirements ::
 
-    . devops-venv/bin/activate
+    . <path>/devops-venv/bin/activate
     pip install -r ./fuelweb_test/requirements.txt --upgrade
 
 If you don't have a Fuel ISO and wanna build it please refer to 

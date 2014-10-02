@@ -90,7 +90,7 @@ function(React, utils, models, dialogViews) {
                             }
                         }, this))
                         .done(function() {
-                            app.breadcrumbs.setPath(_.result(app.page, 'breadcrumbsPath'));
+                            app.breadcrumbs.update(_.result(app.page, 'breadcrumbsPath'));
                         })
                         .always(_.bind(function() {
                             this.setState({disabled: false});

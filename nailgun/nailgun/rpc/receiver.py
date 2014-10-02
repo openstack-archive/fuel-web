@@ -16,6 +16,7 @@
 
 import collections
 import copy
+import datetime
 import itertools
 import os
 import traceback
@@ -136,6 +137,8 @@ class NailgunReceiver(object):
             error_msg = ". ".join([success_msg, err_msg])
         data = {'status': status, 'progress': progress, 'message': error_msg}
         objects.Task.update(task, data)
+
+        cls._update_action_log_entry(status, task_uuid, nodes)
 
     @classmethod
     def remove_cluster_resp(cls, **kwargs):
@@ -288,6 +291,8 @@ class NailgunReceiver(object):
             data = {'status': status, 'progress': progress, 'message': message}
             objects.Task.update(task, data)
 
+        cls._update_action_log_entry(status, task_uuid, nodes)
+
     @classmethod
     def provision_resp(cls, **kwargs):
         logger.info(
@@ -337,6 +342,24 @@ class NailgunReceiver(object):
 
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
+
+        cls._update_action_log_entry(status, task_uuid, nodes)
+
+    @classmethod
+    def _update_action_log_entry(cls, task_status, task_uuid, nodes_from_resp):
+        if task_status in (consts.TASK_STATUSES.ready,
+                           consts.TASK_STATUSES.error):
+            al = objects.ActionLog.get_by_task_uuid(task_uuid)
+
+            if al:
+                data = {
+                    'end_timestamp': datetime.datetime.now(),
+                    'additional_info': {
+                        'nodes_from_resp': nodes_from_resp,
+                        'ended_with_status': task_status
+                    }
+                }
+                objects.ActionLog.update(al, data)
 
     @classmethod
     def _generate_error_message(cls, task, error_types, names_only=False):

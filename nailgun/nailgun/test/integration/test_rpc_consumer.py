@@ -14,7 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import random
+import six
 import uuid
 
 from nailgun.db.sqlalchemy.models import Attributes
@@ -31,6 +33,8 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
 from nailgun import consts
+
+from nailgun import objects
 
 
 class TestVerifyNetworks(BaseIntegrationTest):
@@ -838,6 +842,79 @@ class TestConsumer(BaseIntegrationTest):
         self.db.refresh(task)
 
         self.assertEqual(task.progress, 50)
+
+    def test_action_log_updating(self):
+
+        def check_write_logs_from_receiver(**kwargs):
+            task = objects.Task.create({'name': kwargs['task_name'],
+                                        'cluster_id': kwargs['cluster_id']})
+
+            action_log_kwargs = {
+                'action_group': 'test_cluster_changes',
+                'action_name': 'test_provision_action',
+                'action_type': consts.ACTION_TYPES.nailgun_task,
+                'additional_info': {},
+                'is_sent': False,
+                'cluster_id': task.cluster.id,
+                'task_uuid': task.uuid,
+                'start_timestamp': datetime.datetime.now()
+            }
+            al = objects.ActionLog.create(action_log_kwargs)
+
+            rpc_resp_kwargs = {
+                'task_uuid': task.uuid,
+                'status': kwargs['task_status'],
+                'nodes': [
+                    {
+                        'uid': node_id,
+                        'status': kwargs['status_for_nodes'],
+                        'progress': 100
+                    }
+                    for node_id in kwargs['node_ids']
+                ]
+            }
+            kwargs['rpc_resp'](**rpc_resp_kwargs)
+            self.db.flush()
+
+            self.db.refresh(al)
+
+            # check that action_log entry was updated
+            # in receiver's methods' code
+            self.assertIsNotNone(al.end_timestamp)
+            self.assertIn('nodes_from_resp', six.iterkeys(al.additional_info))
+            self.assertEqual(kwargs['task_status'],
+                             al.additional_info.get('ended_with_status'))
+
+            # clean data
+            self.db.delete(task)
+            self.db.delete(al)
+            self.db.commit()
+
+        self.env.create(
+            nodes_kwargs=[
+                {'api': False},
+                {'api': False}
+            ]
+        )
+
+        node, node2 = self.env.nodes
+
+        test_cases_kwargs = [
+            {'task_name': consts.TASK_NAMES.provision,
+             'task_status': consts.TASK_STATUSES.ready,
+             'status_for_nodes': consts.NODE_STATUSES.provisioned,
+             'rpc_resp': self.receiver.provision_resp},
+            {'task_name': 'deployment',
+             'task_status': consts.TASK_STATUSES.error,
+             'status_for_nodes': consts.NODE_STATUSES.error,
+             'rpc_resp': self.receiver.deploy_resp}
+        ]
+
+        for kw in test_cases_kwargs:
+            kw['cluster_id'] = self.env.clusters[0].id
+            kw['node_ids'] = [node.id, node2.id]
+
+            check_write_logs_from_receiver(**kw)
 
     def test_task_progress(self):
         self.env.create_cluster()

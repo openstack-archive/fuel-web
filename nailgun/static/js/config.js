@@ -16,6 +16,29 @@
 define(function() {
     'use strict';
 
+    var baseDependencies = [
+        'jquery',
+        'underscore',
+        'backbone',
+        'stickit',
+        'coccyx',
+        'react',
+        'react.backbone',
+        'cocktail',
+        'i18next',
+        'bootstrap',
+        'jquery-cookie',
+        'jquery-checkbox',
+        'jquery-timeout',
+        'jquery-ui',
+        'jquery-autoNumeric',
+        'text',
+//>>excludeStart("compressed", pragmas.compressed);
+        'jsx',
+//>>excludeEnd("compressed");
+        'less!/static/css/styles'
+    ];
+
     return {
         baseUrl: 'static',
         urlArgs: '_=' + (new Date()).getTime(),
@@ -102,6 +125,9 @@ define(function() {
             },
             'jquery-autoNumeric': {
                 deps: ['jquery']
+            },
+            app: {
+                deps: baseDependencies
             }
         },
         map: {

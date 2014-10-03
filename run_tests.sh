@@ -59,6 +59,8 @@ function process_options {
       -K|--no-tasklib) no_tasklib_tests=1;;
       -w|--webui) webui_tests=1;;
       -W|--no-webui) no_webui_tests=1;;
+      -x|--compress) webui_compress_test=1;;
+      -X|--no-compress) webui_compress_test=0;;
       -u|--upgrade) upgrade_system=1;;
       -U|--no-upgrade) no_upgrade_system=1;;
       -s|--shotgun) shotgun_tests=1;;
@@ -79,7 +81,6 @@ ROOT=$(dirname `readlink -f $0`)
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
-CASPERJS="casperjs"
 LINTUI="grunt lint-ui"
 
 # test options
@@ -93,6 +94,14 @@ FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-"$ROOT/fuelupgradedow
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
 UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
 NAILGUN_PORT=${NAILGUN_PORT:-8003}
+SELENIUM_SERVER_PORT=${SELENIUM_SERVER_PORT:-4444}
+SELENIUM_SERVER_PATH=${SELENIUM_SERVER_PATH:-"/tmp/selenium-server-standalone.jar"}
+# set SELENIUM_SERVER_URL=0 if you want to disable Selenium server downloading
+SELENIUM_SERVER_URL=${SELENIUM_SERVER_URL:-"http://selenium-release.storage.googleapis.com/2.45/selenium-server-standalone-2.45.0.jar"}
+SELENIUM_SERVER_LOG=/tmp/selenium-server.log
+DISPLAY=${DISPLAY:-":99"}
+BROWSER_DISPLAY=${BROWSER_DISPLAY:-":99"}
+FUELCLIENT_SERVER_PORT=${FUELCLIENT_SERVER_PORT:-8003}
 TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
 NAILGUN_CHECK_URL=${NAILGUN_CHECK_URL:-"http://0.0.0.0:$NAILGUN_PORT/api/version"}
 NAILGUN_START_MAX_WAIT_TIME=${NAILGUN_START_MAX_WAIT_TIME:-5}
@@ -108,6 +117,7 @@ nailgun_tests=0
 no_nailgun_tests=0
 performance_tests=0
 webui_tests=0
+webui_compress_test=1
 no_webui_tests=0
 upgrade_system=0
 no_upgrade_system=0
@@ -276,65 +286,127 @@ function run_nailgun_tests {
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_webui_tests {
-  local SERVER_PORT=$UI_SERVER_PORT
-  local TESTS_DIR=$ROOT/nailgun/ui_tests
-  local TESTS=$TESTS_DIR/test_*.js
   local artifacts=$ARTIFACTS/webui
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config
   local COMPRESSED_STATIC_DIR=$artifacts/static_compressed
-
-  if [ $# -ne 0 ]; then
-    TESTS=$@
-  fi
+  local result=0
+  local selenium_pid=0
+  local xvfb_pid=0
+  local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
 
   pushd $ROOT/nailgun >> /dev/null
 
-  # test compression
-  echo -n "Compressing UI... "
-  local output=$(grunt build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
-  if [ $? -ne 0 ]; then
-    echo "$output"
-    popd >> /dev/null
-    exit 1
+  # UI compression
+  if [ $webui_compress_test -ne 0 ]; then
+    echo -n "Compressing UI... "
+    local output=$(grunt build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
+    if [ $? -ne 0 ]; then
+      echo "$output"
+      popd >> /dev/null
+      exit 1
+    fi
+    echo "done"
   fi
-  echo "done"
 
-  # run js testcases
-  local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
-  local result=0
-  local pid
+  xdpyinfo -display $BROWSER_DISPLAY >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo -n "Display $BROWSER_DISPLAY is not available, "
+    which Xvfb > /dev/null
+    if [ $? -eq 0 ]; then
+      echo "using xvfb"
+      Xvfb -ac $BROWSER_DISPLAY >/dev/null 2>&1 &
+      xvfb_pid=$!
+    else
+      echo "xvfb not available, using display $DISPLAY"
+      BROWSER_DISPLAY=$DISPLAY
+    fi
+  fi
 
-  for testcase in $TESTS; do
+  if [ ! -f $SELENIUM_SERVER_PATH ]; then
+    echo "Downloading selenium server"
+    if [ $SELENIUM_SERVER_URL = "0" ]; then
+      echo "Selenium server download turned off and no server found in $SELENIUM_SERVER_PATH, exiting"
+      return 1;
+    else
+      wget $SELENIUM_SERVER_URL -O $SELENIUM_SERVER_PATH
+    fi
+  fi
 
+  selenium_pid=$(pgrep -f selenium-server)
+  if [ $? -ne 0 ]; then
+    echo "Starting selenium server"
+    DISPLAY=$BROWSER_DISPLAY java -jar $SELENIUM_SERVER_PATH -port $SELENIUM_SERVER_PORT > $SELENIUM_SERVER_LOG 2>&1 &
+    selenium_pid=$!
+  fi
+  echo "Selenium PID: $selenium_pid"
+
+  wait_for_url "http://localhost:$SELENIUM_SERVER_PORT/selenium-server/driver/?cmd=getLogMessages"
+  if [ $? -eq 0 ]; then
+    # run js testcases
+
+    echo "Running UI tests"
+    SERVER_PORT=$UI_SERVER_PORT grunt unit-tests
+    if [ $? -ne 0 ]; then
+      result=1
+    fi
+    echo "Unit tests done"
+
+    echo "Running functional tests"
     dropdb $config
     syncdb $config true
 
-    pid=`run_server $SERVER_PORT $server_log $config` || \
-      { echo 'Failed to start Nailgun'; return 1; }
-
-    if [ "$pid" -ne "0" ]; then
-      SERVER_PORT=$SERVER_PORT \
-      ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
+    local nailgun_pid=`run_server $UI_SERVER_PORT $server_log $config` || { echo 'Failed to start Nailgun'; return 1; }
+    if [ $nailgun_pid -ne 0 ]; then
+    SERVER_PORT=$UI_SERVER_PORT \
+      # TODO: run these one by one
+      grunt functional-tests
       if [ $? -ne 0 ]; then
         result=1
-        break
       fi
 
-      kill $pid
-      wait $pid 2> /dev/null
+      kill $nailgun_pid
+      wait $nailgun_pid 2> /dev/null
     else
       cat $server_log
       result=1
-      break
     fi
 
-  done
+    echo "Functional tests done"
+  else
+    echo "No Selenium available, exiting test"
+    result=1
+  fi
+
+  # cleanup
+  if [ $selenium_pid -ne 0 ]; then
+    kill $selenium_pid
+  fi
+
+  if [ $xvfb_pid -ne 0 ]; then
+    kill $xvfb_pid
+  fi
 
   rm $server_log
   popd >> /dev/null
 
   return $result
+}
+
+
+function wait_for_url {
+    local URL=$1
+    local retry_times=200
+
+    for i in $(seq 1 $retry_times); do
+      local http_code=`curl -s -w %{http_code} -o /dev/null -I $URL`
+      if [ $http_code = "200" ]; then
+        return 0;
+      fi
+      sleep 0.2
+    done
+
+    return 1;
 }
 
 
@@ -513,17 +585,9 @@ function run_server {
   tox -evenv -- $RUN_SERVER >> $SERVER_LOG 2>&1 &
 
   # wait for server availability
-  which curl > /dev/null
-  ret=$?
-  if [ $ret -eq 0 ]; then
-
-    local num_retries=$[$NAILGUN_START_MAX_WAIT_TIME * 10]
-
-    for i in $(seq 1 $num_retries); do
-      local http_code=`curl -s -w %{http_code} -o /dev/null $NAILGUN_CHECK_URL`
-      if [ "$http_code" == "200" ]; then break; fi
-      sleep 0.1
-    done
+  which nc > /dev/null
+  if [ $? -eq 0 ]; then
+    wait_for_url "http://0.0.0.0:$SERVER_PORT/"
   else
     sleep 5
   fi

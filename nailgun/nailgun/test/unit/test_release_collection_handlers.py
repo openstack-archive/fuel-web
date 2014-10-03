@@ -203,7 +203,7 @@ class TestHandlers(BaseIntegrationTest):
         orch_data = {
             "repo_metadata": {
                 "nailgun":
-                "http://10.20.0.2:8080/centos-5.0/centos/fuelweb/x86_64/"
+                "http://10.20.0.2:8080/centos-5.0/centos/x86_64/"
             },
             "puppet_modules_source":
             "rsync://10.20.0.2/puppet/release/5.0/modules",

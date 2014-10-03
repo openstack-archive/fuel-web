@@ -27,6 +27,8 @@ function usage {
   echo "  -N, --no-nailgun            Don't run NAILGUN tests"
   echo "  -w, --webui                 Run WEB-UI tests"
   echo "  -W, --no-webui              Don't run WEB-UI tests"
+  echo "  -x, --compress              Run compression tests for WEB-UI"
+  echo "  -X, --no-compress           Don't run compression tests for WEB-UI"
   echo "  -c, --cli                   Run FUELCLIENT tests"
   echo "  -C, --no-cli                Don't run FUELCLIENT tests"
   echo "  -u, --upgrade               Run tests for UPGRADE system"
@@ -58,6 +60,8 @@ function process_options {
       -L|--no-tasklib) no_tasklib_tests=1;;
       -w|--webui) webui_tests=1;;
       -W|--no-webui) no_webui_tests=1;;
+      -x|--compress) webui_compress_test=1;;
+      -X|--no-compress) webui_compress_test=0;;
       -c|--cli) cli_tests=1;;
       -C|--no-cli) no_cli_tests=1;;
       -u|--upgrade) upgrade_system=1;;
@@ -80,7 +84,6 @@ ROOT=$(dirname `readlink -f $0`)
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
-CASPERJS="casperjs"
 LINTUI="grunt lint-ui"
 
 # test options
@@ -94,6 +97,12 @@ FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
 FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-"$ROOT/fuelupgradedownloader.xml"}
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
 UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
+SELENIUM_SERVER_PORT=${SELENIUM_SERVER_PORT:-4444}
+SELENIUM_SERVER_PATH=${SELENIUM_SERVER_PATH:-"/tmp/selenium-server-standalone.jar"}
+SELENIUM_SERVER_URL=${SELENIUM_SERVER_URL:-"http://selenium-release.storage.googleapis.com/2.43/selenium-server-standalone-2.43.0.jar"}
+SELENIUM_SERVER_LOG=/tmp/selenium-server.log
+DISPLAY=${DISPLAY:-":99"}
+BROWSER_DISPLAY=${BROWSER_DISPLAY:-":99"}
 FUELCLIENT_SERVER_PORT=${FUELCLIENT_SERVER_PORT:-8003}
 TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
 ARTIFACTS=${ARTIFACTS:-`pwd`/test_run}
@@ -106,6 +115,7 @@ no_agent_tests=0
 nailgun_tests=0
 no_nailgun_tests=0
 webui_tests=0
+webui_compress_test=1
 no_webui_tests=0
 cli_tests=0
 no_cli_tests=0
@@ -270,57 +280,97 @@ function run_nailgun_tests {
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_webui_tests {
   local SERVER_PORT=$UI_SERVER_PORT
-  local TESTS_DIR=$ROOT/nailgun/ui_tests
-  local TESTS=$TESTS_DIR/test_*.js
   local artifacts=$ARTIFACTS/webui
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config
   local COMPRESSED_STATIC_DIR=$artifacts/static_compressed
-
-  if [ $# -ne 0 ]; then
-    TESTS=$@
-  fi
+  local result=0
+  local selenium_pid=0
+  local xvfb_pid=0
+  local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
 
   pushd $ROOT/nailgun >> /dev/null
 
-  # test compression
-  echo -n "Compressing UI... "
-  local output=$(grunt build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
-  if [ $? -ne 0 ]; then
-    echo "$output"
-    popd >> /dev/null
-    exit 1
+  # UI compression
+  if [ $webui_compress_test -ne 0 ]; then
+    echo -n "Compressing UI... "
+    local output=$(grunt build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
+    if [ $? -ne 0 ]; then
+      echo "$output"
+      popd >> /dev/null
+      exit 1
+    fi
+    echo "done"
   fi
-  echo "done"
 
-  # run js testcases
-  local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
-  local result=0
+  xdpyinfo -display $BROWSER_DISPLAY >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo -n "Display $BROWSER_DISPLAY is not available, "
+    which Xvfb > /dev/null
+    if [ $? -eq 0 ]; then
+      echo "using xvfb"
+      Xvfb -ac $BROWSER_DISPLAY >/dev/null 2>&1 &
+      xvfb_pid=$!
+    else
+      echo "xvfb not available, using display $DISPLAY"
+      BROWSER_DISPLAY=$DISPLAY
+    fi
+  fi
 
-  for testcase in $TESTS; do
+  if [ ! -f $SELENIUM_SERVER_PATH ]; then
+    echo "Downloading selenium server"
+    wget $SELENIUM_SERVER_URL -O $SELENIUM_SERVER_PATH
+  fi
 
+  echo "Starting selenium server"
+  DISPLAY=$BROWSER_DISPLAY java -jar $SELENIUM_SERVER_PATH -port $SELENIUM_SERVER_PORT > $SELENIUM_SERVER_LOG 2>&1 &
+  selenium_pid=$!
+  echo "Selenium PID: $selenium_pid"
+
+  wait_for_selenium
+  if [ $? -ne 0 ]; then
+    # run js testcases
+
+    echo "Running UI tests"
+    SERVER_PORT=$SERVER_PORT grunt unit-tests
+    if [ $? -ne 0 ]; then
+      result=1
+    fi
+    echo "Unit tests done"
+
+    echo "Running functional tests"
     dropdb $config
     syncdb $config true
 
-    local pid=`run_server $SERVER_PORT $server_log $config`
-
-    if [ $pid -ne 0 ]; then
-      SERVER_PORT=$SERVER_PORT \
-      ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
+    local nailgun_pid=`run_server $SERVER_PORT $server_log $config`
+    if [ $nailgun_pid -ne 0 ]; then
+    SERVER_PORT=$SERVER_PORT \
+      grunt functional-tests
       if [ $? -ne 0 ]; then
         result=1
-        break
       fi
 
-      kill $pid
-      wait $pid 2> /dev/null
+      kill $nailgun_pid
+      wait $nailgun_pid 2> /dev/null
     else
       cat $server_log
       result=1
-      break
     fi
 
-  done
+    echo "Functional tests done"
+  else
+    echo "No Selenium available, exiting test"
+    result=1
+  fi
+
+  # cleanup
+  if [ $selenium_pid -ne 0 ]; then
+    kill $selenium_pid
+  fi
+
+  if [ $xvfb_pid -ne 0 ]; then
+    kill $xvfb_pid
+  fi
 
   rm $server_log
   popd >> /dev/null
@@ -328,6 +378,23 @@ function run_webui_tests {
   return $result
 }
 
+
+# Helper function for WEB-UI tests: wait for Selenium
+# to warm up (i.e. to listen at port SELENIUM_SERVER_PORT)
+function wait_for_selenium {
+  local retry_times=60
+
+  for try in `seq 1 $retry_times`; do
+    curl localhost:$SELENIUM_SERVER_PORT > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      sleep 1
+    else
+      return 1
+    fi
+  done
+
+  return 0
+}
 
 # Run fuelclient tests.
 #

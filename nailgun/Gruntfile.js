@@ -299,12 +299,29 @@ module.exports = function(grunt) {
                     moduleType: 'js'
                 }
             }
+        },
+        intern: {
+            unit: {
+                options: {
+                    config: 'ui_tests/intern',
+                    runType: 'runner',
+                    suites: ['ui_tests/unit/example']
+                }
+            },
+            functional: {
+                options: {
+                    config: 'ui_tests/intern',
+                    runType: 'runner',
+                    functionalSuites: ['ui_tests/functional/example']
+                }
+            }
         }
     });
 
     Object.keys(pkg.devDependencies)
         .filter(function(npmTaskName) { return npmTaskName.indexOf('grunt-') === 0; })
         .forEach(grunt.loadNpmTasks.bind(grunt));
+    grunt.loadNpmTasks('intern');
 
     grunt.registerTask('build', [
         'bower',

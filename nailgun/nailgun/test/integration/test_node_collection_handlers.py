@@ -28,8 +28,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual([], response)
+        self.assertEqual([], resp.json_body)
 
     def test_notification_node_id(self):
         node = self.env.create_node(
@@ -42,7 +41,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        notif_api = jsonutils.loads(resp.body)[0]
+        notif_api = resp.json_body[0]
         self.assertEqual(node['id'], notif_api['node_id'])
 
     def test_node_get_with_cluster(self):
@@ -61,11 +60,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(1, len(response))
+        self.assertEqual(1, len(resp.json_body))
         self.assertEqual(
             self.env.nodes[1].id,
-            response[0]['id']
+            resp.json_body[0]['id']
         )
 
     def test_node_get_with_cluster_None(self):
@@ -83,9 +81,8 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(1, len(response))
-        self.assertEqual(self.env.nodes[0].id, response[0]['id'])
+        self.assertEqual(1, len(resp.json_body))
+        self.assertEqual(self.env.nodes[0].id, resp.json_body[0]['id'])
 
     def test_node_get_without_cluster_specification(self):
         self.env.create(
@@ -101,8 +98,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(2, len(response))
+        self.assertEqual(2, len(resp.json_body))
 
     def test_node_get_with_cluster_and_assigned_ip_addrs(self):
         self.env.create(
@@ -124,8 +120,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(2, len(response))
+        self.assertEqual(2, len(resp.json_body))
 
     def test_node_creation(self):
         resp = self.app.post(
@@ -135,8 +130,7 @@ class TestHandlers(BaseIntegrationTest):
                              'status': 'discover'}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 201)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual('discover', response['status'])
+        self.assertEqual('discover', resp.json_body['status'])
 
     def test_node_update(self):
         node = self.env.create_node(api=False)
@@ -305,7 +299,7 @@ class TestHandlers(BaseIntegrationTest):
                 'agent_checksum': 'test'
             }),
             headers=self.default_headers)
-        response = jsonutils.loads(resp.body)
+        response = resp.json_body
         self.assertEqual(resp.status_code, 200)
         self.assertFalse('cached' in response and response['cached'])
         resp = self.app.put(
@@ -316,7 +310,7 @@ class TestHandlers(BaseIntegrationTest):
                 'agent_checksum': 'test'
             }),
             headers=self.default_headers)
-        response = jsonutils.loads(resp.body)
+        response = resp.json_body
         self.assertEqual(resp.status_code, 200)
         self.assertTrue('cached' in response and response['cached'])
 
@@ -432,10 +426,10 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 200)
-        response = jsonutils.loads(resp.body)
+
         # Here we are checking if node mac is successfully updated
-        self.assertEqual(node1_json["mac"], response[0]["mac"])
-        self.assertEqual(meta, response[0]["meta"])
+        self.assertEqual(node1_json["mac"], resp.json_body[0]["mac"])
+        self.assertEqual(meta, resp.json_body[0]["meta"])
 
     def test_duplicated_node_create_fails(self):
         node = self.env.create_node(api=False)
@@ -473,9 +467,8 @@ class TestHandlers(BaseIntegrationTest):
                               'pending_roles': []}]),
             headers=self.default_headers)
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual(1, len(response))
-        self.assertEqual(node.id, response[0]['id'])
+        self.assertEqual(1, len(resp.json_body))
+        self.assertEqual(node.id, resp.json_body[0]['id'])
         self.assertEqual(node.name, default_name)
         self.assertEqual(node.cluster, None)
         self.assertEqual(node.pending_role_list, [])
@@ -489,17 +482,15 @@ class TestHandlers(BaseIntegrationTest):
                 **{'mac': mac}
             )
 
-            node = jsonutils.loads(
-                self.app.get(reverse('NodeCollectionHandler')).body
-            )[0]
+            node = self.app.get(reverse('NodeCollectionHandler')).json_body[0]
             self.assertEqual(node['name'],
                              'Untitled ({0})'.format(node_mac[-5:]))
 
         node_name_test(node_mac.upper())
 
-        node_id = jsonutils.loads(
-            self.app.get(reverse('NodeCollectionHandler')).body
-        )[0]['id']
+        node_id = self.app.get(
+            reverse('NodeCollectionHandler')
+        ).json_body[0]['id']
 
         self.app.delete(
             reverse('NodeHandler', {'obj_id': node_id})

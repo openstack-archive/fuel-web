@@ -142,7 +142,7 @@ class Environment(object):
                 headers=self.default_headers
             )
             self.tester.assertEqual(resp.status_code, 201)
-            release = jsonutils.loads(resp.body)
+            release = resp.json_body
             self.releases.append(
                 self.db.query(Release).get(release['id'])
             )
@@ -177,7 +177,7 @@ class Environment(object):
                 expect_errors=True
             )
             self.tester.assertEqual(resp.status_code, 201)
-            cluster = jsonutils.loads(resp.body)
+            cluster = resp.json_body
             self.clusters.append(
                 Cluster.get_by_uid(cluster['id'])
             )
@@ -238,7 +238,7 @@ class Environment(object):
             if str(expect_http)[0] != "2":
                 return None
             self.tester.assertEqual(resp.status_code, expect_http)
-            node = jsonutils.loads(resp.body)
+            node = resp.json_body
             node_db = Node.get_by_uid(node['id'])
             if 'interfaces' not in node_data['meta'] \
                     or not node_data['meta']['interfaces']:
@@ -468,7 +468,7 @@ class Environment(object):
                 expect_errors=True
             )
             self.tester.assertEqual(202, resp.status_code)
-            response = jsonutils.loads(resp.body)
+            response = resp.json_body
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
             ).first()
@@ -486,9 +486,8 @@ class Environment(object):
                 headers=self.default_headers)
 
             self.tester.assertEqual(202, resp.status_code)
-            response = jsonutils.loads(resp.body)
             return self.db.query(Task).filter_by(
-                uuid=response['uuid']
+                uuid=resp.json_body['uuid']
             ).first()
         else:
             raise NotImplementedError(
@@ -506,9 +505,8 @@ class Environment(object):
             self.tester.assertEqual(expect_http, resp.status_code)
             if not str(expect_http).startswith("2"):
                 return resp.body
-            response = jsonutils.loads(resp.body)
             return self.db.query(Task).filter_by(
-                uuid=response['uuid']
+                uuid=resp.json_body['uuid']
             ).first()
         else:
             raise NotImplementedError(
@@ -526,9 +524,8 @@ class Environment(object):
             self.tester.assertEqual(resp.status_code, expect_http)
             if not str(expect_http).startswith("2"):
                 return resp.body
-            response = jsonutils.loads(resp.body)
             return self.db.query(Task).filter_by(
-                uuid=response['uuid']
+                uuid=resp.json_body['uuid']
             ).first()
         else:
             raise NotImplementedError(
@@ -569,8 +566,7 @@ class Environment(object):
                 headers=self.default_headers
             )
             self.tester.assertEqual(202, resp.status_code)
-            response = jsonutils.loads(resp.body)
-            task_uuid = response['uuid']
+            task_uuid = resp.json_body['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()
         else:
             raise NotImplementedError(
@@ -585,7 +581,7 @@ class Environment(object):
                     kwargs={"node_id": node_id}),
             headers=self.default_headers)
         self.tester.assertEqual(resp.status_code, 200)
-        data = jsonutils.loads(resp.body)
+        data = resp.json_body
 
         nics = self.db.query(NodeNICInterface).filter(
             NodeNICInterface.name.in_(nic_names)

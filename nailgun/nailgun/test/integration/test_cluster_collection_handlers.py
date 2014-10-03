@@ -29,11 +29,11 @@ from nailgun.test.base import reverse
 class TestHandlers(BaseIntegrationTest):
 
     def _get_cluster_networks(self, cluster_id):
-        nets = jsonutils.loads(self.app.get(
+        nets = self.app.get(
             reverse('NovaNetworkConfigurationHandler',
                     {"cluster_id": cluster_id}),
             headers=self.default_headers,
-        ).body)["networks"]
+        ).json_body["networks"]
         return nets
 
     def test_cluster_list_empty(self):
@@ -42,8 +42,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        self.assertEqual([], response)
+        self.assertEqual([], resp.json_body)
 
     def test_cluster_create(self):
         release_id = self.env.create_release(api=False).id
@@ -195,9 +194,8 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_verify_networks(self, mocked_rpc):
         cluster = self.env.create_cluster(api=True)
-        nets = jsonutils.loads(self.env.nova_networks_get(cluster['id']).body)
+        nets = self.env.nova_networks_get(cluster['id']).json_body
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
         self.assertEqual(202, resp.status_code)
-        task = jsonutils.loads(resp.body)
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], 'ready')

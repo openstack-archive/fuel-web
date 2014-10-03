@@ -61,10 +61,9 @@ class TestClusterChanges(BaseIntegrationTest):
                 kwargs={'obj_id': cluster['id']}),
             headers=self.default_headers
         )
-        response = jsonutils.loads(resp.body)
         self.assertIn(
             {"name": "disks", "node_id": node_db.id},
-            response["changes"]
+            resp.json_body["changes"]
         )
 
     def test_node_volumes_clears_after_deletion_from_cluster(self):
@@ -142,7 +141,7 @@ class TestClusterChanges(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers
         )
-        net_id = jsonutils.loads(resp.body)['networks'][0]["id"]
+        net_id = resp.json_body['networks'][0]["id"]
         resp = self.app.put(
             reverse(
                 'NovaNetworkConfigurationHandler',

@@ -14,7 +14,7 @@
 
 from mock import patch
 
-from nailgun.openstack.common import jsonutils as json
+from nailgun.openstack.common import jsonutils
 from nailgun.test import base
 
 
@@ -42,7 +42,7 @@ class TestPutSameJson(base.BaseIntegrationTest):
         """
         response = self.app.put(
             base.reverse(name, kwargs=arguments),
-            json.dumps(data),
+            jsonutils.dumps(data),
             headers=self.default_headers
         )
         self.assertEqual(response.status_code, expected_status)
@@ -51,11 +51,11 @@ class TestPutSameJson(base.BaseIntegrationTest):
         """Makes a GET request to a resource with `name`.
         Returns a deserialized dict.
         """
-        response = self.app.get(
+        resp = self.app.get(
             base.reverse(name, kwargs=arguments),
             headers=self.default_headers
         )
-        return json.loads(response.body)
+        return resp.json_body
 
     def test_release(self):
         release = self.env.create_release()

@@ -36,7 +36,7 @@ class TestAttributes(BaseIntegrationTest):
         release = objects.Release.get_by_uid(cluster['release_id'])
         self.assertEqual(200, resp.status_code)
         self.assertEqual(
-            jsonutils.loads(resp.body)['editable'],
+            resp.json_body['editable'],
             release.attributes_metadata['editable']
         )
         attrs = objects.Cluster.get_attributes(cluster_db)
@@ -156,7 +156,7 @@ class TestAttributes(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(
-            jsonutils.loads(resp.body)['editable'],
+            resp.json_body['editable'],
             release.attributes_metadata['editable']
         )
 
@@ -191,7 +191,7 @@ class TestAttributes(BaseIntegrationTest):
             cluster['release_id']
         )
         self.assertEqual(
-            jsonutils.loads(resp.body)['editable'],
+            resp.json_body['editable'],
             release.attributes_metadata['editable']
         )
 

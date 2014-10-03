@@ -27,6 +27,7 @@ down_revision = '52924111f7d8'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.utils.migration import upgrade_release_fill_orchestrator_data
 from nailgun.utils.migration import upgrade_release_set_deployable_false
 
 
@@ -60,6 +61,13 @@ def upgrade_data():
     # do not deploy 5.0.x series
     upgrade_release_set_deployable_false(
         connection, ['2014.1', '2014.1.1-5.0.1', '2014.1.1-5.0.2'])
+
+    # In Fuel 5.x default releases do not have filled orchestrator_data,
+    # and defaults one have been used. In Fuel 6.0 we're going to change
+    # default paths, so we need to keep them for old releases explicitly.
+    #
+    # NOTE: all release versions in Fuel 5.x starts with "2014.1"
+    upgrade_release_fill_orchestrator_data(connection, ['2014.1%'])
 
 
 def downgrade_schema():

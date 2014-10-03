@@ -21,6 +21,7 @@ import yaml
 
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.openstack.common import jsonutils
+from nailgun.settings import settings
 
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
@@ -176,3 +177,52 @@ def upgrade_release_set_deployable_false(connection, versions):
         "   WHERE version IN :versions")
 
     connection.execute(update_query, versions=tuple(versions))
+
+
+def upgrade_release_fill_orchestrator_data(connection, versions):
+    """Fill release_orchestrator_data if it's not filled yet.
+
+    :param connection: a database connection
+    :param versions: a list of versions to be forbidden
+    """
+    for version in versions:
+        select_query = text(
+            "SELECT id, operating_system FROM releases "
+            "   WHERE version LIKE :version AND id NOT IN ("
+            "       SELECT release_id FROM release_orchestrator_data "
+            "   )")
+
+        releases = connection.execute(select_query, version=version)
+
+        for release in releases:
+            insert_query = text(
+                "INSERT INTO release_orchestrator_data ("
+                "       release_id, repo_metadata, puppet_manifests_source, "
+                "       puppet_modules_source)"
+                "   VALUES ("
+                "       :release_id, "
+                "       :repo_metadata, "
+                "       :puppet_manifests_source, "
+                "       :puppet_modules_source)")
+
+            # if release_orchestrator_data isn't filled then releases'
+            # repos stores in unversioned directory with "fuelweb" word
+            repo_path = 'http://{MASTER_IP}:8080/{OS}/fuelweb/x86_64'.format(
+                MASTER_IP=settings.MASTER_IP, OS=release[1].lower())
+
+            # for ubuntu we need to add 'precise main'
+            if release[1].lower() == 'ubuntu':
+                repo_path += ' precise main'
+
+            connection.execute(
+                insert_query,
+                release_id=release[0],
+                repo_metadata=(
+                    '{{ "nailgun": "{0}" }}'.format(repo_path)),
+                puppet_manifests_source=(
+                    'rsync://{MASTER_IP}:/puppet/manifests/'.format(
+                        MASTER_IP=settings.MASTER_IP)),
+                puppet_modules_source=(
+                    'rsync://{MASTER_IP}:/puppet/modules/'.format(
+                        MASTER_IP=settings.MASTER_IP)),
+            )

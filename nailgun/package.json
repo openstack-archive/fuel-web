@@ -21,6 +21,8 @@
     "grunt-lintspaces": "~0.6.0",
     "grunt-react": "~0.9.0",
     "grunt-text-replace": "~0.3.12",
+    "intern": "~2.1.1",
+    "leadfoot": "1.1.1",
     "jison": "~0.4.13",
     "jshint-stylish": "~0.4.0",
     "less": "~1.5.1",

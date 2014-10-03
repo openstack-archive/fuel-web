@@ -1420,7 +1420,7 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
     orch_data = {
         "repo_metadata": {
             "nailgun":
-            "http://10.20.0.2:8080/centos-5.0/centos/fuelweb/x86_64/"
+            "http://10.20.0.2:8080/centos-5.0/centos/x86_64/"
         },
         "puppet_modules_source":
         "rsync://10.20.0.2/puppet/release/5.0/modules",
@@ -1462,7 +1462,7 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
             fact['repo_metadata'],
             {
                 'nailgun': 'http://10.20.0.2:8080'
-                           '/centos-5.0/centos/fuelweb/x86_64/'
+                           '/centos-5.0/centos/x86_64/'
             }
         )
         self.assertEqual(
@@ -1495,7 +1495,7 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
         self.assertEqual(
             fact['repo_metadata'],
             {
-                'nailgun': 'http://127.0.0.1:8080/centos/fuelweb/x86_64'
+                'nailgun': 'http://127.0.0.1:8080/centos/x86_64'
             }
         )
         self.assertEqual(

@@ -87,6 +87,33 @@ define(['jquery', 'underscore'], function($, _) {
                     return $.Deferred().reject();
                 }
             }, this));
+        },
+        deauthenticate: function() {
+            var data = {auth: {}};
+
+            if (this.tokenRemoveRequest) {
+                return this.tokenRemoveRequest;
+            }
+            if (!this.token) {
+                return $.Deferred().reject();
+            }
+
+            this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + this.token, {
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json',
+                headers: {'X-Auth-Token': this.token}
+            }).then(_.bind(function(result, state, deferred) {
+                delete this.userId;
+                delete this.username;
+                delete this.password;
+                delete this.token;
+                delete this.tokenUpdateTime;
+            }, this)).always(_.bind(function() {
+                delete this.tokenRemoveRequest;
+            }, this));
+
+            return this.tokenRemoveRequest;
         }
     });
 

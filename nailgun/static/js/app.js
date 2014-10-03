@@ -179,17 +179,21 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.setPage(LoginPage);
         },
         logout: function() {
-            if (this.version.get('auth_required') && this.user.get('authenticated')) {
-                this.user.set('authenticated', false);
-                this.user.unset('username');
-                this.user.unset('password');
-                delete app.keystoneClient.userId;
-                delete app.keystoneClient.username;
-                delete app.keystoneClient.password;
-                delete app.keystoneClient.token;
-                delete app.keystoneClient.tokenUpdateTime;
+            var defer;
+
+            if (!this.user) {
+                defer = $.Deferred().resolve();
+            } else if (this.version.get('auth_required') && this.user.get('authenticated')) {
+                defer = this.keystoneClient.deauthenticate().always(_.bind(function() {
+                    this.user.set('authenticated', false);
+                    this.user.unset('username');
+                    this.user.unset('password');
+                }, this));
+            } else {
+                defer = $.Deferred().resolve();
             }
-            _.defer(function() {
+
+            defer.always(function() {
                 app.navigate('#login', {trigger: true, replace: true});
             });
         },

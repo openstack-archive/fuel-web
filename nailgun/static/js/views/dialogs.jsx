@@ -544,8 +544,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 currentPassword: '',
                 confirmationPassword: '',
                 newPassword: '',
-                validationError: false,
-                actionInProgress: false
+                validationError: false
             };
         },
         getError: function(name) {

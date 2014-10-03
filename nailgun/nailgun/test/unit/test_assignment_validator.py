@@ -19,54 +19,65 @@ from nailgun.test.base import BaseUnitTest
 
 class TestAssignmentValidator(BaseUnitTest):
     def setUp(self):
-        self.settings = {'parent': {
-                         'child': {
-                         'value': 1
-                         }}}
-
-    def test_search_in_settings(self):
-        pattern = 'parent.child.value'
-        result = NodeAssignmentValidator._search_in_settings(self.settings,
-                                                             pattern)
-        self.assertEqual(result, 1)
-
-    def test_search_in_settings_non_exisxt(self):
-        pattern = 'parent.fake.value'
-        result = NodeAssignmentValidator._search_in_settings(self.settings,
-                                                             pattern)
-        self.assertEqual(result, None)
+        self.models = {
+            'settings': {
+                'parent': {
+                    'child': {
+                        'value': 1
+                    }
+                }
+            }
+        }
 
     def test_check_roles_requirement(self):
         roles = ['test']
-        roles_metadata = {'test':
-                         {'depends':
-                          [{'condition': {'setting:parent.child.value': 1},
-                           'warning': 'error'}]}}
-        try:
-            NodeAssignmentValidator.check_roles_requirement(roles,
-                                                            roles_metadata,
-                                                            self.settings)
-        except errors.InvalidData as e:
-            self.fail('check_roles_requirement raised exception: {0}'.format(
-                e.message))
+        roles_metadata = {
+            'test': {
+                'depends': [
+                    {
+                        'condition': 'settings:parent.child.value == 1',
+                        'warning': 'error'
+                    }
+                ]
+            }
+        }
+
+        NodeAssignmentValidator.check_roles_requirement(roles,
+                                                        roles_metadata,
+                                                        self.models)
+
+        roles = ['test']
+        roles_metadata = {
+            'test': {
+                'depends': [
+                    {
+                        'condition': "settings:parent.child.value != 'x'",
+                        'warning': 'error'
+                    }
+                ]
+            }
+        }
+
+        NodeAssignmentValidator.check_roles_requirement(roles,
+                                                        roles_metadata,
+                                                        self.models)
 
     def test_check_roles_requirement_failed(self):
         roles = ['test']
 
+        # wrong child value
         with self.assertRaises(errors.InvalidData):
-            roles_metadata = {'test':
-                              {'depends':
-                              [{'condition': {'setting:parent.child.value': 0},
-                                'warning': 'error'}]}}
-            NodeAssignmentValidator.check_roles_requirement(roles,
-                                                            roles_metadata,
-                                                            self.settings)
+            roles_metadata = {
+                'test': {
+                    'depends': [
+                        {
+                            'condition': 'settings:parent.child.value == 0',
+                            'warning': 'error'
+                        }
+                    ]
+                }
+            }
 
-        with self.assertRaises(errors.InvalidData):
-            roles_metadata = {'test':
-                              {'depends':
-                               [{'condition': {'parent.child.value': 0},
-                               'warning': 'error'}]}}
             NodeAssignmentValidator.check_roles_requirement(roles,
                                                             roles_metadata,
-                                                            self.settings)
+                                                            self.models)

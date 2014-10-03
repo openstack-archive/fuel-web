@@ -104,6 +104,50 @@ gulp.task('bower', ['bower:fetch'], function() {
         .pipe(gulp.dest(bowerDir));
 });
 
+var selenium = require('selenium-standalone');
+var seleniumProcess = null;
+function shutdownSelenium() {
+    if (seleniumProcess) {
+        seleniumProcess.kill();
+        seleniumProcess = null;
+    }
+}
+
+gulp.task('selenium:fetch', function(cb) {
+    var defaultVersion = '2.45.0';
+    selenium.install({version: argv.version || defaultVersion}, cb);
+});
+
+gulp.task('selenium', ['selenium:fetch'], function(cb) {
+    var port = process.env.SELENIUM_SERVER_PORT || 4444;
+    selenium.start(
+        {seleniumArgs: ['--port', port], spawnOptions: {stdio: 'pipe'}},
+        function(err, child) {
+            if (err) throw err;
+            child.on('exit', function() {
+                if (seleniumProcess) {
+                    gutil.log(gutil.colors.yellow('Selenium process died unexpectedly. Probably port', port, ' is already in use.'));
+                }
+            });
+            ['exit', 'uncaughtException', 'SIGTERM', 'SIGINT'].forEach(function(event) {
+                process.on(event, shutdownSelenium);
+            });
+            seleniumProcess = child;
+            cb();
+        }
+    );
+});
+
+gulp.task('selenium:stop', shutdownSelenium);
+
+gulp.task('intern:unit', function(cb) {
+    cb();
+});
+
+gulp.task('unit-tests', function() {
+    runSequence('selenium', 'intern:unit', 'selenium:stop');
+});
+
 gulp.task('jison', function() {
     return gulp.src('static/js/expression/parser.jison')
         .pipe(jison({moduleType: 'js'}))

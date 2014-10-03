@@ -21,7 +21,9 @@
     "gulp-react": "~2.0.0",
     "gulp-replace": "~0.5.2",
     "gulp-util": "~3.0.3",
+    "intern": "~2.2.2",
     "jshint-stylish": "~0.4.0",
+    "leadfoot": "~1.1.1",
     "less": "~1.5.1",
     "lodash-node": "~2.4.1",
     "main-bower-files": "~2.6.2",
@@ -29,6 +31,7 @@
     "requirejs": "~2.1.16",
     "rimraf": "~2.2.8",
     "run-sequence": "~1.0.2",
+    "selenium-standalone": "~4.2.1",
     "uglify-js": "~2.4.16"
   }
 }

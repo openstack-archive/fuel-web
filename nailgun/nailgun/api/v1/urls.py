@@ -79,6 +79,8 @@ from nailgun.api.v1.handlers.tasks import TaskHandler
 
 from nailgun.api.v1.handlers.version import VersionHandler
 
+from nailgun.api.v1.handlers.removed import RemovedIn51RedHatAccountHandler
+from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
 
 urls = (
     r'/releases/?$',
@@ -187,6 +189,11 @@ urls = (
     CapacityLogHandler,
     r'/capacity/csv/?$',
     CapacityLogCsvHandler,
+
+    r'/redhat/account/?$',
+    RemovedIn51RedHatAccountHandler,
+    r'/redhat/setup/?$',
+    RemovedIn51RedHatSetupHandler,
 )
 
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]

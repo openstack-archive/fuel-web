@@ -156,6 +156,7 @@ class BaseHandler(object):
             405: web.nomethod,
             406: web.notacceptable,
             409: web.conflict,
+            410: web.gone,
             415: web.unsupportedmediatype,
 
             500: web.internalerror,

@@ -11,3 +11,4 @@ Table of contents
    user
    devops
    buildsystem
+   ci/overview

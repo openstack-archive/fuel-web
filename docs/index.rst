@@ -11,3 +11,5 @@ Table of contents
    user
    devops
    buildsystem
+   ci/overview
+   ci/third_party

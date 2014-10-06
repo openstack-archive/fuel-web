@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import Cookie
 import re
 
 from nailgun.api.v1 import urls as api_urls
@@ -32,6 +33,26 @@ def public_urls():
     urls["/static"] = ['GET']
     urls["/keystone"] = ['GET', 'POST']
     return urls
+
+
+class CookieTokenMixin(object):
+    """Mixin for getting the auth token out of request X-Auth-Token header or
+    if that doesn't exist, from the cookie.
+    """
+    def get_auth_token(self, env):
+        token = env.get('HTTP_X_AUTH_TOKEN', '')
+
+        if token:
+            return token
+
+        c = Cookie.SimpleCookie(env.get('HTTP_COOKIE', ''))
+
+        token = c.get('token')
+
+        if token:
+            return token.value
+
+        return ''
 
 
 class SkipAuthMixin(object):
@@ -68,24 +89,36 @@ class SkipAuthMixin(object):
         return super(SkipAuthMixin, self).__call__(env, start_response)
 
 
-class FakeAuthProtocol(object):
+class FakeAuthProtocol(CookieTokenMixin):
     """Auth protocol for fake mode.
     """
     def __init__(self, app, conf):
         self.app = app
 
     def __call__(self, env, start_response):
-        if validate_token(env.get('HTTP_X_AUTH_TOKEN', '')):
+        if validate_token(self.get_auth_token(env)):
             return self.app(env, start_response)
         else:
             start_response('401 Unauthorized', [])
             return ''
 
 
-class NailgunKeystoneAuthMiddleware(SkipAuthMixin, auth_token.AuthProtocol):
+class NailgunKeystoneAuthMiddleware(
+        CookieTokenMixin,
+        SkipAuthMixin,
+        auth_token.AuthProtocol):
     """Auth middleware for keystone.
     """
-    pass
+    def __call__(self, env, start_response):
+        token = self.get_auth_token(env)
+
+        if token:
+            env['HTTP_X_AUTH_TOKEN'] = token
+
+        return super(
+            NailgunKeystoneAuthMiddleware,
+            self
+        ).__call__(env, start_response)
 
 
 class NailgunFakeKeystoneAuthMiddleware(SkipAuthMixin, FakeAuthProtocol):

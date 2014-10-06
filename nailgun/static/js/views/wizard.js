@@ -42,7 +42,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         template: _.template(createClusterWizardTemplate),
         modalOptions: {backdrop: 'static'},
         events: {
-            keydown: 'onInputKeydown',
+            keydown: 'onKeydown',
             'click .next-pane-btn': 'nextPane',
             'click .prev-pane-btn': 'prevPane',
             'click .wizard-step.available': 'onStepClick',
@@ -201,7 +201,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             }, this);
             return result;
         },
-        onInputKeydown: function(e) {
+        onKeydown: function(e) {
             if (e.which == 13) {
                 e.preventDefault();
                 this.nextPane();

@@ -130,7 +130,7 @@ function(React, models, utils, componentMixins, wizard) {
                                 <div key="nodes-value" className="span4">{nodes.length}</div>
                                 {!!nodes.length && [
                                     <div key="cpu-title" className="span6">{$.t('clusters_page.cluster_hardware_cpu')}</div>,
-                                    <div key="cpu-value" className="span4">{nodes.resources('cores')}</div>,
+                                    <div key="cpu-value" className="span4">{nodes.resources('cores')} ({nodes.resources('ht_cores')})</div>,
                                     <div key="hdd-title" className="span6">{$.t('clusters_page.cluster_hardware_hdd')}</div>,
                                     <div key="hdd-value" className="span4">{nodes.resources('hdd') ? utils.showDiskSize(nodes.resources('hdd')) : '?GB'}</div>,
                                     <div key="ram-title" className="span6">{$.t('clusters_page.cluster_hardware_ram')}</div>,

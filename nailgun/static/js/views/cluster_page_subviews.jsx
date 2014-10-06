@@ -124,12 +124,13 @@ function(React, utils, dialogs) {
                 taskName = task ? task.get('name') : '',
                 taskProgress = task ? task.get('progress') || 0 : 0,
                 infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
+                isExperimental = _.contains(app.version.get('feature_groups'), 'experimental'),
                 itemClass = 'deployment-control-item-box';
             return task ? (
                     <div className={'pull-right deployment-progress-box ' + taskName}>
                         {!infiniteTask &&
                             <div>
-                                {taskName != 'update' &&
+                                {(taskName != 'update' || isExperimental) &&
                                     <div className={itemClass}>
                                         <button
                                             className='btn btn-danger stop-deployment-btn'

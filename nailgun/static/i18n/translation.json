@@ -568,13 +568,22 @@
                     "incomplete_actions_text": "There are incompleted actions. Removing of the environment may fail and lead to inconsistent state.",
                     "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes."
                 },
-                "stop_deployment": {
+                "stop_deploy": {
                     "title": "Stop Deployment",
                     "text": "Are you sure you want to stop this deployment? Any progress will be lost and nodes will be reset to their pre-deployment state.",
                     "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state.",
-                    "stop_deployment_error": {
+                    "stop_deploy_error": {
                         "title": "Stop Deployment Error",
-                        "stop_deployment_warning": "Unable to stop deployment"
+                        "stop_deploy_warning": "Unable to stop deployment"
+                    }
+                },
+                "stop_update": {
+                    "title": "Stop Update",
+                    "text": "Are you sure you want to stop update?",
+                    "provisioning_warning": "Are you sure you want to stop update?",
+                    "stop_update_error": {
+                        "title": "Stop Update Error",
+                        "stop_update_warning": "Unable to stop update"
                     }
                 },
                 "reset_environment": {

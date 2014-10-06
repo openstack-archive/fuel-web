@@ -249,21 +249,19 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
     views.StopDeploymentDialog = React.createClass({
         mixins: [componentMixins.dialogMixin],
         getDefaultProps: function() {
-            return {title: $.t('dialog.stop_deployment.title')};
+            return {title: $.t('dialog.stop_deploy.title')};
         },
         stopDeployment: function() {
             this.setState({actionInProgress: true});
-            var task = new models.Task();
+            var task = new models.Task(),
+                action = this.props.cluster.task({group: 'deployment', status: 'running'}).get('name');
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/stop_deployment', type: 'PUT'})
                 .done(_.bind(function() {
                     this.close();
                     app.page.deploymentTaskStarted();
                 }, this))
                 .fail(_.bind(function(response) {
-                    this.displayError({
-                        title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
-                        message: utils.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
-                    });
+                    this.displayError({title: $.t('dialog.stop_' + action + '.stop_' + action + '_error.title'), message: utils.getResponseText(response) || $.t('dialog.stop_' + action + '.stop_' + action + '_error.stop_' + action + '_warning')});
                     this.setState({actionInProgress: false});
                 }, this));
         },
@@ -271,7 +269,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             return (
                 <div className='msg-error'>
                     <span className='label label-important'>{$.t('common.important')}</span>
-                    {$.t('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
+                    {$.t('dialog.stop_deploy.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
                 </div>
             );
         },

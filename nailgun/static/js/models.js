@@ -212,7 +212,7 @@ define(['utils', 'deepModel'], function(utils) {
         groups: {
             release_setup: ['redhat_setup'],
             network: ['verify_networks', 'check_networks'],
-            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment']
+            deployment: ['stop_deployment', 'update', 'deploy', 'reset_environment']
         },
         extendGroups: function(filters) {
             return _.union(utils.composeList(filters.name), _.flatten(_.map(utils.composeList(filters.group), _.bind(function(group) {return this.groups[group];}, this))));

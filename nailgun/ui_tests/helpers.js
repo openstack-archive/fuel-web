@@ -20,6 +20,25 @@ var baseUrl = 'http://127.0.0.1:' + port + '/';
 
 var authToken;
 
+var withCookieHeader = function(headers) {
+    var ret = {},
+        property;
+
+    headers = headers || {};
+
+    if(authToken) {
+        ret.Cookie = 'token=' + authToken;
+    }
+
+    for(property in headers) {
+        if(headers.hasOwnProperty(property)) {
+            ret[property] = headers[property];
+        }
+    }
+
+    return ret;
+};
+
 casper.on('page.error', function(msg) {
     casper.echo(msg, 'ERROR');
 });
@@ -52,11 +71,12 @@ casper.test.assertSelectorDisappears = function(selector, message, timeout) {
 
 casper.authenticate = function(options) {
     options = options || {};
-    var username = options.username || 'admin';
-    var password = options.password || 'admin';
+    var username = options.username || 'admin',
+        password = options.password || 'admin';
+
     this.thenOpen(baseUrl + 'keystone/v2.0/tokens', {
         method: 'post',
-        headers: {'Content-Type': 'application/json'},
+        headers: withCookieHeader({'Content-Type': 'application/json'}),
         data: JSON.stringify({
             auth: {
                 passwordCredentials: {
@@ -74,9 +94,11 @@ casper.authenticate = function(options) {
             try {
                 authToken = JSON.parse(document.body.innerText).access.token.id;
             } catch (ignore) {}
+
             return authToken;
         }, [username, password]);
     });
+
     return this;
 }
 
@@ -85,7 +107,7 @@ casper.createCluster = function(options) {
     this.then(function() {
         return this.open(baseUrl + 'api/clusters', {
             method: 'post',
-            headers: {'Content-Type': 'application/json', 'X-Auth-Token': authToken},
+            headers: withCookieHeader({'Content-Type': 'application/json'}),
             data: JSON.stringify(options)
         });
     });
@@ -172,7 +194,7 @@ casper.createNode = function(options) {
     };
     return this.thenOpen(baseUrl + 'api/nodes', {
         method: 'post',
-        headers: {'Content-Type': 'application/json', 'X-Auth-Token': authToken},
+        headers: withCookieHeader({'Content-Type': 'application/json'}),
         data: JSON.stringify(options)
     });
 }

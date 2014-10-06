@@ -53,6 +53,9 @@ define(['jquery', 'underscore'], function($, _) {
                     this.userId = result.access.user.id;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
+
+                    $.cookie('token', result.access.token.id);
+
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
@@ -75,13 +78,15 @@ define(['jquery', 'underscore'], function($, _) {
                 type: 'PATCH',
                 dataType: 'json',
                 contentType: 'application/json',
-                headers: {'X-Auth-Token': this.token},
                 data: JSON.stringify(data)
             }).then(_.bind(function(result, state, deferred) {
                 try {
                     this.password = newPassword;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
+
+                    $.cookie('token', result.access.token.id);
+
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
@@ -102,6 +107,8 @@ define(['jquery', 'underscore'], function($, _) {
             delete this.username;
             delete this.password;
             delete this.token;
+
+            $.removeCookie('token');
 
             this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + token, {
                 type: 'DELETE',

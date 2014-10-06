@@ -53,6 +53,9 @@ define(['jquery', 'underscore'], function($, _) {
                     this.userId = result.access.user.id;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
+
+                    $.cookie('token', result.access.token.id);
+
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
@@ -75,19 +78,27 @@ define(['jquery', 'underscore'], function($, _) {
                 type: 'PATCH',
                 dataType: 'json',
                 contentType: 'application/json',
-                headers: {'X-Auth-Token': this.token},
                 data: JSON.stringify(data)
             }).then(_.bind(function(result, state, deferred) {
                 try {
                     this.password = newPassword;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
+
+                    $.cookie('token', result.access.token.id);
+
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
                 }
             }, this));
         }
+
+        // !!!!!!!!!!!!!!!!!!!!!!
+        // TODO: logout code here with cookie token removal
+        // This depends on issue https://review.openstack.org/#/c/125933/
+        // $.removeCookie('token');
+        // !!!!!!!!!!!!!!!!!!!!!!
     });
 
     return KeystoneClient;

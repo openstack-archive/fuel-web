@@ -19,6 +19,7 @@ requirejs.config({
     waitSeconds: 60,
     paths: {
         jquery: 'js/libs/bower/jquery/js/jquery',
+        'jquery-cookie': 'js/libs/bower/jquery-cookie/jquery.cookie',
         'jquery-checkbox': 'js/libs/custom/jquery.checkbox',
         'jquery-timeout': 'js/libs/custom/jquery.timeout',
         'jquery-ui': 'js/libs/custom/jquery-ui-1.10.2.custom',
@@ -88,6 +89,9 @@ requirejs.config({
                 $.i18n.init({resStore: translation, fallbackLng: 'en-US'});
             }
         },
+        'jquery-cookie': {
+            deps: ['jquery']
+        },
         'jquery-checkbox': {
             deps: ['jquery']
         },
@@ -124,6 +128,7 @@ require([
     'cocktail',
     'i18next',
     'bootstrap',
+    'jquery-cookie',
     'jquery-checkbox',
     'jquery-timeout',
     'jquery-ui',

@@ -13,17 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'utils',
-    'models',
-    'views/cluster_page_tabs/nodes_tab_screens/screen'
-],
-function(utils, models, Screen) {
+define(['utils', 'models'], function(utils, models) {
     'use strict';
-    var EditNodeScreen;
 
-    EditNodeScreen = Screen.extend({
+    var EditNodeScreen = Backbone.View.extend({
         constructorName: 'EditNodeScreen',
         keepScrollPosition: true,
         disableControls: function(disable) {
@@ -35,6 +28,28 @@ function(utils, models, Screen) {
             } else {
                 this.goToNodeList();
             }
+        },
+        goToNodeList: function() {
+            app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});
+        },
+        isLocked: function() {
+            return !!this.model.tasks({group: 'deployment', status: 'running'}).length;
+        },
+        initButtons: function() {
+            this.loadDefaultsButton = new Backbone.Model({disabled: false});
+            this.cancelChangesButton = new Backbone.Model({disabled: true});
+            this.applyChangesButton = new Backbone.Model({disabled: true});
+        },
+        setupButtonsBindings: function() {
+            var bindings = {attributes: [{name: 'disabled', observe: 'disabled'}]};
+            this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
+            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': bindings});
+            this.stickit(this.applyChangesButton, {'.btn-apply': bindings});
+        },
+        updateButtonsState: function(state) {
+            this.applyChangesButton.set('disabled', state);
+            this.cancelChangesButton.set('disabled', state);
+            this.loadDefaultsButton.set('disabled',  state);
         },
         initialize: function(options) {
             _.defaults(this, options);

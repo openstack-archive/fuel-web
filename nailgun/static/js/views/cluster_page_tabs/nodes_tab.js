@@ -18,13 +18,11 @@ define(
     'utils',
     'models',
     'views/common',
-    'views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
+    'views/cluster_page_tabs/nodes_tab_screens/node_list_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function(utils, models, commonViews, NodeListScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
     var NodesTab;
 
@@ -68,9 +66,7 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
         },
         routeScreen: function(options) {
             var screens = {
-                list: ClusterNodesScreen,
-                add: AddNodesScreen,
-                edit: EditNodesScreen,
+                list: NodeListScreen,
                 disks: EditNodeDisksScreen,
                 interfaces: EditNodeInterfacesScreen
             };

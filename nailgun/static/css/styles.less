@@ -670,19 +670,21 @@ label {cursor: default;}
         .css-linear-gradient-mixin-filter(#eedddd, #e3c9c9);
       }
     }
-    &.node-new { border-color: #61a466; }
-    &.node-offline, &.node-offline .name  { opacity: 0.7; }
-    &.node-delete { border-color: #a46161; }
-    &.node-delete .node-content .node-name-roles .name > p {
-      text-decoration: line-through !important;
-      cursor: default;
-      border-bottom: none;
-      &:hover {
+    &.disabled { cursor: default; }
+    &.pending_addition { border-color: #61a466; }
+    &.offline, &.offline .name  { opacity: 0.7; }
+    &.pending_deletion {
+      border-color: #a46161;
+      .node-content .node-name-roles .name > p {
+        text-decoration: line-through !important;
+        cursor: default;
         border-bottom: none;
-        color: @color-nodes-node-names;
+        &:hover {
+          border-bottom: none;
+          color: @color-nodes-node-names;
+        }
       }
     }
-    &.disabled { cursor: default; }
   }
   .node-content {
     display: block;
@@ -765,12 +767,7 @@ label {cursor: default;}
       margin-top: 14px;
       -webkit-font-smoothing: @font-aliasing;
       .font-layout-mixin(@font-size-small-3, @color-nodes-rule-list, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
-      span {
-        display: inline-block;
-        overflow: hidden;
-        float: left;
-        padding: 0 0 0 15px;
-      }
+      > span { padding: 0 0 0 15px; }
     }
     .node-details {
       .float-mixin(right);
@@ -826,7 +823,6 @@ label {cursor: default;}
         height: 13px;
         margin: 1px;
       }
-      span { position: relative; }
       &.provisioning span, &.deploying span {
         .font-layout-mixin(@font-size-base - 4, @fuel-white-color, null, null, 20px, none);
         letter-spacing: 0px;
@@ -843,56 +839,22 @@ label {cursor: default;}
   }
 }
 
-// Node management panel
-// -------------------------
-
-.nodes-management-panel {
-  .nodes-filter {
-    position: relative;
-    width: auto;
-    margin-top: -30px;
-    label {
-      float: none;
-    }
-    input[type=text] {
-      width: 145px;
-      padding-right: 20px;
-      &::-ms-clear { .width-height-mixin(0, 0); }
-    }
-    select {
-      margin: 0;
-      width: 170px;
-    }
-  }
-}
-
-.btn-clear-filter {
-  display: none;
-  .width-height-mixin(15px, 20px);
-  .position(absolute, @bottom: 18px, @right: 5px);
-}
-
-#tab-nodes .cluster-name {
-  margin-top: 10px !important;
-}
-
-.cluster-list .cluster-name {
+.cluster-name {
   height: 34px;
   overflow: hidden;
-  margin: 20px 20px 0px 20px;
+  margin: 10px 20px 0px 20px;
   .font-layout-mixin(@font-size-big-2,  @font-color-dark, normal, @line-height: 16px);
   word-break: break-all;
 }
 
 .node-list-header {
   margin-bottom: 0;
-  p {
-    margin-bottom: 0;
-  }
+  p { margin-bottom: 0; }
   a, label {
     padding-top: 3px;
     padding-right: 0;
     text-align: right;
+    input { .node-label-input-common; }
   }
 }
 
@@ -922,13 +884,7 @@ label {cursor: default;}
       .node-label-input-common;
     }
   }
-}
-.node-list-header label input {
-  .node-label-input-common;
-}
-
-.node-group-header h4 {
-  text-transform: capitalize;
+  h4 { text-transform: capitalize; }
 }
 
 .roles-panel {
@@ -968,28 +924,6 @@ label {cursor: default;}
   max-width: 800px;
 }
 
-// Manufacturer
-// -------------------------
-
-.manufacturer-hp:before {content: '\e81c';}
-.manufacturer-dell:before {content: '\e808';}
-.manufacturer-vbox:before, .manufacturer-virtualbox:before {content: '\e80a';}
-.manufacturer-vmware:before {content: '\e80d';}
-.manufacturer-xen:before {content: '\e80e'; font-size: (@font-size-base + 26) !important;}
-.manufacturer-openvz:before {content: '\e80c';}
-.manufacturer-cisco:before {content: '\e809';}
-.manufacturer-qemu:before {content: '\e810';}
-.manufacturer-supermicro:before { content: '\e80b'; font-size: (@font-size-base * 2) !important;}
-.manufacturer-kvm:before, .manufacturer-bochs:before {content: '\e80f'; font-size: (@font-size-base * 2 - 1) !important;}
-
-// Breadcrumb
-// -------------------------
-
-.openstack {
-  background: url(../img/cluster_logos.png) 0px 0px no-repeat;
-  background-position: 168px 0px;
-}
-
 .breadcrumb {
   background-color: rgba(0,0,0,.1);
   margin: -10px 0 10px 0;
@@ -1009,7 +943,21 @@ label {cursor: default;}
   }
 }
 
-// Cluster Tabs Design
+// Manufacturer
+// -------------------------
+
+.manufacturer-hp:before {content: '\e81c';}
+.manufacturer-dell:before {content: '\e808';}
+.manufacturer-vbox:before, .manufacturer-virtualbox:before {content: '\e80a';}
+.manufacturer-vmware:before {content: '\e80d';}
+.manufacturer-xen:before {content: '\e80e'; font-size: (@font-size-base + 26) !important;}
+.manufacturer-openvz:before {content: '\e80c';}
+.manufacturer-cisco:before {content: '\e809';}
+.manufacturer-qemu:before {content: '\e810';}
+.manufacturer-supermicro:before { content: '\e80b'; font-size: (@font-size-base * 2) !important;}
+.manufacturer-kvm:before, .manufacturer-bochs:before {content: '\e80f'; font-size: (@font-size-base * 2 - 1) !important;}
+
+// Cluster Tabs
 // -------------------------
 
 .cluster-tabs {
@@ -2353,6 +2301,7 @@ input.error:focus,
   margin: 7px 14px 0 0;
   overflow: hidden;
   cursor: default;
+  padding: 0 3px;
   &.hide {
     display: none;
   }
@@ -2561,6 +2510,8 @@ hr.slim {
     .parameter-box {
       margin: 0px;
       margin-right: 20px;
+      .parameter-control { margin-right: 5px; }
+      .parameter-name { min-width: 10px; }
     }
   }
 }
@@ -2785,15 +2736,6 @@ hr.slim {
   text-align: left;
 }
 
-.radio-checkbox-group .item-box .parameter-box {
-  .parameter-control {
-    margin-right: 5px;
-  }
-  .parameter-name {
-    min-width: 10px;
-  }
-}
-
 .changes-locked label {
   cursor: default !important;
 }
@@ -2837,15 +2779,6 @@ hr.slim {
 
 .changes-locked .disk-map-short {
   cursor: not-allowed;
-}
-
-.cluster-toolbar-item {
-  a {
-    display: block;
-  }
-  .btn.conflict i {
-    display: inline;
-  }
 }
 
 .disk-map-full {
@@ -3128,10 +3061,6 @@ form.create-cluster-form {
   }
 }
 
-.credentials .radio-checkbox-group {
-  margin-left: 180px;
-}
-
 .release-description {
   font-size: @font-size-small-2 !important;
   line-height: 15px;
@@ -3251,30 +3180,53 @@ input.input-append {
 .cluster-toolbar {
   display: block;
   .width-height-mixin(100%, 65px);
-  padding: 19px 0px 19px 0px;
+  padding: 0 0 10px;
   margin-bottom: 20px;
   border-bottom: 2px solid @fuel-light-1;
   .box-sizing-mixin;
-  > .pull-right { float: right; }
-  select { margin-bottom: 0; }
+  .node-management-control {
+    position: relative;
+    float: left;
+    margin-left: 5px;
+    &:first-child { margin-left: 0; }
+    .btn.conflict i { display: inline; }
+    &.buttons {
+      float: right;
+      text-align: right;
+      padding-top: 22px;
+      button {
+        margin: 0 5px;
+        &:last-child { margin-right: 0; }
+        &.add-nodes, &.edit-roles, &.delete-nodes { width: 120px; }
+      }
+    }
+    label {
+      display: block;
+      margin: 0;
+      font-weight: normal;
+      .input-label {
+        line-height: 22px;
+        float: none;
+        margin: 0;
+      }
+    }
+    input[type=text] {
+      width: 145px;
+      padding-right: 20px;
+      &::-ms-clear { .width-height-mixin(0, 0); }
+    }
+    select {
+      margin: 0;
+      width: 190px;
+    }
+    .btn-clear-filter {
+      .width-height-mixin(15px, 20px);
+      .position(absolute, @top: 27px, @right: 8px);
+    }
+  }
 }
 
-.cluster-toolbar-item {
-  .float-mixin;
-  margin-left: 20px;
-  &:first-child {
-    margin-left: 0px;
-  }
-  label {
-    height: 30px;
-    .float-mixin;
-    .indent-mixin;
-    line-height: 29px;
-    margin-right: 10px;
-  }
-}
-
-.node-groups {
+.node-group {
   display: block;
   border: solid 1px @fuel-light-3;
   border-radius: 4px;

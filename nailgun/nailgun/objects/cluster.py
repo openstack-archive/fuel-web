@@ -471,6 +471,9 @@ class Cluster(NailgunObject):
                 data.extend(node.replaced_deployment_info)
         return data
 
+    @classmethod
+    def get_creds(cls, instance):
+        return instance.attributes.editable['access']
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

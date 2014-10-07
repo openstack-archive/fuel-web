@@ -298,6 +298,12 @@
             description: "Default network transport type to use"
             weight: 80
             type: "dropdown"
+          replication_mode:
+            description: ""
+            label: "NSX cluster has Service nodes"
+            value: true
+            type: "checkbox"
+            weight: 90
         common:
           metadata:
             label: "Common"

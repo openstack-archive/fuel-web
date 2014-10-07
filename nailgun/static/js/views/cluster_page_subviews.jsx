@@ -91,6 +91,7 @@ function(React, utils, dialogs) {
     clusterPageSubviews.DeploymentControl = React.createClass({
         mixins: [,
             React.BackboneMixin('model'),
+            React.BackboneMixin({modelOrCollection: function(props) {return props.model.get('settings');}}),
             React.BackboneMixin({
                 modelOrCollection: function(props) {return props.model.get('release');}
             }),
@@ -124,7 +125,9 @@ function(React, utils, dialogs) {
                 taskName = task ? task.get('name') : '',
                 taskProgress = task ? task.get('progress') || 0 : 0,
                 infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
-                itemClass = 'deployment-control-item-box';
+                itemClass = 'deployment-control-item-box',
+                settings = this.props.model.get('settings');
+            settings.isValid();
             return task ? (
                     <div className={'pull-right deployment-progress-box ' + taskName}>
                         {!infiniteTask &&
@@ -157,7 +160,7 @@ function(React, utils, dialogs) {
                         <div className={itemClass}>
                             <button
                                 className='deploy-btn'
-                                disabled={cluster.get('release').get('state') != 'available' || (!cluster.hasChanges() && !cluster.needsRedeployment()) || !nodes.reject({status: 'ready'}).length}
+                                disabled={settings.validationError || cluster.get('release').get('state') != 'available' || (!cluster.hasChanges() && !cluster.needsRedeployment()) || !nodes.reject({status: 'ready'}).length}
                                 onClick={this.onDeployRequest}
                             >
                                 <i className='icon-upload-cloud' />

@@ -323,7 +323,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 }, this);
             }, this);
         },
-        renderIpRanges: function() {
+        renderIpRanges: function(singleRange) {
+            if (singleRange === undefined) singleRange = false;
             var config = this.ipRangesConfig;
             var $el = this.$('.' + config.domSelector + '-ranges-rows');
             $el.html('');
@@ -332,7 +333,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 $el.append(this.rangeTemplate({
                     index: rangeIndex,
                     removalPossible: ip_ranges.length > 1,
-                    locked: this.tab.isLocked()
+                    locked: this.tab.isLocked(),
+                    singleRange: singleRange,
                 }));
             }, this);
             this.composeIpRangesBindings();
@@ -391,7 +393,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.ipRangesConfig = {model: this.network, attribute: 'ip_ranges', domSelector: 'ip'};
             this.network.on('change:ip_ranges', function(network, ip_ranges) {
                 if (ip_ranges.length != network.previous('ip_ranges').length) {
-                    this.renderIpRanges();
+                    singleRange = false;
+                    if (this.parameters.get('net_manager')) singleRange = true;
+                    this.renderIpRanges(singleRange);
                 }
             }, this);
             this.network.on('change', this.tab.updateNetworkConfiguration, this.tab);
@@ -399,7 +403,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         render: function() {
             this.$el.html(this.template({network: this.network, locked: this.tab.isLocked()})).i18n();
             if (this.network.get('meta').notation == 'ip_ranges') {
-                this.renderIpRanges();
+                singleRange = false;
+                if (this.parameters.get('net_manager')) singleRange = true;
+                this.renderIpRanges(singleRange);
             }
             this.stickit(this.network, _.merge(this.bindings, this.composeVlanBindings()));
             return this;
@@ -447,7 +453,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.parameters.on('change:fixed_networks_amount', this.updateFixedAmount, this);
             this.parameters.on('change:floating_ranges', function(parameters, floating_ranges) {
                 if (floating_ranges.length != parameters.previous('floating_ranges').length) {
-                    this.renderIpRanges();
+                    singleRange = false;
+                    if (this.parameters.get('net_manager')) singleRange = true;
+                    this.renderIpRanges(singleRange);
                 }
             }, this);
             this.parameters.on('change', this.tab.updateNetworkConfiguration, this.tab);
@@ -472,7 +480,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 locked: this.tab.isLocked()
             })).i18n();
             this.composeBindings();
-            this.renderIpRanges();
+            singleRange = false;
+            if (this.parameters.get('net_manager')) singleRange = true;
+            this.renderIpRanges(singleRange);
             this.stickit(this.parameters);
             this.updateFixedAmount();
             return this;

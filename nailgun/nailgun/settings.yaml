@@ -666,6 +666,8 @@ DUMP:
       - type: file
         path: /var/log/ceph
       - type: file
+        path: /var/lib/puppet/state/last_run_summary.yaml
+      - type: file
         path: /etc/resolv.conf
       - type: dir
         path: /var/run/pcap_dir

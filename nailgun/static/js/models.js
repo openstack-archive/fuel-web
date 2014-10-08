@@ -555,7 +555,7 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'NetworkingParameters'
     });
 
-    models.NetworkConfiguration = Backbone.Model.extend({
+    models.NetworkConfiguration = Backbone.DeepModel.extend({
         constructorName: 'NetworkConfiguration',
         cacheFor: 60 * 1000,
         parse: function(response) {
@@ -679,6 +679,7 @@ define(['utils', 'deepModel'], function(utils) {
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;
             }
+            debugger;
             if (!_.isEmpty(networkingParametersErrors)) {
                 errors.networking_parameters = networkingParametersErrors;
             }

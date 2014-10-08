@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Mirantis, Inc.
+ * Copyright 2015 Mirantis, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -14,12 +14,12 @@
  * under the License.
 **/
 casper.start().authenticate().skipWelcomeScreen();
-casper.createCluster({name: 'Test Cluster'});
+casper.createCluster({name: 'Test Cluster', net_provider: 'nova_network'});
 casper.loadPage('#cluster/1/network').waitForSelector('#tab-network > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: layout rendered');
-    this.test.assertEvalEquals(function() {return $('input[name=net-manager]').length}, 2, 'Network manager options are presented');
+    this.test.assertEvalEquals(function() {return $('.radio-group input[name=net_provider]').length}, 2, 'Network manager options are presented');
     this.test.assertExists('input[value=FlatDHCPManager]:checked', 'Flat DHCP manager is chosen');
     this.test.assertEvalEquals(function() {return $('.networks-table legend').length}, 3, 'All networks are presented');
     this.test.assertDoesntExist('.verify-networks-btn:disabled', 'Verify networks button is enabled');
@@ -35,7 +35,7 @@ casper.then(function() {
     this.evaluate(function() {
         $('.management input[name=cidr]').keyup();
     });
-    this.test.assertExist('.apply-btn:not(:disabled)', 'Save networks button is enabled if there are changes');
+    this.test.assertDoesntExist('.apply-btn:disabled', 'Save networks button is enabled if there are changes');
     this.fill('.management', {'cidr': initialValue});
     this.evaluate(function() {
         $('.management input[name=cidr]').keyup();
@@ -45,11 +45,11 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: change network manager');
-    this.click('input[name=net-manager]:not(:checked)');
+    this.click('input[name=net_provider]:not(:checked)');
     this.test.assertExists('input[name=fixed_networks_amount]', 'Amount field for a fixed network is presented in VLAN mode');
     this.test.assertExists('select[name=fixed_network_size]', 'Size field for a fixed network is presented in VLAN mode');
     this.test.assertExists('.apply-btn:not(:disabled)', 'Save networks button is enabled after manager was changed');
-    this.click('input[name=net-manager]:not(:checked)');
+    this.click('input[name=net_provider]:not(:checked)');
     this.test.assertDoesntExist('input[name=fixed_networks_amount]', 'Amount field was hidden after revert to FlatDHCP');
     this.test.assertDoesntExist('select[name=fixed_network_size]', 'Size field was hidden after revert to FlatDHCP');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled again after revert to FlatDHCP');
@@ -64,18 +64,18 @@ casper.then(function() {
     this.evaluate(function() {
         $('.management input[name=cidr]').keyup();
     });
-    this.test.assertExists('.management input[name=cidr].error', 'Field validation has worked');
+    this.test.assertExists('.management .has-error input[name=cidr]', 'Field validation has worked');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled if there is validation error');
     this.fill('.management', {'cidr': initialValue});
     this.evaluate(function() {
         $('.management input[name=cidr]').keyup();
     });
-    this.test.assertDoesntExist('.management input[name=cidr].error', 'Field validation works properly');
+    this.test.assertDoesntExist('.management .has-error input[name=cidr]', 'Field validation works properly');
 });
 
 casper.then(function() {
     this.test.comment('Check Amount field validation');
-    this.click('input[name=net-manager]:not(:checked)');
+    this.click('input[name=net_provider]:not(:checked)');
     this.test.assertExists('input[value=VlanManager]:checked', 'VLAN manager is chosen');
     var initialAmountValue = this.evaluate(function() {
         return $('input[name=fixed_networks_amount]').val();
@@ -134,11 +134,11 @@ casper.then(function() {
                 $('input[name=fixed_networks_amount]').keyup();
             });
             if (fixture.vlanEnd == '') {
-                this.test.assertExists('input[name=fixed_networks_amount].error', 'Field validation has worked ' + fixture.validationMessage);
+                this.test.assertExists('.has-error input[name=fixed_networks_amount]', 'Field validation has worked ' + fixture.validationMessage);
                 this.test.assertExists('.apply-btn:disabled', 'Apply button is disabled if there is validation error');
             } else {
                 this.test.assertEvalEquals(function() {return $('input[name=vlan_end]').val()}, fixture.vlanEnd, 'End value is correct');
-                this.test.assertDoesntExist('input[name=fixed_networks_amount].error', 'Field validation works properly with correct value');}
+                this.test.assertDoesntExist('.has-error input[name=fixed_networks_amount]', 'Field validation works properly with correct value');}
         });
     });
 
@@ -150,7 +150,7 @@ casper.then(function() {
         this.evaluate(function() {
             $('input[name=fixed_networks_amount]').keyup();
         });
-        this.test.assertDoesntExist('input[name=fixed_networks_amount].error', 'Field validation works properly');
+        this.test.assertDoesntExist('.has-error input[name=fixed_networks_amount]', 'Field validation works properly');
     });
 
     casper.then(function() {
@@ -161,7 +161,7 @@ casper.then(function() {
 	this.evaluate(function() {
             $('input[name=fixed_networks_amount]').keyup();
         });
-        this.click('input[name=net-manager]:not(:checked)');
+        this.click('input[name=net_provider]:not(:checked)');
     });
 
 });
@@ -227,7 +227,7 @@ casper.then(function() {
             this.evaluate(function() {
                 $('.management input[name=cidr]').keyup();
             });
-            this.test.assertExists('.management input[name=cidr].error', 'Field validation has worked properly in case of ' + fixture.validationMessage);
+            this.test.assertExists('.management .has-error input[name=cidr]', 'Field validation has worked properly in case of ' + fixture.validationMessage);
         });
     });
 
@@ -237,7 +237,7 @@ casper.then(function() {
         this.evaluate(function() {
             $('.management input[name=cidr]').keyup();
         });
-        this.test.assertDoesntExist('.management input[name=cidr].error', 'Validation error description disappears if there are no errors');
+        this.test.assertDoesntExist('.management .has-error input[name=cidr]', 'Validation error description disappears if there are no errors');
     });
 
     casper.then(function() {
@@ -263,9 +263,9 @@ casper.then(function() {
                     $('.managementinput[name=cidr]').keyup();
                 });
                 if (negativeTests) {
-                    this.test.assertExists('.management input[name=cidr].error', 'Field validation has worked properly in case of prefix ' + fixture);
+                    this.test.assertExists('.management .has-error input[name=cidr]', 'Field validation has worked properly in case of prefix ' + fixture);
                 } else {
-                    this.test.assertDoesntExist('.management input[name=cidr].error', 'Field validation works properly in case of no errors (prefix ' + fixture +')');
+                    this.test.assertDoesntExist('.management .has-error input[name=cidr]', 'Field validation works properly in case of no errors (prefix ' + fixture +')');
                 }
             });
         });
@@ -295,9 +295,9 @@ casper.then(function() {
                     $('.management input[name=vlan_start]').keyup();
                 });
                 if (negativeTests) {
-                    this.test.assertExists('.management input[name=vlan_start].error', 'Field validation has worked properly in case of ' + fixture + ' value');
+                    this.test.assertExists('.management .has-error input[name=vlan_start]', 'Field validation has worked properly in case of ' + fixture + ' value');
                 } else {
-                    this.test.assertDoesntExist('.management input[name=vlan_start].error', 'No validation errors in case of ' + fixture + ' value');
+                    this.test.assertDoesntExist('.management .has-error input[name=vlan_start]', 'No validation errors in case of ' + fixture + ' value');
                 }
             });
         });
@@ -346,7 +346,7 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: VLAN range fields');
-    this.click('input[name=net-manager]:not(:checked)');
+    this.click('input[name=net_provider]:not(:checked)');
     this.fill('.networking-parameters', {'fixed_networks_amount': '10'});
     this.evaluate(function() {
         $('input[name=fixed_networks_amount]').keyup();

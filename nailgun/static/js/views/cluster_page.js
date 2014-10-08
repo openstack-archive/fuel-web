@@ -22,7 +22,7 @@ define(
     'jsx!views/cluster_page_subviews',
     'jsx!views/dialogs',
     'views/cluster_page_tabs/nodes_tab',
-    'views/cluster_page_tabs/network_tab',
+    'jsx!views/cluster_page_tabs/network_tab',
     'views/cluster_page_tabs/settings_tab',
     'jsx!views/cluster_page_tabs/logs_tab',
     'jsx!views/cluster_page_tabs/actions_tab',

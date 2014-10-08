@@ -691,7 +691,11 @@ define([
 
     models.Networks = BaseCollection.extend({
         constructorName: 'Networks',
-        model: models.Network
+        model: models.Network,
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'fixed'],
+        comparator: function(network) {
+            return _.indexOf(this.preferredOrder, network.get('name'));
+        }
     });
 
     models.NetworkingParameters = BaseModel.extend({
@@ -755,7 +759,7 @@ define([
                 networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(attrs.networking_parameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
                 var fixedAmount = attrs.networking_parameters.get('fixed_networks_amount');
                 var fixedVlan = attrs.networking_parameters.get('fixed_networks_vlan_start');
-                if (!utils.isNaturalNumber(fixedAmount)) {
+                if (!utils.isNaturalNumber(parseInt(fixedAmount))) {
                     networkingParametersErrors.fixed_networks_amount = i18n('cluster_page.network_tab.validation.invalid_amount');
                 }
                 var vlanErrors = utils.validateVlan(fixedVlan, attrs.networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');

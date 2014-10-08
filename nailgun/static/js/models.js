@@ -550,7 +550,8 @@ define([
         constructorName: 'Network'
     });
 
-    models.Networks = Backbone.Collection.extend({
+    models.Networks =
+        Backbone.Collection.extend({
         constructorName: 'Networks',
         model: models.Network
     });
@@ -561,7 +562,7 @@ define([
 
     models.NetworkConfiguration = Backbone.Model.extend({
         constructorName: 'NetworkConfiguration',
-        cacheFor: 60 * 1000,
+        //cacheFor: 60 * 1000,
         parse: function(response) {
             response.networks = new models.Networks(response.networks);
             response.networking_parameters = new models.NetworkingParameters(response.networking_parameters);

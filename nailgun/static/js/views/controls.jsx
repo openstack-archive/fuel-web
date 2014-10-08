@@ -108,6 +108,10 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 'input-append': this.props.toggleable
             };
             classes[this.props.labelClassName] = this.props.labelClassName;
+            var labelWrapperClasses = {
+                'label-wrapper': true
+            };
+            labelWrapperClasses[this.props.labelWrapperClassName] = this.props.labelWrapperClassName;
             return this.props.label ? (
                 <label key='label' className={cx(classes)} htmlFor={this.props.id}>
                     {!this.isCheckboxOrRadio() &&
@@ -118,13 +122,20 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     }
                     {children}
                     {this.isCheckboxOrRadio() &&
-                        <div className='label-wrapper'>
+                        <div className={cx(labelWrapperClasses)}>
                             {this.props.label}
                             {this.renderTooltipIcon()}
                         </div>
                     }
                 </label>
-            ) : children;
+            )
+            : this.props.title ? (
+                <div>
+                    <div className='parameter-name'>{this.props.title}</div>
+                    {children}
+                </div>
+                )
+            : children;
         },
         renderDescription: function() {
             var error = !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
@@ -237,6 +248,111 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                         })}
                     </tbody>
                 </table>
+            );
+        }
+    });
+
+    controls.Range = React.createClass({
+        propTypes: {
+            wrapperClassName: React.PropTypes.renderable,
+            type: React.PropTypes.oneOf(['normal', 'mini']),
+            attribute: React.PropTypes.string,
+            networkAttribute: React.PropTypes.array
+        },
+        render: function() {
+            var wrapperClasses = {},
+                rowHeaderClasses = {
+                    'range-row-header': true,
+                    mini: this.props.type == 'mini'
+                },
+                inputClassName = {
+                    range: true,
+                    mini: this.props.type == 'mini'
+                },
+                startErrorMessage = '',
+                endErrorMessage = '';
+            wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
+//            if (this.props.error) {
+//                debugger;
+//            }
+
+            return (
+                <div className={cx(wrapperClasses)}>
+                    {!this.props.noLabel &&
+                        <div className={cx(rowHeaderClasses)}>
+                            <div>{$.t('cluster_page.network_tab.range_start')}</div>
+                            <div>{$.t('cluster_page.network_tab.range_end')}</div>
+                        </div>
+                    }
+                    <div className='parameter-name'>{this.props.nameLabel}</div>
+                    { (this.props.type == 'normal') ?
+                        <div className={this.props.rowsClassName}>
+                            {_.map(this.props.networkAttribute, function(range, index) {
+                                if (this.props.error) {
+                                    startErrorMessage = _.pluck(this.props.error, 'start')[0];
+                                    endErrorMessage = _.pluck(this.props.error, 'end')[0];
+                                    var errorIndexMatch =  _.pluck(this.props.error, 'index')[0] == index;
+
+                                }
+                                return (
+                                    <div className='range-row autocomplete clearfix' key={index}>
+                                        <label className='parameter-box clearfix'>
+                                            <div className='parameter-control'>
+                                                {this.transferPropsTo(
+                                                    <input className={cx(_.extend(inputClassName, {'error': !!startErrorMessage && errorIndexMatch}))}
+                                                        type='text' name='range0' placeholder='127.0.0.1' value={range[0]}
+                                                    />
+                                                )}
+                                            </div>
+                                        </label>
+                                        <label className='parameter-box clearfix'>
+                                            <div className='parameter-control'>
+                                                {this.transferPropsTo(
+                                                    <input className={cx(_.extend(inputClassName, {'error': !!endErrorMessage && errorIndexMatch}))}
+                                                        type='text' name='range1' placeholder='127.0.0.1' value={range[1]}
+                                                    />
+                                                )}
+                                            </div>
+                                        </label>
+                                        {!this.props.noControls &&
+                                            <div>
+                                                <div className='ip-ranges-control'>
+                                                    <button className='btn btn-link ip-ranges-add' onClick={this.props.addRange}>
+                                                        <i className='icon-plus-circle'></i>
+                                                    </button>
+                                                </div>
+                                                {(this.props.networkAttribute.length > 1) &&
+                                                    <div className='ip-ranges-control'>
+                                                        <button className='btn btn-link ip-ranges-delete' onClick={this.props.removeRange}>
+                                                            <i className='icon-minus-circle'></i>
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        <div className='error validation-error'>
+                                            <span className='help-inline'>{errorIndexMatch ? (startErrorMessage || endErrorMessage) : '' }</span>
+                                        </div>
+                                    </div>
+                                );
+                            }, this)}
+                        </div>
+                    :
+                        <div className='range-row'>
+                            <div className='parameter-control'>
+                                {this.transferPropsTo(<input type='text' className={cx(inputClassName)}
+                                name='range0' value={this.props.networkAttribute[0]} />)}
+                            </div>
+                            <div className='parameter-control'>
+                                {this.transferPropsTo(<input type='text' className={cx(inputClassName)} name='range1'
+                                    value={this.props.networkAttribute[1]} />)}
+                            </div>
+                            <div className='error validation-error'>
+                                <span className='help-inline'></span>
+                            </div>
+                        </div>
+                    }
+                </div>
             );
         }
     });

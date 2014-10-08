@@ -48,12 +48,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         disableControls: function() {
             this.$('.btn, input, select').attr('disabled', true);
         },
-        isLocked: function() {
-            return this.model.task({group: ['deployment', 'network'], status: 'running'}) || !this.model.isAvailableForSettingsChanges();
-        },
-        hasChanges: function() {
-            return !_.isEqual(this.initialConfiguration.toJSON(), this.networkConfiguration.toJSON());
-        },
+        // isLocked: function() {
+        //     return this.model.task({group: ['deployment', 'network'], status: 'running'}) || !this.model.isAvailableForSettingsChanges();
+        // },
+        // hasChanges: function() {
+        //     return !_.isEqual(this.initialConfiguration.toJSON(), this.networkConfiguration.toJSON());
+        // },
         verifyNetworks: function() {
             if (!this.networkConfiguration.validationError) {
                 this.disableControls();
@@ -204,10 +204,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     }, this));
                 }, this));
             }, this);
-            (this.loading = $.when(this.model.get('settings').fetch({cache: true}), this.networkConfiguration.fetch({cache: true}))).done(_.bind(this.updateInitialConfiguration, this));
-            if (this.loading.state() == 'pending') {
-                this.loading.done(_.bind(this.render, this));
-            }
+//            (this.loading = $.when(this.model.get('settings').fetch({cache: true}), this.networkConfiguration.fetch({cache: true}))).done(_.bind(this.updateInitialConfiguration, this));
+//            if (this.loading.state() == 'pending') {
+//                this.loading.done(_.bind(this.render, this));
+//            }
         },
         renderVerificationControl: function() {
             var verificationView = new NetworkTabVerificationControl({
@@ -233,40 +233,40 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 }, this);
             }
         },
-        renderNetworks: function() {
-            this.$('.networks-table').html('');
-            this.networkConfiguration.get('networks').each(function(network) {
-                if (network.get('meta').configurable) {
-                    var networkView = new Network({network: network, tab: this});
-                    this.registerSubView(networkView);
-                    this.$('.networks-table').append(networkView.render().el);
-                }
-            }, this);
-        },
-        renderNetworkingParameters: function() {
-            var networkingParametersView = new NetworkingParameters({parameters: this.networkConfiguration.get('networking_parameters'), tab: this});
-            this.registerSubView(networkingParametersView);
-            this.$('.networking-parameters').html(networkingParametersView.render().el);
-        },
-        render: function() {
-            this.tearDownRegisteredSubViews();
-            var networkingParameters = this.networkConfiguration.get('networking_parameters');
-            this.$el.html(this.template({
-                loading: this.loading,
-                provider: this.model.get('net_provider'),
-                locked: this.isLocked(),
-                segment_type: networkingParameters ? networkingParameters.get('segmentation_type') : null,
-                l23_provider: networkingParameters ? networkingParameters.get('net_l23_provider') : null
-            })).i18n();
-            if (this.loading.state() != 'pending') {
-                this.stickit(networkingParameters, {'input[name=net-manager]': 'net_manager'});
-                this.renderNetworks();
-                this.renderNetworkingParameters();
-                this.calculateButtonsState();
-                this.renderVerificationControl();
-            }
-            return this;
-        }
+//        renderNetworks: function() {
+//            this.$('.networks-table').html('');
+//            this.networkConfiguration.get('networks').each(function(network) {
+//                if (network.get('meta').configurable) {
+//                    var networkView = new Network({network: network, tab: this});
+//                    this.registerSubView(networkView);
+//                    this.$('.networks-table').append(networkView.render().el);
+//                }
+//            }, this);
+//        },
+//        renderNetworkingParameters: function() {
+//            var networkingParametersView = new NetworkingParameters({parameters: this.networkConfiguration.get('networking_parameters'), tab: this});
+//            this.registerSubView(networkingParametersView);
+//            this.$('.networking-parameters').html(networkingParametersView.render().el);
+//        },
+//        render: function() {
+//            this.tearDownRegisteredSubViews();
+//            var networkingParameters = this.networkConfiguration.get('networking_parameters');
+//            this.$el.html(this.template({
+//                loading: this.loading,
+//                provider: this.model.get('net_provider'),
+//                locked: this.isLocked(),
+//                segment_type: networkingParameters ? networkingParameters.get('segmentation_type') : null,
+//                l23_provider: networkingParameters ? networkingParameters.get('net_l23_provider') : null
+//            })).i18n();
+//            if (this.loading.state() != 'pending') {
+//                this.stickit(networkingParameters, {'input[name=net-manager]': 'net_manager'});
+//                this.renderNetworks();
+//                this.renderNetworkingParameters();
+//                this.calculateButtonsState();
+//                this.renderVerificationControl();
+//            }
+//            return this;
+//        }
     });
 
     NetworkTabSubview = Backbone.View.extend({
@@ -275,17 +275,17 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             'click .ip-ranges-control button:not([disabled])': 'changeIPRanges',
             'focus .autocomplete input:last': 'autoCompleteIPRanges'
         },
-        changeIPRanges: function(e) {
-            var config = this.ipRangesConfig;
-            var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index($(e.currentTarget).parents('.range-row'));
-            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
-            if (this.$(e.currentTarget).hasClass('ip-ranges-add')) {
-                ipRanges.splice(rowIndex + 1, 0, ['', '']);
-            } else {
-                ipRanges.splice(rowIndex, 1);
-            }
-            config.model.set(config.attribute, ipRanges);
-        },
+//        changeIPRanges: function(e) {
+//            var config = this.ipRangesConfig;
+//            var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index($(e.currentTarget).parents('.range-row'));
+//            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
+//            if (this.$(e.currentTarget).hasClass('ip-ranges-add')) {
+//                ipRanges.splice(rowIndex + 1, 0, ['', '']);
+//            } else {
+//                ipRanges.splice(rowIndex, 1);
+//            }
+//            config.model.set(config.attribute, ipRanges);
+//        },
         autoCompleteIPRanges: function(e) {
             var config = this.ipRangesConfig;
             var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index(this.$(e.currentTarget).parents('.range-row'));

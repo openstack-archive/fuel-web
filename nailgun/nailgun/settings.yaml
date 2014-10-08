@@ -61,11 +61,11 @@ RABBITMQ:
   hostname: "127.0.0.1"
 
 DEFAULT_PUPPET:
-  modules: "rsync://{master_ip}:/puppet/modules/"
-  manifests: "rsync://{master_ip}:/puppet/manifests/"
+  modules: "rsync://{MASTER_IP}:/puppet/modules/"
+  manifests: "rsync://{MASTER_IP}:/puppet/manifests/"
 DEFAULT_REPO:
-  centos: "http://{master_ip}:8080/centos/fuelweb/x86_64"
-  ubuntu: "http://{master_ip}:8080/ubuntu/fuelweb/x86_64 precise main"
+  centos: "http://{MASTER_IP}:8080/centos/fuelweb/x86_64"
+  ubuntu: "http://{MASTER_IP}:8080/ubuntu/fuelweb/x86_64 precise main"
 
 APP_LOG: &nailgun_log "/var/log/nailgun/app.log"
 API_LOG: &api_log "/var/log/nailgun/api.log"

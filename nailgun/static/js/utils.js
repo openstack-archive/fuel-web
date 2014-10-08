@@ -14,7 +14,12 @@
  * under the License.
 **/
 
-define(['require', 'expression', 'expression/objects', 'react'], function(require, Expression, expressionObjects, React) {
+define([
+    'require',
+    'underscore',
+    'expression',
+    'expression/objects',
+    'react'], function(require, _, Expression, expressionObjects, React) {
     'use strict';
 
     var utils = {
@@ -77,6 +82,44 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 throw new Error('Invalid restriction format');
             }
             return result;
+        },
+        parseConflicts: function(roleData) {
+            var conflicts = {};
+
+            _.each(roleData, function(data, role) {
+                conflicts[role] = _.compact(_.uniq(_.union(conflicts[role], data.conflicts)));
+                _.each(data.conflicts, function(conflictingRole) {
+                    conflicts[conflictingRole] =  conflicts[conflictingRole] || [];
+                    conflicts[conflictingRole].push(role);
+                }, this);
+            });
+
+            return conflicts;
+        },
+        parseDependencies: function(roleData, configModels) {
+            var dependencies = {};
+
+            _.each(roleData, function(data, role) {
+                dependencies[role] = [];
+
+                _.each(data.depends, function(dependency) {
+                    dependency = utils.expandRestriction(dependency);
+
+                    dependencies[role].push({
+                        expression: new Expression(dependency.condition, configModels),
+                        action: dependency.action,
+                        warning: dependency.warning
+                    });
+                }, this);
+            });
+
+            return dependencies;
+        },
+        parseRoleData: function(roleData, configModels) {
+            return {
+                conflicts: utils.parseConflicts(roleData),
+                dependencies: utils.parseDependencies(roleData, configModels)
+            };
         },
         universalMount: function(view, el, parentView) {
             if (view instanceof Backbone.View) {

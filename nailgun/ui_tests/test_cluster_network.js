@@ -64,13 +64,13 @@ casper.then(function() {
     this.evaluate(function() {
         $('.management input[name=cidr]').keyup();
     });
-    this.test.assertExists('.management input[name=cidr].error', 'Field validation has worked');
+    this.test.assertExists('.management .has-error input[name=cidr]', 'Field validation has worked');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled if there is validation error');
     this.fill('.management', {'cidr': initialValue});
     this.evaluate(function() {
         $('.management input[name=cidr]').keyup();
     });
-    this.test.assertDoesntExist('.management input[name=cidr].error', 'Field validation works properly');
+    this.test.assertDoesntExist('.management .has-error input[name=cidr]', 'Field validation works properly');
 });
 
 casper.then(function() {
@@ -81,7 +81,7 @@ casper.then(function() {
         return $('input[name=fixed_networks_amount]').val();
     });
     var initialVlanIDValue = this.evaluate(function() {
-        return $('input[name=fixed_networks_vlan_start]').val();
+        return $('input[name=range0_fixed_networks_vlan_start]').val();
     });
 
     var fixtures = [
@@ -128,35 +128,35 @@ casper.then(function() {
         self.then(function() {
             this.fill('.networking-parameters', {'fixed_networks_amount': fixture.amount});
             if (fixture.vlanStart != '') {
-                this.fill('.networking-parameters', {'fixed_networks_vlan_start': fixture.vlanStart});
+                this.fill('.networking-parameters', {'range0_fixed_networks_vlan_start': fixture.vlanStart});
             }
             this.evaluate(function() {
                 $('input[name=fixed_networks_amount]').keyup();
             });
             if (fixture.vlanEnd == '') {
-                this.test.assertExists('input[name=fixed_networks_amount].error', 'Field validation has worked ' + fixture.validationMessage);
+                this.test.assertExists('.has-error input[name=fixed_networks_amount]', 'Field validation has worked ' + fixture.validationMessage);
                 this.test.assertExists('.apply-btn:disabled', 'Apply button is disabled if there is validation error');
             } else {
                 this.test.assertEvalEquals(function() {return $('input[name=vlan_end]').val()}, fixture.vlanEnd, 'End value is correct');
-                this.test.assertDoesntExist('input[name=fixed_networks_amount].error', 'Field validation works properly with correct value');}
+                this.test.assertDoesntExist('.has-error input[name=fixed_networks_amount]', 'Field validation works properly with correct value');}
         });
     });
 
     casper.then(function() {
 	this.fill('.networking-parameters', {
             'fixed_networks_amount': '1',
-            'fixed_networks_vlan_start': '4094'
+            'range0_fixed_networks_vlan_start': '4094'
         });
         this.evaluate(function() {
             $('input[name=fixed_networks_amount]').keyup();
         });
-        this.test.assertDoesntExist('input[name=fixed_networks_amount].error', 'Field validation works properly');
+        this.test.assertDoesntExist('.has-error input[name=fixed_networks_amount]', 'Field validation works properly');
     });
 
     casper.then(function() {
         this.fill('.networking-parameters', {
             'fixed_networks_amount': initialAmountValue,
-            'fixed_networks_vlan_start': initialVlanIDValue
+            'range0_fixed_networks_vlan_start': initialVlanIDValue
         });
 	this.evaluate(function() {
             $('input[name=fixed_networks_amount]').keyup();
@@ -227,7 +227,7 @@ casper.then(function() {
             this.evaluate(function() {
                 $('.management input[name=cidr]').keyup();
             });
-            this.test.assertExists('.management input[name=cidr].error', 'Field validation has worked properly in case of ' + fixture.validationMessage);
+            this.test.assertExists('.management .has-error input[name=cidr]', 'Field validation has worked properly in case of ' + fixture.validationMessage);
         });
     });
 
@@ -237,7 +237,7 @@ casper.then(function() {
         this.evaluate(function() {
             $('.management input[name=cidr]').keyup();
         });
-        this.test.assertDoesntExist('.management input[name=cidr].error', 'Validation error description disappears if there are no errors');
+        this.test.assertDoesntExist('.management .has-error', 'Validation error description disappears if there are no errors');
     });
 
     casper.then(function() {
@@ -263,9 +263,9 @@ casper.then(function() {
                     $('.managementinput[name=cidr]').keyup();
                 });
                 if (negativeTests) {
-                    this.test.assertExists('.management input[name=cidr].error', 'Field validation has worked properly in case of prefix ' + fixture);
+                    this.test.assertExists('.management .has-error', 'Field validation has worked properly in case of prefix ' + fixture);
                 } else {
-                    this.test.assertDoesntExist('.management input[name=cidr].error', 'Field validation works properly in case of no errors (prefix ' + fixture +')');
+                    this.test.assertDoesntExist('.management .has-error', 'Field validation works properly in case of no errors (prefix ' + fixture +')');
                 }
             });
         });
@@ -295,9 +295,9 @@ casper.then(function() {
                     $('.management input[name=vlan_start]').keyup();
                 });
                 if (negativeTests) {
-                    this.test.assertExists('.management input[name=vlan_start].error', 'Field validation has worked properly in case of ' + fixture + ' value');
+                    this.test.assertExists('.management .has-error input[name=vlan_start]', 'Field validation has worked properly in case of ' + fixture + ' value');
                 } else {
-                    this.test.assertDoesntExist('.management input[name=vlan_start].error', 'No validation errors in case of ' + fixture + ' value');
+                    this.test.assertDoesntExist('.management .has-error input[name=vlan_start]', 'No validation errors in case of ' + fixture + ' value');
                 }
             });
         });
@@ -331,7 +331,7 @@ casper.then(function() {
     this.click('.verify-networks-btn:not(:disabled)');
 	// FIXME: disabling this assert due to bug/1297232
     //this.test.assertSelectorAppears('.connect-3-error',
-    //    'There should be atleast 1 node for dhcp check. And 2 nodes for connectivity check', 10000);
+    //    'There should be at least 1 node for dhcp check. And 2 nodes for connectivity check', 10000);
 
 });
 

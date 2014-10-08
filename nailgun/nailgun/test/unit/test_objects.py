@@ -31,6 +31,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.openstack.common import jsonutils
 
 from nailgun import objects
+from nailgun.settings import settings
 
 
 class TestObjects(BaseIntegrationTest):
@@ -579,3 +580,73 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
         task_obj = objects.Task.get_by_uuid(task.uuid)
         self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
+
+
+class TestReleaseOrchestratorData(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestReleaseOrchestratorData, self).setUp()
+
+        settings.MASTER_IP = '127.0.0.1'
+        self.release = self.env.create_release(api=False)
+
+        self.data = {
+            'release_id': self.release.id,
+            'repo_metadata': {
+                '5.1': 'http://{MASTER_IP}:8080/centos/x86_64',
+                '5.1-user': 'http://{MASTER_IP}:8080/centos-user/x86_64',
+            },
+            'puppet_manifests_source': 'rsync://{MASTER_IP}:/puppet/modules/',
+            'puppet_modules_source': 'rsync://{MASTER_IP}:/puppet/manifests/',
+        }
+
+    def test_render_data_in_create(self):
+        instance = objects.ReleaseOrchestratorData.create(self.data)
+
+        self.assertEqual(instance.repo_metadata, {
+            '5.1': 'http://127.0.0.1:8080/centos/x86_64',
+            '5.1-user': 'http://127.0.0.1:8080/centos-user/x86_64'})
+        self.assertEqual(
+            instance.puppet_manifests_source,
+            'rsync://127.0.0.1:/puppet/modules/')
+        self.assertEqual(
+            instance.puppet_modules_source,
+            'rsync://127.0.0.1:/puppet/manifests/')
+
+    def test_render_data_in_update(self):
+        instance = objects.ReleaseOrchestratorData.create(self.data)
+
+        settings.MASTER_IP = '192.168.1.1'
+        instance = objects.ReleaseOrchestratorData.update(instance, self.data)
+
+        self.assertEqual(instance.repo_metadata, {
+            '5.1': 'http://192.168.1.1:8080/centos/x86_64',
+            '5.1-user': 'http://192.168.1.1:8080/centos-user/x86_64'})
+        self.assertEqual(
+            instance.puppet_manifests_source,
+            'rsync://192.168.1.1:/puppet/modules/')
+        self.assertEqual(
+            instance.puppet_modules_source,
+            'rsync://192.168.1.1:/puppet/manifests/')
+
+    def test_render_data_skip_unmasked_data(self):
+        self.data = {
+            'release_id': self.release.id,
+            'repo_metadata': {
+                '5.1': 'http://10.20.0.2:8080/centos/x86_64',
+                '5.1-user': 'http://{MASTER_IP}:8080/centos-user/x86_64',
+            },
+            'puppet_manifests_source': 'rsync://10.20.0.2:/puppet/modules/',
+            'puppet_modules_source': 'rsync://10.20.0.2:/puppet/manifests/',
+        }
+        instance = objects.ReleaseOrchestratorData.create(self.data)
+
+        self.assertEqual(instance.repo_metadata, {
+            '5.1': 'http://10.20.0.2:8080/centos/x86_64',
+            '5.1-user': 'http://127.0.0.1:8080/centos-user/x86_64'})
+        self.assertEqual(
+            instance.puppet_manifests_source,
+            'rsync://10.20.0.2:/puppet/modules/')
+        self.assertEqual(
+            instance.puppet_modules_source,
+            'rsync://10.20.0.2:/puppet/manifests/')

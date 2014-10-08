@@ -359,7 +359,7 @@ def get_node_arg(help_msg):
 def get_task_arg(help_msg):
     default_kwargs = {
         "action": TaskAction,
-        "flags": ("-t", "--task-id", "--tid"),
+        "flags": ("--task-id", "--tid"),
         "nargs": '+',
         "type": lambda v: v.split(","),
         "default": None,

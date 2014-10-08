@@ -53,32 +53,34 @@ function($, React, controls, statisticsMixin) {
                     <div>
                         <h2 className='center'>{$.t(ns + 'title')}</h2>
                         {this.renderIntro()}
-                        {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
-                        <div className='welcome-text-box'>
-                            <p className='center'>
-                                {$.t(ns + 'support')}<br/>
-                                {$.t(ns + 'provide_contacts')}
-                            </p>
-                        </div>
-                        {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
-                        <form className='form-horizontal'>
-                            { _.map(contacts, function(settingName) {
-                                return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box', true);
-                            }, this)}
-                            {error &&
-                                <div className='welcome-form-error'>{$.t(error)}</div>
-                            }
-                            <div className='welcome-button-box'>
-                                <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress} onClick={this.onStartButtonClick}>
-                                    {$.t(ns + 'start_fuel')}
-                                </button>
+                        <div className='statistics_form'>
+                            {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
+                            <div className='welcome-text-box'>
+                                <p className='center'>
+                                    {$.t(ns + 'support')}<br/>
+                                    {$.t(ns + 'provide_contacts')}
+                                </p>
                             </div>
-                        </form>
-                        <div className='welcome-text-box'>
-                            <p className='center'>
-                                {$.t(ns + 'change_settings')}<br/>
-                                {$.t(ns + 'thanks')}
-                            </p>
+                            {this.renderInput('send_user_info', null, 'welcome-checkbox-box identify-control')}
+                            <form className='form-horizontal'>
+                                { _.map(contacts, function(settingName) {
+                                    return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box', true);
+                                }, this)}
+                                {error &&
+                                    <div className='welcome-form-error'>{$.t(error)}</div>
+                                }
+                                <div className='welcome-button-box'>
+                                    <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress} onClick={this.onStartButtonClick}>
+                                        {$.t(ns + 'start_fuel')}
+                                    </button>
+                                </div>
+                            </form>
+                            <div className='welcome-text-box'>
+                                <p className='center'>
+                                    {$.t(ns + 'change_settings')}<br/>
+                                    {$.t(ns + 'thanks')}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

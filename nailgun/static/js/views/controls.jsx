@@ -61,6 +61,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             labelBeforeControl: React.PropTypes.bool,
             onChange: React.PropTypes.func
         },
+        getDefaultProps: function() {
+            return {labelBeforeControl: false};
+        },
         getInitialState: function() {
             return {visible: false};
         },

@@ -108,6 +108,10 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 'input-append': this.props.toggleable
             };
             classes[this.props.labelClassName] = this.props.labelClassName;
+            var labelWrapperClasses = {
+                'label-wrapper': true
+            };
+            labelWrapperClasses[this.props.labelWrapperClassName] = this.props.labelWrapperClassName;
             return this.props.label ? (
                 <label key='label' className={cx(classes)} htmlFor={this.props.id}>
                     {!this.isCheckboxOrRadio() &&
@@ -118,7 +122,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     }
                     {children}
                     {this.isCheckboxOrRadio() &&
-                        <div className='label-wrapper'>
+                        <div className={cx(labelWrapperClasses)}>
                             {this.props.label}
                             {this.renderTooltipIcon()}
                         </div>

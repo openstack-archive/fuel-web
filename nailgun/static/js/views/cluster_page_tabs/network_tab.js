@@ -204,10 +204,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     }, this));
                 }, this));
             }, this);
-            (this.loading = $.when(this.model.get('settings').fetch({cache: true}), this.networkConfiguration.fetch({cache: true}))).done(_.bind(this.updateInitialConfiguration, this));
-            if (this.loading.state() == 'pending') {
-                this.loading.done(_.bind(this.render, this));
-            }
+//            (this.loading = $.when(this.model.get('settings').fetch({cache: true}), this.networkConfiguration.fetch({cache: true}))).done(_.bind(this.updateInitialConfiguration, this));
+//            if (this.loading.state() == 'pending') {
+//                this.loading.done(_.bind(this.render, this));
+//            }
         },
         renderVerificationControl: function() {
             var verificationView = new NetworkTabVerificationControl({
@@ -233,16 +233,16 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 }, this);
             }
         },
-        renderNetworks: function() {
-            this.$('.networks-table').html('');
-            this.networkConfiguration.get('networks').each(function(network) {
-                if (network.get('meta').configurable) {
-                    var networkView = new Network({network: network, tab: this});
-                    this.registerSubView(networkView);
-                    this.$('.networks-table').append(networkView.render().el);
-                }
-            }, this);
-        },
+//        renderNetworks: function() {
+//            this.$('.networks-table').html('');
+//            this.networkConfiguration.get('networks').each(function(network) {
+//                if (network.get('meta').configurable) {
+//                    var networkView = new Network({network: network, tab: this});
+//                    this.registerSubView(networkView);
+//                    this.$('.networks-table').append(networkView.render().el);
+//                }
+//            }, this);
+//        },
         renderNetworkingParameters: function() {
             var networkingParametersView = new NetworkingParameters({parameters: this.networkConfiguration.get('networking_parameters'), tab: this});
             this.registerSubView(networkingParametersView);

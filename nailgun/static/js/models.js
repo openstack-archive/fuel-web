@@ -552,7 +552,11 @@ define([
 
     models.Networks = Backbone.Collection.extend({
         constructorName: 'Networks',
-        model: models.Network
+        model: models.Network,
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'fixed'],
+        comparator: function(network) {
+            return _.indexOf(this.preferredOrder, network.get('name'));
+        }
     });
 
     models.NetworkingParameters = Backbone.Model.extend({

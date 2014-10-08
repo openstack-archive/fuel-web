@@ -17,7 +17,9 @@
 """
 Release object and collection
 """
+import copy
 
+import six
 from sqlalchemy import not_
 
 from nailgun import consts
@@ -58,6 +60,47 @@ class ReleaseOrchestratorData(NailgunObject):
             "puppet_modules_source": {"type": "string"}
         }
     }
+
+    @classmethod
+    def create(cls, data):
+        data = cls.render_data(data)
+        return super(ReleaseOrchestratorData, cls).create(data)
+
+    @classmethod
+    def update(cls, instance, data):
+        data = cls.render_data(data)
+        return super(ReleaseOrchestratorData, cls).update(instance, data)
+
+    @classmethod
+    def render_data(cls, data):
+        # Actually, we don't have any reason to make copy at least now.
+        # The only reason I want to make copy is to be sure that changed
+        # data don't broke something somewhere in the code, since
+        # without a copy our changes affect entire application.
+        data = copy.deepcopy(data)
+
+        # create context for rendering
+        release = Release.get_by_uid(data['release_id'])
+        context = {
+            'MASTER_IP': settings.MASTER_IP,
+            'OPENSTACK_VERSION': release.version,
+        }
+
+        # render all the paths
+        for key, value in six.iteritems(data['repo_metadata']):
+            data['repo_metadata'][key] = cls.render_path(value, context)
+
+        data['puppet_manifests_source'] = \
+            cls.render_path(data['puppet_manifests_source'], context)
+
+        data['puppet_modules_source'] = \
+            cls.render_path(data['puppet_modules_source'], context)
+
+        return data
+
+    @classmethod
+    def render_path(cls, path, context):
+        return path.format(**context)
 
 
 class Release(NailgunObject):
@@ -190,14 +233,14 @@ class Release(NailgunObject):
             "repo_metadata": {
                 "nailgun":
                 settings.DEFAULT_REPO[os].format(
-                    master_ip=settings.MASTER_IP),
+                    MASTER_IP=settings.MASTER_IP),
             },
             "puppet_modules_source":
             settings.DEFAULT_PUPPET['modules'].format(
-                master_ip=settings.MASTER_IP),
+                MASTER_IP=settings.MASTER_IP),
             "puppet_manifests_source":
             settings.DEFAULT_PUPPET['manifests'].format(
-                master_ip=settings.MASTER_IP),
+                MASTER_IP=settings.MASTER_IP),
         }
 
         return {

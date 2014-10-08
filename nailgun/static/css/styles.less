@@ -89,6 +89,8 @@
 @text-shadow-black: 0 1px 0 rgba(0, 0, 0, 0.35);
 @text-shadow-none: 0 0 0 rgba(0, 0, 0, 0);
 
+
+@network-row-width: 190px;
 // Safari hacks may go here
 .safari {
   .welcome-page > div {
@@ -1341,65 +1343,161 @@ label {cursor: default;}
   }
 }
 
+// Networks styles
+
+.network-settings {
+  .radio-checkbox-group {
+    .label-wrapper {
+      margin: 6px 20px 0 0;
+    }
+  }
+  .networks-table, .networking-parameters {
+    width: 100%;
+    margin-bottom: 10px;
+    > div {padding-left: 3px;}
+    .range-row-header {
+      height: 23px;
+      font-weight: bold;
+      margin-top: 5px;
+      &.mini > div { width: 104px; }
+      > div {
+        float: left;
+        margin-left: 10px;
+        font-size: @font-size-small-3;
+        line-height: 14px;
+        width: 220px;
+        &:first-child {margin-left: 202px;}
+      }
+    }
+    .range-row {
+      margin: 0 0 10px @network-row-width;
+      .parameter-box {
+        float: left;
+        margin: 0 10px 5px 0;
+        input.parameter-input {
+          margin-bottom: 0px;
+        }
+        &:not(.has-error) {
+          input.parameter-input {
+            margin-right: 5px;
+          }
+        }
+      }
+    }
+    .range-row, .vlan-tagging {
+      label {
+        display: inline-block;
+        margin-bottom: 0;
+        float: left;
+      }
+    }
+    .vlan-tagging.network-attribute {
+      height: 40px;
+      .label-wrapper {
+        max-width: @network-row-width;
+      }
+      input[type=text] {
+        width: 172px;
+        margin: 7px 3px 0 0;
+        float: left;
+      }
+      .parameter-box {
+        &.has-error {
+          .parameter-description {
+            float: left;
+          }
+        }
+      }
+    }
+    div.validation-error {
+      float: left;
+      .help-inline {
+        display: block;
+        padding-top: 5px;
+        max-width: 540px;
+        color: @fuel-deep-red;
+        float: none;
+      }
+    }
+
+    .network-attribute {
+      min-height: 47px;
+      .parameter-name { min-width: @network-row-width; }
+      &.floating, &.ip-ranges {padding-bottom: 7px; }
+      &.ip_ranges {
+        .parameter-name {
+          min-width: 182px;
+        }
+      }
+
+      label {
+        margin-bottom: 0;
+        overflow: visible;
+      }
+      .parameter-name {
+        .label-wrapper {
+          min-width: @network-row-width;
+          margin-top: 7px;
+        }
+        .input-label {
+          width: 182px;
+        }
+        input.parameter-input {
+          float: left;
+        }
+      }
+      .parameter-box {
+        &.has-error {
+          .parameter-description {
+            margin-top: 12px;
+            float: right;
+          }
+        }
+      }
+      &.mini {
+        .range-row-header {
+          > div {
+            width: 104px;
+          }
+        }
+
+        input { width: 88px; }
+      }
+      .parameter-name {
+        min-width: 188px;
+      }
+      &.dns-nameservers {
+        .parameter-control input.range {
+          width: 205px;
+        }
+      }
+    }
+
+    .ip-ranges-control, .ranges-control {
+      width: 20px;
+      margin-top: 3px;
+      float: left;
+      margin-left: 0 !important;
+      .btn-link { padding: 0; }
+    }
+  }
+  .verification-box {
+    hr {
+      margin-left: -35px;
+    }
+  }
+  .has-error {
+    .parameter-description {
+      margin: 12px 0 0 5px;
+    }
+  }
+}
+
 .network-segment-type {
   font-style: italic;
   p {
     text-transform: uppercase;
     display: inline;
-  }
-}
-
-.networks-table, .networking-parameters {
-  width: 100%;
-  margin-bottom: 10px;
-  > div {padding-left: 3px;}
-  .range-row-header {
-    height: 23px;
-    font-weight: bold;
-    &.mini > div { width: 104px; }
-    > div {
-      float: left;
-      margin-left: 10px;
-      font-size: @font-size-small-3;
-      line-height: 14px;
-      width: 220px;
-      &:first-child {margin-left: 202px;}
-    }
-  }
-  .range-row { margin-left: 188px; }
-  .range-row, .vlan-tagging {
-    label {
-      display: inline-block;
-      margin-bottom: 0;
-      float: left;
-    }
-  }
-  .vlan-tagging {
-    height: 40px;
-    input[type=text] { width: 172px; }
-  }
-  div.validation-error {
-    float: left;
-    .help-inline {
-      display: block;
-      padding-top: 5px;
-      max-width: 540px;
-      color: @fuel-deep-red;
-    }
-  }
-  .network-attribute {
-    min-height: 47px;
-    .parameter-name { width: 185px; }
-    &.floating, &.ip-ranges {padding-bottom: 7px; }
-    label {margin-bottom: 0;}
-  }
-  input.mini { width: 91px; }
-  .ip-ranges-control, .ranges-control {
-    width: 20px;
-    margin-top: 3px;
-    float: left;
-    margin-left: 0 !important;
-    .btn-link { padding: 0; }
   }
 }
 
@@ -2035,7 +2133,7 @@ select[name=release] option {
 
 .verification-box {
   display: block;
-  margin: 10px 20px;
+  margin: 10px 0px;
   .position(relative, @top: 0px, @left: 0px);
   .alert {
     clear: left;
@@ -2049,13 +2147,16 @@ select[name=release] option {
 .verification-network-placeholder {
   .float-mixin;
   width: 590px;
-  margin-right: 20px;
 }
 
 .verification-text-placeholder {
   display: block;
   width: 330px;
   float: left;
+  margin-left: 20px;
+  li:first-of-type {
+    font-weight: bold;
+  }
   li {
     list-style: none outside none;
     margin: 2px 0 8px 0;
@@ -2103,7 +2204,7 @@ select[name=release] option {
 .connect-1-error { background: url(../img/connect_1_anim.gif) no-repeat 0px -124px;}
 
 .connect-2-stop, .connect-2-success, .connect-2-error {
-  .connect-stop-mixin(8px, 62px, 45px);
+  .connect-stop-mixin(8px, 62px, 49px);
 }
 
 .connect-2-stop { background: url(../img/connect_2_anim.gif) no-repeat top left;}
@@ -2111,7 +2212,7 @@ select[name=release] option {
 .connect-2-error { background: url(../img/connect_2_anim.gif) no-repeat 0px -124px;}
 
 .connect-3-stop, .connect-3-success, .connect-3-error {
-  .connect-stop-mixin(176px, 62px, 46px);
+  .connect-stop-mixin(176px, 62px, 49px);
 }
 
 .connect-3-stop { background: url(../img/connect_3_anim.gif) no-repeat top left;}
@@ -2131,7 +2232,7 @@ select[name=release] option {
   overflow: hidden;
 }
 
-.nodex-box {
+.nodes-box {
   display: block;
   height: 40px;
   overflow: hidden;
@@ -2146,6 +2247,7 @@ input.error,
 }
 
 input.error:focus,
+.has-error input.parameter-input:focus,
 .has-error .parameter-name input:focus {
   border-color: @fuel-deep-red;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #d59392;
@@ -2464,8 +2566,6 @@ legend {
     margin-right: 0px;
   }
 }
-
-.network-settings .parameter-box { clear: inherit; }
 
 .openstack-settings {
   &.wrapper {

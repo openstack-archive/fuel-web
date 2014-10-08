@@ -18,12 +18,23 @@
         description: "The controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well."
         conflicts:
           - compute
+        limits:
+          min: 1
+          overrides:
+            - condition: "cluster:mode == 'multinode'"
+              max: 1
+              warning: "Multi-node environment can not have more than one controller node."
+            - condition: "cluster:mode == 'ha_compact'"
+              recommended: 3
+              warning: "At least 3 controller nodes are recommended for HA deployment."
       compute:
         name: "Compute"
-        description: "A compute node creates, manages and terminates virtual machine instances."
         depends:
           - condition: "settings:common.libvirt_type.value != 'vcenter'"
-            warning: "Computes cannot be used with vCenter"
+            warning: "Computes cannot be added to environment with vCenter hypervisor."
+        description: "A compute node creates, manages and terminates virtual machine instances."
+        limits:
+          recommended: 1
       cinder:
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
@@ -532,6 +543,12 @@
       - zabbix-server
     roles_metadata:
       ceph-osd:
+        # TODO: consider Ceph replication factor? (settings:storage.osd_pool_size.value)
+        # TODO: notification when deleting?
+        # TODO: Ceph nodes cannot be added to the env when Ceph settings are turned off
+        conflicts:
+          # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914  - Prohibit possibility of adding cinder nodes to an environment with Ceph RBD
+          - cinder
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
         depends:
@@ -548,6 +565,14 @@
             warning: "MongoDB node can not be added to an operational environment."
           - condition: "settings:additional_components.ceilometer.value == true"
             warning: "Ceilometer should be enabled."
+          - condition: "settings:additional_components.mongo.value == false"
+            warning: "You are using external MongoDB."
+        limits:
+          max: 1
+          overrides:
+            - condition: "cluster:mode == 'ha_compact'"
+              recommended: 3
+              warning: "At least 3 MongoDB nodes are recommended for HA deployment."
       zabbix-server:
         name: "Zabbix Server"
         description: "Zabbix monitoring system server."
@@ -559,7 +584,9 @@
           - mongo
         depends:
           - condition: "'experimental' in version:feature_groups"
-            action: "hide"
+            action: "hide"  # NOTE: should this be "show" ? action is called when condition is true...
+        limits:
+          max: 1
     networks_metadata:
       neutron:
         networks:

@@ -378,7 +378,7 @@
                         "expected_vlan": "Expected VLAN (not received)"
                     },
                     "network_parameters": {
-                        "ip_range": "IP Range",
+                        "ip_ranges": "IP Range",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
                         "use_vlan_tagging": "Use VLAN tagging"

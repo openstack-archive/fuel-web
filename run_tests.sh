@@ -281,7 +281,7 @@ function run_nailgun_tests {
 function run_webui_tests {
   local SERVER_PORT=$UI_SERVER_PORT
   local TESTS_DIR=$ROOT/nailgun/ui_tests
-  local TESTS=$TESTS_DIR/test_*.js
+  local TESTS=$TESTS_DIR/test_cluster_network.js
   local artifacts=$ARTIFACTS/webui
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config

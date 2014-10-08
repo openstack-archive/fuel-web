@@ -545,7 +545,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         constructorName: 'NetworkingParameters'
     });
 
-    models.NetworkConfiguration = Backbone.Model.extend({
+    models.NetworkConfiguration = Backbone.DeepModel.extend({
         constructorName: 'NetworkConfiguration',
         cacheFor: 60 * 1000,
         parse: function(response) {

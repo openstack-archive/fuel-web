@@ -217,6 +217,9 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                         if (error.start || error.end) {
                             ipRangesErrors.push(error);
                         }
+                    } else {
+                        // @morale: now it's possible that we get an array of empty values in network tab
+                        ipRangesErrors.push({index: i, start: $.t('cluster_page.network_tab.validation.empty_ip_range')});
                     }
                 });
             } else {

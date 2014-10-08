@@ -77,7 +77,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         onChange: function() {
             if (this.props.onChange) {
                 var input = this.getInputDOMNode();
-                return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
+                return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value, this.props);
             }
         },
         renderInput: function() {

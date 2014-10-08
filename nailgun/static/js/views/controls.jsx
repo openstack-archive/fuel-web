@@ -108,6 +108,10 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 'input-append': this.props.toggleable
             };
             classes[this.props.labelClassName] = this.props.labelClassName;
+            var labelWrapperClasses = {
+                'label-wrapper': true
+            };
+            labelWrapperClasses[this.props.labelWrapperClassName] = this.props.labelWrapperClassName;
             return this.props.label ? (
                 <label key='label' className={cx(classes)} htmlFor={this.props.id}>
                     {!this.isCheckboxOrRadio() &&
@@ -118,13 +122,20 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     }
                     {children}
                     {this.isCheckboxOrRadio() &&
-                        <div className='label-wrapper'>
+                        <div className={cx(labelWrapperClasses)}>
                             {this.props.label}
                             {this.renderTooltipIcon()}
                         </div>
                     }
                 </label>
-            ) : children;
+            )
+            : this.props.title ? (
+                <div>
+                    <div className='parameter-name'>{this.props.title}</div>
+                    {children}
+                </div>
+                )
+            : children;
         },
         renderDescription: function() {
             var error = !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
@@ -237,6 +248,83 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                         })}
                     </tbody>
                 </table>
+            );
+        }
+    });
+
+    controls.Range = React.createClass({
+        propTypes: {
+            wrapperClassName: React.PropTypes.renderable,
+            type: React.PropTypes.oneOf(['normal', 'mini']),
+            attribute: React.PropTypes.string,
+            networkAttribute: React.PropTypes.array
+        },
+        changeIPRanges: function() {
+
+        },
+        render: function() {
+            var wrapperClasses = {},
+                rowHeaderClasses = {'range-row-header': true};
+            rowHeaderClasses.mini = (this.props.type == 'mini');
+            wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
+
+            return (
+                <div className={cx(wrapperClasses)}>
+                    <div className={cx(rowHeaderClasses)}>
+                        <div>{$.t('cluster_page.network_tab.range_start')}</div>
+                        <div>{$.t('cluster_page.network_tab.range_end')}</div>
+                    </div>
+                    <div className='parameter-name'>{this.props.nameLabel}</div>
+                    { (this.props.type == 'normal') ?
+                        <div className={this.props.rowsClassName}>
+                            {_.map(this.props.networkAttribute, function(range) {
+                                return (
+                                    <div className='range-row autocomplete clearfix'>
+                                        <label className='parameter-box clearfix'>
+                                            <div className='parameter-control'>
+                                                {this.transferPropsTo(<input className='range' type='text' name='range0'
+                                                    placeholder='127.0.0.1' value={range[0]} />)}
+                                            </div>
+                                        </label>
+                                        <label className='parameter-box clearfix'>
+                                            <div className='parameter-control'>
+                                                {this.transferPropsTo(<input className='range' type='text' name='range1'
+                                                    placeholder='127.0.0.1' value={range[1]} />)}
+                                            </div>
+                                        </label>
+                                        <div className='ip-ranges-control'>
+                                            <button className='btn btn-link ip-ranges-add' onClick={this.changeIPRanges}>
+                                                <i className='icon-plus-circle'></i>
+                                            </button>
+                                        </div>
+                                        <div className='ip-ranges-control'>
+                                            <button className='btn btn-link ip-ranges-delete'>
+                                                <i className='icon-minus-circle'></i>
+                                            </button>
+                                        </div>
+                                        <div className='error validation-error'>
+                                            <span className='help-inline'></span>
+                                        </div>
+                                    </div>
+                                );
+                            }, this)}
+                        </div>
+                    :
+                        <div className='range-row'>
+                            <div className='parameter-control'>
+                                {this.transferPropsTo(<input type='text' className='mini range'
+                                name='range0' value={this.props.networkAttribute[0]} />)}
+                            </div>
+                            <div className='parameter-control'>
+                                {this.transferPropsTo(<input type='text' className='mini' name='range1'
+                                    value={this.props.networkAttribute[1]} />)}
+                            </div>
+                            <div className='error validation-error'>
+                                <span className='help-inline'></span>
+                            </div>
+                        </div>
+                    }
+                </div>
             );
         }
     });

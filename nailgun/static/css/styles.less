@@ -1348,6 +1348,12 @@ label {cursor: default;}
   }
 }
 
+.network-settings {
+  .btn {
+    margin-right: 10px;
+  }
+}
+
 .network-segment-type {
   font-style: italic;
   p {
@@ -1356,14 +1362,13 @@ label {cursor: default;}
   }
 }
 
-.networks-table, .networking-parameters  {
+.networks-table, .networking-parameters {
   width: 100%;
   margin-bottom: 10px;
   > div {padding-left: 3px;}
   .range-row-header {
     height: 23px;
     font-weight: bold;
-    &.mini > div { width: 104px; }
     > div {
       float: left;
       margin-left: 10px;
@@ -1373,7 +1378,14 @@ label {cursor: default;}
       &:first-child {margin-left: 202px;}
     }
   }
-  .range-row { margin-left: 199px; }
+
+  .range-row {
+    margin-left: 197px;
+    .parameter-box {
+      float: left;
+      margin-right: 10px;
+    }
+  }
   .range-row, .vlan-tagging {
     label {
       display: inline-block;
@@ -1381,10 +1393,12 @@ label {cursor: default;}
       float: left;
     }
   }
+
   .vlan-tagging {
     height: 40px;
     input[type=text] { width: 172px; }
   }
+
   div.validation-error {
     float: left;
     .help-inline {
@@ -1394,13 +1408,42 @@ label {cursor: default;}
       color: @fuel-deep-red;
     }
   }
+
   .network-attribute {
     min-height: 47px;
-    .parameter-name { width: 185px; }
     &.floating, &.ip-ranges {padding-bottom: 7px; }
-    label {margin-bottom: 0;}
+    label {
+      margin-bottom: 0;
+      overflow: visible;
+    }
+    .parameter-name {
+      .input-label {
+        width: 182px;
+      }
+    }
+
+    .parameter-box {
+      &.has-error {
+        .parameter-description {margin-top: 10px;}
+      }
+    }
+    &.mini {
+      .range-row-header {
+        > div {
+          width: 104px;
+        }
+      }
+      .parameter-control input {
+        width: 91px;
+      }
+    }
+    &.dns-nameservers {
+      .parameter-control input.range {
+        width: 205px;
+      }
+    }
   }
-  input.mini { width: 91px; }
+
   .ip-ranges-control, .ranges-control {
     width: 20px;
     margin-top: 3px;
@@ -2069,6 +2112,7 @@ select[name=release] option {
   display: block;
   width: 330px;
   float: left;
+  li:first-of-type {font-weight: bold;}
   li {
     list-style: none outside none;
     margin: 2px 0 8px 0;
@@ -2116,7 +2160,7 @@ select[name=release] option {
 .connect-1-error { background: url(../img/connect_1_anim.gif) no-repeat 0px -124px;}
 
 .connect-2-stop, .connect-2-success, .connect-2-error  {
-  .connect-stop-mixin(8px, 62px, 45px);
+  .connect-stop-mixin(8px, 62px, 49px);
 }
 
 .connect-2-stop { background: url(../img/connect_2_anim.gif) no-repeat top left;}
@@ -2124,7 +2168,7 @@ select[name=release] option {
 .connect-2-error { background: url(../img/connect_2_anim.gif) no-repeat 0px -124px;}
 
 .connect-3-stop, .connect-3-success, .connect-3-error  {
-  .connect-stop-mixin(176px, 62px, 46px);
+  .connect-stop-mixin(176px, 62px, 49px);
 }
 
 .connect-3-stop { background: url(../img/connect_3_anim.gif) no-repeat top left;}
@@ -2159,6 +2203,7 @@ input.error,
 }
 
 input.error:focus,
+.has-error input.parameter-input:focus,
 .has-error .parameter-name input:focus {
   border-color: @fuel-deep-red;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #d59392;
@@ -2383,7 +2428,6 @@ input.error:focus,
 }
 
 .parameter-description {
-  .float-mixin;
   color: @font-color-light;
   .box-sizing-mixin;
   margin-top: 4px;
@@ -2806,6 +2850,20 @@ hr.slim {
 
 .changes-locked label {
   cursor: default !important;
+}
+
+.complex-control.network-attribute {
+  .parameter-description {
+    margin: 10px 0 0 15px;
+    float: left;
+  }
+  .parameter-input {
+    float: left;
+    margin-top: 7px;
+  }
+  .parameter-name {
+    margin: 7px 5px 0 0;
+  }
 }
 
 // Disk Utility Start

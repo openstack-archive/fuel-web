@@ -258,7 +258,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                             networkConfiguration: networkConfiguration,
                             release: new models.Release({id: cluster.get('release_id')})
                         });
-                        return cluster.get('release').fetch();
+                        return $.when(networkConfiguration.fetch(), cluster.get('release').fetch());
                     }, this))
                     .done(_.bind(render, this))
                     .fail(_.bind(this.listClusters, this));

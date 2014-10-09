@@ -15,17 +15,20 @@
 #    under the License.
 
 import argparse
+import getpass
+import logging
 import requests
 import sys
 
 from fuel_upgrade.logger import configure_logger
-logger = configure_logger('/var/log/fuel_upgrade.log')
 
 from fuel_upgrade import errors
 from fuel_upgrade import messages
 
 from fuel_upgrade.checker_manager import CheckerManager
+from fuel_upgrade.clients import KeystoneClient
 from fuel_upgrade.config import build_config
+from fuel_upgrade.config import set_keystone_credentials
 from fuel_upgrade.upgrade import UpgradeManager
 
 from fuel_upgrade.engines.bootstrap import BootstrapUpgrader
@@ -36,6 +39,8 @@ from fuel_upgrade.engines.openstack import OpenStackUpgrader
 
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
 
+
+logger = logging.getLogger(__name__)
 
 #: A dict with supported systems.
 #: The key is used for system option in CLI.
@@ -73,7 +78,7 @@ def handle_exception(exc):
     sys.exit(-1)
 
 
-def parse_args():
+def parse_args(args):
     """Parse arguments and return them
     """
     parser = argparse.ArgumentParser(
@@ -90,8 +95,10 @@ def parse_args():
     parser.add_argument(
         '--no-rollback', action='store_true',
         help='do not rollback in case of errors')
+    parser.add_argument(
+        '--password', help="admin user password")
 
-    rv = parser.parse_args()
+    rv = parser.parse_args(args)
 
     # check input systems for compatibility
     for uncompatible_systems in UNCOMPATIBLE_SYSTEMS:
@@ -124,14 +131,37 @@ def is_engine_in_list(engines_list, engine_class):
     return False
 
 
+def get_keystone_token(config, password):
+    """
+    Get keystone token for admin user
+    """
+    credentials = {
+        'username': 'admin',
+        'password': password,
+        'tenant_name': 'admin',
+        'auth_url': 'http://{host}:{port}/v2.0/tokens'.format(
+            **config.endpoints['keystone']),
+    }
+    keystone = KeystoneClient(**credentials)
+    return keystone.get_token()
+
+
 def run_upgrade(args):
     """Run upgrade on master node
 
     :param args: argparse object
     """
+    # Get admin password
+    if not args.password:
+        args.password = getpass.getpass('Admin Password: ')
+
     # Initialize config
     config = build_config(args.src)
     logger.debug('Configuration data: {0}'.format(config))
+
+    keystone_token = get_keystone_token(config, args.password)
+
+    config = set_keystone_credentials(config, {'token': keystone_token})
 
     # Initialize upgrade engines
     upgraders_to_use = [
@@ -155,7 +185,8 @@ def run_upgrade(args):
 def main():
     """Entry point
     """
+    configure_logger('/var/log/fuel_upgrade.log')
     try:
-        run_upgrade(parse_args())
+        run_upgrade(parse_args(sys.argv[1:]))
     except Exception as exc:
         handle_exception(exc)

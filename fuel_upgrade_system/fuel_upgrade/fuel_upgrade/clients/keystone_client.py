@@ -31,11 +31,12 @@ class KeystoneClient(object):
     """
 
     def __init__(self, username=None, password=None,
-                 auth_url=None, tenant_name=None):
+                 auth_url=None, tenant_name=None, token=None):
         self.auth_url = auth_url
         self.tenant_name = tenant_name
         self.username = username
         self.password = password
+        self.token = token
 
     @property
     def request(self):
@@ -44,7 +45,7 @@ class KeystoneClient(object):
         :returns: :class:`requests.Session` object
         """
         session = requests.Session()
-        token = self.get_token()
+        token = self.token or self.get_token()
         if token:
             session.headers.update({'X-Auth-Token': token})
 

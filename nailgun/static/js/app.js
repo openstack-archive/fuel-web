@@ -99,6 +99,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                             })
                             .then(_.bind(function() {
                                 options = options || {};
+                                options.headers = options.headers || {};
+                                options.headers['X-Auth-Token'] = keystoneClient.token;
                                 _.each(['success', 'error'], function(callback) {
                                     if (options[callback]) {
                                         callbacks[callback] = options[callback];

@@ -90,7 +90,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                         // triggered but dfd.state() still returns 'pending'. This
                         // leads to various bugs here and there.
                         var callbacks = {};
-                        // add keystone token to headers
+
                         return keystoneClient.authenticate()
                             .fail(function() {
                                 app.logout();
@@ -175,16 +175,14 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
             this.setPage(LoginPage);
         },
         logout: function() {
-            if (this.version.get('auth_required') && this.user.get('authenticated')) {
+            if (this.user.get('authenticated') && this.version.get('auth_required')) {
                 this.user.set('authenticated', false);
                 this.user.unset('username');
                 this.user.unset('password');
-                delete app.keystoneClient.userId;
-                delete app.keystoneClient.username;
-                delete app.keystoneClient.password;
-                delete app.keystoneClient.token;
-                delete app.keystoneClient.tokenUpdateTime;
+
+                this.keystoneClient.deauthenticate();
             }
+
             _.defer(function() {
                 app.navigate('#login', {trigger: true, replace: true});
             });

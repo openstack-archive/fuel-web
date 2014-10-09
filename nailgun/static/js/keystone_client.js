@@ -53,6 +53,9 @@ define(['jquery', 'underscore'], function($, _) {
                     this.userId = result.access.user.id;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
+
+                    $.cookie('token', result.access.token.id);
+
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
@@ -75,18 +78,50 @@ define(['jquery', 'underscore'], function($, _) {
                 type: 'PATCH',
                 dataType: 'json',
                 contentType: 'application/json',
-                headers: {'X-Auth-Token': this.token},
-                data: JSON.stringify(data)
+                data: JSON.stringify(data),
+                headers: {'X-Auth-Token': this.token}
             }).then(_.bind(function(result, state, deferred) {
                 try {
                     this.password = newPassword;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
+
+                    $.cookie('token', result.access.token.id);
+
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
                 }
             }, this));
+        },
+        deauthenticate: function() {
+            var token = this.token;
+
+            if (this.tokenRemoveRequest) {
+                return this.tokenRemoveRequest;
+            }
+            if (!this.token) {
+                return $.Deferred().reject();
+            }
+
+            delete this.userId;
+            delete this.username;
+            delete this.password;
+            delete this.token;
+            delete this.tokenUpdateTime;
+
+            $.removeCookie('token');
+
+            this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + token, {
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json',
+                headers: {'X-Auth-Token': token}
+            }).always(_.bind(function() {
+                delete this.tokenRemoveRequest;
+            }, this));
+
+            return this.tokenRemoveRequest;
         }
     });
 

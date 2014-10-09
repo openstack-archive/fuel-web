@@ -182,8 +182,10 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                     'X-Auth-Token': app.keystoneClient.token
                 }
             };
+
             _.extend(options, callbacks);
             _.extend(options.data, data);
+
             return this.registerDeferred($.ajax(options));
         },
         showLogs: function(params) {

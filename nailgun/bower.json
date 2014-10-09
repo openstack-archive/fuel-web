@@ -3,6 +3,7 @@
     "dependencies": {
         "jquery": "1.9.1",
         "requirejs": "2.1.9",
+        "jquery-cookie": "1.4.1",
         "requirejs-text": "2.0.10",
         "require-css": "0.1.0",
         "lodash": "1.3.1",

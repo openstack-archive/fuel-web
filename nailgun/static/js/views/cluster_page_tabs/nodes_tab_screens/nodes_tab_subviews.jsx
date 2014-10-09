@@ -51,30 +51,17 @@ function(React, Expression, utils, controls) {
             }, this);
         },
         parseRoleData: function() {
-            this.parsedDependencies = {};
-            this.conflicts = {};
             var configModels = {
                 cluster: this.props.cluster,
                 settings: this.props.cluster.get('settings'),
                 version: app.version,
                 default: this.props.cluster.get('settings')
-            };
-            _.each(this.getRoleData(), function(data, role) {
-                this.conflicts[role] = _.compact(_.uniq(_.union(this.conflicts[role], data.conflicts)));
-                _.each(data.conflicts, function(conflictingRole) {
-                    this.conflicts[conflictingRole] =  this.conflicts[conflictingRole] || [];
-                    this.conflicts[conflictingRole].push(role);
-                }, this);
-                this.parsedDependencies[role] = [];
-                _.each(data.depends, function(dependency) {
-                    dependency = utils.expandRestriction(dependency);
-                    this.parsedDependencies[role].push({
-                        expression: new Expression(dependency.condition, configModels),
-                        action: dependency.action,
-                        warning: dependency.warning
-                    });
-                }, this);
-            }, this);
+            },
+                roleDataParsed = utils.parseRoleData(this.getRoleData(), configModels);
+
+            this.conflicts = roleDataParsed.conflicts;
+            this.parsedDependencies = roleDataParsed.dependencies;
+
             this.forceUpdate();
         },
         getRoleList: function(role) {

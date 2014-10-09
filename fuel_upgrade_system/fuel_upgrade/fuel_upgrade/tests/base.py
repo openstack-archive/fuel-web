@@ -71,7 +71,8 @@ class BaseTestCase(TestCase):
                 return_value={'ADMIN_NETWORK': {'ipaddress': '0.0.0.0'}})
     def fake_config(self, _, __, ___, ____):
         update_path = '/tmp/upgrade_path'
-        conf = config.build_config(update_path)
+        admin_password = 'admin'
+        conf = config.build_config(update_path, admin_password)
 
         conf.astute = {
             'ADMIN_NETWORK': {

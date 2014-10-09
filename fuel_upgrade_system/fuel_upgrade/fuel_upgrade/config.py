@@ -78,13 +78,13 @@ def get_version_from_config(path):
     return read_yaml_config(path)['VERSION']['release']
 
 
-def build_config(update_path):
+def build_config(update_path, admin_password):
     """Builds config
 
     :param str update_path: path to upgrade
     :returns: :class:`Config` object
     """
-    return Config(config(update_path))
+    return Config(config(update_path, admin_password))
 
 
 def from_fuel_version(current_version_path, from_version_path):
@@ -102,7 +102,7 @@ def from_fuel_version(current_version_path, from_version_path):
     return get_version_from_config(current_version_path)
 
 
-def get_endpoints(astute_config):
+def get_endpoints(astute_config, admin_password):
     """Returns services endpoints
 
     :returns: dict where key is the a name of endpoint
@@ -115,7 +115,7 @@ def get_endpoints(astute_config):
     # 5.0.X releases we didn't have this data
     # in astute file
     fuel_access = astute_config.get(
-        'FUEL_ACCESS', {'user': 'admin', 'password': 'admin'})
+        'FUEL_ACCESS', {'user': 'admin'})
     rabbitmq_access = astute_config.get(
         'astute', {'user': 'naily', 'password': 'naily'})
     rabbitmq_mcollective_access = astute_config.get(
@@ -123,7 +123,7 @@ def get_endpoints(astute_config):
 
     keystone_credentials = {
         'username': fuel_access['user'],
-        'password': fuel_access['password'],
+        'password': admin_password,
         'auth_url': 'http://{0}:5000/v2.0/tokens'.format(master_ip),
         'tenant_name': 'admin'}
 
@@ -217,10 +217,11 @@ def get_host_system(update_path, new_version):
                 '/var/www/nailgun', openstack_version, 'centos/x86_64')}}
 
 
-def config(update_path):
+def config(update_path, admin_password):
     """Generates configuration data for upgrade
 
     :param str update_path: path to upgrade
+    :param str admin_password: admin user password
     :retuns: huuuge dict with all required
              for ugprade parameters
     """
@@ -267,7 +268,7 @@ def config(update_path):
         'timeout': 900,
         'interval': 3}
 
-    endpoints = get_endpoints(astute)
+    endpoints = get_endpoints(astute, admin_password)
 
     # Configuration data for docker client
     docker = {

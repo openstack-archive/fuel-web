@@ -14,35 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
-
-from nailgun.db.sqlalchemy.models import Task
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseAuthenticationIntegrationTest
 from nailgun.test.base import reverse
 
 
 class TestPublicHandlers(BaseAuthenticationIntegrationTest):
-
-    def _create_capacity_log(self):
-        headers = copy.deepcopy(self.default_headers)
-        headers['X-Auth-Token'] = 'token'
-        resp = self.app.put(
-            reverse('CapacityLogHandler'),
-            headers=headers)
-        self.assertEqual(resp.status_code, 202)
-
-        capacity_task = self.db.query(Task).filter_by(
-            name="capacity_log"
-        ).first()
-        self.env.wait_ready(capacity_task)
-
-    def test_log_capacity(self):
-        self._create_capacity_log()
-        resp = self.app.get(
-            reverse('CapacityLogCsvHandler'),
-            headers=self.default_headers)
-        self.assertEqual(200, resp.status_code)
 
     def test_node_agent_api(self):
         self.env.create_node(

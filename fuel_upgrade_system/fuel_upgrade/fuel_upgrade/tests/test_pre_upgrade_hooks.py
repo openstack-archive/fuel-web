@@ -33,9 +33,14 @@ from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
 from fuel_upgrade.pre_upgrade_hooks. \
     from_5_0_x_to_any_copy_openstack_release_versions \
     import CopyOpenstackReleaseVersions
+from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
+    import AddKeystoneCredentialsHook
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
+
+    HookClass = None
+
     def setUp(self):
         class Upgrader1(mock.MagicMock):
             pass
@@ -46,8 +51,15 @@ class TestPreUpgradeHooksBase(BaseTestCase):
         self.upgraders_cls = [Upgrader1, Upgrader2]
         self.upgraders = [upgrade_cls() for upgrade_cls in self.upgraders_cls]
 
+    def get_hook(self, astute):
+        config = self.fake_config
+        config.astute = astute
+        return self.HookClass(self.upgraders, config)
+
 
 class TestAddCredentialsHook(TestPreUpgradeHooksBase):
+
+    HookClass = AddCredentialsHook
 
     def setUp(self):
         super(TestAddCredentialsHook, self).setUp()
@@ -58,11 +70,6 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
             'postgres',
             'keystone',
             'FUEL_ACCESS']
-
-    def get_hook(self, astute):
-        config = self.fake_config
-        config.astute = astute
-        return AddCredentialsHook(self.upgraders, config)
 
     def test_is_required_returns_true(self):
         hook = self.get_hook({})
@@ -106,18 +113,72 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
             for key in agrs[0][1].keys()))
 
 
+class TestAddKeystoneCredentialsHook(TestPreUpgradeHooksBase):
+
+    HookClass = AddKeystoneCredentialsHook
+
+    def setUp(self):
+        super(TestAddKeystoneCredentialsHook, self).setUp()
+        self.keystone_keys = [
+            'nailgun_user',
+            'nailgun_password',
+            'ostf_user',
+            'ostf_password',
+        ]
+
+    def test_is_required_returns_true(self):
+        hook = self.get_hook({})
+        self.assertTrue(hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        hook = self.get_hook({
+            'keystone': {
+                'nailgun_user': '',
+                'nailgun_password': '',
+                'ostf_user': '',
+                'ostf_password': '',
+            }
+        })
+
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
+                'from_5_1_to_any_add_keystone_credentials.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
+                'from_5_1_to_any_add_keystone_credentials.utils')
+    def test_run(self, utils_mock, read_yaml_config_mock):
+        file_key = 'this_key_was_here_before_upgrade'
+        hook = self.get_hook({
+            'keystone': {file_key: file_key}
+        })
+        read_yaml_config_mock.return_value = hook.config.astute
+        hook.run()
+
+        utils_mock.copy_file.assert_called_once_with(
+            '/etc/fuel/astute.yaml',
+            '/etc/fuel/astute.yaml_0',
+            overwrite=False)
+
+        agrs = utils_mock.save_as_yaml.call_args
+        self.assertEqual(agrs[0][0], '/etc/fuel/astute.yaml')
+
+        # Check that the key which was in
+        self.keystone_keys.append(file_key)
+        # Check that all required keys are in method call
+        self.assertTrue(all(
+            key in self.keystone_keys
+            for key in agrs[0][1]['keystone'].keys()))
+
+
 class TestSyncDnsHook(TestPreUpgradeHooksBase):
+
+    HookClass = SyncDnsHook
 
     def setUp(self):
         super(TestSyncDnsHook, self).setUp()
         self.additional_keys = [
             'DNS_DOMAIN',
             'DNS_SEARCH']
-
-    def get_hook(self, astute):
-        config = self.fake_config
-        config.astute = astute
-        return SyncDnsHook(self.upgraders, config)
 
     def test_is_required_returns_true(self):
         hook = self.get_hook({

@@ -48,3 +48,16 @@ class TestKeystoneClient(base.BaseTestCase):
     def test_does_not_fail_without_keystone(self, _, __):
         self.keystone.request
         self.assertEqual(self.keystone.get_token(), None)
+
+    @mock.patch('fuel_upgrade.clients.keystone_client.requests.post')
+    @mock.patch('fuel_upgrade.clients.keystone_client.requests.Session')
+    def test_uses_provided_token(self, session, post_mock):
+        token = 'provided_token'
+        credentials = self.credentials.copy()
+        credentials['token'] = token
+
+        keystone = KeystoneClient(**credentials)
+        keystone.request
+        session.return_value.headers.update.assert_called_once_with(
+            {'X-Auth-Token': token})
+        self.assertFalse(post_mock.called)

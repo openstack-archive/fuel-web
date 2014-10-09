@@ -109,23 +109,14 @@ def get_endpoints(astute_config):
               value is dict with host, port and authentication
               information
     """
-    master_ip = astute_config['ADMIN_NETWORK']['ipaddress']
-
+    keystone_credentials = {}
     # Set default user/password because in
     # 5.0.X releases we didn't have this data
     # in astute file
-    fuel_access = astute_config.get(
-        'FUEL_ACCESS', {'user': 'admin', 'password': 'admin'})
     rabbitmq_access = astute_config.get(
         'astute', {'user': 'naily', 'password': 'naily'})
     rabbitmq_mcollective_access = astute_config.get(
         'mcollective', {'user': 'mcollective', 'password': 'marionette'})
-
-    keystone_credentials = {
-        'username': fuel_access['user'],
-        'password': fuel_access['password'],
-        'auth_url': 'http://{0}:5000/v2.0/tokens'.format(master_ip),
-        'tenant_name': 'admin'}
 
     return {
         'nginx_nailgun': {
@@ -215,6 +206,17 @@ def get_host_system(update_path, new_version):
             'src': centos_repo_path,
             'dst': join(
                 '/var/www/nailgun', openstack_version, 'centos/x86_64')}}
+
+
+def set_keystone_credentials(config, credentials):
+    """Updates keystone credentials for endpoints
+    """
+    services = ['nginx_nailgun', 'ostf']
+
+    for service in services:
+        config.endpoints[service]['keystone_credentials'] = credentials
+
+    return config
 
 
 def config(update_path):

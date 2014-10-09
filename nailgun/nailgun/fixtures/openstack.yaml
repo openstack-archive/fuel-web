@@ -153,7 +153,7 @@
               source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$).*'
               error: "Invalid username"
           email:
-            value: "admin@example.org"
+            value: "admin@localhost"
             label: "email"
             description: "Email address for Administrator"
             weight: 40

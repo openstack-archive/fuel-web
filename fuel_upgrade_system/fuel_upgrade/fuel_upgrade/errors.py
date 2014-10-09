@@ -25,6 +25,10 @@ class CannotRunUpgrade(FuelUpgradeException):
     pass
 
 
+class CommandError(FuelUpgradeException):
+    pass
+
+
 class DockerExecutedErrorNonZeroExitCode(FuelUpgradeException):
     pass
 

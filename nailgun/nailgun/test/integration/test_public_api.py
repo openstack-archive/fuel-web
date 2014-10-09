@@ -37,13 +37,6 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
         ).first()
         self.env.wait_ready(capacity_task)
 
-    def test_log_capacity(self):
-        self._create_capacity_log()
-        resp = self.app.get(
-            reverse('CapacityLogCsvHandler'),
-            headers=self.default_headers)
-        self.assertEqual(200, resp.status_code)
-
     def test_node_agent_api(self):
         self.env.create_node(
             api=False,

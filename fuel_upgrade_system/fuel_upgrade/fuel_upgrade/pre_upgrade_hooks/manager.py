@@ -27,6 +27,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_sync_dns \
 from fuel_upgrade.pre_upgrade_hooks. \
     from_5_0_x_to_any_copy_openstack_release_versions \
     import CopyOpenstackReleaseVersions
+from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
+    import AddKeystoneCredentialsHook
 
 
 logger = logging.getLogger(__name__)
@@ -42,10 +44,12 @@ class PreUpgradeHookManager(object):
     #: List of hook clases
     hook_list = [
         AddCredentialsHook,
+        AddKeystoneCredentialsHook,
         FixPuppetManifests,
         FixHostSystemRepoHook,
         SyncDnsHook,
-        CopyOpenstackReleaseVersions]
+        CopyOpenstackReleaseVersions,
+    ]
 
     def __init__(self, upgraders, config):
         #: Pre upgrade hook objects

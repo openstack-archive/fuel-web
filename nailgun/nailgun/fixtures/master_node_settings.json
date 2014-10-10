@@ -1,0 +1,24 @@
+[
+    {
+        "pk": 1,
+        "model": "nailgun.master_node_settings",
+        "fields": {
+            "master_node_uid": "62410d05-ecbd-4912-83fe-5db51ebb273e",
+            "settings": {
+                "send_anonymous_statistic": {
+                    "type": "checkbox",
+                    "value": false
+                },
+                "send_user_info": {
+                    "type": "checkbox",
+                    "value": false
+                }
+                "user_info": {
+                    "name": {"type": "text", "value": "Test User"},
+                    "email": {"type": "text", "value": "test@email.com"},
+                    "company": {"type": "text", "value": "Test Company"}
+                }
+            }
+        }
+    }
+]

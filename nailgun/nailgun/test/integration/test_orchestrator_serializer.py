@@ -17,6 +17,7 @@
 import copy
 from operator import attrgetter
 from operator import itemgetter
+import re
 
 from netaddr import IPRange
 
@@ -186,24 +187,34 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'roles': ['mongo']},
             {'roles': ['cinder']}]
         for i in range(len(expected_list)):
-            expected_list[i]['attrs'] = {'uid': node_uids[i],
-                                         'internal_address': man_ip[i],
-                                         'public_address': pub_ip[i],
-                                         'storage_address': sto_ip[i]}
+            expected_list[i]['attrs'] = {'uid': node_uids[i]}
 
+        used_man_ip = []
+        used_pub_ip = []
+        used_sto_ip = []
         for expected in expected_list:
             attrs = expected['attrs']
 
+            ref_node = self.filter_by_uid(node_list, attrs['uid'])[0]
+            self.assertTrue(ref_node['internal_address'] in man_ip)
+            self.assertTrue(ref_node['public_address'] in pub_ip)
+            self.assertTrue(ref_node['storage_address'] in sto_ip)
+            self.assertFalse(ref_node['internal_address'] in used_man_ip)
+            self.assertFalse(ref_node['public_address'] in used_pub_ip)
+            self.assertFalse(ref_node['storage_address'] in used_sto_ip)
+            used_man_ip.append(ref_node['internal_address'])
+            used_pub_ip.append(ref_node['public_address'])
+            used_sto_ip.append(ref_node['storage_address'])
             for role in expected['roles']:
                 nodes = self.filter_by_role(node_list, role)
                 node = self.filter_by_uid(nodes, attrs['uid'])[0]
 
-                self.assertEqual(attrs['internal_address'],
-                                 node['internal_address'])
-                self.assertEqual(attrs['public_address'],
-                                 node['public_address'])
-                self.assertEqual(attrs['storage_address'],
-                                 node['storage_address'])
+                self.assertEqual(node['public_address'],
+                                 ref_node['public_address'])
+                self.assertEqual(node['storage_address'],
+                                 ref_node['storage_address'])
+                self.assertEqual(node['internal_address'],
+                                 ref_node['internal_address'])
 
     def test_flatdhcp_manager(self):
         cluster = self.create_env('ha_compact')
@@ -863,31 +874,45 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 {'roles': ['compute']},
                 {'roles': ['cinder']}]
             for i in range(len(expected_list)):
-                expected_list[i]['attrs'] = {'uid': node_uids[i],
-                                             'internal_address': man_ip[i],
-                                             'storage_address': sto_ip[i]}
+                expected_list[i]['attrs'] = {'uid': node_uids[i]}
                 if assign:
                     expected_list[i]['attrs']['public_address'] = pub_ip[i]
             if not assign:
                 expected_list[0]['attrs']['public_address'] = pub_ip[0]
 
+            # Check if ips are unique for node and
+            # they are the same for all nodes roles
+            used_man_ip, used_pub_ip, used_sto_ip = [], [], []
             for expected in expected_list:
                 attrs = expected['attrs']
+
+                ref_node = self.filter_by_uid(node_list, attrs['uid'])[0]
+                is_public = objects.Node.should_have_public(
+                    objects.Node.get_by_mac_or_uid(node_uid=attrs['uid']))
+                self.assertTrue(ref_node['internal_address'] in man_ip)
+                self.assertTrue(ref_node['storage_address'] in sto_ip)
+                self.assertFalse(ref_node['internal_address'] in used_man_ip)
+                self.assertFalse(ref_node['storage_address'] in used_sto_ip)
+                used_man_ip.append(ref_node['internal_address'])
+                used_sto_ip.append(ref_node['storage_address'])
+                # Check if pubclic ip field exists
+                if is_public:
+                    self.assertTrue(ref_node['public_address'] in pub_ip)
+                    self.assertFalse(ref_node['public_address'] in used_pub_ip)
+                    used_pub_ip.append(ref_node['public_address'])
 
                 for role in expected['roles']:
                     nodes = self.filter_by_role(node_list, role)
                     node = self.filter_by_uid(nodes, attrs['uid'])[0]
-                    is_public = objects.Node.should_have_public(
-                        objects.Node.get_by_mac_or_uid(node_uid=node['uid']))
-                    self.assertEqual(attrs['internal_address'],
-                                     node['internal_address'])
                     if is_public:
-                        self.assertEqual(attrs['public_address'],
-                                         node['public_address'])
+                        self.assertEqual(node['public_address'],
+                                         ref_node['public_address'])
                     else:
                         self.assertFalse('public_address' in node)
-                    self.assertEqual(attrs['storage_address'],
-                                     node['storage_address'])
+                    self.assertEqual(node['storage_address'],
+                                     ref_node['storage_address'])
+                    self.assertEqual(node['internal_address'],
+                                     ref_node['internal_address'])
 
     def test_public_serialization_for_different_roles(self):
         assign_public_options = (False, True)
@@ -1214,7 +1239,8 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
         self.assertEqual(attrs['management_vip'], '192.168.0.7')
-        self.assertEqual(attrs['public_vip'], '172.16.0.5')
+        self.assertTrue(
+            re.compile('172.16.0.[4-6]').match(attrs['public_vip']))
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)

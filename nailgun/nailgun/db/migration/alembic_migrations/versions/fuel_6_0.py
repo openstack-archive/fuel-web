@@ -29,6 +29,7 @@ import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.utils.migration import drop_enum
+from nailgun.utils.migration import set_master_node_uid
 from nailgun.utils.migration import upgrade_release_fill_orchestrator_data
 from nailgun.utils.migration import upgrade_release_set_deployable_false
 
@@ -113,6 +114,19 @@ def upgrade_schema():
                         nullable=True
                     ),
                     sa.PrimaryKeyConstraint('id'))
+    op.create_table('master_node_settings',
+                    sa.Column('id', sa.Integer, nullable=False),
+                    sa.Column(
+                        'master_node_uid',
+                        sa.String(36),
+                        nullable=False
+                    ),
+                    sa.Column(
+                        'settings',
+                        JSON(),
+                        default={}
+                    ),
+                    sa.PrimaryKeyConstraint('id'))
 
 
 def upgrade_data():
@@ -129,10 +143,15 @@ def upgrade_data():
     # NOTE: all release versions in Fuel 5.x starts with "2014.1"
     upgrade_release_fill_orchestrator_data(connection, ['2014.1%'])
 
+    # generate uid for master node and insert
+    # it into master_node_settings table
+    set_master_node_uid(connection)
+
 
 def downgrade_schema():
     op.drop_column('releases', 'is_deployable')
     op.drop_table('action_logs')
+    op.drop_table('master_node_settings')
     map(drop_enum, ENUMS)
 
 

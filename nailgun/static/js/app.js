@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
+
 define(
 [
     'react',
@@ -23,7 +24,7 @@ define(
     'models',
     'keystone_client',
     'views/common',
-    'views/login_page',
+    'jsx!views/login_page',
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'jsx!views/clusters_page',
@@ -164,6 +165,11 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             document.title = $.t('common.title') + (newTitle ? ' - ' + newTitle : '');
             this.breadcrumbs.update();
         },
+        toggleElements: function(state) {
+            app.footer.setState({hidden: !state});
+            app.breadcrumbs.setState({hidden: !state});
+            app.navbar.setState({hidden: !state});
+        },
         setPage: function(NewPage, options) {
             if (this.page) {
                 utils.universalUnmount(this.page);
@@ -171,10 +177,11 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.page = utils.universalMount(new NewPage(options), this.content);
             this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
             this.updateTitle();
+            this.toggleElements(NewPage != LoginPage);
         },
         // routes
         login: function() {
-            this.setPage(LoginPage);
+            this.setPage(LoginPage, {app: app});
         },
         logout: function() {
             if (this.user.get('authenticated') && this.version.get('auth_required')) {

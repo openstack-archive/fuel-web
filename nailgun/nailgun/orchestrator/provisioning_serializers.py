@@ -112,7 +112,9 @@ class ProvisioningSerializer(object):
                 'mco_password': settings.MCO_PASSWORD,
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
-                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
+                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                'authorized_keys':
+                ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS]}}
 
         orchestrator_data = objects.Release.get_orchestrator_data_dict(
             node.cluster.release)

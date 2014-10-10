@@ -430,7 +430,8 @@ def vm_start(vm, drv=None):
         interfaces.append({
             'type': 'network',
             'source_network': vm.env.name + '_' + interface.network,
-            'mac_address': interface.mac
+            'mac_address': interface.mac,
+            'model_type': interface.model_type
         })
     LOG.debug('Defining vm %s' % vm.name)
     drv.define(vmname, boot=vm.boot, disks=disks, interfaces=interfaces)

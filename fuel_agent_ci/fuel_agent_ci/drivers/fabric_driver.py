@@ -28,7 +28,7 @@ def ssh_status(ssh):
             host_string=ssh.host,
             user=ssh.user,
             key_filename=os.path.join(ssh.env.envdir, ssh.key_filename),
-            timeout=ssh.timeout):
+            timeout=ssh.connection_timeout):
         try:
             with fab.hide('running', 'stdout', 'stderr'):
                 fab.run('echo')
@@ -47,7 +47,7 @@ def ssh_put_content(ssh, file_content, remote_filename):
             host_string=ssh.host,
             user=ssh.user,
             key_filename=os.path.join(ssh.env.envdir, ssh.key_filename),
-            timeout=ssh.timeout):
+            timeout=ssh.connection_timeout):
         with tempfile.NamedTemporaryFile() as f:
             f.write(file_content)
             try:
@@ -67,7 +67,7 @@ def ssh_put_file(ssh, filename, remote_filename):
             host_string=ssh.host,
             user=ssh.user,
             key_filename=os.path.join(ssh.env.envdir, ssh.key_filename),
-            timeout=ssh.timeout):
+            timeout=ssh.connection_timeout):
         try:
             fab.put(filename, remote_filename)
         except SystemExit:
@@ -78,13 +78,31 @@ def ssh_put_file(ssh, filename, remote_filename):
             raise
 
 
+def ssh_get_file(ssh, remote_filename, filename):
+    LOG.debug('Trying to get file from remote host: '
+              'local=%s remote=%s' % (filename, remote_filename))
+    with fab.settings(
+            host_string=ssh.host,
+            user=ssh.user,
+            key_filename=os.path.join(ssh.env.envdir, ssh.key_filename),
+            timeout=ssh.connection_timeout):
+        try:
+            fab.get(remote_filename, filename)
+        except SystemExit:
+            sys.exit()
+        except Exception:
+            LOG.error('Error while getting file from remote host: '
+                      'local=%s remote=%s' % (filename, remote_filename))
+            raise
+
+
 def ssh_run(ssh, command, command_timeout=10):
     LOG.debug('Trying to run command on remote host: %s' % command)
     with fab.settings(
             host_string=ssh.host,
             user=ssh.user,
             key_filename=os.path.join(ssh.env.envdir, ssh.key_filename),
-            timeout=ssh.timeout,
+            timeout=ssh.connection_timeout,
             command_timeout=command_timeout,
             warn_only=True):
         try:

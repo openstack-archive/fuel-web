@@ -95,6 +95,10 @@ def ssh_put_file(*args, **kwargs):
     raise NotImplementedError
 
 
+def ssh_get_file(*args, **kwargs):
+    raise NotImplementedError
+
+
 def ssh_run(*args, **kwargs):
     raise NotImplementedError
 

@@ -13,10 +13,12 @@
 #    under the License.
 
 from alembic import op
+import json
 import os
 import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text
+import uuid
 import yaml
 
 from nailgun.db.sqlalchemy.fixman import load_fixture
@@ -226,3 +228,31 @@ def upgrade_release_fill_orchestrator_data(connection, versions):
                     'rsync://{MASTER_IP}:/puppet/modules/'.format(
                         MASTER_IP=settings.MASTER_IP)),
             )
+
+
+def dump_master_node_settings(connection, fixture_path=None):
+    """Generate uuid for master node installation and update
+    master_node_settings table by generated value
+
+    Arguments:
+    connection - a database connection
+    """
+
+    if not fixture_path:
+        fixture_path = os.path.join(os.path.dirname(__file__), '..',
+                                    'fixtures', 'master_node_settings.yaml')
+
+    with open(fixture_path, 'r') as fixture_file:
+        fixt = load_fixture(fixture_file, loader=yaml)
+
+    settings = json.dumps(fixt[0]["fields"]["settings"])
+
+    generated_uuid = str(uuid.uuid4())
+
+    insert_query = text(
+        "INSERT INTO master_node_settings (master_node_uid, settings) "
+        "   VALUES (:master_node_uid, :settings)"
+    )
+
+    connection.execute(insert_query, master_node_uid=generated_uuid,
+                       settings=settings)

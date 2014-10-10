@@ -58,6 +58,10 @@ class DeadlockDetectingQuery(NoCacheQuery):
 
 
 class DeadlockDetectingSession(Session):
+    def flush(self):
+        clean_locks()
+        super(DeadlockDetectingSession, self).flush()
+
     def commit(self):
         clean_locks()
         super(DeadlockDetectingSession, self).commit()

@@ -17,6 +17,7 @@ import os
 import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text
+import uuid
 import yaml
 
 from nailgun.db.sqlalchemy.fixman import load_fixture
@@ -226,3 +227,23 @@ def upgrade_release_fill_orchestrator_data(connection, versions):
                     'rsync://{MASTER_IP}:/puppet/modules/'.format(
                         MASTER_IP=settings.MASTER_IP)),
             )
+
+
+def set_master_node_uid(connection):
+    """Generate uuid for master node installation and update
+    master_node_settings table by generated value
+
+    Arguments:
+    connection - a database connection
+    """
+
+    generated_uuid = str(uuid.uuid4())
+    settings = '{}'
+
+    insert_query = text(
+        "INSERT INTO master_node_settings (master_node_uid, settings) "
+        "   VALUES (:master_node_uid, :settings)"
+    )
+
+    connection.execute(insert_query, master_node_uid=generated_uuid,
+                       settings=settings)

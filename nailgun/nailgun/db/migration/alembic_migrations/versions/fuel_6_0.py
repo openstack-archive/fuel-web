@@ -29,6 +29,7 @@ import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.utils.migration import drop_enum
+from nailgun.utils.migration import set_master_node_uid
 from nailgun.utils.migration import upgrade_release_set_deployable_false
 
 ENUMS = (
@@ -111,7 +112,24 @@ def upgrade_schema():
                         sa.String(36),
                         nullable=True
                     ),
+                    sa.Column(
+                        'master_node_uid',
+                        sa.String(36),
+                        nullable=True
+                    ),
                     sa.PrimaryKeyConstraint('id'))
+    op.create_table('master_node_settings',
+                    sa.Column(
+                        'master_node_uid',
+                        sa.String(36),
+                        nullable=False
+                    ),
+                    sa.Column(
+                        'settings',
+                        JSON(),
+                        default={}
+                    ),
+                    sa.PrimaryKeyConstraint('master_node_uid'))
 
 
 def upgrade_data():
@@ -120,6 +138,10 @@ def upgrade_data():
     # do not deploy 5.0.x series
     upgrade_release_set_deployable_false(
         connection, ['2014.1', '2014.1.1-5.0.1', '2014.1.1-5.0.2'])
+
+    # generate uid for master node and insert
+    # it into master_node_settings table
+    set_master_node_uid(connection)
 
 
 def downgrade_schema():

@@ -43,6 +43,19 @@ class TaskManager(object):
         if cluster_id:
             self.cluster = db().query(Cluster).get(cluster_id)
 
+        # fetch master_node_uid for further action_log entry creation
+        self.master_node_uid = \
+            objects.MasterNodeSettings.get_one().master_node_uid
+
+    def create_action_log(self, task_instance, operation_nodes):
+        create_kwargs = {'master_node_uid': self.master_node_uid}
+        create_kwargs.update(
+            TaskHelper.prepare_action_log_kwargs(task_instance,
+                                                 operation_nodes)
+        )
+
+        objects.ActionLog.create(create_kwargs)
+
     def _call_silently(self, task, instance, *args, **kwargs):
         method = getattr(instance, kwargs.pop('method_name', 'execute'))
         if task.status == TASK_STATUSES.error:
@@ -167,10 +180,7 @@ class ApplyChangesTaskManager(TaskManager):
                                                      weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
 
-            objects.ActionLog.create(
-                TaskHelper.prepare_action_log_kwargs(task_deletion,
-                                                     nodes_to_delete)
-            )
+            self.create_action_log(task_deletion, nodes_to_delete)
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -191,10 +201,7 @@ class ApplyChangesTaskManager(TaskManager):
             task_provision = supertask.create_subtask(TASK_NAMES.provision,
                                                       weight=task_weight)
 
-            objects.ActionLog.create(
-                TaskHelper.prepare_action_log_kwargs(task_provision,
-                                                     nodes_to_provision)
-            )
+            self.create_action_log(task_provision, nodes_to_provision)
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -229,10 +236,7 @@ class ApplyChangesTaskManager(TaskManager):
                          " ".join([n.fqdn for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(TASK_NAMES.deployment)
 
-            objects.ActionLog.create(
-                TaskHelper.prepare_action_log_kwargs(task_deployment,
-                                                     nodes_to_deploy)
-            )
+            self.create_action_log(task_deployment, nodes_to_deploy)
 
             # we should have task committed for processing in other threads
             db().commit()

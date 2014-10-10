@@ -738,7 +738,7 @@ class Environment(object):
 
 class BaseTestCase(TestCase):
 
-    fixtures = ['admin_network']
+    fixtures = ['admin_network', 'master_node_settings']
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)

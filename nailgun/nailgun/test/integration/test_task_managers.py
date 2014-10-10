@@ -93,7 +93,6 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_write_action_logs(self, _):
-        #self.skipTest('')
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},

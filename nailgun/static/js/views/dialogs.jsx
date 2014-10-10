@@ -105,11 +105,13 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             };
             Backbone.sync('update', nodes)
                 .done(_.bind(function() {
-                    this.close();
-                    cluster.get('nodes').fetch({data: {cluster_id: cluster.id}});
-                    // we set node flags silently, so trigger resize event to redraw node list
-                    cluster.get('nodes').trigger('resize');
-                    app.navbar.refresh();
+                    $.when(cluster.fetch(), cluster.get('nodes').fetch({data: {cluster_id: cluster.id}}))
+                        .always(_.bind(function() {
+                            // we set node flags silently, so trigger resize event to redraw node list
+                            cluster.get('nodes').trigger('resize');
+                            app.navbar.refresh();
+                            this.close();
+                        }, this));
                 }, this))
                 .fail(_.bind(function() {
                     this.displayError();

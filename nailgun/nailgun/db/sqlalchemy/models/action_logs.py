@@ -42,3 +42,4 @@ class ActionLog(Base):
     additional_info = Column(JSON, nullable=False)
     cluster_id = Column(Integer, nullable=True)
     task_uuid = Column(String(36), nullable=True)
+    master_node_uid = Column(String(36), nullable=True)

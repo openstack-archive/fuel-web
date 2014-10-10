@@ -12,34 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy import Boolean
 from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import Enum
 from sqlalchemy import Integer
 from sqlalchemy import String
 
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 
-from nailgun import consts
 
-
-class ActionLog(Base):
-    __tablename__ = 'action_logs'
+class MasterNodeSettings(Base):
+    __tablename__ = 'master_node_settings'
 
     id = Column(Integer, primary_key=True)
-    actor_id = Column(String(64), nullable=True)
-    action_group = Column(String(64), nullable=False)
-    action_name = Column(String(64), nullable=False)
-    action_type = Column(
-        Enum(*consts.ACTION_TYPES, name='action_type'),
-        nullable=False
-    )
-    start_timestamp = Column(DateTime, nullable=False)
-    end_timestamp = Column(DateTime, nullable=True)
-    is_sent = Column(Boolean, default=False)
-    additional_info = Column(JSON, nullable=False)
-    cluster_id = Column(Integer, nullable=True)
-    task_uuid = Column(String(36), nullable=True)
-    master_node_uid = Column(String(36), nullable=True)
+    master_node_uid = Column(String(36), nullable=False)
+    settings = Column(JSON, default={})

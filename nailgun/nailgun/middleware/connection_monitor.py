@@ -22,6 +22,7 @@ from nailgun.middleware import utils
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import ActionLog
+from nailgun.db.sqlalchemy.models import MasterNodeSettings
 
 from nailgun import consts
 
@@ -91,6 +92,8 @@ class ConnectionMonitorMiddleware(object):
                 actor_id = self._get_actor_id(env)
                 create_kwargs['actor_id'] = actor_id
 
+                create_kwargs['master_node_uid'] = self._get_master_node_uid()
+
                 # save actor_id in env for further processing
                 env['fuel.action.actor_id'] = actor_id
 
@@ -148,6 +151,9 @@ class ConnectionMonitorMiddleware(object):
             return None
 
         return hashlib.sha256(token_id).hexdigest()
+
+    def _get_master_node_uid(self):
+        return db.query(MasterNodeSettings).first().master_node_uid
 
     def _get_additional_info(self, env, request_body, response_to_analyse):
         additional_info = {

@@ -35,6 +35,7 @@
                 "error": "Error",
                 "see_logs": "See the logs",
                 "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved.",
+                "version": "Version",
                 "change_password": "Change password",
                 "logout": "Logout"
             },

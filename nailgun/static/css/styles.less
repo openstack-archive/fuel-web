@@ -2177,17 +2177,13 @@ input.error:focus,
     padding: 4px;
     label {
       text-transform: uppercase;
-      display: block;
       .position(@position: absolute; @left: 15px);
       width: @node-details-label-margin - 10;
       .font-layout-mixin(@font-size-small-2, @line-height: 12px);
       word-break: break-all;
       font-weight: normal;
     }
-    span {
-      display: block;
-      margin-left: @node-details-label-margin;
-    }
+    span { margin-left: @node-details-label-margin; }
   }
   .nested-object {
     border: 1px solid #ececec;

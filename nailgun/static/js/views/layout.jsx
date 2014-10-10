@@ -72,35 +72,39 @@ function(React, utils, models, componentMixins, dialogs) {
         getInitialState: function() {
             return {
                 activeElement: null,
-                popoverVisible: false
+                popoverVisible: false,
+                hidden: false
             };
         },
         render: function() {
+            if (this.state.hidden) {
+                return null;
+            }
             return (
                 <div>
-                    <div className="user-info-box">
+                    <div className='user-info-box'>
                         {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
                             <div>
-                                <i className="icon-user"></i>
+                                <i className='icon-user'></i>
                                 {this.props.user.get('username')}
-                                <a className="change-password" onClick={this.showChangePasswordDialog}>{$.t('common.change_password')}</a>
-                                <a href="#logout">{$.t('common.logout')}</a>
+                                <a className='change-password' onClick={this.showChangePasswordDialog}>{$.t('common.change_password')}</a>
+                                <a href='#logout'>{$.t('common.logout')}</a>
                             </div>
                         }
                     </div>
-                    <div className="navigation-bar">
-                        <div className="navigation-bar-box">
-                            <ul className="navigation-bar-ul">
-                                <li className="product-logo">
-                                    <a href="#"><div className="logo"></div></a>
+                    <div className='navigation-bar'>
+                        <div className='navigation-bar-box'>
+                            <ul className='navigation-bar-ul'>
+                                <li className='product-logo'>
+                                    <a href='#'><div className='logo'></div></a>
                                 </li>
                                 {_.map(this.props.elements, function(element) {
                                     return <li key={element.label}>
                                         <a className={cx({active: this.state.activeElement == element.url.slice(1)})} href={element.url}>{$.t('navbar.' + element.label, {defaultValue: element.label})}</a>
                                     </li>;
                                 }, this)}
-                                <li className="space"></li>
-                                <Notifications ref="notifications"
+                                <li className='space'></li>
+                                <Notifications ref='notifications'
                                     notifications={this.props.notifications}
                                     togglePopover={this.togglePopover}
                                 />
@@ -108,9 +112,9 @@ function(React, utils, models, componentMixins, dialogs) {
                             </ul>
                         </div>
                     </div>
-                    <div className="notification-wrapper">
+                    <div className='notification-wrapper'>
                         {this.state.popoverVisible &&
-                            <NotificationsPopover ref="popover"
+                            <NotificationsPopover ref='popover'
                                 notifications={this.props.notifications}
                                 displayCount={this.props.notificationsDisplayCount}
                                 togglePopover={this.togglePopover}
@@ -126,13 +130,13 @@ function(React, utils, models, componentMixins, dialogs) {
         mixins: [React.BackboneMixin('statistics')],
         render: function() {
             return (
-                <li className="navigation-bar-icon nodes-summary-container">
-                    <div className="statistic">
+                <li className='navigation-bar-icon nodes-summary-container'>
+                    <div className='statistic'>
                         {_.map(['total', 'unallocated'], function(prop) {
                             var value = this.props.statistics.get(prop);
                             return _.isUndefined(value) ? '' : [
-                                <div className="stat-count">{value}</div>,
-                                <div className="stat-title" dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape($.t('navbar.stats.' + prop, {count: value})))}}></div>
+                                <div className='stat-count'>{value}</div>,
+                                <div className='stat-title' dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape($.t('navbar.stats.' + prop, {count: value})))}}></div>
                             ];
                         }, this)}
                     </div>
@@ -146,9 +150,9 @@ function(React, utils, models, componentMixins, dialogs) {
         render: function() {
             var unreadNotifications = this.props.notifications.where({status: 'unread'});
             return (
-                <li className="navigation-bar-icon notifications" onClick={this.props.togglePopover}>
-                    <i className="icon-comment"></i>
-                    {unreadNotifications.length && <span className="badge badge-warning">{unreadNotifications.length}</span>}
+                <li className='navigation-bar-icon notifications' onClick={this.props.togglePopover}>
+                    <i className='icon-comment'></i>
+                    {unreadNotifications.length && <span className='badge badge-warning'>{unreadNotifications.length}</span>}
                 </li>
             );
         }
@@ -201,8 +205,8 @@ function(React, utils, models, componentMixins, dialogs) {
             var showMore = (Backbone.history.getHash() != 'notifications') && this.props.notifications.length;
             var notifications = this.props.notifications.first(this.props.displayCount);
             return (
-                <div className="message-list-placeholder">
-                    <ul className="message-list-popover">
+                <div className='message-list-placeholder'>
+                    <ul className='message-list-popover'>
                         {this.props.notifications.length ? (
                             _.map(notifications, function(notification, index, collection) {
                                 var unread = notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id);
@@ -216,12 +220,12 @@ function(React, utils, models, componentMixins, dialogs) {
                                         <i className={{error: 'icon-attention', warning: 'icon-attention', discover: 'icon-bell'}[notification.get('topic')] || 'icon-info-circled'}></i>
                                         <span dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></span>
                                     </li>,
-                                    (showMore || index < (collection.length - 1)) && <li key={'divider' + notification.id} className="divider"></li>
+                                    (showMore || index < (collection.length - 1)) && <li key={'divider' + notification.id} className='divider'></li>
                                 ];
                             }, this)
-                        ) : <li key="no_notifications">{$.t('notifications_popover.no_notifications_text')}</li>}
+                        ) : <li key='no_notifications'>{$.t('notifications_popover.no_notifications_text')}</li>}
                     </ul>
-                    {showMore && <div className="show-more-notifications"><a href="#notifications">{$.t('notifications_popover.view_all_button')}</a></div>}
+                    {showMore && <div className='show-more-notifications'><a href='#notifications'>{$.t('notifications_popover.view_all_button')}</a></div>}
                 </div>
             );
         }
@@ -229,22 +233,31 @@ function(React, utils, models, componentMixins, dialogs) {
 
     components.Footer = React.createClass({
         mixins: [React.BackboneMixin('version')],
+        getInitialState: function() {
+            return {
+                hidden: false
+            };
+        },
         render: function() {
+            if (this.state.hidden) {
+                return null;
+            }
+
             return (
-                <div className="footer-box">
+                <div className='footer-box'>
                     {_.contains(this.props.version.get('feature_groups'), 'mirantis') &&
                         <div>
-                            <a href="http://www.mirantis.com" target="_blank" className="footer-logo"></a>
-                            <div className="footer-copyright pull-left" data-i18n="common.copyright"></div>
+                            <a href='http://www.mirantis.com' target='_blank' className='footer-logo'></a>
+                            <div className='footer-copyright pull-left' data-i18n='common.copyright'></div>
                         </div>
                     }
                     {this.props.version.get('release') &&
-                        <div className="footer-version pull-right">Version: {this.props.version.get('release')}</div>
+                        <div className='footer-version pull-right'>Version: {this.props.version.get('release')}</div>
                     }
-                    <div className="footer-lang pull-right">
-                        <div className="dropdown dropup">
-                            <button className="dropdown-toggle current-locale btn btn-link" data-toggle="dropdown">{this.getCurrentLocale().name}</button>
-                            <ul className="dropdown-menu locales">
+                    <div className='footer-lang pull-right'>
+                        <div className='dropdown dropup'>
+                            <button className='dropdown-toggle current-locale btn btn-link' data-toggle='dropdown'>{this.getCurrentLocale().name}</button>
+                            <ul className='dropdown-menu locales'>
                                 {_.map(this.props.locales, function(locale) {
                                     return <li key={locale.name} onClick={_.bind(this.setLocale, this, locale)}>
                                         <a>{locale.name}</a>
@@ -282,20 +295,29 @@ function(React, utils, models, componentMixins, dialogs) {
     });
 
     components.Breadcrumbs = React.createClass({
+        getInitialState: function() {
+            return {
+                hidden: false
+            };
+        },
         update: function(path) {
             path = path || _.result(app.page, 'breadcrumbsPath');
             this.setProps({path: path});
         },
         render: function() {
-            return <ul className="breadcrumb">
+            if (this.state.hidden) {
+                return null;
+            }
+
+            return <ul className='breadcrumb'>
                 {_.map(this.props.path, function(breadcrumb, index) {
                     if (_.isArray(breadcrumb)) {
                         if (breadcrumb[2]) {
-                            return <li key={index} className="active">{breadcrumb[0]}</li>;
+                            return <li key={index} className='active'>{breadcrumb[0]}</li>;
                         }
-                        return <li key={index}><a href={breadcrumb[1]}>{$.t('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a><span className="divider">/</span></li>;
+                        return <li key={index}><a href={breadcrumb[1]}>{$.t('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a><span className='divider'>/</span></li>;
                     }
-                    return <li key={index} className="active">{$.t('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
+                    return <li key={index} className='active'>{$.t('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
                 })}
             </ul>;
         }

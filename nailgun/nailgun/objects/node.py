@@ -721,9 +721,7 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_ips(nodes_ids, 'management')
             netmanager.assign_ips(nodes_ids, 'public')
             netmanager.assign_ips(nodes_ids, 'storage')
-
-            for node in instances:
-                netmanager.assign_admin_ips(node.id)
+            netmanager.assign_admin_ips(nodes_ids)
 
     @classmethod
     def prepare_for_provisioning(cls, instances):
@@ -732,7 +730,7 @@ class NodeCollection(NailgunCollection):
         """
         cls.update_slave_nodes_fqdn(instances)
         for n in instances:
-            cls.single.get_network_manager(n).assign_admin_ips(n.id)
+            cls.single.get_network_manager(n).assign_admin_ips([n.id])
 
     @classmethod
     def lock_nodes(cls, instances):

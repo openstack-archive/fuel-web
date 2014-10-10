@@ -103,7 +103,7 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def assign_admin_ips(cls, node_id, num=1):
+    def assign_admin_ips(cls, node_ids):
         """Method for assigning admin IP addresses to nodes.
 
         :param node_id: Node database ID.
@@ -113,31 +113,20 @@ class NetworkManager(object):
         :returns: None
         """
         admin_net_id = cls.get_admin_network_group_id()
-        node_admin_ips = db().query(IPAddr).filter_by(
-            node=node_id,
-            network=admin_net_id
-        ).all()
+        admin_net = db().query(NetworkGroup).get(admin_net_id)
+        free_ips = cls.get_free_ips(admin_net.id, num=len(node_ids))
+        for index in xrange(len(node_ids)):
+            free_ip = free_ips[index]
+            node_id = node_ids[index]
+            node_admin_ips = db().query(IPAddr).filter_by(
+                node=node_id, network=admin_net_id).all()
 
-        if not node_admin_ips or len(node_admin_ips) < num:
-            admin_net = db().query(NetworkGroup).get(admin_net_id)
-            logger.debug(
-                u"Trying to assign admin ips: node=%s count=%s",
-                node_id,
-                num - len(node_admin_ips)
-            )
-            free_ips = cls.get_free_ips(
-                admin_net.id,
-                num=num - len(node_admin_ips)
-            )
-            logger.info(len(free_ips))
-            for ip in free_ips:
-                ip_db = IPAddr(
-                    node=node_id,
-                    ip_addr=ip,
-                    network=admin_net_id
-                )
+            if not node_admin_ips:
+                ip_db = IPAddr(node=node_id,
+                               ip_addr=free_ip,
+                               network=admin_net_id)
                 db().add(ip_db)
-            db().commit()
+        db().commit()
 
     @classmethod
     def assign_ips(cls, nodes_ids, network_name):
@@ -156,13 +145,13 @@ class NetworkManager(object):
         :returns: None
         :raises: Exception, errors.AssignIPError
         """
-        cluster_id = db().query(Node).get(nodes_ids[0]).cluster_id
-        for node_id in nodes_ids:
-            node = db().query(Node).get(node_id)
+        nodes = db().query(Node).filter(Node.id.in_(nodes_ids)).all()
+        cluster_id = nodes[0].cluster_id
+        for node in nodes:
             if node.cluster_id != cluster_id:
                 raise Exception(
                     u"Node id='{0}' doesn't belong to cluster_id='{1}'".format(
-                        node_id,
+                        node.id,
                         cluster_id
                     )
                 )
@@ -176,11 +165,14 @@ class NetworkManager(object):
                 u"Network '%s' for cluster_id=%s not found." %
                 (network_name, cluster_id)
             )
+        free_ips = cls.get_free_ips(network.id, len(nodes))
+        for index in xrange(len(nodes)):
+            free_ip = free_ips[index]
+            node = nodes[index]
+            node_id = node.id
 
-        for node_id in nodes_ids:
             if network_name == 'public' and \
-                    not objects.Node.should_have_public(
-                    objects.Node.get_by_mac_or_uid(node_uid=node_id)):
+                    not objects.Node.should_have_public(node):
                 continue
 
             node_ips = imap(
@@ -216,14 +208,13 @@ class NetworkManager(object):
                     network_name
                 )
             )
-            free_ip = cls.get_free_ips(network.id)[0]
             ip_db = IPAddr(
                 network=network.id,
                 node=node_id,
                 ip_addr=free_ip
             )
             db().add(ip_db)
-            db().commit()
+        db().commit()
 
     @classmethod
     def assign_vip(cls, cluster_id, network_name):

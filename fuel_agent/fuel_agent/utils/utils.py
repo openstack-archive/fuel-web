@@ -18,7 +18,6 @@ import os
 import re
 import shlex
 import subprocess
-import time
 
 import jinja2
 import stevedore.driver
@@ -75,10 +74,6 @@ def execute(*cmd, **kwargs):
                                                stderr=e, cmd=command)
         if len(process) >= 2:
             process[-2].stdout.close()
-    #FIXME(agordeev): added sleep for preventing parted failures
-    #TODO(agordeev): figure out the better way to be ensure that partition
-    #                information was updated properly
-    time.sleep(1)
     stdout, stderr = process[-1].communicate()
     if not ignore_exit_code and process[-1].returncode not in check_exit_code:
         raise errors.ProcessExecutionError(exit_code=process[-1].returncode,

@@ -110,7 +110,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         self.env.network_manager.assign_ips(
-            [n.id for n in self.env.nodes],
+            self.env.nodes,
             "management"
         )
 

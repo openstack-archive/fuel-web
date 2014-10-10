@@ -67,10 +67,9 @@ class TestProvisioning(BaseIntegrationTest):
         )
         cluster = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster)
-        nodes_ids = map(lambda n: n.id, self.env.nodes)
-        self.env.network_manager.assign_ips(nodes_ids, 'management')
-        self.env.network_manager.assign_ips(nodes_ids, 'storage')
-        self.env.network_manager.assign_ips(nodes_ids, 'public')
+        self.env.network_manager.assign_ips(self.env.nodes, 'management')
+        self.env.network_manager.assign_ips(self.env.nodes, 'storage')
+        self.env.network_manager.assign_ips(self.env.nodes, 'public')
 
         self.env.launch_deployment()
 

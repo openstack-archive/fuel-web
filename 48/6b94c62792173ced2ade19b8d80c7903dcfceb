@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+2: Dmitry Pyzhov <dpyzhov+gerrit@mirantis.com>
+Workflow+1: Dmitry Pyzhov <dpyzhov+gerrit@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 10 Oct 2014 12:14:30 +0000
+Reviewed-on: https://review.openstack.org/127497
+Project: stackforge/fuel-web
+Branch: refs/heads/stable/5.1

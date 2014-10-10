@@ -93,7 +93,6 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_write_action_logs(self, _):
-        #self.skipTest('')
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},
@@ -104,6 +103,9 @@ class TestTaskManagers(BaseIntegrationTest):
 
         deployment_task = self.env.launch_deployment()
 
+        master_node_uid = \
+            objects.MasterNodeSettings.get_one().master_node_uid
+
         for subtask in deployment_task.subtasks:
             action_log = objects.ActionLog.get_by_task_uuid(subtask.uuid)
 
@@ -112,6 +114,7 @@ class TestTaskManagers(BaseIntegrationTest):
                              action_log.additional_info['parent_task_id'])
             self.assertIn(action_log.action_name, TASK_NAMES)
             self.assertEqual(action_log.action_type, ACTION_TYPES.nailgun_task)
+            self.assertEqual(action_log.master_node_uid, master_node_uid)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

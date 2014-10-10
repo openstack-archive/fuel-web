@@ -861,6 +861,9 @@ class TestConsumer(BaseIntegrationTest):
         self.db.add(task)
         self.db.flush()
 
+        master_node_uid = \
+            objects.MasterNodeSettings.get_one().master_node_uid
+
         action_log_kwargs = {
             'action_group': 'test_cluster_changes',
             'action_name': 'test_provision_action',
@@ -869,7 +872,8 @@ class TestConsumer(BaseIntegrationTest):
             'is_sent': False,
             'cluster_id': task.cluster.id,
             'task_uuid': task.uuid,
-            'start_timestamp': datetime.datetime.now()
+            'start_timestamp': datetime.datetime.now(),
+            'master_node_uid': master_node_uid
         }
 
         al = objects.ActionLog.create(action_log_kwargs)

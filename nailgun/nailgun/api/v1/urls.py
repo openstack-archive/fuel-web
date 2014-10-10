@@ -82,6 +82,9 @@ from nailgun.api.v1.handlers.version import VersionHandler
 from nailgun.api.v1.handlers.removed import RemovedIn51RedHatAccountHandler
 from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
 
+from nailgun.api.v1.handlers.master_node_settings \
+    import MasterNodeSettingsHandler
+
 urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
@@ -194,6 +197,9 @@ urls = (
     RemovedIn51RedHatAccountHandler,
     r'/redhat/setup/?$',
     RemovedIn51RedHatSetupHandler,
+
+    r'/settings/?$',
+    MasterNodeSettingsHandler,
 )
 
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]

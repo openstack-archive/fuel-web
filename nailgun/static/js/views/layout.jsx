@@ -72,10 +72,15 @@ function(React, utils, models, componentMixins, dialogs) {
         getInitialState: function() {
             return {
                 activeElement: null,
-                popoverVisible: false
+                popoverVisible: false,
+                hidden: false
             };
         },
         render: function() {
+            if (this.state.hidden) {
+                return null;
+            }
+
             return (
                 <div>
                     <div className="user-info-box">
@@ -229,7 +234,16 @@ function(React, utils, models, componentMixins, dialogs) {
 
     components.Footer = React.createClass({
         mixins: [React.BackboneMixin('version')],
+        getInitialState: function() {
+            return {
+                hidden: false
+            };
+        },
         render: function() {
+            if (this.state.hidden) {
+                return null;
+            }
+
             return (
                 <div className="footer-box">
                     {_.contains(this.props.version.get('feature_groups'), 'mirantis') &&
@@ -282,11 +296,20 @@ function(React, utils, models, componentMixins, dialogs) {
     });
 
     components.Breadcrumbs = React.createClass({
+        getInitialState: function() {
+            return {
+                hidden: false
+            };
+        },
         update: function(path) {
             path = path || _.result(app.page, 'breadcrumbsPath');
             this.setProps({path: path});
         },
         render: function() {
+            if (this.state.hidden) {
+                return null;
+            }
+
             return <ul className="breadcrumb">
                 {_.map(this.props.path, function(breadcrumb, index) {
                     if (_.isArray(breadcrumb)) {

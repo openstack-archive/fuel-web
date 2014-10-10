@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
+
 define(
 [
     'react',
@@ -23,7 +24,7 @@ define(
     'models',
     'keystone_client',
     'views/common',
-    'views/login_page',
+    'jsx!views/login_page',
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'jsx!views/clusters_page',

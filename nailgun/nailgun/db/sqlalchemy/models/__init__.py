@@ -45,3 +45,6 @@ from nailgun.db.sqlalchemy.models.network_config import NovaNetworkConfig
 from nailgun.db.sqlalchemy.models.notification import Notification
 
 from nailgun.db.sqlalchemy.models.task import Task
+
+from nailgun.db.sqlalchemy.models.master_node_settings \
+    import MasterNodeSettings

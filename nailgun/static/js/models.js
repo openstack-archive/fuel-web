@@ -163,7 +163,9 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'Nodes',
         model: models.Node,
         url: '/api/nodes',
-        comparator: 'id',
+        comparator: function(node) {
+            return [!node.get('online'), node.id];
+        },
         hasChanges: function() {
             return !!this.filter(function(node) {
                 return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;

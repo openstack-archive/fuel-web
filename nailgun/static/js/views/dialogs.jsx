@@ -387,7 +387,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                         value = utils.showBandwidth(value);
                     }
                 } catch (ignore) {}
-                return (_.isEmpty(value) && !value) ? '\u00A0' : value;
+                return (value === '' || !_.isUndefined(value) || _.isNull(value)) ? '\u00A0' : value;
             },
             showSummary: function(meta, group) {
                 var summary = '';

@@ -15,7 +15,6 @@
 #    under the License.
 
 from copy import deepcopy
-from itertools import izip
 from mock import patch
 import netaddr
 
@@ -302,7 +301,7 @@ class TestHandlers(BaseIntegrationTest):
             if vlan_splinters == 'kernel_lt':
                 pnd['ks_meta']['kernel_lt'] = 1
 
-            NetworkManager.assign_admin_ips(n.id, 1)
+            NetworkManager.assign_admin_ips([n.id])
 
             admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
@@ -351,8 +350,22 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
 
-        self.datadiff(args[1][0], provision_msg)
-        self.datadiff(args[1][1], deployment_msg)
+        self.datadiff(
+            args[1][0],
+            provision_msg,
+            ignore_keys=['internal_address',
+                         'public_address',
+                         'storage_address',
+                         'ipaddr',
+                         'IP'])
+        self.datadiff(
+            args[1][1],
+            deployment_msg,
+            ignore_keys=['internal_address',
+                         'public_address',
+                         'storage_address',
+                         'ipaddr',
+                         'IP'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -493,9 +506,9 @@ class TestHandlers(BaseIntegrationTest):
                 nodes_list.append({
                     'role': role,
 
-                    'internal_address': assigned_ips[node_id]['management'],
-                    'public_address': assigned_ips[node_id]['public'],
-                    'storage_address': assigned_ips[node_id]['storage'],
+                    'internal_address': '',
+                    'public_address': '',
+                    'storage_address': '',
 
                     'internal_netmask': '255.255.255.0',
                     'public_netmask': '255.255.255.0',
@@ -727,7 +740,7 @@ class TestHandlers(BaseIntegrationTest):
             if vlan_splinters == 'kernel_lt':
                 pnd['ks_meta']['kernel_lt'] = 1
 
-            NetworkManager.assign_admin_ips(n.id, 1)
+            NetworkManager.assign_admin_ips([n.id])
 
             admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
@@ -776,8 +789,22 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
 
-        self.datadiff(args[1][0], provision_msg)
-        self.datadiff(args[1][1], deployment_msg)
+        self.datadiff(
+            args[1][0],
+            provision_msg,
+            ignore_keys=['internal_address',
+                         'public_address',
+                         'storage_address',
+                         'ipaddr',
+                         'IP'])
+        self.datadiff(
+            args[1][1],
+            deployment_msg,
+            ignore_keys=['internal_address',
+                         'public_address',
+                         'storage_address',
+                         'ipaddr',
+                         'IP'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -871,8 +898,11 @@ class TestHandlers(BaseIntegrationTest):
         pub_ips = ['172.16.0.11', '172.16.0.12', '172.16.0.13',
                    '172.16.0.20', '172.16.0.21']
         for n in n_rpc_deploy:
-            for i, n_common_args in enumerate(n['nodes']):
-                self.assertEqual(n_common_args['public_address'], pub_ips[i])
+            used_ips = []
+            for n_common_args in n['nodes']:
+                self.assertTrue(n_common_args['public_address'] in pub_ips)
+                self.assertFalse(n_common_args['public_address'] in used_ips)
+                used_ips.append(n_common_args['public_address'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -912,8 +942,11 @@ class TestHandlers(BaseIntegrationTest):
                    '172.16.0.20', '172.16.0.21', '172.16.0.22']
         for n in n_rpc_deploy:
             self.assertEqual(n['public_vip'], '172.16.0.10')
-            for i, n_common_args in enumerate(n['nodes']):
-                self.assertEqual(n_common_args['public_address'], pub_ips[i])
+            used_ips = []
+            for n_common_args in n['nodes']:
+                self.assertTrue(n_common_args['public_address'] in pub_ips)
+                self.assertFalse(n_common_args['public_address'] in used_ips)
+                used_ips.append(n_common_args['public_address'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -950,8 +983,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(n_rpc_deploy), 2)
         pub_ips = ['172.16.10.11', '172.16.10.12']
         for n in n_rpc_deploy:
-            for i, n_common_args in enumerate(n['nodes']):
-                self.assertEqual(n_common_args['public_address'], pub_ips[i])
+            for n_common_args in n['nodes']:
+                self.assertTrue(n_common_args['public_address'] in pub_ips)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -1169,37 +1202,3 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(self.db.query(models.Task).count(), 0)
-
-    def datadiff(self, node1, node2, path=None):
-        if path is None:
-            path = []
-
-        # print("Path: {0}".format("->".join(path)))
-        if not isinstance(node1, dict) or not isinstance(node2, dict):
-            if isinstance(node1, list):
-                newpath = path[:]
-                for i, keys in enumerate(izip(node1, node2)):
-                    newpath.append(str(i))
-                    self.datadiff(keys[0], keys[1], newpath)
-                    newpath.pop()
-            elif node1 != node2:
-                err = "Values differ: {0} != {1}".format(
-                    str(node1),
-                    str(node2)
-                )
-                raise Exception(err)
-        else:
-            newpath = path[:]
-            for key1, key2 in zip(
-                sorted(node1.keys()),
-                sorted(node2.keys())
-            ):
-                if key1 != key2:
-                    err = "Keys differ: {0} != {1}".format(
-                        str(key1),
-                        str(key2)
-                    )
-                    raise Exception(err)
-                newpath.append(key1)
-                self.datadiff(node1[key1], node2[key2], newpath)
-                newpath.pop()

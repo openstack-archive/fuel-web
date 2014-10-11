@@ -559,7 +559,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 attrs['transformations'].append({
                     'action': 'add-patch',
                     'bridges': ['br-%s' % netgroup['dev'], brname],
-                    'tags': [netgroup['vlan'], 0]
+                    'tags': [netgroup['vlan'], 0],
+                    'vlan_ids': [netgroup['vlan'], 0]
                 })
             else:
                 # FIXME! Should raise some exception I think.
@@ -1101,6 +1102,11 @@ class DeploymentHASerializer51(DeploymentHASerializer):
     neutron_network_serializer = NeutronNetworkDeploymentSerializer51
 
 
+# Since no difference between 6.0 and 5.1 serializers so far
+DeploymentMultinodeSerializer60 = DeploymentMultinodeSerializer51
+DeploymentHASerializer60 = DeploymentHASerializer51
+
+
 def create_serializer(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -1131,12 +1137,12 @@ def create_serializer(cluster):
         },
         '6.0': {
             'multinode': (
-                DeploymentMultinodeSerializer51,
-                ps.PriorityMultinodeSerializer51,
+                DeploymentMultinodeSerializer60,
+                ps.PriorityMultinodeSerializer60,
             ),
             'ha': (
-                DeploymentHASerializer51,
-                ps.PriorityHASerializer51,
+                DeploymentHASerializer60,
+                ps.PriorityHASerializer60,
             ),
         },
     }

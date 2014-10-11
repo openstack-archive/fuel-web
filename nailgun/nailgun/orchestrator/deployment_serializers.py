@@ -747,6 +747,19 @@ class NeutronNetworkDeploymentSerializer51(NeutronNetworkDeploymentSerializer):
         return l2
 
 
+class NeutronNetworkDeploymentSerializer60(
+    NeutronNetworkDeploymentSerializer51
+):
+
+    @classmethod
+    def generate_network_scheme(cls, node):
+        attrs = super(NeutronNetworkDeploymentSerializer60, cls).\
+            generate_network_scheme(node)
+        if 'tags' in attrs:
+            attrs['vlan_ids'] = attrs['tags']
+        return attrs
+
+
 class DeploymentMultinodeSerializer(object):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
@@ -1101,6 +1114,23 @@ class DeploymentHASerializer51(DeploymentHASerializer):
     neutron_network_serializer = NeutronNetworkDeploymentSerializer51
 
 
+class DeploymentMultinodeSerializer60(DeploymentMultinodeSerializer):
+
+    nova_network_serializer = NovaNetworkDeploymentSerializer
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+
+
+class DeploymentHASerializer60(DeploymentHASerializer):
+
+    nova_network_serializer = NovaNetworkDeploymentSerializer
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+
+
+# Since no difference between 6.0 and 5.1 serializers so far
+# DeploymentMultinodeSerializer60 = DeploymentMultinodeSerializer51
+# DeploymentHASerializer60 = DeploymentHASerializer51
+
+
 def create_serializer(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -1131,12 +1161,12 @@ def create_serializer(cluster):
         },
         '6.0': {
             'multinode': (
-                DeploymentMultinodeSerializer51,
-                ps.PriorityMultinodeSerializer51,
+                DeploymentMultinodeSerializer60,
+                ps.PriorityMultinodeSerializer60,
             ),
             'ha': (
-                DeploymentHASerializer51,
-                ps.PriorityHASerializer51,
+                DeploymentHASerializer60,
+                ps.PriorityHASerializer60,
             ),
         },
     }

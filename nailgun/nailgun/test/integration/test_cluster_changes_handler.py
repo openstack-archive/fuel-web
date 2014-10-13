@@ -287,6 +287,8 @@ class TestHandlers(BaseIntegrationTest):
                         'kernel_params': objects.Node.get_kernel_params(n),
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                    'authorized_keys':
+                    ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
@@ -712,6 +714,8 @@ class TestHandlers(BaseIntegrationTest):
                         'kernel_params': objects.Node.get_kernel_params(n),
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                    'authorized_keys':
+                    ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,

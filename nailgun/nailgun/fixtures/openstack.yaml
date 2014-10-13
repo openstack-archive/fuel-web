@@ -993,12 +993,18 @@
             - data: "kvm"
               label: "dialog.create_cluster_wizard.compute.kvm"
               description: "dialog.create_cluster_wizard.compute.kvm_description"
+              bind:
+                - "wizard:Storage.cinder" : "default"
             - data: "qemu"
               label: "dialog.create_cluster_wizard.compute.qemu"
               description: "dialog.create_cluster_wizard.compute.qemu_description"
+              bind:
+                - "wizard:Storage.cinder" : "default"
             - data: "vcenter"
               label: "dialog.create_cluster_wizard.compute.vcenter"
               description: "dialog.create_cluster_wizard.compute.vcenter_description"
+              bind:
+                - "wizard:Storage.cinder" : "vcenter"
         host_ip:
           type: "text"
           label: "dialog.create_cluster_wizard.compute.vcenter_ip"
@@ -1088,17 +1094,29 @@
           values:
             - data: "default"
               label: "dialog.create_cluster_wizard.storage.default"
+              restrictions:
+                - "Compute.hypervisor == 'vcenter'"
               bind:
                 - "settings:storage.volumes_lvm.value": true
+                - "settings:storage.volumes_ceph.value": false
+                - "settings:storage.volumes_vmdk.value":  false
             - data: "ceph"
               label: "dialog.create_cluster_wizard.storage.ceph"
               restrictions:
                 - "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"
                 - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.cinder_vcenter_alert"
-                - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vmdk_alert"
               bind:
                 - "settings:storage.volumes_ceph.value": true
                 - "settings:storage.volumes_lvm.value": false
+                - "settings:storage.volumes_vmdk.value": false
+            - data: "vcenter"
+              label: "dialog.create_cluster_wizard.storage.vcenter"
+              restrictions:
+                - "Compute.hypervisor != 'vcenter'"
+              bind:
+                - "settings:storage.volumes_vmdk.value": true
+                - "settings:storage.volumes_lvm.value": false
+                - "settings:storage.volumes_ceph.value": false
         glance:
           type: "radio"
           values:

@@ -289,16 +289,17 @@ class TestLvmUtils(test_base.BaseTestCase):
     @mock.patch.object(lu, 'lvdisplay')
     @mock.patch.object(utils, 'execute')
     def test_lvremove_ok(self, mock_exec, mock_lvdisplay):
-        mock_lvdisplay.return_value = [{'name': 'lvname'}, {'name': 'some'}]
-        lu.lvremove('lvname')
-        mock_exec.assert_called_once_with('lvremove', '-f', 'lvname',
+        mock_lvdisplay.return_value = [{'path': '/dev/vg/lv'},
+                                       {'path': '/dev/vg2/lv2'}]
+        lu.lvremove('/dev/vg/lv')
+        mock_exec.assert_called_once_with('lvremove', '-f', '/dev/vg/lv',
                                           check_exit_code=[0])
 
     @mock.patch.object(lu, 'lvdisplay')
     @mock.patch.object(utils, 'execute')
     def test_lvremove_not_found(self, mock_exec, mock_lvdisplay):
-        mock_lvdisplay.return_value = [{'name': 'some'}]
-        self.assertRaises(errors.LVNotFoundError, lu.lvremove, 'lvname')
+        mock_lvdisplay.return_value = [{'path': '/dev/vg/lv'}]
+        self.assertRaises(errors.LVNotFoundError, lu.lvremove, '/dev/vg/lv2')
 
     @mock.patch.object(lu, 'vgdisplay')
     @mock.patch.object(lu, 'lvdisplay')

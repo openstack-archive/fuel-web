@@ -40,7 +40,7 @@ CEPH_DATA = {
     "size": 3333
 }
 PROVISION_SAMPLE_DATA = {
-    "profile": "ubuntu_1204_x86_64",
+    "profile": "pro_fi-le",
     "name_servers_search": "\"domain.tld\"",
     "uid": "1",
     "interfaces": {
@@ -467,7 +467,7 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual('mcollective', cd_scheme.mcollective.user)
         self.assertEqual('marionette', cd_scheme.mcollective.password)
         self.assertEqual('rabbitmq', cd_scheme.mcollective.connector)
-        self.assertEqual('ubuntu_1204_x86_64', cd_scheme.profile)
+        self.assertEqual('pro_fi-le', cd_scheme.profile)
         self.assertEqual({'reponame': 'repourl'}, cd_scheme.common.ks_repos)
 
     @mock.patch.object(hu, 'list_block_devices')

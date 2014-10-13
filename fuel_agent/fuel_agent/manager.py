@@ -207,6 +207,12 @@ class Manager(object):
             LOG.debug('Launching image processing chain')
             processing.process()
 
+            LOG.debug('Extending image file systems')
+            if image.format in ('ext2', 'ext3', 'ext4', 'xfs'):
+                LOG.debug('Extending %s %s' %
+                          (image.format, image.target_device))
+                fu.extend_fs(image.format, image.target_device)
+
     def mount_target(self, chroot):
         LOG.debug('Mounting target file systems')
         # Here we are going to mount all file systems in partition scheme.
@@ -223,26 +229,40 @@ class Manager(object):
         fu.mount_bind(chroot, '/sys')
         fu.mount_bind(chroot, '/dev')
         fu.mount_bind(chroot, '/proc')
+        mtab = utils.execute(
+            'chroot', chroot, 'grep', '-v', 'rootfs', '/proc/mounts')[0]
+        with open(chroot + '/etc/mtab', 'wb') as f:
+            f.write(mtab)
 
     def umount_target(self, chroot):
         LOG.debug('Umounting target file systems')
-        key = lambda x: len(x.mount.rstrip('/').split('/'))
-        for fs in sorted(self.partition_scheme.fss, key=key, reverse=True):
-            fu.umount_fs(fs.device)
         fu.umount_fs(chroot + '/proc')
         fu.umount_fs(chroot + '/dev')
         fu.umount_fs(chroot + '/sys')
+        key = lambda x: len(x.mount.rstrip('/').split('/'))
+        for fs in sorted(self.partition_scheme.fss, key=key, reverse=True):
+            if fs.mount == 'swap':
+                continue
+            fu.umount_fs(fs.device)
 
     def do_bootloader(self):
         LOG.debug('--- Installing bootloader (do_bootloader) ---')
         chroot = '/tmp/target'
         self.mount_target(chroot)
 
-        grub_version = gu.grub_version_guess(chroot=chroot)
+        mount2uuid = {}
+        for fs in self.partition_scheme.fss:
+            mount2uuid[fs.mount], _ = utils.execute(
+                'blkid', '-o', 'value', '-s', 'UUID', fs.device,
+                check_exit_code=[0])
+
+        grub_version = gu.guess_grub_version(chroot=chroot)
         boot_device = self.partition_scheme.boot_device(grub_version)
         install_devices = [d.name for d in self.partition_scheme.parteds
                            if d.install_bootloader]
+
         kernel_params = self.partition_scheme.kernel_params
+        kernel_params += ' root=UUID=%s ' % mount2uuid['/']
 
         if grub_version == 1:
             gu.grub1_cfg(kernel_params=kernel_params, chroot=chroot)
@@ -250,6 +270,16 @@ class Manager(object):
         else:
             gu.grub2_cfg(kernel_params=kernel_params, chroot=chroot)
             gu.grub2_install(install_devices, chroot=chroot)
+
+        with open(chroot + '/etc/fstab', 'wb') as f:
+            for fs in self.partition_scheme.fss:
+                # TODO(kozhukalov): Think of improving the logic so as to
+                # insert a meaningful fsck order value which is last zero
+                # at fstab line. Currently we set it into 0 which means
+                # a corresponding file system will never be checked. We assume
+                # puppet or other configuration tool will care of it.
+                f.write('UUID=%s %s %s defaults 0 0\n' %
+                        (mount2uuid[fs.mount], fs.mount, fs.type))
 
         self.umount_target(chroot)
 

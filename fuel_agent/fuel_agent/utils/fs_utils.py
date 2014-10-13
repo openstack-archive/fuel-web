@@ -13,7 +13,10 @@
 # limitations under the License.
 
 from fuel_agent import errors
+from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import utils
+
+LOG = logging.getLogger(__name__)
 
 
 def make_fs(fs_type, fs_options, fs_label, dev):
@@ -56,4 +59,11 @@ def mount_bind(chroot, path, path2=None):
 
 
 def umount_fs(fs_mount):
-    utils.execute('umount', fs_mount, check_exit_code=[0])
+    try:
+        LOG.debug('Trying to umount {0}'.format(fs_mount))
+        utils.execute('umount', fs_mount, check_exit_code=[0])
+    except errors.ProcessExecutionError as e:
+        LOG.warning('Error while umounting {0} '
+                    'exc={1}'.format(fs_mount, e.message))
+        LOG.debug('Trying lazy umounting {0}'.format(fs_mount))
+        utils.execute('umount', '-l', fs_mount, check_exit_code=[0])

@@ -86,6 +86,9 @@ COLLECTOR_PING_INTERVAL: 300
 # statistics collector response timeout
 COLLECTOR_RESP_TIMEOUT: 5
 
+FUEL_VERSION_FILE: "/etc/fuel/version.yaml"
+FUEL_VERSION_KEY: "version"
+
 PATH_TO_SSH_KEY: = "/root/.ssh/id_rsa"
 PATH_TO_BOOTSTRAP_SSH_KEY: "/root/.ssh/bootstrap.rsa"
 AUTHORIZED_KEYS: []

@@ -183,8 +183,29 @@ class Nailgun(object):
                             fs_label=self._getlabel(volume.get('disk_label')))
 
                 if volume['type'] == 'pv':
+                    lvm_meta_size = volume.get('lvm_meta_size', 64)
+                    # The reason for that is to make sure that
+                    # there will be enough space for creating logical volumes.
+                    # Default lvm extension size is 4M. Nailgun volume
+                    # manager does not care of it and if physical volume size
+                    # is 4M * N + 3M and lvm metadata size is 4M * L then only
+                    # 4M * (N-L) + 3M of space will be available for
+                    # creating logical extensions. So only 4M * (N-L) of space
+                    # will be available for logical volumes, while nailgun
+                    # volume manager might reguire 4M * (N-L) + 3M
+                    # logical volume. Besides, parted aligns partitions
+                    # according to its own algorithm and actual partition might
+                    # be a bit smaller than integer number of mebibytes.
+                    if lvm_meta_size < 10:
+                        raise errors.WrongPartitionSchemeError(
+                            'Error while creating physical volume: '
+                            'lvm metadata size is too small')
+                    metadatasize = int(math.floor((lvm_meta_size - 8) / 2))
+                    metadatacopies = 2
                     partition_scheme.vg_attach_by_name(
-                        pvname=prt.name, vgname=volume['vg'])
+                        pvname=prt.name, vgname=volume['vg'],
+                        metadatasize=metadatasize,
+                        metadatacopies=metadatacopies)
 
                 if volume['type'] == 'raid':
                     if 'mount' in volume and volume['mount'] != 'none':

@@ -122,7 +122,8 @@ class Manager(object):
 
         # creating physical volumes
         for pv in self.partition_scheme.pvs:
-            lu.pvcreate(pv.name)
+            lu.pvcreate(pv.name, metadatasize=pv.metadatasize,
+                        metadatacopies=pv.metadatacopies)
 
         # creating volume groups
         for vg in self.partition_scheme.vgs:

@@ -219,8 +219,9 @@ class TestGrubUtils(test_base.BaseTestCase):
         mock_listdir.return_value = ['1', '2', '3']
         self.assertRaises(errors.GrubUtilsError, gu.guess_initrd, '/target')
 
+    @mock.patch.object(gu, 'grub1_stage1')
     @mock.patch.object(gu, 'grub1_mbr')
-    def test_grub1_install(self, mock_mbr):
+    def test_grub1_install(self, mock_mbr, mock_stage1):
         install_devices = ['/dev/foo', '/dev/bar']
         expected_calls_mbr = []
         for install_device in install_devices:
@@ -228,6 +229,7 @@ class TestGrubUtils(test_base.BaseTestCase):
                 mock.call(install_device, '/dev/foo', '0', chroot='/target'))
         gu.grub1_install(install_devices, '/dev/foo1', '/target')
         self.assertEqual(expected_calls_mbr, mock_mbr.call_args_list)
+        mock_stage1.assert_called_once_with(chroot='/target')
         # should raise exception if boot_device (second argument)
         # is not a partition but a whole disk
         self.assertRaises(errors.GrubUtilsError, gu.grub1_install,
@@ -239,6 +241,7 @@ class TestGrubUtils(test_base.BaseTestCase):
     def test_grub1_mbr_install_differs_boot(self, mock_exec,
                                             mock_chmod, mock_guess):
         mock_guess.return_value = '/sbin/grub'
+        mock_exec.return_value = ('stdout', 'stderr')
 
         # install_device != boot_disk
         batch = 'device (hd0) /dev/foo\n'
@@ -274,6 +277,7 @@ class TestGrubUtils(test_base.BaseTestCase):
     def test_grub1_mbr_install_same_as_boot(self, mock_exec,
                                             mock_chmod, mock_guess):
         mock_guess.return_value = '/sbin/grub'
+        mock_exec.return_value = ('stdout', 'stderr')
 
         # install_device == boot_disk
         batch = 'device (hd0) /dev/foo\n'

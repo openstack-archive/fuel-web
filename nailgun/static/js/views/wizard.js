@@ -162,6 +162,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             }, this);
         },
         handlePaneIndexChange: function() {
+            this.processBinds('wizard');
             this.renderPane(this.panesConstructors[this.panesModel.get('activePaneIndex')]);
         },
         beforeClusterCreation: function() {
@@ -174,7 +175,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         processBinds: function(prefix) {
             var result = true;
-            var configModels = {settings: this.settings, cluster: this.cluster};
+            var configModels = {settings: this.settings, cluster: this.cluster, wizard: this.model};
             function processBind(path, value) {
                 if (path.slice(0, prefix.length) == prefix) {
                     utils.parseModelPath(path, configModels).set(value);

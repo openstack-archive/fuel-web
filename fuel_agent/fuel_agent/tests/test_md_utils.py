@@ -118,7 +118,7 @@ localhost.localdomain)
 
         mu.mdcreate('/dev/md0', 'mirror', '/dev/fake1', '/dev/fake2')
         mock_exec.assert_called_once_with(
-            'mdadm', '--create', '--force', '/dev/md0', '-e1.2',
+            'mdadm', '--create', '--force', '/dev/md0', '-e0.90',
             '--level=mirror',
             '--raid-devices=2', '/dev/fake1', '/dev/fake2',
             check_exit_code=[0])
@@ -181,11 +181,11 @@ localhost.localdomain)
         self.assertEqual(mock_mdclean.call_args_list, expected_calls)
 
     @mock.patch.object(utils, 'execute')
-    @mock.patch.object(mu, 'mddisplay')
-    def test_mdremove_ok(self, mock_mddisplay, mock_exec):
+    @mock.patch.object(mu, 'get_mdnames')
+    def test_mdremove_ok(self, mock_get_mdn, mock_exec):
         # should check if md exists
         # should run mdadm command to remove md device
-        mock_mddisplay.return_value = [{'name': '/dev/md0'}]
+        mock_get_mdn.return_value = ['/dev/md0']
         expected_calls = [
             mock.call('mdadm', '--stop', '/dev/md0', check_exit_code=[0]),
             mock.call('mdadm', '--remove', '/dev/md0', check_exit_code=[0, 1])

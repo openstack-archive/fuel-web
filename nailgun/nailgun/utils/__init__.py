@@ -12,7 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import glob
+import os
 import string
+import yaml
 
 from copy import deepcopy
 from random import choice
@@ -100,3 +103,29 @@ def extract_env_version(release_version):
 
     # we need to extract a second part since it's what we're looking for
     return release_version.split(separator)[1]
+
+
+def get_fuel_release_versions(path_mask):
+    """Returns release versions from files match to path_mask
+
+    :param path_mask: mask of path to release version files
+    :type path_mask: string
+    :returns: dicts with file names as keys and release
+    versions info as values
+    """
+
+    result = {}
+    for fl in glob.glob(path_mask):
+        with open(fl, "r") as release_version:
+            file_name = os.path.splitext(os.path.basename(fl))[0]
+            try:
+                result[file_name] = yaml.load(release_version.read())
+            except Exception as exc:
+                logger.warning(
+                    u"Failed to load release version "
+                    "info from '{0}': {1}".format(
+                        fl,
+                        unicode(exc)
+                    )
+                )
+    return result

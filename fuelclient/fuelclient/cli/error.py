@@ -75,6 +75,14 @@ class ParserException(FuelClientException):
     """
 
 
+class ProfilingError(FuelClientException):
+    """Indicates errors and other issues related to performance profiling."""
+
+
+class SettingsException(FuelClientException):
+    """Indicates errors or unexpected behaviour in processing settings."""
+
+
 def exceptions_decorator(func):
     """Handles HTTP errors and expected exceptions that may occur
     in methods of APIClient class

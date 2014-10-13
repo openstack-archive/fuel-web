@@ -13,6 +13,7 @@
 #    under the License.
 
 import argparse
+import os
 import sys
 
 from fuelclient.cli.actions import actions
@@ -22,6 +23,7 @@ from fuelclient.cli.arguments import substitutions
 from fuelclient.cli.error import exceptions_decorator
 from fuelclient.cli.error import ParserException
 from fuelclient.cli.serializers import Serializer
+from fuelclient import profiler
 
 
 class Parser:
@@ -90,7 +92,17 @@ class Parser:
         if parsed_params.action not in actions:
             self.parser.print_help()
             sys.exit(0)
+
+        if os.environ.get('NAILGUN_LOAD_TEST'):
+            handler_name = parsed_params.action
+            method_name = ''.join([i for i in parsed_params.__dict__
+                                   if getattr(parsed_params, i) is True])
+            prof = profiler.Profiler(method_name, handler_name)
+
         actions[parsed_params.action].action_func(parsed_params)
+
+        if os.environ.get('NAILGUN_LOAD_TEST'):
+            prof.save_data()
 
     def add_serializers_args(self):
         for format_name in Serializer.serializers.keys():

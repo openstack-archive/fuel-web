@@ -192,16 +192,13 @@ class Manager(object):
                 processing.append(au.GunzipStream)
 
             processing.append(image.target_device)
-            # For every file system in partitioning scheme we call
-            # make_fs utility. That means we do not care whether fs image
-            # is available for a particular file system or not.
-            # If image is not available we assume user wants to
-            # leave this file system un-touched.
-            try:
-                processing.process()
-            except Exception as e:
-                LOG.warn('Exception while processing image: uri=%s exc=%s' %
-                         (image.uri, e.message))
+            processing.process()
+
+            LOG.debug('Extending image file systems')
+            if image.image_format in ('ext2', 'ext3', 'ext4', 'xfs'):
+                LOG.debug('Extending %s %s' %
+                          (image.image_format, image.target_device))
+                fu.extend_fs(image.image_format, image.target_device)
 
     def mount_target(self, chroot):
         # Here we are going to mount all file systems in partition scheme.
@@ -218,24 +215,67 @@ class Manager(object):
         fu.mount_bind(chroot, '/sys')
         fu.mount_bind(chroot, '/dev')
         fu.mount_bind(chroot, '/proc')
+        mtab = utils.execute(
+            'chroot', chroot, 'grep', '-v', 'rootfs', '/proc/mounts')[0]
+        with open(chroot + '/etc/mtab', 'wb') as f:
+            f.write(mtab)
 
     def umount_target(self, chroot):
-        key = lambda x: len(x.mount.rstrip('/').split('/'))
-        for fs in sorted(self.partition_scheme.fss, key=key, reverse=True):
-            fu.umount_fs(fs.device)
         fu.umount_fs(chroot + '/proc')
         fu.umount_fs(chroot + '/dev')
         fu.umount_fs(chroot + '/sys')
+        key = lambda x: len(x.mount.rstrip('/').split('/'))
+        for fs in sorted(self.partition_scheme.fss, key=key, reverse=True):
+            if fs.mount == 'swap':
+                continue
+            fu.umount_fs(fs.device)
+
+    def mount_uuid(self):
+        LOG.debug('Creating mount point to UUID mapping')
+
+        fs_dev = {}
+        for fs in self.partition_scheme.fss:
+            # /dev/mapper/os-root -> ../dm-0 ->
+            # -> /dev/mapper/../dm-0 -> /dev/dm-0
+            if os.path.islink(fs.device):
+                fs_dev[fs.mount] = os.path.abspath(
+                    os.path.join(os.path.dirname(fs.device),
+                                 os.readlink(fs.device)))
+            else:
+                fs_dev[fs.mount] = fs.device
+        LOG.debug('Mount point to real device mapping: %s' % fs_dev)
+
+        dev_uuid = {}
+        for uuid in os.listdir('/dev/disk/by-uuid'):
+            # /dev/disk/by-uuid -> ../../dm-0 ->
+            # -> /dev/disk/by-uuid/../../dm-0 -> /dev/dm-0
+            dev = os.path.abspath(
+                os.path.join(
+                    '/dev/disk/by-uuid',
+                    os.readlink(os.path.join('/dev/disk/by-uuid', uuid))))
+            dev_uuid[dev] = uuid
+        LOG.debug('Device to UUID mapping: %s' % dev_uuid)
+
+        mount_uuid = {}
+        for mount, dev in fs_dev.iteritems():
+            if dev in dev_uuid:
+                mount_uuid[mount] = dev_uuid[dev]
+        LOG.debug('Mount point to UUID mapping: %s' % mount_uuid)
+
+        return mount_uuid
 
     def do_bootloader(self):
         chroot = '/tmp/target'
         self.mount_target(chroot)
+        mount_uuid = self.mount_uuid()
 
-        grub_version = gu.grub_version_guess(chroot=chroot)
+        grub_version = gu.guess_grub_version(chroot=chroot)
         boot_device = self.partition_scheme.boot_device(grub_version)
         install_devices = [d.name for d in self.partition_scheme.parteds
                            if d.install_bootloader]
+
         kernel_params = self.partition_scheme.kernel_params
+        kernel_params += ' root=UUID=%s ' % mount_uuid['/']
 
         if grub_version == 1:
             gu.grub1_cfg(kernel_params=kernel_params, chroot=chroot)
@@ -244,7 +284,16 @@ class Manager(object):
             gu.grub2_cfg(kernel_params=kernel_params, chroot=chroot)
             gu.grub2_install(install_devices, chroot=chroot)
 
+        with open(chroot + '/etc/fstab', 'wb') as f:
+            for fs in self.partition_scheme.fss:
+                f.write('UUID=%s %s %s defaults 0 0\n' %
+                        (mount_uuid[fs.mount], fs.mount, fs.type))
+
         self.umount_target(chroot)
+
+    def do_reboot(self):
+        LOG.debug('Rebooting node')
+        utils.execute('reboot')
 
     def do_provisioning(self):
         self.do_parsing()

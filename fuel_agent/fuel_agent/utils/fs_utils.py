@@ -34,7 +34,7 @@ def extend_fs(fs_type, fs_dev):
     if fs_type in ('ext3', 'ext4'):
         # ext3,4 file system can be mounted
         # must be checked with e2fsck -f
-        utils.execute('e2fsck', ' -f', fs_dev, check_exit_code=[0])
+        utils.execute('e2fsck', '-yf', fs_dev, check_exit_code=[0])
         utils.execute('resize2fs', fs_dev, check_exit_code=[0])
     elif fs_type == 'xfs':
         # xfs file system must be mounted

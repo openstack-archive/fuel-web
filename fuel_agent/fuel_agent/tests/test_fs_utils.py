@@ -24,13 +24,13 @@ class TestFSUtils(test_base.BaseTestCase):
 
     @mock.patch.object(utils, 'execute')
     def test_make_fs(self, mock_exec):
-        fu.make_fs('ext4', ' -F ', ' -L fake_label ', '/dev/fake')
+        fu.make_fs('ext4', '-F', '-L fake_label', '/dev/fake')
         mock_exec.assert_called_once_with('mkfs.ext4', '-F', '-L',
                                           'fake_label', '/dev/fake')
 
     @mock.patch.object(utils, 'execute')
     def test_make_fs_swap(self, mock_exec):
-        fu.make_fs('swap', ' -f ', ' -L fake_label ', '/dev/fake')
+        fu.make_fs('swap', '-f', '-L fake_label', '/dev/fake')
         mock_exec.assert_called_once_with('mkswap', '-f', '-L', 'fake_label',
                                           '/dev/fake')
 
@@ -38,7 +38,7 @@ class TestFSUtils(test_base.BaseTestCase):
     def test_extend_fs_ok_ext3(self, mock_exec):
         fu.extend_fs('ext3', '/dev/fake')
         expected_calls = [
-            mock.call('e2fsck', ' -f', '/dev/fake', check_exit_code=[0]),
+            mock.call('e2fsck', '-yf', '/dev/fake', check_exit_code=[0]),
             mock.call('resize2fs', '/dev/fake', check_exit_code=[0])
         ]
         self.assertEqual(mock_exec.call_args_list, expected_calls)
@@ -47,7 +47,7 @@ class TestFSUtils(test_base.BaseTestCase):
     def test_extend_fs_ok_ext4(self, mock_exec):
         fu.extend_fs('ext4', '/dev/fake')
         expected_calls = [
-            mock.call('e2fsck', ' -f', '/dev/fake', check_exit_code=[0]),
+            mock.call('e2fsck', '-yf', '/dev/fake', check_exit_code=[0]),
             mock.call('resize2fs', '/dev/fake', check_exit_code=[0])
         ]
         self.assertEqual(mock_exec.call_args_list, expected_calls)

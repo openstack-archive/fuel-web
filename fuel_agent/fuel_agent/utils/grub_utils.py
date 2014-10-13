@@ -14,6 +14,7 @@
 
 import os
 import re
+import shutil
 
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
@@ -70,6 +71,15 @@ def guess_grub_install(chroot=''):
     raise errors.GrubUtilsError('grub-install not found')
 
 
+def guess_grub1_datadir(chroot='', arch='x86_64'):
+    LOG.debug('Looking for grub data directory')
+    for d in os.listdir(chroot + '/usr/share/grub'):
+        if arch in d:
+            LOG.debug('Looks like grub data directory '
+                      'is /usr/share/grub/%s' % d)
+            return '/usr/share/grub/' + d
+
+
 def guess_kernel(chroot=''):
     for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
         # We assume kernel name is always starts with vmlinuz.
@@ -98,7 +108,7 @@ def grub1_install(install_devices, boot_device, chroot=''):
             'boot device must be a partition')
     boot_disk = match.group(1)
     boot_part = str(int(match.group(3)) - 1)
-
+    grub1_stage1(chroot=chroot)
     for install_device in install_devices:
         grub1_mbr(install_device, boot_disk, boot_part, chroot=chroot)
 
@@ -139,7 +149,23 @@ def grub1_mbr(install_device, boot_disk, boot_part, chroot=''):
     cmd = ['/tmp/grub.sh']
     if chroot:
         cmd[:0] = ['chroot', chroot]
-    utils.execute(*cmd, run_as_root=True, check_exit_code=[0])
+    stdout, stderr = utils.execute(*cmd, run_as_root=True, check_exit_code=[0])
+    LOG.debug('Grub script stdout: \n%s' % stdout)
+    LOG.debug('Grub script stderr: \n%s' % stderr)
+
+
+def grub1_stage1(chroot=''):
+    LOG.debug('Installing grub stage1 files')
+    for f in os.listdir(chroot + '/boot/grub'):
+        if f in ('stage1', 'stage2') or 'stage1_5' in f:
+            LOG.debug('Removing: %s' % chroot + os.path.join('/boot/grub', f))
+            os.remove(chroot + os.path.join('/boot/grub', f))
+    grub1_datadir = guess_grub1_datadir(chroot=chroot)
+    for f in os.listdir(chroot + grub1_datadir):
+        if f in ('stage1', 'stage2') or 'stage1_5' in f:
+            LOG.debug('Copying %s from %s to /boot/grub' % (f, grub1_datadir))
+            shutil.copy(chroot + os.path.join(grub1_datadir, f),
+                        chroot + os.path.join('/boot/grub', f))
 
 
 def grub1_cfg(kernel=None, initrd=None,

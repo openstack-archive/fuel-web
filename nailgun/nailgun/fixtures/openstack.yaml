@@ -1088,6 +1088,9 @@
           values:
             - data: "default"
               label: "dialog.create_cluster_wizard.storage.default"
+              restrictions:
+              - condition: "Compute.hypervisor == 'vcenter'"
+                action: "disable"
               bind:
                 - "settings:storage.volumes_lvm.value": true
             - data: "ceph"
@@ -1099,6 +1102,15 @@
               bind:
                 - "settings:storage.volumes_ceph.value": true
                 - "settings:storage.volumes_lvm.value": false
+            - data: "vcenter"
+              label: "dialog.create_cluster_wizard.storage.vcenter"
+              restrictions:
+                - condition: "Compute.hypervisor != 'vcenter'"
+                  action: "disable"
+              bind:
+                - "settings:storage.volumes_ceph.value": false
+                - "settings:storage.volumes_lvm.value": false
+                - "settings:storage.volumes_vmdk.value": true
         glance:
           type: "radio"
           values:

@@ -667,6 +667,11 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         initialize: function(options) {
             this.constructor.__super__.initialize.call(this, options);
             this.wizard.model.on('change:Compute.*', this.onWizardChange, this);
+            this.wizard.model.on('change:Compute.*', function() {
+                var hypervisor = this.wizard.model.get('Compute.hypervisor'),
+                    cinder = (hypervisor == 'vcenter' ? 'vcenter' : 'default');
+                this.wizard.model.set('Storage.cinder', cinder);
+            }, this);
             this.events = _.extend(this.events, {
                 'focus input': 'onWizardChange'
             });

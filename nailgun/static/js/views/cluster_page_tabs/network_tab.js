@@ -260,9 +260,6 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             })).i18n();
             if (this.loading.state() != 'pending') {
                 this.stickit(networkingParameters, {'input[name=net-manager]': 'net_manager'});
-                // FIXME: quick hack for vCenter feature support.
-                // Reverse dependensies on OpenStack settings should be implemented.
-                this.$('input[name=net-manager]').attr('disabled', this.model.get('settings').get('common.libvirt_type.value') == 'vcenter' || this.isLocked());
                 this.renderNetworks();
                 this.renderNetworkingParameters();
                 this.calculateButtonsState();

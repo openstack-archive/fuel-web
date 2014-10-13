@@ -105,6 +105,8 @@ PROVISION_SAMPLE_DATA = {
         "puppet_master": "fuel.domain.tld",
         "mco_auto_setup": 1,
         "auth_key": "fake_auth_key",
+        "authorized_keys": ["fake_authorized_key1", "fake_authorized_key2"],
+        "repo_metadata": "reponame=repourl",
         "pm_data": {
             "kernel_params": "console=ttyS0,9600 console=tty0 rootdelay=90 "
                              "nomodeset",
@@ -441,7 +443,8 @@ class TestNailgun(test_base.BaseTestCase):
 
     def test_configdrive_scheme(self):
         cd_scheme = self.drv.configdrive_scheme()
-        self.assertEqual('fake_auth_key', cd_scheme.common.ssh_auth_key)
+        self.assertEqual(['fake_authorized_key1', 'fake_authorized_key2',
+                          'fake_auth_key'], cd_scheme.common.ssh_auth_keys)
         self.assertEqual('node-1.domain.tld', cd_scheme.common.hostname)
         self.assertEqual('node-1.domain.tld', cd_scheme.common.fqdn)
         self.assertEqual('node-1.domain.tld', cd_scheme.common.fqdn)
@@ -465,6 +468,7 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual('marionette', cd_scheme.mcollective.password)
         self.assertEqual('rabbitmq', cd_scheme.mcollective.connector)
         self.assertEqual('ubuntu_1204_x86_64', cd_scheme.profile)
+        self.assertEqual({'reponame': 'repourl'}, cd_scheme.common.ks_repos)
 
     @mock.patch.object(hu, 'list_block_devices')
     def test_partition_scheme(self, mock_lbd):
@@ -490,7 +494,7 @@ class TestNailgun(test_base.BaseTestCase):
             expected_images.append(image.Image(
                 uri=i_data['uri'],
                 target_device=fs.device,
-                image_format=i_data['format'],
+                format=i_data['format'],
                 container=i_data['container'],
             ))
         expected_images = sorted(expected_images, key=lambda x: x.uri)
@@ -498,8 +502,8 @@ class TestNailgun(test_base.BaseTestCase):
             self.assertEqual(img.uri, expected_images[i].uri)
             self.assertEqual(img.target_device,
                              expected_images[i].target_device)
-            self.assertEqual(img.image_format,
-                             expected_images[i].image_format)
+            self.assertEqual(img.format,
+                             expected_images[i].format)
             self.assertEqual(img.container,
                              expected_images[i].container)
 

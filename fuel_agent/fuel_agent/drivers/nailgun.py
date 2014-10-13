@@ -247,8 +247,13 @@ class Nailgun(object):
                        data['kernel_options']['netcfg/choose_interface']),
             [dict(name=name, **spec) for name, spec
              in data['interfaces'].iteritems()])[0]
+
+        ssh_auth_keys = data['ks_meta']['authorized_keys']
+        if data['ks_meta']['auth_key']:
+            ssh_auth_keys.append(data['ks_meta']['auth_key'])
+
         configdrive_scheme.set_common(
-            ssh_auth_key=data['ks_meta']['auth_key'],
+            ssh_auth_keys=ssh_auth_keys,
             hostname=data['hostname'],
             fqdn=data['hostname'],
             name_servers=data['name_servers'],
@@ -260,11 +265,14 @@ class Nailgun(object):
             admin_ip=admin_interface['ip_address'],
             admin_mask=admin_interface['netmask'],
             admin_iface_name=admin_interface['name'],
-            timezone=data['ks_meta']['timezone'],
+            timezone=data['ks_meta'].get('timezone', 'America/Los_Angeles'),
+            ks_repos=dict(item.split('=') for item in
+                          data['ks_meta']['repo_metadata'].split(','))
         )
 
         configdrive_scheme.set_puppet(
-            master=data['ks_meta']['puppet_master']
+            master=data['ks_meta']['puppet_master'],
+            enable=data['ks_meta']['puppet_enable']
         )
 
         configdrive_scheme.set_mcollective(
@@ -273,7 +281,8 @@ class Nailgun(object):
             host=data['ks_meta']['mco_host'],
             user=data['ks_meta']['mco_user'],
             password=data['ks_meta']['mco_password'],
-            connector=data['ks_meta']['mco_connector']
+            connector=data['ks_meta']['mco_connector'],
+            enable=data['ks_meta']['mco_enable']
         )
 
         configdrive_scheme.set_profile(profile=data['profile'])
@@ -294,9 +303,9 @@ class Nailgun(object):
             image_scheme.add_image(
                 uri=image_data['uri'],
                 target_device=fs.device,
-                # In the future we will get image_format and container format
+                # In the future we will get format and container format
                 # from provision.json, but currently it is hard coded.
-                image_format=image_data['format'],
+                format=image_data['format'],
                 container=image_data['container'],
             )
         return image_scheme

@@ -107,10 +107,11 @@ class TestManager(test_base.BaseTestCase):
                                               '/dev/sdc3')]
         self.assertEqual(mock_mu_m_expected_calls, mock_mu_m.call_args_list)
 
-        mock_lu_p_expected_calls = [mock.call('/dev/sda5'),
-                                    mock.call('/dev/sda6'),
-                                    mock.call('/dev/sdb4'),
-                                    mock.call('/dev/sdc4')]
+        mock_lu_p_expected_calls = [
+            mock.call('/dev/sda5', metadatasize=28, metadatacopies=2),
+            mock.call('/dev/sda6', metadatasize=28, metadatacopies=2),
+            mock.call('/dev/sdb4', metadatasize=28, metadatacopies=2),
+            mock.call('/dev/sdc4', metadatasize=28, metadatacopies=2)]
         self.assertEqual(mock_lu_p_expected_calls, mock_lu_p.call_args_list)
 
         mock_lu_v_expected_calls = [mock.call('os', '/dev/sda5'),

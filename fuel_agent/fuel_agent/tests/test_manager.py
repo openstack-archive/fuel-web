@@ -169,7 +169,7 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual('file://%s' % CONF.config_drive_path, cf_drv_img.uri)
         self.assertEqual('/dev/sda7',
                          self.mgr.partition_scheme.configdrive_device())
-        self.assertEqual('iso9660', cf_drv_img.image_format)
+        self.assertEqual('iso9660', cf_drv_img.format)
         self.assertEqual('raw', cf_drv_img.container)
 
     @mock.patch.object(partition.PartitionScheme, 'configdrive_device')

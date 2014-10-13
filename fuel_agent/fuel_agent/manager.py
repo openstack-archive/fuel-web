@@ -134,7 +134,7 @@ class Manager(object):
         self.image_scheme.add_image(
             uri='file://%s' % CONF.config_drive_path,
             target_device=configdrive_device,
-            image_format='iso9660',
+            format='iso9660',
             container='raw'
         )
 

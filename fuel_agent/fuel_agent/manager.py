@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import time
 
 from oslo.config import cfg
 
@@ -68,14 +69,52 @@ class Manager(object):
         self.image_scheme = self.driver.image_scheme(self.partition_scheme)
 
     def do_partitioning(self):
+        # If disks are not wiped out at all, it is likely they contain lvm
+        # and md metadata which will prevent re-creating a partition table
+        # with 'device is busy' error.
+        mu.mdclean_all()
+        lu.lvremove_all()
+        lu.vgremove_all()
+        lu.pvremove_all()
+
         for parted in self.partition_scheme.parteds:
             pu.make_label(parted.name, parted.label)
             for prt in parted.partitions:
                 pu.make_partition(prt.device, prt.begin, prt.end, prt.type)
+                # We wipe out the beginning of every new partition
+                # right after creating it. It allows us to avoid possible
+                # interactive dialog if some data (metadata or file system)
+                # present on this new partition.
+                timestamp = time.time()
+                while 1:
+                    if time.time() > timestamp + 30:
+                        raise errors.PartitionNotFoundError(
+                            'Error while wiping data on partition %s.'
+                            'Partition not found' % prt.name)
+                    try:
+                        utils.execute('test', '-e', prt.name,
+                                      check_exit_code=[0])
+                    except errors.ProcessExecutionError:
+                        time.sleep(1)
+                        continue
+                    else:
+                        utils.execute('dd', 'if=/dev/zero', 'bs=1M', 'count=1',
+                                      'of=%s' % prt.name, check_exit_code=[0])
+                        break
+
                 for flag in prt.flags:
                     pu.set_partition_flag(prt.device, prt.count, flag)
                 if prt.guid:
                     pu.set_gpt_type(prt.device, prt.count, prt.guid)
+
+        # If one creates partitions with the same boundaries as last time,
+        # there might be md and lvm metadata on those partitions. To prevent
+        # failing of creating md and lvm devices we need to make sure
+        # unused metadata are wiped out.
+        mu.mdclean_all()
+        lu.lvremove_all()
+        lu.vgremove_all()
+        lu.pvremove_all()
 
         # creating meta disks
         for md in self.partition_scheme.mds:

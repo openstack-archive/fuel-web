@@ -215,9 +215,24 @@ def lvcreate(vgname, lvname, size):
                   vgname, check_exit_code=[0])
 
 
-def lvremove(lvname):
+def lvremove(lvpath):
     # check if lv exists
-    if not filter(lambda x: x['name'] == lvname, lvdisplay()):
+    if not filter(lambda x: x['path'] == lvpath, lvdisplay()):
         raise errors.LVNotFoundError(
-            'Error while removing lv: lv %s not found' % lvname)
-    utils.execute('lvremove', '-f', lvname, check_exit_code=[0])
+            'Error while removing lv: lv %s not found' % lvpath)
+    utils.execute('lvremove', '-f', lvpath, check_exit_code=[0])
+
+
+def lvremove_all():
+    for lv in lvdisplay():
+        lvremove(lv['path'])
+
+
+def vgremove_all():
+    for vg in vgdisplay():
+        vgremove(vg['name'])
+
+
+def pvremove_all():
+    for pv in pvdisplay():
+        pvremove(pv['name'])

@@ -1,0 +1,6 @@
+# performance tests settings
+PERFORMANCE_PROFILING_TESTS: 0
+PERF_TESTS_PATHS:
+    perf_tests_base: "/tmp/fuelclient_performance_tests/tests/"
+    last_performance_test: "/tmp/fuelclient_performance_tests/tests/last/"
+    perf_tests_results: "/tmp/fuelclient_performance_tests/results/"

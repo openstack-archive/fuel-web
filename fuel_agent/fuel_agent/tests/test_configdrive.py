@@ -40,13 +40,13 @@ class TestConfigDriveScheme(test_base.BaseTestCase):
 
     def test_template_data_ok(self):
         cd_common = configdrive.ConfigDriveCommon(
-            'ssh_auth_key', 'hostname', 'fqdn', 'name_servers',
+            ['auth_key1', 'auth_key2'], 'hostname', 'fqdn', 'name_servers',
             'search_domain', 'master_ip', 'master_url', 'udevrules',
             'admin_mac', 'admin_ip', 'admin_mask', 'admin_iface_name',
-            'timezone')
-        cd_puppet = configdrive.ConfigDrivePuppet('master')
+            'timezone', {'repo1': 'repo1_url', 'repo2': 'repo2_url'})
+        cd_puppet = configdrive.ConfigDrivePuppet('master', 0)
         cd_mcollective = configdrive.ConfigDriveMcollective(
-            'pskey', 'vhost', 'host', 'user', 'password', 'connector')
+            'pskey', 'vhost', 'host', 'user', 'password', 'connector', 1)
         self.cd_scheme.common = cd_common
         self.cd_scheme.puppet = cd_puppet
         self.cd_scheme.mcollective = cd_mcollective

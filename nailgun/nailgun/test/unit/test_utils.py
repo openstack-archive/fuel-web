@@ -14,11 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import mock_open
+from mock import patch
 import os
+import tempfile
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
+from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import migration
 
 
@@ -67,3 +71,21 @@ class TestUtils(BaseIntegrationTest):
 
         for input_, output in test_cases:
             self.assertEqual(extract_env_version(input_), output)
+
+    @patch('nailgun.utils.glob.glob', return_value=['test.yaml'])
+    @patch('__builtin__.open', mock_open(read_data='test_data'))
+    def test_get_release_versions(self, _):
+        versions = get_fuel_release_versions(None)
+        self.assertDictEqual({'test': 'test_data'}, versions)
+
+    def test_get_release_versions_empty_file(self):
+        with tempfile.NamedTemporaryFile() as tf:
+            versions = get_fuel_release_versions(tf.name)
+            self.assertDictEqual({os.path.basename(tf.name): None}, versions)
+
+    def test_get_release_no_file(self):
+        with tempfile.NamedTemporaryFile() as tf:
+            file_path = tf.name
+        self.assertFalse(os.path.exists(file_path))
+        versions = get_fuel_release_versions(file_path)
+        self.assertDictEqual({}, versions)

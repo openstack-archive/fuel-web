@@ -36,7 +36,7 @@ class TestVersionHandler(BaseIntegrationTest):
     def test_version_handler(self):
         with nested(
             patch(
-                'nailgun.api.v1.handlers.version.glob.glob',
+                'nailgun.utils.glob.glob',
                 Mock(return_value=["test.yaml"])
             ),
             patch(

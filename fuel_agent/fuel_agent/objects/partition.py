@@ -120,8 +120,10 @@ class Partition(object):
 
 
 class Pv(object):
-    def __init__(self, name):
+    def __init__(self, name, metadatasize=16, metadatacopies=2):
         self.name = name
+        self.metadatasize = metadatasize
+        self.metadatacopies = metadatacopies
 
 
 class Vg(object):
@@ -194,8 +196,8 @@ class PartitionScheme(object):
         self.parteds.append(parted)
         return parted
 
-    def add_pv(self, name):
-        pv = Pv(name=name)
+    def add_pv(self, **kwargs):
+        pv = Pv(**kwargs)
         self.pvs.append(pv)
         return pv
 
@@ -269,9 +271,12 @@ class PartitionScheme(object):
         if found:
             return found[0]
 
-    def vg_attach_by_name(self, pvname, vgname):
+    def vg_attach_by_name(self, pvname, vgname,
+                          metadatasize=16, metadatacopies=2):
         vg = self.vg_by_name(vgname) or self.add_vg(name=vgname)
-        pv = self.pv_by_name(pvname) or self.add_pv(name=pvname)
+        pv = self.pv_by_name(pvname) or self.add_pv(
+            name=pvname, metadatasize=metadatasize,
+            metadatacopies=metadatacopies)
         vg.add_pv(pv.name)
 
     def fs_by_mount(self, mount):

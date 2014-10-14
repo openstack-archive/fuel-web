@@ -63,11 +63,14 @@ class Manager(object):
         self.image_scheme = None
 
     def do_parsing(self):
+        LOG.debug('--- Parsing data (do_parsing) ---')
         self.partition_scheme = self.driver.partition_scheme()
         self.configdrive_scheme = self.driver.configdrive_scheme()
         self.image_scheme = self.driver.image_scheme(self.partition_scheme)
 
     def do_partitioning(self):
+        LOG.debug('--- Partitioning disks (do_partitioning) ---')
+
         for parted in self.partition_scheme.parteds:
             pu.make_label(parted.name, parted.label)
             for prt in parted.partitions:
@@ -98,6 +101,7 @@ class Manager(object):
             fu.make_fs(fs.type, fs.options, fs.label, fs.device)
 
     def do_configdrive(self):
+        LOG.debug('--- Creating configdrive (do_configdrive) ---')
         cc_output_path = os.path.join(CONF.tmp_path, 'cloud_config.txt')
         bh_output_path = os.path.join(CONF.tmp_path, 'boothook.txt')
         # NOTE:file should be strictly named as 'user-data'
@@ -139,31 +143,33 @@ class Manager(object):
         )
 
     def do_copyimage(self):
+        LOG.debug('--- Copying images (do_copyimage) ---')
         for image in self.image_scheme.images:
+            LOG.debug('Processing image: %s' % image.uri)
             processing = au.Chain()
+
+            LOG.debug('Appending uri processor: %s' % image.uri)
             processing.append(image.uri)
 
             if image.uri.startswith('http://'):
+                LOG.debug('Appending HTTP processor')
                 processing.append(au.HttpUrl)
             elif image.uri.startswith('file://'):
+                LOG.debug('Appending FILE processor')
                 processing.append(au.LocalFile)
 
             if image.container == 'gzip':
+                LOG.debug('Appending GZIP processor')
                 processing.append(au.GunzipStream)
 
+            LOG.debug('Appending TARGET processor: %s' % image.target_device)
             processing.append(image.target_device)
-            # For every file system in partitioning scheme we call
-            # make_fs utility. That means we do not care whether fs image
-            # is available for a particular file system or not.
-            # If image is not available we assume user wants to
-            # leave this file system un-touched.
-            try:
-                processing.process()
-            except Exception as e:
-                LOG.warn('Exception while processing image: uri=%s exc=%s' %
-                         (image.uri, e.message))
+
+            LOG.debug('Launching image processing chain')
+            processing.process()
 
     def mount_target(self, chroot):
+        LOG.debug('Mounting target file systems')
         # Here we are going to mount all file systems in partition scheme.
         # Shorter paths earlier. We sort all mount points by their depth.
         # ['/', '/boot', '/var', '/var/lib/mysql']
@@ -180,6 +186,7 @@ class Manager(object):
         fu.mount_bind(chroot, '/proc')
 
     def umount_target(self, chroot):
+        LOG.debug('Umounting target file systems')
         key = lambda x: len(x.mount.rstrip('/').split('/'))
         for fs in sorted(self.partition_scheme.fss, key=key, reverse=True):
             fu.umount_fs(fs.device)
@@ -188,6 +195,7 @@ class Manager(object):
         fu.umount_fs(chroot + '/sys')
 
     def do_bootloader(self):
+        LOG.debug('--- Installing bootloader (do_bootloader) ---')
         chroot = '/tmp/target'
         self.mount_target(chroot)
 
@@ -206,7 +214,12 @@ class Manager(object):
 
         self.umount_target(chroot)
 
+    def do_reboot(self):
+        LOG.debug('--- Rebooting node (do_reboot) ---')
+        utils.execute('reboot')
+
     def do_provisioning(self):
+        LOG.debug('--- Provisioning (do_provisioning) ---')
         self.do_parsing()
         self.do_partitioning()
         self.do_configdrive()

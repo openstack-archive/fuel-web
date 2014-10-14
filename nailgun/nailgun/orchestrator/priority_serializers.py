@@ -109,8 +109,9 @@ class PriorityMultinodeSerializer50(PrioritySerializer):
                 'zabbix-server']))
 
 
-# Yep, for MultiNode we have no changes between 5.0 and 5.1
+# Yep, for MultiNode we have no changes between 5.0, 5.1 and 6.0
 PriorityMultinodeSerializer51 = PriorityMultinodeSerializer50
+PriorityMultinodeSerializer60 = PriorityMultinodeSerializer50
 
 
 class PriorityHASerializer50(PrioritySerializer):
@@ -171,6 +172,10 @@ class PriorityHASerializer51(PrioritySerializer):
                 'mongo',
                 'primary-mongo',
                 'zabbix-server']))
+
+
+# Since no difference between 6.0 and 5.1 serializers so far
+PriorityHASerializer60 = PriorityHASerializer51
 
 
 class PriorityMultinodeSerializerPatching(PrioritySerializer):

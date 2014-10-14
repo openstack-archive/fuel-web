@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,19 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.plugins import plugin_hook
+from nailgun import objects
+from nailgun.api.v1.handlers import base
 
 
-@plugin_hook('process_cluster_attributes')
-def process_cluster_attributes(cluster, attributes):
-    return attributes
+class PluginHandler(base.SingleHandler):
+
+    single = objects.Plugin
 
 
-@plugin_hook('upload_plugin_attributes')
-def upload_plugin_attributes(cluster):
-    return {}
+class PluginCollectionHandler(base.CollectionHandler):
 
-
-@plugin_hook('get_cluster_attributes')
-def get_cluster_attributes(cluster):
-    return {}
+    collection = objects.PluginCollection

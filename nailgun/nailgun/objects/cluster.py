@@ -28,6 +28,8 @@ from nailgun.db.sqlalchemy import models
 
 from nailgun.errors import errors
 
+from nailgun.plugins.hooks import cluster as cluster_hooks
+
 from nailgun.logger import logger
 
 from nailgun.objects import NailgunCollection
@@ -224,6 +226,10 @@ class Cluster(NailgunObject):
             }
         )
         Attributes.generate_fields(attributes)
+        db().flush()
+        # when attributes created we need to understand whether should plugin
+        # be applied for create cluster
+        cluster_hooks.upload_plugin_attributes(instance)
 
     @classmethod
     def get_attributes(cls, instance):
@@ -235,6 +241,31 @@ class Cluster(NailgunObject):
         return db().query(models.Attributes).filter(
             models.Attributes.cluster_id == instance.id
         ).first()
+
+    @classmethod
+    def update_attributes(cls, instance, data):
+        cluster_hooks.process_cluster_attributes(instance, data['editable'])
+        db().flush()
+        for key, value in data.iteritems():
+            setattr(instance.attributes, key, value)
+        cls.add_pending_changes(instance, "attributes")
+
+    @classmethod
+    def patch_attributes(cls, instance, data):
+        cluster_hooks.process_cluster_attributes(instance, data['editable'])
+        db().flush()
+        instance.attributes.editable = dict_merge(
+            instance.attributes.editable, data['editable'])
+        cls.add_pending_changes(instance, "attributes")
+
+    @classmethod
+    def get_editable_attributes(cls, instance):
+        attrs = cls.get_attributes(instance)
+        plugin_attributes = cluster_hooks.get_cluster_attributes(
+            instance)
+        editable = attrs.editable
+        editable.update(plugin_attributes)
+        return {'editable': editable}
 
     @classmethod
     def get_network_manager(cls, instance=None):

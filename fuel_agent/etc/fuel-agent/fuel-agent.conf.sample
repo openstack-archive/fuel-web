@@ -1,18 +1,25 @@
 [DEFAULT]
 
 #
-# Options defined in fuel_agent.partition
+# Options defined in fuel_agent.manager
 #
 
-# Parititoning data driver (string value)
-#partition_data_driver=ks_spaces
+# Data driver (string value)
+#data_driver=nailgun
 
-# Get data driver (string value)
-#get_data_driver=read_file
+# Path to directory with cloud init templates (string value)
+#nc_template_path=/usr/share/fuel-agent/cloud-init-templates
+
+# Temporary directory for file manipulations (string value)
+#tmp_path=/tmp
+
+# Path where to store generated config drive image (string
+# value)
+#config_drive_path=/tmp/config-drive.img
 
 
 #
-# Options defined in fuel_agent.drivers.read_file
+# Options defined in fuel_agent.cmd.agent
 #
 
 # Provision data file (string value)
@@ -25,14 +32,14 @@
 
 # Print debugging output (set logging level to DEBUG instead
 # of default WARNING level). (boolean value)
-#debug=false
+debug=true
 
 # Print more verbose output (set logging level to INFO instead
 # of default WARNING level). (boolean value)
 #verbose=false
 
 # Log output to standard error. (boolean value)
-#use_stderr=true
+use_stderr=false
 
 # Format string to use for log messages with context. (string
 # value)
@@ -44,7 +51,7 @@
 
 # Data to append to log format when level is DEBUG. (string
 # value)
-#logging_debug_format_suffix=%(funcName)s %(pathname)s:%(lineno)d
+logging_debug_format_suffix=
 
 # Prefix each line of exception output with this format.
 # (string value)
@@ -90,7 +97,7 @@
 # (Optional) Name of log file to output to. If no default is
 # set, logging will go to stdout. (string value)
 # Deprecated group/name - [DEFAULT]/logfile
-#log_file=<None>
+log_file=/var/log/fuel-agent.log
 
 # (Optional) The base directory used for relative --log-file
 # paths. (string value)

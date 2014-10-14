@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,24 +14,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.plugins import plugin_hook
+from nailgun.db.sqlalchemy import models
+from nailgun.objects import base
+from nailgun.objects.serializers import plugin
 
 
-@plugin_hook('process_cluster_attributes')
-def process_cluster_attributes(cluster, attributes):
-    return attributes
+class Plugin(base.NailgunObject):
+
+    model = models.plugins.Plugin
+    serializer = plugin.PluginSerializer
 
 
-@plugin_hook('upload_plugin_attributes')
-def upload_plugin_attributes(cluster):
-    return {}
+class PluginCollection(base.NailgunCollection):
 
-
-@plugin_hook('get_cluster_attributes')
-def get_cluster_attributes(cluster):
-    return {}
-
-
-@plugin_hook('get_cluster_tasks')
-def get_cluster_tasks(cluster):
-    return []
+    single = Plugin

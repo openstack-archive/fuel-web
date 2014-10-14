@@ -16,10 +16,13 @@ from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import ForeignKey
 
 from sqlalchemy.dialects.postgresql import JSON
 
 from nailgun import consts
+
+from sqlalchemy.orm import relationship
 
 from nailgun.db.sqlalchemy.models.base import Base
 
@@ -33,3 +36,29 @@ class PluginRecord(Base):
         nullable=False
     )
     data = Column(JSON, default={})
+
+
+class ClusterPlugins(Base):
+
+    __tablename__ = 'cluster_plugins'
+    id = Column(Integer, primary_key=True)
+    plugin_id = Column(Integer, ForeignKey('plugins.id', ondelete='CASCADE'),
+                       nullable=False)
+    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+
+
+class Plugin(Base):
+
+    __tablename__ = 'plugins'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    version = Column(String(32), nullable=False)
+    description = Column(String(400))
+    releases = Column(JSON, default=[])
+    types = Column(JSON, default=[])
+    package_version = Column(String(32), nullable=False)
+    depends_on_plugin = Column(JSON, default=[])
+    conflicts = Column(JSON, default=[])
+    clusters = relationship("Cluster",
+                            secondary=ClusterPlugins.__table__,
+                            backref="plugins")

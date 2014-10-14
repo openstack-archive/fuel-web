@@ -526,6 +526,68 @@ class TestUtils(BaseTestCase):
         walk.assert_called_once_with('path/to/dir', topdown=True)
 
 
+class TestGetBaseRelease(BaseTestCase):
+
+    existing_releases = [
+        {
+            'name': 'Test A',
+            'version': '2014.1.1-5.1',
+            'operating_system': 'centos',
+        },
+        {
+            'name': 'Test B',
+            'version': '2014.1.1-5.1',
+            'operating_system': 'ubuntu',
+        },
+        {
+            'name': 'Test C',
+            'version': '2014.1.1-5.0.2',
+            'operating_system': 'centos',
+        },
+        {
+            'name': 'Test D',
+            'version': '2014.1.1-5.0.2',
+            'operating_system': 'ubuntu',
+        }]
+
+    def setUp(self):
+        super(TestGetBaseRelease, self).setUp()
+
+    def test_not_found(self):
+        base = utils.get_base_release({
+            'operating_system': 'centos',
+            'version': '2014.1.1-6.1',
+        }, '2014.1.1-6.0', self.existing_releases)
+
+        self.assertIsNone(base)
+
+    def test_exact_found(self):
+        base = utils.get_base_release({
+            'operating_system': 'ubuntu',
+            'version': '2014.1.1-6.0',
+        }, '2014.1.1-5.1', self.existing_releases)
+
+        self.assertEqual(base['name'], 'Test B')
+        self.assertEqual(base['version'], '2014.1.1-5.1')
+
+    def test_series_found(self):
+        base = utils.get_base_release({
+            'operating_system': 'centos',
+            'version': '2014.1.1-5.0.3',
+        }, '2014.1.1-5.0', self.existing_releases)
+
+        self.assertEqual(base['name'], 'Test C')
+        self.assertEqual(base['version'], '2014.1.1-5.0.2')
+
+    def test_series_not_above_current_version(self):
+        base = utils.get_base_release({
+            'operating_system': 'centos',
+            'version': '2014.1.1-5.0.1',
+        }, '2014.1.1-5.0', self.existing_releases)
+
+        self.assertIsNone(base)
+
+
 class TestVersionedFile(BaseTestCase):
 
     def setUp(self):

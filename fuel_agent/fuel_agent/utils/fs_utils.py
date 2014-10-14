@@ -31,7 +31,7 @@ def make_fs(fs_type, fs_options, fs_label, dev):
 
 
 def extend_fs(fs_type, fs_dev):
-    if fs_type in ('ext3', 'ext4'):
+    if fs_type in ('ext2', 'ext3', 'ext4'):
         # ext3,4 file system can be mounted
         # must be checked with e2fsck -f
         utils.execute('e2fsck', '-yf', fs_dev, check_exit_code=[0])

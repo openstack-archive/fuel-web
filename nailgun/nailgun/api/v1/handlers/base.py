@@ -272,7 +272,6 @@ class SingleHandler(BaseHandler):
             self.validator.validate_update,
             instance=obj
         )
-
         self.single.update(obj, data)
         return self.single.to_json(obj)
 

@@ -23,6 +23,8 @@ VERSION:
   feature_groups:
     - experimental
 
+BASE_PLUGIN_DIR: "/var/www/nailgun/plugins/"
+
 FUEL_KEY: "Unknown"
 
 FIXTURES_TO_UPLOAD:

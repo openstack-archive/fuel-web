@@ -17,6 +17,8 @@ import traceback
 
 import six
 
+from nailgun.plugins.classes import cluster_attributes
+
 from stevedore import ExtensionManager
 from stevedore import NamedExtensionManager
 
@@ -89,23 +91,34 @@ def plugin_hook(name):
                     on_load_failure_callback=load_failure_callback
                 )
             )
+            from nailgun import objects
+            plugins_db = objects.PluginCollection.all()
+            attrs_plugins = [cluster_attributes.ClusterAttributesPlugin(p)
+                             for p in plugins_db]
 
-            def handle_custom_roles(ext):
-                return getattr(ext.obj, name)(*args, **kwargs)
-
-            if manager.extensions:
-                plugin_result_list = manager.map(handle_custom_roles)
-                check_result = plugin_result_list[0]
-                # TODO(enchantner): research & discuss
-                if isinstance(check_result, list):
-                    plugin_result = []
-                    map(plugin_result.extend, plugin_result_list)
-                elif isinstance(check_result, dict):
-                    plugin_result = {}
-                    map(plugin_result.update, plugin_result_list)
+            plugins = [ext.obj for ext in manager.extensions]
+            plugins.extend(attrs_plugins)
+            if plugins:
+                # we need to
+                plugin_result_list = []
+                for plugin in plugins:
+                    if hasattr(plugin, name):
+                        plugin_result_list.append(
+                            getattr(plugin, name)(*args, **kwargs))
+                if plugin_result_list:
+                    check_result = plugin_result_list[0]
+                    # TODO(enchantner): research & discuss
+                    if isinstance(check_result, list):
+                        plugin_result = []
+                        map(plugin_result.extend, plugin_result_list)
+                    elif isinstance(check_result, dict):
+                        plugin_result = {}
+                        map(plugin_result.update, plugin_result_list)
+                    else:
+                        # only one result if we don't know how to merge it
+                        return plugin_result_list[0]
                 else:
-                    # only one result if we don't know how to merge it
-                    return plugin_result_list[0]
+                    return {}
             else:
                 result = func(*args, **kwargs)
                 plugin_result = result

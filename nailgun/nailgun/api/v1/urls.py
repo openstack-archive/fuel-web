@@ -55,6 +55,9 @@ from nailgun.api.v1.handlers.node import NodeCollectionHandler
 from nailgun.api.v1.handlers.node import NodeHandler
 from nailgun.api.v1.handlers.node import NodesAllocationStatsHandler
 
+from nailgun.api.v1.handlers.plugin import PluginCollectionHandler
+from nailgun.api.v1.handlers.plugin import PluginHandler
+
 from nailgun.api.v1.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
 from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
@@ -164,6 +167,11 @@ urls = (
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',
     TaskHandler,
+
+    r'/plugins/(?P<obj_id>\d+)/?$',
+    PluginHandler,
+    r'/plugins/?$',
+    PluginCollectionHandler,
 
     r'/notifications/?$',
     NotificationCollectionHandler,

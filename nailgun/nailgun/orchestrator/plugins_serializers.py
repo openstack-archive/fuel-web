@@ -18,83 +18,14 @@
 
 from nailgun.settings import settings
 
-from nailgun.settings import settings
 from urlparse import urljoin
-import yaml
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
-from nailgun.objects import Cluster
 
-import glob
-import os
+from nailgun.errors import errors
 
+from plugins.manager import PluginManager
 
-class PluginData(object):
-    """NOTE(eli): this stuff should be somewhere in object
-    """
-
-    def __init__(self, plugin_name, metadata, tasks):
-        self.plugin_name = plugin_name
-        self.metadata = metadata
-        self.tasks = tasks
-
-    def get_release_info(self, release):
-        os = release.operating_system.lower()
-        version = release.version
-
-        release_info = filter(
-            lambda r: (r['os'] == os and
-                       r['version'] == version),
-            self.metadata['releases'])
-
-        return release_info[0]
-
-    @property
-    def full_name(self):
-        return '{0}-{1}'.format(
-            self.metadata['name'],
-            self.metadata['version'])
-
-    @property
-    def slave_scripts_path(self):
-        return settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
-            plugin_name=self.full_name)
-
-def get_plugins():
-    plugin_directories = glob.glob(os.path.join(settings.PLUGINS_PATH, '*'))
-    plugins = []
-    for directory in plugin_directories:
-        metadata_path = os.path.join(directory, 'metadata.yaml')
-        tasks_path = os.path.join(directory, 'tasks.yaml')
-
-        if not os.path.exists(metadata_path) or not os.path.exists(tasks_path):
-            continue
-
-        plugin_name = os.path.basename(directory)
-
-        plugin_data = PluginData(
-            plugin_name,
-            yaml.load(open(metadata_path)),
-            yaml.load(open(tasks_path)))
-        plugins.append(plugin_data)
-
-    return plugins
-
-
-def get_plugins_for_cluster(cluster):
-    plugins = get_plugins()
-    enabled_plugins = []
-    for plugin in plugins:
-        # TODO(eli): is required only for development
-        # it will be replaced with plugins <-> cluster
-        # relation
-        enabled = Cluster.get_attributes(cluster).editable.get(
-            plugin.metadata['name'], {}).get('metadata', {}).get('enabled')
-
-        if not enabled:
-            continue
-        enabled_plugins.append(plugin)
-
-    return sorted(enabled_plugins, key=lambda p: p.full_name)
+from nailgun.logger import logger
 
 
 def make_repo_task(uids, repo_data, repo_path):
@@ -173,7 +104,7 @@ class BasePluginDeploymentHooksSerializer(object):
                 lambda t: (t['type'] == 'shell' and
                            t['stage'] == stage),
                 plugin.tasks)
-            
+
             for task in shell_tasks:
                 uids = self.get_uids_for_task(task)
                 if not uids:
@@ -219,7 +150,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
     def serialize(self):
         tasks = []
-        plugins = get_plugins_for_cluster(self.cluster)
+        plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
         tasks.extend(self.create_repositories(plugins))
         tasks.extend(self.sync_scripts(plugins))
         tasks.extend(self.deployment_tasks(plugins))
@@ -286,21 +217,20 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
             deployment_tasks(plugins, 'pre_deployment')
 
 
-class PluginsPostDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
+class PluginsPostDeploymentHooksSerializer(
+        BasePluginDeploymentHooksSerializer):
 
     def serialize(self):
         tasks = []
-        plugins = get_plugins_for_cluster(self.cluster)
+        plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
         tasks.extend(self.deployment_tasks(plugins))
         self.priority.one_by_one(tasks)
-
         return tasks
 
     def deployment_tasks(self, plugins):
         return super(
             PluginsPostDeploymentHooksSerializer, self).\
             deployment_tasks(plugins, 'post_deployment')
-
 
 
 def pre_deployment_serialize(cluster, nodes):

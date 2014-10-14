@@ -23,11 +23,10 @@ module.exports = function(grunt) {
         pkg: pkg,
         requirejs: {
             compile: {
-                options: {
+                options: require('lodash-node').merge(require('requirejs')('static/js/config.js'), {
                     baseUrl: '.',
                     appDir: staticBuildPreparationDir + '/static',
                     dir: staticBuildDir,
-                    mainConfigFile: 'static/js/main.js',
                     waitSeconds: 60,
                     optimize: 'uglify2',
                     optimizeCss: 'standard',
@@ -48,7 +47,7 @@ module.exports = function(grunt) {
                             exclude: ['require-css/normalize']
                         }
                     ]
-                }
+                })
             }
         },
         lintspaces: {
@@ -219,7 +218,7 @@ module.exports = function(grunt) {
                 options: {
                     process: function (content, path) {
                         // use CSS loader instead LESS loader - styles are precompiled
-                        content = content.replace(/less!/g, 'css!');
+                        content = content.replace(/less!/g, 'require-css/css!');
                         // remove explicit calls to JSX loader plugin
                         content = content.replace(/jsx!/g, '');
                         // add header required for JSXTransformer to all .jsx files

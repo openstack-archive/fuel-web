@@ -169,3 +169,8 @@ CLUSTER_CHANGES = Enum(
     'disks',
     'interfaces'
 )
+
+PROVISION_METHODS = Enum(
+    'cobbler',
+    'image'
+)

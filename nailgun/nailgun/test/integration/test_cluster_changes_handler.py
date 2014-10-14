@@ -21,6 +21,7 @@ import netaddr
 
 import nailgun
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy import models
@@ -289,11 +290,19 @@ class TestHandlers(BaseIntegrationTest):
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'authorized_keys':
                     ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP,
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
                 }
             }
+            provision_data = cluster_attrs.get('provision')
+            if provision_data:
+                if provision_data['method'] == consts.PROVISION_METHODS.image:
+                    pnd['ks_meta']['image_data'] = \
+                        provision_data['image_data']
+
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
                 cluster_db.release)
             if orchestrator_data:
@@ -346,7 +355,11 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method':
+                        cluster_attrs.get('provision', {}).get(
+                            'method', consts.PROVISION_METHODS.cobbler)
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -718,11 +731,19 @@ class TestHandlers(BaseIntegrationTest):
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'authorized_keys':
                     ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP,
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
                 }
             }
+            provision_data = cluster_attrs.get('provision')
+            if provision_data:
+                if provision_data['method'] == consts.PROVISION_METHODS.image:
+                    pnd['ks_meta']['image_data'] = \
+                        provision_data['image_data']
+
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
                 cluster_db.release)
             if orchestrator_data:
@@ -775,7 +796,11 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method':
+                        cluster_attrs.get('provision', {}).get(
+                            'method', consts.PROVISION_METHODS.cobbler)
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args

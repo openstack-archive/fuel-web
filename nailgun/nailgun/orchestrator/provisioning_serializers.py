@@ -18,6 +18,7 @@
 
 from itertools import groupby
 
+from nailgun import consts
 from nailgun import objects
 import netaddr
 
@@ -44,18 +45,21 @@ class ProvisioningSerializer(object):
                 serialized_nodes.extend(
                     cls.serialize_nodes(cluster_attrs, node_group))
         serialized_info = (cluster.replaced_provisioning_info or
-                           cls.serialize_cluster_info(cluster))
+                           cls.serialize_cluster_info(cluster_attrs))
         serialized_info['nodes'] = serialized_nodes
         return serialized_info
 
     @classmethod
-    def serialize_cluster_info(cls, cluster):
+    def serialize_cluster_info(cls, cluster_attrs):
         return {
             'engine': {
                 'url': settings.COBBLER_URL,
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
+                'provision_method':
+                cluster_attrs.get('provision', {}).get(
+                    'method', consts.PROVISION_METHODS.cobbler)
             }}
 
     @classmethod
@@ -114,7 +118,16 @@ class ProvisioningSerializer(object):
                 'mco_enable': 1,
                 'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                 'authorized_keys':
-                ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS]}}
+                ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
+                'master_ip': settings.MASTER_IP,
+                'timezone': settings.TIMEZONE,
+            }}
+
+        provision_data = cluster_attrs.get('provision')
+        if provision_data:
+            if provision_data['method'] == consts.PROVISION_METHODS.image:
+                serialized_node['ks_meta']['image_data'] = \
+                    provision_data['image_data']
 
         orchestrator_data = objects.Release.get_orchestrator_data_dict(
             node.cluster.release)

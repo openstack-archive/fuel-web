@@ -37,7 +37,10 @@ class Target(object):
 
 class LocalFile(Target):
     def __init__(self, filename):
-        self.filename = str(filename)
+        if filename.startswith('file://'):
+            self.filename = filename[7:]
+        else:
+            self.filename = filename
         self.fileobj = None
 
     def next(self):

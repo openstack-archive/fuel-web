@@ -35,6 +35,15 @@ class TestFSUtils(test_base.BaseTestCase):
                                           '/dev/fake')
 
     @mock.patch.object(utils, 'execute')
+    def test_extend_fs_ok_ext2(self, mock_exec):
+        fu.extend_fs('ext2', '/dev/fake')
+        expected_calls = [
+            mock.call('e2fsck', '-yf', '/dev/fake', check_exit_code=[0]),
+            mock.call('resize2fs', '/dev/fake', check_exit_code=[0])
+        ]
+        self.assertEqual(mock_exec.call_args_list, expected_calls)
+
+    @mock.patch.object(utils, 'execute')
     def test_extend_fs_ok_ext3(self, mock_exec):
         fu.extend_fs('ext3', '/dev/fake')
         expected_calls = [

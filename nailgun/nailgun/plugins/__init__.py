@@ -17,6 +17,8 @@ import traceback
 
 import six
 
+from nailgun.plugins.classes import yaml_based_plugin
+
 from stevedore import ExtensionManager
 from stevedore import NamedExtensionManager
 
@@ -89,12 +91,18 @@ def plugin_hook(name):
                     on_load_failure_callback=load_failure_callback
                 )
             )
+            from nailgun import objects
+            plugins_db = objects.PluginCollection.all()
+            yaml_plugins = [yaml_based_plugin.YamlBasedPlugin(p)
+                            for p in plugins_db]
 
-            def handle_custom_roles(ext):
-                return getattr(ext.obj, name)(*args, **kwargs)
+            def handle_custom(obj):
+                return getattr(obj, name)(*args, **kwargs)
 
-            if manager.extensions:
-                plugin_result_list = manager.map(handle_custom_roles)
+            plugins = [ext.obj for ext in manager.extensions]
+            plugins.extend(yaml_plugins)
+            if plugins:
+                plugin_result_list = map(handle_custom, plugins)
                 check_result = plugin_result_list[0]
                 # TODO(enchantner): research & discuss
                 if isinstance(check_result, list):

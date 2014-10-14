@@ -64,11 +64,13 @@ class Manager(object):
         self.image_scheme = None
 
     def do_parsing(self):
+        LOG.debug('--- Parsing data (do_parsing) ---')
         self.partition_scheme = self.driver.partition_scheme()
         self.configdrive_scheme = self.driver.configdrive_scheme()
         self.image_scheme = self.driver.image_scheme(self.partition_scheme)
 
     def do_partitioning(self):
+        LOG.debug('--- Partitioning disks (do_partitioning) ---')
         # If disks are not wiped out at all, it is likely they contain lvm
         # and md metadata which will prevent re-creating a partition table
         # with 'device is busy' error.
@@ -138,6 +140,7 @@ class Manager(object):
             fu.make_fs(fs.type, fs.options, fs.label, fs.device)
 
     def do_configdrive(self):
+        LOG.debug('--- Creating configdrive (do_configdrive) ---')
         cc_output_path = os.path.join(CONF.tmp_path, 'cloud_config.txt')
         bh_output_path = os.path.join(CONF.tmp_path, 'boothook.txt')
         # NOTE:file should be strictly named as 'user-data'
@@ -179,19 +182,29 @@ class Manager(object):
         )
 
     def do_copyimage(self):
+        LOG.debug('--- Copying images (do_copyimage) ---')
         for image in self.image_scheme.images:
+            LOG.debug('Processing image: %s' % image.uri)
             processing = au.Chain()
+
+            LOG.debug('Appending uri processor: %s' % image.uri)
             processing.append(image.uri)
 
             if image.uri.startswith('http://'):
+                LOG.debug('Appending HTTP processor')
                 processing.append(au.HttpUrl)
             elif image.uri.startswith('file://'):
+                LOG.debug('Appending FILE processor')
                 processing.append(au.LocalFile)
 
             if image.container == 'gzip':
+                LOG.debug('Appending GZIP processor')
                 processing.append(au.GunzipStream)
 
+            LOG.debug('Appending TARGET processor: %s' % image.target_device)
             processing.append(image.target_device)
+
+            LOG.debug('Launching image processing chain')
             processing.process()
 
             LOG.debug('Extending image file systems')
@@ -201,6 +214,7 @@ class Manager(object):
                 fu.extend_fs(image.format, image.target_device)
 
     def mount_target(self, chroot):
+        LOG.debug('Mounting target file systems')
         # Here we are going to mount all file systems in partition scheme.
         # Shorter paths earlier. We sort all mount points by their depth.
         # ['/', '/boot', '/var', '/var/lib/mysql']
@@ -221,6 +235,7 @@ class Manager(object):
             f.write(mtab)
 
     def umount_target(self, chroot):
+        LOG.debug('Umounting target file systems')
         fu.umount_fs(chroot + '/proc')
         fu.umount_fs(chroot + '/dev')
         fu.umount_fs(chroot + '/sys')
@@ -265,6 +280,7 @@ class Manager(object):
         return mount_uuid
 
     def do_bootloader(self):
+        LOG.debug('--- Installing bootloader (do_bootloader) ---')
         chroot = '/tmp/target'
         self.mount_target(chroot)
         mount_uuid = self.mount_uuid()
@@ -292,10 +308,11 @@ class Manager(object):
         self.umount_target(chroot)
 
     def do_reboot(self):
-        LOG.debug('Rebooting node')
+        LOG.debug('--- Rebooting node (do_reboot) ---')
         utils.execute('reboot')
 
     def do_provisioning(self):
+        LOG.debug('--- Provisioning (do_provisioning) ---')
         self.do_parsing()
         self.do_partitioning()
         self.do_configdrive()

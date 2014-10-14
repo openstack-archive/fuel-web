@@ -28,6 +28,8 @@ from nailgun.api.v1.handlers.base import SingleHandler
 
 from nailgun import objects
 
+from nailgun.plugins import hooks
+
 from nailgun.api.v1.handlers.base import content_json
 
 from nailgun.api.v1.validators.cluster import AttributesValidator
@@ -130,9 +132,7 @@ class ClusterAttributesHandler(BaseHandler):
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
-        return {
-            "editable": cluster.attributes.editable
-        }
+        return objects.Cluster.get_editable_attributes(cluster)
 
     @content_json
     def PUT(self, cluster_id):
@@ -151,12 +151,12 @@ class ClusterAttributesHandler(BaseHandler):
                                  "after, or in deploy.")
 
         data = self.checked_data()
-
+        hooks.cluster.process_cluster_attributes(cluster, data['editable'])
         for key, value in data.iteritems():
             setattr(cluster.attributes, key, value)
 
         objects.Cluster.add_pending_changes(cluster, "attributes")
-        return {"editable": cluster.attributes.editable}
+        return objects.Cluster.get_editable_attributes(cluster)
 
     @content_json
     def PATCH(self, cluster_id):
@@ -176,12 +176,12 @@ class ClusterAttributesHandler(BaseHandler):
                                  "after, or in deploy.")
 
         data = self.checked_data()
-
+        hooks.cluster.process_cluster_attributes(cluster, data['editable'])
         cluster.attributes.editable = utils.dict_merge(
             cluster.attributes.editable, data['editable'])
 
         objects.Cluster.add_pending_changes(cluster, "attributes")
-        return {"editable": cluster.attributes.editable}
+        return objects.Cluster.get_editable_attributes(cluster)
 
 
 class ClusterAttributesDefaultsHandler(BaseHandler):

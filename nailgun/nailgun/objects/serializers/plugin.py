@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,24 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy import Column
-from sqlalchemy import Enum
-from sqlalchemy import Integer
-from sqlalchemy import String
-
-from sqlalchemy.dialects.postgresql import JSON
-
-from nailgun import consts
-
-from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.objects.serializers.base import BasicSerializer
 
 
-class PluginRecord(Base):
-    __tablename__ = 'plugin_records'
-    id = Column(Integer, primary_key=True)
-    plugin = Column(String(150))
-    record_type = Column(
-        Enum(*consts.PLUGIN_RECORD_TYPES, name='record_type'),
-        nullable=False
+class PluginSerializer(BasicSerializer):
+
+    fields = (
+        "id",
+        "name",
+        "description"
     )
-    data = Column(JSON, default={})

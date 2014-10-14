@@ -28,6 +28,8 @@ from nailgun.db.sqlalchemy import models
 
 from nailgun.errors import errors
 
+from nailgun.plugins.hooks import cluster as cluster_hooks
+
 from nailgun.logger import logger
 
 from nailgun.objects import NailgunCollection
@@ -224,6 +226,10 @@ class Cluster(NailgunObject):
             }
         )
         Attributes.generate_fields(attributes)
+        db().flush()
+        # when attributes created we need to understand whether should plugin
+        # be applied for create cluster
+        cluster_hooks.upload_plugin_attributes(instance)
 
     @classmethod
     def get_attributes(cls, instance):
@@ -232,9 +238,17 @@ class Cluster(NailgunObject):
         :param instance: Cluster instance
         :returns: Attributes instance
         """
-        return db().query(models.Attributes).filter(
+        cluster_attributes = db().query(models.Attributes).filter(
             models.Attributes.cluster_id == instance.id
         ).first()
+        return cluster_hooks.get_cluster_attributes(
+            instance, cluster_attributes)
+
+    @classmethod
+    def get_editable_attributes(cls, instance):
+        attrs = cls.get_attributes(instance)
+        return {'editable': cluster_hooks.get_cluster_attributes(
+            instance, attrs.editable)}
 
     @classmethod
     def get_network_manager(cls, instance=None):

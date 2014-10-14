@@ -23,19 +23,21 @@ class NailgunPlugin(six.with_metaclass(abc.ABCMeta, object)):
     __plugin_name__ = None
 
     config_file = None
+    environment_config_name = 'environment_config.yaml'
 
-    def __init__(self):
-        if not self.__plugin_name__:
+    def __init__(self, plugin_name=None, config_file=None):
+        self.plugin_name = self.__plugin_name__ or plugin_name
+        self.config_file = self.config_file or config_file
+        if not self.plugin_name:
             raise Exception(
-                "__plugin_name__ is not specified!"
+                "plugin_name is not specified!"
             )
-        self.plugin_name = self.__plugin_name__
         from nailgun.plugins.storage import PluginStorage
         self.storage = PluginStorage(
             plugin_name=self.plugin_name
         )
         self.config = {}
-        if self.config_file:
+        if os.path.exists(self.config_file):
             self.config.update(self._load_config())
 
     def _load_config(self):

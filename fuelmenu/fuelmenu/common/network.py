@@ -12,9 +12,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import logging
 import netaddr
-log = logging.getLogger('fuelmenu.mirrors')
+
+from fuelmenu.common.errors import BadIPException
 
 
 def inSameSubnet(ip1, ip2, netmask_or_cidr):
@@ -59,3 +59,16 @@ def getNetwork(ip, netmask, additionalip=None):
         return ipn_list
     except netaddr.AddrFormatError:
         return False
+
+
+def range(startip, endip):
+    #Return a list of IPs between startip and endip
+    try:
+        return set(netaddr.iter_iprange(startip, endip))
+    except netaddr.AddrFormatError:
+        raise BadIPException("Invalid IP address(es) specified.")
+
+
+def intersects(range1, range2):
+    #Returns true if any IPs in range1 exist in range2
+    return range1 & range2

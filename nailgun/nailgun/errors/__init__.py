@@ -48,6 +48,8 @@ default_messages = {
     "TaskAlreadyRunning": "A task is already running",
     "InvalidReleaseId": "Release Id is invalid",
     "UnsupportedSerializer": "There are no serializers for a given cluster",
+    "InvalidOperatingSystem": "Invalid operating system",
+    "CannotFindPluginForRelease": "Cannot find plugin for the release",
 
     # disk errors
     "NotEnoughFreeSpace": "Not enough free space",

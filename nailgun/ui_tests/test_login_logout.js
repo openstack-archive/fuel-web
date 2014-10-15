@@ -42,6 +42,9 @@ casper.then(function() {
     this.test.assertExists('a[href="#logout"]', 'Logout link exists');
     this.test.assert(authenticated, 'User is authenticated');
     this.test.assert(!!token, 'Token is set');
+    this.test.assertSelectorAppears('span.username', 'Username span exists');
+    // TODO: test for span.username content to be equal to localStorage.getItem('username')
+    //       The problem for now is that CasperJS doesn't preserve localStorage for some reason
 });
 
 casper.loadPage('#logout');

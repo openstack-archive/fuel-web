@@ -24,7 +24,7 @@ define(['jquery', 'underscore'], function($, _) {
     }
 
     _.extend(KeystoneClient.prototype, {
-        authenticate: function(options) {
+        authenticate: function(username, password, options) {
             options = options || {};
             if (this.tokenUpdateRequest) {
                 return this.tokenUpdateRequest;
@@ -33,10 +33,13 @@ define(['jquery', 'underscore'], function($, _) {
                 return $.Deferred().resolve();
             }
             var data = {auth: {}};
-            if (this.password) {
-                data.auth.passwordCredentials = _.pick(this, ['username', 'password']);
-            } else if (this.token) {
+            if (this.token) {
                 data.auth.token = {id: this.token};
+            } else if (!!username && !!password) {
+                data.auth.passwordCredentials = {
+                    username: username,
+                    password: password
+                };
             } else {
                 return $.Deferred().reject();
             }
@@ -54,13 +57,14 @@ define(['jquery', 'underscore'], function($, _) {
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
 
+                    app.user.set({username: username, token: result.access.token.id});
                     $.cookie('token', result.access.token.id);
 
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
                 }
-            }, this)).fail(_.bind(function() {
+            }, this), _.bind(function(xhr, status, error) {
                 delete this.tokenUpdateTime;
             }, this)).always(_.bind(function() {
                 delete this.tokenUpdateRequest;
@@ -82,10 +86,10 @@ define(['jquery', 'underscore'], function($, _) {
                 headers: {'X-Auth-Token': this.token}
             }).then(_.bind(function(result, state, deferred) {
                 try {
-                    this.password = newPassword;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
 
+                    app.user.set({token: result.access.token.id});
                     $.cookie('token', result.access.token.id);
 
                     return deferred;
@@ -105,8 +109,6 @@ define(['jquery', 'underscore'], function($, _) {
             }
 
             delete this.userId;
-            delete this.username;
-            delete this.password;
             delete this.token;
             delete this.tokenUpdateTime;
 

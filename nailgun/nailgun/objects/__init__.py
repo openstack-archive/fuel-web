@@ -38,3 +38,7 @@ from nailgun.objects.node import Node
 from nailgun.objects.node import NodeCollection
 
 from nailgun.objects.capacity import CapacityLog
+
+from nailgun.objects.plugin import Plugin
+from nailgun.objects.plugin import PluginCollection
+

@@ -38,6 +38,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
 from nailgun.orchestrator import deployment_serializers
+from nailgun.orchestrator import plugins_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
@@ -135,8 +136,11 @@ class DeploymentTask(object):
                 db().add(n)
         db().flush()
 
-        # here we replace deployment data if user redefined them
         serialized_cluster = deployment_serializers.serialize(
+            task.cluster, nodes)
+        pre_deployment = plugins_serializers.pre_deployment_serialize(
+            task.cluster, nodes)
+        post_deployment = plugins_serializers.post_deployment_serialize(
             task.cluster, nodes)
 
         # After serialization set pending_addition to False
@@ -149,7 +153,9 @@ class DeploymentTask(object):
             'deploy_resp',
             {
                 'task_uuid': task.uuid,
-                'deployment_info': serialized_cluster
+                'deployment_info': serialized_cluster,
+                'pre_deployment': pre_deployment,
+                'post_deployment': post_deployment
             }
         )
 

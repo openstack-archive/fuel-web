@@ -45,30 +45,30 @@ class Priority(object):
 
 
 class PriorityStrategy(object):
-    """Set priorities for sequence of nodes using some strategy.
+    """Set priorities for sequence of tasks using some strategy.
     """
 
     def __init__(self):
         #: priority sequence generator
         self._priority = Priority()
 
-    def one_by_one(self, nodes):
-        """Deploy given nodes one by one."""
-        for n in nodes:
-            n['priority'] = self._priority.next()
+    def one_by_one(self, tasks):
+        """Deploy given tasks one by one."""
+        for t in tasks:
+            t['priority'] = self._priority.next()
 
-    def in_parallel(self, nodes):
-        """Deploy given nodes in parallel mode."""
+    def in_parallel(self, tasks):
+        """Deploy given tasks in parallel mode."""
         self._priority.next()
-        for n in nodes:
-            n['priority'] = self._priority.current
+        for t in tasks:
+            t['priority'] = self._priority.current
 
-    def in_parallel_by(self, nodes, amount):
+    def in_parallel_by(self, tasks, amount):
         """Deploy given nodes in parallel by chunks."""
-        for index, node in enumerate(nodes):
+        for index, task in enumerate(tasks):
             if index % amount == 0:
                 self._priority.next()
-            node['priority'] = self._priority.current
+            task['priority'] = self._priority.current
 
 
 @six.add_metaclass(abc.ABCMeta)

@@ -87,16 +87,21 @@ casper.authenticate = function(options) {
         })
     });
     this.then(function() {
-        authToken = this.evaluate(function(username, password) {
-            localStorage.setItem('username', username);
-            localStorage.setItem('password', password);
-            var authToken = '';
+        authToken = this.evaluate(function() {
+            var data,
+                authToken = '',
+                username;
             try {
-                authToken = JSON.parse(document.body.innerText).access.token.id;
+                data = JSON.parse(document.body.innerText);
+                authToken = data.access.token.id;
+                username = data.access.user.username;
             } catch (ignore) {}
 
+            localStorage.setItem('token', authToken);
+            localStorage.setItem('username', username);
+
             return authToken;
-        }, [username, password]);
+        });
     });
 
     return this;

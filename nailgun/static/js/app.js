@@ -130,6 +130,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
 
                 if (version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('username', 'password'));
+                    _.extend(keystoneClient, this.user.pick('token'));
                     keystoneClient.authenticate()
                         .done(function() {
                             app.user.set({authenticated: true});
@@ -178,7 +179,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
             if (this.user.get('authenticated') && this.version.get('auth_required')) {
                 this.user.set('authenticated', false);
                 this.user.unset('username');
-                this.user.unset('password');
+                this.user.unset('token');
 
                 this.keystoneClient.deauthenticate();
             }

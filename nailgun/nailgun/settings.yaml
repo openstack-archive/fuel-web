@@ -64,8 +64,8 @@ DEFAULT_PUPPET:
   modules: "rsync://{MASTER_IP}:/puppet/modules/"
   manifests: "rsync://{MASTER_IP}:/puppet/manifests/"
 DEFAULT_REPO:
-  centos: "http://{MASTER_IP}:8080/centos/fuelweb/x86_64"
-  ubuntu: "http://{MASTER_IP}:8080/ubuntu/fuelweb/x86_64 precise main"
+  centos: "http://{MASTER_IP}:8080/centos/x86_64"
+  ubuntu: "http://{MASTER_IP}:8080/ubuntu/x86_64 precise main"
 
 APP_LOG: &nailgun_log "/var/log/nailgun/app.log"
 API_LOG: &api_log "/var/log/nailgun/api.log"

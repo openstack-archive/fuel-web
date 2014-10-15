@@ -175,6 +175,11 @@ PROVISION_METHODS = Enum(
     'image'
 )
 
+STAGES = Enum(
+    'pre_deployment',
+    'post_deployment'
+)
+
 ACTION_TYPES = Enum(
     'http_request',
     'nailgun_task'

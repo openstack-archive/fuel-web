@@ -246,6 +246,8 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg['args']['task_uuid'] = deploy_task_uuid
         deployment_msg['args']['deployment_info'] = deployment_info
+        deployment_msg['args']['pre_deployment'] = []
+        deployment_msg['args']['post_deployment'] = []
 
         provision_nodes = []
         admin_net = self.env.network_manager.get_admin_network_group()
@@ -680,6 +682,8 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg['args']['task_uuid'] = deploy_task_uuid
         deployment_msg['args']['deployment_info'] = deployment_info
+        deployment_msg['args']['pre_deployment'] = []
+        deployment_msg['args']['post_deployment'] = []
 
         provision_nodes = []
         admin_net = self.env.network_manager.get_admin_network_group()

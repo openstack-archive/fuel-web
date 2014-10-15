@@ -38,7 +38,6 @@ from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
 from nailgun.task.manager import UpdateEnvironmentTaskManager
-from nailgun import utils
 
 
 class ClusterHandler(SingleHandler):
@@ -130,9 +129,7 @@ class ClusterAttributesHandler(BaseHandler):
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
-        return {
-            "editable": cluster.attributes.editable
-        }
+        return objects.Cluster.get_editable_attributes(cluster)
 
     @content_json
     def PUT(self, cluster_id):
@@ -151,12 +148,8 @@ class ClusterAttributesHandler(BaseHandler):
                                  "after, or in deploy.")
 
         data = self.checked_data()
-
-        for key, value in data.iteritems():
-            setattr(cluster.attributes, key, value)
-
-        objects.Cluster.add_pending_changes(cluster, "attributes")
-        return {"editable": cluster.attributes.editable}
+        objects.Cluster.update_attributes(cluster, data)
+        return objects.Cluster.get_editable_attributes(cluster)
 
     @content_json
     def PATCH(self, cluster_id):
@@ -176,12 +169,8 @@ class ClusterAttributesHandler(BaseHandler):
                                  "after, or in deploy.")
 
         data = self.checked_data()
-
-        cluster.attributes.editable = utils.dict_merge(
-            cluster.attributes.editable, data['editable'])
-
-        objects.Cluster.add_pending_changes(cluster, "attributes")
-        return {"editable": cluster.attributes.editable}
+        objects.Cluster.patch_attributes(cluster, data)
+        return objects.Cluster.get_editable_attributes(cluster)
 
 
 class ClusterAttributesDefaultsHandler(BaseHandler):

@@ -91,16 +91,17 @@ casper.authenticate = function(options) {
         })
     });
     this.then(function() {
-        authToken = this.evaluate(function(username, password) {
-            localStorage.setItem('username', username);
-            localStorage.setItem('password', password);
+        authToken = this.evaluate(function(username) {
             var authToken = '';
             try {
                 authToken = JSON.parse(document.body.innerText).access.token.id;
             } catch (ignore) {}
 
+            localStorage.setItem('token', authToken);
+            localStorage.setItem('username', username);
+
             return authToken;
-        }, [username, password]);
+        }, username);
     });
 
     return this;

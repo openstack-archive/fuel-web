@@ -37,11 +37,16 @@ casper.then(function() {
         }),
         token = this.evaluate(function() {
             return window.app.keystoneClient.token;
+        }),
+        username = this.evaluate(function() {
+            return window.app.user.get('username');
         });
 
     this.test.assertExists('a[href="#logout"]', 'Logout link exists');
     this.test.assert(authenticated, 'User is authenticated');
     this.test.assert(!!token, 'Token is set');
+    this.test.assertExists('span.username', 'Username span exists');
+    this.test.assertSelectorHasText('span.username', username);
 });
 
 casper.loadPage('#logout');

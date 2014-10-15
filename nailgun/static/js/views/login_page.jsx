@@ -29,15 +29,10 @@ function($, React, controls) {
         login: function(username, password) {
             var keystoneClient = app.keystoneClient;
 
-            keystoneClient.username = username;
-            keystoneClient.password = password;
-
-            return keystoneClient.authenticate({force: true})
+            return keystoneClient.authenticate(username, password, {force: true})
                 .done(_.bind(function() {
                     app.user.set({
-                        authenticated: true,
-                        username: keystoneClient.username,
-                        password: keystoneClient.password
+                        authenticated: true
                     });
                     this.loginRedirect();
                 }, this));

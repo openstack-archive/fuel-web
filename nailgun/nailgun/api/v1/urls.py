@@ -55,6 +55,9 @@ from nailgun.api.v1.handlers.node import NodeCollectionHandler
 from nailgun.api.v1.handlers.node import NodeHandler
 from nailgun.api.v1.handlers.node import NodesAllocationStatsHandler
 
+from nailgun.api.v1.handlers.plugin import PluginCollectionHandler
+from nailgun.api.v1.handlers.plugin import PluginHandler
+
 from nailgun.api.v1.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
 from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
@@ -69,6 +72,8 @@ from nailgun.api.v1.handlers.orchestrator import DeploymentInfo
 from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
+from nailgun.api.v1.handlers.orchestrator import DefaultPrePluginsHooksInfo
+from nailgun.api.v1.handlers.orchestrator import DefaultPostPluginsHooksInfo
 
 from nailgun.api.v1.handlers.registration import FuelKeyHandler
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
@@ -121,6 +126,10 @@ urls = (
     DefaultProvisioningInfo,
     r'/clusters/(?P<cluster_id>\d+)/generated/?$',
     ClusterGeneratedData,
+    r'/clusters/(?P<cluster_id>\d+)/orchestrator/plugins_pre_hooks/?$',
+    DefaultPrePluginsHooksInfo,
+    r'/clusters/(?P<cluster_id>\d+)/orchestrator/plugins_post_hooks/?$',
+    DefaultPostPluginsHooksInfo,
 
     r'/clusters/(?P<cluster_id>\d+)/provision/?$',
     ProvisionSelectedNodes,
@@ -164,6 +173,11 @@ urls = (
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',
     TaskHandler,
+
+    r'/plugins/(?P<obj_id>\d+)/?$',
+    PluginHandler,
+    r'/plugins/?$',
+    PluginCollectionHandler,
 
     r'/notifications/?$',
     NotificationCollectionHandler,

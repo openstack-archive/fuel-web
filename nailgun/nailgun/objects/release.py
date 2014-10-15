@@ -93,10 +93,14 @@ class ReleaseOrchestratorData(NailgunObject):
                 cls.render_path(value, context)
 
         rendered_data['puppet_manifests_source'] = \
-            cls.render_path(rendered_data['puppet_manifests_source'], context)
+          cls.render_path(rendered_data.get(
+              'puppet_manifests_source',
+              'default'), context)
 
         rendered_data['puppet_modules_source'] = \
-            cls.render_path(rendered_data['puppet_modules_source'], context)
+          cls.render_path(rendered_data.get(
+                  'puppet_manifests_source',
+                  'default'), context)
 
         return rendered_data
 

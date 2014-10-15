@@ -33,6 +33,8 @@ from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
+from nailgun.plugins.manager import PluginManager
+
 from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
@@ -224,6 +226,12 @@ class Cluster(NailgunObject):
             }
         )
         Attributes.generate_fields(attributes)
+        # when attributes created we need to understand whether should plugin
+        # be applied for created cluster
+        plugin_attrs = PluginManager.get_plugin_attributes(instance)
+        editable = dict(plugin_attrs, **instance.attributes.editable)
+        instance.attributes.editable = editable
+        db().flush()
 
     @classmethod
     def get_attributes(cls, instance):
@@ -235,6 +243,29 @@ class Cluster(NailgunObject):
         return db().query(models.Attributes).filter(
             models.Attributes.cluster_id == instance.id
         ).first()
+
+    @classmethod
+    def update_attributes(cls, instance, data):
+        PluginManager.process_cluster_attributes(instance, data['editable'])
+
+        for key, value in data.iteritems():
+            setattr(instance.attributes, key, value)
+        cls.add_pending_changes(instance, "attributes")
+        db().flush()
+
+    @classmethod
+    def patch_attributes(cls, instance, data):
+        PluginManager.process_cluster_attributes(instance, data['editable'])
+        instance.attributes.editable = dict_merge(
+            instance.attributes.editable, data['editable'])
+        cls.add_pending_changes(instance, "attributes")
+        db().flush()
+
+    @classmethod
+    def get_editable_attributes(cls, instance):
+        attrs = cls.get_attributes(instance)
+        editable = attrs.editable
+        return {'editable': editable}
 
     @classmethod
     def get_network_manager(cls, instance=None):

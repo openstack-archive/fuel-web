@@ -22,30 +22,8 @@ define(
 function($, React, controls) {
     'use strict';
 
-    var LoginMixin, LoginPage, LoginForm,
+    var LoginPage, LoginForm,
         cx = React.addons.classSet;
-
-    LoginMixin = {
-        login: function(username, password) {
-            var keystoneClient = app.keystoneClient;
-
-            keystoneClient.username = username;
-            keystoneClient.password = password;
-
-            return keystoneClient.authenticate({force: true})
-                .done(_.bind(function() {
-                    app.user.set({
-                        authenticated: true,
-                        username: keystoneClient.username,
-                        password: keystoneClient.password
-                    });
-                    this.loginRedirect();
-                }, this));
-        },
-        loginRedirect: function() {
-            app.navigate('#', {trigger: true, replace: true});
-        }
-    };
 
     LoginPage = React.createClass({
         breadcrumbsPath: [],
@@ -75,11 +53,24 @@ function($, React, controls) {
     });
 
     LoginForm = React.createClass({
-        mixins: [
-            LoginMixin
-        ],
         propTypes: {
             app: React.PropTypes.object
+        },
+        login: function(username, password) {
+            var keystoneClient = app.keystoneClient;
+
+            return keystoneClient.authenticate(username, password, {force: true})
+                .done(_.bind(function() {
+                    app.user.set({
+                        authenticated: true,
+                        username: username,
+                        token: keystoneClient.token
+                    });
+                    this.loginRedirect();
+                }, this));
+        },
+        loginRedirect: function() {
+            app.navigate('#', {trigger: true, replace: true});
         },
         componentDidMount: function() {
             if (app.user.get('authenticated')) {

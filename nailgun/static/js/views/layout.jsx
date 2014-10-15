@@ -86,7 +86,7 @@ function(React, utils, models, componentMixins, dialogs) {
                         {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
                             <div>
                                 <i className='icon-user'></i>
-                                {this.props.user.get('username')}
+                                <span className='username'>{this.props.user.get('username')}</span>
                                 <a className='change-password' onClick={this.showChangePasswordDialog}>{$.t('common.change_password')}</a>
                                 <a href='#logout'>{$.t('common.logout')}</a>
                             </div>

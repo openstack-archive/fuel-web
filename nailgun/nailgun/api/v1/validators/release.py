@@ -40,6 +40,7 @@ class ReleaseValidator(BasicValidator):
                     "'orchestrator_data' field must be a dict",
                     log_message=True
                 )
+            return
             keys = set(["repo_metadata",
                         "puppet_manifests_source",
                         "puppet_modules_source"])

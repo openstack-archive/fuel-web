@@ -67,6 +67,11 @@ DEFAULT_REPO:
   centos: "http://{MASTER_IP}:8080/centos/x86_64"
   ubuntu: "http://{MASTER_IP}:8080/ubuntu/x86_64 precise main"
 
+PLUGINS_PATH: '/var/www/nailgun/plugins'
+PLUGINS_SLAVES_SCRIPTS_PATH: '/etc/fuel/plugins/{plugin_name}/'
+PLUGINS_REPO_URL: 'http://{master_ip}:8080/plugins/{plugin_name}/'
+PLUGINS_SLAVES_RSYNC: 'rsync://{master_ip}:/plugins/{plugin_name}/'
+
 APP_LOG: &nailgun_log "/var/log/nailgun/app.log"
 API_LOG: &api_log "/var/log/nailgun/api.log"
 SYSLOG_DIR: &remote_syslog_dir "/var/log/remote/"

@@ -26,6 +26,7 @@ down_revision = '52924111f7d8'
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.utils.migration import drop_enum
@@ -113,6 +114,30 @@ def upgrade_schema():
                         nullable=True
                     ),
                     sa.PrimaryKeyConstraint('id'))
+    op.create_table(
+        'plugins',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('name', sa.String(length=100), nullable=False),
+        sa.Column('version', sa.String(length=32), nullable=False),
+        sa.Column('description', sa.String(length=400), nullable=True),
+        sa.Column('releases', postgresql.JSON(), nullable=True),
+        sa.Column('types', postgresql.JSON(), nullable=True),
+        sa.Column('package_version', sa.String(length=32), nullable=False),
+        sa.Column('depends_on_plugin', postgresql.JSON(), nullable=True),
+        sa.Column('conflicts', postgresql.JSON(), nullable=True),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('name', 'version', name='_name_version_unique')
+    )
+    op.create_table(
+        'cluster_plugins',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('plugin_id', sa.Integer(), nullable=False),
+        sa.Column('cluster_id', sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.ForeignKeyConstraint(
+            ['plugin_id'], ['plugins.id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id')
+    )
 
 
 def upgrade_data():
@@ -134,6 +159,8 @@ def downgrade_schema():
     op.drop_column('releases', 'is_deployable')
     op.drop_table('action_logs')
     map(drop_enum, ENUMS)
+    op.drop_table('cluster_plugins')
+    op.drop_table('plugins')
 
 
 def downgrade_data():

@@ -1,0 +1,2 @@
+type: puppet
+description: "site.pp is default manifest provided by config"

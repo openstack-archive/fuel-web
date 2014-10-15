@@ -111,8 +111,8 @@ class TestHandlers(BaseIntegrationTest):
                 '5.1': 'http://{MASTER_IP}:8080/centos/x86_64',
                 '5.1-user': 'http://{MASTER_IP}:8080/centos-user/x86_64',
             },
-            'puppet_manifests_source': 'rsync://{MASTER_IP}:/puppet/modules/',
-            'puppet_modules_source': 'rsync://{MASTER_IP}:/puppet/manifests/',
+            'puppet_modules_source': 'rsync://{MASTER_IP}:/puppet/modules/',
+            'puppet_manifests_source': 'rsync://{MASTER_IP}:/puppet/manifests/'
         }
 
         resp = self.app.put(
@@ -131,8 +131,8 @@ class TestHandlers(BaseIntegrationTest):
             '5.1': 'http://127.0.0.1:8080/centos/x86_64',
             '5.1-user': 'http://127.0.0.1:8080/centos-user/x86_64'})
         self.assertEqual(
-            orchestrator_data['puppet_manifests_source'],
+            orchestrator_data['puppet_modules_source'],
             'rsync://127.0.0.1:/puppet/modules/')
         self.assertEqual(
-            orchestrator_data['puppet_modules_source'],
+            orchestrator_data['puppet_manifests_source'],
             'rsync://127.0.0.1:/puppet/manifests/')

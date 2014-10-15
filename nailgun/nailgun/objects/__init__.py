@@ -40,3 +40,6 @@ from nailgun.objects.node import NodeCollection
 from nailgun.objects.capacity import CapacityLog
 
 from nailgun.objects.master_node_settings import MasterNodeSettings
+
+from nailgun.objects.plugin import Plugin
+from nailgun.objects.plugin import PluginCollection

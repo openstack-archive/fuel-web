@@ -475,6 +475,7 @@
                         "vmdk_alert": "VMDK driver is a default option for vCenter. Also please change a Cinder LVM option to a Cinder VMDK option in the environment settings.",
                         "default": "Default",
                         "ceph": "Ceph",
+                        "datastore": "DataStore/VMDK Driver",
                         "cinder": "Cinder",
                         "cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.",
                         "glance": "Glance",

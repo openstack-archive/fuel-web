@@ -80,6 +80,10 @@ MASTER_IP: "127.0.0.1"
 COBBLER_URL: "http://localhost/cobbler_api"
 COBBLER_USER: "cobbler"
 COBBLER_PASSWORD: "cobbler"
+# This parameter is used in provisioning serializer. Timezone is one of
+# provisioning data fields which is used by cloud-init to set timezone on
+# target nodes. Flow is settings.yaml -> astute -> fuel_agent -> cloud-init.
+TIMEZONE: "America/Los_Angeles"
 
 NOVA_STATE_PATH: "/var/lib/nova"
 

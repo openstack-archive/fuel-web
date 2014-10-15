@@ -479,6 +479,25 @@
             description: "Password for Zabbix Administrator"
             weight: 20
             type: "password"
+        provision:
+          metadata:
+            label: "Provision"
+            weight: 80
+            restrictions:
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
+          method:
+            type: "radio"
+            label: "Provision method"
+            description: "Which provision method to use for this cluster."
+            value: "cobbler"
+            values:
+              - data: "image"
+                label: "Image"
+                description: "Copying pre-built images on a disk."
+              - data: "cobbler"
+                label: "Classic (use anaconda or debian-installer)"
+                description: "Install from scratch using anaconda or debian-installer."
       generated:
         mysql:
           root_password:
@@ -1198,6 +1217,16 @@
         cobbler:
           profile:
             generator_arg: "centos-x86_64"
+        provision:
+          image_data:
+            /:
+              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/centos_65_x86_64.img.gz"
+              format: "ext4"
+              container: "gzip"
+            /boot:
+              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/centos_65_x86_64-boot.img.gz"
+              format: "ext2"
+              container: "gzip"
 - pk: 2
   extend: *full_release
   fields:
@@ -1211,3 +1240,13 @@
         cobbler:
           profile:
             generator_arg: "ubuntu_1204_x86_64"
+        provision:
+          image_data:
+            /:
+              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64.img.gz"
+              format: "ext4"
+              container: "gzip"
+            /boot:
+              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64-boot.img.gz"
+              format: "ext2"
+              container: "gzip"

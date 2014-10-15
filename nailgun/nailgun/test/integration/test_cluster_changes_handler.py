@@ -21,6 +21,7 @@ import netaddr
 
 import nailgun
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy import models
@@ -289,6 +290,8 @@ class TestHandlers(BaseIntegrationTest):
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'authorized_keys':
                     ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP,
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
@@ -346,7 +349,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': consts.PROVISION_METHODS.cobbler
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -382,6 +387,7 @@ class TestHandlers(BaseIntegrationTest):
         attrs = cluster_db.attributes.editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
+        attrs['provision']['method'] = consts.PROVISION_METHODS.image
         resp = self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
@@ -718,9 +724,12 @@ class TestHandlers(BaseIntegrationTest):
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'authorized_keys':
                     ["\"%s\"" % key for key in settings.AUTHORIZED_KEYS],
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP,
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'image_data': cluster_attrs['provision']['image_data']
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -775,7 +784,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': consts.PROVISION_METHODS.image
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args

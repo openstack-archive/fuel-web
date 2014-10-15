@@ -729,7 +729,7 @@ define(['utils', 'deepModel'], function(utils) {
 
     models.User = Backbone.Model.extend({
         constructorName: 'User',
-        locallyStoredAttributes: ['username', 'password'],
+        locallyStoredAttributes: ['username', 'token'],
         initialize: function() {
             _.each(this.locallyStoredAttributes, function(attribute) {
                 var locallyStoredValue = localStorage.getItem(attribute);

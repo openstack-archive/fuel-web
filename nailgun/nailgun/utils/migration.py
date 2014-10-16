@@ -64,6 +64,13 @@ def convert_condition_value(val):
     return str(val).lower()
 
 
+def negate_condition(condition):
+    """
+    Negates condition.
+    """
+    return "not ({0})".format(condition)
+
+
 def upgrade_release_attributes_50_to_51(attrs_meta):
     if not attrs_meta.get('editable'):
         return attrs_meta
@@ -98,11 +105,34 @@ def upgrade_release_roles_50_to_51(roles_meta):
     for _, role in six.iteritems(roles_meta):
         if role.get('depends'):
             for depend in role['depends']:
-                if isinstance(depend.get('condition'), dict):
-                    cond = depend['condition']
+                cond = depend.get('condition')
+                if isinstance(cond, dict):
                     expr = cond.keys()[0]
                     depend['condition'] = \
                         expr + " == " + convert_condition_value(cond[expr])
+    return roles_meta
+
+
+def upgrade_release_roles_51_to_60(roles_meta):
+    """
+    Convert all role_metadata.depends values into
+    roles_metadata.restrictions.
+    """
+    for _, role in six.iteritems(roles_meta):
+        for depend in role.get('depends', []):
+            cond = depend.get('condition')
+            negated_cond = negate_condition(cond)
+            new_restriction = {
+                'condition': negated_cond,
+            }
+            if 'warning' in depend:
+                new_restriction['message'] = depend['warning']
+
+            role.setdefault('restrictions', [])
+            role['restrictions'].append(new_restriction)
+
+        if 'depends' in role:
+            del role['depends']
     return roles_meta
 
 

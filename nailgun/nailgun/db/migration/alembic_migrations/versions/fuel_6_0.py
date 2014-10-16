@@ -26,11 +26,14 @@ down_revision = '52924111f7d8'
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.sql import text
 
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.utils.migration import drop_enum
+from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import upgrade_release_fill_orchestrator_data
 from nailgun.utils.migration import upgrade_release_set_deployable_false
+from nailgun.utils.migration import upgrade_release_roles_51_to_60
 
 ENUMS = (
     'action_type',
@@ -41,6 +44,7 @@ def upgrade():
     """Upgrade schema and then upgrade data."""
     upgrade_schema()
     upgrade_data()
+    upgrade_releases()
 
 
 def downgrade():
@@ -108,6 +112,28 @@ def upgrade_schema():
                         nullable=True
                     ),
                     sa.PrimaryKeyConstraint('id'))
+
+
+def upgrade_releases():
+    connection = op.get_bind()
+
+    select = text(
+        """SELECT id, roles_metadata
+        from releases""")
+    update = text(
+        """UPDATE releases
+        SET roles_metadata = :roles
+        WHERE id = :id""")
+    r = connection.execute(select)
+
+    for release in r:
+        roles_meta = upgrade_release_roles_51_to_60(
+            jsonutils.loads(release[1]))
+        connection.execute(
+            update,
+            id=release[0],
+            roles=jsonutils.dumps(roles_meta)
+        )
 
 
 def upgrade_data():

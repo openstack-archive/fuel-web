@@ -16,12 +16,13 @@
 
 
 from nailgun.test.base import BaseTestCase
+from nailgun.utils.migration import negate_condition
 from nailgun.utils.migration import upgrade_release_attributes_50_to_51
 from nailgun.utils.migration import upgrade_release_roles_50_to_51
+from nailgun.utils.migration import upgrade_release_roles_51_to_60
 
 
 class TestDataMigration(BaseTestCase):
-
     def test_release_attributes_metadata_upgrade_50_to_51(self):
         attributes_metadata_50 = {
             'editable': {
@@ -77,20 +78,28 @@ class TestDataMigration(BaseTestCase):
         )
 
     def test_release_roles_metadata_upgrade_50_to_51(self):
+        ceilometer_depends = {
+            'condition': {
+                "settings:additional_components.ceilometer.value": True
+            },
+            'warning': "Ceilometer should be enabled"
+        }
+        new_ceilometer_depends = {
+            'condition': "settings:additional_components.ceilometer.value == "
+                         "true",
+            'warning': "Ceilometer should be enabled"
+        }
+
         roles_metadata_50 = {
             'mongo': {
-            'name': "Telemetry - MongoDB",
-            'description': "A feature-complete and recommended "
-                           "database for storage of metering data "
-                           "from OpenStack Telemetry (Ceilometer)",
-            'conflicts': ['compute',
-                          'ceph-osd',
-                          'zabbix-server'],
-            'depends': [
-                {'condition':
-                    {"settings:additional_components.ceilometer.value": True},
-                 'warning': "Ceilometer should be enabled"}]
-
+                'name': "Telemetry - MongoDB",
+                'description': "A feature-complete and recommended "
+                               "database for storage of metering data "
+                               "from OpenStack Telemetry (Ceilometer)",
+                'conflicts': ['compute',
+                              'ceph-osd',
+                              'zabbix-server'],
+                'depends': [ceilometer_depends]
             }
         }
 
@@ -100,9 +109,88 @@ class TestDataMigration(BaseTestCase):
 
         self.assertEqual(
             roles_metadata_51["mongo"]["depends"],
-            [
-                {'condition':
-                    "settings:additional_components.ceilometer.value == true",
-                 'warning': "Ceilometer should be enabled"}
-            ]
+            [new_ceilometer_depends]
         )
+
+    def test_negate_condition(self):
+        self.assertEqual(
+            negate_condition('a == b'),
+            'not (a == b)'
+        )
+        self.assertEqual(
+            negate_condition('a != b'),
+            'not (a != b)'
+        )
+        self.assertEqual(
+            negate_condition('a in b'),
+            'not (a in b)'
+        )
+
+    def test_release_roles_metadata_upgrade_51_to_60(self):
+        operational_condition = {
+            'condition': "cluster:status != 'operational'",
+            'warning': "MongoDB node can not be added to an "
+                       "operational environment."
+        }
+        ceilometer_condition = {
+            'condition': 'settings:additional_components.ceilometer.value == '
+                         'true',
+            'warning': "Ceilometer should be enabled."
+        }
+        new_operational_condition = {
+            'condition': negate_condition(operational_condition['condition']),
+            'warning': operational_condition['warning'],
+        }
+        new_ceilometer_condition = {
+            'condition': negate_condition(ceilometer_condition['condition']),
+            'warning': ceilometer_condition['warning']
+        }
+        false_restriction = {
+            'condition': "1 == 2",
+            'warning': "This is always false"
+        }
+        roles_metadata_51 = {
+            'mongo': {
+                'name': "Telemetry - MongoDB",
+                'description': "A feature-complete and recommended "
+                               "database for storage of metering data "
+                               "from OpenStack Telemetry (Ceilometer)",
+                'conflicts': ['compute',
+                              'ceph-osd',
+                              'zabbix-server'],
+                'depends': [
+                    operational_condition,
+                    ceilometer_condition
+                ],
+            },
+            'test': {
+                'name': "Test restrictions extend",
+                'description': "Testing restrictions list extend",
+                'conflicts': [],
+                'depends': [
+                    operational_condition,
+                    ceilometer_condition
+                ],
+                'restrictions': [
+                    false_restriction
+                ]
+            }
+        }
+
+        roles_metadata_60 = upgrade_release_roles_51_to_60(
+            roles_metadata_51
+        )
+
+        self.assertTrue('depends' not in roles_metadata_60["mongo"])
+        self.assertTrue('depends' not in roles_metadata_60["test"])
+        self.assertEqual(roles_metadata_60['mongo']['restrictions'],
+                         [
+                             new_operational_condition,
+                             new_ceilometer_condition
+                         ])
+        self.assertEqual(roles_metadata_60['test']['restrictions'],
+                         [
+                             false_restriction,
+                             new_operational_condition,
+                             new_ceilometer_condition
+                         ])

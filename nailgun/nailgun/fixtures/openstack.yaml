@@ -21,8 +21,8 @@
       compute:
         name: "Compute"
         description: "A compute node creates, manages and terminates virtual machine instances."
-        depends:
-          - condition: "settings:common.libvirt_type.value != 'vcenter'"
+        restrictions:
+          - condition: "settings:common.libvirt_type.value == 'vcenter'"
             warning: "Computes cannot be used with vCenter"
       cinder:
         name: "Storage - Cinder LVM"
@@ -553,8 +553,8 @@
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
-        depends:
-          - condition: "settings:common.libvirt_type.value != 'vcenter'"
+        restrictions:
+          - condition: "settings:common.libvirt_type.value == 'vcenter'"
             warning: "Ceph cannot be used with vCenter"
       mongo:
         name: "Telemetry - MongoDB"
@@ -562,10 +562,10 @@
         conflicts:
           - compute
           - ceph-osd
-        depends:
-          - condition: "cluster:status != 'operational'"
+        restrictions:
+          - condition: "cluster:status == 'operational'"
             warning: "MongoDB node can not be added to an operational environment."
-          - condition: "settings:additional_components.ceilometer.value == true"
+          - condition: "settings:additional_components.ceilometer.value != true"
             warning: "Ceilometer should be enabled."
       zabbix-server:
         name: "Zabbix Server"
@@ -576,8 +576,8 @@
           - cinder
           - ceph-osd
           - mongo
-        depends:
-          - condition: "'experimental' in version:feature_groups"
+        restrictions:
+          - condition: "not ('experimental' in version:feature_groups)"
             action: "hide"
     networks_metadata:
       neutron:

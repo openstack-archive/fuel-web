@@ -182,9 +182,9 @@ function(React, componentMixins, models, statisticsMixin) {
             if (this.state.loading) return null;
             var settings = this.props.settings.get('statistics'),
                 sortedSettings = _.chain(_.keys(settings))
-                .without('metadata')
-                .sortBy(function(settingName) {return settings[settingName].weight;}, this)
-                .value();
+                    .without('metadata')
+                    .sortBy(function(settingName) {return settings[settingName].weight;}, this)
+                    .value();
             return (
                 <SupportPageElement title={$.t('support_page.send_statistics_title')}>
                     {this.renderIntro()}

@@ -59,7 +59,6 @@ function($, React, controls) {
         },
         login: function(username, password) {
             var keystoneClient = app.keystoneClient;
-
             return keystoneClient.authenticate(username, password, {force: true})
                 .done(_.bind(function() {
                     app.user.set({

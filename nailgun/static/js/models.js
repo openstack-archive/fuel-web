@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['utils', 'deepModel'], function(utils) {
+define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
     'use strict';
 
     var models = {};
@@ -33,9 +33,63 @@ define(['utils', 'deepModel'], function(utils) {
         }
     };
 
+    var restrictionMixin = {
+        expandRestrictions: function(restrictions, path) {
+            if (_.isUndefined(this.expandedRestrictions)) this.expandedRestrictions = {};
+            if (restrictions && restrictions.length) {
+                var result = _.map(restrictions, utils.expandRestriction, this);
+                if (path) {
+                    this.expandedRestrictions[path] = result;
+                } else {
+                    this.expandedRestrictions = result;
+                }
+            }
+        },
+        checkRestrictions: function(models, action, path) {
+            var restrictions = path ? this.expandedRestrictions[path] : this.expandedRestrictions;
+            if (action) restrictions = _.where(restrictions, {action: action});
+            return _.any(restrictions, function(restriction) {
+                return new Expression(restriction.condition, models).evaluate();
+            });
+        }
+    };
+
+    models.Role = Backbone.Model.extend({
+        constructorName: 'Role'
+    });
+    _.extend(models.Role.prototype, restrictionMixin);
+
+    models.Roles = Backbone.Collection.extend({
+        constructorName: 'Roles',
+        model: models.Role,
+        processConflicts: function() {
+            this.each(function(role) {
+                role.conflicts = _.chain(role.conflicts).union(role.get('conflicts')).uniq().compact().value();
+                _.each(role.get('conflicts'), function(conflict) {
+                    var conflictingRole = this.findWhere({name: conflict});
+                    conflictingRole.conflicts = conflictingRole.conflicts || [];
+                    conflictingRole.conflicts.push(role.get('name'));
+                }, this);
+            }, this);
+        }
+    });
+
     models.Release = Backbone.Model.extend({
         constructorName: 'Release',
-        urlRoot: '/api/releases'
+        urlRoot: '/api/releases',
+        parse: function(response) {
+            response.roles = new models.Roles(_.map(response.roles, function(roleName) {
+                var roleData = response.roles_metadata[roleName];
+                roleData.label = roleData.name;
+                return _.extend(roleData, {name: roleName});
+            }));
+            response.roles.each(function(role) {
+                role.expandRestrictions(role.get('restrictions'));
+            });
+            response.roles.processConflicts();
+            delete response.roles_metadata;
+            return response;
+        }
     });
 
     models.Releases = Backbone.Collection.extend({
@@ -151,8 +205,8 @@ define(['utils', 'deepModel'], function(utils) {
             return _.contains(roles, role);
         },
         getRolesSummary: function() {
-            var rolesMetaData = this.collection.cluster.get('release').get('roles_metadata');
-            return _.map(this.sortedRoles(), function(role) {return rolesMetaData[role].name;}).join(', ');
+            var roles = this.collection.cluster.get('release').get('roles');
+            return _.map(this.sortedRoles(), function(role) {return roles.findWhere({name: role}).get('label');}).join(', ');
         },
         getHardwareSummary: function() {
             return $.t('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + $.t('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
@@ -312,53 +366,35 @@ define(['utils', 'deepModel'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            var currentSettings = this.constructor.__super__.toJSON.call(this, options);
-            if (this.initialAttributes) {
-                var result = _.cloneDeep(this.initialAttributes);
-                _.each(currentSettings, function(group, groupName) {
-                    _.each(group, function(setting, settingName) {
-                        if (settingName == 'metadata') {
-                            if (!_.isUndefined(setting.toggleable)) {
-                                result[groupName][settingName].enabled = setting.enabled;
-                            }
-                        } else {
-                            result[groupName][settingName].value = setting.value;
-                        }
-                    });
-                }, this);
-                return {editable: result};
-            }
-            return {editable: currentSettings};
+            return {editable: this.constructor.__super__.toJSON.call(this, options)};
         },
-        expandRestrictions: function() {
+        processRestrictions: function() {
             _.each(this.attributes, function(group, groupName) {
+                this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
                 _.each(group, function(setting, settingName) {
-                    setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
+                    this.expandRestrictions(setting.restrictions, utils.makePath(groupName, settingName));
                     _.each(setting.values, function(value) {
-                        value.restrictions = _.map(value.restrictions, utils.expandRestriction);
-                    });
+                        this.expandRestrictions(value.restrictions, utils.makePath(groupName, settingName, value.data));
+                    }, this);
                 }, this);
             }, this);
         },
-        validate: function(attrs) {
-            var errors = [];
+        validate: function(attrs, options) {
+            var errors = [],
+                models = options ? options.models : {};
             _.each(attrs, function(group, groupName) {
-                if (group.metadata && (group.metadata.disabled || !group.metadata.visible)) { return; }
+                if (this.checkRestrictions(models, null, groupName + '.metadata')) return;
                 _.each(group, function(setting, settingName) {
-                    if (!(setting.regex && setting.regex.source) || setting.disabled || !setting.visible) { return; }
+                    var path = utils.makePath(groupName, settingName);
+                    if (!(setting.regex && setting.regex.source) || this.checkRestrictions(models, null, path)) return;
                     var regExp = new RegExp(setting.regex.source);
-                    if (!setting.value.match(regExp)) {
-                        errors.push({
-                            field: groupName + '.' + settingName,
-                            message: setting.regex.error
-                        });
-                    }
-                });
-            });
+                    if (!setting.value.match(regExp)) errors.push({field: path, message: setting.regex.error});
+                }, this);
+            }, this);
             return errors.length ? errors : null;
         }
     });
-    _.extend(models.Settings.prototype, cacheMixin);
+    _.extend(models.Settings.prototype, cacheMixin, restrictionMixin);
 
     models.Disk = Backbone.Model.extend({
         constructorName: 'Disk',

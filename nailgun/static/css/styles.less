@@ -8,6 +8,7 @@
 
 /* Base Colors */
 @fuel-white-color: #ffffff;
+@fuel-grey-lighter: #ececec;
 @fuel-grey-light: #dadada;
 @fuel-grey-color: #d3d3d3;
 @fuel-black-color: #333333;
@@ -985,11 +986,6 @@ label {cursor: default;}
 // Breadcrumb
 // -------------------------
 
-.openstack {
-  background: url(../img/cluster_logos.png) 0px 0px no-repeat;
-  background-position: 168px 0px;
-}
-
 .breadcrumb {
   background-color: rgba(0,0,0,.1);
   margin: -10px 0 10px 0;
@@ -1370,10 +1366,10 @@ label {cursor: default;}
       font-size: @font-size-small-3;
       line-height: 14px;
       width: 220px;
-      &:first-child {margin-left: 202px;}
+      &:first-child {margin-left: 192px;}
     }
   }
-  .range-row { margin-left: 199px; }
+  .range-row { margin-left: 188px; }
   .range-row, .vlan-tagging {
     label {
       display: inline-block;
@@ -1568,7 +1564,7 @@ label {cursor: default;}
   display: block;
   clear: both;
   margin: 20px 0px 14px 20px;
-  background-color: #e5e5e5;
+  background-color: @fuel-grey-lighter;
   box-shadow: inset 0 1px 2px rgba(0,0,0,.2);
   .border-radius-mixin;
   .width-height-mixin(auto, 38px);
@@ -1625,7 +1621,7 @@ label {cursor: default;}
     &.nowrap {white-space: nowrap;}
   }
   thead th {
-    background-color: #ececec;
+    background-color: @fuel-grey-lighter;
     vertical-align: middle;
   }
   tbody tr td {
@@ -2167,7 +2163,7 @@ input.error:focus,
 #nodeDetailsAccordion {
   .accordion-toggle {
     text-transform: capitalize;
-    background-color: #ececec;
+    background-color: @fuel-grey-lighter;
     .font-layout-mixin(@color: @font-color-dark, @font-weight: bold);
     &[data-group=cpu] {
       text-transform: uppercase;
@@ -2200,7 +2196,7 @@ input.error:focus,
     }
   }
   .nested-object {
-    border: 1px solid #ececec;
+    border: 1px solid @fuel-grey-lighter;
     margin-top: 3px;
     .border-radius-mixin(3px);
     div {
@@ -2338,10 +2334,6 @@ input.error:focus,
 .custom-tumbler input[disabled] + span{filter:alpha(opacity=40);-moz-opacity:0.4;-khtml-opacity:0.4;opacity:0.4;cursor: not-allowed;}
 .custom-tumbler input[type=radio] + span.checked{background-position:0px -24px;}
 
-.parameter-box {
-  display: block;
-}
-
 .fieldset-group > div > .parameter-box,
 .fieldset-group > div > div > .parameter-box  {
   margin-left: 12px;
@@ -2352,7 +2344,14 @@ input.error:focus,
   .box-sizing-mixin;
   span:first-of-type {
     font-size: 14px;
-  };
+  }
+  &.input-append {
+    input {
+      width: 175px;
+      margin-bottom: 10px;
+    }
+    .add-on { cursor: pointer; }
+  }
   .input-label {
     width: 160px;
     float: left;
@@ -2360,8 +2359,7 @@ input.error:focus,
   }
   min-width: 120px;
   font-weight: bold;
-  margin: 7px 14px 0 0;
-  overflow: hidden;
+  margin: 7px 3px 0 0;
   cursor: default;
   &.hide {
     display: none;
@@ -2458,27 +2456,24 @@ input.error:focus,
 }
 
 legend {
+  cursor: default;
   &.openstack-settings, &.networks {
     display: block;
     margin-bottom: 10px;
-    background-color: #ececec;
-    border: 1px solid #e5e5e5;
+    background-color: @fuel-grey-lighter;
     border-radius: 4px;
-    padding: 10px 12px 12px 12px;
+    padding: 12px;
     height: 42px;
     margin-top: 15px;
     .box-sizing-mixin;
     .font-layout-mixin(@font-size-base + 4, @font-color-dark, null, null, 18px);
     .box-sizing-mixin;
   }
-  &.openstack-sub-title {
-    .font-layout-mixin(@font-size-big-1, null, null, null, 30px);
-    margin: 10px 0px 6px 14px;
-  }
-  .toggleable {
+  .parameter-control { .position(relative, @top: -5px); }
+  .toggleable span {
+    .indent-mixin;
     font-size: @font-size-base + 4;
-    margin: 0px;
-    padding: 0px;
+    display: inline;
   }
   .tumbler {
     float:left;
@@ -2487,18 +2482,50 @@ legend {
   }
 }
 
-.settings .hide { display: none !important; }
+.parameter-box { clear: both; }
+.network-settings .parameter-box { clear: inherit; }
+
+.openstack-settings {
+  .icon-attention {
+    font-size: @font-size-base;
+    .position(relative, @top: -6px, @left: -2px);
+  }
+  .radio-group .parameter-name { margin: 7px 0 10px 12px; }
+  .parameter-box {
+    clear: both;
+    .parameter-name {
+      float: left;
+      margin: 0 10px 0 0;
+      .font-layout-mixin(@font-size-big-1);
+      .input-label { min-width: 120px; }
+    }
+    &.checkbox-or-radio {
+      margin-bottom: 10px;
+      .parameter-name { float: none; }
+      .parameter-description { margin: 0 0 0 30px; }
+    }
+    .parameter-description { float: none; }
+    .custom-tumbler { top: -7px; }
+  }
+}
+
+button { margin: 0 3px; }
+
+.tooltip-inner {
+  min-width: 200px;
+  max-width: 800px;
+}
 
 .credentials {
   margin-bottom: 15px;
   legend { margin: 0 0 10px; }
   .parameter-box {
     margin-left: 0 !important;
-      .input-label {
-        width: 115px;
-        float: left;
-        margin: 7px 14px 0 0;
-      }
+    .input-label {
+      width: 115px;
+      float: left;
+      margin: 7px 14px 0 0;
+    }
     .parameter-control {
       margin-bottom: 5px;
       input { margin: 0; }
@@ -3013,7 +3040,7 @@ hr.slim {
   display: block;
   height: 48px;
   border: 1px solid #d0d0d0;
-  background-color: #e5e5e5;
+  background-color: @fuel-grey-lighter;
   margin-bottom: 10px;
   overflow: hidden;
   .box-sizing-mixin;
@@ -3181,16 +3208,6 @@ form.create-cluster-form {
   margin-top: -40px;
   .font-layout-mixin(@font-size-small-3, @fuel-white-color);
   text-align: center;
-}
-
-input.input-append {
-  width: 175px;
-}
-
-.parameter-control.input-append .add-on {
-  .icon-eye, .icon-eye-off {
-    cursor: pointer;
-  }
 }
 
 // OpenStack Health Check

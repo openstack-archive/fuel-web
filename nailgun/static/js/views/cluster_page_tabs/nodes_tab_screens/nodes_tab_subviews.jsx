@@ -43,7 +43,7 @@ function(React, Expression, utils, controls) {
             };
         },
         componentDidMount: function() {
-            if (!this.parsedDependencies) this.props.cluster.get('settings').fetch({cache: true}).always(this.parseRoleData, this);
+            if (!this.parsedRestrictions) this.props.cluster.get('settings').fetch({cache: true}).always(this.parseRoleData, this);
         },
         componentDidUpdate: function() {
             _.each(this.refs, function(roleView, role) {
@@ -51,7 +51,7 @@ function(React, Expression, utils, controls) {
             }, this);
         },
         parseRoleData: function() {
-            this.parsedDependencies = {};
+            this.parsedRestrictions = {};
             this.conflicts = {};
             var configModels = {
                 cluster: this.props.cluster,
@@ -65,13 +65,13 @@ function(React, Expression, utils, controls) {
                     this.conflicts[conflictingRole] =  this.conflicts[conflictingRole] || [];
                     this.conflicts[conflictingRole].push(role);
                 }, this);
-                this.parsedDependencies[role] = [];
-                _.each(data.depends, function(dependency) {
-                    dependency = utils.expandRestriction(dependency);
-                    this.parsedDependencies[role].push({
-                        expression: new Expression(dependency.condition, configModels),
-                        action: dependency.action,
-                        warning: dependency.warning
+                this.parsedRestrictions[role] = [];
+                _.each(data.restrictions, function(restriction) {
+                    restriction = utils.expandRestriction(restriction);
+                    this.parsedRestrictions[role].push({
+                        expression: new Expression(restriction.condition, configModels),
+                        action: restriction.action,
+                        warning: restriction.message
                     });
                 }, this);
             }, this);
@@ -116,13 +116,13 @@ function(React, Expression, utils, controls) {
         },
         checkDependencies: function(role, action) {
             var checkResult = {result: true, warning: ''};
-            if (this.parsedDependencies) {
+            if (this.parsedRestrictions) {
                 action = action || 'disable';
                 var warnings = [];
-                _.each(_.where(this.parsedDependencies[role], {action: action}), function(dependency) {
-                    if (!dependency.expression.evaluate()) {
+                _.each(_.where(this.parsedRestrictions[role], {action: action}), function(restriction) {
+                    if (restriction.expression.evaluate()) {
                         checkResult.result = false;
-                        warnings.push(dependency.warning);
+                        warnings.push(restriction.warning);
                     }
                 });
                 checkResult.warning = warnings.join(' ');

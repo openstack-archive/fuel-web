@@ -36,7 +36,7 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Testing adding node with controller role');
     this.click('.cluster-toolbar  .btn-add-nodes');
-    this.test.assertSelectorAppears('.roles-panel', 'Add controller nodes screen appears');
+    this.test.assertSelectorAppears('.node-box', 'Add controller nodes screen appears');
     this.then(function() {
         this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, 1, 'Number of unallocated nodes is correct');
         this.evaluate(function() {

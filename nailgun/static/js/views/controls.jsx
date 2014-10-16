@@ -137,11 +137,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             ) : null;
         },
         renderWrapper: function(children) {
-            var classes = {
-                'parameter-box': true,
-                clearfix: !this.isCheckboxOrRadio(),
-                'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error)
-            };
+            var isCheckboxOrRadio = this.isCheckboxOrRadio(),
+                classes = {
+                    'parameter-box': true,
+                    'checkbox-or-radio': isCheckboxOrRadio,
+                    clearfix: !isCheckboxOrRadio,
+                    'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error)
+                };
             classes[this.props.wrapperClassName] = this.props.wrapperClassName;
             return (<div className={cx(classes)}>{children}</div>);
         },
@@ -182,7 +184,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                                 key={value.data}
                                 type='radio'
                                 value={value.data}
-                                defaultChecked={value.checked}
+                                defaultChecked={value.defaultChecked}
+                                checked={value.checked}
                                 label={value.label}
                                 description={value.description}
                                 disabled={value.disabled}

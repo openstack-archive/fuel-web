@@ -244,6 +244,9 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
         },
         getResponseText: function(response) {
             return _.contains([400, 409], response.status) ? response.responseText : '';
+        },
+        makePath: function() {
+            return _.toArray(arguments).join('.');
         }
     };
 

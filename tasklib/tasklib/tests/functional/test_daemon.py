@@ -26,6 +26,9 @@ class TestDaemon(base.BaseFunctionalTest):
         self.assertEqual(out.strip('\n'), STATUS.end.name)
 
     def test_puppet_simple_daemon(self):
+        self.skipTest(
+            ('This test should be disabled.'
+             ' Because puppet runs very slow on CI.'))
         self.check_puppet_installed()
         exit_code, out, err = self.execute(['daemon', 'puppet/sleep'])
         self.assertEqual(exit_code, 0)

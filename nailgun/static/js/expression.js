@@ -27,16 +27,17 @@ define(['expression/parser', 'expression/objects'], function(ExpressionParser, e
             options: options
         });
         _.extend(ExpressionParser.yy, expressionObjects, {expression: this});
-        this.compiledExpression = ExpressionParser.parse(expressionText);
+        if (!_.has(this.expressions, expressionText)) this.expressions[expressionText] = ExpressionParser.parse(expressionText);
+        this.compiledExpression = this.expressions[expressionText];
         return this;
     }
     Expression.prototype.evaluate = function(extraModels) {
         this.modelPaths = {};
         this.knownModels = extraModels ? _.extend({}, this.models, extraModels) : this.models;
         var value = this.compiledExpression.evaluate();
-        delete this.knownModels;
         return value;
     };
+    Expression.prototype.expressions = {};
 
     return Expression;
 });

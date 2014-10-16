@@ -47,6 +47,11 @@ class TestManager(test_base.BaseTestCase):
         self.assertFalse(self.mgr.configdrive_scheme is None)
         self.assertFalse(self.mgr.image_scheme is None)
 
+    @mock.patch.object(utils, 'execute')
+    @mock.patch.object(mu, 'mdclean_all')
+    @mock.patch.object(lu, 'lvremove_all')
+    @mock.patch.object(lu, 'vgremove_all')
+    @mock.patch.object(lu, 'pvremove_all')
     @mock.patch.object(fu, 'make_fs')
     @mock.patch.object(lu, 'lvcreate')
     @mock.patch.object(lu, 'vgcreate')
@@ -59,7 +64,8 @@ class TestManager(test_base.BaseTestCase):
     @mock.patch.object(hu, 'list_block_devices')
     def test_do_partitioning(self, mock_hu_lbd, mock_pu_ml, mock_pu_mp,
                              mock_pu_spf, mock_pu_sgt, mock_mu_m, mock_lu_p,
-                             mock_lu_v, mock_lu_l, mock_fu_mf):
+                             mock_lu_v, mock_lu_l, mock_fu_mf, mock_pvr,
+                             mock_vgr, mock_lvr, mock_mdr, mock_exec):
         mock_hu_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         self.mgr.do_parsing()
         self.mgr.do_partitioning()

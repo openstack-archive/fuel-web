@@ -269,13 +269,11 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             var settingPath = groupName + '.' + settingName;
             var rolesData = this.model.get('release').get('roles_metadata');
             this.settings.get(settingPath).hasDependentRole = _.any(this.model.get('release').get('roles'), function(role) {
-                var roleDependencies = _.map(rolesData[role].depends, utils.expandRestriction);
-                var hasSatisfiedDependencies = _.any(roleDependencies, function(dependency) {
-                    var evaluatedDependency = utils.evaluateExpression(dependency.condition, this.configModels);
-                    return _.contains(dependency.condition, 'settings:' + settingPath) && evaluatedDependency.value;
-                }, this);
                 var assignedNodes = this.model.get('nodes').filter(function(node) { return node.hasRole(role); });
-                return hasSatisfiedDependencies && assignedNodes.length;
+                return assignedNodes.length && _.any(_.map(rolesData[role].restrictions, utils.expandRestriction), function(restriction) {
+                    var evaluatedRestriction = utils.evaluateExpression(restriction.condition, this.configModels);
+                    return _.contains(restriction.condition, 'settings:' + settingPath) && !evaluatedRestriction.value;
+                }, this);
             }, this);
         },
         renderSettingGroup: function(groupName) {

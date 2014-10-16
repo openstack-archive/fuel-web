@@ -43,7 +43,7 @@ function(React, Expression, utils, controls) {
             };
         },
         componentDidMount: function() {
-            if (!this.parsedDependencies) this.props.cluster.get('settings').fetch({cache: true}).always(this.parseRoleData, this);
+            if (!this.parsedRestrictions) this.props.cluster.get('settings').fetch({cache: true}).always(this.parseRoleData, this);
         },
         componentDidUpdate: function() {
             _.each(this.refs, function(roleView, role) {
@@ -51,7 +51,7 @@ function(React, Expression, utils, controls) {
             }, this);
         },
         parseRoleData: function() {
-            this.parsedDependencies = {};
+            this.parsedRestrictions = {};
             this.conflicts = {};
             var configModels = {
                 cluster: this.props.cluster,
@@ -65,13 +65,13 @@ function(React, Expression, utils, controls) {
                     this.conflicts[conflictingRole] =  this.conflicts[conflictingRole] || [];
                     this.conflicts[conflictingRole].push(role);
                 }, this);
-                this.parsedDependencies[role] = [];
-                _.each(data.depends, function(dependency) {
-                    dependency = utils.expandRestriction(dependency);
-                    this.parsedDependencies[role].push({
-                        expression: new Expression(dependency.condition, configModels),
-                        action: dependency.action,
-                        warning: dependency.warning
+                this.parsedRestrictions[role] = [];
+                _.each(data.restrictions, function(restriction) {
+                    restriction = utils.expandRestriction(restriction);
+                    this.parsedRestrictions[role].push({
+                        expression: new Expression(restriction.condition, configModels),
+                        action: restriction.action,
+                        message: restriction.message
                     });
                 }, this);
             }, this);
@@ -114,18 +114,18 @@ function(React, Expression, utils, controls) {
         isRoleSelected: function(role) {
             return _.contains(this.state.selectedRoles, role);
         },
-        checkDependencies: function(role, action) {
-            var checkResult = {result: true, warning: ''};
-            if (this.parsedDependencies) {
+        checkRestrictions: function(role, action) {
+            var checkResult = {result: true, message: ''};
+            if (this.parsedRestrictions) {
                 action = action || 'disable';
-                var warnings = [];
-                _.each(_.where(this.parsedDependencies[role], {action: action}), function(dependency) {
-                    if (!dependency.expression.evaluate()) {
+                var messages = [];
+                _.each(_.where(this.parsedRestrictions[role], {action: action}), function(restriction) {
+                    if (restriction.expression.evaluate()) {
                         checkResult.result = false;
-                        warnings.push(dependency.warning);
+                        messages.push(restriction.message);
                     }
                 });
-                checkResult.warning = warnings.join(' ');
+                checkResult.message = messages.join(' ');
             }
             return checkResult;
         },
@@ -148,13 +148,13 @@ function(React, Expression, utils, controls) {
                 <div>
                     <h4>{$.t(ns + 'assign_roles')}</h4>
                     {_.map(this.getRoleList(), function(role) {
-                        if (this.checkDependencies(role, 'hide').result) {
+                        if (this.checkRestrictions(role, 'hide').result) {
                             var data = this.getRoleData()[role],
-                                dependenciesCheck = this.checkDependencies(role),
+                                restrictionsCheck = this.checkRestrictions(role),
                                 checked = this.isRoleSelected(role),
                                 isAvailable = this.isRoleAvailable(role),
-                                disabled = !this.props.nodes.length || _.contains(conflicts, role) || (!isAvailable && !checked) || !dependenciesCheck.result,
-                                warning = dependenciesCheck.warning || (_.contains(conflicts, role) ? $.t(ns + 'role_conflict') : !isAvailable ? $.t('cluster_page.nodes_tab.' + role + '_restriction') : '');
+                                disabled = !this.props.nodes.length || _.contains(conflicts, role) || (!isAvailable && !checked) || !restrictionsCheck.result,
+                                warning = restrictionsCheck.message || (_.contains(conflicts, role) ? $.t(ns + 'role_conflict') : !isAvailable ? $.t('cluster_page.nodes_tab.' + role + '_restriction') : '');
                             return (<controls.Input
                                 key={role}
                                 ref={role}

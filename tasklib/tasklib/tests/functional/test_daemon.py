@@ -24,11 +24,3 @@ class TestDaemon(base.BaseFunctionalTest):
         exit_code, out, err = self.wait_ready(['status', 'exec/long'], 2)
         self.assertEqual(exit_code, 0)
         self.assertEqual(out.strip('\n'), STATUS.end.name)
-
-    def test_puppet_simple_daemon(self):
-        self.check_puppet_installed()
-        exit_code, out, err = self.execute(['daemon', 'puppet/sleep'])
-        self.assertEqual(exit_code, 0)
-        exit_code, out, err = self.wait_ready(['status', 'puppet/sleep'], 10)
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(out.strip('\n'), STATUS.end.name)

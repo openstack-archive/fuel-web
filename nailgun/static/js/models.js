@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['utils', 'deepModel'], function(utils) {
+define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
     'use strict';
 
     var models = {};
@@ -23,10 +23,12 @@ define(['utils', 'deepModel'], function(utils) {
             if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {
                 return $.Deferred().resolve();
             }
-            return this.constructor.__super__.fetch.apply(this, arguments);
+            //FIXME: ignoring inheritance here and calling fetch method of Backbone.Model/Backbone.Collection
+            return Backbone[this instanceof Backbone.Model ? 'Model' : 'Collection'].prototype.fetch.apply(this, arguments);
         },
         sync: function(options) {
-            var deferred = this.constructor.__super__.sync.apply(this, arguments);
+            //FIXME: ignoring inheritance here and calling sync method of Backbone.Model/Backbone.Collection
+            var deferred = Backbone[this instanceof Backbone.Model ? 'Model' : 'Collection'].prototype.sync.apply(this, arguments);
             if (this.cacheFor) {
                 deferred.done(_.bind(function() {
                     this.lastSyncTime = new Date();
@@ -36,9 +38,62 @@ define(['utils', 'deepModel'], function(utils) {
         }
     };
 
+    var restrictionMixin = {
+        expandRestrictions: function(restrictions, path) {
+            path = path || 'restrictions';
+            this.expandedRestrictions = this.expandedRestrictions || {};
+            this.expandedRestrictions[path] = _.map(restrictions, utils.expandRestriction, this);
+        },
+        checkRestrictions: function(models, action, path) {
+            path = path || 'restrictions';
+            var restrictions = this.expandedRestrictions[path];
+            if (action) restrictions = _.where(restrictions, {action: action});
+            return _.any(restrictions, function(restriction) {
+                return new Expression(restriction.condition, models).evaluate();
+            });
+        }
+    };
+
+    models.Role = Backbone.Model.extend({
+        constructorName: 'Role'
+    });
+    _.extend(models.Role.prototype, restrictionMixin);
+
+    models.Roles = Backbone.Collection.extend({
+        constructorName: 'Roles',
+        model: models.Role,
+        processConflicts: function() {
+            this.each(function(role) {
+                role.conflicts = _.chain(role.conflicts)
+                    .union(role.get('conflicts'))
+                    .uniq()
+                    .compact()
+                    .value();
+                _.each(role.get('conflicts'), function(conflict) {
+                    var conflictingRole = this.findWhere({name: conflict});
+                    conflictingRole.conflicts = conflictingRole.conflicts || [];
+                    conflictingRole.conflicts.push(role.get('name'));
+                }, this);
+            }, this);
+        }
+    });
+
     models.Release = Backbone.Model.extend({
         constructorName: 'Release',
-        urlRoot: '/api/releases'
+        urlRoot: '/api/releases',
+        parse: function(response) {
+            response.roles = new models.Roles(_.map(response.roles, function(roleName) {
+                var roleData = response.roles_metadata[roleName];
+                roleData.label = roleData.name;
+                return _.extend(roleData, {name: roleName});
+            }));
+            response.roles.each(function(role) {
+                role.expandRestrictions(role.get('restrictions'));
+            });
+            response.roles.processConflicts();
+            delete response.roles_metadata;
+            return response;
+        }
     });
 
     models.Releases = Backbone.Collection.extend({
@@ -146,8 +201,8 @@ define(['utils', 'deepModel'], function(utils) {
             return _.contains(roles, role);
         },
         getRolesSummary: function() {
-            var rolesMetaData = this.collection.cluster.get('release').get('roles_metadata');
-            return _.map(this.sortedRoles(), function(role) {return rolesMetaData[role].name;}).join(', ');
+            var roles = this.collection.cluster.get('release').get('roles');
+            return _.map(this.sortedRoles(), function(role) {return roles.findWhere({name: role}).get('label');}).join(', ');
         },
         getHardwareSummary: function() {
             return $.t('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + $.t('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
@@ -299,85 +354,18 @@ define(['utils', 'deepModel'], function(utils) {
     models.Settings = Backbone.DeepModel.extend({
         constructorName: 'Settings',
         urlRoot: '/api/clusters/',
+        root: 'editable',
         cacheFor: 60 * 1000,
         isNew: function() {
             return false;
         },
         parse: function(response) {
-            return response.editable;
+            return response[this.root];
         },
         toJSON: function(options) {
-            var currentSettings = this.constructor.__super__.toJSON.call(this, options);
-            if (this.initialAttributes) {
-                var result = _.cloneDeep(this.initialAttributes);
-                _.each(currentSettings, function(group, groupName) {
-                    _.each(group, function(setting, settingName) {
-                        if (settingName == 'metadata') {
-                            if (!_.isUndefined(setting.toggleable)) {
-                                result[groupName][settingName].enabled = setting.enabled;
-                            }
-                        } else {
-                            result[groupName][settingName].value = setting.value;
-                        }
-                    });
-                }, this);
-                return {editable: result};
-            }
-            return {editable: currentSettings};
-        },
-        expandRestrictions: function() {
-            _.each(this.attributes, function(group, groupName) {
-                _.each(group, function(setting, settingName) {
-                    setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
-                    _.each(setting.values, function(value) {
-                        value.restrictions = _.map(value.restrictions, utils.expandRestriction);
-                    });
-                }, this);
-            }, this);
-        },
-        validate: function(attrs) {
-            var errors = [];
-            _.each(attrs, function(group, groupName) {
-                if (group.metadata && (group.metadata.disabled || !group.metadata.visible)) { return; }
-                _.each(group, function(setting, settingName) {
-                    if (!(setting.regex && setting.regex.source) || setting.disabled || !setting.visible) { return; }
-                    var regExp = new RegExp(setting.regex.source);
-                    if (!setting.value.match(regExp)) {
-                        errors.push({
-                            field: groupName + '.' + settingName,
-                            message: setting.regex.error
-                        });
-                    }
-                });
-            });
-            return errors.length ? errors : null;
-        }
-    });
-    _.extend(models.Settings.prototype, cacheMixin);
-
-    models.FuelSettings = Backbone.DeepModel.extend({
-        constructorName: 'FuelSettings',
-        url: '/api/settings',
-        cacheFor: 60 * 1000,
-        isNew: function() {
-            return false;
-        },
-        parse: function(response) {
-            return response.settings;
-        },
-        toJSON: function(options) {
-            return {settings: this.constructor.__super__.toJSON.call(this, options)};
-        },
-        expandRestrictions: function(restrictions, path) {
-            if (_.isUndefined(this.expandedRestrictions)) this.expandedRestrictions = {};
-            if (restrictions && restrictions.length) {
-                var result = _.map(restrictions, utils.expandRestriction, this);
-                if (path) {
-                    this.expandedRestrictions[path] = result;
-                } else {
-                    this.expandedRestrictions = result;
-                }
-            }
+            var data = {};
+            data[this.root] = Backbone.Model.prototype.toJSON.call(this, options);
+            return data;
         },
         processRestrictions: function() {
             _.each(this.attributes, function(group, groupName) {
@@ -389,13 +377,6 @@ define(['utils', 'deepModel'], function(utils) {
                     }, this);
                 }, this);
             }, this);
-        },
-        checkRestrictions: function(models, action, path) {
-            var restrictions = path ? this.expandedRestrictions[path] : this.expandedRestrictions;
-            if (action) restrictions = _.where(restrictions, {action: action});
-            return _.any(restrictions, function(restriction) {
-                return utils.evaluateExpression(restriction.condition, models).value;
-            });
         },
         validate: function(attrs, options) {
             var errors = {},
@@ -417,7 +398,13 @@ define(['utils', 'deepModel'], function(utils) {
             return _.toArray(arguments).join('.');
         }
     });
-    _.extend(models.FuelSettings.prototype, cacheMixin);
+    _.extend(models.Settings.prototype, cacheMixin, restrictionMixin);
+
+    models.FuelSettings = models.Settings.extend({
+        constructorName: 'FuelSettings',
+        url: '/api/settings',
+        root: 'settings'
+    });
 
     models.Disk = Backbone.Model.extend({
         constructorName: 'Disk',

@@ -26,15 +26,15 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster OpenStack settings: Save button interractions');
-    this.click('input[type=checkbox]:not(.show-password)');
+    this.click('input[type=checkbox]');
     this.test.assertExists('.btn-apply-changes:not(:disabled)', 'Save settings button is enabled if there are changes');
-    this.click('input[type=checkbox]:not(.show-password)');
+    this.click('input[type=checkbox]');
     this.test.assertExists('.btn-apply-changes:disabled', 'Save settings button is disabled again if there are no changes');
 });
 
 casper.then(function() {
     this.test.comment('Testing cluster OpenStack settings: cancel changes operation');
-    this.click('input[type=checkbox]:not(.show-password)');
+    this.click('input[type=checkbox]');
     this.click('.nav-tabs li.active + li a');
     this.test.assertSelectorAppears('.dismiss-settings-dialog', 'Dismiss changes dialog appears if there are changes and user is going to leave the tab');
     this.then(function() {
@@ -49,8 +49,9 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing OpenStack settings: save changes');
-    this.click('input[type=checkbox]:not(.show-password)');
-    this.click('.btn-apply-changes');
+    this.click('input[type=checkbox]');
+    this.test.assertExists('.btn-apply-changes:not(:disabled)', 'Save settings button is enabled');
+    this.click('.btn-apply-changes:not(:disabled)');
     this.waitWhileSelector('.btn-load-defaults:disabled');
     this.then(function() {
         this.test.assertExists('.btn-revert-changes:disabled', 'Cancel changes button is disabled after changes were saved successfully');

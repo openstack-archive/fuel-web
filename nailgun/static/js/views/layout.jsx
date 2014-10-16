@@ -248,7 +248,7 @@ function(React, utils, models, componentMixins, dialogs) {
                     {_.contains(this.props.version.get('feature_groups'), 'mirantis') &&
                         <div>
                             <a href='http://www.mirantis.com' target='_blank' className='footer-logo'></a>
-                            <div className='footer-copyright pull-left' data-i18n='common.copyright'></div>
+                            <div className='footer-copyright pull-left'>{$.t('common.copyright')}</div>
                         </div>
                     }
                     {this.props.version.get('release') &&

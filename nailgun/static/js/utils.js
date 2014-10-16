@@ -52,8 +52,8 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
-            var compiledExpression = new Expression(expression, models, options);
-            var value = compiledExpression.evaluate();
+            var compiledExpression = Expression.prototype.compile(expression, options);
+            var value = compiledExpression.evaluate(models);
             return {
                 value: value,
                 modelPaths: compiledExpression.modelPaths

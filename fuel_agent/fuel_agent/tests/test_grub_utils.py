@@ -30,23 +30,23 @@ from fuel_agent.utils import utils
 
 class TestGrubUtils(test_base.BaseTestCase):
 
-    @mock.patch.object(os.path, 'isfile')
-    def test_guess_grub2_conf(self, mock_isfile):
+    @mock.patch.object(os.path, 'isdir')
+    def test_guess_grub2_conf(self, mock_isdir):
         side_effect_values = {
-            '/target/boot/grub/grub.cfg': True,
-            '/target/boot/grub2/grub.cfg': False
+            '/target/boot/grub': True,
+            '/target/boot/grub2': False
         }
 
         def side_effect(key):
             return side_effect_values[key]
 
-        mock_isfile.side_effect = side_effect
+        mock_isdir.side_effect = side_effect
         self.assertEqual(gu.guess_grub2_conf('/target'),
                          '/boot/grub/grub.cfg')
 
         side_effect_values = {
-            '/target/boot/grub/grub.cfg': False,
-            '/target/boot/grub2/grub.cfg': True
+            '/target/boot/grub': False,
+            '/target/boot/grub2': True
         }
         self.assertEqual(gu.guess_grub2_conf('/target'),
                          '/boot/grub2/grub.cfg')

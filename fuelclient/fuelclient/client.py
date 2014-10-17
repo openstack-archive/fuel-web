@@ -160,7 +160,6 @@ class Client(object):
 
         return resp.json()
 
-    @exceptions_decorator
     def post_request(self, api, data, ostf=False):
         """Make POST request to specific API with some data
         """

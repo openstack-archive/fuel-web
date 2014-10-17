@@ -29,8 +29,8 @@ class Parser:
     and based on available actions, serializers and additional flags
     populates it.
     """
-    def __init__(self):
-        self.args = sys.argv
+    def __init__(self, argv):
+        self.args = argv
         self.parser = argparse.ArgumentParser(
             usage="""
             Configuration for client you can find in
@@ -172,6 +172,6 @@ class Parser:
 
 
 @exceptions_decorator
-def main():
-    parser = Parser()
+def main(args=sys.argv):
+    parser = Parser(args)
     parser.parse()

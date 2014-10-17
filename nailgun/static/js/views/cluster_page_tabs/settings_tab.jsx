@@ -41,7 +41,22 @@ function(React, utils, models, Expression, controls) {
             return this.settings.checkRestrictions(this.configModels, action, path);
         },
         processRestrictions: function(path) {
-            return this.checkRestrictions('disable', path) || !!this.checkDependentRoles(path).length || !!this.checkDependentSettings(path).length;
+            var disabled = this.checkRestrictions('disable', path);
+            var dependentRoles = this.checkDependentRoles(path);
+            if (dependentRoles.length) {
+                disabled.result = true;
+                disabled.warnings.push(
+                    $.t('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length})
+                );
+            }
+            var dependentSettings = this.checkDependentSettings(path);
+            if (dependentSettings.length) {
+                disabled.result = true;
+                disabled.warnings.push(
+                    $.t('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length})
+                );
+            }
+            return disabled;
         },
         checkDependentRoles: function(path) {
             var setting = this.settings.get(path);
@@ -66,9 +81,9 @@ function(React, utils, models, Expression, controls) {
             var dependentSettings = {};
             _.each(this.settings.attributes, function(group, groupName) {
                 // don't take into account hidden dependent settings
-                if (this.checkRestrictions('hide', groupName + '.metadata')) return;
+                if (this.checkRestrictions('hide', groupName + '.metadata').result) return;
                 _.each(group, function(setting, settingName) {
-                    if (_.contains(['text', 'password', 'hidden'], setting.type) || groupName + '.' + settingName == path || this.checkRestrictions('hide', groupName + '.' + settingName)) return;
+                    if (_.contains(['text', 'password', 'hidden'], setting.type) || groupName + '.' + settingName == path || this.checkRestrictions('hide', groupName + '.' + settingName).result) return;
                     var value = settingName == 'metadata' ? 'enabled' : 'value',
                         restrictions,
                         dependentRestrictions;
@@ -208,13 +223,15 @@ function(React, utils, models, Expression, controls) {
                         <div>
                             {_.map(sortedSettingGroups, function(groupName) {
                                 var path = groupName + '.metadata';
-                                if (!this.checkRestrictions('hide', path)) {
+                                if (!this.checkRestrictions('hide', path).result) {
+                                    var processedRestrictions = locked || !this.settings.get(path).toggleable ? {} : this.processRestrictions(path);
                                     return this.transferPropsTo(
                                         <SettingGroup
                                             key={groupName}
                                             groupName={groupName}
                                             onChange={_.bind(this.onChange, this, groupName)}
-                                            disabled={locked || (!!this.settings.get(path).toggleable && this.processRestrictions(path))}
+                                            disabled={locked || processedRestrictions.result}
+                                            warnings={processedRestrictions.warnings}
                                         />
                                     );
                                 }
@@ -257,6 +274,7 @@ function(React, utils, models, Expression, controls) {
                                 checked={metadata.enabled}
                                 label={metadata.label || this.props.groupName}
                                 disabled={this.props.disabled}
+                                tooltipText={this.props.warnings ? this.props.warnings.join(' ') : ''}
                                 onChange={this.props.onChange}
                             />
                             :
@@ -267,13 +285,16 @@ function(React, utils, models, Expression, controls) {
                         {_.map(sortedSettings, function(settingName) {
                             var setting = group[settingName],
                                 path = this.props.groupName + '.' + settingName;
-                            if (!this.checkRestrictions('hide', path)) {
-                                var error = _.find(this.settings.validationError, {field: this.props.groupName + '.' + settingName});
+                            if (!this.checkRestrictions('hide', path).result) {
+                                var processedRestrictions = this.props.disabled ? {} : this.processRestrictions(path),
+                                    error = _.find(this.settings.validationError, {field: this.props.groupName + '.' + settingName});
                                 if (setting.values) {
                                     var values = _.compact(_.map(_.cloneDeep(setting.values), function(value) {
-                                        if (!this.checkRestrictions('hide', path + '.' + value.data)) {
-                                            value.disabled = this.props.disabled || (metadata.toggleable && !metadata.enabled) || this.processRestrictions(path) || this.checkRestrictions('disable', path + '.' + value.data);
+                                        if (!this.checkRestrictions('hide', path + '.' + value.data).result) {
+                                            var restrictionsCheck = this.checkRestrictions('disable', path + '.' + value.data);
+                                            value.disabled = this.props.disabled || processedRestrictions.result || restrictionsCheck.result || (metadata.toggleable && !metadata.enabled);
                                             value.checked = value.data == setting.value;
+                                            value.tooltipText = restrictionsCheck.warnings ? restrictionsCheck.warnings.join(' ') : '';
                                             return value;
                                         }
                                     }, this));
@@ -284,6 +305,7 @@ function(React, utils, models, Expression, controls) {
                                             label={setting.label}
                                             values={values}
                                             error={error ? error.message : null}
+                                            tooltipText={processedRestrictions.warnings ? processedRestrictions.warnings.join(' ') : ''}
                                         />
                                     );
                                 }
@@ -298,7 +320,8 @@ function(React, utils, models, Expression, controls) {
                                         description={setting.description}
                                         toggleable={setting.type == 'password'}
                                         error={error ? error.message : null}
-                                        disabled={this.props.disabled || (metadata.toggleable && !metadata.enabled) || this.processRestrictions(path)}
+                                        disabled={this.props.disabled || processedRestrictions.result || (metadata.toggleable && !metadata.enabled)}
+                                        tooltipText={processedRestrictions.warnings ? processedRestrictions.warnings.join(' ') : ''}
                                     />
                                 );
                             }

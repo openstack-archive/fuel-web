@@ -44,9 +44,12 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         checkRestrictions: function(models, action, path) {
             var restrictions = path ? this.expandedRestrictions[path] : this.expandedRestrictions;
             if (action) restrictions = _.where(restrictions, {action: action});
-            return _.any(restrictions, function(restriction) {
-                return new Expression(restriction.condition, models).evaluate();
-            });
+            var result = false,
+                warnings = _.map(restrictions, function(restriction) {
+                    result = result || new Expression(restriction.condition, models).evaluate();
+                    return restriction.message;
+                });
+            return {result: result, warnings: _.compact(warnings)};
         }
     };
 
@@ -368,10 +371,10 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             var errors = [],
                 models = options ? options.models : {};
             _.each(attrs, function(group, groupName) {
-                if (this.checkRestrictions(models, null, groupName + '.metadata')) return;
+                if (this.checkRestrictions(models, null, groupName + '.metadata').result) return;
                 _.each(group, function(setting, settingName) {
                     var path = groupName + '.' + settingName;
-                    if (!(setting.regex && setting.regex.source) || this.checkRestrictions(models, null, path)) return;
+                    if (!(setting.regex && setting.regex.source) || this.checkRestrictions(models, null, path).result) return;
                     var regExp = new RegExp(setting.regex.source);
                     if (!setting.value.match(regExp)) errors.push({field: path, message: setting.regex.error});
                 }, this);

@@ -602,6 +602,8 @@ class TestHandlers(BaseIntegrationTest):
                         "roles": {
                             "management": "br-mgmt",
                             "mesh": "br-mgmt",
+                            "int": "br-int",
+                            "tun": "br-tun",
                             "ex": "br-ex",
                             "storage": "br-storage",
                             "fw-admin": "br-fw-admin",

@@ -160,10 +160,7 @@ class Client(object):
 
         return resp.json()
 
-    @exceptions_decorator
-    def post_request(self, api, data, ostf=False):
-        """Make POST request to specific API with some data
-        """
+    def post_request_raw(self, api, data, ostf=False):
         url = (self.ostf_root if ostf else self.api_root) + api
         data_json = json.dumps(data)
         self.print_debug(
@@ -173,7 +170,13 @@ class Client(object):
 
         headers = {'content-type': 'application/json',
                    'x-auth-token': self.auth_token}
-        resp = requests.post(url, data=data_json, headers=headers)
+        return requests.post(url, data=data_json, headers=headers)
+
+    @exceptions_decorator
+    def post_request(self, api, data, ostf=False):
+        """Make POST request to specific API with some data
+        """
+        resp = self.post_request_raw(api, data, ostf=ostf)
         resp.raise_for_status()
 
         return resp.json()

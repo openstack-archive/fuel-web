@@ -602,6 +602,8 @@ class TestHandlers(BaseIntegrationTest):
                         "roles": {
                             "management": "br-mgmt",
                             "mesh": "br-mgmt",
+                            "neutron-integration-bridge": "br-int",
+                            "neutron-tunnel-bridge": "br-tun",
                             "ex": "br-ex",
                             "storage": "br-storage",
                             "fw-admin": "br-fw-admin",

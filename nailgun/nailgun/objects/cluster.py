@@ -34,6 +34,7 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
 from nailgun.plugins.manager import PluginManager
+from nailgun.plugins.plugin import ClusterAttributesPlugin
 
 from nailgun.settings import settings
 
@@ -513,3 +514,24 @@ class ClusterCollection(NailgunCollection):
 
     #: Single Cluster object class
     single = Cluster
+
+
+class ClusterPluginRelation(NailgunObject):
+
+    model = models.ClusterPlugins
+
+    @classmethod
+    def create(cls, cluster, plugin):
+        attr_plugin = ClusterAttributesPlugin(plugin)
+        editable = cluster.attributes.editable
+        attr_plugin.enable_plugin_for_cluster(editable)
+        Cluster.update_attributes(cluster, {'editable': editable})
+        db().flush()
+
+    @classmethod
+    def delete(cls, cluster, plugin):
+        attr_plugin = ClusterAttributesPlugin(plugin)
+        editable = cluster.attributes.editable
+        attr_plugin.disable_plugin_for_cluster(editable)
+        Cluster.update_attributes(cluster, {'editable': editable})
+        db().flush()

@@ -57,6 +57,8 @@ from nailgun.api.v1.handlers.node import NodesAllocationStatsHandler
 
 from nailgun.api.v1.handlers.plugin import PluginCollectionHandler
 from nailgun.api.v1.handlers.plugin import PluginHandler
+from nailgun.api.v1.handlers.plugin import PluginForClustersCollectionHandler
+from nailgun.api.v1.handlers.plugin import ClusterPluginRelationHandler
 
 from nailgun.api.v1.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
@@ -146,6 +148,11 @@ urls = (
     NodeAssignmentHandler,
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
     NodeUnassignmentHandler,
+
+    r'/clusters/(?P<cluster_id>\d+)/plugins/?$',
+    PluginForClustersCollectionHandler,
+    r'/clusters/(?P<cluster_id>\d+)/plugins/(?P<plugin_id>\d+)/?$',
+    ClusterPluginRelationHandler,
 
     r'/nodes/?$',
     NodeCollectionHandler,

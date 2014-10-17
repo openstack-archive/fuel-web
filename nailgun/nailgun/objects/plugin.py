@@ -28,3 +28,8 @@ class Plugin(base.NailgunObject):
 class PluginCollection(base.NailgunCollection):
 
     single = Plugin
+
+    @classmethod
+    def filter_by_cluster(cls, cluster_id):
+        return cls.all().filter(
+            plugin_db_model.ClusterPlugins.cluster_id == cluster_id)

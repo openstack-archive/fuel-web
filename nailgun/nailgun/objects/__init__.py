@@ -24,6 +24,7 @@ from nailgun.objects.release import ReleaseOrchestratorData
 from nailgun.objects.cluster import Attributes
 from nailgun.objects.cluster import Cluster
 from nailgun.objects.cluster import ClusterCollection
+from nailgun.objects.cluster import ClusterPluginRelation
 
 from nailgun.objects.task import Task
 from nailgun.objects.task import TaskCollection
@@ -38,4 +39,3 @@ from nailgun.objects.capacity import CapacityLog
 
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
-

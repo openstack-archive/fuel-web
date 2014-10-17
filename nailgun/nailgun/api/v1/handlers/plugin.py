@@ -17,6 +17,8 @@
 from nailgun.api.v1.handlers import base
 from nailgun import objects
 
+from nailgun.api.v1.handlers.base import content_json
+
 
 class PluginHandler(base.SingleHandler):
 
@@ -26,3 +28,33 @@ class PluginHandler(base.SingleHandler):
 class PluginCollectionHandler(base.CollectionHandler):
 
     collection = objects.PluginCollection
+
+
+class PluginForClustersCollectionHandler(PluginCollectionHandler):
+
+    @content_json
+    def GET(self, cluster_id):
+        """Filters list of plugins by cluster id parameter
+
+        :returns: Collection of JSONized Plugin objects.
+        :http: * 200 (OK)
+        """
+        query = self.collection.filter_by_cluster(cluster_id)
+        return self.collection.to_json(query)
+
+
+class ClusterPluginRelationHandler(base.SingleHandler):
+
+    single = objects.ClusterPluginRelation
+
+    def POST(self, cluster_id, plugin_id):
+        plugin = self.get_object_or_404(objects.Plugin, plugin_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self.single.create(cluster, plugin)
+        return self.http(201)
+
+    def DELETE(self, cluster_id, plugin_id):
+        plugin = self.get_object_or_404(objects.Plugin, plugin_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self.single.delete(cluster, plugin)
+        return self.http(204)

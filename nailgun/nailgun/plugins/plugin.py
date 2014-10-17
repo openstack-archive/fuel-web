@@ -64,6 +64,14 @@ class ClusterAttributesPlugin(object):
             return {self.plugin.name: attrs}
         return {}
 
+    def enable_plugin_for_cluster(self, cluster_attrs):
+        if self.plugin.name in cluster_attrs:
+            cluster_attrs[self.plugin.name]['metadata']['enabled'] = True
+
+    def disable_plugin_for_cluster(self, cluster_attrs):
+        if self.plugin.name in cluster_attrs:
+            cluster_attrs[self.plugin.name]['metadata']['enabled'] = False
+
     def process_cluster_attributes(self, cluster, cluster_attrs):
         custom_attrs = cluster_attrs.get(self.plugin.name, {})
         if custom_attrs:

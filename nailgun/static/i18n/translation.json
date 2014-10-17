@@ -322,7 +322,11 @@
                         "load_defaults_warning": "Unable to load default configuration",
                         "saving_warning": "Unable to apply changes"
                     },
-                    "title": "OpenStack Settings"
+                    "title": "OpenStack Settings",
+                    "dependent_role_warning": "The environment contains __roles__ node",
+                    "dependent_role_warning_plural": "The environment contains __roles__ nodes",
+                    "dependent_settings_warning": "__settings__ is active",
+                    "dependent_settings_warning_plural": "__settings__ are active"
                 },
                 "actions_tab": {
                     "title": "Actions",

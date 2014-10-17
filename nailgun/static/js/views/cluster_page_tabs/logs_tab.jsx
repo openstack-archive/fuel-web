@@ -116,6 +116,7 @@ function(React, utils, models, componentMixins, controls) {
                 <div className='wrapper'>
                     <h3>{$.t('cluster_page.logs_tab.title')}</h3>
                     <LogFilterBar
+                        ref='bar'
                         cluster={this.props.model}
                         onShowButtonClick={this.onShowButtonClick} />
                     {this.state.loading == 'fail' &&
@@ -167,8 +168,8 @@ function(React, utils, models, componentMixins, controls) {
                 this.sources.deferred = $.Deferred().resolve();
             }
             this.sources.deferred.done(_.bind(function() {
-                var chosenSource = type == 'local' ? _.first(this.sources.reject({remote: true})) : this.sources.find({remote: true}),
-                    chosenLevelId = chosenSource ? _.find(this.sources.get(chosenSource.id).get('levels')) : null;
+                var chosenSource = type == 'local' ? _.first(this.sources.reject({remote: true})) : this.sources.findWhere({remote: true}),
+                    chosenLevelId = chosenSource ? _.first(chosenSource.get('levels')) : null;
                 this.setState({
                     chosenType: type || this.state.chosenType,
                     sources: this.sources,
@@ -239,6 +240,7 @@ function(React, utils, models, componentMixins, controls) {
                     }
                 }, this);
             }
+            return options;
         },
         handleShowButtonClick: function() {
             this.setState({locked: true});

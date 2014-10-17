@@ -744,6 +744,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 'management': 'br-mgmt',
                 'storage': 'br-storage',
                 'fw-admin': 'br-fw-admin',
+                'neutron-integration-bridge': 'br-int',
             },
             'transformations': []
         }
@@ -885,6 +886,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             })
         elif node.cluster.network_config.segmentation_type == 'gre':
             attrs['roles']['mesh'] = 'br-mgmt'
+            attrs['roles']['neutron-tunnel-bridge'] = 'br-tun'
 
         return attrs
 

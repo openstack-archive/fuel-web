@@ -231,7 +231,10 @@ class Manager(object):
         fu.mount_bind(chroot, '/proc')
         mtab = utils.execute(
             'chroot', chroot, 'grep', '-v', 'rootfs', '/proc/mounts')[0]
-        with open(chroot + '/etc/mtab', 'wb') as f:
+        mtab_path = chroot + '/etc/mtab'
+        if os.path.islink(mtab_path):
+            os.remove(mtab_path)
+        with open(mtab_path, 'wb') as f:
             f.write(mtab)
 
     def umount_target(self, chroot):

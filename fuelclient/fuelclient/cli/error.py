@@ -35,6 +35,14 @@ class FuelClientException(Exception):
         self.message = args[0]
 
 
+class BadDataException(FuelClientException):
+    """Should be raised when user provded corrupted data."""
+
+
+class WrongEnvironmentError(FuelClientException):
+    """Raised when particular action is not supported on environment."""
+
+
 class ServerDataException(FuelClientException):
     """ServerDataException - must be raised when
     data returned from server cannot be processed by Fuel-Client methods.

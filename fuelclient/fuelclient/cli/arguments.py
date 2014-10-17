@@ -366,3 +366,19 @@ def get_task_arg(help_msg):
         "help": help_msg
     }
     return get_arg("task", **default_kwargs)
+
+
+def get_plugin_arg(help_msg):
+    return get_int_arg(
+        "plugin",
+        flags=("--plugin",),
+        help=help_msg
+    )
+
+
+def get_enable_arg(help_msg):
+    return get_boolean_arg("enable", help=help_msg)
+
+
+def get_disable_arg(help_msg):
+    return get_boolean_arg("disable", help=help_msg)

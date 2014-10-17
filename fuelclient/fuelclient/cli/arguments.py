@@ -367,3 +367,19 @@ def get_task_arg(help_msg):
         "help": help_msg
     }
     return get_arg("task", **default_kwargs)
+
+
+def get_plugin_arg(help_msg):
+    return get_int_arg(
+        "plugin",
+        flags=("--plugin",),
+        help=help_msg
+    )
+
+
+def get_plugin_install_arg(help_msg):
+    return get_boolean_arg("install", help=help_msg)
+
+
+def get_plugin_update_arg(help_msg):
+    return get_boolean_arg("update", help=help_msg)

@@ -17,7 +17,7 @@
 
 import os
 
-from tests.base import BaseTestCase
+from fuelclient.tests.base import BaseTestCase
 
 
 class TestHandlers(BaseTestCase):

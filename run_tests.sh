@@ -339,7 +339,7 @@ function run_webui_tests {
 # We are going to pass nailgun url to test runner.
 function run_cli_tests {
   local SERVER_PORT=$FUELCLIENT_SERVER_PORT
-  local TESTS=$ROOT/fuelclient/tests
+  local TESTS=$ROOT/fuelclient/fuelclient/tests
   local artifacts=$ARTIFACTS/cli
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config

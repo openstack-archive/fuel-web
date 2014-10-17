@@ -116,11 +116,12 @@ function(React, Expression, utils, controls) {
                     <h4>{$.t(ns + 'assign_roles')}</h4>
                     {roles.map(function(role) {
                         var name = role.get('name');
-                        if (!role.checkRestrictions(configModels, 'hide')) {
-                            var checked = this.isRoleSelected(name),
+                        if (!role.checkRestrictions(configModels, 'hide').result) {
+                            var restrictionsCheck = role.checkRestrictions(configModels, 'disable'),
+                                checked = this.isRoleSelected(name),
                                 isAvailable = this.isRoleAvailable(name),
-                                disabled = !this.props.nodes.length || _.contains(conflicts, name) || (!isAvailable && !checked) || role.checkRestrictions(configModels, 'disable'),
-                                warning = _.contains(conflicts, name) ? $.t(ns + 'role_conflict') : !isAvailable ? $.t('cluster_page.nodes_tab.' + name + '_restriction') : '';
+                                disabled = !this.props.nodes.length || _.contains(conflicts, name) || (!isAvailable && !checked) || restrictionsCheck.result,
+                                warning = (restrictionsCheck.result && restrictionsCheck.warnings.join(' ')) || (_.contains(conflicts, name) ? $.t(ns + 'role_conflict') : !isAvailable ? $.t('cluster_page.nodes_tab.' + name + '_restriction') : null);
                             return (
                                 <controls.Input
                                     key={name}

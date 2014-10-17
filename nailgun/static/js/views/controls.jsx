@@ -31,7 +31,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip();
         },
         componentDidUpdate: function() {
-            if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip();
+            if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip('destroy').tooltip();
         },
         componentWillUnmount: function() {
             if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip('destroy');

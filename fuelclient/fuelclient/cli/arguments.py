@@ -37,6 +37,7 @@ substitutions = {
     "config": "--config",
     "--roles": "--role",
     "help": "--help",
+    "change-password": "--change-password",
 }
 
 

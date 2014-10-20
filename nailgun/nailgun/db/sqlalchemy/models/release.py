@@ -110,3 +110,31 @@ class Release(Base):
                 )
                 db().add(new_role)
                 added_roles.append(role)
+
+    def __cmp__(self, other):
+        """Allows to compare two releases
+
+        :other: an instance of nailgun.db.sqlalchemy.models.release.Release
+        """
+        # Extract Openstack and Fuel version
+        self_openstack, self_fuel = self.version.split('-')[:2]
+        other_openstack, other_fuel = other.version.split('-')[:2]
+
+        if self_fuel < other_fuel:
+            return -1
+        if self_fuel > other_fuel:
+            return 1
+
+        if self_openstack < other_openstack:
+            return -1
+        if self_openstack > other_openstack:
+            return 1
+
+        self_os_weight = consts.RELEASE_OS[::-1].index(self.operating_system)
+        other_os_weight = consts.RELEASE_OS[::-1].index(other.operating_system)
+        if self_os_weight < other_os_weight:
+            return -1
+        if self_os_weight > other_os_weight:
+            return 1
+
+        return 0

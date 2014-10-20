@@ -18,6 +18,7 @@ from nailgun.db.sqlalchemy.models import Release
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
+from uuid import uuid4
 
 
 class TestHandlers(BaseIntegrationTest):
@@ -257,3 +258,48 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual(1, len(resp.json_body))
         self.assertEqual(orch_data, resp.json_body[0]["orchestrator_data"])
+
+
+class TestReleaseCollectionSortingHandlers(BaseIntegrationTest):
+    releases = [('2014.1-5.1.1', 'Ubuntu'), ('2014.1-6.0', 'Ubuntu'),
+                ('2013.2.1-5.1', 'Ubuntu'), ('2014.2.2-6.0', 'CentOS'),
+                ('2014.2-5.1.1', 'CentOS'), ('2013.2.1-5.1', 'CentOS'),
+                ('2014.2-6.0', 'CentOS'), ('2014.1.3-5.1.1', 'CentOS'),
+                ('2013.2-5.0', 'CentOS'), ('2014.2-6.1', 'CentOS'),
+                ('2014.2-6.0', 'Ubuntu'), ('2014.2-5.1.1', 'Ubuntu'),
+                ('2013.2-5.0', 'CentOS')]
+
+    def setUp(self):
+        super(TestReleaseCollectionSortingHandlers, self).setUp()
+        for r in self.releases:
+            self.env.create_release(**{
+                'version': r[0],
+                'operating_system': r[1],
+                'name': 'release_name_{0}'.format(uuid4())
+            })
+
+    def test_release_collection_order(self):
+        resp = self.app.get(
+            reverse('ReleaseCollectionHandler'),
+            headers=self.default_headers
+        ).json_body
+
+        actual = [(r['version'], r['operating_system']) for r in resp]
+
+        # Sorting order: Fuel version => OpenStack release => Operating system
+        expected = [
+            ("2014.2-6.1", "CentOS"),
+            ("2014.2.2-6.0", "CentOS"),
+            ("2014.2-6.0", "Ubuntu"),
+            ("2014.2-6.0", "CentOS"),
+            ("2014.1-6.0", "Ubuntu"),
+            ("2014.2-5.1.1", "Ubuntu"),
+            ("2014.2-5.1.1", "CentOS"),
+            ("2014.1.3-5.1.1", "CentOS"),
+            ("2014.1-5.1.1", "Ubuntu"),
+            ("2013.2.1-5.1", "Ubuntu"),
+            ("2013.2.1-5.1", "CentOS"),
+            ("2013.2-5.0", "CentOS"),
+            ("2013.2-5.0", "CentOS"),
+        ]
+        self.assertEqual(actual, expected)

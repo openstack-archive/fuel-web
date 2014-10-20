@@ -257,3 +257,10 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual(1, len(resp.json_body))
         self.assertEqual(orch_data, resp.json_body[0]["orchestrator_data"])
+
+    # def test_release_collection_descending_order(self):
+    #     resp = self.app.get(
+    #         reverse('ReleaseCollectionHandler'),
+    #         headers=self.default_headers
+    #     )
+    #     print resp

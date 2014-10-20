@@ -19,6 +19,7 @@ Handlers dealing with releases
 """
 
 from nailgun.api.v1.handlers.base import CollectionHandler
+from nailgun.api.v1.handlers.base import content_json
 from nailgun.api.v1.handlers.base import SingleHandler
 
 from nailgun.api.v1.validators.release import ReleaseValidator
@@ -41,3 +42,12 @@ class ReleaseCollectionHandler(CollectionHandler):
 
     validator = ReleaseValidator
     collection = ReleaseCollection
+
+    @content_json
+    def GET(self):
+        """:returns: Releases' collection in JSON format
+        :http: * 200 (OK)
+        """
+        q = self.collection.eager(None, self.eager)
+        q_sorted = ReleaseCollection.order_by(q, '-operating_system')
+        return self.collection.to_json(q_sorted)

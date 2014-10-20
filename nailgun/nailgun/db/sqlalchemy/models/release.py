@@ -110,3 +110,53 @@ class Release(Base):
                 )
                 db().add(new_role)
                 added_roles.append(role)
+
+    @property
+    def openstack_version(self):
+        return self.version.split('-')[0]
+
+    @property
+    def fuel_version(self):
+        try:
+            version = self.version.split('-')[1]
+        except IndexError:
+            version = ''
+
+        return version
+
+    @property
+    def os_weight(self):
+        try:
+            weight = consts.RELEASE_OS[::-1].index(self.operating_system)
+        except ValueError:
+            weight = -1
+
+        return weight
+
+    def __cmp__(self, other):
+        """Allows to compare two releases
+
+        :other: an instance of nailgun.db.sqlalchemy.models.release.Release
+        """
+        if self.fuel_version < other.fuel_version:
+            return -1
+        if self.fuel_version > other.fuel_version:
+            return 1
+
+        if self.openstack_version < other.openstack_version:
+            return -1
+        if self.openstack_version > other.openstack_version:
+            return 1
+
+        if self.os_weight == other.os_weight == -1:
+            if self.operating_system > other.operating_system:
+                return -1
+            if self.operating_system < other.operating_system:
+                return 1
+        else:
+            if self.os_weight < other.os_weight:
+                return -1
+            if self.os_weight > other.os_weight:
+                return 1
+
+        return 0

@@ -23,7 +23,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, deferred
 
 from nailgun import consts
 from nailgun.db import db
@@ -49,7 +49,7 @@ class Task(Base):
         default='running'
     )
     progress = Column(Integer, default=0)
-    cache = Column(JSON, default={})
+    cache = deferred(Column(JSON, default={}))
     result = Column(JSON, default={})
     parent_id = Column(Integer, ForeignKey('tasks.id'))
     subtasks = relationship(

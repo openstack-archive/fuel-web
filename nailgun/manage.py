@@ -18,7 +18,15 @@
 import __main__
 import argparse
 import code
+import os
 import sys
+
+
+def add_config_parameter(parser):
+    parser.add_argument(
+        '-c', '--config', dest='config_file', action='store', type=str,
+        help='custom config file', default=None
+    )
 
 
 def load_run_parsers(subparsers):
@@ -45,10 +53,7 @@ def load_run_parsers(subparsers):
         action='store_true',
         help='run keep alive thread'
     )
-    run_parser.add_argument(
-        '-c', '--config', dest='config_file', action='store', type=str,
-        help='custom config file', default=None
-    )
+    add_config_parameter(run_parser)
     run_parser.add_argument(
         '--fake-tasks-tick-count', action='store', type=int,
         help='Fake tasks tick count'
@@ -123,6 +128,13 @@ def load_db_migrate_parsers(subparsers):
     load_alembic_parsers(migrate_parser)
 
 
+def load_dbshell_parsers(subparsers):
+    dbshell_parser = subparsers.add_parser(
+        'dbshell', help='open database shell'
+    )
+    add_config_parameter(dbshell_parser)
+
+
 def load_test_parsers(subparsers):
     subparsers.add_parser(
         'test', help='run unit tests'
@@ -133,10 +145,7 @@ def load_shell_parsers(subparsers):
     shell_parser = subparsers.add_parser(
         'shell', help='open python REPL'
     )
-    shell_parser.add_argument(
-        '-c', '--config', dest='config_file', action='store', type=str,
-        help='custom config file', default=None
-    )
+    add_config_parameter(shell_parser)
 
 
 def load_settings_parsers(subparsers):
@@ -205,6 +214,26 @@ def action_test(params):
     logger.info("Done")
 
 
+def action_dbshell(params):
+    from nailgun.settings import settings
+
+    if params.config_file:
+        settings.update_from_file(params.config_file)
+
+    args = ['psql']
+    if settings.DATABASE['user']:
+        args += ["-U", settings.DATABASE['user']]
+    if settings.DATABASE['host']:
+        args.extend(["-h", settings.DATABASE['host']])
+    if settings.DATABASE['port']:
+        args.extend(["-p", str(settings.DATABASE['port'])])
+    args += [settings.DATABASE['name']]
+    if os.name == 'nt':
+        sys.exit(os.system(" ".join(args)))
+    else:
+        os.execvp('psql', args)
+
+
 def action_dump_settings(params):
     from nailgun.settings import settings
     sys.stdout.write(settings.dump())
@@ -255,6 +284,7 @@ if __name__ == "__main__":
     load_run_parsers(subparsers)
     load_db_parsers(subparsers)
     load_db_migrate_parsers(subparsers)
+    load_dbshell_parsers(subparsers)
     load_test_parsers(subparsers)
     load_shell_parsers(subparsers)
     load_settings_parsers(subparsers)

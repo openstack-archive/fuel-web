@@ -18,6 +18,7 @@ from nailgun.db.sqlalchemy.models import Release
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
+from uuid import uuid4
 
 
 class TestHandlers(BaseIntegrationTest):
@@ -257,3 +258,127 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual(1, len(resp.json_body))
         self.assertEqual(orch_data, resp.json_body[0]["orchestrator_data"])
+
+
+class ReleaseCollectionSortBaseTest(BaseIntegrationTest):
+    releases = []
+    expected = []
+
+    def setUp(self):
+        super(ReleaseCollectionSortBaseTest, self).setUp()
+        for r in self.releases:
+            self.env.create_release(**{
+                'version': r[0],
+                'operating_system': r[1],
+                'name': 'release_name_{0}'.format(uuid4())
+            })
+
+    def test_release_collection_order(self):
+        resp = self.app.get(
+            reverse('ReleaseCollectionHandler'),
+            headers=self.default_headers
+        ).json_body
+
+        actual = [(r['version'], r['operating_system']) for r in resp]
+
+        self.assertEqual(actual, self.expected)
+
+
+class TestReleaseCollectionSorting(BaseIntegrationTest):
+    releases = [
+        ("2014.3-7.0", "CentOS"),
+        ("2014.2-6.1", "CentOS"),
+        ("2014.2.2-6.0", "CentOS"),
+        ("2014.2-6.0", "Ubuntu"),
+        ("2014.2-6.0", "CentOS"),
+        ("2014.1-6.0", "Ubuntu"),
+        ("2014.2-5.1.1", "Ubuntu"),
+        ("2014.3", "Ubuntu"),
+        ("2014.3", "CentOS"),
+        ("2014.2-5.1.1", "CentOS"),
+        ("2014.1.3-5.1.1", "CentOS"),
+        ("2014.1-5.1.1", "Ubuntu"),
+        ("2014.2-6.1", "CentOS"),
+        ("2014.2.2-6.0", "CentOS"),
+        ("2013.2.1-5.1", "CentOS"),
+        ("2013.2-5.0", "CentOS"),
+        ("2014.3", "Ubuntu"),
+        ("2014.3", "CentOS"),
+        ("2013.2-4.0", "Ubuntu"),
+        ("2013.2", "CentOS"),
+        ("2013.2", "Ubuntu"),
+        ("2013.2.1-5.1", "Ubuntu"),
+    ]
+
+    expected = [
+        ("2014.3-7.0", "CentOS"),
+        ("2014.2-6.1", "CentOS"),
+        ("2014.2.2-6.0", "CentOS"),
+        ("2014.2-6.0", "Ubuntu"),
+        ("2014.2-6.0", "CentOS"),
+        ("2014.1-6.0", "Ubuntu"),
+        ("2014.2-5.1.1", "Ubuntu"),
+        ("2014.2-5.1.1", "CentOS"),
+        ("2014.1.3-5.1.1", "CentOS"),
+        ("2014.1-5.1.1", "Ubuntu"),
+        ("2013.2.1-5.1", "Ubuntu"),
+        ("2013.2.1-5.1", "CentOS"),
+        ("2013.2-5.0", "CentOS"),
+        ("2013.2-4.0", "Ubuntu"),
+        ("2014.3", "Ubuntu"),
+        ("2014.3", "CentOS"),
+        ("2013.2", "Ubuntu"),
+        ("2013.2", "CentOS"),
+    ]
+
+
+class TestReleaseCollectionSortByFuelVersion(ReleaseCollectionSortBaseTest):
+    releases = [
+        ("-7.1", "WhateverLinux"),
+        ("-7.0", "WhateverLinux"),
+        ("-6.0", "WhateverLinux"),
+        ("-6", "WhateverLinux"),
+    ]
+
+    expected = [
+        ("-7.1", "WhateverLinux"),
+        ("-7.0", "WhateverLinux"),
+        ("-6.0", "WhateverLinux"),
+        ("-6", "WhateverLinux"),
+    ]
+
+
+class TestReleaseCollectionSortByOpenstack(ReleaseCollectionSortBaseTest):
+    releases = [
+        ("2011.1-", "WhateverLinux"),
+        ("2014.3-", "WhateverLinux"),
+        ("2012.3-", "WhateverLinux"),
+        ("2013.4-", "WhateverLinux"),
+    ]
+
+    expected = [
+        ("2014.3-", "WhateverLinux"),
+        ("2013.4-", "WhateverLinux"),
+        ("2012.3-", "WhateverLinux"),
+        ("2011.1-", "WhateverLinux"),
+    ]
+
+
+class TestReleaseCollectionSortByOS(ReleaseCollectionSortBaseTest):
+    releases = [
+        ("X", "Debian"),
+        ("X", "Fedora"),
+        ("X", "ArchLinux"),
+        ("X", "Ubuntu"),
+        ("X", "WhateverLinux"),
+        ("X", "CentOS"),
+    ]
+
+    expected = [
+        ("X", "Ubuntu"),
+        ("X", "CentOS"),
+        ("X", "ArchLinux"),
+        ("X", "Debian"),
+        ("X", "Fedora"),
+        ("X", "WhateverLinux"),
+    ]

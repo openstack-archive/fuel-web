@@ -110,3 +110,29 @@ class Release(Base):
                 )
                 db().add(new_role)
                 added_roles.append(role)
+
+    def __cmp__(self, other):
+        """Allows to compare two releases
+
+        :other: an instance of nailgun.db.sqlalchemy.models.release.Release
+        """
+        self_version = self.version.split('-')[1]
+        other_version = other.version.split('-')[1]
+
+        if self_version < other_version:
+            return -1
+        if self_version > other_version:
+            return 1
+
+        if self.name[0] < other.name[0]:
+            return -1
+        if self.name[0] > other.name[0]:
+            return 1
+
+        # Ensure Ubuntu is preferred Linux distribution
+        if self.operating_system.lower() == 'ubuntu':
+            return 1
+        if other.operating_system.lower() == 'ubuntu':
+            return -1
+
+        return 0

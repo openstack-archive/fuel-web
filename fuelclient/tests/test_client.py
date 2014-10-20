@@ -100,11 +100,11 @@ class TestHandlers(BaseTestCase):
         del os.environ["SERVER_ADDRESS"]
 
     def test_wrong_credentials(self):
-        result = self.run_cli_command("--os-username=a --os-password=a node",
+        result = self.run_cli_command("--user=a --password=a node",
                                       check_errors=True)
         must_be = ('\n            Unauthorized: need authentication!\n       '
                    '     Please provide user and password via client\n       '
-                   '     --os-username --os-password\n            or modify '
+                   '     --user --password\n            or modify '
                    '"KEYSTONE_USER" and "KEYSTONE_PASS" in\n            '
                    '/etc/fuel/client/config.yaml\n'
                    )
@@ -174,7 +174,7 @@ class TestHandlers(BaseTestCase):
 class TestUserActions(BaseTestCase):
 
     def test_change_password_params(self):
-        cmd = "user --change-password"
+        cmd = "user change-password"
         msg = "Expect password [--newpass NEWPASS]"
         result = self.run_cli_command(cmd, check_errors=True)
         self.assertTrue(msg, result)

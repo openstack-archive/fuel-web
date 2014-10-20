@@ -116,14 +116,14 @@ class Parser:
 
     def add_keystone_credentials_args(self):
         self.parser.add_argument(
-            "--os-username",
+            "--user",
             dest="user",
             type=str,
             help="credentials for keystone authentication user",
             default=None
         )
         self.parser.add_argument(
-            "--os-password",
+            "--password",
             dest="password",
             type=str,
             help="credentials for keystone authentication password",

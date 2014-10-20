@@ -257,3 +257,95 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual(1, len(resp.json_body))
         self.assertEqual(orch_data, resp.json_body[0]["orchestrator_data"])
+
+
+class TestReleaseCollectionSortingHandlers(BaseIntegrationTest):
+    releases = [
+        {
+            'operating_system': 'CentOS',
+            'version': '2014.2-6.0',
+            'name': "Havana on CentOS 6.5"
+        },
+        {
+            'operating_system': 'Ubuntu',
+            'version': '2014.2-6.0',
+            'name': "Havana on Ubuntu 12.04.4"
+        },
+        {
+            'operating_system': 'Ubuntu',
+            'version': '2014.2-6.0',
+            'name': "Icehouse on Ubuntu 14.04"
+        },
+        {
+            'operating_system': 'CentOS',
+            'version': '2014.2-6.0',
+            'name': "Juno on CentOS 6.5"
+        },
+        {
+            'operating_system': 'Ubuntu',
+            'version': '2014.2-6.0',
+            'name': "Juno on Ubuntu 12.04.4"
+        },
+        {
+            'operating_system': 'CentOS',
+            'version': '2014.1-5.1',
+            'name': "Icehouse on CentOS 6.5"
+        },
+        {
+            'operating_system': 'Ubuntu',
+            'version': '2014.1-5.1',
+            'name': "Icehouse on Ubuntu 12.04.4"
+        },
+        {
+            'operating_system': 'CentOS',
+            'version': '2014.1.3-5.1.1',
+            'name': "Icehouse on CentOS 6.5"
+        },
+        {
+            'operating_system': 'Ubuntu',
+            'version': '2014.1.3-5.1.1',
+            'name': "Icehouse on Ubuntu 12.04.4"
+        },
+        {
+            'operating_system': 'CentOS',
+            'version': '2013.2-5.0',
+            'name': "Havana on CentOS 6.0"
+        },
+        {
+            'operating_system': 'Ubuntu',
+            'version': '2013.2-5.0',
+            'name': "Havana on Ubuntu 12.04.4"
+        },
+    ]
+
+    def setUp(self):
+        super(TestReleaseCollectionSortingHandlers, self).setUp()
+        for release in self.releases:
+            self.env.create_release(**release)
+
+    def test_release_collection_order(self):
+        resp = self.app.get(
+            reverse('ReleaseCollectionHandler'),
+            headers=self.default_headers
+        ).json_body
+
+        actual = [
+            (r['version'], r['name'], r['operating_system']) for r in resp
+        ]
+
+        # Sorting order: Fuel version => OpenStack release => Operating system
+        expected = [
+            ("2014.2-6.0", "Juno on Ubuntu 12.04.4", "Ubuntu"),
+            ("2014.2-6.0", "Juno on CentOS 6.5", "CentOS"),
+            ("2014.2-6.0", "Icehouse on Ubuntu 14.04", "Ubuntu"),
+            ("2014.2-6.0", "Havana on Ubuntu 12.04.4", "Ubuntu"),
+            ("2014.2-6.0", "Havana on CentOS 6.5", "CentOS"),
+            ("2014.1.3-5.1.1", "Icehouse on Ubuntu 12.04.4", "Ubuntu"),
+            ("2014.1.3-5.1.1", "Icehouse on CentOS 6.5", "CentOS"),
+            ("2014.1-5.1", "Icehouse on Ubuntu 12.04.4", "Ubuntu"),
+            ("2014.1-5.1", "Icehouse on CentOS 6.5", "CentOS"),
+            ("2013.2-5.0", "Havana on Ubuntu 12.04.4", "Ubuntu"),
+            ("2013.2-5.0", "Havana on CentOS 6.0", "CentOS")
+        ]
+
+        self.assertEqual(actual, expected)

@@ -29,6 +29,7 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
+from nailgun.statistics.installation_info import InstallationInfo
 
 
 class StatsSender():
@@ -46,79 +47,99 @@ class StatsSender():
             logger.exception("Collector ping failed: %s", six.text_type(e))
             return False
 
-    def send_action_log(self):
+    def send_data_to_url(self, url, data):
+        try:
+            headers = {'content-type': 'application/json'}
+            resp = requests.post(
+                url,
+                headers=headers,
+                data=jsonutils.dumps(data),
+                timeout=settings.COLLECTOR_RESP_TIMEOUT)
+            resp.raise_for_status()
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.RequestException,
+                requests.exceptions.HTTPError) as e:
+            logger.exception(
+                "Sending data to collector failed: %s",
+                six.text_type(e))
+        return resp
 
-        def send_serialized(records):
-            if records:
-                logger.info("Send %d records", len(records))
-                try:
-                    req_body = {"action_logs": records}
-                    headers = {'content-type': 'application/json'}
-                    resp = requests.post(
-                        settings.COLLECTOR_STORE_URL,
-                        headers=headers,
-                        data=jsonutils.dumps(req_body),
-                        timeout=settings.COLLECTOR_RESP_TIMEOUT)
-                    resp.raise_for_status()
-                except (requests.exceptions.ConnectionError,
-                        requests.exceptions.Timeout,
-                        requests.exceptions.RequestException,
-                        requests.exceptions.HTTPError) as e:
-                    logger.exception(
-                        "Action logs sending to collector failed: %s",
-                        six.text_type(e))
-                else:
-                    resp_dict = resp.json()
-                    if resp.status_code == requests.codes.created and \
-                            resp_dict["status"] == \
-                            consts.LOG_CHUNK_SEND_STATUS.ok:
-                        records_resp = resp_dict["action_logs"]
-                        saved_ids = set()
-                        failed_ids = set()
-                        for record in records_resp:
-                            if record["status"] == \
-                                    consts.LOG_RECORD_SEND_STATUS.failed:
-                                failed_ids.add(record["external_id"])
-                            else:
-                                saved_ids.add(record["external_id"])
-                        sent_saved_ids = set(saved_ids) & set(ids)
-                        logger.info("Records saved: %s, failed: %s",
-                                    six.text_type(list(sent_saved_ids)),
-                                    six.text_type(list(failed_ids)))
-                        db().query(models.ActionLog).filter(
-                            models.ActionLog.id.in_(sent_saved_ids)
-                        ).update(
-                            {"is_sent": True}, synchronize_session=False
-                        )
-                        db().commit()
+    def send_log_serialized(self, records, ids):
+        if records:
+            logger.info("Send %d records", len(records))
+            resp = self.send_data_to_url(
+                url=settings.COLLECTOR_ACTION_LOGS_URL,
+                data={"action_logs": records}
+            )
+            resp_dict = resp.json()
+            if resp.status_code == requests.codes.created and \
+                    resp_dict["status"] == \
+                    consts.LOG_CHUNK_SEND_STATUS.ok:
+                records_resp = resp_dict["action_logs"]
+                saved_ids = set()
+                failed_ids = set()
+                for record in records_resp:
+                    if record["status"] == \
+                            consts.LOG_RECORD_SEND_STATUS.failed:
+                        failed_ids.add(record["external_id"])
                     else:
-                        logger.error("Unexpected collector answer: %s",
-                                     six.text_type(resp))
+                        saved_ids.add(record["external_id"])
+                sent_saved_ids = set(saved_ids) & set(ids)
+                logger.info("Records saved: %s, failed: %s",
+                            six.text_type(list(sent_saved_ids)),
+                            six.text_type(list(failed_ids)))
+                db().query(models.ActionLog).filter(
+                    models.ActionLog.id.in_(sent_saved_ids)
+                ).update(
+                    {"is_sent": False}, synchronize_session=False
+                )
+                db().commit()
+            else:
+                logger.error("Unexpected collector answer: %s",
+                             six.text_type(resp))
 
+    def send_action_log(self):
         action_log = db().query(models.ActionLog).order_by(
             models.ActionLog.id
         ).filter_by(
             is_sent=False
-        )
+        ).limit(settings.STATS_SEND_COUNT)
         logger.info("Action log has %d unsent records", action_log.count())
-        records = []
-        ids = []
-        for log_record in action_log:
-            # send by settings.STATS_SEND_COUNT log records per request
-            if len(records) < settings.STATS_SEND_COUNT:
+
+        offset = 0
+        while True:
+            log_chunk = action_log.offset(offset)
+            records = []
+            ids = []
+            logger.info("Send records: %s", six.text_type(log_chunk.count()))
+            for log_record in log_chunk:
                 body = objects.ActionLog.to_dict(log_record)
                 record = {
                     'external_id': body['id'],
-                    'node_aid': 'test_aid',
+                    'master_node_uid': 'test_uid',
                     'body': body
                 }
                 records.append(record)
                 ids.append(log_record.id)
-            if len(records) == settings.STATS_SEND_COUNT:
-                send_serialized(records)
-                records = []
-                ids = []
-        send_serialized(records)
+            self.send_log_serialized(records, ids)
+            if log_chunk.count() < settings.STATS_SEND_COUNT:
+                break
+            offset += settings.STATS_SEND_COUNT
+
+    def send_installation_info(self):
+        inst_info = InstallationInfo().get_installation_info()
+        resp = self.send_data_to_url(
+            url=settings.COLLECTOR_INST_INFO_URL,
+            data={"installation_struct": inst_info}
+        )
+        if resp.status_code == requests.codes.created and \
+                resp.json()["status"] == \
+                consts.LOG_CHUNK_SEND_STATUS.ok:
+            logger.info("Installation info saved in collector")
+        else:
+            logger.error("Unexpected collector answer: %s",
+                         six.text_type(resp))
 
     def run(self, *args, **kwargs):
 
@@ -128,6 +149,7 @@ class StatsSender():
         while True:
             if self.ping_collector():
                 self.send_action_log()
+                self.send_installation_info()
                 time.sleep(dithered(settings.STATS_SEND_INTERVAL))
             else:
                 time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))

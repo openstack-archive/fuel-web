@@ -25,7 +25,7 @@ class InstallationInfo(object):
     """
 
     FUEL_VERSION_FILE = '/etc/fuel/version.yaml'
-    FUEL_VERSION_KEY = 'version'
+    FUEL_VERSION_KEY = 'VERSION'
 
     def fuel_release_info(self):
         versions = utils.get_fuel_release_versions(self.FUEL_VERSION_FILE)

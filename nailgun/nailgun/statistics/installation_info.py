@@ -13,6 +13,7 @@
 #    under the License.
 
 from nailgun.objects import ClusterCollection
+from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
 from nailgun.settings import settings
 from nailgun import utils
@@ -25,7 +26,7 @@ class InstallationInfo(object):
     """
 
     FUEL_VERSION_FILE = '/etc/fuel/version.yaml'
-    FUEL_VERSION_KEY = 'version'
+    FUEL_VERSION_KEY = 'VERSION'
 
     def fuel_release_info(self):
         versions = utils.get_fuel_release_versions(self.FUEL_VERSION_FILE)
@@ -84,5 +85,4 @@ class InstallationInfo(object):
         return info
 
     def get_master_node_uid(self):
-        #TODO(akislitsky): aid should be fetched from MasterNode settigns
-        return 'to_be_implemented'
+        return MasterNodeSettings.get_one().master_node_uid

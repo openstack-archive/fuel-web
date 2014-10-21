@@ -117,20 +117,21 @@ function(React, utils, models, componentMixins, controls) {
                     <h3>{$.t('cluster_page.logs_tab.title')}</h3>
                     <LogFilterBar
                         cluster={this.props.model}
+                        tabOptions={this.props.tabOptions}
                         onShowButtonClick={this.onShowButtonClick} />
                     {this.state.loading == 'fail' &&
                         <div className='logs-fetch-error alert alert-error'>{$.t('cluster_page.logs_tab.log_alert')}</div>
+                    }
+                    {this.state.loading == 'loading' &&
+                        <div className='row row-fluid'>
+                            <controls.ProgressBar />
+                        </div>
                     }
                     {this.state.logsEntries &&
                         <LogsTable
                             logsEntries={this.state.logsEntries}
                             showMoreLogsLink={this.state.showMoreLogsLink}
                             onShowMoreClick={this.onShowMoreClick} />
-                    }
-                    {this.state.loading == 'loading' &&
-                        <div className='logs-loading row row-fluid'>
-                            <controls.ProgressBar />
-                        </div>
                     }
                 </div>
             );
@@ -139,10 +140,15 @@ function(React, utils, models, componentMixins, controls) {
 
     var LogFilterBar = React.createClass({
         getInitialState: function() {
+            var options = {};
+            if (this.props.tabOptions[0]) {
+                options = utils.deserializeTabOptions(this.props.tabOptions.join('/'));
+            }
             return {
-                chosenType: 'local',
-                chosenNodeId: null,
-                chosenSourceId: null,
+                chosenType: options.type || 'local',
+                chosenNodeId: options.node || null,
+                chosenSourceId: options.source || null,
+                chosenLevelId: options.level ? options.level.toUpperCase() : null,
                 sourcesLoadingState: 'loading',
                 sources: [],
                 locked: false
@@ -151,7 +157,7 @@ function(React, utils, models, componentMixins, controls) {
         fetchSources: function(type, nodeId) {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                chosenNodeId = nodeId || nodes.length ? nodes.first().id : null;
+                chosenNodeId = nodeId || (nodes.length ? nodes.first().id : null);
             this.sources = new models.LogSources();
             if (type == 'remote') {
                 if (chosenNodeId) {
@@ -167,10 +173,11 @@ function(React, utils, models, componentMixins, controls) {
                 this.sources.deferred = $.Deferred().resolve();
             }
             this.sources.deferred.done(_.bind(function() {
-                var chosenSource = type == 'local' ? _.first(this.sources.reject({remote: true})) : this.sources.findWhere({remote: true}),
-                    chosenLevelId = chosenSource ? _.first(chosenSource.get('levels')) : null;
+                var filteredSources = this.sources.filter(function(source) {return source.get('remote') == (type != 'local');}),
+                    chosenSource = _.findWhere(filteredSources, {id: this.state.chosenSourceId}) || _.first(filteredSources),
+                    chosenLevelId = chosenSource ? _.contains(chosenSource.get('levels'), this.state.chosenLevelId) ? this.state.chosenLevelId : _.first(chosenSource.get('levels')) : null;
                 this.setState({
-                    chosenType: type || this.state.chosenType,
+                    chosenType: type,
                     sources: this.sources,
                     sourcesLoadingState: 'done',
                     chosenNodeId: chosenNodeId && type == 'remote' ? chosenNodeId : null,
@@ -181,7 +188,7 @@ function(React, utils, models, componentMixins, controls) {
             }, this));
             this.sources.deferred.fail(_.bind(function() {
                 this.setState({
-                    chosenType: type || this.state.chosenType,
+                    chosenType: type,
                     sources: {},
                     sourcesLoadingState: 'fail',
                     locked: false
@@ -190,7 +197,7 @@ function(React, utils, models, componentMixins, controls) {
             return this.sources.deferred;
         },
         componentDidMount: function() {
-            this.fetchSources(this.state.chosenType);
+            this.fetchSources(this.state.chosenType, this.state.chosenNodeId);
         },
         onTypeChange: function(name, value) {
             this.fetchSources(value);
@@ -301,6 +308,7 @@ function(React, utils, models, componentMixins, controls) {
                 type='select'
                 labelClassName='filter-bar-label'
                 label={$.t('cluster_page.logs_tab.node')}
+                value={this.state.chosenNodeId}
                 wrapperClassName='filter-bar-item log-node-filter'
                 name='node'
                 className='filter-bar-dropdown input-large'
@@ -314,6 +322,7 @@ function(React, utils, models, componentMixins, controls) {
                 type='select'
                 labelClassName='filter-bar-label'
                 label={$.t('cluster_page.logs_tab.source')}
+                value={this.state.chosenSourceId}
                 wrapperClassName='filter-bar-item log-source-filter'
                 name='source'
                 className='filter-bar-dropdown input-medium'
@@ -333,6 +342,7 @@ function(React, utils, models, componentMixins, controls) {
                 type='select'
                 labelClassName='filter-bar-label'
                 label={$.t('cluster_page.logs_tab.min_level')}
+                value={this.state.chosenLevelId}
                 wrapperClassName='filter-bar-item log-level-filter'
                 name='level'
                 className='filter-bar-dropdown input-medium'

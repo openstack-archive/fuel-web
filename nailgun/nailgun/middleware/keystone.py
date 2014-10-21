@@ -21,7 +21,7 @@ from nailgun.api.v1 import urls as api_urls
 from nailgun.fake_keystone import validate_token
 from nailgun.settings import settings
 
-from keystoneclient.middleware import auth_token
+from keystonemiddleware import auth_token
 
 
 def public_urls():
@@ -61,6 +61,7 @@ class SkipAuthMixin(object):
     """
     def __init__(self, app):
         self.public_api_routes = {}
+        self.app = app
         try:
             for route_tpl, methods in public_urls().iteritems():
                 self.public_api_routes[re.compile(route_tpl)] = methods

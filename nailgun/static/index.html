@@ -13,7 +13,141 @@
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
     <script data-main="/static/js/main.js?_=__COMMIT_SHA__" src="/static/js/libs/bower/requirejs/js/require.js"></script>
   </head>
+  
   <body>
+      
+      <div class="welcome-page">
+        <div class="welcome-box">
+          <h2 align="center">Welcome to Fuel Installer</h2>
+            
+        <div class="welcome-text-box">
+            <p>Help us to improve your experience by sending Mirantis information about the settings, features, and deployment actions when you use Fuel.</p>
+            <p>Usage statistics include information such as settings, button/menu clicks, hardware configuration, and version information.  The usage statistics do not include any sensitive information such as passwords, ip addresses, or node names. For a complete list of statistics that we gather, <a href="#">click here</a>.</p>
+        </div>
+            
+        <div class="welcome-disclaimer-box">
+                <p>Usage statistics include the following. Sensitive information such as passwords, ip addresses, and node names are not included.</p>
+                <p>Actions:
+                    <ul>
+                    <li>Operation type (adding cluster, adding node, deployment, removing node, e.t.c.)</li>
+                    <li>Operation start and finish time</li>
+                    <li>Actual time that is took to complete the operation</li>
+                    <li>Network verification - whether it was used, and what was the result</li>
+                    <li>Is OSTF used, and tests results</li>
+                    </ul>                
+                </p>
+                <p>Environment Settings:
+                    <ul>
+                    <li>Number of environments</li>
+                    <li>Distribution / OS</li>
+                    <li>Network type</li>
+                    <li>Kernel parameters</li>
+                    <li>Admin network parameters</li>
+                    <li>PXE parameters</li>
+                    <li>DNS parameters</li>
+                    <li>Storage options</li>
+                    <li>Related Projects</li>
+                    <li>Settings modified on Settings tab</li>
+                    <li>Networking configuration</li>
+                    </ul>                
+                </p>
+                <p>Node Settings:
+                    <ul>
+                    <li>Number of nodes deployed</li>
+                    <li>Roles deployed to each node</li>
+                    <li>Disk layout</li>
+                    <li>Interfaces configuration</li>
+                    </ul>                
+                </p>
+                <p>System Info:
+                    <ul>
+                    <li>Hypervisor</li>
+                    <li>Hardware info</li>
+                    <li>Fuel version info</li>
+                    <li>OpenStack version info</li>
+                    </ul>                
+                </p>
+            </div>
+
+            <div class="welcome-checkbox-box">
+                <div>
+                    <label class="parameter-box clearfix">
+                        <div class="parameter-control">
+                            <div class="custom-tumbler">
+                                <input type="checkbox" name="additional_components.sahara">
+                                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                            </div>
+                        </div>
+                        <div class="openstack-sub-title parameter-name">Send usage statistics to Mirantis</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="welcome-text-box">
+                <p align="center">Our support team can optionally use your error reports to assist you.<br>Please provide your contact information below.</p>
+            </div>
+
+            <div class="welcome-checkbox-box">
+                <div>
+                    <label class="parameter-box clearfix">
+                        <div class="parameter-control">
+                            <div class="custom-tumbler">
+                                <input type="checkbox" name="additional_components.sahara">
+                                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                            </div>
+                        </div>
+                        <div class="openstack-sub-title parameter-name">Identify my error reports so that Mirantis Support can assist me</div>
+                    </label>
+                </div>
+            </div>
+
+            <form class="form-horizontal">
+            <div class="welcome-form-box">
+                <div class="welcome-form-item">
+                    <div class="control-group">
+                        <label class="control-label" for="inputEmail">Name:</label>
+                        <div class="controls">
+                            <input type="text" id="inputEmail" placeholder="Name" class="input-xlarge">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="welcome-form-box">
+                <div class="welcome-form-item">
+                    <div class="control-group">
+                        <label class="control-label" for="inputEmail">Email:</label>
+                        <div class="controls">
+                            <input type="text" id="inputEmail" placeholder="Email" class="input-xlarge">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="welcome-form-box">
+                <div class="welcome-form-item">
+                    <div class="control-group">
+                        <label class="control-label" for="inputEmail">Company:</label>
+                        <div class="controls">
+                            <input type="text" id="inputEmail" placeholder="Company" class="input-xlarge">
+                        </div>
+                    </div>
+                </div>
+            </div>
+                
+            <div class="welcome-form-error">Please fill email address</div>
+            
+            <div class="welcome-button-box"><button class="btn btn-large btn-success" type="button">Start Using Fuel</button></div>    
+                
+            </form>
+
+            <div class="welcome-text-box">
+                <p align="center">You can change your settings at any time by updating your user profile information.<br>Thanks for helping to improve Mirantis Fuel!</p>
+            </div>
+
+          </div>
+      </div>
+  
+    <!-- Old Code -->
+    <!--
     <div id="wrap">
       <div class="container">
         <div id="navbar" class="container"></div>
@@ -26,5 +160,7 @@
     </div>
     <div id="footer"></div>
     <div id="modal-container"></div>
+    -->
+      
   </body>
 </html>

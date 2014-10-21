@@ -49,7 +49,9 @@ class NodeAction(Action):
                 Args.get_delete_from_db_arg(
                     "Delete specific nodes only from fuel db.\n"
                     "User should still delete node from cobbler"),
-                Args.get_provision_arg("Provision specific nodes.")
+                Args.get_provision_arg("Provision specific nodes."),
+                Args.get_prepare_env_arg(
+                    "Perform all prepared steps on specific nodes")
             ),
             group(
                 Args.get_default_arg(
@@ -74,6 +76,7 @@ class NodeAction(Action):
             ("disk", self.attributes),
             ("deploy", self.start),
             ("provision", self.start),
+            ("prepare-env", self.start),
             ("delete-from-db", self.delete_from_db),
             (None, self.list)
         )
@@ -207,12 +210,26 @@ class NodeAction(Action):
 
     @check_all("env", "node")
     def start(self, params):
-        """Deploy/Provision some node:
+        """Deploy/Provision/PrepareEnv some node:
                 fuel node --node-id 2 --provision
                 fuel node --node-id 2 --deploy
+                fuel node --node-id 2 --prepare-env
         """
         node_collection = NodeCollection.init_with_ids(params.node)
-        method_type = "deploy" if params.deploy else "provision"
+        method_type = "deploy" if params.deploy
+
+        if params.deploy:
+            method_type = "deploy"
+        elif params.provision:
+            method_type = "provision"
+        else
+            method_type = "prepare-env"
+
+        deploy_hint = {
+            'deploy':'deploying',
+            'provision':'provisioning',
+            'prepare-env': 'preparing environment for'}
+
         env_ids = set(n.env_id for n in node_collection)
         if len(env_ids) != 1:
             raise ActionException(
@@ -223,8 +240,8 @@ class NodeAction(Action):
             method_type, node_collection.collection)
         self.serializer.print_to_output(
             task.data,
-            "Started {0}ing {1}."
-            .format(method_type, node_collection))
+            "Started {0} {1}."
+            .format(deploy_hint[method_type], node_collection))
 
     def list(self, params):
         """To list all available nodes:

@@ -244,6 +244,8 @@ def get_deploy_arg(help_msg):
 def get_provision_arg(help_msg):
     return get_boolean_arg("provision", help=help_msg)
 
+def get_prepare_env_arg(help_msg):
+    return get_boolean_arg("prepare-env", help=help_msg)
 
 def get_role_arg(help_msg):
     return get_set_type_arg("role", flags=("-r",), help=help_msg)

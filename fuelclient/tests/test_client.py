@@ -60,8 +60,9 @@ class TestHandlers(BaseTestCase):
     def test_node_action(self):
         help_msg = ["fuel node [-h] [--env ENV]",
                     "[--list | --set | --delete | --network | --disk |"
-                    " --deploy | --delete-from-db | --provision]", "-h",
-                    "--help", " -s", "--default", " -d", "--download", " -u",
+                    " --deploy | --delete-from-db | --provision |"
+                    " --prepare-env]", "-h", "--help", " -s",
+                    "--default", " -d", "--download", " -u",
                     "--upload", "--dir", "--node", "--node-id", " -r",
                     "--role", "--net"]
         self.check_all_in_msg("node --help", help_msg)
@@ -74,18 +75,19 @@ class TestHandlers(BaseTestCase):
         self.load_data_to_nailgun_server()
         self.check_number_of_rows_in_table("node --node 9f:b7,9d:24,ab:aa", 3)
 
-    def test_selected_node_deploy_or_provision(self):
+    def test_selected_node_deploy_or_provision_or_prepare_env(self):
         self.load_data_to_nailgun_server()
         self.run_cli_commands((
             "env create --name=NewEnv --release=1",
             "--env-id=1 node set --node 1 --role=controller"
         ))
-        commands = ("--provision", "--deploy")
+        commands = ("--provision", "--deploy", "--prepare-env")
         for action in commands:
             self.check_if_required("--env-id=1 node {0}".format(action))
         messages = (
             "Started provisioning nodes [1].\n",
-            "Started deploying nodes [1].\n"
+            "Started deploying nodes [1].\n",
+            "Started preparing environment for nodes [1].\n"
         )
         for cmd, msg in zip(commands, messages):
             self.check_for_stdout(

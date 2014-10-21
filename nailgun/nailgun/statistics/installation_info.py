@@ -13,6 +13,7 @@
 #    under the License.
 
 from nailgun.objects import ClusterCollection
+from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
 from nailgun.settings import settings
 from nailgun import utils
@@ -82,5 +83,4 @@ class InstallationInfo(object):
         return info
 
     def get_master_node_uid(self):
-        #TODO(akislitsky): aid should be fetched from MasterNode settigns
-        return 'to_be_implemented'
+        return MasterNodeSettings.get_one().master_node_uid

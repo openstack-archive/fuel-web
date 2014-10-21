@@ -189,15 +189,14 @@ class NailgunCollection(object):
         )
 
     @classmethod
-    def all(cls, yield_per=100):
+    def all(cls):
         """Get all instances of this object (model)
 
-        :param yield_per: SQLAlchemy's yield_per() clause
         :returns: iterable (SQLAlchemy query)
         """
         return db().query(
             cls.single.model
-        ).yield_per(yield_per)
+        )
 
     @classmethod
     def _query_order_by(cls, query, order_by):
@@ -259,12 +258,11 @@ class NailgunCollection(object):
             return cls._iterable_order_by(iterable, order_by)
 
     @classmethod
-    def filter_by(cls, iterable, yield_per=100, **kwargs):
+    def filter_by(cls, iterable, **kwargs):
         """Filter given iterable by specified kwargs.
         In case if iterable=None filters all object instances
 
         :param iterable: iterable (SQLAlchemy query)
-        :param yield_per: SQLAlchemy's yield_per() clause
         :param order_by: tuple of model fields names for ORDER BY criterion
             to SQLAlchemy query. If name starts with '-' desc ordering applies,
             else asc.
@@ -274,7 +272,7 @@ class NailgunCollection(object):
         if iterable is not None:
             use_iterable = iterable
         else:
-            use_iterable = cls.all(yield_per=yield_per)
+            use_iterable = cls.all()
         if cls._is_query(use_iterable):
             return use_iterable.filter_by(**kwargs)
         elif cls._is_iterable(use_iterable):
@@ -288,16 +286,15 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
-    def filter_by_not(cls, iterable, yield_per=100, **kwargs):
+    def filter_by_not(cls, iterable, **kwargs):
         """Filter given iterable by specified kwargs with negation.
         In case of `iterable` is `None` filters all object instances.
 
         :param iterable: iterable (SQLAlchemy query)
-        :param yield_per: SQLAlchemy's yield_per() clause
         :returns: filtered iterable (SQLAlchemy query)
         """
         map(cls.single.check_field, kwargs.iterkeys())
-        use_iterable = iterable or cls.all(yield_per=yield_per)
+        use_iterable = iterable or cls.all()
         if cls._is_query(use_iterable):
             conditions = []
             for key, value in kwargs.iteritems():
@@ -316,15 +313,14 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
-    def lock_for_update(cls, iterable, yield_per=100):
+    def lock_for_update(cls, iterable):
         """Use SELECT FOR UPDATE on a given iterable (query).
         In case if iterable=None returns all object instances
 
         :param iterable: iterable (SQLAlchemy query)
-        :param yield_per: SQLAlchemy's yield_per() clause
         :returns: filtered iterable (SQLAlchemy query)
         """
-        use_iterable = iterable or cls.all(yield_per=yield_per)
+        use_iterable = iterable or cls.all()
         if cls._is_query(use_iterable):
             return use_iterable.with_lockmode('update')
         elif cls._is_iterable(use_iterable):
@@ -336,18 +332,17 @@ class NailgunCollection(object):
 
     @classmethod
     def filter_by_list(cls, iterable, field_name, list_of_values,
-                       yield_per=100, order_by=()):
+                       order_by=()):
         """Filter given iterable by list of list_of_values.
         In case if iterable=None filters all object instances
 
         :param iterable: iterable (SQLAlchemy query)
         :param field_name: filtering field name
         :param list_of_values: list of values for objects filtration
-        :param yield_per: SQLAlchemy's yield_per() clause
         :returns: filtered iterable (SQLAlchemy query)
         """
         field_getter = operator.attrgetter(field_name)
-        use_iterable = iterable or cls.all(yield_per=yield_per)
+        use_iterable = iterable or cls.all()
         if cls._is_query(use_iterable):
             result = use_iterable.filter(
                 field_getter(cls.single.model).in_(list_of_values)
@@ -363,20 +358,18 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
-    def filter_by_id_list(cls, iterable, uid_list, yield_per=100):
+    def filter_by_id_list(cls, iterable, uid_list):
         """Filter given iterable by list of uids.
         In case if iterable=None filters all object instances
 
         :param iterable: iterable (SQLAlchemy query)
         :param uid_list: list of uids for objects
-        :param yield_per: SQLAlchemy's yield_per() clause
         :returns: filtered iterable (SQLAlchemy query)
         """
         return cls.filter_by_list(
             iterable,
             'id',
             uid_list,
-            yield_per=yield_per
         )
 
     @classmethod
@@ -418,35 +411,32 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
-    def to_list(cls, iterable=None, fields=None, yield_per=100):
+    def to_list(cls, iterable=None, fields=None):
         """Serialize iterable to list of dicts
         In case if iterable=None serializes all object instances
 
         :param iterable: iterable (SQLAlchemy query)
         :param fields: exact fields to serialize
-        :param yield_per: SQLAlchemy's yield_per() clause
         :returns: collection of objects as a list of dicts
         """
-        use_iterable = iterable or cls.all(yield_per=yield_per)
+        use_iterable = iterable or cls.all()
         return map(
             lambda o: cls.single.to_dict(o, fields=fields),
             use_iterable
         )
 
     @classmethod
-    def to_json(cls, iterable=None, fields=None, yield_per=100):
+    def to_json(cls, iterable=None, fields=None):
         """Serialize iterable to JSON
         In case if iterable=None serializes all object instances
 
         :param iterable: iterable (SQLAlchemy query)
         :param fields: exact fields to serialize
-        :param yield_per: SQLAlchemy's yield_per() clause
         :returns: collection of objects as a JSON string
         """
         return jsonutils.dumps(
             cls.to_list(
                 fields=fields,
-                yield_per=yield_per,
                 iterable=iterable
             )
         )

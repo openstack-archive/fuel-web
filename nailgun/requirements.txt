@@ -24,4 +24,6 @@ simplejson==3.3.0
 web.py==0.37
 wsgilog==0.3
 wsgiref==0.1.2
-python-keystoneclient>=0.7.1,<=0.7.2
+keystonemiddleware>=1.2.0
+# we might still need keystone command
+python-keystoneclient>=0.11

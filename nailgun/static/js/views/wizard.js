@@ -162,7 +162,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             }, this);
         },
         handlePaneIndexChange: function() {
-            this.processBinds('wizard');
+            this.processBinds('wizard', this.activePane.constructorName);
             this.renderPane(this.panesConstructors[this.panesModel.get('activePaneIndex')]);
         },
         beforeClusterCreation: function() {
@@ -173,7 +173,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var success = this.processBinds('settings');
             return $.Deferred()[success ? 'resolve' : 'reject']();
         },
-        processBinds: function(prefix) {
+        processBinds: function(prefix, paneNameToProcess) {
             var result = true;
             var configModels = {settings: this.settings, cluster: this.cluster, wizard: this.model};
             function processBind(path, value) {
@@ -182,6 +182,9 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 }
             }
             _.each(this.config, function(paneConfig, paneName) {
+                if (paneNameToProcess && paneNameToProcess != paneName) {
+                    return;
+                }
                 _.each(paneConfig, function(attributeConfig, attribute) {
                     var bind = attributeConfig.bind;
                     var value = this.model.get(paneName + '.' + attribute);

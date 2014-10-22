@@ -27,26 +27,95 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         # fixture file which is located in fixtures directory for nailgun
         expected = {
             "settings": {
-                "send_anonymous_statistic": {
-                    "type": "checkbox",
-                    "value": True
-                },
-                "send_user_info": {
-                    "type": "checkbox",
-                    "value": True
-                },
-                "user_info": {
+                "statistics": {
+                    "send_anonymous_statistic": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "statistics.setting_labels."
+                                 "send_anonymous_statistic",
+                        "weight": 10
+                    },
+                    "send_user_info": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "statistics.setting_labels.send_user_info",
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
                     "name": {
                         "type": "text",
-                        "value": "Test User"
-                    },
-                    "company": {
-                        "type": "text",
-                        "value": "Test Company"
+                        "value": "",
+                        "label": "statistics.setting_labels.name",
+                        "weight": 40,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.name"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
                     },
                     "email": {
                         "type": "text",
-                        "value": "test@email.com"
+                        "value": "",
+                        "label": "statistics.setting_labels.email",
+                        "weight": 50,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.email"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "company": {
+                        "type": "text",
+                        "value": "",
+                        "label": "statistics.setting_labels.company",
+                        "weight": 30,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.company"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "user_choice_saved": {
+                        "type": "hidden",
+                        "value": True
                     }
                 }
             }
@@ -61,26 +130,95 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
     def test_put_controller(self):
         data = {
             "settings": {
-                "send_anonymous_statistic": {
-                    "type": "checkbox",
-                    "value": False
-                },
-                "send_user_info": {
-                    "type": "checkbox",
-                    "value": True
-                },
-                "user_info": {
+                "statistics": {
+                    "send_anonymous_statistic": {
+                        "type": "checkbox",
+                        "value": False,
+                        "label": "statistics.setting_labels."
+                                 "send_anonymous_statistic",
+                        "weight": 10
+                    },
+                    "send_user_info": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "statistics.setting_labels.send_user_info",
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
                     "name": {
                         "type": "text",
-                        "value": "Some User"
-                    },
-                    "company": {
-                        "type": "text",
-                        "value": "Some Company"
+                        "value": "Some name",
+                        "label": "statistics.setting_labels.name",
+                        "weight": 40,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.name"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
                     },
                     "email": {
                         "type": "text",
-                        "value": "user@email.com"
+                        "value": "Some email",
+                        "label": "statistics.setting_labels.email",
+                        "weight": 50,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.email"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "company": {
+                        "type": "text",
+                        "value": "Some Company",
+                        "label": "statistics.setting_labels.company",
+                        "weight": 30,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.company"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "user_choice_saved": {
+                        "type": "hidden",
+                        "value": False
                     }
                 }
             }
@@ -102,36 +240,103 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
     def test_patch_controller(self):
         data = {
             "settings": {
-                "user_info": {
-                    "company": {
-                        "value": "Other Company"
-                    }
+                "company": {
+                    "value": "Other Company"
                 }
             }
         }
 
         expected = {
             "settings": {
-                "send_anonymous_statistic": {
-                    "type": "checkbox",
-                    "value": True
-                },
-                "send_user_info": {
-                    "type": "checkbox",
-                    "value": True
-                },
-                "user_info": {
+                "statistics": {
+                    "send_anonymous_statistic": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "statistics.setting_labels."
+                                 "send_anonymous_statistic",
+                        "weight": 10
+                    },
+                    "send_user_info": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "statistics.setting_labels.send_user_info",
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
                     "name": {
                         "type": "text",
-                        "value": "Test User"
-                    },
-                    "company": {
-                        "type": "text",
-                        "value": "Other Company"
+                        "value": "",
+                        "label": "statistics.setting_labels.name",
+                        "weight": 40,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.name"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
                     },
                     "email": {
                         "type": "text",
-                        "value": "test@email.com"
+                        "value": "",
+                        "label": "statistics.setting_labels.email",
+                        "weight": 50,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.email"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "company": {
+                        "type": "text",
+                        "value": "Other Company",
+                        "label": "statistics.setting_labels.company",
+                        "weight": 30,
+                        "regex": {
+                            "source": "\S",
+                            "error": "statistics.errors.company"
+                        },
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "user_choice_saved": {
+                        "type": "hidden",
+                        "value": True
                     }
                 }
             }

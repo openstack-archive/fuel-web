@@ -38,14 +38,15 @@ class MasterNodeSettings(NailgunObject):
             "settings": {
                 "type": "object",
                 "properties": {
-                    "send_anonymous_statistic": {"type": "object"},
-                    "send_user_info": {"type": "object"},
-                    "user_info": {
+                    "statistics": {
                         "type": "object",
                         "properties": {
+                            "send_anonymous_statistic": {"type": "object"},
+                            "send_user_info": {"type": "object"},
                             "name": {"type": "object"},
                             "company": {"type": "object"},
-                            "email": {"type": "object"}
+                            "email": {"type": "object"},
+                            "user_choice_saved": {"type": "object"}
                         }
                     }
                 }

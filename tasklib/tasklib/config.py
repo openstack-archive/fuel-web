@@ -30,9 +30,10 @@ class Config(object):
         return {
             'library_dir': '/etc/puppet/tasks',
             'puppet_modules': '/etc/puppet/modules',
-            'puppet_options': ('--logdest syslog '
-                               '--logdest /var/log/puppet.log'
-                               '--trace --no-report'),
+            'puppet_options': '--logdest syslog '
+                              '--logdest /var/log/puppet.log '
+                              '--logdest console '
+                              '--report',
             'report_dir': '/var/tmp/task_report',
             'pid_dir': '/var/tmp/task_run',
             'puppet_manifest': 'site.pp',

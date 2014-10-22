@@ -20,6 +20,7 @@ from tasklib import task
 from tasklib.tests import base
 
 
+@mock.patch('tasklib.task.os.chdir')
 @mock.patch('tasklib.task.os.path.exists')
 @mock.patch('tasklib.utils.execute')
 class TestExecTask(base.BaseUnitTest):
@@ -30,9 +31,10 @@ class TestExecTask(base.BaseUnitTest):
         self.only_required = {'type': 'puppet'}
         self.config = config.Config()
 
-    def test_base_cmd_task(self, mexecute, mexists):
+    def test_base_cmd_task(self, mexecute, mexists, mchdir):
         mexists.return_value = True
         mexecute.return_value = (0, '', '')
+        mchdir.return_value = None
         mopen = mock.mock_open(read_data=yaml.dump(self.meta))
         puppet_task = task.Task('test/cmd', self.config)
         with mock.patch('tasklib.task.open', mopen, create=True):

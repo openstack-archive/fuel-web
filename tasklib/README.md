@@ -42,8 +42,8 @@ with additional options you will provide
 Exec
 -----
 
-    type: exec       - required
-    cmd: echo 12     - required
+    type: exec      - required
+    cmd: echo 1     - required
 
 will execute any cmd provided as subprocess
 
@@ -64,7 +64,7 @@ taskcmd -c tasklib/tests/functional/conf.yaml run puppet/invalid
 HOW TO RUN TESTS:
 ==================
 python setup.py develop
-pip install -r test-requires.txt
+pip install -r test-requirements.txt
 
 nosetests tasklib/tests
 

@@ -13,6 +13,7 @@
 #    under the License.
 
 import logging
+import os
 
 from tasklib.actions import action
 from tasklib import exceptions
@@ -35,7 +36,14 @@ class ExecAction(action.Action):
     def run(self):
         log.debug('Running task %s with command %s',
                   self.task.name, self.command)
+        # save the current directory, execute task
+        # inside it's own directory and then return back
+        current_directory = os.getcwd()
+        os.chdir(self.task.dir)
+        # run the command
         exit_code, stdout, stderr = utils.execute(self.command)
+        # return back
+        os.chdir(current_directory)
         log.debug(
             'Task %s with command %s\n returned code %s\n out %s err%s',
             self.task.name, self.command, exit_code, stdout, stderr)

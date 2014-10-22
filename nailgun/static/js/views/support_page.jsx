@@ -17,9 +17,10 @@ define(
 [
     'react',
     'jsx!component_mixins',
-    'models'
+    'models',
+    'jsx!views/statistics_mixin'
 ],
-function(React, componentMixins, models) {
+function(React, componentMixins, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -32,7 +33,8 @@ function(React, componentMixins, models) {
         render: function() {
             var elements = [
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
-                <CapacityAudit key='CapacityAudit' />
+                <CapacityAudit key='CapacityAudit' />,
+                <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
@@ -166,6 +168,43 @@ function(React, componentMixins, models) {
                     text={$.t('support_page.capacity_audit_text')}
                 >
                     <p><a className='btn' href='#capacity'>{$.t('support_page.view_capacity_audit')}</a></p>
+                </SupportPageElement>
+            );
+        }
+    });
+
+    var StatisticsSettings = React.createClass({
+        mixins: [
+            statisticsMixin,
+            React.BackboneMixin('settings')
+        ],
+        getInitialState: function() {
+            return {actionInProgress: false};
+        },
+        render: function() {
+            var sortedSettingGroups = _.sortBy(_.keys(this.props.settings.attributes), function(groupName) {
+                return this.get(groupName, 'metadata.weight');
+            }, this);
+            return (
+                <SupportPageElement title={$.t('support_page.send_statistics_title')}>
+                    <div className='statistics-settings'>
+                        {_.map(sortedSettingGroups, function(groupName) {
+                            return _.chain(_.keys(this.get(groupName)))
+                                .sortBy(function(settingName) {
+                                    return this.get(groupName, settingName, 'weight');
+                                }, this)
+                                .without('metadata')
+                                .map(function(settingName) {
+                                    return this.renderInput(this.get(groupName, settingName), groupName, settingName);
+                                }, this)
+                                .value();
+                        }, this)}
+                    </div>
+                    <p>
+                        <a className='btn' disabled={this.state.actionInProgress} onClick={this.saveSettings}>
+                            {$.t('support_page.save_changes')}
+                        </a>
+                    </p>
                 </SupportPageElement>
             );
         }

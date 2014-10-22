@@ -4,19 +4,48 @@
   fields:
       master_node_uid: "62410d05-ecbd-4912-83fe-5db51ebb273e"
       settings:
-          send_anonymous_statistic:
-              type: "checkbox"
-              value: true
-          send_user_info:
-              type: "checkbox"
-              value: true
+          statistics:
+              metadata:
+                  weight: 10
+              send_anonymous_statistic:
+                  type: "checkbox"
+                  value: true
+                  label: "Send usage statistics to Mirantis"
+                  weight: 10
+              send_user_info:
+                  type: "checkbox"
+                  value: true
+                  label: "Personalize statistics so that Mirantis Support can assist me"
+                  weight: 20
+                  restrictions:
+                      - "master_node_settings:statistics.send_anonymous_statistic.value == false"
           user_info:
+              metadata:
+                  weight: 20
+                  restrictions:
+                      - "master_node_settings:statistics.send_anonymous_statistic.value == false"
+                      - "master_node_settings:statistics.send_user_info.value == false"
               name:
                   type: "text"
-                  value: "Test User"
+                  value: ""
+                  label: "Name"
+                  weight: 10
+                  regex:
+                      source: &non_empty_string '\S'
+                      error: "Please fill your name"
               email:
                   type: "text"
-                  value: "test@email.com"
+                  value: ""
+                  label: "Email"
+                  weight: 20
+                  regex:
+                      source: *non_empty_string
+                      error: "Please fill email address"
               company:
                   type: "text"
-                  value: "Test Company"
+                  value: ""
+                  label: "Company"
+                  weight: 30
+                  regex:
+                      source: *non_empty_string
+                      error: "Please fill company name"

@@ -51,6 +51,33 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             return _.any(restrictions, function(restriction) {
                 return new Expression(restriction.condition, models).evaluate();
             });
+        },
+        processRestrictions: function() {
+            _.each(this.attributes, function(group, groupName) {
+                this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+                _.each(group, function(setting, settingName) {
+                    this.expandRestrictions(setting.restrictions, utils.makePath(groupName, settingName));
+                    _.each(setting.values, function(value) {
+                        this.expandRestrictions(value.restrictions, utils.makePath(groupName, settingName, value.data));
+                    }, this);
+                }, this);
+            }, this);
+        },
+        validate: function(attrs, options) {
+            var errors = {},
+                models = options ? options.models : {},
+                checkRestrictions = _.bind(function(path) {
+                    return this.checkRestrictions(models, null, path);
+                }, this);
+            _.each(attrs, function(group, groupName) {
+                if (checkRestrictions(utils.makePath(groupName, 'metadata'))) return;
+                _.each(group, function(setting, settingName) {
+                    var path = utils.makePath(groupName, settingName);
+                    if (checkRestrictions(path)) return;
+                    if (utils.validateByRegexp(setting)) errors[path] = setting.regex.error;
+                });
+            });
+            return _.isEmpty(errors) ? null : errors;
         }
     };
 
@@ -367,34 +394,24 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         },
         toJSON: function(options) {
             return {editable: this.constructor.__super__.toJSON.call(this, options)};
-        },
-        processRestrictions: function() {
-            _.each(this.attributes, function(group, groupName) {
-                this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
-                _.each(group, function(setting, settingName) {
-                    this.expandRestrictions(setting.restrictions, utils.makePath(groupName, settingName));
-                    _.each(setting.values, function(value) {
-                        this.expandRestrictions(value.restrictions, utils.makePath(groupName, settingName, value.data));
-                    }, this);
-                }, this);
-            }, this);
-        },
-        validate: function(attrs, options) {
-            var errors = [],
-                models = options ? options.models : {};
-            _.each(attrs, function(group, groupName) {
-                if (this.checkRestrictions(models, null, groupName + '.metadata')) return;
-                _.each(group, function(setting, settingName) {
-                    var path = utils.makePath(groupName, settingName);
-                    if (!(setting.regex && setting.regex.source) || this.checkRestrictions(models, null, path)) return;
-                    var regExp = new RegExp(setting.regex.source);
-                    if (!setting.value.match(regExp)) errors.push({field: path, message: setting.regex.error});
-                }, this);
-            }, this);
-            return errors.length ? errors : null;
         }
     });
     _.extend(models.Settings.prototype, cacheMixin, restrictionMixin);
+
+    models.MasterNodeSettings = Backbone.DeepModel.extend({
+        constructorName: 'MasterNodeSettings',
+        url: '/api/settings',
+        isNew: function() {
+            return false;
+        },
+        parse: function(response) {
+            return response.settings;
+        },
+        toJSON: function(options) {
+            return {settings: this.constructor.__super__.toJSON.call(this, options)};
+        }
+    });
+    _.extend(models.MasterNodeSettings.prototype, restrictionMixin);
 
     models.Disk = Backbone.Model.extend({
         constructorName: 'Disk',

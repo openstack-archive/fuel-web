@@ -27,6 +27,7 @@ function($, React, controls) {
 
     LoginPage = React.createClass({
         breadcrumbsPath: [],
+        hiddenLayout: true,
         propTypes: {
             app: React.PropTypes.object
         },
@@ -66,15 +67,25 @@ function($, React, controls) {
                         username: username,
                         token: keystoneClient.token
                     });
-                    this.loginRedirect();
+                    this.goToWelcomePage();
                 }, this));
         },
         loginRedirect: function() {
             app.navigate('#', {trigger: true, replace: true});
         },
+        goToWelcomePage: function() {
+            app.settings.fetch({cache: true})
+                .always(_.bind(function() {
+                    if (!app.settings.get('statistics').user_choice_saved.value) {
+                        app.navigate('#welcome', {trigger: true, replace: true});
+                    } else {
+                        this.loginRedirect();
+                    }
+                }, this));
+        },
         componentDidMount: function() {
             if (app.user.get('authenticated')) {
-                this.loginRedirect();
+                this.goToWelcomePage();
             } else {
                 $(this.refs.username.getDOMNode()).focus();
             }

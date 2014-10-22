@@ -352,6 +352,67 @@ define(['utils', 'deepModel'], function(utils) {
     });
     _.extend(models.Settings.prototype, cacheMixin);
 
+    models.MasterNodeSettings = Backbone.DeepModel.extend({
+        constructorName: 'MasterNodeSettings',
+        url: '/api/settings',
+        cacheFor: 60 * 1000,
+        isNew: function() {
+            return false;
+        },
+        parse: function(response) {
+            return response.settings;
+        },
+        toJSON: function(options) {
+            return {settings: this.constructor.__super__.toJSON.call(this, options)};
+        },
+        expandRestrictions: function(restrictions, path) {
+            if (_.isUndefined(this.expandedRestrictions)) this.expandedRestrictions = {};
+            if (restrictions && restrictions.length) {
+                var result = _.map(restrictions, utils.expandRestriction, this);
+                if (path) {
+                    this.expandedRestrictions[path] = result;
+                } else {
+                    this.expandedRestrictions = result;
+                }
+            }
+        },
+        processRestrictions: function() {
+            _.each(this.attributes, function(group, groupName) {
+                this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+                _.each(group, function(setting, settingName) {
+                    this.expandRestrictions(setting.restrictions, utils.makePath(groupName, settingName));
+                    _.each(setting.values, function(value) {
+                        this.expandRestrictions(value.restrictions, utils.makePath(groupName, settingName, value.data));
+                    }, this);
+                }, this);
+            }, this);
+        },
+        checkRestrictions: function(models, action, path) {
+            var restrictions = path ? this.expandedRestrictions[path] : this.expandedRestrictions;
+            if (action) restrictions = _.where(restrictions, {action: action});
+            return _.any(restrictions, function(restriction) {
+                return utils.evaluateExpression(restriction.condition, models).value;
+            });
+        },
+        validate: function(attrs, options) {
+            var errors = {},
+                models = options ? options.models : {},
+                checkRestrictions = _.bind(function(path) {
+                    return this.checkRestrictions(models, null, path);
+                }, this);
+            _.each(attrs, function(group, groupName) {
+                if (checkRestrictions(utils.makePath(groupName, 'metadata'))) return;
+                _.each(group, function(setting, settingName) {
+                    var path = utils.makePath(groupName, settingName);
+                    if (checkRestrictions(path)) return;
+                    if (utils.validateByRegexp(setting)) errors[path] = setting.regex.error;
+                });
+            });
+            return _.isEmpty(errors) ? null : errors;
+        }
+    });
+    _.extend(models.MasterNodeSettings.prototype, cacheMixin);
+
     models.Disk = Backbone.Model.extend({
         constructorName: 'Disk',
         urlRoot: '/api/nodes/',

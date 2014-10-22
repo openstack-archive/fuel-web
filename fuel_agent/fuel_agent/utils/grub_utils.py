@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 
 def guess_grub2_conf(chroot=''):
     for filename in ('/boot/grub/grub.cfg', '/boot/grub2/grub.cfg'):
-        if os.path.isfile(chroot + filename):
+        if os.path.isdir(os.path.dirname(chroot + filename)):
             return filename
 
 
@@ -189,7 +189,7 @@ title Default ({kernel})
 
 
 def grub2_install(install_devices, chroot=''):
-    grub_install = guess_grub_install()
+    grub_install = guess_grub_install(chroot=chroot)
     for install_device in install_devices:
         cmd = [grub_install, install_device]
         if chroot:
@@ -208,7 +208,7 @@ def grub2_cfg(kernel_params='', chroot=''):
                 format(kernel_params=kernel_params), line)
     with open(grub_defaults, 'wb') as f:
         f.write(new_content)
-    cmd = [guess_grub2_mkconfig(), '-o', guess_grub2_conf()]
+    cmd = [guess_grub2_mkconfig(chroot), '-o', guess_grub2_conf(chroot)]
     if chroot:
         cmd[:0] = ['chroot', chroot]
     utils.execute(*cmd, run_as_root=True)

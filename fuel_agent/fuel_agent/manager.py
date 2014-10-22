@@ -231,7 +231,10 @@ class Manager(object):
         fu.mount_bind(chroot, '/proc')
         mtab = utils.execute(
             'chroot', chroot, 'grep', '-v', 'rootfs', '/proc/mounts')[0]
-        with open(chroot + '/etc/mtab', 'wb') as f:
+        mtab_path = chroot + '/etc/mtab'
+        if os.path.islink(mtab_path):
+            os.remove(mtab_path)
+        with open(mtab_path, 'wb') as f:
             f.write(mtab)
 
     def umount_target(self, chroot):
@@ -252,9 +255,9 @@ class Manager(object):
 
         mount2uuid = {}
         for fs in self.partition_scheme.fss:
-            mount2uuid[fs.mount], _ = utils.execute(
+            mount2uuid[fs.mount] = utils.execute(
                 'blkid', '-o', 'value', '-s', 'UUID', fs.device,
-                check_exit_code=[0])
+                check_exit_code=[0])[0].strip()
 
         grub_version = gu.guess_grub_version(chroot=chroot)
         boot_device = self.partition_scheme.boot_device(grub_version)

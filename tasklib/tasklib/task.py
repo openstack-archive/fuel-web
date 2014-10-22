@@ -45,7 +45,8 @@ class Task(object):
         self.status_file = os.path.abspath(os.path.join(
             self.report_dir, self.config['status_file']))
         self._metadata = {}
-        log.debug('Init task %s with task file %s', self.name, self.file)
+        self.comment = self.metadata.get('comment', '')
+        # log.debug('Init task %s with task file %s', self.name, self.file)
 
     def verify(self):
         if not os.path.exists(self.file):
@@ -66,7 +67,7 @@ class Task(object):
         return cls(task_name, config)
 
     def __repr__(self):
-        return "{0:10} | {1:15}".format(self.name, self.dir)
+        return "{0:40} | {1:39}".format(self.name, self.comment)
 
     def run(self):
         """Will be used to run a task."""
@@ -76,4 +77,12 @@ class Task(object):
             raise exceptions.NotValidMetadata()
         action = action_class(self, self.config)
         action.verify()
-        return action.run()
+        # save the current directory, execute task
+        # inside it's own directory and then return back
+        current_directory = os.getcwd()
+        if os.path.exists(self.dir):
+            os.chdir(self.dir)
+        output = action.run()
+        # return back
+        os.chdir(current_directory)
+        return output

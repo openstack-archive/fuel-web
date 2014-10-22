@@ -403,7 +403,7 @@ class TestNailgun(test_base.BaseTestCase):
         }
         self.assertTrue(nailgun.match_device(fake_hu_disk, fake_ks_disk))
 
-    def test_match_device_id_matches(self):
+    def test_match_device_id_dont_matches_non_empty_extra(self):
         fake_ks_disk = {
             "extra": [
                 "disk/by-id/fake_scsi_dont_matches",
@@ -411,6 +411,36 @@ class TestNailgun(test_base.BaseTestCase):
             ],
             "id": "sdd"
         }
+        fake_hu_disk = {
+            "uspec": {
+                "DEVLINKS": [
+                    "/dev/disk/by-id/fake_scsi_matches",
+                    "/dev/disk/by-path/fake_path",
+                    "/dev/sdd"
+                ]
+            }
+        }
+        self.assertFalse(nailgun.match_device(fake_hu_disk, fake_ks_disk))
+
+    def test_match_device_id_matches_empty_extra(self):
+        fake_ks_disk = {
+            "extra": [
+            ],
+            "id": "sdd"
+        }
+        fake_hu_disk = {
+            "uspec": {
+                "DEVLINKS": [
+                    "/dev/disk/by-id/fake_scsi_matches",
+                    "/dev/disk/by-path/fake_path",
+                    "/dev/sdd"
+                ]
+            }
+        }
+        self.assertTrue(nailgun.match_device(fake_hu_disk, fake_ks_disk))
+
+    def test_match_device_id_matches_missing_extra(self):
+        fake_ks_disk = {"id": "sdd"}
         fake_hu_disk = {
             "uspec": {
                 "DEVLINKS": [
@@ -435,6 +465,26 @@ class TestNailgun(test_base.BaseTestCase):
                 "DEVLINKS": [
                     "/dev/disk/by-id/fake_scsi_matches",
                     "/dev/disk/by-path/fake_path",
+                    "/dev/sdd"
+                ]
+            }
+        }
+        self.assertFalse(nailgun.match_device(fake_hu_disk, fake_ks_disk))
+
+    def test_match_device_dont_macthes_by_id(self):
+        # disks are different but both of have same `by-path` link
+        fake_ks_disk = {
+            "extra": [
+                "disk/by-id/fake_scsi_dont_matches",
+                "disk/by-id/fake_ata_dont_matches"
+            ],
+            "id": "disk/by-path/pci-fake_path"
+        }
+        fake_hu_disk = {
+            "uspec": {
+                "DEVLINKS": [
+                    "/dev/disk/by-id/fake_scsi_matches",
+                    "/dev/disk/by-path/pci-fake_path",
                     "/dev/sdd"
                 ]
             }

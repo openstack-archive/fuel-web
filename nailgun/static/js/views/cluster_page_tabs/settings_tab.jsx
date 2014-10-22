@@ -254,7 +254,7 @@ function(React, utils, models, Expression, controls) {
                             var setting = group[settingName],
                                 path = utils.makePath(this.props.groupName, settingName);
                             if (!this.checkRestrictions('hide', path)) {
-                                var error = _.find(this.settings.validationError, {field: path});
+                                var errors = this.settings.validationError;
                                 if (setting.values) {
                                     var values = _.compact(_.map(_.cloneDeep(setting.values), function(value) {
                                         var valuePath = utils.makePath(path, value.data);
@@ -270,7 +270,7 @@ function(React, utils, models, Expression, controls) {
                                             name={settingName}
                                             label={setting.label}
                                             values={values}
-                                            error={error ? error.message : null}
+                                            error={errors ? errors[path] : null}
                                         />
                                     );
                                 }
@@ -284,7 +284,7 @@ function(React, utils, models, Expression, controls) {
                                         label={setting.label}
                                         description={setting.description}
                                         toggleable={setting.type == 'password'}
-                                        error={error ? error.message : null}
+                                        error={errors ? errors[path] : null}
                                         disabled={this.props.disabled || (metadata.toggleable && !metadata.enabled) || this.processRestrictions(path)}
                                     />
                                 );

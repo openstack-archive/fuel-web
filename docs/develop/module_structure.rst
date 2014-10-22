@@ -38,6 +38,40 @@ If you have features that are necessary, but do not work fully yet, then prevent
 them from running during the deployment. Once your feature is complete, submit
 a review to activate the module during deployment.
 
+Contributing to existing fuel-library modules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As developers of Puppet modules, we tend to collaborate with the Puppet
+OpenStack community. As a result, we contribute to upstream modules all of the
+improvements, fixes and customizations we make to improve Fuel as well.
+That implies that every contributor must follow Puppet DSL basics,
+`puppet-openstack dev docs
+<https://wiki.openstack.org/wiki/Puppet-openstack#Developer_documentation>`_
+and `Puppet rspec tests
+<https://wiki.openstack.org/wiki/Puppet-openstack#Rspec_puppet_tests>`_
+requirements.
+
+The most common and general rule is that upstream modules should be modified
+only when bugfixes and improvements could benefit everyone in the community.
+And appropriate patch should be proposed to the upstream project prior
+to Fuel project.
+
+In other cases (like applying some very specific custom logic or settings)
+contributor should submit patches to ``openstack::*`` `classes
+<https://github.com/stackforge/fuel-library/tree/master/deployment/puppet/
+openstack>`_
+
+Fuel library includes custom modules as well as ones forked from upstream
+sources. Note that ``Modulefile``, if any exists, should be used in order
+to recognize either given module is forked upstream one or not.
+In case there is no ``Modulefile`` in module's directory, the contributor may
+submit a patch directly to this module in Fuel library.
+Otherwise, he or she should submit patch to upstream module first, and once
+merged or +2 recieved from a core reviewer, the patch should be backported to
+Fuel library as well. Note that the patch submitted for Fuel library should
+contain in commit message the upstream commit SHA or link to github pull-request
+(if the module is not on stackforge) or Change-Id of gerrit patch.
+
 The Puppet modules structure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

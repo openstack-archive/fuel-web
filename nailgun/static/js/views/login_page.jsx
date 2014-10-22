@@ -39,7 +39,12 @@ function($, React, controls) {
                         username: keystoneClient.username,
                         password: keystoneClient.password
                     });
-                    this.loginRedirect();
+                    // TODO: set an appropriate conditions to show Welcome page
+                    if (true) {
+                        app.navigate('#welcome', {trigger: true, replace: true});
+                    } else {
+                        this.loginRedirect();
+                    }
                 }, this));
         },
         loginRedirect: function() {

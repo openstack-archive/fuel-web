@@ -51,11 +51,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             label: React.PropTypes.renderable,
             description: React.PropTypes.renderable,
             disabled: React.PropTypes.bool,
+            inputClassName: React.PropTypes.renderable,
             wrapperClassName: React.PropTypes.renderable,
             labelClassName: React.PropTypes.renderable,
             descriptionClassName: React.PropTypes.renderable,
             tooltipText: React.PropTypes.renderable,
-            toggleable: React.PropTypes.bool
+            toggleable: React.PropTypes.bool,
+            onChange: React.PropTypes.func
         },
         getInitialState: function() {
             return {visible: false};
@@ -68,25 +70,29 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return this.props.type == 'radio' || this.props.type == 'checkbox';
         },
         onChange: function() {
-            var input = this.refs.input.getDOMNode();
-            return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
+            if (this.props.onChange) {
+                var input = this.refs.input.getDOMNode();
+                return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
+            }
+            return;
         },
         renderInput: function() {
             var input = null,
-                className = 'parameter-input';
+                classes = {'parameter-input': true};
+            classes[this.props.inputClassName] = this.props.inputClassName;
             switch (this.props.type) {
                 case 'select':
-                    input = (<select ref='input' key='input' className={className} onChange={this.onChange}>{this.props.children}</select>);
+                    input = (<select ref='input' key='input' className={cx(classes)} onChange={this.onChange}>{this.props.children}</select>);
                     break;
                 case 'textarea':
-                    input = <textarea ref='input' key='input' className={className} onChange={this.onChange} />;
+                    input = <textarea ref='input' key='input' className={cx(classes)} onChange={this.onChange} />;
                     break;
                 case 'password':
                     var type = (this.props.toggleable && this.state.visible) ? 'text' : 'password';
-                    input = <input ref='input' key='input' className={className} type={type} onChange={this.onChange} />;
+                    input = <input ref='input' key='input' className={cx(classes)} type={type} onChange={this.onChange} />;
                     break;
                 default:
-                    input = <input ref='input' key='input' className={className} onChange={this.onChange} value={this.props.value} />;
+                    input = <input ref='input' key='input' className={cx(classes)} onChange={this.onChange} value={this.props.value} />;
             }
             return this.isCheckboxOrRadio() ? (
                 <div key='input-wrapper' className='custom-tumbler'>

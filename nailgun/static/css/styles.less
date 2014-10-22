@@ -3593,3 +3593,101 @@ i.btn-cluster-details {
     }
   }
 }
+
+
+/**  Fuel Welcome page **/
+
+.welcome-page {
+  .width-height-mixin;
+  .box-sizing-mixin;
+  padding: 40px;
+  color: #4d545b;
+  > div {
+    width: 800px;
+    background-color: @fuel-white-color;
+    margin: 0 auto;
+    padding: 30px;
+    padding-bottom: 10px;
+    .box-sizing-mixin;
+    .border-radius-mixin(10px);
+    .center { text-align: center; }
+    h2 {
+      line-height: 40px;
+      .font-layout-mixin(36px, #4d545b);
+      .indent-mixin();
+      margin-bottom: 20px;
+    }
+    .welcome-checkbox-box {
+      text-align: center;
+      margin-bottom: 16px;
+      padding-top: 4px;
+      div {
+        display: inline-block;
+        margin: 0 auto;
+      }
+      /* overrides for reusable inputs */
+      .parameter-name, .custom-tumbler {
+        float: none;
+        font-weight: normal;
+      }
+      .label-wrapper { .position(relative, @top: -7px, @left: 3px); }
+    }
+    .welcome-form-box {
+      margin-bottom: 15px;
+      .welcome-form-item {
+        display: inline-block;
+        margin-left: 175px;
+        font-weight: normal;
+        .input-label { width: 80px; }
+      }
+    }
+    .welcome-form-error {
+      text-align: center;
+      color: @fuel-deep-red;
+      margin-bottom: 20px;
+    }
+    .welcome-button-box {
+      text-align: center;
+      button { .width-height-mixin(230px, 44px); }
+    }
+  }
+}
+
+.statistics-settings {
+  margin-bottom: 10px;
+  /* overrides for reusable inputs */
+  .checkbox-or-radio .parameter-name { float: none; }
+  .parameter-name {
+    font-weight: normal;
+    margin: 0;
+    .label-wrapper { .position(relative, @top: 7px); }
+    padding: 4px;
+  }
+  .parameter-description { margin-top: 10px; }
+  .input-label { width: 80px; }
+}
+
+.statistics-text-box {
+  width: 100%;
+  margin-bottom: 20px;
+  .font-layout-mixin(14px, #4d545b, lighter);
+  a { cursor: pointer; }
+  p {
+    text-align: justify;
+    margin: 0px;
+    margin-bottom: 20px;
+  }
+}
+.statistics-disclaimer-box {
+  background-color: #ecf0f2;
+  border: 1px solid #c9cdce;
+  overflow-y: auto;
+  padding: 20px;
+  margin-bottom: 16px;
+  line-height: 16px;
+  .width-height-mixin(100%, 300px);
+  .font-layout-mixin(14px, #5b636b, lighter);
+  .box-sizing-mixin;
+  p { margin-bottom: 10px; }
+  ul { margin-bottom: 20px; }
+}

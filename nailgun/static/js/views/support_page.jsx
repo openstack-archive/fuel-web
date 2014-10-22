@@ -17,9 +17,11 @@ define(
 [
     'react',
     'jsx!component_mixins',
-    'models'
+    'models',
+    'jsx!views/controls',
+    'jsx!views/statistics_mixin'
 ],
-function(React, componentMixins, models) {
+function(React, componentMixins, models, controls, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -32,7 +34,8 @@ function(React, componentMixins, models) {
         render: function() {
             var elements = [
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
-                <CapacityAudit key='CapacityAudit' />
+                <CapacityAudit key='CapacityAudit' />,
+                <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
@@ -166,6 +169,35 @@ function(React, componentMixins, models) {
                     text={$.t('support_page.capacity_audit_text')}
                 >
                     <p><a className='btn' href='#capacity'>{$.t('support_page.view_capacity_audit')}</a></p>
+                </SupportPageElement>
+            );
+        }
+    });
+
+    var StatisticsSettings = React.createClass({
+        mixins: [
+            statisticsMixin,
+            React.BackboneMixin('settings')
+        ],
+        render: function() {
+            if (this.state.loading) return <controls.ProgressBar />;
+            var sortedSettings = _.chain(_.keys(this.props.settings.get('statistics')))
+                .without('metadata')
+                .sortBy(function(settingName) {return this.get(settingName).weight;}, this)
+                .value();
+            return (
+                <SupportPageElement title={$.t('support_page.send_statistics_title')}>
+                    {this.renderIntro()}
+                    <div className='statistics-settings'>
+                        {_.map(sortedSettings, function(settingName) {
+                            return this.renderInput(this.get(settingName), settingName);
+                        }, this)}
+                    </div>
+                    <p>
+                        <a className='btn' disabled={this.state.actionInProgress || !this.hasChanges()} onClick={this.saveSettings}>
+                            {$.t('support_page.save_changes')}
+                        </a>
+                    </p>
                 </SupportPageElement>
             );
         }

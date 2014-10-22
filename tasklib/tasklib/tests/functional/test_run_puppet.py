@@ -28,7 +28,7 @@ class TestFunctionalExecTasks(base.BaseFunctionalTest):
         if os.path.exists(test_file):
             os.unlink(test_file)
         exit_code, out, err = self.execute(['run', 'puppet/file'])
-        self.assertEqual(exit_code, 0)
+        self.assertEqual(exit_code, 2)
 
     def test_puppet_invalid(self):
         exit_code, out, err = self.execute(['run', 'puppet/invalid'])
@@ -36,4 +36,4 @@ class TestFunctionalExecTasks(base.BaseFunctionalTest):
 
     def test_puppet_cmd(self):
         exit_code, out, err = self.execute(['run', 'puppet/cmd'])
-        self.assertEqual(exit_code, 0)
+        self.assertEqual(exit_code, 2)

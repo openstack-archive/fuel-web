@@ -86,7 +86,8 @@ class CmdApi(object):
 
     def run(self, args):
         task_agent = agent.TaskAgent(args.task, self.config)
-        task_agent.run()
+        if task_agent.verify():
+            task_agent.run()
         status = task_agent.status()
         print(status)
         return task_agent.code()

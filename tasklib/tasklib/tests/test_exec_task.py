@@ -13,29 +13,45 @@
 #    under the License.
 
 import mock
-import yaml
 
 from tasklib import config
 from tasklib import task
 from tasklib.tests import base
 
+task_file_yaml = '''comment: A test task
+description: A task used to test exec action
+cmd: echo 1
+type: exec
+'''
 
-@mock.patch('tasklib.task.os.path.exists')
+
 @mock.patch('tasklib.utils.execute')
+@mock.patch.object(task.Task, 'change_directory_back',
+                   return_value=True)
+@mock.patch.object(task.Task, 'change_directory_to_task',
+                   return_value=True)
+@mock.patch.object(task.Task, 'read_task_file',
+                   return_value=task_file_yaml)
+@mock.patch.object(task.Task, 'verify',
+                   return_value=True)
 class TestExecTask(base.BaseUnitTest):
 
     def setUp(self):
-        self.meta = {'cmd': 'echo 1',
-                     'type': 'exec'}
-        self.only_required = {'type': 'puppet'}
         self.config = config.Config()
 
-    def test_base_cmd_task(self, mexecute, mexists):
-        mexists.return_value = True
-        mexecute.return_value = (0, '', '')
-        mopen = mock.mock_open(read_data=yaml.dump(self.meta))
-        puppet_task = task.Task('test/cmd', self.config)
-        with mock.patch('tasklib.task.open', mopen, create=True):
-            puppet_task.run()
+    def test_task_exec_cmd(self, m_verify, m_read, m_cd_task, m_cd_back,
+                           m_execute):
+        m_execute.return_value = (0, '', '')
+        exec_task = task.Task('test/cmd', self.config)
+        exec_task.run()
         expected_cmd = 'echo 1'
-        mexecute.assert_called_once_with(expected_cmd)
+        m_execute.assert_called_once_with(expected_cmd)
+
+    def test_task_exec_chdir(self, m_verify, m_read, m_cd_task, m_cd_back,
+                             m_execute):
+        m_execute.return_value = (0, '', '')
+        exec_task = task.Task('test/cmd', self.config)
+        exec_task.run()
+        m_cd_task.assert_called_once_with()
+        self.assertTrue(m_execute.called)
+        m_cd_back.assert_called_once_with()

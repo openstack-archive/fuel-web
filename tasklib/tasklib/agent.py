@@ -30,14 +30,23 @@ class TaskAgent(object):
     def __init__(self, task_name, config):
         log.debug('Initializing task agent for task %s', task_name)
         self.config = config
-        self.task = task.Task(task_name, self.config)
-        self.init_directories()
+        self.task = None
+        try:
+            self.task = task.Task(task_name, self.config)
+        except exceptions.NotFound:
+            log.warning('Cant find task %s', task_name)
+            self.task = None
+        else:
+            self.init_directories()
 
     def init_directories(self):
         utils.ensure_dir_created(self.config['pid_dir'])
         utils.ensure_dir_created(self.config['report_dir'])
         utils.ensure_dir_created(self.task.pid_dir)
         utils.ensure_dir_created(self.task.report_dir)
+
+    def verify(self):
+        return self.task is not None
 
     def run(self):
         try:
@@ -65,6 +74,8 @@ class TaskAgent(object):
         return 'placeholder'
 
     def status(self):
+        if not self.verify():
+            return utils.STATUS.notfound.name
         if not os.path.exists(self.task.status_file):
             return utils.STATUS.notfound.name
         with open(self.task.status_file) as f:

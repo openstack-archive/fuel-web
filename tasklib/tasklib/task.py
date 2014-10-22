@@ -44,8 +44,11 @@ class Task(object):
             os.path.join(self.config['report_dir'], self.name))
         self.status_file = os.path.abspath(os.path.join(
             self.report_dir, self.config['status_file']))
+        self.verify()
         self._metadata = {}
-        log.debug('Init task %s with task file %s', self.name, self.file)
+        self.comment = self.metadata.get('comment', '')
+        self.saved_directory = None
+        # log.debug('Init task %s with task file %s', self.name, self.file)
 
     def verify(self):
         if not os.path.exists(self.file):
@@ -55,9 +58,19 @@ class Task(object):
     def metadata(self):
         if self._metadata:
             return self._metadata
-        with open(self.file) as f:
-            self._metadata = yaml.load(f.read())
+        data = self.read_task_file()
+        if data:
+            self._metadata = yaml.load(data)
         return self._metadata
+
+    def read_task_file(self):
+        """Read the task file of this task
+        :return: the contents of the file
+        :rtype: str
+        """
+        with open(self.file, 'r') as f:
+            data = f.read()
+        return data
 
     @classmethod
     def task_from_dir(cls, task_dir, config):
@@ -66,14 +79,33 @@ class Task(object):
         return cls(task_name, config)
 
     def __repr__(self):
-        return "{0:10} | {1:15}".format(self.name, self.dir)
+        return "{0:40} | {1:39}".format(self.name, self.comment)
+
+    def change_directory_to_task(self):
+        """Change directory to the task
+        And save the current directory
+        :return:
+        """
+        self.saved_directory = os.getcwd()
+        if os.path.exists(self.dir):
+            os.chdir(self.dir)
+
+    def change_directory_back(self):
+        """Change directory back from the task
+        Using previously saved value
+        :return:
+        """
+        if self.saved_directory:
+            os.chdir(self.saved_directory)
 
     def run(self):
         """Will be used to run a task."""
-        self.verify()
         action_class = type_mapping.get(self.metadata.get('type'))
         if action_class is None:
             raise exceptions.NotValidMetadata()
         action = action_class(self, self.config)
         action.verify()
-        return action.run()
+        self.change_directory_to_task()
+        output = action.run()
+        self.change_directory_back()
+        return output

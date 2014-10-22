@@ -4,19 +4,55 @@
   fields:
       master_node_uid: "62410d05-ecbd-4912-83fe-5db51ebb273e"
       settings:
-          send_anonymous_statistic:
-              type: "checkbox"
-              value: true
-          send_user_info:
-              type: "checkbox"
-              value: true
+          statistics:
+              metadata:
+                  weight: 10
+              send_anonymous_statistic:
+                  type: "checkbox"
+                  value: true
+                  label: "Send usage statistics to Mirantis"
+                  weight: 10
+              send_user_info:
+                  type: "checkbox"
+                  value: true
+                  label: "Identify my error reports so that Mirantis Support can assist me"
+                  weight: 20
+                  restrictions:
+                      - "master_node_settings:statistics.send_anonymous_statistic.value == false"
+                      - condition: &commumity_iso "not ('mirantis' in version:feature_groups)"
+                        action: "hide"
+              show_welcome_page:
+                  type: "hidden"
+                  value: true
           user_info:
+              metadata:
+                  weight: 20
+                  restrictions:
+                      - "master_node_settings:statistics.send_anonymous_statistic.value == false"
+                      - "master_node_settings:statistics.send_user_info.value == false"
+                      - condition: *commumity_iso
+                        action: "hide"
               name:
                   type: "text"
-                  value: "Test User"
+                  value: ""
+                  label: "Name"
+                  weight: 10
+                  regex:
+                      source: &non_empty_string '\S'
+                      error: "Please fill your name"
               email:
                   type: "text"
-                  value: "test@email.com"
+                  value: ""
+                  label: "Email"
+                  weight: 20
+                  regex:
+                      source: *non_empty_string
+                      error: "Please fill email address"
               company:
                   type: "text"
-                  value: "Test Company"
+                  value: ""
+                  label: "Company"
+                  weight: 30
+                  regex:
+                      source: *non_empty_string
+                      error: "Please fill company name"

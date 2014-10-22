@@ -27,26 +27,81 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         # fixture file which is located in fixtures directory for nailgun
         expected = {
             "settings": {
-                "send_anonymous_statistic": {
-                    "type": "checkbox",
-                    "value": True
-                },
-                "send_user_info": {
-                    "type": "checkbox",
-                    "value": True
+                "statistics": {
+                    "metadata": {
+                        "weight": 10
+                    },
+                    "send_anonymous_statistic": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "Send usage statistics to Mirantis",
+                        "weight": 10
+                    },
+                    "send_user_info": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "Identify my error reports so that "
+                                 "Mirantis Support can assist me",
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "show_welcome_page": {
+                        "type": "hidden",
+                        "value": True
+                    }
                 },
                 "user_info": {
+                    "metadata": {
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
                     "name": {
                         "type": "text",
-                        "value": "Test User"
-                    },
-                    "company": {
-                        "type": "text",
-                        "value": "Test Company"
+                        "value": "",
+                        "label": "Name",
+                        "weight": 10,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill your name"
+                        }
                     },
                     "email": {
                         "type": "text",
-                        "value": "test@email.com"
+                        "value": "",
+                        "label": "Email",
+                        "weight": 20,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill email address"
+                        }
+                    },
+                    "company": {
+                        "type": "text",
+                        "value": "",
+                        "label": "Company",
+                        "weight": 30,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill company name"
+                        }
                     }
                 }
             }
@@ -61,26 +116,81 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
     def test_put_controller(self):
         data = {
             "settings": {
-                "send_anonymous_statistic": {
-                    "type": "checkbox",
-                    "value": False
-                },
-                "send_user_info": {
-                    "type": "checkbox",
-                    "value": True
+                "statistics": {
+                    "metadata": {
+                        "weight": 10
+                    },
+                    "send_anonymous_statistic": {
+                        "type": "checkbox",
+                        "value": False,
+                        "label": "Send usage statistics to Mirantis",
+                        "weight": 10
+                    },
+                    "send_user_info": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "Identify my error reports so that "
+                                 "Mirantis Support can assist me",
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "show_welcome_page": {
+                        "type": "hidden",
+                        "value": False
+                    }
                 },
                 "user_info": {
+                    "metadata": {
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
                     "name": {
                         "type": "text",
-                        "value": "Some User"
-                    },
-                    "company": {
-                        "type": "text",
-                        "value": "Some Company"
+                        "value": "Some User",
+                        "label": "Name",
+                        "weight": 10,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill your name"
+                        }
                     },
                     "email": {
                         "type": "text",
-                        "value": "user@email.com"
+                        "value": "user@email.com",
+                        "label": "Email",
+                        "weight": 20,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill email address"
+                        }
+                    },
+                    "company": {
+                        "type": "text",
+                        "value": "Some Company",
+                        "label": "Company",
+                        "weight": 30,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill company name"
+                        }
                     }
                 }
             }
@@ -112,26 +222,81 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
 
         expected = {
             "settings": {
-                "send_anonymous_statistic": {
-                    "type": "checkbox",
-                    "value": True
-                },
-                "send_user_info": {
-                    "type": "checkbox",
-                    "value": True
+                "statistics": {
+                    "metadata": {
+                        "weight": 10
+                    },
+                    "send_anonymous_statistic": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "Send usage statistics to Mirantis",
+                        "weight": 10
+                    },
+                    "send_user_info": {
+                        "type": "checkbox",
+                        "value": True,
+                        "label": "Identify my error reports so that "
+                                 "Mirantis Support can assist me",
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
+                    "show_welcome_page": {
+                        "type": "hidden",
+                        "value": True
+                    }
                 },
                 "user_info": {
+                    "metadata": {
+                        "weight": 20,
+                        "restrictions": [
+                            "master_node_settings:statistics."
+                            "send_anonymous_statistic.value == false",
+                            "master_node_settings:statistics."
+                            "send_user_info.value == false",
+                            {
+                                "condition":
+                                "not ('mirantis' in version:feature_groups)",
+                                "action": "hide"
+                            }
+                        ]
+                    },
                     "name": {
                         "type": "text",
-                        "value": "Test User"
-                    },
-                    "company": {
-                        "type": "text",
-                        "value": "Other Company"
+                        "value": "",
+                        "label": "Name",
+                        "weight": 10,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill your name"
+                        }
                     },
                     "email": {
                         "type": "text",
-                        "value": "test@email.com"
+                        "value": "",
+                        "label": "Email",
+                        "weight": 20,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill email address"
+                        }
+                    },
+                    "company": {
+                        "type": "text",
+                        "value": "Other Company",
+                        "label": "Company",
+                        "weight": 30,
+                        "regex": {
+                            "source": "\S",
+                            "error": "Please fill company name"
+                        }
                     }
                 }
             }

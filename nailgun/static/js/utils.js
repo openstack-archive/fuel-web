@@ -234,6 +234,13 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;
         },
+        validateByRegexp: function(setting) {
+            if (!setting.regex || !setting.regex.source) return;
+            return !setting.value.match(new RegExp(setting.regex.source));
+        },
+        makePath: function() {
+            return _.toArray(arguments).join('.');
+        },
         sortEntryProperties: function(entry, sortOrder) {
             sortOrder = sortOrder || ['name'];
             var properties = _.keys(entry);

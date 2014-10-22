@@ -39,16 +39,27 @@ function($, React, controls) {
                         username: keystoneClient.username,
                         password: keystoneClient.password
                     });
-                    this.loginRedirect();
+                    this.goToWelcomePage();
                 }, this));
         },
         loginRedirect: function() {
             app.navigate('#', {trigger: true, replace: true});
+        },
+        goToWelcomePage: function() {
+            app.settings.fetch({cache: true})
+                .always(_.bind(function() {
+                    if (app.settings.get('statistics').show_welcome_page.value) {
+                        app.navigate('#welcome', {trigger: true, replace: true});
+                    } else {
+                        this.loginRedirect();
+                    }
+                }, this));
         }
     };
 
     LoginPage = React.createClass({
         breadcrumbsPath: [],
+        customLayout: true,
         propTypes: {
             app: React.PropTypes.object
         },
@@ -83,7 +94,7 @@ function($, React, controls) {
         },
         componentDidMount: function() {
             if (app.user.get('authenticated')) {
-                this.loginRedirect();
+                this.goToWelcomePage();
             } else {
                 $(this.refs.username.getDOMNode()).focus();
             }

@@ -25,6 +25,7 @@ define(
     'keystone_client',
     'views/common',
     'jsx!views/login_page',
+    'jsx!views/welcome_page',
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'jsx!views/clusters_page',
@@ -33,13 +34,14 @@ define(
     'jsx!views/support_page',
     'jsx!views/capacity_page'
 ],
-function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
         routes: {
             login: 'login',
             logout: 'logout',
+            welcome: 'welcome',
             clusters: 'listClusters',
             'cluster/:id': 'showCluster',
             'cluster/:id/:tab(/:opt1)(/:opt2)': 'showClusterTab',
@@ -72,8 +74,10 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 cacheTokenFor: 10 * 60 * 1000,
                 tenant: 'admin'
             });
-            var version = this.version = new models.FuelVersion();
 
+            this.settings = new models.FuelSettings();
+
+            var version = this.version = new models.FuelVersion();
             version.fetch().then(_.bind(function() {
                 this.user = new models.User({authenticated: !version.get('auth_required')});
 
@@ -179,7 +183,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.page = utils.universalMount(new NewPage(options), this.content);
             this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
             this.updateTitle();
-            this.toggleElements(NewPage != LoginPage);
+            this.toggleElements(!this.page.hiddenLayout);
         },
         // routes
         login: function() {
@@ -197,6 +201,9 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             _.defer(function() {
                 app.navigate('#login', {trigger: true, replace: true});
             });
+        },
+        welcome: function() {
+            this.setPage(WelcomePage, {settings: this.settings});
         },
         showCluster: function(id) {
             this.navigate('#cluster/' + id + '/nodes', {trigger: true, replace: true});
@@ -286,7 +293,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
         showSupportPage: function() {
             var tasks = new models.Tasks();
             tasks.fetch().done(_.bind(function() {
-                this.setPage(SupportPage, {tasks: tasks});
+                this.setPage(SupportPage, {tasks: tasks, settings: this.settings});
             }, this));
         },
         showCapacityPage: function() {

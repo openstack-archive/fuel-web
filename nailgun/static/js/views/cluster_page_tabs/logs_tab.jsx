@@ -240,9 +240,10 @@ function(React, utils, models, componentMixins, controls) {
                 });
                 _.each(groups, function(group) {
                     if (sourcesByGroup[group].length) {
-                        options[group] = sourcesByGroup[group].map(function(source) {
+                        var option = sourcesByGroup[group].map(function(source) {
                             return <option value={source.id} key={source.id}>{source.get('name')}</option>;
                         }, this);
+                        options[group] = group ? <optgroup label={group}>{option}</optgroup> : option;
                     }
                 }, this);
             }

@@ -38,14 +38,15 @@ def match_device(hu_disk, ks_disk):
     uspec = hu_disk['uspec']
 
     # True if at least one by-id link matches ks_disk
-    if ('DEVLINKS' in uspec and 'extra' in ks_disk
+    if ('DEVLINKS' in uspec and len(ks_disk.get('extra', [])) > 0
             and any(x.startswith('/dev/disk/by-id') for x in
                     set(uspec['DEVLINKS']) &
                     set(['/dev/%s' % l for l in ks_disk['extra']]))):
         return True
 
     # True if one of DEVLINKS matches ks_disk id
-    if ('DEVLINKS' in uspec and 'id' in ks_disk
+    if (len(ks_disk.get('extra', [])) == 0
+            and 'DEVLINKS' in uspec and 'id' in ks_disk
             and '/dev/%s' % ks_disk['id'] in uspec['DEVLINKS']):
         return True
 

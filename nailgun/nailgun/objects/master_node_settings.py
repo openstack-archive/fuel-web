@@ -35,21 +35,7 @@ class MasterNodeSettings(NailgunObject):
         "description": "Serialized ActionLog object",
         "type": "object",
         "properties": {
-            "settings": {
-                "type": "object",
-                "properties": {
-                    "send_anonymous_statistic": {"type": "object"},
-                    "send_user_info": {"type": "object"},
-                    "user_info": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "object"},
-                            "company": {"type": "object"},
-                            "email": {"type": "object"}
-                        }
-                    }
-                }
-            }
+            "settings": {"type": "object"}
         }
     }
 

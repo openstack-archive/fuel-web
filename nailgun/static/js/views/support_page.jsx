@@ -17,9 +17,10 @@ define(
 [
     'react',
     'jsx!component_mixins',
-    'models'
+    'models',
+    'jsx!views/statistics_mixin'
 ],
-function(React, componentMixins, models) {
+function(React, componentMixins, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -32,7 +33,8 @@ function(React, componentMixins, models) {
         render: function() {
             var elements = [
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
-                <CapacityAudit key='CapacityAudit' />
+                <CapacityAudit key='CapacityAudit' />,
+                <StatisticsSettings key='StatisticsSettings' />
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
@@ -166,6 +168,37 @@ function(React, componentMixins, models) {
                     text={$.t('support_page.capacity_audit_text')}
                 >
                     <p><a className='btn' href='#capacity'>{$.t('support_page.view_capacity_audit')}</a></p>
+                </SupportPageElement>
+            );
+        }
+    });
+
+    var StatisticsSettings = React.createClass({
+        mixins: [statisticsMixin],
+        getInitialState: function() {
+            // TODO: get values from user settings
+            return {
+                errors: [],
+                actionInProgress: false,
+                sendStatistics: true,
+                personalizeStatistics: true
+            };
+        },
+        componentWillMount: function() {
+            this.ns = 'support_page.';
+        },
+        render: function() {
+            return (
+                <SupportPageElement title={$.t(this.ns + 'send_statistics_title')}>
+                    <div className='statistics-settings'>
+                        {_.map(['send_statistics', 'personalize_statistics'], this.renderCheckbox, this)}
+                        {this.renderContactForm()}
+                    </div>
+                    <p>
+                        <a className='btn' disabled={this.state.actionInProgress} onClick={this.saveSettings}>
+                            {$.t(this.ns + 'save_changes')}
+                        </a>
+                    </p>
                 </SupportPageElement>
             );
         }

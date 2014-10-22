@@ -8,10 +8,16 @@ For information on how to get source code see :ref:`getting-source`.
 Preparing Development Environment
 ---------------------------------
 
-.. warning:: Nailgun requires Python 2.6. Please check installed Python version
-    using ``python --version``. If the version check does not match, you can use
-    `PPA <https://launchpad.net/~fkrull/+archive/ubuntu/deadsnakes>`_ (Ubuntu)
-    or  `pyenv <https://github.com/yyuu/pyenv>`_ (Universal)
+.. warning:: Nailgun requires Python 2.6. with development files.  Please check
+    installed Python version using ``python --version``. If the version check
+    does not match, you can use `PPA
+    <https://launchpad.net/~fkrull/+archive/ubuntu/deadsnakes>`_ (Ubuntu) or
+    `pyenv <https://github.com/yyuu/pyenv>`_ (Universal)
+
+    For PPA::
+
+     sudo add-apt-repository ppa:fkrull/deadsnakes
+     sudo apt-get install python2.6 python2.6-dev
 
 #. Nailgun can be found in fuel-web/nailgun
 

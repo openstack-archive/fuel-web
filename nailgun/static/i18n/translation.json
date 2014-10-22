@@ -79,6 +79,70 @@
                 "log_in": "Log in",
                 "title": "Log In"
             },
+            "statistics": {
+                "help_to_improve": "Help us to improve your experience by sending Mirantis information about the settings, features, and deployment actions when you use Mirantis OpenStack.",
+                "statistics_includes": "Usage statistics include information such as settings, button/menu clicks, hardware configuration, and version information.  The usage statistics do not include information such as passwords, ip addresses, or node names. For a complete list of statistics that we gather, ",
+                "click_here": "click here",
+                "privacy_policy": "Mirantis’ privacy policy (\"Privacy Policy\") describes our practices regarding the information we collect on the Mirantis web sites and through the use of our products and services, and how it is used and shared with third parties. You can read the policy ",
+                "privacy_policy_link": "here",
+                "statistics_includes_full": "Usage statistics include the following. Information such as passwords, ip addresses, and node names are not included.",
+                "actions_title": "Actions:",
+                "actions": {
+                    "operation_type": "Operation type (adding cluster, adding node, deployment, removing node, e.t.c.)",
+                    "operation_time": "Operation start and finish time",
+                    "actual_time": "Actual time that is took to complete the operation",
+                    "network_verification": "Network verification - whether it was used, and what was the result",
+                    "ostf_results": "Is OSTF used, and tests results"
+                },
+                "settings_title": "Environment Settings:",
+                "settings": {
+                    "envronments_amount": "Number of environments",
+                    "nistribution": "Distribution / OS",
+                    "network_type": "Network type",
+                    "kernel_parameters": "Kernel parameters",
+                    "admin_network_parameters": "Admin network parameters",
+                    "pxe_parameters": "PXE parameters",
+                    "dns_parameters": "DNS parameters",
+                    "storage_options": "Storage options",
+                    "related_projects": "Related Projects",
+                    "modified_settings": "Settings modified on Settings tab",
+                    "networking_configuration": "Networking configuration"
+                },
+                "node_settings_title": "Node Settings:",
+                "node_settings": {
+                    "deployed_nodes_amount": "Number of nodes deployed",
+                    "deployed_roles": "Roles deployed to each node",
+                    "disk_layout": "Disk layout",
+                    "interfaces_configuration": "Interfaces configuration"
+                },
+                "system_info_title": "System Info:",
+                "system_info": {
+                    "hypervisor": "Hypervisor",
+                    "hardware_info": "Hardware info",
+                    "fuel_version": "Fuel version info",
+                    "openstack_version": "OpenStack version info"
+                },
+                "setting_labels": {
+                    "send_anonymous_statistic": "Send usage statistics to Mirantis",
+                    "send_user_info": "Identify my error reports so that Mirantis Support can assist me",
+                    "name": "Name",
+                    "email": "Email",
+                    "company": "Company"
+                },
+                "errors": {
+                    "name": "Please fill your name",
+                    "email": "Please fill email address",
+                    "company": "Please fill company name"
+                }
+            },
+            "welcome_page": {
+                "title": "Welcome to Mirantis OpenStack",
+                "support": "Our support team can optionally use your error reports to assist you.",
+                "provide_contacts": "Please provide your contact information below.",
+                "start_fuel": "Start Using Fuel",
+                "change_settings": "You can change your settings at any time by updating your user profile information.",
+                "thanks": "Thanks for helping to improve Mirantis OpenStack!"
+            },
             "navbar": {
                 "environments": "Environments",
                 "releases": "Releases",
@@ -119,7 +183,9 @@
                 "diagnostic_snapshot": "Diagnostic Snapshot",
                 "capacity_audit": "Capacity Audit",
                 "capacity_audit_text": "To better manage your resources, you can run this report to find out what OpenStack roles have been deployed across all of your environments.",
-                "view_capacity_audit": "View Capacity Audit"
+                "view_capacity_audit": "View Capacity Audit",
+                "send_statistics_title": "Send Statistics About Usage",
+                "save_changes": "Save Changes"
             },
             "release_page": {
                 "title": "Releases",

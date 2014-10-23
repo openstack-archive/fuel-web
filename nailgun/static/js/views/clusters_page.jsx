@@ -158,7 +158,7 @@ function(React, models, utils, componentMixins, wizard) {
     RegisterTrial = React.createClass({
         mixins: [React.BackboneMixin('fuelKey')],
         shouldShowMessage: function() {
-            return _.contains(app.version.get('feature_groups'), 'mirantis') && !localStorage.trialRemoved;
+            return _.contains(app.version.get('feature_groups'), 'mirantis') && !_.contains(app.version.get('feature_groups'), 'techpreview') && !localStorage.trialRemoved;
         },
         closeTrialWarning: function() {
             localStorage.setItem('trialRemoved', 'true');

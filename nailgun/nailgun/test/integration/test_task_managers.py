@@ -435,7 +435,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.wait_ready(supertask, timeout=5)
         self.assertEqual(self.env.db.query(Node).count(), 1)
 
-    @fake_tasks(recover_offline_nodes=False)
+    @fake_tasks(recover_offline_nodes=False, tick_interval=1)
     def test_deletion_three_offline_nodes_and_one_online(self):
         self.env.create(
             nodes_kwargs=[
@@ -455,7 +455,8 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(node.status, 'discover')
         self.assertEqual(node.cluster_id, None)
 
-    @fake_tasks(recover_nodes=True, recover_offline_nodes=True)
+    @fake_tasks(recover_nodes=True, recover_offline_nodes=True,
+                tick_interval=1)
     def test_delete_offile_nodes_and_recover_them(self):
         self.env.create(
             nodes_kwargs=[

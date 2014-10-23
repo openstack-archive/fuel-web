@@ -39,7 +39,11 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Testing logs tab');
     this.test.assertSelectorAppears('.filter-bar select[name=source] option', 'Log source selection box appears and is not empty');
-    this.test.assertSelectorAppears('.filter-bar .show-logs-btn:not([disabled])', '"Show logs" button is available');
+    this.test.assertSelectorAppears('.filter-bar .show-logs-btn:disabled', '"Show logs" button is locked');
+    this.then(function() {
+        this.fill('.filter-bar', {'level': 'DEBUG'});
+    });
+    this.test.assertSelectorAppears('.filter-bar .show-logs-btn:not([disabled])', '"Show logs" button is enabled after "Levels" change');
     this.then(function() {
         this.click('.filter-bar .show-logs-btn');
     });

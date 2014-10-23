@@ -59,7 +59,62 @@ compiled_urls_actions_mapping = utils.compile_mapping_keys(
         r'.*/clusters/(?P<cluster_id>\d+)/?$': {
             'action_name': 'cluster_instance',
             'action_group': 'cluster_changes'
-        }
+        },
+        (r'.*/clusters/(?P<cluster_id>\d+)'
+         r'/network_configuration/nova_network/?$'): {
+             'action_name': 'nova_network',
+             'action_group': 'network_configuration'
+         },
+        r'.*/clusters/(?P<cluster_id>\d+)/network_configuration/neutron/?$': {
+            'action_name': 'neutron',
+            'action_group': 'network_configuration'
+        },
+        (r'.*/clusters/(?P<cluster_id>\d+)/network_configuration/'
+         r'nova_network/verify/?$'): {
+             'action_name': 'nova_network',
+             'action_group': 'network_verification'
+         },
+        (r'.*/clusters/(?P<cluster_id>\d+)/network_configuration/'
+         r'neutron/verify/?$'): {
+             'action_name': 'neutron',
+             'action_group': 'network_verification'
+         },
+        r'.*/clusters/(?P<cluster_id>\d+)/attributes/?$': {
+            'action_name': 'attributes',
+            'action_group': 'cluster_attributes'
+        },
+        r'.*/clusters/(?P<cluster_id>\d+)/attributes/defaults/?$': {
+            'action_name': 'attributes_defaults',
+            'action_group': 'cluster_attributes'
+        },
+        r'.*/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/?$': {
+            'action_name': 'deployment_info',
+            'action_group': 'orchestrator'
+        },
+        r'.*/clusters/(?P<cluster_id>\d+)/orchestrator/provisioning/?$': {
+            'action_name': 'provisioning_info',
+            'action_group': 'orchestrator'
+        },
+        r'.*/settings/?$': {
+            'action_name': 'master_node_settings',
+            'action_group': 'master_node_settings'
+        },
+        r'.*/releases/?$': {
+            'action_name': 'releases_collection',
+            'action_group': 'release_changes'
+        },
+        r'.*/releases/(?P<obj_id>\d+)/?$': {
+            'action_name': 'release_instance',
+            'action_group': 'release_changes'
+        },
+        r'.*/tasks/?$': {
+            'action_name': 'tasks_collection',
+            'action_group': 'tasks_changes'
+        },
+        r'.*/tasks/(?P<obj_id>\d+)/?$': {
+            'action_name': 'task_instance',
+            'action_group': 'tasks_changes'
+        },
     }
 )
 
@@ -192,6 +247,12 @@ class ConnectionMonitorMiddleware(object):
             # response
             response_data['data'] = {'message': six.next(response_iterator)}
         else:
-            response_data['data'] = json.loads(six.next(response_iterator))
+            # some handlers return no data after successful processing
+            # in that case json.loads() fails so we need following workflow
+            to_check, to_write = itertools.tee(response_iterator)
+            try:
+                response_data['data'] = json.loads(six.next(to_check))
+            except ValueError:
+                response_data['data'] = {'content': six.next(to_write)}
 
         return response_data

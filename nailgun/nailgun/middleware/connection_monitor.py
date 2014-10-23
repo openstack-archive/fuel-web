@@ -59,7 +59,42 @@ compiled_urls_actions_mapping = utils.compile_mapping_keys(
         r'.*/clusters/(?P<cluster_id>\d+)/?$': {
             'action_name': 'cluster_instance',
             'action_group': 'cluster_changes'
-        }
+        },
+        (r'.*/clusters/(?P<cluster_id>\d+)'
+         r'/network_configuration/nova_network/?$'): {
+             'action_name': 'nova_network',
+             'action_group': 'network_configuration'
+         },
+        r'.*/clusters/(?P<cluster_id>\d+)/network_configuration/neutron/?$': {
+            'action_name': 'neutron',
+            'action_group': 'network_configuration'
+        },
+        (r'.*/clusters/(?P<cluster_id>\d+)/network_configuration/'
+         r'nova_network/verify/?$'): {
+             'action_name': 'nova_network',
+             'action_group': 'network_verification'
+         },
+        (r'.*/clusters/(?P<cluster_id>\d+)/network_configuration/'
+         r'neutron/verify/?$'): {
+             'action_name': 'neutron',
+             'action_group': 'network_verification'
+         },
+        r'.*/clusters/(?P<cluster_id>\d+)/attributes/?$': {
+            'action_name': 'attributes',
+            'action_group': 'cluster_attributes'
+        },
+        r'.*/clusters/(?P<cluster_id>\d+)/attributes/defaults/?$': {
+            'action_name': 'attributes_defaults',
+            'action_group': 'cluster_attributes'
+        },
+        r'.*/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/?$': {
+            'action_name': 'deployment_info',
+            'action_group': 'orchestrator'
+        },
+        r'.*/clusters/(?P<cluster_id>\d+)/orchestrator/provisioning/?$': {
+            'action_name': 'provisioning_info',
+            'action_group': 'orchestrator'
+        },
     }
 )
 

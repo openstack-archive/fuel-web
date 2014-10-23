@@ -10,4 +10,5 @@ ISO, other materials: http://fuel.mirantis.com/
 
 User guide: http://docs.mirantis.com/
 
-Development documentation: http://docs.mirantis.com/fuel-dev/
+Development documentation can be found in the
+Fuel Development Guide: http://docs.mirantis.com/

@@ -8,6 +8,5 @@ It has links to two submodules:
 
 ISO, other materials: http://fuel.mirantis.com/
 
-User guide: http://docs.mirantis.com/
-
-Development documentation: http://docs.mirantis.com/fuel-dev/
+The User Guide and Fuel Development Guide
+can be found at: http://docs.mirantis.com/

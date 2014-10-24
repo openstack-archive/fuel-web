@@ -48,13 +48,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         propTypes: {
             type: React.PropTypes.string.isRequired,
             name: React.PropTypes.string,
-            label: React.PropTypes.renderable,
-            description: React.PropTypes.renderable,
+            label: React.PropTypes.node,
+            description: React.PropTypes.node,
             disabled: React.PropTypes.bool,
-            wrapperClassName: React.PropTypes.renderable,
-            labelClassName: React.PropTypes.renderable,
-            descriptionClassName: React.PropTypes.renderable,
-            tooltipText: React.PropTypes.renderable,
+            wrapperClassName: React.PropTypes.node,
+            labelClassName: React.PropTypes.node,
+            descriptionClassName: React.PropTypes.node,
+            tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool
         },
         getInitialState: function() {
@@ -161,9 +161,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         propTypes: {
             name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-            label: React.PropTypes.renderable,
-            labelClassName: React.PropTypes.renderable,
-            tooltipText: React.PropTypes.renderable
+            label: React.PropTypes.node,
+            labelClassName: React.PropTypes.node,
+            tooltipText: React.PropTypes.node
         },
         render: function() {
             var labelClasses = {'parameter-name': true};

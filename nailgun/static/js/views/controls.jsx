@@ -48,13 +48,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         propTypes: {
             type: React.PropTypes.string.isRequired,
             name: React.PropTypes.string,
-            label: React.PropTypes.renderable,
-            description: React.PropTypes.renderable,
+            label: React.PropTypes.node,
+            description: React.PropTypes.node,
             disabled: React.PropTypes.bool,
-            wrapperClassName: React.PropTypes.renderable,
-            labelClassName: React.PropTypes.renderable,
-            descriptionClassName: React.PropTypes.renderable,
-            tooltipText: React.PropTypes.renderable,
+            wrapperClassName: React.PropTypes.node,
+            labelClassName: React.PropTypes.node,
+            descriptionClassName: React.PropTypes.node,
+            tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool
         },
         getInitialState: function() {
@@ -73,27 +73,27 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         renderInput: function() {
             var input = null,
-                className = 'parameter-input';
+                props = {ref: 'input', key: 'input', className: 'parameter-input', onChange: this.onChange};
             switch (this.props.type) {
                 case 'select':
-                    input = (<select ref='input' key='input' className={className} onChange={this.onChange}>{this.props.children}</select>);
+                    input = (<select {...this.props} {...props}>{this.props.children}</select>);
                     break;
                 case 'textarea':
-                    input = <textarea ref='input' key='input' className={className} onChange={this.onChange} />;
+                    input = <textarea {...this.props} {...props} />;
                     break;
                 case 'password':
                     var type = (this.props.toggleable && this.state.visible) ? 'text' : 'password';
-                    input = <input ref='input' key='input' className={className} type={type} onChange={this.onChange} />;
+                    input = <input {...this.props} {...props} type={type} />;
                     break;
                 default:
-                    input = <input ref='input' key='input' className={className} onChange={this.onChange} value={this.props.value} />;
+                    input = <input {...this.props} {...props} />;
             }
             return this.isCheckboxOrRadio() ? (
                 <div key='input-wrapper' className='custom-tumbler'>
-                    {this.transferPropsTo(input)}
+                    {input}
                     <span>&nbsp;</span>
                 </div>
-            ) : this.transferPropsTo(input);
+            ) : input;
         },
         renderToggleablePasswordAddon: function() {
             return this.props.toggleable ? (
@@ -161,9 +161,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         propTypes: {
             name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-            label: React.PropTypes.renderable,
-            labelClassName: React.PropTypes.renderable,
-            tooltipText: React.PropTypes.renderable
+            label: React.PropTypes.node,
+            labelClassName: React.PropTypes.node,
+            tooltipText: React.PropTypes.node
         },
         render: function() {
             var labelClasses = {'parameter-name': true};
@@ -177,18 +177,16 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                         </label>
                     }
                     {_.map(this.props.values, function(value) {
-                        return this.transferPropsTo(
-                            <controls.Input
-                                key={value.data}
-                                type='radio'
-                                value={value.data}
-                                defaultChecked={value.checked}
-                                label={value.label}
-                                description={value.description}
-                                disabled={value.disabled}
-                                tooltipText={value.tooltipText}
-                            />
-                        );
+                        return <controls.Input {...this.props}
+                            key={value.data}
+                            type='radio'
+                            value={value.data}
+                            defaultChecked={value.checked}
+                            label={value.label}
+                            description={value.description}
+                            disabled={value.disabled}
+                            tooltipText={value.tooltipText}
+                        />;
                     }, this)}
                 </div>
             );

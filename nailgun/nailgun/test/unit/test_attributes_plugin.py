@@ -31,7 +31,7 @@ SAMPLE_PLUGIN = {
     'package_version': '1',
     'description': 'Enable to use plugin X for Neutron',
     'types': ['nailgun', 'repository', 'deployment_scripts'],
-    'fuel_version': 6.0,
+    'fuel_version': '6.0',
     'releases': [
         {'repository_path': 'repositories/ubuntu',
          'version': '2014.2-6.0', 'os': 'ubuntu',
@@ -62,6 +62,7 @@ class TestPlugin(base.BaseTestCase):
         super(TestPlugin, self).setUp()
         self.plugin = Plugin.create(SAMPLE_PLUGIN)
         self.env.create(
+            cluster_kwargs={'mode': 'multinode'},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'})
         self.cluster = self.env.clusters[0]
@@ -86,7 +87,7 @@ class TestPlugin(base.BaseTestCase):
             ENVIRONMENT_CONFIG['attributes']['lbaas_simple_text'])
         self.assertEqual(
             attributes['testing_plugin']['metadata'],
-            self.attr_plugin.metadata['metadata'])
+            self.attr_plugin.default_metadata)
 
     def test_plugin_release_versions(self):
         """Helper should return set of all release versions this plugin
@@ -138,3 +139,56 @@ class TestPlugin(base.BaseTestCase):
         expected = '{0}{1}'.format(base_url, 'deployment_scripts/')
         self.assertEqual(
             expected, self.attr_plugin.master_scripts_path(self.cluster))
+
+
+class TestClusterCompatiblityValidation(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestClusterCompatiblityValidation, self).setUp()
+        self.plugin = Plugin.create(SAMPLE_PLUGIN)
+        self.attr_plugin = attr_plugin.ClusterAttributesPlugin(self.plugin)
+
+    def get_cluster(self, os, mode, version):
+        release = mock.Mock(operating_system=os, version=version)
+        cluster = mock.Mock(mode=mode, release=release)
+        return cluster
+
+    def test_validation_ubuntu_ha(self):
+        cluster = self.get_cluster(
+            os='Ubuntu',
+            mode='ha_compact',
+            version='2014.2-6.0')
+        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
+        self.assertTrue(validated)
+
+    def test_validation_centos_multinode(self):
+        cluster = self.get_cluster(
+            os='Centos',
+            mode='multinode',
+            version='2014.2-6.0')
+        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
+        self.assertTrue(validated)
+
+    def test_not_existent_os(self):
+        cluster = self.get_cluster(
+            os='Fedora',
+            mode='multinode',
+            version='2014.2-6.0')
+        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
+        self.assertFalse(validated)
+
+    def test_plugin_provided_ha_compact(self):
+        cluster = self.get_cluster(
+            os='Ubuntu',
+            mode='ha_compact',
+            version='2014.2-6.0')
+        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
+        self.assertTrue(validated)
+
+    def test_version_mismatch(self):
+        cluster = self.get_cluster(
+            os='Ubuntu',
+            mode='ha_compact',
+            version='2014.2.1-6.0')
+        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
+        self.assertFalse(validated)

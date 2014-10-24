@@ -38,7 +38,7 @@ function(React, utils, models, dialogs) {
                     <h3 className='page-title'>{$.t('notifications_page.title')}</h3>
                     <ul className='notification-list page-wrapper'>
                         {this.props.notifications.map(function(notification) {
-                            return this.transferPropsTo(<Notification key={'notification' + notification.id} notification={notification} />);
+                            return <Notification {...this.props} key={'notification' + notification.id} notification={notification} />;
                         }, this)}
                     </ul>
                 </div>

@@ -41,11 +41,10 @@ class ReleaseSerializer(BasicSerializer):
             super(ReleaseSerializer, cls).serialize(instance, fields)
         release_dict["is_deployable"] = Release.is_deployable(instance)
 
-        if instance.orchestrator_data:
-            release_dict["orchestrator_data"] = \
-                ReleaseOrchestratorDataSerializer.serialize(
-                    instance.orchestrator_data
-                )
+        # we always want to get orchestrator data even it's a default one
+        release_dict["orchestrator_data"] = \
+            Release.get_orchestrator_data_dict(instance)
+
         return release_dict
 
 

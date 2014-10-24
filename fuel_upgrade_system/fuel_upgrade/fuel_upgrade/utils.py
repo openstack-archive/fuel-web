@@ -29,6 +29,7 @@ from copy import deepcopy
 from distutils.version import StrictVersion
 
 from mako.template import Template
+import six
 import yaml
 
 from fuel_upgrade import errors
@@ -665,6 +666,61 @@ def iterfiles(path):
     for root, dirnames, filenames in os.walk(path, topdown=True):
         for filename in filenames:
             yield os.path.join(root, filename)
+
+
+def extract_env_version(release_version):
+    """Returns environment version based on release version.
+
+    A release version consists of 'OSt' and 'MOS' versions: '2014.1.1-5.0.2'
+    so we need to extract 'MOS' version and returns it as result.
+
+    :param release_version: a string which represents a release version
+    :returns: an environment version
+    """
+    separator = '-'
+
+    # unfortunately, Fuel 5.0 didn't has an env version in release_version
+    # so we need to handle that special case
+    if release_version == '2014.1':
+        return '5.0'
+
+    # we need to extract a second part since it's what we're looking for
+    return release_version.split(separator)[1]
+
+
+def get_base_release(release, depends_on, existing_releases):
+    """Returns a base release for a given release.
+
+    :param release: a release to find base for
+    :parem depends_on: a release version depends on
+    :param existing_releases: a list of available releases to search in
+    :returns: a release if available; None - if not found
+    """
+    # create a map for existing releases
+    existing_releases = filter(
+        lambda r: r['operating_system'] == release['operating_system'],
+        existing_releases)
+    release_map = dict([(r['version'], r) for r in existing_releases])
+
+    # if we have exact release - return it!
+    if depends_on in release_map:
+        return release_map[depends_on]
+
+    # try to find a release from the same series
+    series = extract_env_version(depends_on)
+    cur_series = extract_env_version(release['version'])
+    for version, candidate_release in six.iteritems(release_map):
+        candidate_series = extract_env_version(version)
+        if candidate_series.startswith(series) and \
+                candidate_series < cur_series:
+            logger.warning(
+                'The version "%s" is not found on the system. '
+                'Use "%s" as fallback for "%s".',
+                depends_on, version, release['version'])
+            return candidate_release
+
+    # nothing found
+    return None
 
 
 class VersionedFile(object):

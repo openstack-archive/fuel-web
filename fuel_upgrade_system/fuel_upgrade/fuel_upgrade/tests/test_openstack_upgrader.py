@@ -18,6 +18,7 @@ import mock
 import requests
 
 from fuel_upgrade.engines.openstack import OpenStackUpgrader
+from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
 
 
@@ -31,6 +32,11 @@ class TestOpenStackUpgrader(BaseTestCase):
             "operating_system": "CentOS",
           }
         }]
+    '''
+
+    metadata_raw = '''
+    diff_releases:
+       2012.2-6.0: 2014.1.1-5.1
     '''
 
     @mock.patch(
@@ -49,16 +55,16 @@ class TestOpenStackUpgrader(BaseTestCase):
         orchestrator_data = self.upgrader.releases[0]['orchestrator_data']
 
         self.assertEqual(
-            orchestrator_data['repo_metadata']['nailgun'],
-            'http://0.0.0.0:8080/2014.1/centos/x86_64')
+            orchestrator_data['repo_metadata']['2014.1'],
+            'http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/centos/x86_64')
 
         self.assertEqual(
             orchestrator_data['puppet_manifests_source'],
-            'rsync://0.0.0.0:/puppet/2014.1/manifests/')
+            'rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/')
 
         self.assertEqual(
             orchestrator_data['puppet_modules_source'],
-            'rsync://0.0.0.0:/puppet/2014.1/modules/')
+            'rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/')
 
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_versions')
@@ -290,3 +296,76 @@ class TestOpenStackUpgrader(BaseTestCase):
             '/etc/puppet': 84,
             '/var/www/nailgun': 84,
         })
+
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.os.path.exists', return_value=True)
+    def test_add_base_repos_to_releases(self, _):
+        with mock.patch('fuel_upgrade.engines.openstack.io.open',
+                        self.mock_open(self.metadata_raw)):
+
+            releases = [
+                {
+                    'name': 'A',
+                    'version': '2012.2-6.0',
+                    'operating_system': 'centos',
+                    'orchestrator_data': {
+                        'repo_metadata': {
+                            '2012.2-6.0': 'path/to/6.0',
+                        }
+                    },
+                }
+            ]
+
+            existing_releases = [
+                {
+                    'name': 'A',
+                    'version': '2012.2-5.0',
+                    'operating_system': 'centos',
+                    'orchestrator_data': {
+                        'repo_metadata': {
+                            'nailgun': 'path/to/5.0',
+                        }
+                    },
+                },
+                {
+                    'name': 'A',
+                    'version': '2012.2-5.1',
+                    'operating_system': 'centos',
+                    'orchestrator_data': {
+                        'repo_metadata': {
+                            'nailgun': 'path/to/5.1',
+                        }
+                    },
+                },
+            ]
+
+            self.upgrader._add_base_repos_to_releases(
+                releases, existing_releases)
+
+            self.assertEqual(
+                releases[0]['orchestrator_data']['repo_metadata'], {
+                    '2012.2-6.0': 'path/to/6.0',
+                    'nailgun': 'path/to/5.1'})
+
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.os.path.exists', return_value=True)
+    def test_add_base_repos_to_releases_not_found(self, _):
+        with mock.patch('fuel_upgrade.engines.openstack.io.open',
+                        self.mock_open(self.metadata_raw)):
+            releases = [
+                {
+                    'name': 'A',
+                    'version': '2012.2-6.0',
+                    'operating_system': 'centos',
+                    'orchestrator_data': {
+                        'repo_metadata': {
+                            '2012.2-6.0': 'path/to/6.0',
+                        }
+                    },
+                }
+            ]
+
+            self.assertRaises(
+                errors.BaseReleaseNotFound,
+                self.upgrader._add_base_repos_to_releases,
+                releases, [])

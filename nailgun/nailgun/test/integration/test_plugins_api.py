@@ -23,45 +23,6 @@ from nailgun.openstack.common import jsonutils
 from nailgun.test import base
 
 
-SAMPLE_PLUGIN = {
-    'version': '1.1.0',
-    'name': 'testing',
-    'package_version': '1',
-    'description': 'Enable to use plugin X for Neutron',
-    'types': ['nailgun', 'repository', 'deployment_scripts'],
-    'fuel_version': 6.0,
-    'releases': [
-        {'repository_path': 'repositories/ubuntu',
-         'version': '2014.2-6.0', 'os': 'ubuntu',
-         'mode': ['ha', 'multinode'],
-         'deployment_scripts_path': 'deployment_scripts/'},
-        {'repository_path': 'repositories/centos',
-         'version': '2014.2-6.0', 'os': 'centos',
-         'mode': ['ha', 'multinode'],
-         'deployment_scripts_path': 'deployment_scripts/'}]}
-
-ENVIRONMENT_CONFIG = {
-    'attributes': {
-        'lbaas_simple_text': {
-            'value': 'Set default value',
-            'type': 'text',
-            'description': 'Description for text field',
-            'weight': 25,
-            'label': 'Text field'}}}
-
-TASKS_CONFIG = [
-    {'priority': 10,
-     'role': ['controller'],
-     'type': 'shell',
-     'parameters': {'cmd': './lbaas_enable.sh', 'timeout': 42},
-     'stage': 'post_deployment'},
-    {'priority': 10,
-     'role': '*',
-     'type': 'shell',
-     'parameters': {'cmd': 'echo all > /tmp/plugin.all', 'timeout': 42},
-     'stage': 'pre_deployment'}]
-
-
 def get_config(config):
     def _get_config(*args):
         return mock.mock_open(read_data=yaml.dump(config))()
@@ -70,11 +31,52 @@ def get_config(config):
 
 class BasePluginTest(base.BaseIntegrationTest):
 
-    def create_plugin(self):
+    SAMPLE_PLUGIN = {
+        'version': '1.1.0',
+        'name': 'testing',
+        'package_version': '1',
+        'description': 'Enable to use plugin X for Neutron',
+        'types': ['nailgun', 'repository', 'deployment_scripts'],
+        'fuel_version': "6.0",
+        'releases': [
+            {'repository_path': 'repositories/ubuntu',
+             'version': '2014.2-6.0',
+             'os': 'ubuntu',
+             'mode': ['ha_compact', 'multinode'],
+             'deployment_scripts_path': 'deployment_scripts/'},
+            {'repository_path': 'repositories/centos',
+             'version': '2014.2-6.0', 'os': 'centos',
+             'mode': ['ha', 'multinode'],
+             'deployment_scripts_path': 'deployment_scripts/'}]}
+
+    ENVIRONMENT_CONFIG = {
+        'attributes': {
+            'lbaas_simple_text': {
+                'value': 'Set default value',
+                'type': 'text',
+                'description': 'Description for text field',
+                'weight': 25,
+                'label': 'Text field'}}}
+
+    TASKS_CONFIG = [
+        {'priority': 10,
+         'role': ['controller'],
+         'type': 'shell',
+         'parameters': {'cmd': './lbaas_enable.sh', 'timeout': 42},
+         'stage': 'post_deployment'},
+        {'priority': 10,
+         'role': '*',
+         'type': 'shell',
+         'parameters': {'cmd': 'echo all > /tmp/plugin.all', 'timeout': 42},
+         'stage': 'pre_deployment'}]
+
+    def create_plugin(self, sample=None, expect_errors=False):
+        sample = sample or self.SAMPLE_PLUGIN
         resp = self.app.post(
             base.reverse('PluginCollectionHandler'),
-            jsonutils.dumps(SAMPLE_PLUGIN),
-            headers=self.default_headers
+            jsonutils.dumps(sample),
+            headers=self.default_headers,
+            expect_errors=expect_errors
         )
         return resp
 
@@ -92,7 +94,7 @@ class BasePluginTest(base.BaseIntegrationTest):
                             create=True) as f_m:
                 os.access.return_value = True
                 os.path.exists.return_value = True
-                f_m.side_effect = get_config(ENVIRONMENT_CONFIG)
+                f_m.side_effect = get_config(self.ENVIRONMENT_CONFIG)
                 self.env.create(
                     release_kwargs={'version': '2014.2-6.0',
                                     'operating_system': 'Ubuntu'},
@@ -123,7 +125,7 @@ class BasePluginTest(base.BaseIntegrationTest):
                                 create=True) as f_m:
                     os.access.return_value = True
                     os.path.exists.return_value = True
-                    f_m.side_effect = get_config(TASKS_CONFIG)
+                    f_m.side_effect = get_config(self.TASKS_CONFIG)
                     resp = self.app.get(
                         base.reverse('DefaultPrePluginsHooksInfo',
                                      {'cluster_id': cluster.id}),
@@ -136,7 +138,7 @@ class BasePluginTest(base.BaseIntegrationTest):
                             create=True) as f_m:
                 os.access.return_value = True
                 os.path.exists.return_value = True
-                f_m.side_effect = get_config(TASKS_CONFIG)
+                f_m.side_effect = get_config(self.TASKS_CONFIG)
                 resp = self.app.get(
                     base.reverse('DefaultPostPluginsHooksInfo',
                                  {'cluster_id': cluster.id}),
@@ -153,7 +155,7 @@ class TestPluginsApi(BasePluginTest):
     def test_env_create_and_load_env_config(self):
         self.create_plugin()
         cluster = self.create_cluster()
-        self.assertIn(SAMPLE_PLUGIN['name'], cluster.attributes.editable)
+        self.assertIn(self.SAMPLE_PLUGIN['name'], cluster.attributes.editable)
 
     def test_enable_disable_plugin(self):
         resp = self.create_plugin()
@@ -175,7 +177,7 @@ class TestPluginsApi(BasePluginTest):
     def test_update_plugin(self):
         resp = self.create_plugin()
         data = resp.json
-        data['package_version'] = 2
+        data['package_version'] = '2'
         plugin_id = data.pop('id')
         resp = self.app.put(
             base.reverse('PluginHandler', {'obj_id': plugin_id}),
@@ -196,7 +198,7 @@ class TestPrePostHooks(BasePluginTest):
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True}])
-        self.enable_plugin(self.cluster, SAMPLE_PLUGIN['name'])
+        self.enable_plugin(self.cluster, self.SAMPLE_PLUGIN['name'])
 
     def test_generate_pre_hooks(self):
         tasks = self.get_pre_hooks(self.cluster).json
@@ -215,3 +217,41 @@ class TestPrePostHooks(BasePluginTest):
         controller_id = [n.id for n in self.cluster.nodes
                          if 'controller' in n.roles]
         self.assertEqual(controller_id, tasks[0]['uids'])
+
+
+class TestPluginValidation(BasePluginTest):
+
+    def test_releases_not_provided(self):
+        sample = {
+            'name': 'test_name',
+            'version': '0.1.1',
+            'package_version': '1'
+        }
+        resp = self.create_plugin(sample=sample, expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+
+    def test_version_is_not_present_in_release_data(self):
+        sample = {
+            'name': 'test_name',
+            'version': '0.1.1',
+            'package_version': '1',
+            'releases': [
+                {'os': 'Ubuntu', 'mode': ['ha_compact', 'multinode']}
+            ]
+        }
+        resp = self.create_plugin(sample=sample, expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+
+    def test_plugin_version_is_floating(self):
+        sample = {
+            'name': 'test_name',
+            'version': 1.1,
+            'package_version': '1',
+            'releases': [
+                {'os': 'Ubuntu',
+                 'mode': ['ha_compact', 'multinode'],
+                 'version': '2014.2.1-5.1'}
+            ]
+        }
+        resp = self.create_plugin(sample=sample, expect_errors=True)
+        self.assertEqual(resp.status_code, 400)

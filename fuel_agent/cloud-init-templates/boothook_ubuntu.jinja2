@@ -10,6 +10,8 @@ function add_str_to_file_if_not_exists {
     fi
 }
 
+cloud-init-per instance wipe_sources_list_templates echo | tee /etc/cloud/templates/sources.list.ubuntu.tmpl
+
 # configure udev rules
 
 # udev persistent net
@@ -57,8 +59,8 @@ cloud-init-per instance sync_hwclock hwclock --systohc
 cloud-init-per instance edit_ntp_conf1 sed -i '/^\s*tinker panic/ d' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf2 sed -i '1 i tinker panic 0' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf3 echo 0 > /var/lib/ntp/drift
-cloud-init-per instance edit_ntp_conf3 sed -i '/^\s*server/ d' /etc/ntp.conf
-cloud-init-per instance edit_ntp_conf4 echo "server {{ common.master_ip }} burst iburst" | tee -a /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf4 sed -i '/^\s*server/ d' /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf5 echo "server {{ common.master_ip }} burst iburst" | tee -a /etc/ntp.conf
 
 cloud-init-per instance removeUseDNS sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config
 add_str_to_file_if_not_exists /etc/ssh/sshd_config 'UseDNS' 'UseDNS no'

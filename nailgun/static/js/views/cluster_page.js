@@ -143,10 +143,10 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
                 activeTab: this.activeTab
             })).i18n();
             var options = {model: this.model, page: this};
-            this.clusterInfo = utils.universalMount(new clusterPageSubviews.ClusterInfo(options), this.$('.cluster-info'), this);
-            this.clusterCustomizationMessage = utils.universalMount(new clusterPageSubviews.ClusterCustomizationMessage(options), this.$('.customization-message'), this);
-            this.deploymentResult = utils.universalMount(new clusterPageSubviews.DeploymentResult(options), this.$('.deployment-result'), this);
-            this.deploymentControl = utils.universalMount(new clusterPageSubviews.DeploymentControl(options), this.$('.deployment-control'), this);
+            this.clusterInfo = utils.universalMount(clusterPageSubviews.ClusterInfo, options, this.$('.cluster-info'), this);
+            this.clusterCustomizationMessage = utils.universalMount(clusterPageSubviews.ClusterCustomizationMessage, options, this.$('.customization-message'), this);
+            this.deploymentResult = utils.universalMount(clusterPageSubviews.DeploymentResult, options, this.$('.deployment-result'), this);
+            this.deploymentControl = utils.universalMount(clusterPageSubviews.DeploymentControl, options, this.$('.deployment-control'), this);
 
             var tabs = {
                 nodes: NodesTab,
@@ -158,7 +158,8 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
             };
             if (_.has(tabs, this.activeTab)) {
                 this.tab = utils.universalMount(
-                    new tabs[this.activeTab]({model: this.model, tabOptions: this.tabOptions, page: this}),
+                    tabs[this.activeTab],
+                    {model: this.model, tabOptions: this.tabOptions, page: this},
                     this.$('#tab-' + this.activeTab),
                     this
                 );

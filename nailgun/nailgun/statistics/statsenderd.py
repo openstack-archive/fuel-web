@@ -32,7 +32,7 @@ from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
 
 
-class StatsSender():
+class StatsSender(object):
 
     COLLECTOR_MIRANTIS_SERVER = "collector.mirantis.com"
     COLLECTOR_COMMUNITY_SERVER = "collector.fuel-infra.org"

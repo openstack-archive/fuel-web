@@ -39,6 +39,29 @@ tasks_names_actions_groups_mapping = dict(
             consts.TASK_NAMES.deployment,
             consts.TASK_NAMES.provision,
             consts.TASK_NAMES.node_deletion,
+            consts.TASK_NAMES.update,
+            consts.TASK_NAMES.cluster_deletion,
+            consts.TASK_NAMES.stop_deployment,
+            consts.TASK_NAMES.reset_environment,
+        )
+    ]
+    +
+    [
+        (task_name, 'cluster_checking') for task_name in
+        (
+            consts.TASK_NAMES.check_networks,
+            consts.TASK_NAMES.check_before_deployment,
+            consts.TASK_NAMES.verify_networks,
+            consts.TASK_NAMES.check_dhcp,
+            consts.TASK_NAMES.multicast_verification
+        )
+    ]
+    +
+    [
+        (task_name, 'operations') for task_name in
+        (
+            consts.TASK_NAMES.dump,
+            consts.TASK_NAMES.capacity_log,
         )
     ]
 )
@@ -316,7 +339,7 @@ class TaskHelper(object):
             raise errors.NetworkCheckError(full_err_msg)
 
     @classmethod
-    def prepare_action_log_kwargs(self, task, nodes):
+    def prepare_action_log_kwargs(self, task):
         """Prepares kwargs dict for ActionLog db model class
 
         :param task: task instance to be processed

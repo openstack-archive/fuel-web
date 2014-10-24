@@ -638,30 +638,6 @@ class FakeCheckingDhcpThread(FakeAmpqThread):
             return (self._get_message(settings.ADMIN_NETWORK['mac']),)
 
 
-class DownloadReleaseThread(FakeAmpqThread):
-    def message_gen(self):
-        kwargs = {
-            'task_uuid': self.task_uuid,
-            'status': 'running',
-            'progress': 0,
-            'release_info': self.data['args']['release_info']
-        }
-
-        ready = False
-        while not ready and not self.stoprequest.isSet():
-            kwargs['progress'] += randrange(
-                self.low_tick_count,
-                self.tick_count
-            )
-            if kwargs['progress'] >= 100:
-                kwargs['progress'] = 100
-                kwargs['status'] = 'ready'
-                ready = True
-
-            yield kwargs
-            self.sleep(self.tick_interval)
-
-
 class FakeDumpEnvironment(FakeAmpqThread):
     def message_gen(self):
         self.sleep(self.tick_interval)
@@ -692,7 +668,6 @@ FAKE_THREADS = {
     'reset_environment': FakeResetEnvironmentThread,
     'verify_networks': FakeVerificationThread,
     'check_dhcp': FakeCheckingDhcpThread,
-    'download_release': DownloadReleaseThread,
     'dump_environment': FakeDumpEnvironment,
     'generate_capacity_log': FakeCapacityLog,
     'multicast_verification': FakeMulticastVerifications

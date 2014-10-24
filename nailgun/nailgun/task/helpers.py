@@ -32,16 +32,24 @@ from nailgun.logger import logger
 from nailgun.settings import settings
 
 
-tasks_names_actions_groups_mapping = dict(
-    [
-        (task_name, 'cluster_changes') for task_name in
-        (
-            consts.TASK_NAMES.deployment,
-            consts.TASK_NAMES.provision,
-            consts.TASK_NAMES.node_deletion,
-        )
-    ]
-)
+tasks_names_actions_groups_mapping = {
+    consts.TASK_NAMES.deployment: "cluster_changes",
+    consts.TASK_NAMES.provision: "cluster_changes",
+    consts.TASK_NAMES.node_deletion: "cluster_changes",
+    consts.TASK_NAMES.update: "cluster_changes",
+    consts.TASK_NAMES.cluster_deletion: "cluster_changes",
+    consts.TASK_NAMES.stop_deployment: "cluster_changes",
+    consts.TASK_NAMES.reset_environment: "cluster_changes",
+
+    consts.TASK_NAMES.check_networks: "cluster_checking",
+    consts.TASK_NAMES.check_before_deployment: "cluster_checking",
+    consts.TASK_NAMES.verify_networks: "cluster_checking",
+    consts.TASK_NAMES.check_dhcp: "cluster_checking",
+    consts.TASK_NAMES.multicast_verification: "cluster_checking",
+
+    consts.TASK_NAMES.dump: "operations",
+    consts.TASK_NAMES.capacity_log: "operations",
+}
 
 
 class TaskHelper(object):
@@ -316,7 +324,7 @@ class TaskHelper(object):
             raise errors.NetworkCheckError(full_err_msg)
 
     @classmethod
-    def prepare_action_log_kwargs(self, task, nodes):
+    def prepare_action_log_kwargs(self, task):
         """Prepares kwargs dict for ActionLog db model class
 
         :param task: task instance to be processed
@@ -329,7 +337,7 @@ class TaskHelper(object):
             'action_group': tasks_names_actions_groups_mapping[task.name],
             'action_name': task.name,
             'action_type': consts.ACTION_TYPES.nailgun_task,
-            'start_timestamp': datetime.datetime.now()
+            'start_timestamp': datetime.datetime.utcnow()
         }
 
         # actor_id passed from ConnectionMonitor middleware and is

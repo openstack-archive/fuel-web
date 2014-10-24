@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import traceback
 
 from nailgun.objects.serializers.network_configuration \
@@ -43,20 +44,37 @@ class TaskManager(object):
         if cluster_id:
             self.cluster = db().query(Cluster).get(cluster_id)
 
-    def create_action_log(self, task_instance, operation_nodes):
-        create_kwargs = TaskHelper.prepare_action_log_kwargs(
-            task_instance,
-            operation_nodes
-        )
+    def create_action_log(self, task_instance):
+        create_kwargs = TaskHelper.prepare_action_log_kwargs(task_instance)
 
-        objects.ActionLog.create(create_kwargs)
+        return objects.ActionLog.create(create_kwargs)
+
+    def update_action_log(self, task_status, al_instance):
+        update_data = {
+            "end_timestamp": datetime.datetime.utcnow(),
+            "additional_info": {
+                "ended_with_status": task_status
+            }
+        }
+        objects.ActionLog.update(al_instance, update_data)
 
     def _call_silently(self, task, instance, *args, **kwargs):
+        # create action_log for task
+        al = self.create_action_log(task)
+
         method = getattr(instance, kwargs.pop('method_name', 'execute'))
         if task.status == TASK_STATUSES.error:
+            self.update_action_log(task.status, al)
             return
         try:
-            return method(task, *args, **kwargs)
+            to_return = method(task, *args, **kwargs)
+
+            # update action_log instance for task
+            # for asynchronous task it will be not final update
+            # as they also are updated in rpc receiver
+            self.update_action_log(task.status, al)
+
+            return to_return
         except Exception as exc:
             err = str(exc)
             if any([
@@ -70,6 +88,8 @@ class TaskManager(object):
                     'progress': 100,
                     'message': err}
             objects.Task.update(task, data)
+
+            self.update_action_log(task.status, al)
 
     def check_running_task(self, task_name):
         current_tasks = db().query(Task).filter_by(
@@ -175,11 +195,9 @@ class ApplyChangesTaskManager(TaskManager):
                                                      weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
 
-            self.create_action_log(task_deletion, nodes_to_delete)
-
+            self._call_silently(task_deletion, tasks.DeletionTask)
             # we should have task committed for processing in other threads
             db().commit()
-            self._call_silently(task_deletion, tasks.DeletionTask)
 
         if nodes_to_provision:
             objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
@@ -195,8 +213,6 @@ class ApplyChangesTaskManager(TaskManager):
             task_weight = 0.4
             task_provision = supertask.create_subtask(TASK_NAMES.provision,
                                                       weight=task_weight)
-
-            self.create_action_log(task_provision, nodes_to_provision)
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -230,8 +246,6 @@ class ApplyChangesTaskManager(TaskManager):
             logger.debug("There are nodes to deploy: %s",
                          " ".join([n.fqdn for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(TASK_NAMES.deployment)
-
-            self.create_action_log(task_deployment, nodes_to_deploy)
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -292,12 +306,14 @@ class ApplyChangesTaskManager(TaskManager):
         ]
 
         check_networks = supertask.create_subtask(TASK_NAMES.check_networks)
+
         self._call_silently(
             check_networks,
             tasks.CheckNetworksTask,
             data=network_info,
             check_admin_untagged=True
         )
+
         if check_networks.status == TASK_STATUSES.error:
             logger.warning(
                 "Checking networks failed: %s", check_networks.message
@@ -312,10 +328,12 @@ class ApplyChangesTaskManager(TaskManager):
             TASK_NAMES.check_before_deployment
         )
         logger.debug("Checking prerequisites task: %s", check_before.uuid)
+
         self._call_silently(
             check_before,
             tasks.CheckBeforeDeploymentTask
         )
+
         # if failed to check prerequisites
         # then task is already set to error
         if check_before.status == TASK_STATUSES.error:
@@ -831,24 +849,6 @@ class ClusterDeletionManager(TaskManager):
         self._call_silently(
             task,
             tasks.ClusterDeletionTask
-        )
-        return task
-
-
-class DownloadReleaseTaskManager(TaskManager):
-
-    def __init__(self, release_data):
-        self.release_data = release_data
-
-    def execute(self):
-        logger.debug("Creating release dowload task")
-        task = Task(name="download_release")
-        db().add(task)
-        db().commit()
-        self._call_silently(
-            task,
-            tasks.DownloadReleaseTask,
-            self.release_data
         )
         return task
 

@@ -35,7 +35,7 @@ SAMPLE_PLUGIN = {
     'releases': [
         {'repository_path': 'repositories/ubuntu',
          'version': '2014.2-6.0', 'os': 'ubuntu',
-         'mode': ['ha', 'multinode'],
+         'mode': ['ha_compact', 'multinode'],
          'deployment_scripts_path': 'deployment_scripts/'},
         {'repository_path': 'repositories/centos',
          'version': '2014.2-6.0', 'os': 'centos',
@@ -62,6 +62,7 @@ class TestPlugin(base.BaseTestCase):
         super(TestPlugin, self).setUp()
         self.plugin = Plugin.create(SAMPLE_PLUGIN)
         self.env.create(
+            cluster_kwargs={'mode': 'multinode'},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'})
         self.cluster = self.env.clusters[0]
@@ -86,7 +87,7 @@ class TestPlugin(base.BaseTestCase):
             ENVIRONMENT_CONFIG['attributes']['lbaas_simple_text'])
         self.assertEqual(
             attributes['testing_plugin']['metadata'],
-            self.attr_plugin.metadata['metadata'])
+            self.attr_plugin.default_metadata)
 
     def test_plugin_release_versions(self):
         """Helper should return set of all release versions this plugin

@@ -38,7 +38,7 @@ class PluginCollectionHandler(base.CollectionHandler):
                * 400 (invalid object data specified)
                * 409 (object with such parameters already exists)
         """
-        data = self.checked_data()
+        data = self.checked_data(self.validator.validate)
         obj = self.collection.single.get_by_name_version(
             data['name'], data['version'])
         if obj:

@@ -36,7 +36,7 @@ function(React, utils, models, componentMixins, dialogs) {
         ],
         showChangePasswordDialog: function(e) {
             e.preventDefault();
-            utils.showDialog(dialogs.ChangePasswordDialog());
+            utils.showDialog(dialogs.ChangePasswordDialog);
         },
         togglePopover: function(visible) {
             this.setState({popoverVisible: _.isBoolean(visible) ? visible : !this.state.popoverVisible});

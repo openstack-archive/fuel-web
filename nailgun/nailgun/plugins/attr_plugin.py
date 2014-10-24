@@ -66,11 +66,27 @@ class ClusterAttributesPlugin(object):
         config = {}
         if os.path.exists(self.config_file):
             config = self._load_config(self.config_file)
-        if cluster.release.version in self.plugin_release_versions:
+        if self.validate_cluster_compatibility(cluster):
             attrs = config.get("attributes", {})
-            attrs.update(self.metadata)
+            self.update_metadata(attrs)
             return {self.plugin.name: attrs}
         return {}
+
+    def validate_cluster_compatibility(self, cluster):
+        """Validates if plugin is compatible with cluster.
+        - validates operating systems
+        - modes of clusters (simple or ha)
+        - release version
+        """
+        for release in self.plugin.releases:
+            os_compat = (cluster.release.operating_system.lower()
+                         == release['os'].lower())
+            mode_compat = cluster.mode in release['mode']
+            release_version_compat = (
+                cluster.release.version == release['version'])
+            if all((os_compat, mode_compat, release_version_compat)):
+                return True
+        return False
 
     def process_cluster_attributes(self, cluster, cluster_attrs):
         """Checks cluster attributes for plugin related metadata.
@@ -89,10 +105,19 @@ class ClusterAttributesPlugin(object):
             elif not enable and cluster in self.plugin.clusters:
                 self.plugin.clusters.remove(cluster)
 
+    def update_metadata(self, attributes):
+        """Overwrights only default values in metadata.
+        Plugin should be able to provide UI "native" conditions
+        to enable/disable plugin on UI itself
+        """
+        attributes.setdefault('metadata', {})
+        attributes['metadata'].update(self.default_metadata)
+        return attributes
+
     @property
-    def metadata(self):
-        return {u'metadata': {u'enabled': False, u'toggleable': True,
-                              u'weight': 70, u'label': self.plugin.name}}
+    def default_metadata(self):
+        return {u'enabled': False, u'toggleable': True,
+                u'weight': 70, u'label': self.plugin.name}
 
     def set_cluster_tasks(self, cluster):
         """Loads plugins provided tasks from tasks config file and

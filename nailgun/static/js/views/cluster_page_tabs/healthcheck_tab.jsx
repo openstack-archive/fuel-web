@@ -157,15 +157,17 @@ function(React, models, utils, componentMixins, controls) {
                             oldTestruns.add(new models.TestRun(testrunConfig));
                         }, this);
                     } else {
-                        _.extend(testrunConfig, {
-                            testset: testset.id,
-                            metadata: addCredentials({
-                                config: {},
-                                cluster_id: this.props.cluster.id
-                            })
-                        });
-                        testruns.add(new models.TestRun(testrunConfig));
-                    }
+                        //if (selectedTestIds.length > testruns.length) {
+                            _.extend(testrunConfig, {
+                                testset: testset.id,
+                                metadata: addCredentials({
+                                    config: {},
+                                    cluster_id: this.props.cluster.id
+                                })
+                            });
+                            testruns.add(new models.TestRun(testrunConfig));
+                        }
+                    //}
                 }
             }, this);
             var requests = [];
@@ -175,10 +177,16 @@ function(React, models, utils, componentMixins, controls) {
             if (oldTestruns.length) {
                 requests.push(Backbone.sync('update', oldTestruns));
             }
-            $.when.apply($, requests).done(_.bind(function() {
-                this.setState({actionInProgress: false});
-                this.startPolling(true);
-            }, this));
+            $.when.apply($, requests)
+                .done(_.bind(function() {
+                    this.setState({actionInProgress: false});
+                    this.startPolling(true);
+                }, this))
+                .fail(_.bind(function() {
+                    this.setState({actionInProgress: false});
+                    this.forceUpdate();
+                    utils.showErrorDialog();
+                }, this));
         },
         getActiveTestRuns: function() {
             return this.props.testruns.where({status: 'running'});

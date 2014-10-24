@@ -89,7 +89,7 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 }
                 return view;
             }
-            return React.renderComponent(view, $(el)[0]);
+            return React.render(view, $(el)[0]);
         },
         universalUnmount: function(view) {
             if (view instanceof Backbone.View) {
@@ -99,7 +99,7 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             }
         },
         showDialog: function(dialog) {
-            return React.renderComponent(dialog, $('#modal-container')[0]);
+            return React.render(dialog, $('#modal-container')[0]);
         },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;

@@ -621,7 +621,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 this.setState({actionInProgress: true});
                 app.keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
                     .done(_.bind(function() {
-                        app.user.set({password: app.keystoneClient.password});
+                        app.user.set({token: app.keystoneClient.token});
                         this.close();
                     }, this))
                     .fail(_.bind(function() {

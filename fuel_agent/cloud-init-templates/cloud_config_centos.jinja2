@@ -1,11 +1,14 @@
 #cloud-config
+resize_rootfs: false
+growpart:
+  mode: false
 disable_ec2_metadata: true
 disable_root: false
 
 # password: RANDOM
 # chpasswd: { expire: True }
 
-ssh_pwauth: True
+ssh_pwauth: true
 ssh_authorized_keys:
 {% for key in common.ssh_auth_keys %}
   - {{ key }}

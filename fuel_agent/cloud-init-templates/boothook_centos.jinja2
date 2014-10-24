@@ -74,9 +74,9 @@ cloud-init-per instance sync_hwclock hwclock --systohc
 cloud-init-per instance edit_ntp_conf1 sed -i '/^\s*tinker panic/ d' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf2 sed -i '1 i tinker panic 0' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf3 echo 0 > /var/lib/ntp/drift
-cloud-init-per instance edit_ntp_conf_0 chown ntp: /var/lib/ntp/drift
-cloud-init-per instance edit_ntp_conf3 sed -i '/^\s*server/ d' /etc/ntp.conf
-cloud-init-per instance edit_ntp_conf4 echo "server {{ common.master_ip }} burst iburst" | tee -a /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf4 chown ntp: /var/lib/ntp/drift
+cloud-init-per instance edit_ntp_conf5 sed -i '/^\s*server/ d' /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf6 echo "server {{ common.master_ip }} burst iburst" | tee -a /etc/ntp.conf
 
 
 # Point installed ntpd to Master node

@@ -106,7 +106,7 @@ PROVISION_SAMPLE_DATA = {
         "mco_auto_setup": 1,
         "auth_key": "fake_auth_key",
         "authorized_keys": ["fake_authorized_key1", "fake_authorized_key2"],
-        "repo_metadata": "repo1=repo1_url,repo2=repo2_url",
+        "repo_metadata": 'repo1="repo1_url",' + "repo2='repo2_url'",
         "pm_data": {
             "kernel_params": "console=ttyS0,9600 console=tty0 rootdelay=90 "
                              "nomodeset",

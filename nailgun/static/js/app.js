@@ -155,7 +155,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
         },
         renderLayout: function() {
             this.content = $('#content');
-            this.navbar = React.renderComponent(new layoutComponents.Navbar({
+            this.navbar = React.render(React.createElement(layoutComponents.Navbar, {
                 elements: [
                     {label: 'environments', url: '#clusters'},
                     {label: 'releases', url: '#releases'},
@@ -166,8 +166,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 statistics: new models.NodesStatistics(),
                 notifications: new models.Notifications()
             }), $('#navbar')[0]);
-            this.breadcrumbs = React.renderComponent(new layoutComponents.Breadcrumbs(), $('#breadcrumbs')[0]);
-            this.footer = React.renderComponent(new layoutComponents.Footer({version: this.version}), $('#footer')[0]);
+            this.breadcrumbs = React.render(React.createElement(layoutComponents.Breadcrumbs), $('#breadcrumbs')[0]);
+            this.footer = React.render(React.createElement(layoutComponents.Footer, {version: this.version}), $('#footer')[0]);
             this.content.find('.loading').addClass('layout-loaded');
         },
         updateTitle: function() {
@@ -184,7 +184,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             if (this.page) {
                 utils.universalUnmount(this.page);
             }
-            this.page = utils.universalMount(new NewPage(options), this.content);
+            this.page = utils.universalMount(NewPage, options, this.content);
             this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
             this.updateTitle();
             this.toggleElements(!this.page.hiddenLayout);

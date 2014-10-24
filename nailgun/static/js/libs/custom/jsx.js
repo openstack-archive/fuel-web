@@ -35,9 +35,6 @@ define(['JSXTransformer', 'text'], function (JSXTransformer, text) {
 
       var onLoad = function(content) {
         try {
-          if (-1 === content.indexOf('@jsx React.DOM')) {
-            content = "/** @jsx React.DOM */" + content;
-          }
           content = JSXTransformer.transform(content).code;
         } catch (err) {
           onLoadNative.error(err);

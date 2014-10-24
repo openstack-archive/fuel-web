@@ -78,8 +78,9 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             }
             return result;
         },
-        universalMount: function(view, el, parentView) {
-            if (view instanceof Backbone.View) {
+        universalMount: function(ViewConstructor, options, el, parentView) {
+            if (ViewConstructor.prototype instanceof Backbone.View) {
+                var view = new ViewConstructor(options);
                 view.render();
                 if (el) {
                     $(el).html(view.el);
@@ -90,7 +91,7 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 return view;
             } else {
                 var node = $(el)[0];
-                var mountedComponent = React.renderComponent(view, node);
+                var mountedComponent = React.render(React.createElement(ViewConstructor, options), node);
                 // FIXME(vkramskikh): we need to store node to which
                 // we mounted the component since it is not always
                 // possible to determine the node: if render() returns
@@ -106,8 +107,8 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 React.unmountComponentAtNode(view._mountNode || view.getDOMNode().parentNode);
             }
         },
-        showDialog: function(dialog) {
-            return React.renderComponent(dialog, $('#modal-container')[0]);
+        showDialog: function(Dialog, options) {
+            return React.render(React.createElement(Dialog, options), $('#modal-container')[0]);
         },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;

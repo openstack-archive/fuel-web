@@ -206,14 +206,12 @@ function(React, utils, models, Expression, controls) {
                             {_.map(sortedSettingGroups, function(groupName) {
                                 var path = groupName + '.metadata';
                                 if (!this.checkRestrictions('hide', path)) {
-                                    return this.transferPropsTo(
-                                        <SettingGroup
-                                            key={groupName}
-                                            groupName={groupName}
-                                            onChange={_.bind(this.onChange, this, groupName)}
-                                            disabled={locked || (!!this.settings.get(path).toggleable && this.processRestrictions(path))}
-                                        />
-                                    );
+                                    return <SettingGroup {...this.props}
+                                        key={groupName}
+                                        groupName={groupName}
+                                        onChange={_.bind(this.onChange, this, groupName)}
+                                        disabled={locked || (!!this.settings.get(path).toggleable && this.processRestrictions(path))}
+                                    />;
                                 }
                             }, this)}
                             <div className='row'>
@@ -291,32 +289,28 @@ function(React, utils, models, Expression, controls) {
                                         }, this)
                                         .compact()
                                         .value();
-                                    if (setting.type == 'radio') return this.transferPropsTo(
-                                        <controls.RadioGroup
-                                            key={settingName}
-                                            name={settingName}
-                                            label={setting.label}
-                                            values={values}
-                                            error={error}
-                                        />
-                                    );
-                                }
-                                return this.transferPropsTo(
-                                    <controls.Input
+                                    if (setting.type == 'radio') return <controls.RadioGroup {...this.props}
                                         key={settingName}
-                                        type={setting.type}
                                         name={settingName}
-                                        value={setting.value}
-                                        checked={_.isBoolean(setting.value) ? setting.value : false}
                                         label={setting.label}
-                                        description={setting.description}
-                                        children={setting.type == 'select' && this.composeOptions(setting.values)}
-                                        toggleable={setting.type == 'password'}
+                                        values={values}
                                         error={error}
-                                        disabled={this.props.disabled || disabled}
-                                        wrapperClassName='tablerow-wrapper'
-                                    />
-                                );
+                                    />;
+                                }
+                                return <controls.Input {...this.props}
+                                    key={settingName}
+                                    type={setting.type}
+                                    name={settingName}
+                                    children={setting.type == 'select' && this.composeOptions(setting.values)}
+                                    value={setting.value}
+                                    checked={_.isBoolean(setting.value) ? setting.value : false}
+                                    label={setting.label}
+                                    description={setting.description}
+                                    toggleable={setting.type == 'password'}
+                                    error={error}
+                                    disabled={this.props.disabled || disabled}
+                                    wrapperClassName='tablerow-wrapper'
+                                />;
                             }
                         }, this)}
                     </div>

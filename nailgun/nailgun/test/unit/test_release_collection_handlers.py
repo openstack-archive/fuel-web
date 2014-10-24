@@ -13,7 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+from mock import patch
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
@@ -284,30 +284,32 @@ class ReleaseCollectionSortBaseTest(BaseIntegrationTest):
         self.assertEqual(actual, self.expected)
 
 
-class TestReleaseCollectionSorting(BaseIntegrationTest):
+@patch('nailgun.objects.release.settings.DEFAULT_REPO',
+       {'whateverlinux': '', 'centos': '', 'ubuntu': '',
+        'archlinux': '', 'fedora': ''})
+class TestReleaseCollectionSorting(ReleaseCollectionSortBaseTest):
     releases = [
-        ("2014.3-7.0", "CentOS"),
-        ("2014.2-6.1", "CentOS"),
-        ("2014.2.2-6.0", "CentOS"),
-        ("2014.2-6.0", "Ubuntu"),
-        ("2014.2-6.0", "CentOS"),
         ("2014.1-6.0", "Ubuntu"),
         ("2014.2-5.1.1", "Ubuntu"),
-        ("2014.3", "Ubuntu"),
-        ("2014.3", "CentOS"),
-        ("2014.2-5.1.1", "CentOS"),
-        ("2014.1.3-5.1.1", "CentOS"),
-        ("2014.1-5.1.1", "Ubuntu"),
-        ("2014.2-6.1", "CentOS"),
-        ("2014.2.2-6.0", "CentOS"),
         ("2013.2.1-5.1", "CentOS"),
-        ("2013.2-5.0", "CentOS"),
+        ("2013.2.1-5.1", "WhateverLinux"),
         ("2014.3", "Ubuntu"),
-        ("2014.3", "CentOS"),
-        ("2013.2-4.0", "Ubuntu"),
         ("2013.2", "CentOS"),
         ("2013.2", "Ubuntu"),
+        ("2014.3-7.0", "CentOS"),
+        ("2014.1.3-5.1.1", "CentOS"),
+        ("2013.2-5.0", "CentOS"),
+        ("2014.3", "CentOS"),
+        ("2014.2-6.0", "Ubuntu"),
+        ("2013.2.1-5.1", "Fedora"),
+        ("2014.2-6.1", "CentOS"),
+        ("2014.2-6.0", "CentOS"),
+        ("2014.2-5.1.1", "CentOS"),
         ("2013.2.1-5.1", "Ubuntu"),
+        ("2013.2-4.0", "Ubuntu"),
+        ("2014.3", "ArchLinux"),
+        ("2014.2.2-6.0", "CentOS"),
+        ("2014.1-5.1.1", "Ubuntu")
     ]
 
     expected = [
@@ -323,10 +325,13 @@ class TestReleaseCollectionSorting(BaseIntegrationTest):
         ("2014.1-5.1.1", "Ubuntu"),
         ("2013.2.1-5.1", "Ubuntu"),
         ("2013.2.1-5.1", "CentOS"),
+        ("2013.2.1-5.1", "Fedora"),
+        ("2013.2.1-5.1", "WhateverLinux"),
         ("2013.2-5.0", "CentOS"),
         ("2013.2-4.0", "Ubuntu"),
         ("2014.3", "Ubuntu"),
         ("2014.3", "CentOS"),
+        ("2014.3", "ArchLinux"),
         ("2013.2", "Ubuntu"),
         ("2013.2", "CentOS"),
     ]
@@ -334,44 +339,47 @@ class TestReleaseCollectionSorting(BaseIntegrationTest):
 
 class TestReleaseCollectionSortByFuelVersion(ReleaseCollectionSortBaseTest):
     releases = [
-        ("-7.1", "WhateverLinux"),
-        ("-7.0", "WhateverLinux"),
-        ("-6.0", "WhateverLinux"),
-        ("-6", "WhateverLinux"),
+        ("-7.1", "CentOS"),
+        ("-7.0", "CentOS"),
+        ("-6.0", "CentOS"),
+        ("-6", "CentOS"),
     ]
 
     expected = [
-        ("-7.1", "WhateverLinux"),
-        ("-7.0", "WhateverLinux"),
-        ("-6.0", "WhateverLinux"),
-        ("-6", "WhateverLinux"),
+        ("-7.1", "CentOS"),
+        ("-7.0", "CentOS"),
+        ("-6.0", "CentOS"),
+        ("-6", "CentOS"),
     ]
 
 
 class TestReleaseCollectionSortByOpenstack(ReleaseCollectionSortBaseTest):
     releases = [
-        ("2011.1-", "WhateverLinux"),
-        ("2014.3-", "WhateverLinux"),
-        ("2012.3-", "WhateverLinux"),
-        ("2013.4-", "WhateverLinux"),
+        ("2011.1-", "Ubuntu"),
+        ("2014.3-", "Ubuntu"),
+        ("2012.3-", "Ubuntu"),
+        ("2013.4-", "Ubuntu"),
     ]
 
     expected = [
-        ("2014.3-", "WhateverLinux"),
-        ("2013.4-", "WhateverLinux"),
-        ("2012.3-", "WhateverLinux"),
-        ("2011.1-", "WhateverLinux"),
+        ("2014.3-", "Ubuntu"),
+        ("2013.4-", "Ubuntu"),
+        ("2012.3-", "Ubuntu"),
+        ("2011.1-", "Ubuntu"),
     ]
 
 
+@patch('nailgun.objects.release.settings.DEFAULT_REPO',
+       {'whateverlinux': '', 'centos': '', 'ubuntu': '',
+        'archlinux': '', 'debian': '', 'fedora': ''})
 class TestReleaseCollectionSortByOS(ReleaseCollectionSortBaseTest):
     releases = [
         ("X", "Debian"),
         ("X", "Fedora"),
         ("X", "ArchLinux"),
+        ("X", "CentOS"),
         ("X", "Ubuntu"),
         ("X", "WhateverLinux"),
-        ("X", "CentOS"),
     ]
 
     expected = [

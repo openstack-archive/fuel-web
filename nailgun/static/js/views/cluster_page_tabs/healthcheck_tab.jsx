@@ -134,12 +134,14 @@ function(React, models, utils, componentMixins, controls) {
         },
         runTests: function() {
             var testruns = new models.TestRuns(),
-                oldTestruns = new models.TestRuns();
+                oldTestruns = new models.TestRuns(),
+                selectedTests = this.props.tests.where({checked: true});
             this.setState({actionInProgress: true});
-            this.props.testsets.each(function(testset) {
-                var selectedTestIds = _.pluck(this.props.tests.where({checked: true}), 'id');
-                if (selectedTestIds.length) {
-                    var addCredentials = _.bind(function(obj) {
+            _.each(selectedTests, function(test) {
+                var selectedTestIds = _.pluck(this.props.tests.where({checked: true}), 'id'),
+                    testsetId = test.get('testset'),
+                    testrunConfig = {tests: selectedTestIds},
+                    addCredentials = _.bind(function(obj) {
                         obj.ostf_os_access_creds = {
                             ostf_os_username: this.state.credentials.user,
                             ostf_os_tenant_name: this.state.credentials.tenant,
@@ -147,25 +149,23 @@ function(React, models, utils, componentMixins, controls) {
                         };
                         return obj;
                     }, this);
-                    var testrunConfig = {tests: selectedTestIds};
-                    if (this.props.testruns.where({testset: testset.id}).length) {
-                        _.each(this.props.testruns.where({testset: testset.id}), function(testrun) {
-                            _.extend(testrunConfig, addCredentials({
-                                id: testrun.id,
-                                status: 'restarted'
-                            }));
-                            oldTestruns.add(new models.TestRun(testrunConfig));
-                        }, this);
-                    } else {
-                        _.extend(testrunConfig, {
-                            testset: testset.id,
-                            metadata: addCredentials({
-                                config: {},
-                                cluster_id: this.props.cluster.id
-                            })
-                        });
-                        testruns.add(new models.TestRun(testrunConfig));
-                    }
+                if (this.props.testruns.where({testset: testsetId}).length) {
+                    _.each(this.props.testruns.where({testset: testsetId}), function(testrun) {
+                        _.extend(testrunConfig, addCredentials({
+                            id: testrun.id,
+                            status: 'restarted'
+                        }));
+                        oldTestruns.add(new models.TestRun(testrunConfig));
+                    }, this);
+                } else {
+                    _.extend(testrunConfig, {
+                        testset: testsetId,
+                        metadata: addCredentials({
+                            config: {},
+                            cluster_id: this.props.cluster.id
+                        })
+                    });
+                    testruns.add(new models.TestRun(testrunConfig));
                 }
             }, this);
             var requests = [];
@@ -175,10 +175,16 @@ function(React, models, utils, componentMixins, controls) {
             if (oldTestruns.length) {
                 requests.push(Backbone.sync('update', oldTestruns));
             }
-            $.when.apply($, requests).done(_.bind(function() {
-                this.setState({actionInProgress: false});
-                this.startPolling(true);
-            }, this));
+            $.when.apply($, requests)
+                .done(_.bind(function() {
+                    this.setState({actionInProgress: false});
+                    this.startPolling(true);
+                }, this))
+                .fail(_.bind(function() {
+                    this.setState({actionInProgress: false});
+                    this.forceUpdate();
+                    utils.showErrorDialog();
+                }, this));
         },
         getActiveTestRuns: function() {
             return this.props.testruns.where({status: 'running'});

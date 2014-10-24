@@ -29,11 +29,12 @@ SAMPLE_PLUGIN = {
     'package_version': '1',
     'description': 'Enable to use plugin X for Neutron',
     'types': ['nailgun', 'repository', 'deployment_scripts'],
-    'fuel_version': 6.0,
+    'fuel_version': "6.0",
     'releases': [
         {'repository_path': 'repositories/ubuntu',
-         'version': '2014.2-6.0', 'os': 'ubuntu',
-         'mode': ['ha', 'multinode'],
+         'version': '2014.2-6.0',
+         'os': 'ubuntu',
+         'mode': ['ha_compact', 'multinode'],
          'deployment_scripts_path': 'deployment_scripts/'},
         {'repository_path': 'repositories/centos',
          'version': '2014.2-6.0', 'os': 'centos',
@@ -175,7 +176,7 @@ class TestPluginsApi(BasePluginTest):
     def test_update_plugin(self):
         resp = self.create_plugin()
         data = resp.json
-        data['package_version'] = 2
+        data['package_version'] = '2'
         plugin_id = data.pop('id')
         resp = self.app.put(
             base.reverse('PluginHandler', {'obj_id': plugin_id}),

@@ -46,6 +46,9 @@ class TestTaskManagers(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestTaskManagers, self).tearDown()
 
+    def check_node_presence(self, nodes_count):
+        return self.db.query(Node).count() == nodes_count
+
     @fake_tasks(godmode=True)
     def test_deployment_task_managers(self):
         self.env.create(
@@ -111,6 +114,42 @@ class TestTaskManagers(BaseIntegrationTest):
                              action_log.additional_info['parent_task_id'])
             self.assertIn(action_log.action_name, TASK_NAMES)
             self.assertEqual(action_log.action_type, ACTION_TYPES.nailgun_task)
+
+            if action_log.additional_info["operation"] in \
+                    (TASK_NAMES.check_networks,
+                     TASK_NAMES.check_before_deployment):
+                self.assertIsNotNone(action_log.end_timestamp)
+                self.assertIn("ended_with_status", action_log.additional_info)
+
+    def test_check_before_deployment_with_error(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "online": False}
+            ]
+        )
+
+        supertask = self.env.launch_deployment()
+
+        action_logs = objects.ActionLogCollection.all()
+
+        for al in action_logs:
+            self.assertEqual(al.action_type, ACTION_TYPES.nailgun_task)
+            self.assertEqual(al.additional_info["parent_task_id"],
+                             supertask.id)
+            self.assertIsNotNone(al.end_timestamp)
+            self.assertIn("ended_with_status", al.additional_info)
+
+            if al.additional_info["operation"] == TASK_NAMES.check_networks:
+                # check_networks task is not updated to "ready" status in case
+                # of success but left with "running" value
+                self.assertEqual(al.additional_info["ended_with_status"],
+                                 TASK_STATUSES.running)
+            elif (
+                al.additional_info["operation"] ==
+                TASK_NAMES.check_before_deployment
+            ):
+                self.assertEqual(al.additional_info["ended_with_status"],
+                                 TASK_STATUSES.error)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -450,7 +489,12 @@ class TestTaskManagers(BaseIntegrationTest):
         self.db.flush()
         self.env.wait_ready(supertask, timeout=5)
 
-        self.assertEqual(self.env.db.query(Node).count(), 1)
+        # this test is failing when whole test set is executing
+        # apparently the main reason for that is delays in data
+        # updating inside of fake threads so in order to make test
+        # pass we have to wait for data to be present in db
+        self.env.wait_for_true(self.check_node_presence, args=[1])
+
         node = self.db.query(Node).first()
         self.assertEqual(node.status, 'discover')
         self.assertEqual(node.cluster_id, None)
@@ -469,6 +513,9 @@ class TestTaskManagers(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.db.flush()
         self.env.wait_ready(supertask, timeout=5)
+
+        # same as in previous test
+        self.env.wait_for_true(self.check_node_presence, args=[3])
 
         q_nodes = self.env.db.query(Node)
 

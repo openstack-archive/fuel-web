@@ -353,7 +353,7 @@ class NailgunReceiver(object):
 
             if al:
                 data = {
-                    'end_timestamp': datetime.datetime.now(),
+                    'end_timestamp': datetime.datetime.utcnow(),
                     'additional_info': {
                         'nodes_from_resp': nodes_from_resp,
                         'ended_with_status': task_status

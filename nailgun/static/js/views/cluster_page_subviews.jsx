@@ -104,7 +104,7 @@ function(React, utils, dialogs) {
             })
         ],
         showDialog: function(Constructor) {
-            utils.showDialog(Constructor({cluster: this.props.model}));
+            utils.showDialog(Constructor, {cluster: this.props.model});
         },
         onDeployRequest: function() {
             var page = this.props.page;

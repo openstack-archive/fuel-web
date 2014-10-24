@@ -78,8 +78,9 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             }
             return result;
         },
-        universalMount: function(view, el, parentView) {
-            if (view instanceof Backbone.View) {
+        universalMount: function(ViewConstructor, options, el, parentView) {
+            if (ViewConstructor.prototype instanceof Backbone.View) {
+                var view = new ViewConstructor(options);
                 view.render();
                 if (el) {
                     $(el).html(view.el);
@@ -88,8 +89,9 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                     parentView.registerSubView(view);
                 }
                 return view;
+            } else {
+                return React.render(React.createElement(ViewConstructor, options), $(el)[0]);
             }
-            return React.renderComponent(view, $(el)[0]);
         },
         universalUnmount: function(view) {
             if (view instanceof Backbone.View) {
@@ -98,8 +100,8 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 React.unmountComponentAtNode(view.getDOMNode().parentNode);
             }
         },
-        showDialog: function(dialog) {
-            return React.renderComponent(dialog, $('#modal-container')[0]);
+        showDialog: function(Dialog, options) {
+            return React.render(React.createElement(Dialog, options), $('#modal-container')[0]);
         },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;

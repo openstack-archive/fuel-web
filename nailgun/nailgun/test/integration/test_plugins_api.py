@@ -32,7 +32,8 @@ SAMPLE_PLUGIN = {
     'fuel_version': 6.0,
     'releases': [
         {'repository_path': 'repositories/ubuntu',
-         'version': '2014.2-6.0', 'os': 'ubuntu',
+         'version': '2014.2-6.0',
+         'os': 'ubuntu',
          'mode': ['ha', 'multinode'],
          'deployment_scripts_path': 'deployment_scripts/'},
         {'repository_path': 'repositories/centos',

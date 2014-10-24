@@ -17,6 +17,8 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.errors import errors
 
+from nailgun.api.v1.validators.json_schema import plugin
+
 
 class PluginValidator(BasicValidator):
 
@@ -29,6 +31,15 @@ class PluginValidator(BasicValidator):
             )
 
     @classmethod
+    def validate(cls, data):
+        parsed = super(PluginValidator, cls).validate(data)
+        cls.validate_schema(data, plugin.PLUGIN_SCHEMA)
+        return parsed
+
+    @classmethod
     def validate_update(cls, data, instance):
-        """It should be possible to update plugin info."""
+        return cls.validate(data)
+
+    @classmethod
+    def validate_create(cls, data):
         return cls.validate(data)

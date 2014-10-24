@@ -30,7 +30,8 @@ class ReleaseSerializer(BasicSerializer):
         "roles",
         "roles_metadata",
         "wizard_metadata",
-        "state"
+        "state",
+        "attributes_metadata"
     )
 
     @classmethod

@@ -190,7 +190,7 @@ function(React, utils, models, dialogs) {
     var DeleteEnvironmentAction = React.createClass({
         applyAction: function(e) {
             e.preventDefault();
-            utils.showDialog(dialogs.RemoveClusterDialog({cluster: this.props.cluster}));
+            utils.showDialog(dialogs.RemoveClusterDialog, {cluster: this.props.cluster});
         },
         render: function() {
             return (

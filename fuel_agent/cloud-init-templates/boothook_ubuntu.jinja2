@@ -10,6 +10,8 @@ function add_str_to_file_if_not_exists {
     fi
 }
 
+cloud-init-per instance wipe_sources_list_templates echo | tee /etc/cloud/templates/sources.list.ubuntu.tmpl
+
 # configure udev rules
 
 # udev persistent net

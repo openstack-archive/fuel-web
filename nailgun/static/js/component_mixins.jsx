@@ -46,7 +46,7 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
         },
         dialogMixin: {
             propTypes: {
-                modalClass: React.PropTypes.renderable
+                modalClass: React.PropTypes.node
             },
             getInitialState: function() {
                 return {

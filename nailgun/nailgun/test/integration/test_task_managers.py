@@ -112,6 +112,42 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertIn(action_log.action_name, TASK_NAMES)
             self.assertEqual(action_log.action_type, ACTION_TYPES.nailgun_task)
 
+            if action_log.additional_info["operation"] in \
+                    (TASK_NAMES.check_networks,
+                     TASK_NAMES.check_before_deployment):
+                self.assertNotNull(action_log.end_timestamp)
+                self.assertIn("ended_with_status", action_log.additional_info)
+
+    def test_check_before_deployment_with_error(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "online": False}
+            ]
+        )
+
+        supertask = self.env.launch_deployment()
+
+        action_logs = objects.ActionLogCollection.all()
+
+        for al in action_logs:
+            self.assertEqual(al.action_type, ACTION_TYPES.nailgun_task)
+            self.assertEqual(al.additional_info["parent_task_id"],
+                             supertask.id)
+            self.assertIsNotNone(al.end_timestamp)
+            self.assertIn("ended_with_status", al.additional_info)
+
+            if al.additional_info["operation"] == TASK_NAMES.check_networks:
+                # check_networks task is not updated to "ready" status in case
+                # of success but left with "running" value
+                self.assertEqual(al.additional_info["ended_with_status"],
+                                 TASK_STATUSES.running)
+            elif (
+                al.additional_info["operation"] ==
+                TASK_NAMES.check_before_deployment
+            ):
+                self.assertEqual(al.additional_info["ended_with_status"],
+                                 TASK_STATUSES.error)
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_do_not_send_node_to_orchestrator_which_has_status_discover(

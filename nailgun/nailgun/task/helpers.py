@@ -41,6 +41,14 @@ tasks_names_actions_groups_mapping = dict(
             consts.TASK_NAMES.node_deletion,
         )
     ]
+    +
+    [
+        (task_name, 'cluster_checking') for task_name in
+        (
+            consts.TASK_NAMES.check_networks,
+            consts.TASK_NAMES.check_before_deployment
+        )
+    ]
 )
 
 
@@ -316,7 +324,7 @@ class TaskHelper(object):
             raise errors.NetworkCheckError(full_err_msg)
 
     @classmethod
-    def prepare_action_log_kwargs(self, task, nodes):
+    def prepare_action_log_kwargs(self, task, nodes=None):
         """Prepares kwargs dict for ActionLog db model class
 
         :param task: task instance to be processed
@@ -338,13 +346,12 @@ class TaskHelper(object):
         actor_id = web.ctx.env.get('fuel.action.actor_id')
         create_kwargs['actor_id'] = actor_id
 
+        nodes = [] if nodes is None else nodes
         additional_info = {
             'parent_task_id': task.parent_id,
             'subtasks_ids': [t.id for t in task.subtasks],
-            'nodes_to_change': {
-                'nodes': [n.id for n in nodes],
-                'operation': task.name
-            }
+            'operation': task.name,
+            'nodes_to_change': [n.id for n in nodes],
         }
         create_kwargs['additional_info'] = additional_info
 

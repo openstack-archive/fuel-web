@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import traceback
 
 from nailgun.objects.serializers.network_configuration \
@@ -43,13 +44,22 @@ class TaskManager(object):
         if cluster_id:
             self.cluster = db().query(Cluster).get(cluster_id)
 
-    def create_action_log(self, task_instance, operation_nodes):
+    def create_action_log(self, task_instance, **kwargs):
         create_kwargs = TaskHelper.prepare_action_log_kwargs(
             task_instance,
-            operation_nodes
+            nodes=kwargs.get('operation_nodes')
         )
 
-        objects.ActionLog.create(create_kwargs)
+        return objects.ActionLog.create(create_kwargs)
+
+    def update_action_log(self, task_instance, al_instance):
+        update_data = {
+            "end_timestamp": datetime.datetime.now(),
+            "additional_info": {
+                "ended_with_status": task_instance.status
+            }
+        }
+        objects.ActionLog.update(al_instance, update_data)
 
     def _call_silently(self, task, instance, *args, **kwargs):
         method = getattr(instance, kwargs.pop('method_name', 'execute'))
@@ -175,7 +185,8 @@ class ApplyChangesTaskManager(TaskManager):
                                                      weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
 
-            self.create_action_log(task_deletion, nodes_to_delete)
+            self.create_action_log(task_deletion,
+                                   operation_nodes=nodes_to_delete)
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -196,7 +207,8 @@ class ApplyChangesTaskManager(TaskManager):
             task_provision = supertask.create_subtask(TASK_NAMES.provision,
                                                       weight=task_weight)
 
-            self.create_action_log(task_provision, nodes_to_provision)
+            self.create_action_log(task_provision,
+                                   operation_nodes=nodes_to_provision)
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -231,7 +243,8 @@ class ApplyChangesTaskManager(TaskManager):
                          " ".join([n.fqdn for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(TASK_NAMES.deployment)
 
-            self.create_action_log(task_deployment, nodes_to_deploy)
+            self.create_action_log(task_deployment,
+                                   operation_nodes=nodes_to_deploy)
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -292,12 +305,21 @@ class ApplyChangesTaskManager(TaskManager):
         ]
 
         check_networks = supertask.create_subtask(TASK_NAMES.check_networks)
+
+        # write info about network checking into action_log table
+        al = self.create_action_log(check_networks)
+
         self._call_silently(
             check_networks,
             tasks.CheckNetworksTask,
             data=network_info,
             check_admin_untagged=True
         )
+
+        # update instance of CheckNetworksTask here as it
+        # completely executes inside current process of nailgun
+        self.update_action_log(check_networks, al)
+
         if check_networks.status == TASK_STATUSES.error:
             logger.warning(
                 "Checking networks failed: %s", check_networks.message
@@ -312,10 +334,18 @@ class ApplyChangesTaskManager(TaskManager):
             TASK_NAMES.check_before_deployment
         )
         logger.debug("Checking prerequisites task: %s", check_before.uuid)
+
+        # write info about prerequisites checking into action_log table
+        al = self.create_action_log(check_before)
+
         self._call_silently(
             check_before,
             tasks.CheckBeforeDeploymentTask
         )
+
+        # DRY: as for CheckNetworkTask
+        self.update_action_log(check_before, al)
+
         # if failed to check prerequisites
         # then task is already set to error
         if check_before.status == TASK_STATUSES.error:
@@ -323,6 +353,7 @@ class ApplyChangesTaskManager(TaskManager):
                 "Checking prerequisites failed: %s", check_before.message
             )
             raise errors.CheckBeforeDeploymentError(check_before.message)
+
         logger.debug(
             "Checking prerequisites is successful, starting deployment..."
         )

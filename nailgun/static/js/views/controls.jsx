@@ -48,15 +48,15 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         propTypes: {
             type: React.PropTypes.string.isRequired,
             name: React.PropTypes.string,
-            label: React.PropTypes.renderable,
-            description: React.PropTypes.renderable,
+            label: React.PropTypes.node,
+            description: React.PropTypes.node,
             disabled: React.PropTypes.bool,
-            wrapperClassName: React.PropTypes.renderable,
-            labelClassName: React.PropTypes.renderable,
-            descriptionClassName: React.PropTypes.renderable,
-            labelWrapperClassName:  React.PropTypes.renderable,
-            inputClassName: React.PropTypes.renderable,
-            tooltipText: React.PropTypes.renderable,
+            inputClassName: React.PropTypes.node,
+            labelClassName: React.PropTypes.node,
+            labelWrapperClassName:  React.PropTypes.node,
+            descriptionClassName: React.PropTypes.node,
+            wrapperClassName: React.PropTypes.node,
+            tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool,
             labelBeforeControl: React.PropTypes.bool,
             onChange: React.PropTypes.func
@@ -78,32 +78,26 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             }
         },
         renderInput: function() {
-            var input = null,
-                classes = {
-                    'parameter-input': true,
-                    'input-append': this.props.toggleable
-                };
+            var classes = {
+                'parameter-input': true,
+                'input-append': this.props.toggleable
+            };
             classes[this.props.inputClassName] = this.props.inputClassName;
-            switch (this.props.type) {
-                case 'select':
-                    input = (<select ref='input' key='input' className={cx(classes)} onChange={this.onChange}>{this.props.children}</select>);
-                    break;
-                case 'textarea':
-                    input = <textarea ref='input' key='input' className={cx(classes)} onChange={this.onChange} />;
-                    break;
-                case 'password':
-                    var type = (this.props.toggleable && this.state.visible) ? 'text' : 'password';
-                    input = <input ref='input' key='input' className={cx(classes)} type={type} onChange={this.onChange} />;
-                    break;
-                default:
-                    input = <input ref='input' key='input' className={cx(classes)} onChange={this.onChange} value={this.props.value} />;
-            }
+            var props = {
+                    ref: 'input',
+                    key: 'input',
+                    type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
+                    className: cx(classes),
+                    onChange: this.onChange
+                },
+                Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
+                input = (<Tag {...this.props} {...props}>{this.props.children}</Tag>);
             return this.isCheckboxOrRadio() ? (
                 <div key='input-wrapper' className='custom-tumbler'>
-                    {this.transferPropsTo(input)}
+                    {input}
                     <span>&nbsp;</span>
                 </div>
-            ) : this.transferPropsTo(input);
+            ) : input;
         },
         renderToggleablePasswordAddon: function() {
             return this.props.toggleable ? (
@@ -177,9 +171,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         propTypes: {
             name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-            label: React.PropTypes.renderable,
-            labelClassName: React.PropTypes.renderable,
-            tooltipText: React.PropTypes.renderable
+            label: React.PropTypes.node,
+            labelClassName: React.PropTypes.node,
+            tooltipText: React.PropTypes.node
         },
         render: function() {
             var labelClasses = {'parameter-name': true};
@@ -194,19 +188,17 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                         </label>
                     }
                     {_.map(this.props.values, function(value) {
-                        return this.transferPropsTo(
-                            <controls.Input
-                                key={value.data}
-                                type='radio'
-                                value={value.data}
-                                defaultChecked={value.defaultChecked}
-                                checked={value.checked}
-                                label={value.label}
-                                description={value.description}
-                                disabled={value.disabled}
-                                tooltipText={value.tooltipText}
-                            />
-                        );
+                        return <controls.Input {...this.props}
+                            key={value.data}
+                            type='radio'
+                            value={value.data}
+                            defaultChecked={value.defaultChecked}
+                            checked={value.checked}
+                            label={value.label}
+                            description={value.description}
+                            disabled={value.disabled}
+                            tooltipText={value.tooltipText}
+                        />;
                     }, this)}
                 </div>
             );
@@ -227,7 +219,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
 
     controls.Table = React.createClass({
         propTypes: {
-            tableClassName: React.PropTypes.renderable,
+            tableClassName: React.PropTypes.node,
             head: React.PropTypes.array,
             body: React.PropTypes.array
         },

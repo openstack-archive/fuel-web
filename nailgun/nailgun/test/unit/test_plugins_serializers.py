@@ -30,7 +30,7 @@ class TestMakeTask(base.BaseTestCase):
         self.assertEqual(
             result,
             {'parameters': {
-                'data': 'deb http://url',
+                'data': 'deb http://url /',
                 'path': '/etc/apt/sources.list.d/plugin_name.list'},
              'type': 'upload_file',
              'uids': [1, 2, 3]})

@@ -34,7 +34,7 @@ def make_repo_task(uids, repo_data, repo_path):
 
 
 def make_ubuntu_repo_task(plugin_name, repo_url, uids):
-    repo_data = 'deb {0}'.format(repo_url)
+    repo_data = 'deb {0} /'.format(repo_url)
     repo_path = '/etc/apt/sources.list.d/{0}.list'.format(plugin_name)
 
     return make_repo_task(uids, repo_data, repo_path)

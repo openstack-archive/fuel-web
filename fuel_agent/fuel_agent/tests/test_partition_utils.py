@@ -14,6 +14,7 @@
 
 import mock
 from oslotest import base as test_base
+import time
 
 from fuel_agent import errors
 from fuel_agent.utils import partition_utils as pu
@@ -255,8 +256,9 @@ class TestPartitionUtils(test_base.BaseTestCase):
         pu.reread_partitions('/dev/fake', out='')
         self.assertEqual(mock_exec.call_args_list, [])
 
+    @mock.patch.object(time, 'sleep')
     @mock.patch.object(utils, 'execute')
-    def test_reread_partitions_device_busy(self, mock_exec):
+    def test_reread_partitions_device_busy(self, mock_exec, mock_sleep):
         mock_exec.return_value = ('', '')
         pu.reread_partitions('/dev/fake', out='_Device or resource busy_')
         mock_exec_expected = [
@@ -264,6 +266,7 @@ class TestPartitionUtils(test_base.BaseTestCase):
             mock.call('partx', '-a', '/dev/fake', check_exit_code=[0, 1])
         ]
         self.assertEqual(mock_exec.call_args_list, mock_exec_expected)
+        mock_sleep.assert_called_once_with(1)
 
     @mock.patch.object(utils, 'execute')
     def test_reread_partitions_timeout(self, mock_exec):

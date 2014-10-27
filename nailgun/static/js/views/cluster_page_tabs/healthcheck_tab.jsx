@@ -253,6 +253,7 @@ function(React, models, utils, componentMixins, controls) {
                         visible={this.state.credentialsVisible}
                         credentials={this.state.credentials}
                         onInputChange={this.handleInputChange}
+                        disabled={disabledState || hasRunningTests}
                     />
                     <div className='testsets' key='testsets'>
                         <div>
@@ -299,6 +300,7 @@ function(React, models, utils, componentMixins, controls) {
                                     description={$.t('cluster_page.healthcheck_tab.' + name + '_description')}
                                     labelClassName='openstack-sub-title'
                                     descriptionClassName={React.addons.classSet({'healthcheck-password': name == 'password'})}
+                                    disabled={this.props.disabled}
                                 />);
                             }, this)}
                         </div>

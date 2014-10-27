@@ -44,6 +44,7 @@ class Parser:
             fuel [optional args] <namespace> [action] [flags]"""
         )
         self.universal_flags = []
+        self.credential_flags = []
         self.subparsers = self.parser.add_subparsers(
             title="Namespaces",
             metavar="",
@@ -115,6 +116,8 @@ class Parser:
         )
 
     def add_keystone_credentials_args(self):
+        self.credential_flags.append('--user')
+        self.credential_flags.append('--password')
         self.parser.add_argument(
             "--user",
             dest="user",
@@ -140,29 +143,56 @@ class Parser:
             lambda x: substitutions.get(x, x),
             self.args
         )
-        # move --json and --debug flags before any action
+
+        # move general used flags before actions, otherwise they will be used
+        # as a part of action by action_generator
+        for flag in self.credential_flags:
+            self.move_argument_before_action(flag)
+
         for flag in self.universal_flags:
-            if flag in self.args:
-                self.args.remove(flag)
-                self.args.insert(1, flag)
+            self.move_argument_before_action(flag, has_value=False)
 
-        self.move_argument_before_action("--env", )
+        self.move_argument_after_action("--env", )
 
-    def move_argument_before_action(self, argument):
+    def move_argument_before_action(self, flag, has_value=True):
+        """We need to move general argument before action, we use them
+        not directly in action but in APIClient.
+        """
         for arg in self.args:
-            if argument in arg:
-                # if declaration with '=' sign (e.g. --env-id=1)
-                if "=" in arg:
-                    index_of_env = self.args.index(arg)
-                    env = self.args.pop(index_of_env)
-                    self.args.append(env)
+            if flag in arg:
+                if "=" in arg or not has_value:
+                    index_of_flag = self.args.index(arg)
+                    flag = self.args.pop(index_of_flag)
+                    self.args.insert(1, flag)
                 else:
                     try:
-                        index_of_env = self.args.index(arg)
-                        self.args.pop(index_of_env)
-                        env = self.args.pop(index_of_env)
+                        index_of_flag = self.args.index(arg)
+                        flag = self.args.pop(index_of_flag)
+                        value = self.args.pop(index_of_flag)
+                        self.args.insert(1, value)
+                        self.args.insert(1, flag)
+                    except IndexError:
+                            raise ParserException(
+                                'Corresponding value must follow "{0}" flag'
+                                .format(arg)
+                            )
+                    break
+
+    def move_argument_after_action(self, flag):
+        for arg in self.args:
+            if flag in arg:
+                # if declaration with '=' sign (e.g. --env-id=1)
+                if "=" in arg:
+                    index_of_flag = self.args.index(arg)
+                    flag = self.args.pop(index_of_flag)
+                    self.args.append(flag)
+                else:
+                    try:
+                        index_of_flag = self.args.index(arg)
+                        self.args.pop(index_of_flag)
+                        flag = self.args.pop(index_of_flag)
                         self.args.append(arg)
-                        self.args.append(env)
+                        self.args.append(flag)
                     except IndexError:
                         raise ParserException(
                             'Corresponding value must follow "{0}" flag'

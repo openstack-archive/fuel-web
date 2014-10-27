@@ -17,10 +17,13 @@
 
 import os
 
-from fuelclient.tests.base import BaseTestCase
+from mock import Mock
+from mock import patch
+
+from fuelclient.tests import base
 
 
-class TestHandlers(BaseTestCase):
+class TestHandlers(base.BaseTestCase):
 
     def test_env_action(self):
         #check env help
@@ -99,17 +102,6 @@ class TestHandlers(BaseTestCase):
         self.assertEqual(result.stderr, '')
         del os.environ["SERVER_ADDRESS"]
 
-    def test_wrong_credentials(self):
-        result = self.run_cli_command("--user=a --password=a node",
-                                      check_errors=True)
-        must_be = ('\n            Unauthorized: need authentication!\n       '
-                   '     Please provide user and password via client\n       '
-                   '     --user --password\n            or modify '
-                   '"KEYSTONE_USER" and "KEYSTONE_PASS" in\n            '
-                   '/etc/fuel/client/config.yaml\n'
-                   )
-        self.assertEqual(result.stderr, must_be)
-
     def test_destroy_node(self):
         self.load_data_to_nailgun_server()
         self.run_cli_commands((
@@ -171,7 +163,7 @@ class TestHandlers(BaseTestCase):
         self.run_cli_command(cmd)
 
 
-class TestUserActions(BaseTestCase):
+class TestUserActions(base.BaseTestCase):
 
     def test_change_password_params(self):
         cmd = "user change-password"
@@ -180,7 +172,7 @@ class TestUserActions(BaseTestCase):
         self.assertTrue(msg, result)
 
 
-class TestCharset(BaseTestCase):
+class TestCharset(base.BaseTestCase):
 
     def test_charset_problem(self):
         self.load_data_to_nailgun_server()
@@ -191,7 +183,7 @@ class TestCharset(BaseTestCase):
         ))
 
 
-class TestFiles(BaseTestCase):
+class TestFiles(base.BaseTestCase):
 
     def test_file_creation(self):
         self.load_data_to_nailgun_server()
@@ -282,7 +274,7 @@ class TestFiles(BaseTestCase):
             ))
 
 
-class TestDownloadUploadNodeAttributes(BaseTestCase):
+class TestDownloadUploadNodeAttributes(base.BaseTestCase):
 
     def test_upload_download_interfaces(self):
         self.load_data_to_nailgun_server()
@@ -297,7 +289,7 @@ class TestDownloadUploadNodeAttributes(BaseTestCase):
                               self.upload_command(cmd)))
 
 
-class TestDeployChanges(BaseTestCase):
+class TestDeployChanges(base.BaseTestCase):
 
     def test_deploy_changes_no_failure(self):
         self.load_data_to_nailgun_server()
@@ -305,3 +297,26 @@ class TestDeployChanges(BaseTestCase):
         add_node = "--env-id=1 node set --node 1 --role=controller"
         deploy_changes = "deploy-changes --env 1"
         self.run_cli_commands((env_create, add_node, deploy_changes))
+
+
+class TestAuthentication(base.UnitTestCase):
+
+    @patch('fuelclient.client.requests')
+    @patch('fuelclient.client.auth_client')
+    def test_wrong_credentials(self, mkeystone_cli, mrequests):
+        mkeystone_cli.return_value = Mock(auth_token='')
+        mrequests.get_request.return_value = Mock(status_code=200)
+        self.execute(
+            ['fuel', '--user=a', '--password=a', 'node'])
+        mkeystone_cli.Client.assert_called_with(
+            username='a',
+            tenant_name='admin',
+            password='a',
+            auth_url='http://127.0.0.1:8003/keystone/v2.0')
+        self.execute(
+            ['fuel', '--user=a', '--password', 'a', 'node'])
+        mkeystone_cli.Client.assert_called_with(
+            username='a',
+            tenant_name='admin',
+            password='a',
+            auth_url='http://127.0.0.1:8003/keystone/v2.0')

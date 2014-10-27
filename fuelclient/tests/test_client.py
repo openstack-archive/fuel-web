@@ -102,11 +102,20 @@ class TestHandlers(BaseTestCase):
     def test_wrong_credentials(self):
         result = self.run_cli_command("--user=a --password=a node",
                                       check_errors=True)
-        must_be = ('\n            Unauthorized: need authentication!\n       '
-                   '     Please provide user and password via client\n       '
-                   '     --user --password\n            or modify '
-                   '"KEYSTONE_USER" and "KEYSTONE_PASS" in\n            '
-                   '/etc/fuel/client/config.yaml\n'
+        must_be = ('\n            Unauthorized: need authentication!\n        '
+                   '    Please provide user and password via client\n         '
+                   '    fuel --user=user --password=pass [action]\n           '
+                   ' or modify "KEYSTONE_USER" and "KEYSTONE_PASS" in\n       '
+                   '     /etc/fuel/client/config.yaml\n'
+                   )
+        self.assertEqual(result.stderr, must_be)
+        result = self.run_cli_command("node --user=a --password a",
+                                      check_errors=True)
+        must_be = ('\n            Unauthorized: need authentication!\n        '
+                   '    Please provide user and password via client\n         '
+                   '    fuel --user=user --password=pass [action]\n           '
+                   ' or modify "KEYSTONE_USER" and "KEYSTONE_PASS" in\n       '
+                   '     /etc/fuel/client/config.yaml\n'
                    )
         self.assertEqual(result.stderr, must_be)
 

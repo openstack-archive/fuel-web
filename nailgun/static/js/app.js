@@ -74,9 +74,11 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             });
             var version = this.version = new models.FuelVersion();
 
-            version.fetch().then(_.bind(function() {
+            version.fetch().always(_.bind(function() {
                 this.user = new models.User({authenticated: !version.get('auth_required')});
-
+                this.renderLayout();
+                Backbone.history.start();
+            }, this)).then(_.bind(function() {
                 var originalSync = Backbone.sync;
                 Backbone.sync = function(method, model, options) {
                     // our server doesn't support PATCH, so use PUT instead
@@ -95,9 +97,6 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                         var callbacks = {};
 
                         return keystoneClient.authenticate()
-                            .fail(function() {
-                                app.logout();
-                            })
                             .then(_.bind(function() {
                                 options = options || {};
                                 options.headers = options.headers || {};
@@ -120,10 +119,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                                     callbacks.error.apply(callbacks.error, arguments);
                                 }
                             })
-                            .fail(function(response) {
-                                if (response && response.status == 401) {
-                                    app.logout();
-                                }
+                            .fail(function() {
+                                app.logout();
                             });
                     }
                     return originalSync.call(this, method, model, options);
@@ -138,10 +135,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 }
                 return $.Deferred().resolve();
             }, this)).always(_.bind(function() {
-                this.renderLayout();
-                Backbone.history.start();
                 if (version.get('auth_required') && !this.user.get('authenticated')) {
-                    app.navigate('#login', {trigger: true});
+                    app.logout();
                 }
             }, this));
         },

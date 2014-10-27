@@ -33,13 +33,13 @@ define(['jquery', 'underscore'], function($, _) {
                 return $.Deferred().resolve();
             }
             var data = {auth: {}};
-            if (this.token) {
-                data.auth.token = {id: this.token};
-            } else if (username && password) {
+            if (username && password) {
                 data.auth.passwordCredentials = {
                     username: username,
                     password: password
                 };
+            } else if (this.token) {
+                data.auth.token = {id: this.token};
             } else {
                 return $.Deferred().reject();
             }

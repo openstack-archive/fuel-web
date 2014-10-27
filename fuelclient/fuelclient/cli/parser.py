@@ -44,6 +44,7 @@ class Parser:
             fuel [optional args] <namespace> [action] [flags]"""
         )
         self.universal_flags = []
+        self.credential_flags = []
         self.subparsers = self.parser.add_subparsers(
             title="Namespaces",
             metavar="",
@@ -115,6 +116,8 @@ class Parser:
         )
 
     def add_keystone_credentials_args(self):
+        self.credential_flags.append('--user')
+        self.credential_flags.append('--password')
         self.parser.add_argument(
             "--user",
             dest="user",
@@ -140,6 +143,28 @@ class Parser:
             lambda x: substitutions.get(x, x),
             self.args
         )
+
+        # move --user and --password flags before any action
+        for arg in self.args:
+            for flag in self.credential_flags:
+                if flag in arg:
+                    if "=" in arg:
+                        index_of_env = self.args.index(arg)
+                        env = self.args.pop(index_of_env)
+                        self.args.insert(1, env)
+                    else:
+                        try:
+                            index_of_env = self.args.index(arg)
+                            env = self.args.pop(index_of_env)
+                            value = self.args.pop(index_of_env)
+                            self.args.insert(1, value)
+                            self.args.insert(1, env)
+                        except IndexError:
+                            raise ParserException(
+                                'Corresponding value must follow "{0}" flag'
+                                .format(arg)
+                            )
+
         # move --json and --debug flags before any action
         for flag in self.universal_flags:
             if flag in self.args:

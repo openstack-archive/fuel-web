@@ -54,6 +54,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             wrapperClassName: React.PropTypes.renderable,
             labelClassName: React.PropTypes.renderable,
             descriptionClassName: React.PropTypes.renderable,
+            labelWrapperClassName:  React.PropTypes.renderable,
+            inputClassName: React.PropTypes.renderable,
             tooltipText: React.PropTypes.renderable,
             toggleable: React.PropTypes.bool
         },
@@ -73,20 +75,21 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         renderInput: function() {
             var input = null,
-                className = 'parameter-input';
+                className = {'parameter-input': true};
+            className[this.props.inputClassName] = this.props.inputClassName;
             switch (this.props.type) {
                 case 'select':
-                    input = (<select ref='input' key='input' className={className} onChange={this.onChange}>{this.props.children}</select>);
+                    input = (<select ref='input' key='input' className={cx(className)} onChange={this.onChange}>{this.props.children}</select>);
                     break;
                 case 'textarea':
-                    input = <textarea ref='input' key='input' className={className} onChange={this.onChange} />;
+                    input = <textarea ref='input' key='input' className={cx(className)} onChange={this.onChange} />;
                     break;
                 case 'password':
                     var type = (this.props.toggleable && this.state.visible) ? 'text' : 'password';
-                    input = <input ref='input' key='input' className={className} type={type} onChange={this.onChange} />;
+                    input = <input ref='input' key='input' className={cx(className)} type={type} onChange={this.onChange} />;
                     break;
                 default:
-                    input = <input ref='input' key='input' className={className} onChange={this.onChange} value={this.props.value} />;
+                    input = <input ref='input' key='input' className={cx(className)} onChange={this.onChange} value={this.props.value} />;
             }
             return this.isCheckboxOrRadio() ? (
                 <div key='input-wrapper' className='custom-tumbler'>
@@ -104,27 +107,38 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         renderLabel: function(children) {
             var classes = {
-                'parameter-name enable-selection': true,
+                'parameter-name': true,
                 'input-append': this.props.toggleable
             };
             classes[this.props.labelClassName] = this.props.labelClassName;
+            var labelWrapperClasses = {
+                'label-wrapper enable-selection': true
+            };
+            labelWrapperClasses[this.props.labelWrapperClassName] = this.props.labelWrapperClassName;
             return this.props.label ? (
                 <label key='label' className={cx(classes)} htmlFor={this.props.id}>
-                    {!this.isCheckboxOrRadio() &&
-                        <div className='input-label'>
+                    {(!this.isCheckboxOrRadio() || this.props.labelBeforeControl) &&
+                        <div className='input-label enable-selection'>
                             <span>{this.props.label}</span>
                             {this.renderTooltipIcon()}
                         </div>
                     }
                     {children}
-                    {this.isCheckboxOrRadio() &&
-                        <div className='label-wrapper'>
+                    {(this.isCheckboxOrRadio() && !this.props.labelBeforeControl) &&
+                        <div className={cx(labelWrapperClasses)}>
                             {this.props.label}
                             {this.renderTooltipIcon()}
                         </div>
                     }
                 </label>
-            ) : children;
+            )
+            : this.props.title ? (
+                <div key={this.props.title}>
+                    <div className='parameter-name'>{this.props.title}</div>
+                    {children}
+                </div>
+                )
+            : children;
         },
         renderDescription: function() {
             var error = !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
@@ -209,12 +223,12 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
 
     controls.Table = React.createClass({
         propTypes: {
-            tableClassName: React.PropTypes.string,
+            tableClassName: React.PropTypes.renderable,
             head: React.PropTypes.array,
             body: React.PropTypes.array
         },
         render: function() {
-            var tableClasses = {'table table-bordered table-striped': true};
+            var tableClasses = this.props.noStripes ? {} : {'table table-bordered table-striped': true};
             tableClasses[this.props.tableClassName] = this.props.tableClassName;
             return (
                 <table className={cx(tableClasses)}>

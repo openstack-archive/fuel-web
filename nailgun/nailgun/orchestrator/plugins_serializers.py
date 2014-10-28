@@ -105,19 +105,17 @@ class BasePluginDeploymentHooksSerializer(object):
                 uids = self.get_uids_for_task(task)
                 if not uids:
                     continue
-                tasks.append(make_shell_task(
-                    uids,
-                    task,
-                    plugin.slaves_scripts_path))
+                tasks.append(self.serialize_task(
+                    plugin, task,
+                    make_shell_task(uids, task, plugin.slaves_scripts_path)))
 
             for task in puppet_tasks:
                 uids = self.get_uids_for_task(task)
                 if not uids:
                     continue
-                tasks.append(make_puppet_task(
-                    uids,
-                    task,
-                    plugin.slaves_scripts_path))
+                tasks.append(self.serialize_task(
+                    plugin, task,
+                    make_puppet_task(uids, task, plugin.slaves_scripts_path)))
 
         return tasks
 
@@ -140,6 +138,14 @@ class BasePluginDeploymentHooksSerializer(object):
 
     def get_uids_for_task(self, task):
         return self.get_uids_for_tasks([task])
+
+    def serialize_task(self, plugin, task_defaults, task):
+        task.update(self.get_default_parameters(plugin, task_defaults))
+        return task
+
+    def get_default_parameters(self, plugin, task_defaults):
+        return {'fail_on_error': task_defaults.get('fail_on_error', True),
+                'diagnostic_name': plugin.full_name}
 
 
 class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
@@ -174,8 +180,10 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
                 continue
 
             repo_tasks.append(
-                make_repo(
-                    plugin.full_name, plugin.repo_url(self.cluster), uids))
+                self.serialize_task(
+                    plugin, {},
+                    make_repo(plugin.full_name,
+                              plugin.repo_url(self.cluster), uids)))
 
         return repo_tasks
 
@@ -185,10 +193,13 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
             uids = self.get_uids_for_tasks(plugin.tasks)
             if not uids:
                 continue
-            tasks.append(make_sync_scripts_task(
-                uids,
-                plugin.master_scripts_path(self.cluster),
-                plugin.slaves_scripts_path))
+            tasks.append(
+                self.serialize_task(
+                    plugin, {},
+                    make_sync_scripts_task(
+                        uids,
+                        plugin.master_scripts_path(self.cluster),
+                        plugin.slaves_scripts_path)))
 
         return tasks
 

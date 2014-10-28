@@ -60,7 +60,7 @@ function($, React, controls, statisticsMixin) {
                                 {$.t(ns + 'provide_contacts')}
                             </p>
                         </div>
-                        {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
+                        {this.renderInput('send_user_info', null, 'welcome-checkbox-box identify-control')}
                         <form className='form-horizontal'>
                             { _.map(contacts, function(settingName) {
                                 return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box', true);

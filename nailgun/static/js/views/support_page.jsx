@@ -188,7 +188,7 @@ function(React, componentMixins, models, statisticsMixin) {
             return (
                 <SupportPageElement title={$.t('support_page.send_statistics_title')}>
                     {this.renderIntro()}
-                    <div className='statistics-settings'>
+                    <div className='statistics-settings statistics-credentials'>
                         {_.map(sortedSettings, this.renderInput, this)}
                     </div>
                     <p>

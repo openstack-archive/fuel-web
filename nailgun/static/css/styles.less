@@ -2305,6 +2305,16 @@ input.error:focus,
     &.img-download-logs { background-position: 0 -(@support-img-size * 2); }
     &.img-audit-logs {  background-position: 0 -(@support-img-size * 3); }
   }
+  .statistics-settings {
+    .parameter-box.checkbox-or-radio {
+      .parameter-name {
+        .label-wrapper {
+          width: auto;
+          top: 0px;
+        }
+      }
+    }
+  }
 }
 
 .accordion-inner, .accordion-inner label {
@@ -2341,6 +2351,9 @@ input.error:focus,
 
 .parameter-box {
   display: block;
+  input.parameter-input {
+    margin-bottom: 0px;
+  }
 }
 
 .fieldset-group > div > .parameter-box,
@@ -3581,12 +3594,10 @@ i.btn-cluster-details {
       .parameter-name { overflow: visible; }
       .parameter-description { margin: 0 0 0 175px; }
       input {
-        margin-bottom: 0;
         width: 237px;
-      }
-      .input-append {
-        margin-bottom: 0;
-        input { width: 207px; }
+        &.input-append {
+          width: 207px;
+        }
       }
     }
   }
@@ -3628,7 +3639,9 @@ i.btn-cluster-details {
         float: none;
         font-weight: normal;
       }
-      .label-wrapper { .position(relative, @top: -7px, @left: 3px); }
+      .label-wrapper {
+        .position(relative, @top: -7px, @left: 3px);
+      }
     }
     .welcome-form-box {
       margin-bottom: 15px;
@@ -3636,6 +3649,7 @@ i.btn-cluster-details {
         display: inline-block;
         margin-left: 175px;
         font-weight: normal;
+        overflow: visible;
         .input-label { width: 80px; }
       }
     }
@@ -3647,6 +3661,14 @@ i.btn-cluster-details {
     .welcome-button-box {
       text-align: center;
       button { .width-height-mixin(230px, 44px); }
+    }
+  }
+  .parameter-box.checkbox-or-radio {
+    .parameter-name {
+      .input-label {
+        width: auto;
+        float: none;
+      }
     }
   }
 }

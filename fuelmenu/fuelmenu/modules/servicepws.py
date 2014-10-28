@@ -54,6 +54,22 @@ class servicepws(urwid.WidgetWrap):
                 "keystone/admin_token": {"label": "Keystone Admin Token",
                                          "tooltip": "",
                                          "value": pwgen.password()},
+                "keystone/nailgun_user": {
+                    "label": "Keystone username for Nailgun",
+                    "tooltip": "",
+                    "value": "nailgun"},
+                "keystone/nailgun_password": {
+                    "label": "Keystone password for Nailgun",
+                    "tooltip": "",
+                    "value": pwgen.password()},
+                "keystone/ostf_user": {
+                    "label": "Keystone username for OSTF",
+                    "tooltip": "",
+                    "value": "ostf"},
+                "keystone/ostf_password": {
+                    "label": "Keystone password for OSTF",
+                    "tooltip": "",
+                    "value": pwgen.password()},
                 "mcollective/user": {"label": "Mcollective user",
                                      "tooltip": "",
                                      "value": "mcollective"},

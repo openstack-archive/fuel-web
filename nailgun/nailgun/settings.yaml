@@ -84,7 +84,7 @@ COLLECTOR_PING_URL: "https://{collector_server}/api/v1/ping/"
 STATS_SEND_INTERVAL: 3600
 
 # statistics send records per request
-STATS_SEND_COUNT: 5
+STATS_SEND_COUNT: 100
 
 # statistics collector ping interval
 COLLECTOR_PING_INTERVAL: 300

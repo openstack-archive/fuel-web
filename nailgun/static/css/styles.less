@@ -2343,6 +2343,9 @@ input.error:focus,
 
 .parameter-box {
   display: block;
+  input.parameter-input {
+    margin-bottom: 0px;
+  }
 }
 
 .fieldset-group > div > .parameter-box,
@@ -2500,7 +2503,6 @@ legend {
       .input-label {
         width: 115px;
         float: left;
-        margin: 7px 14px 0 0;
       }
     .parameter-control {
       margin-bottom: 5px;
@@ -2516,9 +2518,6 @@ legend {
     background-color: @fuel-light-5;
     padding: 20px 40px 20px 40px;
     border: 1px dotted @fuel-base-color;
-  }
-  .input-append {
-    margin-top: 0px;
   }
 }
 
@@ -3241,9 +3240,6 @@ input.input-append {
       width: 175px;
     }
   }
-  .parameter-description.healthcheck-password {
-    margin-top: 4px;
-  }
 }
 
 .healthcheck-title {
@@ -3582,12 +3578,10 @@ i.btn-cluster-details {
       .parameter-name { overflow: visible; }
       .parameter-description { margin: 0 0 0 175px; }
       input {
-        margin-bottom: 0;
         width: 237px;
-      }
-      .input-append {
-        margin-bottom: 0;
-        input { width: 207px; }
+        &.input-append {
+          width: 207px;
+        }
       }
     }
   }

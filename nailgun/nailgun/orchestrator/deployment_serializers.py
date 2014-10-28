@@ -16,6 +16,7 @@
 
 """Deployment serializers for orchestrator"""
 
+from collections import Iterable
 from copy import deepcopy
 from itertools import groupby
 
@@ -750,13 +751,19 @@ class NeutronNetworkDeploymentSerializer51(NeutronNetworkDeploymentSerializer):
 class NeutronNetworkDeploymentSerializer60(
     NeutronNetworkDeploymentSerializer51
 ):
-
     @classmethod
     def generate_network_scheme(cls, node):
-        attrs = super(NeutronNetworkDeploymentSerializer60, cls).\
+        attrs = super(NeutronNetworkDeploymentSerializer60, cls). \
             generate_network_scheme(node)
-        if 'tags' in attrs:
-            attrs['vlan_ids'] = attrs['tags']
+
+        if 'transformations' in attrs and \
+                isinstance(attrs['transformations'], Iterable):
+            result = []
+            for item in attrs['transformations']:
+                if 'tags' in item:
+                    item['vlan_ids'] = item['tags']
+                result.append(item)
+            attrs['transformations'] = result
         return attrs
 
 

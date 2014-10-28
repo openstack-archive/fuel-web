@@ -27,6 +27,9 @@
       cinder:
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+        restrictions:
+          - condition: "settings:storage.volumes_ceph.value == true"
+            message: "Adding Cinder nodes to an environment with Ceph RBD used as backend for volumes (instead of Cinder LVM backend) is not a valid configuration"
     networks_metadata:
       nova_network:
         networks:
@@ -556,6 +559,9 @@
         restrictions:
           - condition: "settings:common.libvirt_type.value == 'vcenter'"
             message: "Ceph cannot be used with vCenter"
+      cinder:
+         name: "Storage - Cinder LVM"
+         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
       mongo:
         name: "Telemetry - MongoDB"
         description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."

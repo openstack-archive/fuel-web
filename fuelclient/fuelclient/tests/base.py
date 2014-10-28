@@ -25,6 +25,9 @@ import subprocess
 import sys
 import tempfile
 
+from fuelclient.cli.parser import main
+
+
 logging.basicConfig(stream=sys.stderr)
 log = logging.getLogger("CliTest.ExecutionLog")
 log.setLevel(logging.DEBUG)
@@ -45,7 +48,14 @@ class CliExectutionResult:
         return self.return_code == 0
 
 
-class BaseTestCase(TestCase):
+class UnitTestCase(TestCase):
+    """Base test class which does not require nailgun server to run."""
+
+    def execute(self, command):
+        return main(command)
+
+
+class BaseTestCase(UnitTestCase):
     root_path = os.path.abspath(
         os.path.join(
             os.curdir,
@@ -68,6 +78,18 @@ class BaseTestCase(TestCase):
     def tearDown(self):
         shutil.rmtree(self.temp_directory)
 
+    @staticmethod
+    def run_command(*args):
+        handle = subprocess.Popen(
+            [" ".join(args)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        log.debug("Running " + " ".join(args))
+        out, err = handle.communicate()
+        log.debug("Finished command with {0} - {1}".format(out, err))
+
     def upload_command(self, cmd):
         return "{0} --upload --dir {1}".format(cmd, self.temp_directory)
 
@@ -87,18 +109,6 @@ class BaseTestCase(TestCase):
                 "nailgun/nailgun/fixtures/sample_environment.json"
             )
         ))
-
-    @staticmethod
-    def run_command(*args):
-        handle = subprocess.Popen(
-            [" ".join(args)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=True
-        )
-        log.debug("Running " + " ".join(args))
-        out, err = handle.communicate()
-        log.debug("Finished command with {0} - {1}".format(out, err))
 
     def run_cli_command(self, command_line, check_errors=False):
         modified_env = os.environ.copy()

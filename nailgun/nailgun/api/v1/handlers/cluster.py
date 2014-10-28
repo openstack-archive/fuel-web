@@ -189,7 +189,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
                * 500 (cluster has no attributes)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        attrs = cluster.release.attributes_metadata.get("editable")
+        attrs = objects.Cluster.get_default_editable_attributes(cluster)
         if not attrs:
             raise self.http(500, "No attributes found!")
         return {"editable": attrs}
@@ -217,9 +217,8 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
                          ' found for cluster_id %s' % cluster_id)
             raise self.http(500, "No attributes found!")
 
-        cluster.attributes.editable = cluster.release.attributes_metadata.get(
-            "editable"
-        )
+        cluster.attributes.editable = (
+            objects.Cluster.get_default_editable_attributes(cluster))
         objects.Cluster.add_pending_changes(cluster, "attributes")
 
         logger.debug('ClusterAttributesDefaultsHandler:'

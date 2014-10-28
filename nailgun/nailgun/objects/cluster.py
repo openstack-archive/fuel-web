@@ -216,9 +216,7 @@ class Cluster(NailgunObject):
         """
         attributes = Attributes.create(
             {
-                "editable": instance.release.attributes_metadata.get(
-                    "editable"
-                ),
+                "editable": cls.get_default_editable_attributes(instance),
                 "generated": instance.release.attributes_metadata.get(
                     "generated"
                 ),
@@ -226,12 +224,21 @@ class Cluster(NailgunObject):
             }
         )
         Attributes.generate_fields(attributes)
+        db().flush()
+
+    @classmethod
+    def get_default_editable_attributes(cls, instance):
+        """Get editable attributes from release metadata
+
+        :param instance: Cluster instance
+        :returns: Dict object
+        """
+        editable = instance.release.attributes_metadata.get("editable")
         # when attributes created we need to understand whether should plugin
         # be applied for created cluster
         plugin_attrs = PluginManager.get_plugin_attributes(instance)
-        editable = dict(plugin_attrs, **instance.attributes.editable)
-        instance.attributes.editable = editable
-        db().flush()
+        editable = dict(plugin_attrs, **editable)
+        return editable
 
     @classmethod
     def get_attributes(cls, instance):

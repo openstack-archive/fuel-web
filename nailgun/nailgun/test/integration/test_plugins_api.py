@@ -101,6 +101,13 @@ class BasePluginTest(base.BaseIntegrationTest):
                     nodes_kwargs=nodes)
         return self.env.clusters[0]
 
+    def default_attributes(self, cluster):
+        resp = self.app.get(
+            base.reverse('ClusterAttributesDefaultsHandler',
+                         {'cluster_id': cluster.id}),
+            headers=self.default_headers)
+        return resp
+
     def modify_plugin(self, cluster, plugin_name, enabled):
         editable_attrs = cluster.attributes.editable
         editable_attrs[plugin_name]['metadata']['enabled'] = enabled
@@ -188,6 +195,12 @@ class TestPluginsApi(BasePluginTest):
         updated_data = resp.json
         updated_data.pop('id')
         self.assertEqual(updated_data, data)
+
+    def test_default_attributes_after_plugin_is_created(self):
+        self.create_plugin()
+        cluster = self.create_cluster()
+        default_attributes = self.default_attributes(cluster)
+        self.assertIn(self.SAMPLE_PLUGIN['name'], default_attributes)
 
 
 class TestPrePostHooks(BasePluginTest):

@@ -24,6 +24,7 @@ VERSION:
   ostf_sha: "Unknown build"
   feature_groups:
     - experimental
+    - mirantis
 
 FUEL_KEY: "Unknown"
 

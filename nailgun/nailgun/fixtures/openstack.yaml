@@ -498,6 +498,26 @@
               - data: "cobbler"
                 label: "Classic (use anaconda or debian-installer)"
                 description: "Install from scratch using anaconda or debian-installer."
+        external_dns:
+          metadata:
+            label: "Upstream DNS"
+            weight: 90
+          dns_list:
+            value: "8.8.8.8, 8.8.4.4"
+            label: "DNS list"
+            description: "List of upstream DNS servers separated by comma"
+            weight: 10
+            type: "text"
+        external_ntp:
+          metadata:
+            label: "Upstream NTP"
+            weight: 100
+          ntp_list:
+            value: "0.pool.ntp.org, 1.pool.ntp.org"
+            label: "NTP servers list"
+            description: "List of upstream NTP servers separated by comma"
+            weight: 10
+            type: "text"
       generated:
         mysql:
           root_password:

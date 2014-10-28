@@ -262,7 +262,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             var clusters = new models.Clusters();
             var nodes = new models.Nodes();
             var tasks = new models.Tasks();
-            $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch()).always(_.bind(function() {
+            $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch()).done(_.bind(function() {
                 clusters.each(function(cluster) {
                     cluster.set('nodes', new models.Nodes(nodes.where({cluster: cluster.id})));
                     cluster.get('nodes').deferred = nodes.deferred;
@@ -279,7 +279,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
         },
         showNotifications: function() {
             var notifications = app.navbar.props.notifications;
-            notifications.fetch().always(_.bind(function() {
+            notifications.fetch().done(_.bind(function() {
                 this.setPage(NotificationsPage, {notifications: notifications});
             }, this));
         },

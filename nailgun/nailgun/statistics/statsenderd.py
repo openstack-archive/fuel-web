@@ -71,17 +71,23 @@ class StatsSender():
                 six.text_type(e))
         return resp
 
+    def is_status_acceptable(
+            self, resp_status_code, resp_status,
+            codes=(requests.codes.created, requests.codes.ok)
+    ):
+        return (resp_status_code in codes and
+                resp_status == consts.LOG_CHUNK_SEND_STATUS.ok)
+
     def send_log_serialized(self, records, ids):
         if records:
-            logger.info("Send %d records", len(records))
+            logger.info("Send %d action logs records", len(records))
             resp = self.send_data_to_url(
                 url=self.build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
                 data={"action_logs": records}
             )
             resp_dict = resp.json()
-            if resp.status_code == requests.codes.created and \
-                    resp_dict["status"] == \
-                    consts.LOG_CHUNK_SEND_STATUS.ok:
+            if self.is_status_acceptable(resp.status_code,
+                                         resp_dict["status"]):
                 records_resp = resp_dict["action_logs"]
                 saved_ids = set()
                 failed_ids = set()
@@ -92,7 +98,7 @@ class StatsSender():
                     else:
                         saved_ids.add(record["external_id"])
                 sent_saved_ids = set(saved_ids) & set(ids)
-                logger.info("Records saved: %s, failed: %s",
+                logger.info("Action logs records saved: %s, failed: %s",
                             six.text_type(list(sent_saved_ids)),
                             six.text_type(list(failed_ids)))
                 db().query(models.ActionLog).filter(
@@ -103,7 +109,7 @@ class StatsSender():
                 db().commit()
             else:
                 logger.error("Unexpected collector answer: %s",
-                             six.text_type(resp))
+                             six.text_type(resp.text))
 
     def send_action_log(self):
         action_log = db().query(models.ActionLog).order_by(
@@ -135,18 +141,18 @@ class StatsSender():
             offset += settings.STATS_SEND_COUNT
 
     def send_installation_info(self):
+        logger.info("Sending installation structure info")
         inst_info = InstallationInfo().get_installation_info()
         resp = self.send_data_to_url(
             url=self.build_collector_url("COLLECTOR_INST_INFO_URL"),
-            data={"installation_struct": inst_info}
+            data={"installation_structure": inst_info}
         )
-        if resp.status_code == requests.codes.created and \
-                resp.json()["status"] == \
-                consts.LOG_CHUNK_SEND_STATUS.ok:
-            logger.info("Installation info saved in collector")
+        resp_dict = resp.json()
+        if self.is_status_acceptable(resp.status_code, resp_dict["status"]):
+            logger.info("Installation structure info saved in collector")
         else:
             logger.error("Unexpected collector answer: %s",
-                         six.text_type(resp))
+                         six.text_type(resp.text))
 
     def run(self, *args, **kwargs):
 

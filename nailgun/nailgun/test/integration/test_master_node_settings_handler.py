@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import unittest2
+
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -22,6 +24,7 @@ from nailgun import objects
 
 class TestMasterNodeSettingsHandler(BaseIntegrationTest):
 
+    @unittest2.skip('To be reworked')
     def test_get_controller(self):
         # should contain data that are defined in master_node_settings.yaml
         # fixture file which is located in fixtures directory for nailgun
@@ -127,6 +130,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         )
         self.assertEqual(resp.json_body, expected)
 
+    @unittest2.skip('To be reworked')
     def test_put_controller(self):
         data = {
             "settings": {
@@ -237,6 +241,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
 
         self.assertEqual(settings_from_db.settings, data["settings"])
 
+    @unittest2.skip('To be reworked')
     def test_patch_controller(self):
         data = {
             "settings": {

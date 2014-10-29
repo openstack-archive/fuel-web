@@ -55,6 +55,7 @@ class TestStatistics(BaseTestCase):
         self.assertEquals(len(nodes_params), cluster_info['nodes_num'])
         self.assertEquals(consts.CLUSTER_MODES.ha_full, cluster_info['mode'])
         self.assertTrue('release' in cluster_info)
+        self.assertTrue('attributes' in cluster_info)
         self.assertEquals(consts.RELEASE_OS.centos,
                           cluster_info['release']['os'])
 
@@ -128,3 +129,22 @@ class TestStatistics(BaseTestCase):
     @patch.dict('nailgun.settings.settings.VERSION', FEATURE_EXPERIMENTAL)
     def test_community_collector_urls(self):
         self.check_collector_urls(StatsSender.COLLECTOR_COMMUNITY_SERVER)
+
+    def test_sanitation(self):
+        info = InstallationInfo()
+        self.assertDictEqual({}, info.sanitise_data({}))
+        self.assertDictEqual({}, info.sanitise_data({'password': 'xx'}))
+        self.assertDictEqual(
+            {'f': 'n'},
+            info.sanitise_data({'password': 'xx', 'f': 'n'})
+        )
+        self.assertListEqual([], info.sanitise_data([]))
+        self.assertListEqual(
+            sorted([1, 2, 'password']),
+            sorted(info.sanitise_data([1, 2, 'password']))
+        )
+        self.assertListEqual(
+            sorted([{'f': 'n'}, {'a': 'b'}]),
+            sorted(info.sanitise_data([
+                {'password': 'x', 'f': 'n'}, {'a': 'b'}]))
+        )

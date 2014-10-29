@@ -34,9 +34,15 @@ from nailgun.statistics.installation_info import InstallationInfo
 
 class StatsSender():
 
+    def build_collector_url(self, url_template):
+        server = "collector.mirantis.com" \
+            if "mirantis" in settings.VERSION["feature_groups"] \
+            else "collector.fuel-infra.org"
+        return getattr(settings, url_template).format(collector_server=server)
+
     def ping_collector(self):
         try:
-            resp = requests.get(settings.COLLECTOR_PING_URL,
+            resp = requests.get(self.build_collector_url("COLLECTOR_PING_URL"),
                                 timeout=settings.COLLECTOR_RESP_TIMEOUT)
             resp.raise_for_status()
             return True
@@ -69,7 +75,7 @@ class StatsSender():
         if records:
             logger.info("Send %d records", len(records))
             resp = self.send_data_to_url(
-                url=settings.COLLECTOR_ACTION_LOGS_URL,
+                url=self.build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
                 data={"action_logs": records}
             )
             resp_dict = resp.json()
@@ -131,7 +137,7 @@ class StatsSender():
     def send_installation_info(self):
         inst_info = InstallationInfo().get_installation_info()
         resp = self.send_data_to_url(
-            url=settings.COLLECTOR_INST_INFO_URL,
+            url=self.build_collector_url("COLLECTOR_INST_INFO_URL"),
             data={"installation_struct": inst_info}
         )
         if resp.status_code == requests.codes.created and \

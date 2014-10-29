@@ -174,6 +174,90 @@ class TestLogs(BaseIntegrationTest):
         self.assertEqual(response['entries'], log_entries)
         settings.LOGS[0]['multiline'] = False
 
+    def test_incremental_older_fetch(self):
+        """Older entries should be fetched incrementally.
+        """
+        log_entries = [
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL111',
+                'text1',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL222',
+                'text2',
+            ],
+            [
+                time.strftime(settings.UI_LOG_DATE_FORMAT),
+                'LEVEL333',
+                'text3',
+            ],
+        ]
+
+        self.env.create_cluster(api=False)
+        self._create_logfile_for_node(settings.LOGS[0], log_entries)
+
+        total_len = len(''.join(map(self._format_log_entry, log_entries)))
+
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={
+                'max_entries': 1,
+                'source': settings.LOGS[0]['id'],
+            },
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        response = resp.json_body
+        self.assertEqual(response['entries'], [log_entries[2]])
+        self.assertTrue(response['has_more'])
+        self.assertEqual(response['to'], total_len)
+        self.assertEqual(
+            response['from'],
+            total_len - len(self._format_log_entry(log_entries[2])))
+
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={
+                'fetch_older': True,
+                'from': response['from'],
+                'to': response['to'],
+                'max_entries': 1,
+                'source': settings.LOGS[0]['id'],
+            },
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        response = resp.json_body
+        self.assertEqual(response['entries'], [log_entries[1]])
+        self.assertTrue(response['has_more'])
+        self.assertEqual(response['to'], total_len)
+        self.assertEqual(
+            response['from'],
+            total_len - len(self._format_log_entry(log_entries[2])) -
+            len(self._format_log_entry(log_entries[1])))
+
+        # Normal, forward fetch shouldn't affect from and to
+
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={
+                'fetch_older': True,
+                'from': response['from'],
+                'to': response['to'],
+                'max_entries': 1,
+                'source': settings.LOGS[0]['id'],
+            },
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        response = resp.json_body
+        self.assertEqual(response['entries'], [log_entries[0]])
+        self.assertFalse(response['has_more'])
+        self.assertEqual(response['to'], total_len)
+        self.assertEqual(response['from'], 0)
+
     def test_backward_reader(self):
         f = tempfile.TemporaryFile(mode='r+')
         forward_lines = []
@@ -219,6 +303,9 @@ class TestLogs(BaseIntegrationTest):
 
         f.close()
 
+    def _format_log_entry(self, log_entry):
+        return ':'.join(log_entry) + '\n'
+
     def _create_logfile_for_node(self, log_config, log_entries, node=None):
         if log_config['remote']:
             log_dir = os.path.join(self.log_dir, node.ip)
@@ -228,7 +315,7 @@ class TestLogs(BaseIntegrationTest):
             log_file = log_config['path']
         with open(log_file, 'w') as f:
             for log_entry in log_entries:
-                f.write(':'.join(log_entry) + '\n')
+                f.write(self._format_log_entry(log_entry))
                 f.flush()
 
     @patch.dict('nailgun.task.task.settings.DUMP',

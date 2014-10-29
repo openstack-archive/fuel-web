@@ -70,6 +70,116 @@ def read_backwards(file, bufsize=4096):
             return
 
 
+# It turns out that strftime/strptime are costly functions in Python
+# http://stackoverflow.com/questions/13468126/a-faster-strptime
+# We don't call them if the log and UI date formats aren't very different
+STRPTIME_PERFORMANCE_HACK = {}
+if settings.UI_LOG_DATE_FORMAT == '%Y-%m-%d %H:%M:%S':
+    STRPTIME_PERFORMANCE_HACK = {
+        '%Y-%m-%dT%H:%M:%S': lambda date: date.replace('T', ' '),
+        '%Y-%m-%d %H:%M:%S': lambda date: date,
+    }
+
+
+def read_log(
+        log_file,
+        level=None,
+        log_config={},
+        max_entries=None,
+        regexp=None,
+        from_byte=-1,
+        fetch_older=False,
+        to_byte=0,
+        **kwargs):
+    has_more = False
+    entries = []
+    log_date_format = log_config['date_format']
+    multiline = log_config.get('multiline', False)
+    skip_regexp = log_config.get('skip_regexp')  # TODO: re.compile ?
+
+    allowed_levels = log_config['levels']
+    if level:
+        allowed_levels = list(dropwhile(lambda l: l != level,
+                                        log_config['levels']))
+
+    log_file_size = os.stat(log_file).st_size
+
+    if log_date_format in STRPTIME_PERFORMANCE_HACK:
+        strptime_function = STRPTIME_PERFORMANCE_HACK[log_date_format]
+    else:
+        strptime_function = lambda date: time.strftime(
+            settings.UI_LOG_DATE_FORMAT,
+            time.strptime(date, log_date_format)
+        )
+
+    with open(log_file, 'r') as f:
+        if from_byte != -1 and fetch_older:
+            f.seek(from_byte)
+        else:
+            f.seek(0, 2)
+        # we need to calculate current position manually instead of using
+        # tell() because read_backwards uses buffering
+        pos = f.tell()
+        multilinebuf = []
+        for line in read_backwards(f):
+            pos -= len(line)
+            if not fetch_older and pos < to_byte:
+                has_more = pos > 0
+                break
+            entry = line.rstrip('\n')
+            if not len(entry):
+                continue
+            if skip_regexp and re.match(skip_regexp, entry):
+                continue
+            m = regexp.match(entry)
+            if m is None:
+                if multiline:
+                    #  Add next multiline part to last entry if it exist.
+                    multilinebuf.append(entry)
+                else:
+                    logger.debug("Unable to parse log entry '%s' from %s",
+                                 entry, log_file)
+                continue
+            entry_text = m.group('text')
+            if len(multilinebuf):
+                multilinebuf.reverse()
+                entry_text += '\n' + '\n'.join(multilinebuf)
+                multilinebuf = []
+            entry_level = m.group('level').upper() or 'INFO'
+            if level and not (entry_level in allowed_levels):
+                continue
+            try:
+                entry_date = strptime_function(m.group('date'))
+            except ValueError:
+                logger.debug("Unable to parse date from log entry."
+                             " Date format: %r, date part of entry: %r",
+                             log_date_format,
+                             m.group('date'))
+                continue
+
+            entries.append([
+                entry_date,
+                entry_level,
+                entry_text
+            ])
+
+            if len(entries) >= max_entries:
+                has_more = True
+                break
+
+        if fetch_older or (not fetch_older and from_byte == -1):
+            from_byte = pos
+            if from_byte == 0:
+                has_more = False
+
+    return {
+        'entries': entries,
+        'from': from_byte,
+        'to': log_file_size,
+        'has_more': has_more,
+    }
+
+
 class LogEntryCollectionHandler(BaseHandler):
     """Log entry collection handler
     """
@@ -103,7 +213,56 @@ class LogEntryCollectionHandler(BaseHandler):
             * 500 (node has no assigned ip)
             * 500 (invalid regular expression in config)
         """
+        data = self.read_and_validate_data()
+
+        log_file = data['log_file']
+        fetch_older = data['fetch_older']
+        from_byte = data['from_byte']
+        to_byte = data['to_byte']
+
+        log_file_size = os.stat(log_file).st_size
+        if (not fetch_older and to_byte >= log_file_size) or \
+                (fetch_older and from_byte == 0):
+            return jsonutils.dumps({
+                'entries': [],
+                'from': from_byte,
+                'to': log_file_size,
+                'has_more': False,
+            })
+
+        return read_log(log_file, **data)
+
+    def read_and_validate_data(self):
         user_data = web.input()
+
+        if not user_data.get('source'):
+            logger.debug("'source' must be specified")
+            raise self.http(400, "'source' must be specified")
+
+        try:
+            max_entries = int(user_data.get('max_entries',
+                                            settings.TRUNCATE_LOG_ENTRIES))
+        except ValueError:
+            logger.debug("Invalid 'max_entries' value: %d",
+                         user.data.get('max_entries'))
+            raise self.http(400, "Invalid 'max_entries' value")
+
+        from_byte = None
+        try:
+            from_byte = int(user_data.get('from', -1))
+        except ValueError:
+            logger.debug("Invalid 'from' value: %d", user_data.get('from'))
+            raise self.http(400, "Invalid 'from' value")
+
+        to_byte = None
+        try:
+            to_byte = int(user_data.get('to', 0))
+        except ValueError:
+            logger.debug("Invalid 'to' value: %d", user_data.get('to'))
+            raise self.http(400, "Invalid 'to' value")
+
+        fetch_older = bool(user_data.get('fetch_older', False))
+
         date_before = user_data.get('date_before')
         if date_before:
             try:
@@ -112,6 +271,7 @@ class LogEntryCollectionHandler(BaseHandler):
             except ValueError:
                 logger.debug("Invalid 'date_before' value: %s", date_before)
                 raise self.http(400, "Invalid 'date_before' value")
+
         date_after = user_data.get('date_after')
         if date_after:
             try:
@@ -120,11 +280,6 @@ class LogEntryCollectionHandler(BaseHandler):
             except ValueError:
                 logger.debug("Invalid 'date_after' value: %s", date_after)
                 raise self.http(400, "Invalid 'date_after' value")
-        truncate_log = bool(user_data.get('truncate_log'))
-
-        if not user_data.get('source'):
-            logger.debug("'source' must be specified")
-            raise self.http(400, "'source' must be specified")
 
         log_config = filter(lambda lc: lc['id'] == user_data.get('source'),
                             settings.LOGS)
@@ -174,12 +329,9 @@ class LogEntryCollectionHandler(BaseHandler):
             raise self.http(404, "Log file not found")
 
         level = user_data.get('level')
-        allowed_levels = log_config['levels']
-        if level is not None:
-            if not (level in log_config['levels']):
-                raise self.http(400, "Invalid level")
-            allowed_levels = [l for l in dropwhile(lambda l: l != level,
-                                                   log_config['levels'])]
+        if level is not None and level not in log_config['levels']:
+            raise self.http(400, "Invalid level")
+
         try:
             regexp = re.compile(log_config['regexp'])
         except re.error as e:
@@ -187,87 +339,19 @@ class LogEntryCollectionHandler(BaseHandler):
                          log_config['id'], e)
             raise self.http(500, "Invalid regular expression in config")
 
-        entries = []
-        to_byte = None
-        try:
-            to_byte = int(user_data.get('to', 0))
-        except ValueError:
-            logger.debug("Invalid 'to' value: %d", to_byte)
-            raise self.http(400, "Invalid 'to' value")
-
-        log_file_size = os.stat(log_file).st_size
-        if to_byte >= log_file_size:
-            return jsonutils.dumps({
-                'entries': [],
-                'to': log_file_size,
-                'has_more': False,
-            })
-
-        try:
-            max_entries = int(user_data.get('max_entries',
-                                            settings.TRUNCATE_LOG_ENTRIES))
-        except ValueError:
-            logger.debug("Invalid 'max_entries' value: %d", max_entries)
-            raise self.http(400, "Invalid 'max_entries' value")
-
-        has_more = False
-        with open(log_file, 'r') as f:
-            f.seek(0, 2)
-            # we need to calculate current position manually instead of using
-            # tell() because read_backwards uses buffering
-            pos = f.tell()
-            multilinebuf = []
-            for line in read_backwards(f):
-                pos -= len(line)
-                if not truncate_log and pos < to_byte:
-                    has_more = pos > 0
-                    break
-                entry = line.rstrip('\n')
-                if not len(entry):
-                    continue
-                if 'skip_regexp' in log_config and \
-                        re.match(log_config['skip_regexp'], entry):
-                    continue
-                m = regexp.match(entry)
-                if m is None:
-                    if log_config.get('multiline'):
-                        #  Add next multiline part to last entry if it exist.
-                        multilinebuf.append(entry)
-                    else:
-                        logger.debug("Unable to parse log entry '%s' from %s",
-                                     entry, log_file)
-                    continue
-                entry_text = m.group('text')
-                if len(multilinebuf):
-                    multilinebuf.reverse()
-                    entry_text += '\n' + '\n'.join(multilinebuf)
-                    multilinebuf = []
-                entry_level = m.group('level').upper() or 'INFO'
-                if level and not (entry_level in allowed_levels):
-                    continue
-                try:
-                    entry_date = time.strptime(m.group('date'),
-                                               log_config['date_format'])
-                except ValueError:
-                    logger.debug("Unable to parse date from log entry."
-                                 " Date format: %r, date part of entry: %r",
-                                 log_config['date_format'],
-                                 m.group('date'))
-                    continue
-
-                entries.append([
-                    time.strftime(settings.UI_LOG_DATE_FORMAT, entry_date),
-                    entry_level,
-                    entry_text
-                ])
-                if truncate_log and len(entries) >= max_entries:
-                    has_more = True
-                    break
-
         return {
-            'entries': entries,
-            'to': log_file_size,
-            'has_more': has_more,
+            'date_after': date_after,
+            'date_before': date_before,
+            'level': level,
+            'log_file': log_file,
+            'log_config': log_config,
+            'max_entries': max_entries,
+            'node': node,
+            'regexp': regexp,
+
+            'fetch_older': fetch_older,
+            'from_byte': from_byte,
+            'to_byte': to_byte,
         }
 
 

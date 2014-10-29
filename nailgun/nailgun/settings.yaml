@@ -77,14 +77,14 @@ API_LOG: &api_log "/var/log/nailgun/api.log"
 SYSLOG_DIR: &remote_syslog_dir "/var/log/remote/"
 
 COLLECTOR_ACTION_LOGS_URL: "https://{collector_server}/api/v1/action_logs/"
-COLLECTOR_INST_INFO_URL: "https://{collector_server}/api/v1/installation_struct/"
+COLLECTOR_INST_INFO_URL: "https://{collector_server}/api/v1/installation_structure/"
 COLLECTOR_PING_URL: "https://{collector_server}/api/v1/ping/"
 
 # statistics send interval
 STATS_SEND_INTERVAL: 3600
 
 # statistics send records per request
-STATS_SEND_COUNT: 5
+STATS_SEND_COUNT: 100
 
 # statistics collector ping interval
 COLLECTOR_PING_INTERVAL: 300

@@ -12,7 +12,7 @@
           weight: 10
         send_user_info:
           type: "checkbox"
-          value: true
+          value: false
           label: "statistics.setting_labels.send_user_info"
           weight: 20
           restrictions:
@@ -29,7 +29,8 @@
             error: "statistics.errors.name"
           restrictions: &user_info_restrictions
             - "fuel_settings:statistics.send_anonymous_statistic.value == false"
-            - "fuel_settings:statistics.send_user_info.value == false"
+            - condition: "fuel_settings:statistics.send_user_info.value == false"
+              action: "hide"
             - condition: *commumity_iso
               action: "hide"
         email:

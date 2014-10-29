@@ -756,14 +756,10 @@ class NeutronNetworkDeploymentSerializer60(
         attrs = super(NeutronNetworkDeploymentSerializer60, cls). \
             generate_network_scheme(node)
 
-        if 'transformations' in attrs and \
-                isinstance(attrs['transformations'], Iterable):
-            result = []
-            for item in attrs['transformations']:
-                if 'tags' in item:
-                    item['vlan_ids'] = item['tags']
-                result.append(item)
-            attrs['transformations'] = result
+        for item in attrs.get('transformations', ()):
+            if 'tags' in item:
+                item['vlan_ids'] = item['tags']
+
         return attrs
 
 

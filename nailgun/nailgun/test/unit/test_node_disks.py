@@ -91,12 +91,14 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         self.env.create(
             nodes_kwargs=[{
                 "roles": [],
-                "pending_roles": ['compute'],
+                "pending_roles": ['controller'],
                 "meta": {"disks": disks}
             }]
         )
-        self.env.launch_deployment()
-        self.env.reset_environment()
+        self.env.wait_ready(
+            self.env.launch_deployment())
+        self.env.wait_ready(
+            self.env.reset_environment())
 
         node_db = self.env.nodes[0]
 
@@ -104,12 +106,18 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         new_meta = deepcopy(node_db.meta)
         new_meta['disks'][0]['disk'] = new_meta['disks'][1]['disk']
         new_meta['disks'][1]['disk'] = 'sdb'
-        node_db.meta = new_meta
-        self.env.db.commit()
+
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({
+                'mac': node_db.mac,
+                'meta': new_meta}),
+            headers=self.default_headers)
 
         # check that we can config disks after reset
         disks = self.get(node_db.id)
         disks[0]['volumes'][0]['size'] -= 100
+
         updated_disks = self.put(node_db.id, disks)
 
         self.assertEqual(disks, updated_disks)

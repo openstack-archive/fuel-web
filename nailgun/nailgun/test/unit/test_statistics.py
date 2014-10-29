@@ -12,11 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
+from nailgun.statistics.statsenderd import StatsSender
+
+
+FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
+FEATURE_EXPERIMENTAL = {'feature_groups': ['experimental']}
 
 
 class TestStatistics(BaseTestCase):
@@ -99,3 +106,25 @@ class TestStatistics(BaseTestCase):
                           info['unallocated_nodes_num'])
         self.assertTrue('master_node_uid' in info)
         self.assertDictEqual(settings.VERSION, info['fuel_release'])
+
+    def check_collector_urls(self, server):
+        self.assertEqual(
+            StatsSender().build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
+            settings.COLLECTOR_ACTION_LOGS_URL.format(collector_server=server)
+        )
+        self.assertEqual(
+            StatsSender().build_collector_url("COLLECTOR_INST_INFO_URL"),
+            settings.COLLECTOR_INST_INFO_URL.format(collector_server=server)
+        )
+        self.assertEqual(
+            StatsSender().build_collector_url("COLLECTOR_PING_URL"),
+            settings.COLLECTOR_PING_URL.format(collector_server=server)
+        )
+
+    @patch.dict('nailgun.settings.settings.VERSION', FEATURE_MIRANTIS)
+    def test_mirantis_collector_urls(self):
+        self.check_collector_urls(StatsSender.COLLECTOR_MIRANTIS_SERVER)
+
+    @patch.dict('nailgun.settings.settings.VERSION', FEATURE_EXPERIMENTAL)
+    def test_community_collector_urls(self):
+        self.check_collector_urls(StatsSender.COLLECTOR_COMMUNITY_SERVER)

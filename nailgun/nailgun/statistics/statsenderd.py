@@ -34,10 +34,13 @@ from nailgun.statistics.installation_info import InstallationInfo
 
 class StatsSender():
 
+    COLLECTOR_MIRANTIS_SERVER = "collector.mirantis.com"
+    COLLECTOR_COMMUNITY_SERVER = "collector.fuel-infra.org"
+
     def build_collector_url(self, url_template):
-        server = "collector.mirantis.com" \
+        server = self.COLLECTOR_MIRANTIS_SERVER \
             if "mirantis" in settings.VERSION["feature_groups"] \
-            else "collector.fuel-infra.org"
+            else self.COLLECTOR_COMMUNITY_SERVER
         return getattr(settings, url_template).format(collector_server=server)
 
     def ping_collector(self):

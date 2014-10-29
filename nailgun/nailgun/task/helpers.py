@@ -341,10 +341,7 @@ class TaskHelper(object):
         additional_info = {
             'parent_task_id': task.parent_id,
             'subtasks_ids': [t.id for t in task.subtasks],
-            'nodes_to_change': {
-                'nodes': [n.id for n in nodes],
-                'operation': task.name
-            }
+            'operation': task.name
         }
         create_kwargs['additional_info'] = additional_info
 

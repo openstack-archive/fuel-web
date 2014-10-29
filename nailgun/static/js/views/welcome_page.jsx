@@ -69,7 +69,7 @@ function($, React, controls, statisticsMixin) {
                                 <div className='welcome-form-error'>{$.t(error)}</div>
                             }
                             <div className='welcome-button-box'>
-                                <button className='btn btn-large btn-success' disabled={this.state.actionInProgress} onClick={this.onStartButtonClick}>
+                                <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress} onClick={this.onStartButtonClick}>
                                     {$.t(ns + 'start_fuel')}
                                 </button>
                             </div>

@@ -758,12 +758,9 @@ class NeutronNetworkDeploymentSerializer60(
 
         if 'transformations' in attrs and \
                 isinstance(attrs['transformations'], Iterable):
-            result = []
-            for item in attrs['transformations']:
+            for item in attrs.get('transformations', ()):
                 if 'tags' in item:
                     item['vlan_ids'] = item['tags']
-                result.append(item)
-            attrs['transformations'] = result
         return attrs
 
 

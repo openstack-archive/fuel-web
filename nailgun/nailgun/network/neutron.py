@@ -54,6 +54,7 @@ class NeutronManager(NetworkManager):
         if 'lacp' in bond.mode:
             props.append('lacp=active')
             props.append('bond_mode=balance-tcp')
+            props.append('other_config:lacp-time=fast')
         else:
             props.append('bond_mode=%s' % bond.mode)
         return props

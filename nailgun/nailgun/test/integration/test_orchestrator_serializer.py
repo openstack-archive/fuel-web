@@ -1261,7 +1261,9 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
                 'bridge': 'br-ovsbond0',
                 'interfaces': ['eth1', 'eth2'],
                 'name': 'ovsbond0',
-                'properties': ['lacp=active', 'bond_mode=balance-tcp']
+                'properties': ['lacp=active',
+                               'bond_mode=balance-tcp',
+                               'other_config:lacp-time=fast']
             })
 
     def check_add_bond_msg_non_lacp(self, msg, mode):

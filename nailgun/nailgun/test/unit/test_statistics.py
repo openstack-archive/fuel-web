@@ -48,6 +48,7 @@ class TestStatistics(BaseTestCase):
         self.assertEquals(len(nodes_params), cluster_info['nodes_num'])
         self.assertEquals(consts.CLUSTER_MODES.ha_full, cluster_info['mode'])
         self.assertTrue('release' in cluster_info)
+        self.assertTrue('attributes' in cluster_info)
         self.assertEquals(consts.RELEASE_OS.centos,
                           cluster_info['release']['os'])
 
@@ -99,3 +100,21 @@ class TestStatistics(BaseTestCase):
                           info['unallocated_nodes_num'])
         self.assertTrue('master_node_uid' in info)
         self.assertDictEqual(settings.VERSION, info['fuel_release'])
+
+    def test_sanitation(self):
+        info = InstallationInfo()
+        self.assertDictEqual({}, info.sanitise_data({}))
+        self.assertDictEqual({}, info.sanitise_data({'password': 'xx'}))
+        self.assertDictEqual(
+            {'f': 'n'},
+            info.sanitise_data({'password': 'xx', 'f': 'n'})
+        )
+        self.assertListEqual([], info.sanitise_data([]))
+        self.assertListEqual(
+            [1, 2, 'password'],
+            info.sanitise_data([1, 2, 'password'])
+        )
+        self.assertListEqual(
+            sorted([{'f': 'n'}, {'a': 'b'}]),
+            info.sanitise_data([{'password': 'x', 'f': 'n'}, {'a': 'b'}])
+        )

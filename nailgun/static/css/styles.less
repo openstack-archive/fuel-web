@@ -378,7 +378,7 @@ h1, h2, h3, h4, h5, h6 {
   .font-layout-mixin(@font-weight: lighter, @font-family: @font-family-headline);
 }
 
-.page-title  {
+.page-title {
   .font-layout-mixin(@color: @fuel-white-color, @text-shadow: @text-shadow-black);
   display: inline-block;
   margin: 0 0 10px 8px !important;
@@ -654,7 +654,6 @@ label {cursor: default;}
     display: block;
     border: 1px solid @color-nodes-border;
     cursor: pointer;
-    .width-height-mixin(100%, 52px);
     .box-sizing-mixin;
     .css-linear-gradient-mixin-filter(#edeeef, #dfe2e4);
     &:hover {
@@ -671,7 +670,7 @@ label {cursor: default;}
       }
     }
     &.node-new { border-color: #61a466; }
-    &.node-offline, &.node-offline .name  { opacity: 0.7; }
+    &.node-offline, &.node-offline .name { opacity: 0.7; }
     &.node-delete { border-color: #a46161; }
     &.node-delete .node-content .node-name-roles .name > p {
       text-decoration: line-through !important;
@@ -1359,7 +1358,7 @@ label {cursor: default;}
   }
 }
 
-.networks-table, .networking-parameters  {
+.networks-table, .networking-parameters {
   width: 100%;
   margin-bottom: 10px;
   > div {padding-left: 3px;}
@@ -2110,7 +2109,7 @@ select[name=release] option {
   background: url(../img/node-small.png) no-repeat top left;
 }
 
-.connect-1-stop, .connect-1-success, .connect-1-error  {
+.connect-1-stop, .connect-1-success, .connect-1-error {
   .connect-stop-mixin(176px, 62px, 62px);
 }
 
@@ -2118,7 +2117,7 @@ select[name=release] option {
 .connect-1-success { background: url(../img/connect_1_anim.gif) no-repeat 0px -62px;}
 .connect-1-error { background: url(../img/connect_1_anim.gif) no-repeat 0px -124px;}
 
-.connect-2-stop, .connect-2-success, .connect-2-error  {
+.connect-2-stop, .connect-2-success, .connect-2-error {
   .connect-stop-mixin(8px, 62px, 45px);
 }
 
@@ -2126,7 +2125,7 @@ select[name=release] option {
 .connect-2-success { background: url(../img/connect_2_anim.gif) no-repeat 0px -62px;}
 .connect-2-error { background: url(../img/connect_2_anim.gif) no-repeat 0px -124px;}
 
-.connect-3-stop, .connect-3-success, .connect-3-error  {
+.connect-3-stop, .connect-3-success, .connect-3-error {
   .connect-stop-mixin(176px, 62px, 46px);
 }
 
@@ -2345,7 +2344,7 @@ input.error:focus,
 }
 
 .fieldset-group > div > .parameter-box,
-.fieldset-group > div > div > .parameter-box  {
+.fieldset-group > div > div > .parameter-box {
   margin-left: 12px;
 }
 
@@ -2975,7 +2974,7 @@ hr.slim {
   float: left;
 }
 
-.disk-visual .unallocated  {
+.disk-visual .unallocated {
   overflow: hidden;
   background: @fuel-light-1; /* Old browsers */
   .css-linear-gradient-mixin-filter(@fuel-light-1, @fuel-light-4);

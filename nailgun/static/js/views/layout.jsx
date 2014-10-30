@@ -59,8 +59,9 @@ function(React, utils, models, componentMixins, dialogs) {
         componentDidMount: function() {
             this.props.user.on('change:authenticated', function(model, value) {
                 if (value) {
-                    this.refresh();
+                    this.startPolling();
                 } else {
+                    this.stopPolling();
                     this.props.statistics.clear();
                     this.props.notifications.reset();
                 }

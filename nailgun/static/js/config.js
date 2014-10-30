@@ -40,6 +40,7 @@ define(function() {
             stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
             coccyx: 'js/libs/custom/coccyx',
             cocktail: 'js/libs/bower/cocktail/Cocktail',
+            routefilter: 'js/libs/bower/routefilter/backbone.routefilter.min',
             bootstrap: 'js/libs/custom/bootstrap.min',
             text: 'js/libs/bower/requirejs-text/js/text',
             json: 'js/libs/bower/requirejs-plugins/json',

@@ -111,6 +111,28 @@ casper.authenticate = function(options) {
     return this;
 }
 
+casper.skipWelcomeScreen = function() {
+    this.then(function() {
+        this.thenOpen(baseUrl + 'api/settings', {
+            method: 'get',
+            headers: withCookieHeader()
+        });
+        this.then(function() {
+            var fuelSettings = this.evaluate(function() {
+                return JSON.parse(document.body.innerText);
+            });
+            fuelSettings.settings.statistics.user_choice_saved.value = true;
+            this.thenOpen(baseUrl + 'api/settings', {
+                method: 'put',
+                headers: withCookieHeader({'Content-Type': 'application/json'}),
+                data: JSON.stringify(fuelSettings)
+            });
+        });
+    });
+
+    return this;
+}
+
 casper.createCluster = function(options) {
     options.release = 1; // centos
     this.then(function() {

@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-casper.start().authenticate().loadPage('#clusters');
+casper.start().authenticate().skipWelcomeScreen().loadPage('#clusters');
 
 casper.then(function() {
     this.test.comment('Testing cluster list page');

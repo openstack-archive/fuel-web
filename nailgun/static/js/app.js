@@ -75,11 +75,12 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 tenant: 'admin'
             });
 
+            this.version = new models.FuelVersion();
             this.settings = new models.FuelSettings();
+            this.user = new models.User();
 
-            var version = this.version = new models.FuelVersion();
-            version.fetch().then(_.bind(function() {
-                this.user = new models.User({authenticated: !version.get('auth_required')});
+            this.version.fetch().then(_.bind(function() {
+                this.user.set({authenticated: !this.version.get('auth_required')});
 
                 var originalSync = Backbone.sync;
                 Backbone.sync = function(method, model, options) {
@@ -87,7 +88,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                     if (method == 'patch') {
                         method = 'update';
                     }
-                    if (version.get('auth_required') && !this.authExempt) {
+                    if (app.version.get('auth_required') && !this.authExempt) {
                         // FIXME(vkramskikh): manually moving success/error callbacks
                         // to deferred-style callbacks. Everywhere in the code we use
                         // deferreds, but backbone uses success/error callbacks. It
@@ -133,7 +134,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                     return originalSync.call(this, method, model, options);
                 };
 
-                if (version.get('auth_required')) {
+                if (app.version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('token'));
                     return keystoneClient.authenticate()
                         .done(function() {
@@ -141,12 +142,11 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                         });
                 }
                 return $.Deferred().resolve();
+            }, this)).then(_.bind(function() {
+                return this.settings.fetch();
             }, this)).always(_.bind(function() {
                 this.renderLayout();
                 Backbone.history.start();
-                if (version.get('auth_required') && !this.user.get('authenticated')) {
-                    app.navigate('#login', {trigger: true});
-                }
             }, this));
         },
         renderLayout: function() {
@@ -185,6 +185,32 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.updateTitle();
             this.toggleElements(!this.page.hiddenLayout);
         },
+        // pre-route hook
+        before: function(currentUrl) {
+            var preventRouting = false;
+            var specialRoutes = [
+                {url: 'login', condition: function() {
+                    return app.version.get('auth_required') && !app.user.get('authenticated');
+                }},
+                {url: 'welcome', condition: function() {
+                    return !app.settings.get('statistics.user_choice_saved.value');
+                }}
+            ];
+            _.each(specialRoutes, function(route) {
+                if (route.condition()) {
+                    if (currentUrl != route.url) {
+                        preventRouting = true;
+                        this.navigate(route.url, {trigger: true, replace: true});
+                    }
+                    return false;
+                } else if (currentUrl == route.url) {
+                    preventRouting = true;
+                    this.navigate('', {trigger: true});
+                    return false;
+                }
+            }, this);
+            return !preventRouting;
+        },
         // routes
         login: function() {
             this.setPage(LoginPage, {app: app});
@@ -203,7 +229,9 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             });
         },
         welcome: function() {
-            this.setPage(WelcomePage, {settings: this.settings});
+            this.settings.fetch({cache: true}).done(_.bind(function() {
+                this.setPage(WelcomePage, {settings: this.settings});
+            }, this));
         },
         showCluster: function(id) {
             this.navigate('#cluster/' + id + '/nodes', {trigger: true, replace: true});

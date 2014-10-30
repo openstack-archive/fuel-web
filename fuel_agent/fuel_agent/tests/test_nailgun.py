@@ -387,6 +387,7 @@ class TestNailgun(test_base.BaseTestCase):
         self.drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
 
     def test_match_device_by_id_matches(self):
+        # matches by 'by-id' links
         fake_ks_disk = {
             "extra": [
                 "disk/by-id/fake_scsi_matches",
@@ -403,7 +404,9 @@ class TestNailgun(test_base.BaseTestCase):
         }
         self.assertTrue(nailgun.match_device(fake_hu_disk, fake_ks_disk))
 
-    def test_match_device_id_matches(self):
+    def test_match_device_id_dont_matches_non_empty_extra(self):
+        # Shouldn't match. If non empty extra present it will match by what is
+        # presented `extra` field, ignoring the `id` at all. Eg.: on VirtualBox
         fake_ks_disk = {
             "extra": [
                 "disk/by-id/fake_scsi_dont_matches",
@@ -420,9 +423,41 @@ class TestNailgun(test_base.BaseTestCase):
                 ]
             }
         }
+        self.assertFalse(nailgun.match_device(fake_hu_disk, fake_ks_disk))
+
+    def test_match_device_id_matches_empty_extra(self):
+        # since `extra` is empty, it will match by `id`
+        fake_ks_disk = {
+            "extra": [],
+            "id": "sdd"
+        }
+        fake_hu_disk = {
+            "uspec": {
+                "DEVLINKS": [
+                    "/dev/disk/by-id/fake_scsi_matches",
+                    "/dev/disk/by-path/fake_path",
+                    "/dev/sdd"
+                ]
+            }
+        }
+        self.assertTrue(nailgun.match_device(fake_hu_disk, fake_ks_disk))
+
+    def test_match_device_id_matches_missing_extra(self):
+        # `extra` is empty or just missing entirely, it will match by `id`
+        fake_ks_disk = {"id": "sdd"}
+        fake_hu_disk = {
+            "uspec": {
+                "DEVLINKS": [
+                    "/dev/disk/by-id/fake_scsi_matches",
+                    "/dev/disk/by-path/fake_path",
+                    "/dev/sdd"
+                ]
+            }
+        }
         self.assertTrue(nailgun.match_device(fake_hu_disk, fake_ks_disk))
 
     def test_match_device_dont_macthes(self):
+        # Mismatches totally
         fake_ks_disk = {
             "extra": [
                 "disk/by-id/fake_scsi_dont_matches",
@@ -435,6 +470,27 @@ class TestNailgun(test_base.BaseTestCase):
                 "DEVLINKS": [
                     "/dev/disk/by-id/fake_scsi_matches",
                     "/dev/disk/by-path/fake_path",
+                    "/dev/sdd"
+                ]
+            }
+        }
+        self.assertFalse(nailgun.match_device(fake_hu_disk, fake_ks_disk))
+
+    def test_match_device_dont_macthes_by_id(self):
+        # disks are different but both of have same `by-path` link.
+        # it will match by `extra` ignoring `id`
+        fake_ks_disk = {
+            "extra": [
+                "disk/by-id/fake_scsi_dont_matches",
+                "disk/by-id/fake_ata_dont_matches"
+            ],
+            "id": "disk/by-path/pci-fake_path"
+        }
+        fake_hu_disk = {
+            "uspec": {
+                "DEVLINKS": [
+                    "/dev/disk/by-id/fake_scsi_matches",
+                    "/dev/disk/by-path/pci-fake_path",
                     "/dev/sdd"
                 ]
             }

@@ -17,6 +17,7 @@ from mock import patch
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
+from nailgun.objects import Cluster
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
 from nailgun.statistics.statsenderd import StatsSender
@@ -33,6 +34,21 @@ class TestStatistics(BaseTestCase):
         f_info = info.fuel_release_info()
         self.assertDictEqual(f_info, settings.VERSION)
 
+    def test_get_attributes(self):
+        info = InstallationInfo()
+        cluster_data = self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.centos
+            }
+        )
+        cluster = Cluster.get_by_uid(cluster_data['id'])
+        libvirt_dict = cluster.attributes.editable['common']['libvirt_type']
+        libvirt_type = libvirt_dict['value']
+
+        self.assertEquals('qemu', libvirt_type)
+        self.assertEquals({'libvirt_type': 'qemu'},
+                          info.get_attributes(cluster.attributes.editable))
+
     def test_clusters_info(self):
         info = InstallationInfo()
         nodes_params = [
@@ -44,7 +60,8 @@ class TestStatistics(BaseTestCase):
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.centos
             },
-            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_full},
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_full,
+                            'libvirt_type': 'quemu'},
             nodes_kwargs=nodes_params
         )
         self.env.create_node({'status': consts.NODE_STATUSES.discover})
@@ -56,6 +73,7 @@ class TestStatistics(BaseTestCase):
         self.assertEquals(consts.CLUSTER_MODES.ha_full, cluster_info['mode'])
         self.assertTrue('release' in cluster_info)
         self.assertTrue('attributes' in cluster_info)
+        self.assertEquals('qemu', cluster_info['attributes']['libvirt_type'])
         self.assertEquals(consts.RELEASE_OS.centos,
                           cluster_info['release']['os'])
 
@@ -129,22 +147,3 @@ class TestStatistics(BaseTestCase):
     @patch.dict('nailgun.settings.settings.VERSION', FEATURE_EXPERIMENTAL)
     def test_community_collector_urls(self):
         self.check_collector_urls(StatsSender.COLLECTOR_COMMUNITY_SERVER)
-
-    def test_sanitation(self):
-        info = InstallationInfo()
-        self.assertDictEqual({}, info.sanitise_data({}))
-        self.assertDictEqual({}, info.sanitise_data({'password': 'xx'}))
-        self.assertDictEqual(
-            {'f': 'n'},
-            info.sanitise_data({'password': 'xx', 'f': 'n'})
-        )
-        self.assertListEqual([], info.sanitise_data([]))
-        self.assertListEqual(
-            sorted([1, 2, 'password']),
-            sorted(info.sanitise_data([1, 2, 'password']))
-        )
-        self.assertListEqual(
-            sorted([{'f': 'n'}, {'a': 'b'}]),
-            sorted(info.sanitise_data([
-                {'password': 'x', 'f': 'n'}, {'a': 'b'}]))
-        )

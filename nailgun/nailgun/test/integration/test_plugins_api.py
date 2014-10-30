@@ -20,6 +20,7 @@ import yaml
 
 from nailgun import objects
 from nailgun.openstack.common import jsonutils
+from nailgun.plugins import attr_plugin
 from nailgun.test import base
 
 
@@ -207,7 +208,9 @@ class TestPrePostHooks(BasePluginTest):
 
     def setUp(self):
         super(TestPrePostHooks, self).setUp()
-        self.create_plugin()
+        resp = self.create_plugin()
+        self.plugin = attr_plugin.ClusterAttributesPlugin(
+            objects.Plugin.get_by_uid(resp.json['id']))
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True}])
@@ -223,13 +226,18 @@ class TestPrePostHooks(BasePluginTest):
             #shoud uid be a string
             self.assertEqual(
                 sorted(t['uids']), sorted([n.id for n in self.cluster.nodes]))
+            self.assertTrue(t['fail_on_error'])
+            self.assertEqual(t['diagnostic_name'], self.plugin.full_name)
 
     def test_generate_post_hooks(self):
         tasks = self.get_post_hooks(self.cluster).json
         self.assertEqual(len(tasks), 1)
+        task = tasks[0]
         controller_id = [n.id for n in self.cluster.nodes
                          if 'controller' in n.roles]
-        self.assertEqual(controller_id, tasks[0]['uids'])
+        self.assertEqual(controller_id, task['uids'])
+        self.assertTrue(task['fail_on_error'])
+        self.assertEqual(task['diagnostic_name'], self.plugin.full_name)
 
 
 class TestPluginValidation(BasePluginTest):

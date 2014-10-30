@@ -21,6 +21,8 @@ from nailgun.openstack.common import jsonutils
 
 from nailgun import objects
 
+from nailgun.statistics.statsenderd import StatsSender
+
 
 class TestMasterNodeSettingsHandler(BaseIntegrationTest):
 
@@ -391,3 +393,33 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
 
         self.assertEqual(404, resp.status_code)
         self.assertIn("not found", resp.body)
+
+    def test_stats_sending_enabled(self):
+        self.assertEqual(StatsSender().must_send_stats(), False)
+
+        resp = self.app.get(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        data = resp.json_body
+
+        # emulate user confirmed settings in UI
+        data["settings"]["statistics"]["user_choice_saved"]["value"] = True
+        resp = self.app.put(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(StatsSender().must_send_stats(), True)
+
+        # emulate user disabled statistics sending
+        data["settings"]["statistics"]["send_anonymous_statistic"]["value"] = \
+            False
+        resp = self.app.put(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(StatsSender().must_send_stats(), False)

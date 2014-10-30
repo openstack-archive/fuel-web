@@ -46,6 +46,11 @@ pre-upgrade checks.
 """
 
 
+no_password_provided = """
+Expecting a password provided via --password or prompted response
+"""
+
+
 health_checker_failed = """
 Couldn't start some of the services, try to run upgrade again.
 """

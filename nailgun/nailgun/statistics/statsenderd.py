@@ -49,10 +49,7 @@ class StatsSender():
                                 timeout=settings.COLLECTOR_RESP_TIMEOUT)
             resp.raise_for_status()
             return True
-        except (requests.exceptions.ConnectionError,
-                requests.exceptions.Timeout,
-                requests.exceptions.RequestException,
-                requests.exceptions.HTTPError) as e:
+        except Exception as e:
             logger.exception("Collector ping failed: %s", six.text_type(e))
             return False
 
@@ -65,10 +62,7 @@ class StatsSender():
                 data=jsonutils.dumps(data),
                 timeout=settings.COLLECTOR_RESP_TIMEOUT)
             resp.raise_for_status()
-        except (requests.exceptions.ConnectionError,
-                requests.exceptions.Timeout,
-                requests.exceptions.RequestException,
-                requests.exceptions.HTTPError) as e:
+        except Exception as e:
             logger.exception(
                 "Sending data to collector failed: %s",
                 six.text_type(e))

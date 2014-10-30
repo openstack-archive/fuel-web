@@ -49,7 +49,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             notifications: 'showNotifications',
             support: 'showSupportPage',
             capacity: 'showCapacityPage',
-            '*default': 'listClusters'
+            '*default': 'defaultRoute'
         },
         initialize: function() {
             window.app = this;
@@ -143,10 +143,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 return $.Deferred().resolve();
             }, this)).always(_.bind(function() {
                 this.renderLayout();
-                Backbone.history.start();
-                if (version.get('auth_required') && !this.user.get('authenticated')) {
-                    app.navigate('#login', {trigger: true});
-                }
+                this.defaultRoute();
             }, this));
         },
         renderLayout: function() {
@@ -186,6 +183,28 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.toggleElements(!this.page.hiddenLayout);
         },
         // routes
+        defaultRoute: function() {
+            var routes = [
+                {url: 'login', condition: function() {
+                    return this.version.get('auth_required') && !this.user.get('authenticated');
+                }},
+                {url: 'clusters', condition: function() {
+                    return true;
+                }}
+            ];
+            var currentUrl = Backbone.history.getHash();
+            _.each(routes, function(route) {
+                if (route.condition.call(this)) {
+                    if (currentUrl == route.url) {
+                        if (!Backbone.History.started) Backbone.history.start();
+                    } else {
+                        if (!Backbone.History.started) Backbone.history.start({silent: true});
+                        this.navigate(route.url, {trigger: true, replace: true});
+                    }
+                    return false;
+                }
+            }, this);
+        },
         login: function() {
             this.setPage(LoginPage, {app: app});
         },

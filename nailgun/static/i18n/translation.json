@@ -527,7 +527,7 @@
                     "network": {
                         "title": "Network",
                         "release_alert": "Neutron is not supported in __NameAndRelease.release_name__",
-                        "hypervisor_alert": "Neutron is not available with __Compute.hypervisor__ as a compute option.",
+                        "hypervisor_alert": "Neutron with VLAN or GRE segmentaion is not available with __Compute.hypervisor__ as a compute option.",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron with GRE segmentation",
                         "neutr_vlan": "Neutron with VLAN segmentation",

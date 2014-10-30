@@ -30,6 +30,11 @@ function($, React, controls, statisticsMixin) {
         ],
         breadcrumbsPath: [],
         hiddenLayout: true,
+        statics: {
+            isAvailable: function() {
+                return !app.settings.get('statistics').user_choice_saved.value;
+            }
+        },
         title: function() {
             return $.t('welcome_page.title');
         },
@@ -37,14 +42,14 @@ function($, React, controls, statisticsMixin) {
             this.props.settings.get('statistics').user_choice_saved.value = true;
             this.saveSettings(e)
                 .done(function() {
-                    app.navigate('#clusters', {trigger: true});
+                    app.defaultRoute();
                 })
                 .fail(_.bind(function() {
                     this.props.settings.get('statistics').user_choice_saved.value = false;
                 }, this));
         },
         render: function() {
-            if (this.state.loading) return <controls.ProgressBar />;
+            if (this.state.loading) return null;
             var ns = 'welcome_page.',
                 contacts = ['name', 'email', 'company'],
                 error = _.compact(_.map(contacts, this.getError, this))[0];

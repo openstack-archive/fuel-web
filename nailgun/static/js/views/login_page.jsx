@@ -31,6 +31,11 @@ function($, React, controls) {
         propTypes: {
             app: React.PropTypes.object
         },
+        statics: {
+            isAvailable: function() {
+                return app.version.get('auth_required') && !app.user.get('authenticated');
+            }
+        },
         title: function() {
             return $.t('login_page.title');
         },
@@ -67,28 +72,11 @@ function($, React, controls) {
                         username: username,
                         token: keystoneClient.token
                     });
-                    this.goToWelcomePage();
-                }, this));
-        },
-        loginRedirect: function() {
-            app.navigate('#', {trigger: true, replace: true});
-        },
-        goToWelcomePage: function() {
-            app.settings.fetch({cache: true})
-                .always(_.bind(function() {
-                    if (!app.settings.get('statistics').user_choice_saved.value) {
-                        app.navigate('#welcome', {trigger: true, replace: true});
-                    } else {
-                        this.loginRedirect();
-                    }
+                    app.defaultRoute();
                 }, this));
         },
         componentDidMount: function() {
-            if (app.user.get('authenticated')) {
-                this.goToWelcomePage();
-            } else {
-                $(this.refs.username.getDOMNode()).focus();
-            }
+            $(this.refs.username.getDOMNode()).focus();
         },
         getInitialState: function() {
             return {
@@ -133,7 +121,7 @@ function($, React, controls) {
                                 <input className='input-xlarge' type='password' name='password' ref='password' placeholder={$.t('login_page.password')} onChange={this.onChange} />
                             </div>
                         </div>
-                        { this.state.hasError && (
+                        {this.state.hasError && (
                                 <div className='login-error-auth login-error-message'>
                                     <p className='text-center text-error'>{$.t('login_page.login_error')}</p>
                                 </div>

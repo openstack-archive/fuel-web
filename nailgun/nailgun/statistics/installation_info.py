@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
@@ -26,29 +24,6 @@ class InstallationInfo(object):
     Master nodes, clusters, networks, e.t.c.
     Used for collecting info for fuel statistics
     """
-
-    def sanitise_data(self, data):
-        to_sanitation = ('password', 'login', 'username', 'user', 'passwd',
-                         'network_data', 'ip_addr', 'cidr', 'vlan_start', 'ip',
-                         'net', 'network', 'address', 'ip_address', 'vlan',
-                         'vlan_range', 'base_mac', 'mac', 'internal_cidr',
-                         'internal_gateway', 'gateway', 'netmask',
-                         'floating_ranges', 'nsx_username', 'nsx_password')
-
-        if isinstance(data, (list, tuple)):
-            result = []
-            for v in data:
-                processed = self.sanitise_data(v)
-                result.append(processed)
-            return result
-        elif isinstance(data, dict):
-            result = {}
-            for k, v in six.iteritems(data):
-                if k not in to_sanitation:
-                    result[k] = self.sanitise_data(v)
-            return result
-        else:
-            return data
 
     def fuel_release_info(self):
         versions = utils.get_fuel_release_versions(settings.FUEL_VERSION_FILE)
@@ -74,10 +49,25 @@ class InstallationInfo(object):
                 'mode': cluster.mode,
                 'nodes': self.get_nodes_info(cluster.nodes),
                 'status': cluster.status,
-                'attributes': self.sanitise_data(cluster.attributes.editable)
+                'attributes': self.get_attributes(cluster.attributes.editable)
             }
             clusters_info.append(cluster_info)
         return clusters_info
+
+    def get_attributes(self, attributes):
+        result = {}
+        white_list = (
+            # ((path, to, property), 'map_to_name')
+            (('common', 'libvirt_type', 'value'), 'libvirt_type'),
+        )
+        for path, map_to_name in white_list:
+            attr = attributes
+            for p in path:
+                if p not in attr:
+                    break
+                attr = attr.get(p)
+            result[map_to_name] = attr
+        return result
 
     def get_nodes_info(self, nodes):
         nodes_info = []

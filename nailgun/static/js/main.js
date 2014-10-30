@@ -28,6 +28,7 @@ require(['./config'], function(config) {
         'react',
         'react.backbone',
         'cocktail',
+        'routefilter',
         'i18next',
         'bootstrap',
         'jquery-cookie',

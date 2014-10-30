@@ -26,10 +26,13 @@ define(['utils', 'deepModel'], function(utils) {
             return this.constructor.__super__.fetch.apply(this, arguments);
         },
         sync: function(options) {
+            var deferred = this.constructor.__super__.sync.apply(this, arguments);
             if (this.cacheFor) {
-                this.lastSyncTime = new Date();
+                deferred.done(_.bind(function() {
+                    this.lastSyncTime = new Date();
+                }, this));
             }
-            return this.constructor.__super__.sync.apply(this, arguments);
+            return deferred;
         }
     };
 

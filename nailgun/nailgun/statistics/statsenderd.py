@@ -163,10 +163,14 @@ class StatsSender():
             return randint(int(medium * 0.9), int(medium * 1.1))
 
         while True:
-            if self.ping_collector():
-                self.send_action_log()
-                self.send_installation_info()
-                time.sleep(dithered(settings.STATS_SEND_INTERVAL))
+            settings = objects.MasterNodeSettings.get_one().settings
+            if settings.get("send_anonymous_statistic", {}).get("value"):
+                if self.ping_collector():
+                    self.send_action_log()
+                    self.send_installation_info()
+                    time.sleep(dithered(settings.STATS_SEND_INTERVAL))
+                else:
+                    time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))
             else:
                 time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))
 

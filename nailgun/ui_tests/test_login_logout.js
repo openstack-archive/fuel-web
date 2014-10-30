@@ -14,7 +14,13 @@
  * under the License.
  **/
 
-casper.start().loadPage('#logout');
+casper.start().loadPage('#');
+
+casper.then(function() {
+    this.evaluate(function() {
+        window.app.logout();
+    })
+});
 
 casper.then(function() {
     var authenticated = this.evaluate(function() {
@@ -29,7 +35,7 @@ casper.then(function() {
     this.test.assertUrlMatch(/#login/, 'Redirect to login page after logout');
 });
 
-casper.then(casper.authenticate).loadPage('#clusters');
+casper.then(casper.authenticate).then(casper.skipWelcomeScreen).loadPage('#clusters');
 
 casper.then(function() {
     var authenticated = this.evaluate(function() {

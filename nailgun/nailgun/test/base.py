@@ -768,7 +768,7 @@ class BaseTestCase(TestCase):
         except exception:
             self.fail('Exception "{0}" raised.'.format(exception))
 
-    def datadiff(self, node1, node2, path=None):
+    def datadiff(self, node1, node2, path=None, ignore_keys=[]):
         if path is None:
             path = []
 
@@ -779,7 +779,7 @@ class BaseTestCase(TestCase):
                 newpath = path[:]
                 for i, keys in enumerate(izip(node1, node2)):
                     newpath.append(str(i))
-                    self.datadiff(keys[0], keys[1], newpath)
+                    self.datadiff(keys[0], keys[1], newpath, ignore_keys)
                     newpath.pop()
             elif node1 != node2:
                 err = "Values differ: {0} != {1}".format(
@@ -799,8 +799,10 @@ class BaseTestCase(TestCase):
                         str(key2)
                     )
                     raise Exception(err)
+                if key1 in ignore_keys:
+                    continue
                 newpath.append(key1)
-                self.datadiff(node1[key1], node2[key2], newpath)
+                self.datadiff(node1[key1], node2[key2], newpath, ignore_keys)
                 newpath.pop()
 
 

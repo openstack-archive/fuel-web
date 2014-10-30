@@ -713,17 +713,13 @@ class NodeCollection(NailgunCollection):
         """
         cls.update_slave_nodes_fqdn(instances)
 
-        nodes_ids = [n.id for n in instances]
-
         # TODO(enchantner): check network manager instance for each node
         netmanager = Cluster.get_network_manager()
-        if nodes_ids:
-            netmanager.assign_ips(nodes_ids, 'management')
-            netmanager.assign_ips(nodes_ids, 'public')
-            netmanager.assign_ips(nodes_ids, 'storage')
-
-            for node in instances:
-                netmanager.assign_admin_ips(node.id)
+        if instances:
+            netmanager.assign_ips(instances, 'management')
+            netmanager.assign_ips(instances, 'public')
+            netmanager.assign_ips(instances, 'storage')
+            netmanager.assign_admin_ips(instances)
 
     @classmethod
     def prepare_for_provisioning(cls, instances):
@@ -731,8 +727,8 @@ class NodeCollection(NailgunCollection):
         update fqdns, assign admin IPs
         """
         cls.update_slave_nodes_fqdn(instances)
-        for n in instances:
-            cls.single.get_network_manager(n).assign_admin_ips(n.id)
+        netmanager = Cluster.get_network_manager()
+        netmanager.assign_admin_ips(instances)
 
     @classmethod
     def lock_nodes(cls, instances):

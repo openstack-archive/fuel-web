@@ -30,7 +30,6 @@ SAMPLE_PLUGIN = {
     'name': 'testing_plugin',
     'package_version': '1',
     'description': 'Enable to use plugin X for Neutron',
-    'types': ['nailgun', 'repository', 'deployment_scripts'],
     'fuel_version': '6.0',
     'releases': [
         {'repository_path': 'repositories/ubuntu',

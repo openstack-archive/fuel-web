@@ -25,6 +25,5 @@ class PluginSerializer(BasicSerializer):
         "version",
         "description",
         "releases",
-        "types",
         "package_version"
     )

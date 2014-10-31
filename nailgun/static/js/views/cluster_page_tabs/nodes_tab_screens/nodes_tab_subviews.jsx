@@ -88,11 +88,11 @@ function(React, Expression, utils, controls) {
             if (checked) {
                 selectedRoles.push(role);
             } else {
-                selectedRoles = _.difference(selectedRoles, role);
+                selectedRoles = _.difference(selectedRoles, [role]);
             }
             this.setState({
                 selectedRoles: selectedRoles,
-                indeterminateRoles: _.difference(this.state.indeterminateRoles, role)
+                indeterminateRoles: _.difference(this.state.indeterminateRoles, [role])
             }, this.assignRoles);
         },
         assignRoles: function() {
@@ -102,9 +102,9 @@ function(React, Expression, utils, controls) {
                     if (!node.hasRole(role, true)) {
                         var roles = node.get('pending_roles');
                         if (this.isRoleSelected(role)) {
-                            if (this.isRoleAvailable(role)) roles = _.uniq(_.union(roles, role));
+                            if (this.isRoleAvailable(role)) roles = _.uniq(_.union(roles, [role]));
                         } else if (!_.contains(this.state.indeterminateRoles, role)) {
-                            roles = _.difference(roles, role);
+                            roles = _.difference(roles, [role]);
                         }
                         node.set({pending_roles: roles}, {assign: true});
                     }

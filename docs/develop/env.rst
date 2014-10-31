@@ -49,7 +49,7 @@ Unless otherwise specified in the makefile, the master branch of
 each respective repo is used to build the ISO.
 
 The basic steps to build the Fuel ISO from trunk in an
-Ubuntu 12.04 environment are:
+Ubuntu 14.04 environment are:
 ::
 
     apt-get install git
@@ -129,6 +129,10 @@ newest 14.04):
 
     make clean          #remove build/ directory
     make deep_clean     #remove build/ and local_mirror/
+
+.. note:: In case you are using Virtualbox for building iso, please ensure that the build
+    directory BUILD_DIR ``is OUT`` of the Virtualbox
+    `shared folder path <https://www.virtualbox.org/manual/ch04.html#sharedfolders>`_
 
 Nailgun (Fuel-Web)
 ------------------

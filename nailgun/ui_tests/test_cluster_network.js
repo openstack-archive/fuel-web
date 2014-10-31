@@ -320,7 +320,7 @@ casper.then(function() {
         $('.management input[name=cidr]').keyup();
     });
     this.click('.apply-btn:not(:disabled)');
-    this.test.assertSelectorAppears('input:not(:disabled)');
+    this.test.assertSelectorAppears('input:not(:disabled)', 'Input is not disabled');
     this.then(function() {
         this.test.assertDoesntExist('.alert-error', 'Correct settings were saved successfully');
     });

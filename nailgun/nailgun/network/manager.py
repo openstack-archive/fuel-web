@@ -25,6 +25,7 @@ from netaddr import IPRange
 
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
+from sqlalchemy.sql import or_
 
 from nailgun import objects
 
@@ -36,10 +37,12 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeBondInterface
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.utils.zabbix import ZabbixManager
+from nailgun.settings import settings
 
 
 class NetworkManager(object):
@@ -61,26 +64,33 @@ class NetworkManager(object):
         db().commit()
 
     @classmethod
-    def get_admin_network_group_id(cls):
+    def get_admin_network_group_id(cls, node_id=None):
         """Method for receiving Admin NetworkGroup ID.
 
         :type  fail_if_not_found: bool
         :returns: Admin NetworkGroup ID or None.
         :raises: errors.AdminNetworkNotFound
         """
-        return cls.get_admin_network_group().id
+        return cls.get_admin_network_group(node_id=node_id).id
 
     @classmethod
-    def get_admin_network_group(cls):
+    def get_admin_network_group(cls, node_id=None):
         """Method for receiving Admin NetworkGroup.
 
         :type  fail_if_not_found: bool
         :returns: Admin NetworkGroup or None.
         :raises: errors.AdminNetworkNotFound
         """
-        admin_ng = db().query(NetworkGroup).filter_by(
-            name="fuelweb_admin"
-        ).first()
+        admin_ng = None
+        admin_ngs = db().query(NetworkGroup).filter_by(
+            name="fuelweb_admin",
+        )
+        if node_id:
+            node_db = db().query(Node).get(node_id)
+            admin_ng = admin_ngs.filter_by(group_id=node_db.group_id).first()
+
+        admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
+
         if not admin_ng:
             raise errors.AdminNetworkNotFound()
         return admin_ng
@@ -112,13 +122,12 @@ class NetworkManager(object):
         :type  num: int
         :returns: None
         """
-        admin_net_id = cls.get_admin_network_group_id()
-        admin_net = db().query(NetworkGroup).get(admin_net_id)
-
         # Check which nodes need ips
         nodes_need_ips = []
         for node in nodes:
             node_id = node.id
+            admin_net = cls.get_admin_network_group(node_id)
+            admin_net_id = admin_net.id
             node_admin_ips = db().query(IPAddr).filter_by(
                 node=node_id, network=admin_net_id)
             logger.debug(u"Trying to assign admin ip: node=%s", node_id)
@@ -161,11 +170,10 @@ class NetworkManager(object):
                     )
                 )
 
-        network = db().query(NetworkGroup).\
-            filter(NetworkGroup.cluster_id == cluster_id).\
-            filter_by(name=network_name).first()
+        network_groups = db().query(NetworkGroup).\
+            filter_by(name=network_name)
 
-        if not network:
+        if not network_groups:
             raise errors.AssignIPError(
                 u"Network '%s' for cluster_id=%s not found." %
                 (network_name, cluster_id)
@@ -179,6 +187,14 @@ class NetworkManager(object):
             if network_name == 'public' and \
                     not objects.Node.should_have_public(node):
                 continue
+            group_id = node.group_id or cluster.default_group
+
+            network = network_groups.filter(
+                or_(
+                    NetworkGroup.group_id == group_id,
+                    NetworkGroup.group_id == None  # flake8: noqa
+                )
+            ).first()
 
             node_ips = imap(
                 lambda i: i.ip_addr,
@@ -248,14 +264,22 @@ class NetworkManager(object):
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
+        group_id = None
+        for node in cluster.nodes:
+            if 'controller' in node.all_roles or \
+               'primary-controller' in node.all_roles:
+                group_id = node.group_id
+                break
+
+        if not group_id:
+            group_id = cluster.default_group
+
         network = db().query(NetworkGroup).\
-            filter(NetworkGroup.cluster_id == cluster_id).\
-            filter_by(name=network_name).first()
+            filter_by(name=network_name, group_id=group_id).first()
 
         if not network:
             raise Exception(u"Network '%s' for cluster_id=%s not found." %
                             (network_name, cluster_id))
-
         admin_net_id = cls.get_admin_network_group_id()
         cluster_ips = [ne.ip_addr for ne in db().query(IPAddr).filter_by(
             network=network.id,
@@ -365,7 +389,7 @@ class NetworkManager(object):
             ips = ips.filter_by(network=network_id)
 
         try:
-            admin_net_id = cls.get_admin_network_group_id()
+            admin_net_id = cls.get_admin_network_group_id(node_id=node_id)
         except errors.AdminNetworkNotFound:
             admin_net_id = None
         if admin_net_id:
@@ -393,7 +417,12 @@ class NetworkManager(object):
         networks metadata
         """
         nics = []
-        ngs = node.cluster.network_groups + [cls.get_admin_network_group()]
+        group_id = node.group_id
+        if not group_id:
+            group_id = node.cluster.default_group
+
+        node_group = db().query(NodeGroup).get(group_id)
+        ngs = node_group.networks + [cls.get_admin_network_group(node.id)]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(
@@ -403,7 +432,7 @@ class NetworkManager(object):
                 key=lambda x: x[1]))[0]
         )
         ng_ids = set(ng.id for ng in ngs)
-        ng_wo_admin_ids = ng_ids ^ set([cls.get_admin_network_group_id()])
+        ng_wo_admin_ids = ng_ids ^ set([cls.get_admin_network_group_id(node.id)])
         for nic in node.nic_interfaces:
             nic_dict = {
                 "id": nic.id,
@@ -483,7 +512,14 @@ class NetworkManager(object):
         :type  node: Node
         :returns: List of network groups for cluster node belongs to.
         """
-        return node.cluster.network_groups
+        if node.group_id:
+            return db().query(NetworkGroup).filter_by(
+                group_id=node.group_id,
+            ).filter(
+                NetworkGroup.name != 'fuelweb_admin'
+            ).order_by(NetworkGroup.id).all()
+        else:
+            return node.cluster.network_groups
 
     @classmethod
     def get_node_networkgroups_ids(cls, node):
@@ -494,23 +530,27 @@ class NetworkManager(object):
 
     @classmethod
     def _get_admin_node_network(cls, node):
-        net = cls.get_admin_network_group()
+        node_db = db().query(Node).get(node)
+        net = cls.get_admin_network_group(node)
         net_cidr = IPNetwork(net.cidr)
         ip_addr = cls.get_admin_ip_for_node(node)
+        if ip_addr:
+            ip_addr =  "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
+
         return {
             'name': net.name,
+            'cidr': net.cidr,
             'vlan': net.vlan_start,
-            'ip': "{0}/{1}".format(ip_addr, net_cidr.prefixlen),
+            'ip': ip_addr,
             'netmask': str(net_cidr.netmask),
             'brd': str(net_cidr.broadcast),
             'gateway': net.gateway,
-            'dev': node.admin_interface.name
+            'dev': node_db.admin_interface.name
         }
 
     @classmethod
     def get_node_network_by_netname(cls, node, netname):
         networks = cls.get_node_networks(node)
-        networks.append(cls._get_admin_node_network(node))
         return filter(
             lambda n: n['name'] == netname, networks)[0]
 
@@ -529,6 +569,7 @@ class NetworkManager(object):
         prefix = str(IPNetwork(net.cidr).prefixlen)
         return {
             'name': net.name,
+            'cidr': net.cidr,
             'vlan': cls.get_network_vlan(net, node_db.cluster),
             'ip': ip.ip_addr + '/' + prefix,
             'netmask': str(IPNetwork(net.cidr).netmask),
@@ -539,6 +580,7 @@ class NetworkManager(object):
     @classmethod
     def _get_network_data_wo_ip(cls, node_db, interface, net):
         return {'name': net.name,
+                'cidr': net.cidr,
                 'vlan': cls.get_network_vlan(net, node_db.cluster),
                 'dev': interface.name}
 
@@ -548,27 +590,27 @@ class NetworkManager(object):
                 if net.name != 'fuelweb_admin')
 
     @classmethod
-    def get_node_networks(cls, node_db):
-        cluster_db = node_db.cluster
+    def get_node_networks(cls, node):
+        cluster_db = node.cluster
         if cluster_db is None:
             # Node doesn't belong to any cluster, so it should not have nets
             return []
 
         network_data = []
-        for interface in node_db.interfaces:
+        for interface in node.interfaces:
             networks_wo_admin = cls._get_networks_except_admin(
                 interface.assigned_networks_list)
             for net in networks_wo_admin:
-                ip = cls._get_ip_by_network_name(node_db, net.name)
+                ip = cls._get_ip_by_network_name(node, net.name)
                 if ip is not None:
                     network_data.append(cls._get_network_data_with_ip(
-                        node_db, interface, net, ip))
+                        node, interface, net, ip))
                 else:
                     if not cls.fixed_and_vlan_manager(net, cluster_db):
                         network_data.append(cls._get_network_data_wo_ip(
-                            node_db, interface, net))
+                            node, interface, net))
 
-        network_data.append(cls._get_admin_network(node_db))
+        network_data.append(cls._get_admin_node_network(node.id))
 
         return network_data
 
@@ -678,7 +720,7 @@ class NetworkManager(object):
         admin_interface = None
         for interface in interfaces:
             ip_addr = interface.get('ip')
-            if cls.is_ip_belongs_to_admin_subnet(ip_addr):
+            if cls.is_ip_belongs_to_admin_subnet(ip_addr, node.id):
                 # Interface was founded
                 admin_interface = interface
                 break
@@ -702,8 +744,8 @@ class NetworkManager(object):
                 )
 
     @classmethod
-    def is_ip_belongs_to_admin_subnet(cls, ip_addr):
-        admin_cidr = cls.get_admin_network_group().cidr
+    def is_ip_belongs_to_admin_subnet(cls, ip_addr, node_id=None):
+        admin_cidr = cls.get_admin_network_group(node_id).cidr
         if ip_addr and IPAddress(ip_addr) in IPNetwork(admin_cidr):
             return True
         return False
@@ -760,25 +802,26 @@ class NetworkManager(object):
     def get_admin_ip_for_node(cls, node):
         """Returns first admin IP address for node
         """
-        admin_net_id = cls.get_admin_network_group_id()
+        admin_net_id = cls.get_admin_network_group_id(node_id=node)
         admin_ip = db().query(IPAddr).order_by(
             IPAddr.id
         ).filter_by(
-            node=node.id
+            node=node
         ).filter_by(
             network=admin_net_id
         ).first()
-        return admin_ip.ip_addr
+
+        return getattr(admin_ip, 'ip_addr', None)
 
     @classmethod
     def get_admin_ips_for_interfaces(cls, node):
         """Returns mapping admin {"inteface name" => "admin ip"}
         """
-        admin_net_id = cls.get_admin_network_group_id()
+        admin_net_id = cls.get_admin_network_group_id(node)
         admin_ips = set([
             i.ip_addr for i in db().query(IPAddr).
             order_by(IPAddr.id).
-            filter_by(node=node.id).
+            filter_by(node=node).
             filter_by(network=admin_net_id)])
 
         interfaces_names = sorted(set([
@@ -789,8 +832,14 @@ class NetworkManager(object):
     @classmethod
     def _get_admin_network(cls, node):
         """Returns dict with admin network."""
+
+        net = cls.get_admin_network_group(node_id=node)
         return {
-            'name': 'admin',
+            'id': net.id,
+            'cidr': net.cidr,
+            'name': net.name,
+            'gateway': net.gateway,
+            'vlan': net.vlan_start,
             'dev': cls.get_admin_interface(node).name
         }
 
@@ -830,7 +879,8 @@ class NetworkManager(object):
     @classmethod
     def _get_ip_by_network_name(cls, node, network_name):
         for ip in node.ip_addrs:
-            if ip.network_data.name == network_name:
+            ng = ip.network_data
+            if ng.name == network_name and ng.group_id == node.group_id:
                 return ip
         return None
 
@@ -937,7 +987,23 @@ class NetworkManager(object):
         db().commit()
 
     @classmethod
-    def create_network_groups(cls, cluster_id, neutron_segment_type):
+    def create_admin_network_group(cls, cluster_id, group_id):
+        cluster_db = objects.Cluster.get_by_uid(cluster_id)
+        admin_ng = cls.get_admin_network_group()
+        new_admin = NetworkGroup(
+            release=cluster_db.release.id,
+            name='fuelweb_admin',
+            cidr='9.9.9.0/24',
+            gateway='9.9.9.1',
+            group_id=group_id,
+            vlan_start=None,
+            meta=admin_ng.meta
+        )
+        db().add(new_admin)
+        db().flush()
+
+    @classmethod
+    def create_network_groups(cls, cluster_id, neutron_segment_type, gid=None):
         """Method for creation of network groups for cluster.
 
         :param cluster_id: Cluster database ID.
@@ -945,6 +1011,7 @@ class NetworkManager(object):
         :returns: None
         """
         cluster_db = objects.Cluster.get_by_uid(cluster_id)
+        group_id = gid or cluster_db.default_group
         networks_metadata = cluster_db.release.networks_metadata
         networks_list = networks_metadata[cluster_db.net_provider]["networks"]
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
@@ -992,7 +1059,7 @@ class NetworkManager(object):
                 name=net['name'],
                 cidr=str(cidr) if cidr else None,
                 gateway=gw,
-                cluster_id=cluster_id,
+                group_id=group_id,
                 vlan_start=vlan_start,
                 meta=net
             )
@@ -1025,7 +1092,7 @@ class NetworkManager(object):
 
                 if ng_db.meta.get("notation"):
                     cls.cleanup_network_group(ng_db)
-                objects.Cluster.add_pending_changes(ng_db.cluster, 'networks')
+                objects.Cluster.add_pending_changes(cluster, 'networks')
 
     @classmethod
     def update(cls, cluster, network_configuration):
@@ -1054,3 +1121,28 @@ class NetworkManager(object):
                                       data.get('net_l23_provider'))
         elif cluster.net_provider == 'nova_network':
             cls.create_nova_network_config(cluster)
+
+    @classmethod
+    def get_default_gateway(cls, node_id):
+        return cls.get_admin_network_group(node_id).gateway \
+                or settings.MASTER_IP
+
+    @classmethod
+    def get_networks_not_on_node(cls, node):
+        node_net = [(n['name'], n['cidr'])
+                for n in cls.get_node_networks(node) if n.get('cidr')]
+        all_nets = [(n.name, n.cidr)
+                for n in node.cluster.network_groups if n.cidr]
+
+        if node.group_id != node.cluster.default_group:
+            admin_net = cls.get_admin_network_group()
+            all_nets.append((admin_net.name, admin_net.cidr))
+
+        other_nets = set(all_nets) ^ set(node_net)
+        output = {}
+        for name, cidr in other_nets:
+            if name not in output:
+                output[name] = []
+            output[name].append(cidr)
+
+        return output

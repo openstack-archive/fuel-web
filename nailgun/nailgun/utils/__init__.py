@@ -63,6 +63,23 @@ def traverse(cdict, generator_class):
     return new_dict
 
 
+def generate_editables(adict, generator_class):
+    for key in adict:
+        if key == 'value' and isinstance(adict[key], dict):
+            if 'generator' in adict[key]:
+                method = adict[key]['generator']
+
+                try:
+                    generator = getattr(generator_class, method)
+                except AttributeError:
+                    logger.error("Couldn't find generator {0}".format(method))
+                else:
+                    adict[key] = generator()
+
+        elif isinstance(adict[key], dict):
+            generate_editables(adict[key], generator_class)
+
+
 class AttributesGenerator(object):
     @classmethod
     def password(cls, arg=None):
@@ -82,6 +99,18 @@ class AttributesGenerator(object):
     @classmethod
     def identical(cls, arg=None):
         return str(arg)
+
+    @staticmethod
+    def dns_ip_addresses():
+        if not settings.DNS_IP_ADDRESSES:
+            return []
+        return settings.DNS_IP_ADDRESSES
+
+    @staticmethod
+    def ntp_ip_addresses():
+        if not settings.NTP_IP_ADDRESSES:
+            return []
+        return settings.NTP_IP_ADDRESSES
 
 
 def extract_env_version(release_version):

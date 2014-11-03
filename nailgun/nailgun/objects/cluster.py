@@ -39,6 +39,7 @@ from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
+from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
 
@@ -61,6 +62,8 @@ class Attributes(NailgunObject):
             instance.generated,
             AttributesGenerator
         )
+        generate_editables(instance.editable, AttributesGenerator)
+
         db().add(instance)
         db().flush()
 

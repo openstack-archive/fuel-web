@@ -206,19 +206,38 @@ class TaskHelper(object):
     # nailgun Cluster object's methods
     @classmethod
     def nodes_to_deploy(cls, cluster):
-        nodes_to_deploy = sorted(filter(
-            lambda n: any([
-                n.pending_addition,
-                n.needs_reprovision,
-                n.needs_redeploy
-            ]),
-            cluster.nodes
-        ), key=lambda n: n.id)
-
+        nodes_to_deploy = []
+        update_required = []
+        roles_metadata = cluster.release.roles_metadata
+        for node in cluster.nodes:
+            if any([node.pending_addition,
+                    node.needs_reprovision,
+                    node.needs_redeploy]):
+                nodes_to_deploy.append(node)
+                for role in node.pending_role_list:
+                    update_required.extend(
+                        roles_metadata[role.name].get('update_required', []))
+        cls.add_required_for_update_nodes(
+            cluster, nodes_to_deploy, set(update_required))
         if cluster.is_ha_mode:
             return cls.__nodes_to_deploy_ha(cluster, nodes_to_deploy)
 
         return nodes_to_deploy
+
+    @classmethod
+    def add_required_for_update_nodes(
+            cls, cluster, nodes_to_deploy, update_required):
+        """Add nodes that requires update
+
+        :param cluster: Cluster instance
+        :param nodes_to_deploy: list of Nodes instance that should be deployed
+        :param update_required: list of role names that should be updated
+        :returns: None
+        """
+        for node in cluster.nodes:
+            if (node not in nodes_to_deploy and
+                    set(node.roles) & update_required):
+                nodes_to_deploy.append(node)
 
     @classmethod
     def nodes_to_provision(cls, cluster):

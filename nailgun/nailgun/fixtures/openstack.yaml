@@ -18,6 +18,9 @@
         description: "The controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well."
         conflicts:
           - compute
+        update_required:
+          - compute
+          - cinder
       compute:
         name: "Compute"
         description: "A compute node creates, manages and terminates virtual machine instances."

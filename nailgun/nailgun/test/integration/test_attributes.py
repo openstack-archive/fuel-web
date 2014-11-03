@@ -18,6 +18,7 @@ from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.openstack.common import jsonutils
+from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -35,12 +36,12 @@ class TestAttributes(BaseIntegrationTest):
         )
         release = objects.Release.get_by_uid(cluster['release_id'])
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(
-            resp.json_body['editable'],
-            release.attributes_metadata['editable']
+        self._compare_editable(
+            release.attributes_metadata['editable'],
+            resp.json_body['editable']
         )
         attrs = objects.Cluster.get_attributes(cluster_db)
-        self._compare(
+        self._compare_generated(
             release.attributes_metadata['generated'],
             attrs.generated
         )
@@ -155,9 +156,9 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(
-            resp.json_body['editable'],
-            release.attributes_metadata['editable']
+        self._compare_editable(
+            release.attributes_metadata['editable'],
+            resp.json_body['editable']
         )
 
     def test_attributes_set_defaults(self):
@@ -190,9 +191,9 @@ class TestAttributes(BaseIntegrationTest):
         release = self.db.query(Release).get(
             cluster['release_id']
         )
-        self.assertEqual(
-            resp.json_body['editable'],
-            release.attributes_metadata['editable']
+        self._compare_editable(
+            release.attributes_metadata['editable'],
+            resp.json_body['editable']
         )
 
     def test_attributes_merged_values(self):
@@ -219,14 +220,43 @@ class TestAttributes(BaseIntegrationTest):
                 else:
                     self.assertEqual(orig_value, value)
 
-    def _compare(self, d1, d2):
+    def _compare_generated(self, d1, d2):
         if isinstance(d1, dict) and isinstance(d2, dict):
             for s_field, s_value in d1.iteritems():
                 if s_field not in d2:
                     raise KeyError()
-                self._compare(s_value, d2[s_field])
+                self._compare_generated(s_value, d2[s_field])
         elif isinstance(d1, str) or isinstance(d1, unicode):
             if d1 in [u"", ""]:
                 self.assertEqual(len(d2), 8)
             else:
                 self.assertEqual(d1, d2)
+
+    def _compare_editable(self, r_attrs, c_attrs):
+        """Compare editable attributes omitting the check of generated values
+        r_attrs: attributes from release
+        c_attrs: attributes from cluster
+        """
+        if isinstance(r_attrs, dict) and isinstance(c_attrs, dict):
+            for s_field, s_value in r_attrs.iteritems():
+                if s_field not in c_attrs:
+                    raise KeyError()
+                self._compare_editable(s_value, c_attrs[s_field])
+        elif isinstance(c_attrs, str) or isinstance(c_attrs, unicode) and \
+                isinstance(r_attrs, dict):
+            self.assertTrue("generator" in r_attrs)
+        else:
+            self.assertEqual(c_attrs, r_attrs)
+
+    def test_editable_attributes_generators(self):
+        cluster = self.env.create_cluster(api=True)
+        cluster_db = objects.Cluster.get_by_uid(cluster['id'])
+        editable = objects.Cluster.get_attributes(cluster_db).editable
+        self.assertEqual(
+            editable["external_dns"]["dns_list"]["value"],
+            settings.DNS_UPSTREAM
+        )
+        self.assertEqual(
+            editable["external_ntp"]["ntp_list"]["value"],
+            settings.NTP_UPSTREAM
+        )

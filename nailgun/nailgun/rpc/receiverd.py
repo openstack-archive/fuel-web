@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2013-2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -50,16 +50,21 @@ class RPCConsumer(ConsumerMixin):
         callback = getattr(self.receiver, body["method"])
         try:
             callback(**body["args"])
-            db().commit()
         except errors.CannotFindTask as e:
             logger.warn(str(e))
-            db().rollback()
+            msg.ack()
         except Exception:
             logger.error(traceback.format_exc())
-            db().rollback()
-        finally:
             msg.ack()
-            db().expire_all()
+        except KeyboardInterrupt:
+            logger.error("Receiverd interrupted.")
+            msg.requeue()
+            raise
+        else:
+            db.commit()
+            msg.ack()
+        finally:
+            db.remove()
 
     def on_precondition_failed(self, error_msg):
         logger.warning(error_msg)

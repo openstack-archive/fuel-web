@@ -219,9 +219,6 @@ class TaskHelper(object):
                         roles_metadata[role.name].get('update_required', []))
         cls.add_required_for_update_nodes(
             cluster, nodes_to_deploy, set(update_required))
-        if cluster.is_ha_mode:
-            return cls.__nodes_to_deploy_ha(cluster, nodes_to_deploy)
-
         return nodes_to_deploy
 
     @classmethod
@@ -270,52 +267,7 @@ class TaskHelper(object):
             cluster.nodes
         )
 
-        if cluster.is_ha_mode:
-            return cls.__nodes_to_deploy_ha(cluster, nodes_to_upgrade)
-
         return sorted(nodes_to_upgrade, key=lambda n: n.id)
-
-    @classmethod
-    def __nodes_to_deploy_ha(cls, cluster, nodes):
-        """Get nodes for deployment for ha mode
-        * in case of failed controller should be redeployed
-          all controllers
-        * in case of failed non-controller should be
-          redeployed only node which was failed
-
-        If node list has at least one controller we
-        filter all controllers from the cluster and
-        return them.
-        """
-        controller_nodes = []
-
-        # if list contain at least one controller
-        if cls.__has_controller_nodes(nodes):
-            # retrive all controllers from cluster
-            controller_nodes = db().query(Node). \
-                filter(or_(
-                    Node.role_list.any(name='controller'),
-                    Node.pending_role_list.any(name='controller'),
-                    Node.role_list.any(name='primary-controller'),
-                    Node.pending_role_list.any(name='primary-controller')
-                )). \
-                filter(Node.cluster == cluster). \
-                filter(False == Node.pending_deletion). \
-                order_by(Node.id).all()
-
-        return sorted(set(nodes + controller_nodes),
-                      key=lambda node: node.id)
-
-    @classmethod
-    def __has_controller_nodes(cls, nodes):
-        """Returns True if list of nodes has
-        at least one controller.
-        """
-        for node in nodes:
-            if 'controller' in node.all_roles or \
-               'primary-controller' in node.all_roles:
-                return True
-        return False
 
     @classmethod
     def set_error(cls, task_uuid, message):

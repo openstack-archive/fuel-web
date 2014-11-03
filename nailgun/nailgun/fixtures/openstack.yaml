@@ -21,6 +21,7 @@
         update_required:
           - compute
           - cinder
+          - controller
       compute:
         name: "Compute"
         description: "A compute node creates, manages and terminates virtual machine instances."

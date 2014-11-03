@@ -39,6 +39,7 @@ from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
+from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
 
@@ -61,8 +62,6 @@ class Attributes(NailgunObject):
             instance.generated,
             AttributesGenerator
         )
-        db().add(instance)
-        db().flush()
 
     @classmethod
     def merged_attrs(cls, instance):
@@ -225,7 +224,9 @@ class Cluster(NailgunObject):
             }
         )
         Attributes.generate_fields(attributes)
+        db().add(attributes)
         db().flush()
+        return attributes
 
     @classmethod
     def get_default_editable_attributes(cls, instance):
@@ -235,6 +236,7 @@ class Cluster(NailgunObject):
         :returns: Dict object
         """
         editable = instance.release.attributes_metadata.get("editable")
+        generate_editables(editable, AttributesGenerator)
         # when attributes created we need to understand whether should plugin
         # be applied for created cluster
         plugin_attrs = PluginManager.get_plugin_attributes(instance)

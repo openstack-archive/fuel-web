@@ -18,6 +18,7 @@ from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.openstack.common import jsonutils
+from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -230,3 +231,16 @@ class TestAttributes(BaseIntegrationTest):
                 self.assertEqual(len(d2), 8)
             else:
                 self.assertEqual(d1, d2)
+
+    def test_editable_attributes_generators(self):
+        cluster = self.env.create_cluster(api=True)
+        cluster_db = objects.Cluster.get_by_uid(cluster['id'])
+        editable = objects.Cluster.get_attributes(cluster_db).editable
+        self.assertEqual(
+            editable["external_dns"]["dns_list"]["value"],
+            settings.DNS_IP_ADDRESSES
+        )
+        self.assertEqual(
+            editable["external_ntp"]["ntp_list"]["value"],
+            settings.NTP_IP_ADDRESSES
+        )

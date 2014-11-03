@@ -51,14 +51,16 @@ class RPCConsumer(ConsumerMixin):
         try:
             callback(**body["args"])
             db().commit()
+            msg.ack()
         except errors.CannotFindTask as e:
             logger.warn(str(e))
             db().rollback()
+            msg.ack()
         except Exception:
             logger.error(traceback.format_exc())
             db().rollback()
-        finally:
             msg.ack()
+        finally:
             db().expire_all()
 
     def on_precondition_failed(self, error_msg):

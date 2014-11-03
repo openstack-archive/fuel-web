@@ -501,6 +501,30 @@
               - data: "cobbler"
                 label: "Classic (use anaconda or debian-installer)"
                 description: "Install from scratch using anaconda or debian-installer."
+        external_dns:
+          metadata:
+            label: "Upstream DNS"
+            weight: 90
+          dns_list:
+            value:
+              generator: "from_settings"
+              generator_arg: "DNS_UPSTREAM"
+            label: "DNS list"
+            description: "List of upstream DNS servers separated by comma"
+            weight: 10
+            type: "text"
+        external_ntp:
+          metadata:
+            label: "Upstream NTP"
+            weight: 100
+          ntp_list:
+            value:
+              generator: "from_settings"
+              generator_arg: "NTP_UPSTREAM"
+            label: "NTP servers list"
+            description: "List of upstream NTP servers separated by comma"
+            weight: 10
+            type: "text"
       generated:
         mysql:
           root_password:

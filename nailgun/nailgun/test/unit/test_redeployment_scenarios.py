@@ -86,3 +86,19 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
         self.assertNotEqual(cluster.nodes, nodes)
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0].pending_roles, ['compute'])
+
+    def test_controllers_redeployed_if_ceph_added(self):
+        self.env.create(
+            cluster_kwargs={'mode': 'multinode'},
+            release_kwargs={'version': '2014.2-6.0',
+                            'operating_system': 'Ubuntu'},
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'status': 'ready'},
+                {'pending_roles': ['ceph-osd'],
+                 'status': 'discover',
+                 'pending_addition': True}])
+        cluster = self.env.clusters[0]
+        nodes = helpers.TaskHelper.nodes_to_deploy(cluster)
+        self.assertEqual(sorted(cluster.nodes), sorted(nodes))
+        self.assertEqual(len(nodes), 2)

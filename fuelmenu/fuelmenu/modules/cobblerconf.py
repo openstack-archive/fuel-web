@@ -273,18 +273,6 @@ interface first.")
                                         mgmt_if_ipaddr, netmask) is False:
                     errors.append("DHCP Pool end does not match management "
                                   "network.")
-                #Ensure dynamic and static ranges do not overlap
-                try:
-                    if network.intersects(
-                            network.range(
-                                responses["ADMIN_NETWORK/dhcp_pool_start"],
-                                responses["ADMIN_NETWORK/dhcp_pool_end"]),
-                            network.range(
-                                responses["ADMIN_NETWORK/static_pool_start"],
-                                responses["ADMIN_NETWORK/static_pool_end"])):
-                        errors.append("DHCP and Static pools overlap")
-                except BadIPException:
-                    errors.append("Invalid network range specified.")
 
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))

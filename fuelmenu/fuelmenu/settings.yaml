@@ -11,9 +11,7 @@ ADMIN_NETWORK:
   netmask: "255.255.255.0"
   cidr: "10.20.0.0/24"
   size: "256"
-  static_pool_start: "10.20.0.10"
-  static_pool_end: "10.20.0.120"
-  dhcp_pool_start: "10.20.0.130"
+  dhcp_pool_start: "10.20.0.3"
   dhcp_pool_end: "10.20.0.254"
 FUEL_ACCESS:
   user: "admin"

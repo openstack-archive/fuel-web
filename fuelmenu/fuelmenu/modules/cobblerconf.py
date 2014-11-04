@@ -58,9 +58,7 @@ class cobblerconf(urwid.WidgetWrap):
         self.net_text4 = widget.TextLabel("")
         self.header_content = [text1, text2, self.net_choices, self.net_text1,
                                self.net_text2, self.net_text3, self.net_text4]
-        self.fields = ["static_label", "ADMIN_NETWORK/static_pool_start",
-                       "ADMIN_NETWORK/static_pool_end", "blank",
-                       "dynamic_label", "ADMIN_NETWORK/dhcp_pool_start",
+        self.fields = ["dynamic_label", "ADMIN_NETWORK/dhcp_pool_start",
                        "ADMIN_NETWORK/dhcp_pool_end"]
 
         self.defaults = \
@@ -68,23 +66,11 @@ class cobblerconf(urwid.WidgetWrap):
                 "ADMIN_NETWORK/dhcp_pool_start": {"label": "DHCP Pool Start",
                                                   "tooltip": "Used for \
 defining IPs for hosts and instance public addresses",
-                                                  "value": "10.0.0.130"},
+                                                  "value": "10.0.0.3"},
                 "ADMIN_NETWORK/dhcp_pool_end": {"label": "DHCP Pool End",
                                                 "tooltip": "Used for defining \
 IPs for hosts and instance public addresses",
                                                 "value": "10.0.0.254"},
-                "static_label": {"label": "Static pool for installed nodes:",
-                                 "tooltip": "",
-                                 "value": "label"},
-                "ADMIN_NETWORK/static_pool_start": {"label": "Static Pool \
-Start",
-                                                    "tooltip": "Static pool \
-for installed nodes",
-                                                    "value": "10.0.0.10"},
-                "ADMIN_NETWORK/static_pool_end": {"label": "Static Pool End",
-                                                  "tooltip": "Static pool for \
-installed nodes",
-                                                  "value": "10.0.0.120"},
                 "dynamic_label": {"label": "DHCP pool for node discovery:",
                                   "tooltip": "",
                                   "value": "label"},
@@ -191,31 +177,6 @@ interface first.")
                         "ADMIN_NETWORK/interface"]]["bootproto"] == "dhcp":
                     errors.append("%s is running DHCP. Change it to static "
                                   "first." % self.activeiface)
-
-                #Ensure Static Pool Start and Static Pool are valid IPs
-                try:
-                    if netaddr.valid_ipv4(responses[
-                            "ADMIN_NETWORK/static_pool_start"]):
-                        static_start = netaddr.IPAddress(responses[
-                            "ADMIN_NETWORK/static_pool_start"])
-                        if not static_start:
-                            raise BadIPException("Not a valid IP address")
-                    else:
-                        raise BadIPException("Not a valid IP address")
-                except Exception:
-                    errors.append("Not a valid IP address for Static Pool "
-                                  "Start")
-                try:
-                    if netaddr.valid_ipv4(responses[
-                            "ADMIN_NETWORK/static_pool_end"]):
-                        static_end = netaddr.IPAddress(responses[
-                            "ADMIN_NETWORK/static_pool_end"])
-                        if not static_end:
-                            raise BadIPException("Not a valid IP address")
-                    else:
-                        raise BadIPException("Not a valid IP address")
-                except Exception:
-                    errors.append("Invalid IP address for Static Pool End")
                 #Ensure DHCP Pool Start and DHCP Pool are valid IPs
                 try:
                     if netaddr.valid_ipv4(responses[
@@ -254,16 +215,6 @@ interface first.")
                 mgmt_if_ipaddr = self.netsettings[responses[
                     "ADMIN_NETWORK/interface"]]["addr"]
                 if network.inSameSubnet(responses[
-                                        "ADMIN_NETWORK/static_pool_start"],
-                                        mgmt_if_ipaddr, netmask) is False:
-                    errors.append("Static Pool start does not match management"
-                                  " network.")
-                if network.inSameSubnet(responses[
-                                        "ADMIN_NETWORK/static_pool_end"],
-                                        mgmt_if_ipaddr, netmask) is False:
-                    errors.append("Static Pool end does not match management "
-                                  "network.")
-                if network.inSameSubnet(responses[
                                         "ADMIN_NETWORK/dhcp_pool_start"],
                                         mgmt_if_ipaddr, netmask) is False:
                     errors.append("DHCP Pool start does not match management"
@@ -273,18 +224,6 @@ interface first.")
                                         mgmt_if_ipaddr, netmask) is False:
                     errors.append("DHCP Pool end does not match management "
                                   "network.")
-                #Ensure dynamic and static ranges do not overlap
-                try:
-                    if network.intersects(
-                            network.range(
-                                responses["ADMIN_NETWORK/dhcp_pool_start"],
-                                responses["ADMIN_NETWORK/dhcp_pool_end"]),
-                            network.range(
-                                responses["ADMIN_NETWORK/static_pool_start"],
-                                responses["ADMIN_NETWORK/static_pool_end"])):
-                        errors.append("DHCP and Static pools overlap")
-                except BadIPException:
-                    errors.append("Invalid network range specified.")
 
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
@@ -435,11 +374,7 @@ interface first.")
             self.netsettings[self.activeiface]['netmask'],
             self.gateway)
         try:
-            half = int(len(net_ip_list) / 2)
-            static_pool = list(net_ip_list[1:half])
-            dhcp_pool = list(net_ip_list[half:])
-            static_start = str(static_pool[0])
-            static_end = str(static_pool[-1])
+            dhcp_pool = net_ip_list[1:]
             dynamic_start = str(dhcp_pool[0])
             dynamic_end = str(dhcp_pool[-1])
             if self.net_text4.get_text() == "":
@@ -447,16 +382,10 @@ interface first.")
                                         "support %s nodes." % len(dhcp_pool))
         except Exception:
             #We don't have valid values, so mark all fields empty
-            static_start = ""
-            static_end = ""
             dynamic_start = ""
             dynamic_end = ""
         for index, key in enumerate(self.fields):
-            if key == "ADMIN_NETWORK/static_pool_start":
-                self.edits[index].set_edit_text(static_start)
-            elif key == "ADMIN_NETWORK/static_pool_end":
-                self.edits[index].set_edit_text(static_end)
-            elif key == "ADMIN_NETWORK/dhcp_pool_start":
+            if key == "ADMIN_NETWORK/dhcp_pool_start":
                 self.edits[index].set_edit_text(dynamic_start)
             elif key == "ADMIN_NETWORK/dhcp_pool_end":
                 self.edits[index].set_edit_text(dynamic_end)

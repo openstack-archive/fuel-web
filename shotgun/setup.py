@@ -12,48 +12,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import os
-import os.path
-
 import setuptools
 
-requires = [
-    'Fabric>=1.7.0'
-]
 
-name = 'shotgun'
-version = '6.0.0'
-
-
-def recursive_data_files(spec_data_files):
-    result = []
-    for dstdir, srcdir in spec_data_files:
-        for topdir, dirs, files in os.walk(srcdir):
-            for f in files:
-                result.append((os.path.join(dstdir, topdir),
-                               [os.path.join(topdir, f)]))
-    return result
-
-
-if __name__ == "__main__":
-    setuptools.setup(
-        name=name,
-        version=version,
-        description='Shotgun package',
-        long_description="""Shotgun is diagnostic snapshot generator""",
-        classifiers=[
-            "Development Status :: 4 - Beta",
-            "Programming Language :: Python",
-        ],
-        author='Mirantis Inc.',
-        author_email='product@mirantis.com',
-        url='http://mirantis.com',
-        keywords='shotgun mirantis',
-        packages=setuptools.find_packages(),
-        zip_safe=False,
-        install_requires=requires,
-        include_package_data=True,
-        entry_points={
-            'console_scripts': [
-                'shotgun = shotgun.cli:main']})
+setuptools.setup(
+    name='shotgun',
+    version='6.0.0',
+    description='Shotgun package',
+    long_description='Shotgun is diagnostic snapshot generator',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Programming Language :: Python'],
+    author='Mirantis Inc.',
+    author_email='product@mirantis.com',
+    url='http://mirantis.com',
+    keywords='shotgun mirantis',
+    packages=setuptools.find_packages(),
+    zip_safe=False,
+    install_requires=[
+        'Fabric >= 1.10.0'],
+    entry_points={
+        'console_scripts': [
+            'shotgun = shotgun.cli:main']})

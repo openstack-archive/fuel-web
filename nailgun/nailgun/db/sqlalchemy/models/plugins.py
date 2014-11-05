@@ -42,6 +42,7 @@ class Plugin(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
+    title = Column(String(100), nullable=False)
     version = Column(String(32), nullable=False)
     description = Column(String(400))
     releases = Column(JSON, default=[])

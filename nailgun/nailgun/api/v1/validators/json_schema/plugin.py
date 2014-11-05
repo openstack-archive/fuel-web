@@ -34,16 +34,17 @@ PLUGIN_SCHEMA = {
     'properties': {
         'id': {'type': 'integer'},
         'name': {'type': 'string'},
+        'title': {'type': 'string'},
         'version': {'type': 'string'},
         'package_version': {'type': 'string'},
         'description': {'type': 'string'},
-        'fuel_version': {'type': 'string'},
+        'fuel_version': {'type': 'array',
+                         'items': {'type': 'string'}},
         'releases': {
             'type': 'array',
             'items': PLUGIN_RELEASE_SCHEMA}
-
     },
-    'required': ['name', 'version', 'releases', 'package_version']
+    'required': ['name', 'title', 'version', 'releases', 'package_version']
 }
 
 

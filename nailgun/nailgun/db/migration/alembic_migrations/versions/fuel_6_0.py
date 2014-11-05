@@ -134,6 +134,7 @@ def upgrade_schema():
         'plugins',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(length=100), nullable=False),
+        sa.Column('title', sa.String(length=100), nullable=False),
         sa.Column('version', sa.String(length=32), nullable=False),
         sa.Column('description', sa.String(length=400), nullable=True),
         sa.Column('releases', JSON(), nullable=True),

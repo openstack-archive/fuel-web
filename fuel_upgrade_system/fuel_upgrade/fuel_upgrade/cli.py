@@ -90,6 +90,9 @@ def parse_args(args):
     parser.add_argument(
         '--src', required=True, help='path to update file')
     parser.add_argument(
+        '--check-only', action='store_true',
+        help='only perform pre-upgrade checks')
+    parser.add_argument(
         '--no-checker', action='store_true',
         help='do not check before upgrade')
     parser.add_argument(
@@ -131,6 +134,16 @@ def is_engine_in_list(engines_list, engine_class):
     return False
 
 
+def check(config, upgraders_to_use):
+    """Perform pre-upgrade checks.
+
+    :param args: argparse object
+    """
+    # Initialize checkers
+    checker_manager = CheckerManager(upgraders_to_use, config)
+    checker_manager.check()
+
+
 def run_upgrade(args):
     """Run upgrade on master node
 
@@ -153,10 +166,11 @@ def run_upgrade(args):
         SUPPORTED_SYSTEMS[system](config)
         for system in args.systems]
 
-    # Initialize checkers
-    if not args.no_checker:
-        checker_manager = CheckerManager(upgraders_to_use, config)
-        checker_manager.check()
+    if not args.no_checker or args.check_only:
+        check(config, upgraders_to_use)
+
+    if args.check_only:
+        sys.exit()
 
     # Initialize pre upgrade hook manager
     hook_manager = PreUpgradeHookManager(upgraders_to_use, config)

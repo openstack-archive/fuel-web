@@ -23,6 +23,7 @@ from nailgun.api.v1.handlers.base import content_json
 from nailgun.api.v1.handlers.base import SingleHandler
 
 from nailgun.api.v1.validators.release import ReleaseValidator
+from nailgun.api.v2.validators.release import ReleaseNetworksValidator
 
 from nailgun.objects import Release
 from nailgun.objects import ReleaseCollection
@@ -50,3 +51,51 @@ class ReleaseCollectionHandler(CollectionHandler):
         """
         q = sorted(self.collection.all(), reverse=True)
         return self.collection.to_json(q)
+
+
+class ReleaseNetworksHandler(SingleHandler):
+    """Release Handler for network metadata
+    """
+
+    single = Release
+    validator = ReleaseNetworksValidator
+
+    @content_json
+    def GET(self, obj_id):
+        """
+        :returns: Release networks metadata
+        :http: * 201 (object successfully created)
+               * 400 (invalid object data specified)
+               * 404 (release object not found)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+        self.validator.validate_schema(obj['networks_metadata'])
+        return obj['networks_metadata']
+
+    @content_json
+    def PUT(self, obj_id):
+        """
+        :returns: Release networks metadata
+        :http: * 201 (object successfully created)
+               * 400 (invalid object data specified)
+               * 404 (release object not found)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+
+        data = self.checked_data(
+            self.validator.validate,
+            instance=obj
+        )
+        self.single.update(obj, data['networks_metadata'])
+
+    def POST(self, obj_id):
+        """
+        :http: $ 405 (method not supported)
+        """
+        raise self.http(405, 'Create not supported for this entity')
+
+    def DELETE(self):
+        """
+        :http: $ 405 (method not supported)
+        """
+        raise self.http(405, 'Delete not supported for this entity')

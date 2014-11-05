@@ -126,9 +126,9 @@ class BasePluginDeploymentHooksSerializer(object):
                 for node in self.nodes:
                     required_for_node = set(task['role']) & set(node.all_roles)
                     if required_for_node:
-                        uids.append(node.id)
+                        uids.append(node.uid)
             elif task['role'] == '*':
-                uids.extend([n.id for n in self.nodes])
+                uids.extend([n.uid for n in self.nodes])
             else:
                 logger.warn(
                     'Wrong task format, `role` should be a list or "*": %s',

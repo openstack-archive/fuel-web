@@ -225,7 +225,7 @@ class TestPrePostHooks(BasePluginTest):
         for t in tasks:
             #shoud uid be a string
             self.assertEqual(
-                sorted(t['uids']), sorted([n.id for n in self.cluster.nodes]))
+                sorted(t['uids']), sorted([n.uid for n in self.cluster.nodes]))
             self.assertTrue(t['fail_on_error'])
             self.assertEqual(t['diagnostic_name'], self.plugin.full_name)
 
@@ -233,7 +233,7 @@ class TestPrePostHooks(BasePluginTest):
         tasks = self.get_post_hooks(self.cluster).json
         self.assertEqual(len(tasks), 1)
         task = tasks[0]
-        controller_id = [n.id for n in self.cluster.nodes
+        controller_id = [n.uid for n in self.cluster.nodes
                          if 'controller' in n.roles]
         self.assertEqual(controller_id, task['uids'])
         self.assertTrue(task['fail_on_error'])

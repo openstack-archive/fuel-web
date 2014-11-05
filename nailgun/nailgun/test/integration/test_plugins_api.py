@@ -35,9 +35,10 @@ class BasePluginTest(base.BaseIntegrationTest):
     SAMPLE_PLUGIN = {
         'version': '1.1.0',
         'name': 'testing',
-        'package_version': '1',
+        'title': 'Test plugin',
+        'package_version': '1.0.0',
         'description': 'Enable to use plugin X for Neutron',
-        'fuel_version': "6.0",
+        'fuel_version': ["6.0"],
         'releases': [
             {'repository_path': 'repositories/ubuntu',
              'version': '2014.2-6.0',
@@ -184,7 +185,7 @@ class TestPluginsApi(BasePluginTest):
     def test_update_plugin(self):
         resp = self.create_plugin()
         data = resp.json
-        data['package_version'] = '2'
+        data['package_version'] = '2.0.0'
         plugin_id = data.pop('id')
         resp = self.app.put(
             base.reverse('PluginHandler', {'obj_id': plugin_id}),
@@ -245,7 +246,7 @@ class TestPluginValidation(BasePluginTest):
         sample = {
             'name': 'test_name',
             'version': '0.1.1',
-            'package_version': '1'
+            'package_version': '1.0.0'
         }
         resp = self.create_plugin(sample=sample, expect_errors=True)
         self.assertEqual(resp.status_code, 400)
@@ -254,7 +255,7 @@ class TestPluginValidation(BasePluginTest):
         sample = {
             'name': 'test_name',
             'version': '0.1.1',
-            'package_version': '1',
+            'package_version': '1.0.0',
             'releases': [
                 {'os': 'Ubuntu', 'mode': ['ha_compact', 'multinode']}
             ]
@@ -266,7 +267,7 @@ class TestPluginValidation(BasePluginTest):
         sample = {
             'name': 'test_name',
             'version': 1.1,
-            'package_version': '1',
+            'package_version': '1.0.0',
             'releases': [
                 {'os': 'Ubuntu',
                  'mode': ['ha_compact', 'multinode'],

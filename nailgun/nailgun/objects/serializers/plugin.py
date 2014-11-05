@@ -22,6 +22,7 @@ class PluginSerializer(BasicSerializer):
     fields = (
         "id",
         "name",
+        "title",
         "version",
         "description",
         "releases",

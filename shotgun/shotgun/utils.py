@@ -77,28 +77,3 @@ def execute(command, to_filename=None):
             process[-2].stdout.close()
     stdout, stderr = process[-1].communicate()
     return (process[-1].returncode, stdout, stderr)
-
-
-def fabric_monkey_patch():
-    """Current Fabric incorrectly checks for a directory, because it uses
-    lstat() which returns False in case of symlink to a directory.
-
-    The issue occurs when shotgun wants to download a directory that contains
-    a symlink to another directory. For example, we have
-
-        /var/log/remote -> /var/log/docker-logs/remote
-
-    The fix was proposed to fabric master branch:
-
-        https://github.com/fabric/fabric/pull/1147
-    """
-    from fabric.sftp import SFTP
-    import stat
-
-    def isdir(self, path):
-        try:
-            return stat.S_ISDIR(self.ftp.stat(path).st_mode)
-        except IOError:
-            return False
-
-    SFTP.isdir = isdir

@@ -16,6 +16,7 @@
 from sqlalchemy import not_
 
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators.json_schema import release
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
@@ -126,3 +127,17 @@ class ReleaseValidator(BasicValidator):
                 "Can't delete release with "
                 "clusters assigned"
             )
+
+
+class ReleaseNetworksValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data):
+        parsed = super(ReleaseNetworksValidator, cls).validate(data)
+        cls.validate_schema(parsed)
+        return parsed
+
+    @classmethod
+    def validate_schema(cls, data):
+        return super(ReleaseNetworksValidator, cls).validate_schema(
+            data, release.NETWORKS_SCHEMA)

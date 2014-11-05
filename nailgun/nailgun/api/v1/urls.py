@@ -77,10 +77,10 @@ from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 
-
 from nailgun.api.v1.handlers.registration import FuelKeyHandler
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
+from nailgun.api.v1.handlers.release import ReleaseNetworksHandler
 
 from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
@@ -98,6 +98,8 @@ urls = (
     ReleaseCollectionHandler,
     r'/releases/(?P<obj_id>\d+)/?$',
     ReleaseHandler,
+    r'/releases/(?P<obj_id>\d+)/networks/?$',
+    ReleaseNetworksHandler,
 
     r'/clusters/?$',
     ClusterCollectionHandler,

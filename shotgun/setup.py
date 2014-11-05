@@ -12,34 +12,30 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import os
-import os.path
 
 import setuptools
 
-requires = [
-    'Fabric==1.7.0'
-]
 
-name = 'shotgun'
-version = '6.0.0'
+def parse_requirements_txt():
+    """Returns requirements list from requirements.txt
+    """
+    root = os.path.dirname(os.path.abspath(__file__))
 
-
-def recursive_data_files(spec_data_files):
-    result = []
-    for dstdir, srcdir in spec_data_files:
-        for topdir, dirs, files in os.walk(srcdir):
-            for f in files:
-                result.append((os.path.join(dstdir, topdir),
-                               [os.path.join(topdir, f)]))
-    return result
+    requirements = []
+    with open(os.path.join(root, 'requirements.txt'), 'r') as f:
+        for line in f.readlines():
+            line = line.rstrip()
+            if not line or line.startswith('#'):
+                continue
+            requirements.append(line)
+    return requirements
 
 
 if __name__ == "__main__":
     setuptools.setup(
-        name=name,
-        version=version,
+        name='shotgun',
+        version='6.0.0',
         description='Shotgun package',
         long_description="""Shotgun is diagnostic snapshot generator""",
         classifiers=[
@@ -52,7 +48,7 @@ if __name__ == "__main__":
         keywords='shotgun mirantis',
         packages=setuptools.find_packages(),
         zip_safe=False,
-        install_requires=requires,
+        install_requires=parse_requirements_txt(),
         include_package_data=True,
         entry_points={
             'console_scripts': [

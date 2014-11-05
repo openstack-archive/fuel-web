@@ -415,6 +415,26 @@ class TestNodeObject(BaseIntegrationTest):
         nodes_db = objects.NodeCollection.eager_nodes_handlers(None)
         self.assertEqual(nodes_db.count(), nodes_count)
 
+    def test_reset_to_discover(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'role': 'controller'},
+                {'role': 'controller'},
+            ]
+        )
+        netmanager = objects.Cluster.get_network_manager()
+        netmanager.assign_admin_ips(self.env.nodes)
+        for node in self.env.nodes:
+            networks = [ip.network_data.name for ip in node.ip_addrs]
+            prev_roles = node.roles
+            self.assertIn(consts.NETWORKS.fuelweb_admin, networks)
+            objects.Node.reset_to_discover(node)
+            self.db().flush()
+            self.db().refresh(node)
+            self.assertEqual(node.status, consts.NODE_STATUSES.discover)
+            self.assertEqual(node.ip_addrs, [])
+            self.assertEqual(node.pending_roles, prev_roles)
+
 
 class TestTaskObject(BaseIntegrationTest):
 

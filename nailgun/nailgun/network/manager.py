@@ -400,6 +400,10 @@ class NetworkManager(object):
         return ips.all()
 
     @classmethod
+    def clear_assigned_ips(cls, node):
+        db().query(IPAddr).filter_by(node=node.id).delete()
+
+    @classmethod
     def clear_assigned_networks(cls, node):
         for nic in node.interfaces:
             while nic.assigned_networks_list:

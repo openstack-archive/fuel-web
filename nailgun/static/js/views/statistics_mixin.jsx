@@ -92,6 +92,7 @@ define([
             var setting = this.props.settings.get(this.props.settings.makePath('statistics', settingName)),
                 error = this.getError(settingName),
                 disabled = this.checkRestrictions('metadata') || this.checkRestrictions(settingName);
+            if (!this.props.settings.get('statistics').send_anonymous_statistic.value && setting.type == 'text') return null;
             return <controls.Input
                 key={settingName}
                 type={setting.type}

@@ -10,7 +10,7 @@ Fuel, and build the ISO which will be used to deploy your
 Fuel master node.
 
 The basic operating system for Fuel development is Ubuntu Linux.
-The setup instructions below assume Ubuntu 12.04 though most of
+The setup instructions below assume Ubuntu 14.04 though most of
 them should be applicable to other Ubuntu and Debian versions, too.
 
 Each subsequent section below assumes that you have followed the steps
@@ -49,7 +49,7 @@ Unless otherwise specified in the makefile, the master branch of
 each respective repo is used to build the ISO.
 
 The basic steps to build the Fuel ISO from trunk in an
-Ubuntu 12.04 environment are:
+Ubuntu 14.04 environment are:
 ::
 
     apt-get install git

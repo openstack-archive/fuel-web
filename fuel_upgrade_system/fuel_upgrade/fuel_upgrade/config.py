@@ -619,7 +619,8 @@ def config(update_path, admin_password):
     # Openstack Upgrader settings. Please note, that "[0-9.-]*" is
     # a glob pattern for matching our os versions
     openstack = {
-        'releases': join(update_path, 'releases', '*.yaml'),
+        'releases': join(update_path, 'releases', '[0-9.-]*.yaml'),
+        'metadata': join(update_path, 'releases', 'metadata.yaml'),
 
         'puppets': {
             'src': join(update_path, 'puppet', '[0-9.-]*'),

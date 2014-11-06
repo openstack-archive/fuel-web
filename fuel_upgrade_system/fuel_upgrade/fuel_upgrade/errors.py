@@ -83,3 +83,7 @@ class UnsupportedActionTypeError(FuelUpgradeException):
 
 class NailgunIsNotRunningError(FuelUpgradeException):
     pass
+
+
+class BaseReleaseNotFound(FuelUpgradeException):
+    pass

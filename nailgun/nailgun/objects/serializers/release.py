@@ -35,13 +35,15 @@ class ReleaseSerializer(BasicSerializer):
 
     @classmethod
     def serialize(cls, instance, fields=None):
-        release_dict = super(ReleaseSerializer, cls).serialize(instance,
-                                                               fields)
-        if instance.orchestrator_data:
-            release_dict["orchestrator_data"] = \
-                ReleaseOrchestratorDataSerializer.serialize(
-                    instance.orchestrator_data
-                )
+        from nailgun.objects.release import Release
+
+        release_dict = \
+            super(ReleaseSerializer, cls).serialize(instance, fields)
+
+        # we always want to get orchestrator data even it's a default one
+        release_dict["orchestrator_data"] = \
+            Release.get_orchestrator_data_dict(instance)
+
         return release_dict
 
 

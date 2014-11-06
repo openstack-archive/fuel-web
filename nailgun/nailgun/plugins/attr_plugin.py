@@ -119,7 +119,7 @@ class ClusterAttributesPlugin(object):
     @property
     def default_metadata(self):
         return {u'enabled': False, u'toggleable': True,
-                u'weight': 70, u'label': self.plugin.name}
+                u'weight': 70, u'label': self.plugin.title}
 
     def set_cluster_tasks(self, cluster):
         """Loads plugins provided tasks from tasks config file and

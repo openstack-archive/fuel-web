@@ -28,9 +28,10 @@ from nailgun.test import base
 SAMPLE_PLUGIN = {
     'version': '0.1.0',
     'name': 'testing_plugin',
-    'package_version': '1',
+    'title': 'Test plugin',
+    'package_version': '1.0.0',
     'description': 'Enable to use plugin X for Neutron',
-    'fuel_version': '6.0',
+    'fuel_version': ['6.0'],
     'releases': [
         {'repository_path': 'repositories/ubuntu',
          'version': '2014.2-6.0', 'os': 'ubuntu',

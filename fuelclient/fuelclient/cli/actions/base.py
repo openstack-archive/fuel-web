@@ -15,6 +15,7 @@
 from functools import partial
 from functools import wraps
 from itertools import imap
+import os
 
 from fuelclient.cli.error import ArgumentException
 from fuelclient.cli.formatting import quote_and_join
@@ -79,6 +80,15 @@ class Action(object):
                ).format(
                    action_name=self.action_name
                )
+
+    def full_path_directory(self, directory, base_name, ):
+        full_path = os.path.join(directory, base_name)
+        if not os.path.exists(full_path):
+            os.mkdir(full_path)
+        return full_path
+
+    def default_directory(self, directory=None):
+        return os.path.abspath(os.curdir if directory is None else directory)
 
 
 def wrap(method, args, f):

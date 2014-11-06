@@ -13,6 +13,9 @@
 #    under the License.
 
 from fuelclient.cli.actions.base import Action
+from fuelclient.cli.actions.base import check_all
+from fuelclient.cli.actions.base import check_any
+from fuelclient.cli.arguments import group
 import fuelclient.cli.arguments as Args
 from fuelclient.cli.formatting import format_table
 from fuelclient.objects.release import Release
@@ -28,8 +31,18 @@ class ReleaseAction(Action):
         self.args = [
             Args.get_release_arg('Specify particular release id'),
             Args.get_list_arg("List all available releases."),
+            Args.get_network_arg("Node network configuration."),
+            Args.get_dir_arg(
+                "Select directory to which download release attributes"),
+            group(
+                Args.get_download_arg(
+                    "Download configuration of specific release"),
+                Args.get_upload_arg(
+                    "Upload configuration to specific release")
+            )
         ]
         self.flag_func_map = (
+            ('network', self.network),
             (None, self.list),
         )
 
@@ -59,3 +72,25 @@ class ReleaseAction(Action):
                 acceptable_keys=acceptable_keys
             )
         )
+
+    @check_all("release")
+    @check_any("download", "upload")
+    def network(self, params):
+        """Modify release networks configuration.
+        fuel rel --rel 1 --network --download
+        fuel rel --rel 2 --network --upload
+        """
+        release = Release(params.release)
+        dir_path = self.full_path_directory(
+            params.dir, 'release_{0}'.format(params.release))
+        full_path = '{0}/networks'.format(dir_path)
+        if params.download:
+            networks = release.get_networks()
+            self.serializer.write_to_file(full_path, networks)
+            print("Networks for release {0} "
+                  "downloaded into {1}.yaml".format(release.id, full_path))
+        elif params.upload:
+            networks = self.serializer.read_from_file(full_path)
+            release.update_networks(networks)
+            print("Networks for release {0} uploaded from {1}.yaml".format(
+                release.id, full_path))

@@ -19,6 +19,7 @@ from nailgun.objects.base import NailgunCollection
 
 from nailgun.objects.release import Release
 from nailgun.objects.release import ReleaseCollection
+from nailgun.objects.release import ReleaseOrchestratorData
 
 from nailgun.objects.cluster import Attributes
 from nailgun.objects.cluster import Cluster

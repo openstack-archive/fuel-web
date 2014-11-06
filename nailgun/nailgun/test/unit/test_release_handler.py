@@ -21,6 +21,7 @@ from nailgun.test.base import reverse
 
 
 class TestHandlers(BaseIntegrationTest):
+
     def test_release_put_change_name_and_version(self):
         release = self.env.create_release(api=False)
         resp = self.app.put(
@@ -62,3 +63,37 @@ class TestHandlers(BaseIntegrationTest):
             "Can't delete release with "
             "clusters assigned"
         )
+
+    def test_release_put_orchestrator_data_w_masks(self):
+        release = self.env.create_release(api=False)
+
+        orchestrator_data = {
+            'repo_metadata': {
+                '5.1': 'http://{MASTER_IP}:8080/centos/x86_64',
+                '5.1-user': 'http://{MASTER_IP}:8080/centos-user/x86_64',
+            },
+            'puppet_manifests_source': 'rsync://{MASTER_IP}:/puppet/modules/',
+            'puppet_modules_source': 'rsync://{MASTER_IP}:/puppet/manifests/',
+        }
+
+        resp = self.app.put(
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
+            params=jsonutils.dumps({'orchestrator_data': orchestrator_data}),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+
+        resp = self.app.get(
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        orchestrator_data = resp.json_body['orchestrator_data']
+
+        self.assertEqual(orchestrator_data['repo_metadata'], {
+            '5.1': 'http://127.0.0.1:8080/centos/x86_64',
+            '5.1-user': 'http://127.0.0.1:8080/centos-user/x86_64'})
+        self.assertEqual(
+            orchestrator_data['puppet_manifests_source'],
+            'rsync://127.0.0.1:/puppet/modules/')
+        self.assertEqual(
+            orchestrator_data['puppet_modules_source'],
+            'rsync://127.0.0.1:/puppet/manifests/')

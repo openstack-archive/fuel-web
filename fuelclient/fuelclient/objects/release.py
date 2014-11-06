@@ -19,7 +19,16 @@ class Release(BaseObject):
 
     class_api_path = "releases/"
     instance_api_path = "releases/{0}/"
+    networks_path = 'releases/{0}/networks'
 
     @classmethod
     def get_all(cls):
         map(cls.init_with_data, cls.get_all_data())
+
+    def get_networks(self):
+        url = self.networks_path.format(self.id)
+        return self.connection.get_request(url)
+
+    def update_networks(self, data):
+        url = self.networks_path.format(self.id)
+        return self.connection.put_request(url, data)

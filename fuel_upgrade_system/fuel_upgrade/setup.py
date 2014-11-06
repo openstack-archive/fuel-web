@@ -33,14 +33,7 @@ def parse_requirements_txt():
             line = line.rstrip()
             if not line or line.startswith('#'):
                 continue
-
-            egg = re.match('git\+.*#egg=(.*)$', line)
-            if egg is not None:
-                egg = egg.groups()[0]
-                requirements.append(egg)
-                dependencies.append(line)
-            else:
-                requirements.append(line)
+            requirements.append(line)
 
     return requirements, dependencies
 REQUIREMENTS, DEPENDENCIES = parse_requirements_txt()

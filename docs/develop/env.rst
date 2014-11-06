@@ -85,8 +85,7 @@ https://review.openstack.org/#/c/63732/8 (id:63732, patch:8) set:
 
 If you are building Fuel from an older branch that does not contain the
 "prepare-build-env.sh" script, you can follow these steps to prepare
-your Fuel ISO build environment on Ubuntu 12.04 or newer (excluding
-newest 14.04):
+your Fuel ISO build environment on Ubuntu 14.04:
 
 #. ISO build process requires sudo permissions, allow yourself to run
    commands as root user without request for a password::

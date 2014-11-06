@@ -21,6 +21,7 @@ from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy import String
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 
@@ -47,21 +48,10 @@ class IPAddrRange(Base):
 
 class NetworkGroup(Base):
     __tablename__ = 'network_groups'
-    NAMES = (
-        # Node networks
-        'fuelweb_admin',
-        'storage',
-        # internal in terms of fuel
-        'management',
-        'public',
-
-        # private in terms of fuel
-        'fixed',
-        'private'
-    )
 
     id = Column(Integer, primary_key=True)
-    name = Column(Enum(*NAMES, name='network_group_name'), nullable=False)
+    name = Column(Enum(*consts.NETWORKS, name='network_group_name'),
+                  nullable=False)
     # can be nullable only for fuelweb admin net
     release = Column(Integer, ForeignKey('releases.id'))
     # can be nullable only for fuelweb admin net

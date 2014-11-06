@@ -586,15 +586,9 @@ class NailgunReceiver(object):
             update_nodes = objects.NodeCollection.lock_for_update(
                 q_nodes
             ).all()
-            node_data = {
-                'online': False,
-                'status': consts.NODE_STATUSES.discover,
-                'pending_addition': True,
-            }
 
-            for n in update_nodes:
-                objects.Node.update(n, node_data)
-                objects.Node.move_roles_to_pending_roles(n)
+            for node in update_nodes:
+                objects.Node.reset_to_discover(node)
 
             if ia_nodes:
                 cls._notify_inaccessible(
@@ -670,18 +664,8 @@ class NailgunReceiver(object):
                 q_nodes
             ).all()
 
-            node_data = {
-                "online": False,
-                "status": consts.NODE_STATUSES.discover,
-                "pending_addition": True,
-                "pending_deletion": False,
-            }
-
             for node in update_nodes:
-                # forcing volumes to rebuild
-                objects.Node.update_volumes(node)
-                objects.Node.update(node, node_data)
-                objects.Node.move_roles_to_pending_roles(node)
+                objects.Node.reset_to_discover(node)
 
             if ia_nodes:
                 cls._notify_inaccessible(

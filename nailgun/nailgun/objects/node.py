@@ -488,6 +488,31 @@ class Node(NailgunObject):
         return instance
 
     @classmethod
+    def reset_to_discover(cls, instance):
+        """Flush database objects which is not consistent with actual node
+           configuration in the event of resetting node to discover state
+
+        :param instance: Node database object
+        :returns: None
+        """
+        node_data = {
+            "online": False,
+            "status": consts.NODE_STATUSES.discover,
+            "pending_addition": True,
+            "pending_deletion": False,
+        }
+        cls.update_volumes(instance)
+        cls.update(instance, node_data)
+        cls.move_roles_to_pending_roles(instance)
+        # when node reseted to discover:
+        # - cobbler system is deleted
+        # - mac to ip mapping from dnsmasq.conf is deleted
+        # imho we need to revert node to original state, as it was
+        # added to cluster (without any additonal state in database)
+        netmanager = Cluster.get_network_manager()
+        netmanager.clear_assigned_ips(instance)
+
+    @classmethod
     def update_by_agent(cls, instance, data):
         """Update Node instance with some specific cases for agent.
 

@@ -56,6 +56,19 @@ CLUSTER_STATUSES = Enum(
     'update_error'
 )
 
+NETWORKS = Enum(
+    # Node networks
+    'fuelweb_admin',
+    'storage',
+    # internal in terms of fuel
+    'management',
+    'public',
+
+    # private in terms of fuel
+    'fixed',
+    'private'
+)
+
 NOVA_NET_MANAGERS = Enum(
     'FlatDHCPManager',
     'VlanManager'

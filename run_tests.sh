@@ -97,6 +97,7 @@ UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
 FUELCLIENT_SERVER_PORT=${FUELCLIENT_SERVER_PORT:-8003}
 TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
 ARTIFACTS=${ARTIFACTS:-`pwd`/test_run}
+PYTEST_WORKERS=${PYTEST_WORKERS:-0}
 mkdir -p $ARTIFACTS
 
 # disabled/enabled flags that are setted from the cli.
@@ -246,11 +247,15 @@ function run_nailgun_tests {
   local result=0
   local artifacts=$ARTIFACTS/nailgun
   local config=$artifacts/test.yaml
+  local options="-vv --junit-xml $NAILGUN_XUNIT"
   prepare_artifacts $artifacts $config
   if [ $# -ne 0 ]; then
     TESTS="$@"
   fi
 
+  if [ ! $PYTEST_WORKERS -eq 0 ]; then
+    options+=" -n $PYTEST_WORKERS"
+  fi
   # prepare database
   dropdb $config
   syncdb $config false
@@ -258,7 +263,7 @@ function run_nailgun_tests {
   pushd $ROOT/nailgun >> /dev/null
   # # run tests
   NAILGUN_CONFIG=$config \
-  tox -epy26 -- -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT || result=1
+  tox -epy26 -- $options $TESTS  || result=1
   popd >> /dev/null
   return $result
 }

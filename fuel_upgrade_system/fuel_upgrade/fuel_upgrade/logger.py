@@ -16,10 +16,19 @@
 
 import logging
 import sys
+from utils import hide_passwords
+
+
+class UpgradeLogger(logging.Logger):
+    def _log(self, level, msg, args, exc_info=None, extra=None, **kwargs):
+        if isinstance(msg, (dict, list)): # and not kwargs.get('hide_passwords'):
+            msg = hide_passwords(msg)
+        super(UpgradeLogger, self)._log(level, msg, args, exc_info, extra)
 
 
 def configure_logger(path):
-    logger = logging.getLogger('fuel_upgrade')
+    # logger = logging.getLogger('fuel_upgrade')
+    logger = UpgradeLogger('fuel_upgrade')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
         '%(asctime)s %(levelname)s %(process)d (%(module)s) %(message)s',

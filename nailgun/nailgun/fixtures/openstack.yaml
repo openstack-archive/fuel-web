@@ -620,7 +620,7 @@
             label: "Public Key"
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
-            type: "text"
+            type: "textarea"
           disable_offload:
             value: true
             label: "Disable generic offload on physical nics"

@@ -30,7 +30,7 @@ Why python based config?
 import glob
 import logging
 import yaml
-
+from copy import deepcopy
 from os.path import basename
 from os.path import exists
 from os.path import join
@@ -59,6 +59,34 @@ class Config(object):
 
     def __repr__(self):
         return str(self._config)
+
+    def sanitize(self, mask='******', keywords=()):
+        """Find and hide private data in config using keywords.
+
+        :param keywords: describe keywords to be found in config's options
+        :return: config
+        """
+        # Return pure config if keywords not specified
+        if not keywords:
+            return self._config
+
+        def _helper(_obj):
+            if isinstance(_obj, dict):
+                for key in _obj:
+                    if any([i in key.lower() for i in keywords]):
+                        _obj[key] = mask
+                    else:
+                        _helper(_obj[key])
+
+            elif isinstance(_obj, (list, set, tuple)):
+                for value in _obj:
+                    _helper(value)
+
+            return _obj
+
+        # Making sure the original config remains untouched
+        config_copy = deepcopy(self._config)
+        return _helper(config_copy)
 
 
 def read_yaml_config(path):

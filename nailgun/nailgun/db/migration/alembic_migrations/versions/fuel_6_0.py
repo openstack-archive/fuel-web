@@ -138,6 +138,7 @@ def upgrade_schema():
         sa.Column('version', sa.String(length=32), nullable=False),
         sa.Column('description', sa.String(length=400), nullable=True),
         sa.Column('releases', JSON(), nullable=True),
+        sa.Column('fuel_version', JSON(), nullable=True),
         sa.Column('package_version', sa.String(length=32), nullable=False),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name', 'version', name='_name_version_unique')

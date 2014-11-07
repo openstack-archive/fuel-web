@@ -44,7 +44,13 @@ PLUGIN_SCHEMA = {
             'type': 'array',
             'items': PLUGIN_RELEASE_SCHEMA}
     },
-    'required': ['name', 'title', 'version', 'releases', 'package_version']
+    'required': [
+        'name',
+        'title',
+        'version',
+        'releases',
+        'package_version',
+        'fuel_version']
 }
 
 

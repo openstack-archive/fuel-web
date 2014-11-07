@@ -46,6 +46,7 @@ class Plugin(Base):
     version = Column(String(32), nullable=False)
     description = Column(String(400))
     releases = Column(JSON, default=[])
+    fuel_version = Column(JSON, default=[])
     package_version = Column(String(32), nullable=False)
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,

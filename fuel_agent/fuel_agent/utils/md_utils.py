@@ -94,7 +94,8 @@ def mdcreate(mdname, level, device, *args):
 
     # check if devices are not parts of some md array
     if set(devices) & \
-            set(reduce(lambda x, y: x + y, [md['devices'] for md in mds], [])):
+            set(reduce(lambda x, y: x + y,
+                       [md.get('devices', []) for md in mds], [])):
         raise errors.MDDeviceDuplicationError(
             'Error while creating md: at least one of devices is '
             'already in belongs to some md')

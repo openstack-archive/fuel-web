@@ -1578,15 +1578,18 @@ label {cursor: default;}
   .parameter-name {
     margin: 0;
     &.filter-bar-label .input-label {
-      width: auto;
       float: left;
-      margin: 0;
       span {
         .float-mixin;
         .font-layout-mixin(@font-size-base, @fuel-dark-5, @text-shadow: 0 1px 0 rgba(255,255,255,.4));
         font-weight: normal;
         margin: 10px 2px 0 0;
       }
+    }
+    .label-wrapper {
+      min-width: 30px;
+      font-weight: normal;
+      margin-top: 9px;
     }
   }
 }
@@ -2341,6 +2344,9 @@ input.error:focus,
 
 .parameter-box {
   display: block;
+  input.parameter-input {
+    margin-bottom: 0px;
+  }
 }
 
 .fieldset-group > div > .parameter-box,
@@ -2354,10 +2360,9 @@ input.error:focus,
   span:first-of-type {
     font-size: 14px;
   };
-  .input-label {
-    width: 160px;
+  .label-wrapper {
+    min-width: 80px;
     float: left;
-    margin: 7px 14px 0 0;
   }
   min-width: 120px;
   font-weight: bold;
@@ -2495,7 +2500,7 @@ legend {
   legend { margin: 0 0 10px; }
   .parameter-box {
     margin-left: 0 !important;
-      .input-label {
+      .label-wrapper {
         width: 115px;
         float: left;
         margin: 7px 14px 0 0;
@@ -2514,9 +2519,6 @@ legend {
     background-color: @fuel-light-5;
     padding: 20px 40px 20px 40px;
     border: 1px dotted @fuel-base-color;
-  }
-  .input-append {
-    margin-top: 0px;
   }
 }
 
@@ -3240,9 +3242,6 @@ input.input-append {
       width: 175px;
     }
   }
-  .parameter-description.healthcheck-password {
-    margin-top: 4px;
-  }
 }
 
 .healthcheck-title {
@@ -3255,6 +3254,10 @@ input.input-append {
   }
   .custom-tumbler input[type=checkbox][disabled] + span {
     cursor: not-allowed;
+  }
+  .parameter-name .label-wrapper {
+    float: none;
+    margin: 5px;
   }
 }
 // Cluster toolbar
@@ -3581,13 +3584,14 @@ i.btn-cluster-details {
       .parameter-name { overflow: visible; }
       .parameter-description { margin: 0 0 0 175px; }
       input {
-        margin-bottom: 0;
         width: 237px;
+        &.input-append {
+          width: 207px;
+        }
       }
-      .input-append {
-        margin-bottom: 0;
-        input { width: 207px; }
-      }
+    }
+    .label-wrapper {
+      min-width: 170px;
     }
   }
 }
@@ -3628,7 +3632,9 @@ i.btn-cluster-details {
         float: none;
         font-weight: normal;
       }
-      .label-wrapper { .position(relative, @top: -7px, @left: 3px); }
+      .label-wrapper {
+        .position(relative, @top: -7px, @left: 3px);
+      }
     }
     .welcome-form-box {
       margin-bottom: 15px;
@@ -3636,7 +3642,7 @@ i.btn-cluster-details {
         display: inline-block;
         margin-left: 175px;
         font-weight: normal;
-        .input-label { width: 80px; }
+        overflow: visible;
       }
     }
     .welcome-form-error {
@@ -3647,6 +3653,13 @@ i.btn-cluster-details {
     .welcome-button-box {
       text-align: center;
       button { .width-height-mixin(230px, 44px); }
+    }
+  }
+  .parameter-box.checkbox-or-radio {
+    .parameter-name {
+      .label-wrapper {
+        float: none;
+      }
     }
   }
 }
@@ -3662,7 +3675,6 @@ i.btn-cluster-details {
     padding: 4px;
   }
   .parameter-description { margin-top: 10px; }
-  .input-label { width: 80px; }
 }
 
 .statistics-text-box {

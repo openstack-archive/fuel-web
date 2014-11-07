@@ -51,12 +51,14 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             label: React.PropTypes.renderable,
             description: React.PropTypes.renderable,
             disabled: React.PropTypes.bool,
-            inputClassName: React.PropTypes.renderable,
             wrapperClassName: React.PropTypes.renderable,
             labelClassName: React.PropTypes.renderable,
             descriptionClassName: React.PropTypes.renderable,
+            labelWrapperClassName:  React.PropTypes.renderable,
+            inputClassName: React.PropTypes.renderable,
             tooltipText: React.PropTypes.renderable,
             toggleable: React.PropTypes.bool,
+            labelBeforeControl: React.PropTypes.bool,
             onChange: React.PropTypes.func
         },
         getInitialState: function() {
@@ -77,7 +79,10 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         renderInput: function() {
             var input = null,
-                classes = {'parameter-input': true};
+                classes = {
+                    'parameter-input': true,
+                    'input-append': this.props.toggleable
+                };
             classes[this.props.inputClassName] = this.props.inputClassName;
             switch (this.props.type) {
                 case 'select':
@@ -108,32 +113,36 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             ) : null;
         },
         renderLabel: function(children) {
-            var classes = {
-                'parameter-name enable-selection': true,
-                'input-append': this.props.toggleable
-            };
-            classes[this.props.labelClassName] = this.props.labelClassName;
+            var labelClasses = {
+                    'parameter-name': true,
+                    'input-append': this.props.toggleable
+                },
+                labelWrapperClasses = {
+                    'label-wrapper': true
+                };
+
+            labelClasses[this.props.labelClassName] = this.props.labelClassName;
+            labelWrapperClasses[this.props.labelWrapperClassName] = this.props.labelWrapperClassName;
+            var labelElement = (
+                    <div className={cx(labelWrapperClasses)}>
+                        <span>{this.props.label}</span>
+                        {this.renderTooltipIcon()}
+                    </div>
+                ),
+                labelBefore = (!this.isCheckboxOrRadio() || this.props.labelBeforeControl) ? labelElement : null,
+                labelAfter = (this.isCheckboxOrRadio() && !this.props.labelBeforeControl) ? labelElement : null;
             return this.props.label ? (
-                <label key='label' className={cx(classes)} htmlFor={this.props.id}>
-                    {!this.isCheckboxOrRadio() &&
-                        <div className='input-label'>
-                            <span>{this.props.label}</span>
-                            {this.renderTooltipIcon()}
-                        </div>
-                    }
+                <label key='label' className={cx(labelClasses)} htmlFor={this.props.id}>
+                    {labelBefore}
                     {children}
-                    {this.isCheckboxOrRadio() &&
-                        <div className='label-wrapper'>
-                            {this.props.label}
-                            {this.renderTooltipIcon()}
-                        </div>
-                    }
+                    {labelAfter}
                 </label>
-            ) : children;
+            )
+            : children;
         },
         renderDescription: function() {
             var error = !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
-                classes = {'parameter-description enable-selection': true};
+                classes = {'parameter-description': true};
             classes[this.props.descriptionClassName] = this.props.descriptionClassName;
             return error || this.props.description ? (
                 <div key='description' className={cx(classes)}>
@@ -216,12 +225,12 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
 
     controls.Table = React.createClass({
         propTypes: {
-            tableClassName: React.PropTypes.string,
+            tableClassName: React.PropTypes.renderable,
             head: React.PropTypes.array,
             body: React.PropTypes.array
         },
         render: function() {
-            var tableClasses = {'table table-bordered table-striped': true};
+            var tableClasses = {'table table-bordered': true, 'table-striped': !this.props.noStripes};
             tableClasses[this.props.tableClassName] = this.props.tableClassName;
             return (
                 <table className={cx(tableClasses)}>

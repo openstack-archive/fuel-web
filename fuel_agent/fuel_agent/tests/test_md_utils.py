@@ -112,7 +112,9 @@ localhost.localdomain)
         # should run mdadm command to create new md
 
         mock_mddisplay.return_value = \
-            [{'name': '/dev/md10', 'devices': ['/dev/fake10']}]
+            [{'name': '/dev/md10', 'devices': ['/dev/fake10']},
+             # should also accept devices with missing 'devices' entry
+             {'name': '/dev/md11'}]
         mock_bdevs.return_value = [{'device': '/dev/fake1'},
                                    {'device': '/dev/fake2'}]
 

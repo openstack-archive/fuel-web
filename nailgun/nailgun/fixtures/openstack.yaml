@@ -977,6 +977,9 @@
             type: "text"
             restrictions:
               - "settings:common.libvirt_type.value == 'vcenter'"
+            regex:
+              source: '^[1-9]\d*$'
+              error: "Replication factor should be a positive number with base 10"
       generated:
         sahara:
           user_password:

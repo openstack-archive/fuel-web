@@ -74,6 +74,15 @@ class AttributesGenerator(object):
         return u''.join([choice(chars) for _ in xrange(length)])
 
     @classmethod
+    def authkey32(cls, arg=None):
+        try:
+            length = int(arg)
+        except Exception:
+            length = 32
+        chars = string.letters + string.digits
+        return u''.join([choice(chars) for _ in xrange(length)])
+
+    @classmethod
     def ip(cls, arg=None):
         if str(arg) in ("admin", "master"):
             return settings.MASTER_IP

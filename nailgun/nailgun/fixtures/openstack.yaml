@@ -973,6 +973,8 @@
             generator: "password"
           db_password:
             generator: "password"
+          auth_encryption_key:
+            generator: "authkey32"
         ceilometer:
           db_password:
             generator: "password"

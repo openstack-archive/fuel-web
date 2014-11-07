@@ -258,7 +258,7 @@ function run_nailgun_tests {
   pushd $ROOT/nailgun >> /dev/null
   # # run tests
   NAILGUN_CONFIG=$config \
-  tox -epy26 -- -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT || result=1
+  tox -epy26 -- -vv $TESTS --junit-xml $NAILGUN_XUNIT || result=1
   popd >> /dev/null
   return $result
 }

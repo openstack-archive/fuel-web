@@ -31,6 +31,7 @@ import glob
 import logging
 import yaml
 
+from copy import deepcopy
 from os.path import basename
 from os.path import exists
 from os.path import join
@@ -59,6 +60,30 @@ class Config(object):
 
     def __repr__(self):
         return str(self._config)
+
+    def sanitize(self, keywords, mask='******'):
+        """Find and hide private data in config using keywords.
+
+        :param keywords: describe keywords to be found in config's options
+        :return: sanitized copy of config
+        """
+        def _helper(_obj):
+            if isinstance(_obj, dict):
+                for option in _obj:
+                    if any([key in option for key in keywords]):
+                        _obj[option] = mask
+                    else:
+                        _helper(_obj[option])
+
+            elif isinstance(_obj, (list, set, tuple)):
+                for value in _obj:
+                    _helper(value)
+
+            return _obj
+
+        # Making sure the original config remains untouched
+        config_copy = deepcopy(self._config)
+        return _helper(config_copy)
 
 
 def read_yaml_config(path):

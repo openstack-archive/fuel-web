@@ -723,6 +723,25 @@ def get_base_release(release, depends_on, existing_releases):
     return None
 
 
+def hide_passwords(obj):
+    """Find and hide passwords in a given object
+
+    :param obj: list() or dict()
+    """
+    if isinstance(obj, dict):
+        for key in obj:
+            if 'password' in key.lower():
+                obj[key] = '******'
+            else:
+                hide_passwords(obj[key])
+
+    elif isinstance(obj, (list, set, tuple)):
+        for value in obj:
+            hide_passwords(value)
+
+    return obj
+
+
 class VersionedFile(object):
     """Set of methods for versioned files.
     If `basename` is '/tmp/file.ext' it allows

@@ -28,6 +28,7 @@ from fuel_upgrade.utils import create_dir_if_not_exists
 from fuel_upgrade.utils import exec_cmd
 from fuel_upgrade.utils import exec_cmd_iterator
 from fuel_upgrade.utils import get_request
+from fuel_upgrade.utils import hide_passwords
 from fuel_upgrade.utils import topological_sorting
 from fuel_upgrade.utils import wait_for_true
 
@@ -617,3 +618,83 @@ class TestVersionedFile(BaseTestCase):
         self.assertEqual(
             self.versioned_file.sorted_files(),
             ['/tmp/path.ext.10', '/tmp/path.ext.6'])
+
+
+class TestHidePasswords(BaseTestCase):
+    original_dict = {
+        'admin_password': 'r00tme',
+        'not_a_pass': 1,
+        'nested': {
+            'password_here': 'JuYReDm4',
+            'nested_again': [
+                'apassword!',
+                'jcqOyKEf',
+                {'login': 'root', 'a_password': '8xMflcaD', 'x': 55.2},
+                {'and_again': {
+                    'UPPERCASE_PASSWORD': 'VpE8gqKN',
+                    'password_as_list': ['it', 'will', 'be', 'changed']
+                    }
+                }
+            ]
+        }
+    }
+
+    expected_dict = {
+        'admin_password': '******',
+        'not_a_pass': 1,
+        'nested': {
+            'password_here': '******',
+            'nested_again': [
+                'apassword!',
+                'jcqOyKEf',
+                {'login': 'root', 'a_password': '******', 'x': 55.2},
+                {'and_again': {
+                    'UPPERCASE_PASSWORD': '******',
+                    'password_as_list': '******'
+                    }
+                }
+            ]
+        }
+    }
+
+    original_list = [
+        'not_a_pass',
+        2,
+        19.4,
+        [
+            'just',
+            'a',
+            'test',
+            {'!password!': '8xMflcaD', 'login': 'adm'},
+            [
+                {'_change_password_here_too': 'JuYReDm4'},
+                'but_not',
+                'Here'
+            ]
+        ],
+        {'password': ['all', 'the', 'values', 'will', 'be', 'changed']}
+    ]
+
+    expected_list = [
+        'not_a_pass',
+        2,
+        19.4,
+        [
+            'just',
+            'a',
+            'test',
+            {'!password!': '******', 'login': 'adm'},
+            [
+                {'_change_password_here_too': '******'},
+                'but_not',
+                'Here'
+            ]
+        ],
+        {'password': '******'}
+    ]
+
+    def test_hide_passwords_in_dict(self):
+        self.assertEqual(hide_passwords(self.original_dict), self.expected_dict)
+    
+    def test_hide_passwords_in_list(self):
+        self.assertEqual(hide_passwords(self.original_list), self.expected_list)

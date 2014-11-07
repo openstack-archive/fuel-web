@@ -554,10 +554,13 @@ def config(update_path, admin_password):
         {'id': 'volume_repos',
          'supervisor_config': False,
          'from_image': 'busybox',
-         'volumes': ['/var/www/nailgun'],
+         'volumes': ['/var/www/nailgun', '/etc/yum.repos.d'],
          'binds': {
              '/var/www/nailgun': {
                  'bind': '/var/www/nailgun',
+                 'ro': False},
+             '/etc/yum.repos.d': {
+                 'bind': '/etc/yum.repos.d',
                  'ro': False}}},
 
         {'id': 'volume_logs',

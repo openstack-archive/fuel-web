@@ -28,8 +28,8 @@
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
         restrictions:
-          - condition: "settings:storage.volumes_lvm.value == false"
-            message: "Cinder LVM should be enabled in settings"
+          - condition: "settings:storage.volumes_lvm.value == false and settings:storage.volumes_vmdk.value == false"
+            message: "Cinder LVM or VMDK should be enabled in settings"
     networks_metadata:
       nova_network:
         networks:

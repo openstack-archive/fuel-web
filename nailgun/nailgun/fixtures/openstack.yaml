@@ -384,7 +384,7 @@
             label: "Public Key"
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
-            type: "text"
+            type: "textarea"
         public_network_assignment:
           metadata:
             weight: 50

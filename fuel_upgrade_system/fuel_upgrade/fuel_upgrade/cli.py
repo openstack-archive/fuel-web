@@ -36,7 +36,7 @@ from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.engines.openstack import OpenStackUpgrader
 
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
-
+from fuel_upgrade.utils import hide_passwords
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +146,7 @@ def run_upgrade(args):
 
     # Initialize config
     config = build_config(args.src, args.password)
-    logger.debug('Configuration data: {0}'.format(config))
+    logger.debug('Configuration data: {0}'.format(hide_passwords(config)))
 
     # Initialize upgrade engines
     upgraders_to_use = [

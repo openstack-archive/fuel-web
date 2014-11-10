@@ -18,6 +18,8 @@
 import mock
 import os
 
+import six
+
 from fuel_upgrade.tests.base import BaseTestCase
 
 from fuel_upgrade.pre_upgrade_hooks.base import PreUpgradeHookBase
@@ -35,6 +37,8 @@ from fuel_upgrade.pre_upgrade_hooks. \
     import CopyOpenstackReleaseVersions
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
+from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
+    import AddFuelwebX8664LinkForUbuntu
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
@@ -51,9 +55,12 @@ class TestPreUpgradeHooksBase(BaseTestCase):
         self.upgraders_cls = [Upgrader1, Upgrader2]
         self.upgraders = [upgrade_cls() for upgrade_cls in self.upgraders_cls]
 
-    def get_hook(self, astute):
+    def get_hook(self, conf={}):
         config = self.fake_config
-        config.astute = astute
+
+        for key, value in six.iteritems(conf):
+            setattr(config, key, value)
+
         return self.HookClass(self.upgraders, config)
 
 
@@ -72,17 +79,18 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
             'FUEL_ACCESS']
 
     def test_is_required_returns_true(self):
-        hook = self.get_hook({})
+        hook = self.get_hook({'astute': {}})
         self.assertTrue(hook.check_if_required())
 
     def test_is_required_returns_false(self):
         hook = self.get_hook({
-            'astute': {},
-            'cobbler': {},
-            'mcollective': {},
-            'postgres': {},
-            'keystone': {},
-            'FUEL_ACCESS': {}})
+            'astute': {
+                'astute': {},
+                'cobbler': {},
+                'mcollective': {},
+                'postgres': {},
+                'keystone': {},
+                'FUEL_ACCESS': {}}})
 
         self.assertFalse(hook.check_if_required())
 
@@ -92,7 +100,7 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
                 'from_5_0_to_any_add_credentials.utils')
     def test_run(self, utils_mock, read_yaml_config_mock):
         file_key = 'this_key_was_here_before_upgrade'
-        hook = self.get_hook({file_key: file_key})
+        hook = self.get_hook({'astute': {file_key: file_key}})
         read_yaml_config_mock.return_value = hook.config.astute
         hook.run()
 
@@ -111,6 +119,41 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
         self.assertTrue(all(
             key in self.additional_keys
             for key in agrs[0][1].keys()))
+
+
+class TestAddFuelwebX8664LinkForUbuntu(TestPreUpgradeHooksBase):
+
+    HookClass = AddFuelwebX8664LinkForUbuntu
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64.'
+        'utils.file_exists', side_effect=[True, False])
+    def test_is_required_returns_true(self, file_exists_mock):
+        hook = self.get_hook({'new_version': '6.0'})
+        self.assertTrue(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64.'
+        'utils.file_exists', side_effect=[False, False])
+    def test_is_required_returns_false_1(self, file_exists_mock):
+        hook = self.get_hook({'new_version': '6.0'})
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64.'
+        'utils.file_exists', side_effect=[True, True])
+    def test_is_required_returns_false_2(self, file_exists_mock):
+        hook = self.get_hook({'new_version': '6.0'})
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64.'
+        'utils.symlink')
+    def test_run(self, symlink_mock):
+        hook = self.get_hook({'new_version': '6.0'})
+        hook.run()
+
+        self.called_once(symlink_mock)
 
 
 class TestAddKeystoneCredentialsHook(TestPreUpgradeHooksBase):
@@ -132,11 +175,13 @@ class TestAddKeystoneCredentialsHook(TestPreUpgradeHooksBase):
 
     def test_is_required_returns_false(self):
         hook = self.get_hook({
-            'keystone': {
-                'nailgun_user': '',
-                'nailgun_password': '',
-                'ostf_user': '',
-                'ostf_password': '',
+            'astute': {
+                'keystone': {
+                    'nailgun_user': '',
+                    'nailgun_password': '',
+                    'ostf_user': '',
+                    'ostf_password': '',
+                }
             }
         })
 
@@ -149,7 +194,8 @@ class TestAddKeystoneCredentialsHook(TestPreUpgradeHooksBase):
     def test_run(self, utils_mock, read_yaml_config_mock):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({
-            'keystone': {file_key: file_key}
+            'astute': {
+                'keystone': {file_key: file_key}}
         })
         read_yaml_config_mock.return_value = hook.config.astute
         hook.run()
@@ -182,15 +228,17 @@ class TestSyncDnsHook(TestPreUpgradeHooksBase):
 
     def test_is_required_returns_true(self):
         hook = self.get_hook({
-            'DNS_DOMAIN': 'veryunlikelydomain',
-            'DNS_SEARCH': 'veryunlikelydomain'})
+            'astute': {
+                'DNS_DOMAIN': 'veryunlikelydomain',
+                'DNS_SEARCH': 'veryunlikelydomain'}})
         self.assertTrue(hook.check_if_required())
 
     def test_is_required_returns_false(self):
         hostname, sep, realdomain = os.uname()[1].partition('.')
         hook = self.get_hook({
-            'DNS_DOMAIN': realdomain,
-            'DNS_SEARCH': realdomain})
+            'astute': {
+                'DNS_DOMAIN': realdomain,
+                'DNS_SEARCH': realdomain}})
 
         self.assertFalse(hook.check_if_required())
 
@@ -200,7 +248,7 @@ class TestSyncDnsHook(TestPreUpgradeHooksBase):
                 'from_5_0_to_any_sync_dns.utils')
     def test_run(self, utils_mock, read_yaml_config):
         file_key = 'this_key_was_here_before_upgrade'
-        hook = self.get_hook({file_key: file_key})
+        hook = self.get_hook({'astute': {file_key: file_key}})
         read_yaml_config.return_value = hook.config.astute
         hook.run()
 

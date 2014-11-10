@@ -29,7 +29,8 @@ from fuel_upgrade.pre_upgrade_hooks. \
     import CopyOpenstackReleaseVersions
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
-
+from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
+    import AddFuelwebX8664LinkForUbuntu
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class PreUpgradeHookManager(object):
     #: List of hook clases
     hook_list = [
         AddCredentialsHook,
+        AddFuelwebX8664LinkForUbuntu,
         AddKeystoneCredentialsHook,
         FixPuppetManifests,
         FixHostSystemRepoHook,

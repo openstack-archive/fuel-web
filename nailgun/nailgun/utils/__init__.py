@@ -74,6 +74,15 @@ class AttributesGenerator(object):
         return u''.join([choice(chars) for _ in xrange(length)])
 
     @classmethod
+    def hexstring(cls, arg=None):
+        try:
+            length = int(arg)
+        except Exception:
+            length = 8
+        chars = '0123456789abcdef'
+        return u''.join([choice(chars) for x in range(length)])
+
+    @classmethod
     def ip(cls, arg=None):
         if str(arg) in ("admin", "master"):
             return settings.MASTER_IP
@@ -130,3 +139,4 @@ def get_fuel_release_versions(path_mask):
                     )
                 )
     return result
+

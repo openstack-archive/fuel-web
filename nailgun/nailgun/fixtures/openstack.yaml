@@ -974,7 +974,7 @@
           db_password:
             generator: "password"
           auth_encryption_key:
-            generator: "password"
+            generator: "hexstring"
             generator_arg: "32"
         ceilometer:
           db_password:

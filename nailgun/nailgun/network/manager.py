@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import defaultdict
+
 from itertools import chain
 from itertools import ifilter
 from itertools import imap
@@ -140,29 +142,29 @@ class NetworkManager(object):
         # verification that node.ip (which is reported by agent) belongs
         # to one of the ranges of required to be able to reuse admin ip address
         # also such approach is backward compatible
-        nodes_need_ips = []
+        nodes_need_ips = defaultdict(list)
         for node in nodes:
             node_id = node.id
             admin_net = cls.get_admin_network_group(node_id)
-            admin_net_id = admin_net.id
             node_admin_ips = db().query(IPAddr).filter_by(
-                node=node_id, network=admin_net_id)
+                node=node_id, network=admin_net.id)
             logger.debug(u"Trying to assign admin ip: node=%s", node_id)
             if not db().query(node_admin_ips.exists()).scalar():
                 reusable_ip = cls.reusable_ip_address(node, admin_net)
                 if reusable_ip:
                     db().add(reusable_ip)
                 else:
-                    nodes_need_ips.append(node_id)
+                    nodes_need_ips[admin_net].append(node_id)
         db().flush()
-        free_ips = cls.get_free_ips(admin_net, len(nodes_need_ips))
-        # assign ip for nodes
-        for free_ip, node_id in zip(free_ips, nodes_need_ips):
-            ip_db = IPAddr(node=node_id,
-                           ip_addr=free_ip,
-                           network=admin_net_id)
-            db().add(ip_db)
-        db().flush()
+
+        for admin_net, nodes in nodes_need_ips.iteritems():
+            free_ips = cls.get_free_ips(admin_net, len(nodes))
+            for ip, n in zip(free_ips, nodes):
+                ip_db = IPAddr(node=n,
+                               ip_addr=ip,
+                               network=admin_net.id)
+                db().add(ip_db)
+            db().flush()
 
     @classmethod
     def assign_ips(cls, nodes, network_name):
@@ -201,7 +203,7 @@ class NetworkManager(object):
             )
 
         # Check which nodes need ips
-        nodes_need_ips = []
+        nodes_need_ips = defaultdict(list)
         for node in nodes:
             node_id = node.id
 
@@ -243,24 +245,23 @@ class NetworkManager(object):
             if ip_already_assigned:
                 continue
 
-            nodes_need_ips.append(node_id)
+            nodes_need_ips[network].append(node_id)
 
         # Get and assign ips for nodes
-        free_ips = cls.get_free_ips(network, len(nodes_need_ips))
-        for free_ip, node_id in zip(free_ips, nodes_need_ips):
-            logger.info(
-                "Assigning IP for node '{0}' in network '{1}'".format(
-                    node_id,
-                    network_name
+        for network, nodes in nodes_need_ips.iteritems():
+            free_ips = cls.get_free_ips(network, len(nodes))
+            for ip, n in zip(free_ips, nodes):
+                logger.info(
+                    "Assigning IP for node '{0}' in network '{1}'".format(
+                        n,
+                        network_name
+                    )
                 )
-            )
-            ip_db = IPAddr(
-                network=network.id,
-                node=node_id,
-                ip_addr=free_ip
-            )
-            db().add(ip_db)
-        db().flush()
+                ip_db = IPAddr(node=n,
+                               ip_addr=ip,
+                               network=network.id)
+                db().add(ip_db)
+            db().flush()
 
     @classmethod
     def assign_vip(cls, cluster_id, network_name):

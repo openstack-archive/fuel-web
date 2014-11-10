@@ -160,6 +160,89 @@ class TestNetworkManager(BaseIntegrationTest):
         fixed_nets = filter(lambda net: net['name'] == 'fixed', network_data)
         self.assertEqual(fixed_nets, [])
 
+    def test_assign_admin_ip_multiple_groups(self):
+        self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[{}, {}]
+        )
+        node_group = self.env.create_node_group()
+        self.env.nodes[1].group_id = node_group['id']
+        self.db().flush()
+
+        admin_net =\
+            self.env.network_manager.get_admin_network_group(
+                self.env.nodes[1].id
+            )
+        mock_range = IPAddrRange(
+            first='9.9.9.1',
+            last='9.9.9.254',
+            network_group_id=admin_net.id
+        )
+        self.db.add(mock_range)
+        self.db.commit()
+
+        self.env.network_manager.assign_admin_ips(self.env.nodes)
+
+        for n in self.env.nodes:
+            admin_net = self.env.network_manager.get_admin_network_group(n.id)
+            ip = self.db.query(IPAddr).\
+                filter_by(network=admin_net.id).\
+                filter_by(node=n.id).first()
+
+            self.assertIn(
+                IPAddress(ip.ip_addr),
+                IPNetwork(admin_net.cidr)
+            )
+
+    def test_assign_ip_multiple_groups(self):
+        self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[{}, {}]
+        )
+        node_group = self.env.create_node_group()
+        self.env.nodes[1].group_id = node_group['id']
+        self.db().flush()
+        mgmt_net = self.db.query(NetworkGroup).\
+            filter(
+                NetworkGroup.group_id == node_group["id"]
+            ).filter_by(
+                name='management'
+            ).first()
+
+        mock_range = IPAddrRange(
+            first='9.9.9.1',
+            last='9.9.9.254',
+            network_group_id=mgmt_net.id
+        )
+        self.db.add(mock_range)
+        self.db.commit()
+
+        self.env.network_manager.assign_ips(self.env.nodes, "management")
+
+        for n in self.env.nodes:
+            mgmt_net = self.db.query(NetworkGroup).\
+                filter(
+                    NetworkGroup.group_id == n.group_id
+                ).filter_by(
+                    name='management'
+                ).first()
+            ip = self.db.query(IPAddr).\
+                filter_by(network=mgmt_net.id).\
+                filter_by(node=n.id).first()
+
+            self.assertIn(
+                IPAddress(ip.ip_addr),
+                IPNetwork(mgmt_net.cidr)
+            )
+
     def test_ipaddr_joinedload_relations(self):
         self.env.create(
             cluster_kwargs={},

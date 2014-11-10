@@ -113,6 +113,20 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
+    def reusable_ip_address(cls, node, network):
+        """Verifies that ip belongs to network and creates IPAddr in case it did
+
+        :param node: Node database object.
+        :param network: Network database object.
+        :returns: IPAddr object or None
+        """
+        if node.ip and cls.check_ip_belongs_to_net(node.ip, network):
+            return IPAddr(node=node.id,
+                          ip_addr=node.ip,
+                          network=network.id)
+        return None
+
+    @classmethod
     def assign_admin_ips(cls, nodes):
         """Method for assigning admin IP addresses to nodes.
 
@@ -123,6 +137,9 @@ class NetworkManager(object):
         :returns: None
         """
         # Check which nodes need ips
+        # verification that node.ip (which is reported by agent) belongs
+        # to one of the ranges of required to be able to reuse admin ip address
+        # also such approach is backward compatible
         nodes_need_ips = []
         for node in nodes:
             node_id = node.id
@@ -132,9 +149,13 @@ class NetworkManager(object):
                 node=node_id, network=admin_net_id)
             logger.debug(u"Trying to assign admin ip: node=%s", node_id)
             if not db().query(node_admin_ips.exists()).scalar():
-                nodes_need_ips.append(node_id)
-        free_ips = cls.get_free_ips(admin_net.id, len(nodes_need_ips))
-
+                reusable_ip = cls.reusable_ip_address(node, admin_net)
+                if reusable_ip:
+                    db().add(reusable_ip)
+                else:
+                    nodes_need_ips.append(node_id)
+        db().flush()
+        free_ips = cls.get_free_ips(admin_net, len(nodes_need_ips))
         # assign ip for nodes
         for free_ip, node_id in zip(free_ips, nodes_need_ips):
             ip_db = IPAddr(node=node_id,
@@ -225,7 +246,7 @@ class NetworkManager(object):
             nodes_need_ips.append(node_id)
 
         # Get and assign ips for nodes
-        free_ips = cls.get_free_ips(network.id, len(nodes_need_ips))
+        free_ips = cls.get_free_ips(network, len(nodes_need_ips))
         for free_ip, node_id in zip(free_ips, nodes_need_ips):
             logger.info(
                 "Assigning IP for node '{0}' in network '{1}'".format(
@@ -298,37 +319,12 @@ class NetworkManager(object):
             vip = cluster_ips[0]
         else:
             # IP address has not been assigned, let's do it
-            vip = cls.get_free_ips(network.id)[0]
+            vip = cls.get_free_ips(network)[0]
             ne_db = IPAddr(network=network.id, ip_addr=vip)
             db().add(ne_db)
             db().commit()
 
         return vip
-
-    @classmethod
-    def _chunked_range(cls, iterable, chunksize=64):
-        """We want to be able to iterate over iterable chunk by chunk.
-        We instantiate iter object from itarable. We then yield
-        iter instance slice in infinite loop. Iter slice starts
-        from the last used position and finishes on the position
-        which is offset with chunksize from the last used position.
-
-        :param iterable: Iterable object.
-        :type  iterable: iterable
-        :param chunksize: Size of chunk to iterate through.
-        :type  chunksize: int
-        :yields: iterator
-        :raises: StopIteration
-        """
-        it = iter(iterable)
-        while True:
-            s = islice(it, chunksize)
-            # Here we check if iterator is not empty calling
-            # next() method which raises StopInteration if
-            # iter is empty. If iter is not empty we yield
-            # iterator which is concatenation of fisrt element in
-            # slice and the ramained elements.
-            yield chain([s.next()], s)
 
     @classmethod
     def check_ip_belongs_to_net(cls, ip_addr, network):
@@ -339,31 +335,25 @@ class NetworkManager(object):
         return False
 
     @classmethod
+    def is_ip_usable(cls, network_group, ip):
+        return (ip != network_group.gateway
+            and db().query(IPAddr).filter_by(ip_addr=ip).first() is None)
+
+    @classmethod
     def _iter_free_ips(cls, network_group):
         """Represents iterator over free IP addresses
         in all ranges for given Network Group
         """
-        for ip_addr in ifilter(
-            lambda ip: db().query(IPAddr).filter_by(
-                ip_addr=str(ip)
-            ).first() is None and not str(ip) == network_group.gateway,
-            chain(*[
-                IPRange(ir.first, ir.last)
-                for ir in network_group.ip_ranges
-            ])
-        ):
-            yield ip_addr
+        for ip_range in network_group.ip_ranges:
+            for ip in IPRange(ip_range.first, ip_range.last):
+                if cls.is_ip_usable(network_group, str(ip)):
+                    yield str(ip)
 
     @classmethod
-    def get_free_ips(cls, network_group_id, num=1):
+    def get_free_ips(cls, network_group, num=1):
         """Returns list of free IP addresses for given Network Group
         """
-        ng = db().query(NetworkGroup).get(network_group_id)
-        free_ips = []
-        for ip in cls._iter_free_ips(ng):
-            free_ips.append(str(ip))
-            if len(free_ips) == num:
-                break
+        free_ips = list(islice(cls._iter_free_ips(network_group), 0, num))
         if len(free_ips) < num:
             raise errors.OutOfIPs()
         return free_ips

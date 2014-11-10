@@ -98,12 +98,10 @@ localhost.localdomain)
         self.assertEqual(sorted(expected, key=key), sorted(mds, key=key))
         patcher.stop()
 
-    @mock.patch.object(mu, 'mdclean')
     @mock.patch.object(hu, 'list_block_devices')
     @mock.patch.object(mu, 'mddisplay')
     @mock.patch.object(utils, 'execute')
-    def test_mdcreate_ok(self, mock_exec, mock_mddisplay,
-                         mock_bdevs, mock_mdclean):
+    def test_mdcreate_ok(self, mock_exec, mock_mddisplay, mock_bdevs):
         # should check if md already exists
         # should check if md level is valid
         # should check if all necessary devices exist
@@ -168,19 +166,31 @@ localhost.localdomain)
             errors.MDDeviceDuplicationError, mu.mdcreate,
             '/dev/md0', 'mirror', '/dev/fake1', '/dev/fake2')
 
-    @mock.patch.object(utils, 'execute')
     @mock.patch.object(mu, 'mdclean')
-    @mock.patch.object(hu, 'list_block_devices')
+    @mock.patch.object(mu, 'mdremove')
     @mock.patch.object(mu, 'mddisplay')
-    def test_mdcreate_device_clean(self, mock_mddisplay,
-                                   mock_bdevs, mock_mdclean, mock_exec):
-        # should clean md metadata on all devices before building new md
-        mock_mddisplay.return_value = []
-        mock_bdevs.return_value = [{'device': '/dev/fake1'},
-                                   {'device': '/dev/fake2'}]
-        mu.mdcreate('/dev/md0', 'mirror', '/dev/fake1', '/dev/fake2')
-        expected_calls = [mock.call('/dev/fake1'), mock.call('/dev/fake2')]
-        self.assertEqual(mock_mdclean.call_args_list, expected_calls)
+    def test_mdclean_all(self, mock_mddisplay, mock_mdremove, mock_mdclean):
+        mock_mddisplay.side_effect = [
+            [{'name': '/dev/md10', 'devices': ['/dev/fake10']},
+             {'name': '/dev/md11'}],
+            [{'name': '/dev/md11'}],
+            []
+        ]
+        mu.mdclean_all()
+        mock_mdremove_expected_calls = [
+            mock.call('/dev/md10'), mock.call('/dev/md11'),
+            mock.call('/dev/md11')]
+        mock_mdclean.assert_called_once_with('/dev/fake10')
+        self.assertEqual(mock_mdremove.call_args_list,
+                         mock_mdremove_expected_calls)
+
+    @mock.patch.object(mu, 'mdclean')
+    @mock.patch.object(mu, 'mdremove')
+    @mock.patch.object(mu, 'mddisplay')
+    def test_mdclean_all_fail(self, mock_mddisplay, mock_mdremove,
+                              mock_mdclean):
+        mock_mddisplay.return_value = [{'name': '/dev/md11'}]
+        self.assertRaises(errors.MDRemovingError, mu.mdclean_all)
 
     @mock.patch.object(utils, 'execute')
     @mock.patch.object(mu, 'get_mdnames')

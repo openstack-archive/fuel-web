@@ -100,8 +100,6 @@ def mdcreate(mdname, level, device, *args):
             'Error while creating md: at least one of devices is '
             'already in belongs to some md')
 
-    # cleaning md metadata from devices
-    map(mdclean, devices)
     utils.execute('mdadm', '--create', '--force', mdname, '-e0.90',
                   '--level=%s' % level,
                   '--raid-devices=%s' % len(devices), *devices,
@@ -129,3 +127,10 @@ def mdclean_all():
         mdremove(md['name'])
         for dev in md.get('devices', []):
             mdclean(dev)
+    # second attempt, remove stale inactive devices
+    for md in mddisplay():
+        mdremove(md['name'])
+    mds = mddisplay()
+    if len(mds) > 0:
+        raise errors.MDRemovingError(
+            'Error while removing mds: few devices still presented %s' % mds)

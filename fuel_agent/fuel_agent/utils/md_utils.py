@@ -100,7 +100,8 @@ def mdcreate(mdname, level, device, *args):
             'Error while creating md: at least one of devices is '
             'already in belongs to some md')
 
-    # cleaning md metadata from devices
+    #FIXME: mdadm will ask user to continue creating if any device appears to
+    #       be a part of raid array. Superblock zeroing helps to avoid that.
     map(mdclean, devices)
     utils.execute('mdadm', '--create', '--force', mdname, '-e0.90',
                   '--level=%s' % level,
@@ -113,6 +114,9 @@ def mdremove(mdname):
     if mdname not in get_mdnames():
         raise errors.MDNotFoundError(
             'Error while removing md: md %s not found' % mdname)
+    #FIXME: `udevadm settle` really helps to avoid a lot of problem with
+    #       foreseeable md device creation
+    utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
     utils.execute('mdadm', '--stop', mdname, check_exit_code=[0])
     utils.execute('mdadm', '--remove', mdname, check_exit_code=[0, 1])
 
@@ -129,3 +133,10 @@ def mdclean_all():
         mdremove(md['name'])
         for dev in md.get('devices', []):
             mdclean(dev)
+    # second attempt, remove stale inactive devices
+    for md in mddisplay():
+        mdremove(md['name'])
+    mds = mddisplay()
+    if len(mds) > 0:
+        raise errors.MDRemovingError(
+            'Error while removing mds: few devices still presented %s' % mds)

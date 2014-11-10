@@ -650,6 +650,9 @@
             generator: "password"
           db_password:
             generator: "password"
+          auth_encryption_key:
+            generator: "hexstring"
+            generator_arg: "32"
         ceilometer:
           db_password:
             generator: "password"

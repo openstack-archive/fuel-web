@@ -100,7 +100,8 @@ def mdcreate(mdname, level, device, *args):
             'Error while creating md: at least one of devices is '
             'already in belongs to some md')
 
-    # cleaning md metadata from devices
+    #FIXME: mdadm will ask user to continue creating if any device appears to
+    #       be a part of raid array. Superblock zeroing helps to avoid that.
     map(mdclean, devices)
     utils.execute('mdadm', '--create', '--force', mdname, '-e0.90',
                   '--level=%s' % level,
@@ -113,6 +114,31 @@ def mdremove(mdname):
     if mdname not in get_mdnames():
         raise errors.MDNotFoundError(
             'Error while removing md: md %s not found' % mdname)
+    #FIXME: The issue faced was quiet hard to reproduce and to figure out the
+    #       root cause. For unknown reason already removed md device is
+    #       unexpectedly returning back after a while from time to time making
+    #       new md device creation to fail.
+    #           Still the actual reason of its failure is unknown, but after a
+    #       searching on a web a mention was found about a race in udev
+    #       http://dev.bizo.com/2012/07/mdadm-device-or-resource-busy.html
+    #       The article recommends to disable udev's queue entirely during md
+    #       device manipulation which sounds rather unappropriate for our case.
+    #       And the link to original post on mailing list suggests to execute
+    #       `udevadm settle` before removing the md device.
+    #       here -> http://permalink.gmane.org/gmane.linux.raid/34027
+    #           So, what was done. `udevadm settle` calls were placed just
+    #       before any of `mdadm` calls and the analizyng the logs was started.
+    #       According to the manual `settle` is an option that "Watches the
+    #       udev event queue, and exits if all current events are handled".
+    #       That means it will wait for udev's finishing of processing the
+    #       events. According to the logs noticeable delay had been recognized
+    #       between `udevadm settle` and the next `mdadm` call.
+    #           The delay was about 150-200ms or even bigger. It was appeared
+    #       right before the `mdadm --stop` call. That just means that udev was
+    #       too busy with events when we start to modifiy md devices hard.
+    #           Thus `udevadm settle` is helping to avoid the later failure and
+    #       to prevent strange behaviour of md device.
+    utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
     utils.execute('mdadm', '--stop', mdname, check_exit_code=[0])
     utils.execute('mdadm', '--remove', mdname, check_exit_code=[0, 1])
 
@@ -129,3 +155,10 @@ def mdclean_all():
         mdremove(md['name'])
         for dev in md.get('devices', []):
             mdclean(dev)
+    # second attempt, remove stale inactive devices
+    for md in mddisplay():
+        mdremove(md['name'])
+    mds = mddisplay()
+    if len(mds) > 0:
+        raise errors.MDRemovingError(
+            'Error while removing mds: few devices still presented %s' % mds)

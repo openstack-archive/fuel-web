@@ -32,18 +32,13 @@ class TestNodeGroups(BaseIntegrationTest):
             net_segment_type='gre'
         )
 
-    def create_node_group(self):
+    def test_nodegroup_creation(self):
         resp = self.app.post(
             reverse('NodeGroupCollectionHandler'),
             json.dumps({'cluster_id': self.cluster['id'], 'name': 'test_ng'}),
             headers=self.default_headers,
             expect_errors=False
         )
-
-        return resp
-
-    def test_nodegroup_creation(self):
-        resp = self.create_node_group()
 
         self.assertEquals(resp.status_code, 201)
         response = json.loads(resp.body)
@@ -62,17 +57,9 @@ class TestNodeGroups(BaseIntegrationTest):
                 'pending_addition': True,
                 'api': True}]
         )
-        cluster = self.env.clusters[0]
         node = self.env.nodes[0]
 
-        resp = self.app.post(
-            reverse('NodeGroupCollectionHandler'),
-            json.dumps({'cluster_id': cluster['id'], 'name': 'test_ng'}),
-            headers=self.default_headers,
-            expect_errors=False
-        )
-
-        response = json.loads(resp.body)
+        response = self.env.create_node_group()
         ng_id = response['id']
 
         resp = self.app.put(
@@ -87,15 +74,13 @@ class TestNodeGroups(BaseIntegrationTest):
         self.assertEquals(node.group_id, ng_id)
 
     def test_nodegroup_create_network(self):
-        resp = self.create_node_group()
+        response = self.env.create_node_group()
 
-        response = json.loads(resp.body)
         nets = db().query(NetworkGroup).filter_by(group_id=response['id'])
         self.assertEquals(nets.count(), 4)
 
     def test_nodegroup_deletion(self):
-        resp = self.create_node_group()
-        response = json.loads(resp.body)
+        response = self.env.create_node_group()
         group_id = response['id']
 
         self.app.delete(

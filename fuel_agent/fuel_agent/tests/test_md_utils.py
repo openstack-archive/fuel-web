@@ -98,12 +98,13 @@ localhost.localdomain)
         self.assertEqual(sorted(expected, key=key), sorted(mds, key=key))
         patcher.stop()
 
+    @mock.patch.object(mu, 'mdremove')
     @mock.patch.object(mu, 'mdclean')
     @mock.patch.object(hu, 'list_block_devices')
     @mock.patch.object(mu, 'mddisplay')
     @mock.patch.object(utils, 'execute')
     def test_mdcreate_ok(self, mock_exec, mock_mddisplay,
-                         mock_bdevs, mock_mdclean):
+                         mock_bdevs, mock_mdclean, mock_mdremove):
         # should check if md already exists
         # should check if md level is valid
         # should check if all necessary devices exist
@@ -119,6 +120,7 @@ localhost.localdomain)
                                    {'device': '/dev/fake2'}]
 
         mu.mdcreate('/dev/md0', 'mirror', '/dev/fake1', '/dev/fake2')
+        mock_mdremove.assert_called_once_with('/dev/md11')
         mock_exec.assert_called_once_with(
             'mdadm', '--create', '--force', '/dev/md0', '-e0.90',
             '--level=mirror',

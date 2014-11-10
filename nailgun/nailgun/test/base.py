@@ -53,6 +53,7 @@ from nailgun.db.sqlalchemy.models import Task
 # here come objects
 from nailgun.objects import Cluster
 from nailgun.objects import Node
+from nailgun.objects import NodeGroup
 from nailgun.objects import Release
 
 from nailgun.app import build_app
@@ -301,6 +302,28 @@ class Environment(object):
         self.db.add(notification)
         self.db.commit()
         return notification
+
+    def create_node_group(self, api=True, **kwargs):
+        ng_data = {
+            'cluster_id': self.clusters[0].id,
+            'name': 'test_ng'
+        }
+        if kwargs:
+            ng_data.update(kwargs)
+        if api:
+            resp = self.app.post(
+                reverse('NodeGroupCollectionHandler'),
+                jsonutils.dumps(ng_data),
+                headers=self.default_headers,
+                expect_errors=False
+            )
+
+            ng = resp
+        else:
+            ng = NodeGroup.create(ng_data)
+            db().commit()
+
+        return ng
 
     def default_metadata(self):
         item = self.find_item_by_pk_model(

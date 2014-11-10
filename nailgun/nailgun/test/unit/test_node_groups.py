@@ -33,16 +33,6 @@ class TestNodeGroups(BaseIntegrationTest):
             net_segment_type='gre'
         )
 
-    def create_node_group(self):
-        resp = self.app.post(
-            reverse('NodeGroupCollectionHandler'),
-            json.dumps({'cluster_id': self.cluster['id'], 'name': 'test_ng'}),
-            headers=self.default_headers,
-            expect_errors=False
-        )
-
-        return resp
-
     def test_nodegroup_creation(self):
         self.assertEquals(
             objects.NodeGroupCollection.get_by_cluster_id(
@@ -50,10 +40,9 @@ class TestNodeGroups(BaseIntegrationTest):
             1
         )
 
-        resp = self.create_node_group()
+        resp = self.env.create_node_group()
         self.assertEquals(resp.status_code, 201)
-        response = json.loads(resp.body)
-        self.assertEquals(response['cluster'], self.cluster['id'])
+        self.assertEquals(resp.json_body['cluster'], self.cluster['id'])
 
         self.assertEquals(
             objects.NodeGroupCollection.get_by_cluster_id(
@@ -74,18 +63,10 @@ class TestNodeGroups(BaseIntegrationTest):
                 'pending_addition': True,
                 'api': True}]
         )
-        cluster = self.env.clusters[0]
         node = self.env.nodes[0]
 
-        resp = self.app.post(
-            reverse('NodeGroupCollectionHandler'),
-            json.dumps({'cluster_id': cluster['id'], 'name': 'test_ng'}),
-            headers=self.default_headers,
-            expect_errors=False
-        )
-
-        response = json.loads(resp.body)
-        ng_id = response['id']
+        resp = self.env.create_node_group()
+        ng_id = resp.json_body['id']
 
         resp = self.app.put(
             reverse('NodeHandler', kwargs={'obj_id': node['id']}),
@@ -98,15 +79,15 @@ class TestNodeGroups(BaseIntegrationTest):
         self.assertEquals(node.group_id, ng_id)
 
     def test_nodegroup_create_network(self):
-        resp = self.create_node_group()
+        resp = self.env.create_node_group()
+        response = resp.json_body
 
-        response = json.loads(resp.body)
         nets = db().query(NetworkGroup).filter_by(group_id=response['id'])
         self.assertEquals(nets.count(), 4)
 
     def test_nodegroup_deletion(self):
-        resp = self.create_node_group()
-        response = json.loads(resp.body)
+        resp = self.env.create_node_group()
+        response = resp.json_body
         group_id = response['id']
 
         self.app.delete(

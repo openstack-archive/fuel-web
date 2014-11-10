@@ -246,6 +246,7 @@ class TestPluginValidation(BasePluginTest):
         sample = {
             'name': 'test_name',
             'version': '0.1.1',
+            'fuel_version': ['6.0'],
             'title': 'Test plugin',
             'package_version': '1.0.0'
         }
@@ -256,6 +257,7 @@ class TestPluginValidation(BasePluginTest):
         sample = {
             'name': 'test_name',
             'version': '0.1.1',
+            'fuel_version': ['6.0'],
             'title': 'Test plugin',
             'package_version': '1.0.0',
             'releases': [
@@ -270,6 +272,7 @@ class TestPluginValidation(BasePluginTest):
             'name': 'test_name',
             'title': 'Test plugin',
             'version': 1.1,
+            'fuel_version': ['6.0'],
             'package_version': '1.0.0',
             'releases': [
                 {'os': 'Ubuntu',
@@ -284,6 +287,7 @@ class TestPluginValidation(BasePluginTest):
         sample = {
             'name': 'test_name',
             'version': '1.1',
+            'fuel_version': ['6.0'],
             'package_version': '1.0.0',
             'releases': [
                 {'os': 'Ubuntu',

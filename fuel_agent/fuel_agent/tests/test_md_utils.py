@@ -119,6 +119,10 @@ localhost.localdomain)
                                    {'device': '/dev/fake2'}]
 
         mu.mdcreate('/dev/md0', 'mirror', '/dev/fake1', '/dev/fake2')
+        mock_mdclean_expected_calls = [mock.call('/dev/fake1'),
+                                       mock.call('/dev/fake2')]
+        self.assertEqual(mock_mdclean_expected_calls,
+                         mock_mdclean.call_args_list)
         mock_exec.assert_called_once_with(
             'mdadm', '--create', '--force', '/dev/md0', '-e0.90',
             '--level=mirror',
@@ -181,6 +185,32 @@ localhost.localdomain)
         mu.mdcreate('/dev/md0', 'mirror', '/dev/fake1', '/dev/fake2')
         expected_calls = [mock.call('/dev/fake1'), mock.call('/dev/fake2')]
         self.assertEqual(mock_mdclean.call_args_list, expected_calls)
+
+    @mock.patch.object(mu, 'mdclean')
+    @mock.patch.object(mu, 'mdremove')
+    @mock.patch.object(mu, 'mddisplay')
+    def test_mdclean_all(self, mock_mddisplay, mock_mdremove, mock_mdclean):
+        mock_mddisplay.side_effect = [
+            [{'name': '/dev/md10', 'devices': ['/dev/fake10']},
+             {'name': '/dev/md11'}],
+            [{'name': '/dev/md11'}],
+            []
+        ]
+        mu.mdclean_all()
+        mock_mdremove_expected_calls = [
+            mock.call('/dev/md10'), mock.call('/dev/md11'),
+            mock.call('/dev/md11')]
+        mock_mdclean.assert_called_once_with('/dev/fake10')
+        self.assertEqual(mock_mdremove.call_args_list,
+                         mock_mdremove_expected_calls)
+
+    @mock.patch.object(mu, 'mdclean')
+    @mock.patch.object(mu, 'mdremove')
+    @mock.patch.object(mu, 'mddisplay')
+    def test_mdclean_all_fail(self, mock_mddisplay, mock_mdremove,
+                              mock_mdclean):
+        mock_mddisplay.return_value = [{'name': '/dev/md11'}]
+        self.assertRaises(errors.MDRemovingError, mu.mdclean_all)
 
     @mock.patch.object(utils, 'execute')
     @mock.patch.object(mu, 'get_mdnames')

@@ -34,11 +34,13 @@ function(React, utils, models, componentMixins, controls) {
         fetchData: function() {
             var request,
                 logsEntries = this.state.logsEntries,
+                from = this.state.from,
                 to = this.state.to;
-            request = this.fetchLogs({to: to})
+            request = this.fetchLogs({from: from, to: to})
                 .done(_.bind(function(data) {
                     this.setState({
-                        logsEntries: _.union(data.entries, logsEntries),
+                        logsEntries: data.entries.concat(logsEntries),
+                        from: data.from,
                         to: data.to
                     });
                 }, this));
@@ -48,6 +50,7 @@ function(React, utils, models, componentMixins, controls) {
             return {
                 showMoreLogsLink: false,
                 loading: null,
+                from: -1,
                 to: 0
             };
         },
@@ -69,16 +72,20 @@ function(React, utils, models, componentMixins, controls) {
             return $.ajax(options);
         },
         showLogs: function(params) {
+            params = params || {};
             var options = this.composeOptions();
             this.stopPolling();
             this.props.model.set({log_options: options}, {silent: true});
             app.navigate('#cluster/' + this.props.model.id + '/logs/' + utils.serializeTabOptions(options), {trigger: false, replace: true});
             this.fetchLogs(params)
                 .done(_.bind(function(data) {
+                    var logsEntries = this.state.logsEntries || [];
+
                     this.setState({
                         showMoreLogsLink: data.has_more || false,
-                        logsEntries: data.entries,
+                        logsEntries: params.fetch_older ? logsEntries.concat(data.entries) : data.entries,
                         loading: 'done',
+                        from: data.from,
                         to: data.to
                     });
                     this.startPolling();
@@ -101,13 +108,14 @@ function(React, utils, models, componentMixins, controls) {
         },
         onShowButtonClick: function(states) {
             this.setState(_.extend(states, {loading: 'loading'}), _.bind(function() {
-                this.showLogs({truncate_log: true});
+                this.showLogs();
             }, this));
         },
         onShowMoreClick: function(value) {
-            var options = value == 'all' ? {} : {
-                truncate_log: true,
-                max_entries: parseInt(value, 10) + this.state.logsEntries.length
+            var options = {
+                max_entries: value,
+                fetch_older: true,
+                from: this.state.from
             };
             this.showLogs(options);
         },
@@ -353,8 +361,7 @@ function(React, utils, models, componentMixins, controls) {
     });
 
     var LogsTable = React.createClass({
-        handleShowMoreClick: function(e) {parseInt(this.props.onShowMoreClick($(e.target).text()))},
-        handleShowAllClick: function() {this.props.onShowMoreClick('all')},
+        handleShowMoreClick: function(value) { return this.props.onShowMoreClick(value); },
         render: function() {
             var tabRows = [],
                 logsEntries = this.props.logsEntries;
@@ -386,9 +393,8 @@ function(React, utils, models, componentMixins, controls) {
                                 <td colSpan='3'>
                                     <span>{$.t('cluster_page.logs_tab.bottom_text')}
                                     </span>: {[100, 500, 1000, 5000].map(function(count) {
-                                        return <span className='show-more-entries' onClick={this.handleShowMoreClick} key={count}> {count} </span>;
+                                        return <span className='show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}> {count} </span>;
                                     }, this)}
-                                    <span className='show-all-entries' onClick={this.handleShowAllClick}>{$.t('cluster_page.logs_tab.all_logs')}</span>
                                 </td>
                             </tr>
                         </tfoot>

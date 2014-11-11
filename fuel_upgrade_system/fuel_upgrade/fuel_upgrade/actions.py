@@ -119,9 +119,10 @@ class Symlink(Action):
         self._from = kwargs['from']
         self._to = kwargs['to']
         self._overwrite = kwargs.get('overwrite', True)
+        self._check_source = kwargs.get('check_source', False)
 
     def do(self):
-        symlink(self._from, self._to, self._overwrite)
+        symlink(self._from, self._to, self._overwrite, self._check_source)
 
     def undo(self):
         remove(self._to)

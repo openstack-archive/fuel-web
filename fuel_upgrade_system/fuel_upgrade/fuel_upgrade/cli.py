@@ -34,6 +34,7 @@ from fuel_upgrade.engines.docker_engine import DockerInitializer
 from fuel_upgrade.engines.docker_engine import DockerUpgrader
 from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.engines.openstack import OpenStackUpgrader
+from fuel_upgrade.engines.targetimages import TargetimagesUpgrader
 
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
 
@@ -48,6 +49,7 @@ SUPPORTED_SYSTEMS = {
     'docker': DockerUpgrader,
     'bootstrap': BootstrapUpgrader,
     'openstack': OpenStackUpgrader,
+    'targetimages': TargetimagesUpgrader
 }
 
 #: A list of tuples of incompatible systems.

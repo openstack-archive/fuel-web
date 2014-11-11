@@ -1022,90 +1022,120 @@
       generated:
         mysql:
           root_password:
-            generator: "password"
+            value:
+              generator: "password"
           wsrep_password:
             generator: "password"
         keystone:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           admin_token:
             generator: "password"
         glance:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
         nova:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
           state_path: "/var/lib/nova"
         rabbit:
           password:
-            generator: "password"
+            value:
+              generator: "password"
         swift:
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
         cinder:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
         base_syslog:
           syslog_server:
-            generator: "ip"
-            generator_arg: "admin"
+            value:
+              generator: "ip"
+              generator_arg: "admin"
           syslog_port:
-            generator: "identical"
-            generator_arg: "514"
+            value:
+              generator: "identical"
+              generator_arg: "514"
         cobbler:
           profile:
-            generator: "identical"
+            value:
+              generator: "identical"
         sahara:
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
         murano:
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
           rabbit_password:
-            generator: "password"
+            value:
+              generator: "password"
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
         heat:
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
           rabbit_password:
-            generator: "password"
+            value:
+              generator: "password"
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           auth_encryption_key:
-            generator: "hexstring"
-            generator_arg: "32"
+            value:
+              generator: "hexstring"
+              generator_arg: "32"
         ceilometer:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
           metering_secret:
-            generator: "password"
+            value:
+              generator: "password"
         zabbix:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           db_root_password:
-            generator: "password"
+            value:
+              generator: "password"
         quantum_settings:
           database:
             passwd:
-              generator: "password"
+              value:
+                generator: "password"
           keystone:
             admin_password:
-              generator: "password"
+              value:
+                generator: "password"
           metadata:
             metadata_proxy_shared_secret:
-              generator: "password"
+              value:
+                generator: "password"
     wizard_metadata:
       Mode:
         metadata:

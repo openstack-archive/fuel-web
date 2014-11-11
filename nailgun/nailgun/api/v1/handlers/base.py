@@ -409,7 +409,7 @@ class CollectionHandler(BaseHandler):
                * 400 (invalid object data specified)
                * 409 (object with such parameters already exists)
         """
-
+        
         data = self.checked_data()
 
         try:

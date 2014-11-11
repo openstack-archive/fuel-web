@@ -688,16 +688,22 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_network(cls, task):
-        nodes_count = len(task.cluster.nodes)
+        all_public = objects.Cluster.assign_public_to_all_nodes(task.cluster)
 
-        public_network = filter(
+        public_networks = filter(
             lambda ng: ng.name == 'public',
-            task.cluster.network_groups)[0]
-        public_network_size = cls.__network_size(public_network)
+            task.cluster.network_groups)
 
-        if public_network_size < nodes_count:
-            error_message = cls.__format_network_error(nodes_count)
-            raise errors.NetworkCheckError(error_message)
+        for public in public_networks:
+            nodes = objects.NodeCollection.get_by_group_id(public.group_id)
+            if all_public:
+                nodes_count = nodes.count()
+            else:
+                nodes_count = sum(int(objects.Node.should_have_public(node))
+                                  for node in nodes)
+            if cls.__network_size(public) < nodes_count:
+                error_message = cls.__format_network_error(public, nodes_count)
+                raise errors.NetworkCheckError(error_message)
 
     @classmethod
     def __network_size(cls, network):
@@ -705,9 +711,9 @@ class CheckBeforeDeploymentTask(object):
                    for ip_range in network.ip_ranges)
 
     @classmethod
-    def __format_network_error(cls, nodes_count):
-        return 'Not enough IP addresses. Public network must have at least '\
-            '{nodes_count} IP addresses '.format(nodes_count=nodes_count) + \
+    def __format_network_error(cls, public, nodes_count):
+        return 'Not enough IP addresses. Public network {0} must have ' \
+            'at least {1} IP addresses '.format(public.cidr, nodes_count) + \
             'for the current environment.'
 
 

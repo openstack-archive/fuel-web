@@ -220,14 +220,19 @@ class TestPrePostHooks(BasePluginTest):
         tasks = self.get_pre_hooks(self.cluster).json
         upload_file = [t for t in tasks if t['type'] == 'upload_file']
         rsync = [t for t in tasks if t['type'] == 'sync']
+        cmd_tasks = [t for t in tasks if t['type'] == 'shell']
         self.assertEqual(len(upload_file), 1)
         self.assertEqual(len(rsync), 1)
+        self.assertEqual(len(cmd_tasks), 2)
         for t in tasks:
             #shoud uid be a string
             self.assertEqual(
                 sorted(t['uids']), sorted([n.id for n in self.cluster.nodes]))
             self.assertTrue(t['fail_on_error'])
             self.assertEqual(t['diagnostic_name'], self.plugin.full_name)
+        apt_update = [t for t in cmd_tasks
+                      if u'apt-get update' in t['parameters']['cmd']]
+        self.assertEqual(len(apt_update), 1)
 
     def test_generate_post_hooks(self):
         tasks = self.get_post_hooks(self.cluster).json

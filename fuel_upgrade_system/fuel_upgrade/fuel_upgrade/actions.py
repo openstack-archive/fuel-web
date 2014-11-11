@@ -23,6 +23,7 @@ from fuel_upgrade.utils import copy
 from fuel_upgrade.utils import remove
 from fuel_upgrade.utils import rename
 from fuel_upgrade.utils import symlink
+from fuel_upgrade.utils import symlink_if_src_exists
 
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,19 @@ class Symlink(Action):
         remove(self._to)
 
 
+class SymlinkIfSrcExists(Symlink):
+    """SymlinkIfSrcExists action provides a way
+    to make a symbolic link to some resource but only if
+    source exists. I.e. link 1 -> 2 will be created only if 2 exists.
+
+    :param from: a path to origin resource
+    :param to: a path to link
+    :param overwrite: overwrite link if True
+    """
+    def do(self):
+        symlink_if_src_exists(self._from, self._to, self._overwrite)
+
+
 class ActionManager(Action):
     """The action manager is designed to manage actions, run it or
     rollback based on action description.
@@ -140,6 +154,7 @@ class ActionManager(Action):
         'copy': Copy,
         'move': Move,
         'symlink': Symlink,
+        'symlink_if_src_exists': SymlinkIfSrcExists
     }
 
     def __init__(self, actions):

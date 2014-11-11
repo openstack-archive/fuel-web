@@ -683,4 +683,28 @@ def config(update_path, admin_password):
             }
         ]}
 
+    targetimages = {
+        'actions': [
+            {
+                'name': 'copy',
+                'from': join(update_path, 'targetimages'),
+                'to': '/var/www/nailgun/{0}_targetimages'.format(new_version),
+            },
+            {
+                'name': 'symlink',
+                'from': '/var/www/nailgun/{0}_targetimages'.format(
+                    new_version),
+                'to': '/var/www/nailgun/targetimages',
+                'undo': [
+                    {
+                        'name': 'symlink_if_src_exists',
+                        'from': '/var/www/nailgun/{0}_targetimages'.format(
+                            from_version),
+                        'to': '/var/www/nailgun/targetimages'
+                    }
+                ]
+            }
+        ]
+    }
+
     return locals()

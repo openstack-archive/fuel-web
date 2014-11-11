@@ -146,6 +146,14 @@ class ProvisioningSerializer(object):
                 'mlnx_plugin_mode': mellanox_data['plugin'],
                 'mlnx_iser_enabled': cluster_attrs['storage']['iser'],
             })
+            # Add relevant kernel parameter when using Mellanox SR-IOV
+            # and/or iSER (which works on top of a probed virtual function)
+            # unless it was explicitly added by the user
+            k_params = serialized_node['ks_meta']['pm_data']['kernel_params']
+            if ((mellanox_data['plugin'] == 'ethernet' or
+                    cluster_attrs['storage']['iser'] == True) and
+                    'intel_iommu=' not in k_params):
+                        k_params += ' intel_iommu=on'
 
         net_manager = objects.Node.get_network_manager(node)
         gw = net_manager.get_default_gateway(node.id)

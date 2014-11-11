@@ -40,7 +40,7 @@ from nailgun.settings import settings
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import generate_editables
-from nailgun.utils import traverse
+# from nailgun.utils import traverse
 
 
 class Attributes(NailgunObject):
@@ -58,10 +58,14 @@ class Attributes(NailgunObject):
         :param instance: Attributes instance
         :returns: None
         """
-        instance.generated = traverse(
+        generate_editables(
             instance.generated,
             AttributesGenerator
         )
+        # instance.generated = traverse(
+        #     instance.generated,
+        #     AttributesGenerator
+        # )
 
     @classmethod
     def merged_attrs(cls, instance):

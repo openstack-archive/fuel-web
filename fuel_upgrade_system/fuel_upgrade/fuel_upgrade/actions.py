@@ -119,9 +119,12 @@ class Symlink(Action):
         self._from = kwargs['from']
         self._to = kwargs['to']
         self._overwrite = kwargs.get('overwrite', True)
+        self._perform_if_src_exists = \
+            kwargs.get('perform_if_src_exists', False)
 
     def do(self):
-        symlink(self._from, self._to, self._overwrite)
+        symlink(self._from, self._to, self._overwrite,
+                self._perform_if_src_exists)
 
     def undo(self):
         remove(self._to)

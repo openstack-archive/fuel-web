@@ -203,7 +203,7 @@ def wait_for_true(check, timeout=60, interval=0.5):
         time.sleep(interval)
 
 
-def symlink(source, destination, overwrite=True):
+def symlink(source, destination, overwrite=True, perform_if_src_exists=False):
     """Creates a symbolic link to the resource.
 
     :param source: symlink from
@@ -216,7 +216,9 @@ def symlink(source, destination, overwrite=True):
 
     if overwrite or not os.path.exists(destination):
         remove(destination)
-        os.symlink(source, destination)
+        if (perform_if_src_exists and os.path.exists(source)) or \
+                not perform_if_src_exists:
+            os.symlink(source, destination)
     else:
         logger.debug('Skip symlinking process')
 

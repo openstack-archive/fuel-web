@@ -282,6 +282,22 @@ class TestUtils(BaseTestCase):
         self.called_once(remove_mock)
 
     @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.symlink')
+    def test_symlink_src_exists(self, symlink_mock, _):
+        from_path = '/tmp/from/path'
+        to_path = '/tmp/to/path'
+        utils.symlink(from_path, to_path, perform_if_src_exists=True)
+        symlink_mock.assert_called_once_with(from_path, to_path)
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.symlink')
+    def test_symlink_src_not_exists(self, symlink_mock, _):
+        from_path = '/tmp/from/path'
+        to_path = '/tmp/to/path'
+        utils.symlink(from_path, to_path, perform_if_src_exists=True)
+        self.assertItemsEqual(symlink_mock.call_args_list, [])
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.remove')
     def test_remove_if_exists(self, remove_mock, exists_mock):
         path = '/tmp/some/path'

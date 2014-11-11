@@ -19,6 +19,8 @@ from random import randint
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.orchestrator.provisioning_serializers \
+    import serialize as prov_serializer
 from nailgun.test.integration.test_orchestrator_serializer \
     import OrchestratorSerializerTestBase
 
@@ -161,3 +163,42 @@ class TestMellanox(OrchestratorSerializerTestBase):
                 self.iser_interface_name,
                 network_scheme['endpoints'][vlan_name]['vlandev'])
             self.assertNotIn('br-storage', network_scheme['endpoints'])
+
+    def check_mellanox_kernel_params(self, mode, mellanox, iser):
+        self.cluster = self.create_env(
+            mode=mode,
+            mellanox=mellanox,
+            iser=iser,
+        )
+        serialized_cluster = prov_serializer(
+            self.cluster,
+            self.cluster.nodes
+        )
+        assert_method = (self.assertIn if (mellanox or iser)
+            else self.assertNotIn)
+        for node in serialized_cluster['nodes']:
+            assert_method(
+                'intel_iommu=on',
+                node['ks_meta']['pm_data']['kernel_params'].split()
+            )
+
+    def test_serialize_kernel_params_using_mellanox_sriov_plugin(self):
+        self.check_mellanox_kernel_params(
+            mode='multinode',
+            mellanox=True,
+            iser=False,
+        )
+
+    def test_serialize_kernel_params_using_mellanox_iser(self):
+        self.check_mellanox_kernel_params(
+            mode='ha_compact',
+            mellanox=True,
+            iser=True,
+        )
+
+    def test_serialize_kernel_params_not_using_mellanox(self):
+        self.check_mellanox_kernel_params(
+            mode='ha_compact',
+            mellanox=False,
+            iser=False,
+        )

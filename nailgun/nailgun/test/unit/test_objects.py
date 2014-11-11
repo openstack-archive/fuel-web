@@ -227,10 +227,11 @@ class TestNodeObject(BaseIntegrationTest):
             attrs['public_network_assignment']['assign_to_all_nodes']['value'],
             False
         )
+        self.assertFalse(
+            objects.Cluster.should_assign_public_to_all_nodes(cluster))
 
-        nodes_w_public_count = 0
-        for node in self.env.nodes:
-            nodes_w_public_count += int(objects.Node.should_have_public(node))
+        nodes_w_public_count = sum(int(objects.Node.should_have_public(node))
+                                   for node in self.env.nodes)
         self.assertEqual(nodes_w_public_count, 2)
 
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
@@ -243,10 +244,11 @@ class TestNodeObject(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
+        self.assertTrue(
+            objects.Cluster.should_assign_public_to_all_nodes(cluster))
 
-        nodes_w_public_count = 0
-        for node in self.env.nodes:
-            nodes_w_public_count += int(objects.Node.should_have_public(node))
+        nodes_w_public_count = sum(int(objects.Node.should_have_public(node))
+                                   for node in self.env.nodes)
         self.assertEqual(nodes_w_public_count, 5)
 
     def test_removing_from_cluster(self):

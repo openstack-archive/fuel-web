@@ -528,44 +528,58 @@
       generated:
         mysql:
           root_password:
-            generator: "password"
+            value:
+              generator: "password"
         keystone:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           admin_token:
-            generator: "password"
+            value:
+              generator: "password"
         glance:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
         nova:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
           state_path: "/var/lib/nova"
         rabbit:
           password:
-            generator: "password"
+            value:
+              generator: "password"
         swift:
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
         cinder:
           db_password:
-            generator: "password"
+            value:
+              generator: "password"
           user_password:
-            generator: "password"
+            value:
+              generator: "password"
         base_syslog:
           syslog_server:
-            generator: "ip"
-            generator_arg: "admin"
+            value:
+              generator: "ip"
+              generator_arg: "admin"
           syslog_port:
-            generator: "identical"
-            generator_arg: "514"
+            value:
+              generator: "identical"
+              generator_arg: "514"
         cobbler:
           profile:
-            generator: "identical"
+            value:
+              generator: "identical"
 - &full_release
   extend: *base_release
   fields:

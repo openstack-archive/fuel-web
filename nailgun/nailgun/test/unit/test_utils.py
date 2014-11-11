@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import Mock
+from mock import NonCallableMock
 from mock import mock_open
 from mock import patch
 import os
@@ -24,10 +26,10 @@ from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
 from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import migration
+from nailgun.utils import traverse
 
 
 class TestUtils(BaseIntegrationTest):
-
     def test_dict_merge(self):
         custom = {"coord": [10, 10],
                   "pass": "qwerty",
@@ -89,3 +91,46 @@ class TestUtils(BaseIntegrationTest):
         self.assertFalse(os.path.exists(file_path))
         versions = get_fuel_release_versions(file_path)
         self.assertDictEqual({}, versions)
+
+
+class TestTraverseUtil(BaseIntegrationTest):
+    attrs = {
+        'param1': {'value': {'generator': 'generator1'}},
+        'nested': {
+            'param2': {
+                'value': {'generator': 'generator2',
+                          'generator_arg': 'gen_arg'}}
+        }
+    }
+
+    def test_parameter_is_unchanged(self):
+        obj1 = Mock()
+        obj2 = traverse(obj1, Mock)
+        self.assertFalse(obj1 is obj2)
+
+    def test_process_dict_only(self):
+        obj1 = [1, 2, 3]
+        obj2 = traverse(obj1, Mock)
+        self.assertEqual(obj1, obj2)
+
+        obj1 = (1, 2, 3)
+        obj2 = traverse(obj1, Mock)
+        self.assertEqual(obj1, obj2)
+
+        obj1 = set([1, 2, 3])
+        obj2 = traverse(obj1, Mock)
+        self.assertEqual(obj1, obj2)
+
+    def test_generate_attributes(self):
+        generator_class = Mock()
+        generator_class.generator1 = Mock(return_value='generated_value1')
+        generator_class.generator2 = Mock(return_value='generated_value2')
+        # generator_class.generator2.assert_called_once_with('gen_arg')
+        attrs = traverse(self.attrs, generator_class)
+        self.assertEqual(attrs, {'param1': 'generated_value1',
+                                 'nested': {
+                                 'param2': 'generated_value2'}})
+
+    def test_non_existent_generator(self):
+        generator_class = NonCallableMock()
+        attrs = traverse(self.attrs, generator_class)

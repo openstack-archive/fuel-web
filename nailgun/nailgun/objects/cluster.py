@@ -44,7 +44,6 @@ from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
-from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
 
@@ -63,10 +62,7 @@ class Attributes(NailgunObject):
         :param instance: Attributes instance
         :returns: None
         """
-        instance.generated = traverse(
-            instance.generated,
-            AttributesGenerator
-        )
+        return traverse(instance.generated, AttributesGenerator)
 
     @classmethod
     def merged_attrs(cls, instance):
@@ -229,9 +225,9 @@ class Cluster(NailgunObject):
                 "cluster_id": instance.id
             }
         )
-        Attributes.generate_fields(attributes)
+        generated_attributes = Attributes.generate_fields(attributes)
         db().flush()
-        return attributes
+        return generated_attributes
 
     @classmethod
     def get_default_editable_attributes(cls, instance):
@@ -240,13 +236,14 @@ class Cluster(NailgunObject):
         :param instance: Cluster instance
         :returns: Dict object
         """
-        editable = instance.release.attributes_metadata.get("editable")
-        generate_editables(editable, AttributesGenerator)
+        editable_meta = instance.release.attributes_metadata.get("editable")
+        editable_attrs = traverse(editable_meta, AttributesGenerator)
+
         # when attributes created we need to understand whether should plugin
         # be applied for created cluster
         plugin_attrs = PluginManager.get_plugin_attributes(instance)
-        editable = dict(plugin_attrs, **editable)
-        return editable
+        default_editable_attrs = dict(plugin_attrs, **editable_attrs)
+        return default_editable_attrs
 
     @classmethod
     def get_attributes(cls, instance):
@@ -740,8 +737,8 @@ class Cluster(NailgunObject):
         """Get metadata from release with empty value section.
         """
         editable = instance.release.vmware_attributes_metadata.get("editable")
-        generate_editables(editable, AttributesGenerator)
-        return editable
+        editable_generated = traverse(editable, AttributesGenerator)
+        return editable_generated
 
     @classmethod
     def update_vmware_attributes(cls, instance, data):

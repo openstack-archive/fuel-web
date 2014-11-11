@@ -20,10 +20,12 @@ import os
 import tempfile
 
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
 from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import migration
+from nailgun.utils import traverse
 
 
 class TestUtils(BaseIntegrationTest):
@@ -89,3 +91,28 @@ class TestUtils(BaseIntegrationTest):
         self.assertFalse(os.path.exists(file_path))
         versions = get_fuel_release_versions(file_path)
         self.assertDictEqual({}, versions)
+
+
+class TestTraverseUtil(BaseIntegrationTest):
+
+    def test_parameter_is_unchanged(self):
+        obj1 = object()
+        obj2 = traverse(obj1, AttributesGenerator)
+        self.assertFalse(obj1 is obj2)
+        # import pdb; pdb.set_trace()
+
+    def test_process_dict_only(self):
+        obj1 = [1, 2, 3]
+        obj2 = traverse(obj1, AttributesGenerator)
+        self.assertEqual(obj1, obj2)
+
+        obj1 = (1, 2, 3)
+        obj2 = traverse(obj1, AttributesGenerator)
+        self.assertEqual(obj1, obj2)
+
+        obj1 = set([1, 2, 3])
+        obj2 = traverse(obj1, AttributesGenerator)
+        self.assertEqual(obj1, obj2)
+
+    def test_generate_attributes(self):
+        pass

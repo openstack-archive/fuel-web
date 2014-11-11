@@ -42,57 +42,51 @@ def dict_merge(a, b):
     return result
 
 
-def traverse(cdict, generator_class):
-    new_dict = {}
-    if cdict:
-        for i, val in cdict.iteritems():
-            if isinstance(val, (str, unicode, int, float)):
-                new_dict[i] = val
-            elif isinstance(val, dict) and "generator" in val:
-                try:
-                    generator = getattr(
-                        generator_class,
-                        val["generator"]
-                    )
-                except AttributeError:
-                    logger.error("Attribute error: %s" % val["generator"])
-                    raise
-                else:
-                    new_dict[i] = generator(val.get("generator_arg"))
-            elif isinstance(val, list):
-                new_dict[i] = [traverse(v, generator_class) for v in val]
-            else:
-                new_dict[i] = traverse(val, generator_class)
-    return new_dict
-
-
-def generate_editables(editable, generator_class):
-    """Traverse through editable attributes and replace values with
+def traverse(attributes, generator_class):
+    """Traverse through attributes and replace values with
     generated ones where generators are provided.
 
     E.g.:
     'value': { 'generator': 'from_settings',
                'generator_arg' : 'MASTER_IP' }
     """
-    for key, val in six.iteritems(editable):
-        if isinstance(val, dict):
-            if key == 'value' and 'generator' in val:
-                method = val['generator']
-                try:
-                    generator = getattr(generator_class, method)
-                except AttributeError:
-                    logger.error("Couldn't find generator %s.%s",
-                                 generator_class, method)
-                    raise
+    def _generate(value):
+        method = value.get('generator')
+        try:
+            generator = getattr(generator_class, method)
+        except AttributeError:
+            logger.error("Couldn't find generator %s.%s",
+                         generator_class, method)
+            raise
+        return generator(value.get("generator_arg"))
+
+    def _helper(_obj):
+        if isinstance(_obj, dict):
+            for key, value in _obj.iteritems():
+                if isinstance(value, dict):
+                    if value.get('generator'):
+                        _obj[key] = _generate(value)
+                    else:
+                        _helper(value)
                 else:
-                    editable[key] = generator(val.get("generator_arg"))
-            else:
-                generate_editables(editable[key], generator_class)
+                    _helper(value)
+        elif isinstance(_obj, list):
+            for item in _obj:
+                _helper(item)
+
+    # Copy attributes to make sure it won't be changed
+    obj = deepcopy(attributes)
+
+    _helper(obj)
+    return obj
 
 
 class AttributesGenerator(object):
-    @classmethod
-    def password(cls, arg=None):
+    """Container class for generation different types of attributes
+    """
+
+    @staticmethod
+    def password(arg=None):
         try:
             length = int(arg)
         except Exception:
@@ -100,8 +94,8 @@ class AttributesGenerator(object):
         chars = string.letters + string.digits
         return u''.join([choice(chars) for _ in xrange(length)])
 
-    @classmethod
-    def hexstring(cls, arg=None):
+    @staticmethod
+    def hexstring(arg=None):
         try:
             length = int(arg)
         except (ValueError, TypeError):
@@ -109,18 +103,18 @@ class AttributesGenerator(object):
         chars = '0123456789abcdef'
         return u''.join([choice(chars) for _ in range(length)])
 
-    @classmethod
-    def ip(cls, arg=None):
+    @staticmethod
+    def ip(arg=None):
         if str(arg) in ("admin", "master"):
             return settings.MASTER_IP
         return "127.0.0.1"
 
-    @classmethod
-    def identical(cls, arg=None):
+    @staticmethod
+    def identical(arg=None):
         return str(arg)
 
-    @classmethod
-    def from_settings(cls, arg):
+    @staticmethod
+    def from_settings(arg):
         return getattr(settings, arg)
 
 

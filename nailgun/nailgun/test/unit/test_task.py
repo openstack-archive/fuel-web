@@ -19,8 +19,10 @@ from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.openstack.common import jsonutils
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseTestCase
+from nailgun.test.base import reverse
 from nailgun.volumes.manager import VolumeManager
 
 
@@ -163,6 +165,10 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
     def setUp(self):
         super(TestCheckBeforeDeploymentTask, self).setUp()
         self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
             nodes_kwargs=[{'roles': ['controller']}])
 
         self.env.create_node()
@@ -281,4 +287,53 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.assertRaises(
             errors.NotEnoughControllers,
             CheckBeforeDeploymentTask._check_controllers_count,
+            self.task)
+
+    def find_net_by_name(self, nets, name):
+        for net in nets['networks']:
+            if net['name'] == name:
+                return net
+
+    def test_check_public_networks(self):
+        cluster = self.env.clusters[0]
+        self.env.create_nodes(
+            5, api=True, roles=['compute'], cluster_id=cluster.id)
+
+        attrs = cluster.attributes.editable
+        self.assertEqual(
+            attrs['public_network_assignment']['assign_to_all_nodes']['value'],
+            False
+        )
+        self.assertFalse(
+            objects.Cluster.should_assign_public_to_all_nodes(cluster))
+
+        resp = self.env.neutron_networks_get(cluster.id)
+        nets = resp.json_body
+        # enough IPs for 4 nodes
+        self.find_net_by_name(nets, 'public')['ip_ranges'] = \
+            [["172.16.0.2", "172.16.0.5"]]
+        resp = self.env.neutron_networks_put(cluster.id, nets)
+        self.assertEqual(resp.status_code, 202)
+
+        self.assertNotRaises(
+            errors.NetworkCheckError,
+            CheckBeforeDeploymentTask._check_public_network,
+            self.task)
+
+        attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
+            True
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(
+            objects.Cluster.should_assign_public_to_all_nodes(cluster))
+
+        self.assertRaises(
+            errors.NetworkCheckError,
+            CheckBeforeDeploymentTask._check_public_network,
             self.task)

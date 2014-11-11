@@ -152,12 +152,7 @@ class Node(NailgunObject):
         :param instance: Node DB instance
         :returns: True when node has Public network
         """
-        if instance.cluster.net_provider == \
-                consts.CLUSTER_NET_PROVIDERS.nova_network:
-            return True
-        assignment = instance.cluster.attributes.editable.get(
-            'public_network_assignment')
-        if not assignment or assignment['assign_to_all_nodes']['value']:
+        if Cluster.should_assign_public_to_all_nodes(instance.cluster):
             return True
         ctrl = set(['primary-controller', 'controller', 'zabbix-server'])
         if ctrl & (set(instance.roles) or set(instance.pending_roles)):
@@ -799,3 +794,7 @@ class NodeCollection(NailgunCollection):
         instances_ids = [instance.id for instance in instances]
         q = cls.filter_by_list(None, 'id', instances_ids, order_by='id')
         return cls.lock_for_update(q).all()
+
+    @classmethod
+    def get_by_group_id(cls, group_id):
+        return cls.filter_by(None, group_id=group_id)

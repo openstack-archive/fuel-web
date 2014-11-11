@@ -119,7 +119,7 @@ class TestCheckFreeSpace(BaseTestCase):
         self.context = context
 
     @mock.patch('fuel_upgrade.before_upgrade_checker.utils.'
-                'calculate_free_space')
+                'calculate_free_space', return_value=100)
     def test_check(self, calculate_free_space_mock, find_mount_point_mock):
         checker = CheckFreeSpace(self.context)
         checker.check()

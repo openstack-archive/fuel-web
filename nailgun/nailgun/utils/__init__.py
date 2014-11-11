@@ -71,25 +71,28 @@ def generate_editables(editable, generator_class):
     'value': { 'generator': 'from_settings',
                'generator_arg' : 'MASTER_IP' }
     """
-    for key, val in six.iteritems(editable):
-        if isinstance(val, dict):
-            if key == 'value' and 'generator' in val:
-                method = val['generator']
-                try:
-                    generator = getattr(generator_class, method)
-                except AttributeError:
-                    logger.error("Couldn't find generator %s.%s",
-                                 generator_class, method)
-                    raise
+    def _helper(_obj):
+        for key, val in six.iteritems(_obj):
+            if isinstance(val, dict):
+                if key == 'value' and 'generator' in val:
+                    method = val['generator']
+                    try:
+                        generator = getattr(generator_class, method)
+                    except AttributeError:
+                        logger.error("Couldn't find generator %s.%s",
+                                     generator_class, method)
+                        raise
+                    else:
+                        _obj[key] = generator(val.get("generator_arg"))
                 else:
-                    editable[key] = generator(val.get("generator_arg"))
-            else:
-                generate_editables(editable[key], generator_class)
+                    _helper(_obj[key])
+
+    return _helper(deepcopy(editable))
 
 
 class AttributesGenerator(object):
-    @classmethod
-    def password(cls, arg=None):
+    @staticmethod
+    def password(arg=None):
         try:
             length = int(arg)
         except Exception:
@@ -97,8 +100,8 @@ class AttributesGenerator(object):
         chars = string.letters + string.digits
         return u''.join([choice(chars) for _ in xrange(length)])
 
-    @classmethod
-    def hexstring(cls, arg=None):
+    @staticmethod
+    def hexstring(arg=None):
         try:
             length = int(arg)
         except (ValueError, TypeError):
@@ -106,18 +109,18 @@ class AttributesGenerator(object):
         chars = '0123456789abcdef'
         return u''.join([choice(chars) for _ in range(length)])
 
-    @classmethod
-    def ip(cls, arg=None):
+    @staticmethod
+    def ip(arg=None):
         if str(arg) in ("admin", "master"):
             return settings.MASTER_IP
         return "127.0.0.1"
 
-    @classmethod
-    def identical(cls, arg=None):
+    @staticmethod
+    def identical(arg=None):
         return str(arg)
 
-    @classmethod
-    def from_settings(cls, arg):
+    @staticmethod
+    def from_settings(arg):
         return getattr(settings, arg)
 
 

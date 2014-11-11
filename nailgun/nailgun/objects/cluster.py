@@ -58,10 +58,14 @@ class Attributes(NailgunObject):
         :param instance: Attributes instance
         :returns: None
         """
-        instance.generated = traverse(
+        generate_editables(
             instance.generated,
             AttributesGenerator
         )
+        # instance.generated = traverse(
+        #     instance.generated,
+        #     AttributesGenerator
+        # )
 
     @classmethod
     def merged_attrs(cls, instance):

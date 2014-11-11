@@ -87,6 +87,30 @@ def generate_editables(editable, generator_class):
                 generate_editables(editable[key], generator_class)
 
 
+# def traverse(editable, generator_class):
+#     """Traverse through editable attributes and replace values with
+#     generated ones where generators are provided.
+#
+#     E.g.:
+#     'value': { 'generator': 'from_settings',
+#                'generator_arg' : 'MASTER_IP' }
+#     """
+#     for key, val in six.iteritems(editable):
+#         if isinstance(val, dict):
+#             if key == 'value' and 'generator' in val:
+#                 method = val['generator']
+#                 try:
+#                     generator = getattr(generator_class, method)
+#                 except AttributeError:
+#                     logger.error("Couldn't find generator %s.%s",
+#                                  generator_class, method)
+#                     raise
+#                 else:
+#                     editable[key] = generator(val.get("generator_arg"))
+#             else:
+#                 generate_editables(editable[key], generator_class)
+
+
 class AttributesGenerator(object):
     @classmethod
     def password(cls, arg=None):

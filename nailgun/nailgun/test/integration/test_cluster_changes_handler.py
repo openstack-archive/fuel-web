@@ -980,8 +980,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(task.status, 'error')
         self.assertEqual(
             task.message,
-            'Not enough IP addresses. Public network must have at least '
-            '3 IP addresses for the current environment.')
+            'Not enough IP addresses. Public network 172.16.0.0/24 must have '
+            'at least 3 IP addresses for the current environment.')
 
     def test_occurs_error_not_enough_ip_addresses(self):
         self.env.create(
@@ -1018,8 +1018,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(task.status, 'error')
         self.assertEqual(
             task.message,
-            'Not enough IP addresses. Public network must have at least '
-            '3 IP addresses for the current environment.')
+            'Not enough IP addresses. Public network 220.0.1.0/24 must have '
+            'at least 3 IP addresses for the current environment.')
 
     def test_occurs_error_not_enough_free_space(self):
         meta = self.env.default_metadata()

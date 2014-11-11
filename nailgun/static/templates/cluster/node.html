@@ -27,7 +27,7 @@
       </div>
       <div class="node-details"></div>
       <div class="node-hardware">
-        <span><%- $.t('node_details.cpu') %>: <%- node.resource('cores') || '?' %> (<%- node.resource('ht_cores') || '?' %>)</span>
+        <span><%- $.t('node_details.cpu') %>: <%- node.resource('cores') || '0' %> (<%- node.resource('ht_cores') || '?' %>)</span>
         <span><%- $.t('node_details.hdd') %>: <%- node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></span>
         <span><%- $.t('node_details.ram') %>: <%- node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></span>
       </div>

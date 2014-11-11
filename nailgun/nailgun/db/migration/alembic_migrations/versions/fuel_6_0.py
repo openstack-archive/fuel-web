@@ -166,8 +166,15 @@ def upgrade_schema():
         'network_groups',
         sa.Column('group_id', sa.Integer(), nullable=True)
     )
-    op.drop_column('network_groups', 'cluster_id')
+
     op.add_column('nodes', sa.Column('group_id', sa.Integer(), nullable=True))
+
+    # We need this code here because the "upgrade_node_groups" function
+    # relies on "cluster_id" column from "network_groups" table.
+    connection = op.get_bind()
+    upgrade_node_groups(connection)
+
+    op.drop_column('network_groups', 'cluster_id')
 
 
 def upgrade_releases():
@@ -198,7 +205,6 @@ def upgrade_data():
     # do not deploy 5.0.x series
     upgrade_release_set_deployable_false(
         connection, ['2014.1', '2014.1.1-5.0.1', '2014.1.1-5.0.2'])
-    upgrade_node_groups(connection)
 
     # In Fuel 5.x default releases do not have filled orchestrator_data,
     # and defaults one have been used. In Fuel 6.0 we're going to change

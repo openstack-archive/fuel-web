@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import Mock
 from mock import mock_open
 from mock import patch
 import os
@@ -27,7 +28,7 @@ from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import traverse
 
 
-class TestUtils(base.BaseIntegrationTest):
+class TestUtils(base.BaseUnitTest):
 
     def test_dict_merge(self):
         custom = {"coord": [10, 10],
@@ -128,3 +129,63 @@ class TestTraverse(base.BaseUnitTest):
                 'source': 'test {a} string',
                 'error': 'an {a} error'
             }})
+
+
+class TestTraverseUtil(base.BaseUnitTest):
+    attrs = {
+        'param1': {'generator': 'generator1'},
+        'nested': {
+            'param2': {'generator': 'generator2',
+                       'generator_arg': 'gen_arg2'}
+        },
+        'nested_list': [
+            'a',
+            {'param3': 'some_value'},
+            {'param4': {'generator': 'generator4',
+                        'generator_arg': 'gen_arg4'}},
+            ['v', 'a', 'l', {'u': 'e',
+                             'param5': {'generator': 'generator5',
+                                        'generator_arg': 'gen_arg5'}}]
+        ]
+    }
+
+    def test_parameter_is_unchanged(self):
+        obj1 = Mock()
+        obj2 = traverse(obj1, Mock)
+        self.assertFalse(obj1 is obj2)
+
+    def test_process_dict_only(self):
+        obj1 = [1, 2, 3]
+        obj2 = traverse(obj1, Mock)
+        self.assertEqual(obj1, obj2)
+
+    def test_generate_attributes(self):
+        generator_class = Mock()
+        generator_class.generator1 = Mock(return_value='generated_value1')
+        generator_class.generator2 = Mock(return_value='generated_value2')
+        generator_class.generator4 = Mock(return_value='generated_value4')
+        generator_class.generator5 = Mock(return_value='generated_value5')
+
+        attrs = traverse(self.attrs, generator_class)
+
+        generator_class.generator1.assert_called_once_with(None)
+        generator_class.generator2.assert_called_once_with('gen_arg2')
+        generator_class.generator4.assert_caled_once_with('gen_arg4')
+        generator_class.generator5.assert_caled_once_with('gen_arg5')
+        expected = {
+            'param1': 'generated_value1',
+            'nested': {'param2': 'generated_value2'},
+            'nested_list': [
+                'a',
+                {'param3': 'some_value'},
+                {'param4': 'generated_value4'},
+                ['v', 'a', 'l', {'u': 'e', 'param5': 'generated_value5'}]
+            ]
+        }
+        self.assertEqual(attrs, expected)
+
+    def test_non_existent_generator(self):
+        class Generator(object):
+            pass
+
+        self.assertRaises(AttributeError, traverse, self.attrs, Generator)

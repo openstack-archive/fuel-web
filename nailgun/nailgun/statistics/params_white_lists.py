@@ -92,7 +92,7 @@ _task_output_white_list_template = {
                     "image_cache_max_size": ""
                 },
                 "cobbler": {
-                    "profile": ""
+                    "profile": {"generator": ""}
                 },
                 "quantum_settings": {
                     "L3": {

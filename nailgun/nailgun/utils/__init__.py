@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import collections
 import glob
 import os
 import re
@@ -43,69 +42,51 @@ def dict_merge(a, b):
     return result
 
 
-def traverse(data, generator_class, formatter_context=None):
-    """Traverse data.
-
-    :param data: an input data to be traversed
-    :param generator_class: a generator class to be used
-    :param formatter_context: a dict to be passed into .format() for strings
-    :returns: a dict with traversed data
-    """
-    rv = {}
-
-    for key, value in six.iteritems(data):
-        # if value should be generated then generate it
-        if isinstance(value, collections.Mapping) and 'generator' in value:
-            try:
-                generator = getattr(generator_class, value["generator"])
-                rv[key] = generator(value.get("generator_arg"))
-            except AttributeError:
-                logger.error("Attribute error: %s", value["generator"])
-                raise
-
-        # we want to traverse in all levels, so dive in child mappings
-        elif isinstance(value, collections.Mapping) and key != 'regex':
-            rv[key] = traverse(value, generator_class, formatter_context)
-
-        # format all strings with "formatter_context"
-        elif isinstance(value, six.string_types) and formatter_context:
-            rv[key] = value.format(**formatter_context)
-
-        # all other types should be copied "as is"
-        else:
-            rv[key] = value
-
-    return rv
-
-
-def generate_editables(editable, generator_class):
-    """Traverse through editable attributes and replace values with
+def traverse(attributes, generator_class):
+    """Traverse through attributes and replace values with
     generated ones where generators are provided.
 
     E.g.:
     'value': { 'generator': 'from_settings',
                'generator_arg' : 'MASTER_IP' }
     """
-    for key, val in six.iteritems(editable):
-        if isinstance(val, dict):
-            if key == 'value' and 'generator' in val:
-                method = val['generator']
-                try:
-                    generator = getattr(generator_class, method)
-                except AttributeError:
-                    logger.error("Couldn't find generator %s.%s",
-                                 generator_class, method)
-                    raise
+    def _generate(value):
+        method = value.get('generator')
+        try:
+            generator = getattr(generator_class, method)
+        except AttributeError:
+            logger.error("Couldn't find generator %s.%s",
+                         generator_class, method)
+            raise
+        return generator(value.get("generator_arg"))
+
+    def _helper(_obj):
+        if isinstance(_obj, dict):
+            for key, value in six.iteritems(_obj):
+                if isinstance(value, dict):
+                    if value.get('generator'):
+                        _obj[key] = _generate(value)
+                    else:
+                        _helper(value)
                 else:
-                    editable[key] = generator(val.get("generator_arg"))
-            else:
-                generate_editables(editable[key], generator_class)
+                    _helper(value)
+        elif isinstance(_obj, list):
+            for item in _obj:
+                _helper(item)
+
+    # Copy attributes to make sure it won't be changed
+    obj = deepcopy(attributes)
+
+    _helper(obj)
+    return obj
 
 
 class AttributesGenerator(object):
+    """Container class for generation different types of attributes
+    """
 
-    @classmethod
-    def password(cls, arg=None):
+    @staticmethod
+    def password(arg=None):
         try:
             length = int(arg)
         except Exception:
@@ -113,8 +94,8 @@ class AttributesGenerator(object):
         chars = string.letters + string.digits
         return u''.join([choice(chars) for _ in xrange(length)])
 
-    @classmethod
-    def hexstring(cls, arg=None):
+    @staticmethod
+    def hexstring(arg=None):
         try:
             length = int(arg)
         except (ValueError, TypeError):
@@ -122,18 +103,18 @@ class AttributesGenerator(object):
         chars = '0123456789abcdef'
         return u''.join([choice(chars) for _ in range(length)])
 
-    @classmethod
-    def ip(cls, arg=None):
+    @staticmethod
+    def ip(arg=None):
         if str(arg) in ("admin", "master"):
             return settings.MASTER_IP
         return "127.0.0.1"
 
-    @classmethod
-    def identical(cls, arg=None):
+    @staticmethod
+    def identical(arg=None):
         return str(arg)
 
-    @classmethod
-    def from_settings(cls, arg):
+    @staticmethod
+    def from_settings(arg):
         return getattr(settings, arg)
 
 

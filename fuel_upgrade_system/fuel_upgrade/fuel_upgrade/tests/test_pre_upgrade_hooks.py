@@ -37,6 +37,8 @@ from fuel_upgrade.pre_upgrade_hooks. \
     import CopyOpenstackReleaseVersions
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
+from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_create_targetimages \
+    import CreateTargetimages
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
 
@@ -505,3 +507,36 @@ class TestCopyOpenstackReleaseVersions(TestPreUpgradeHooksBase):
             mock_utils.copy_if_exists.call_args_list,
             [mock.call(self.hook.version_path_5_0,
                        self.hook.dst_version_path_5_0)])
+
+
+class TestCreateTargetimages(TestPreUpgradeHooksBase):
+
+    def setUp(self):
+        super(TestCreateTargetimages, self).setUp()
+
+        conf = self.fake_config
+        conf.from_version = '5.1'
+
+        self.hook = CreateTargetimages(self.upgraders, conf)
+
+    def test_is_required_returns_true(self):
+        self.hook.config.from_version = '5.1'
+        self.assertTrue(self.hook.check_if_required())
+
+        self.hook.config.from_version = '5.1.1'
+        self.assertTrue(self.hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        self.hook.config.from_version = '6.0'
+        self.assertFalse(self.hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.'
+        'from_5_1_to_any_create_targetimages.utils')
+    def test_run(self, mock_utils):
+        self.hook.run()
+        mock_utils.create_dir_if_not_exists.assert_called_once_with(
+            '/var/www/nailgun/5.1_targetimages')
+        mock_utils.symlink.assert_called_once_with(
+            '/var/www/nailgun/5.1_targetimages',
+            '/var/www/nailgun/targetimages')

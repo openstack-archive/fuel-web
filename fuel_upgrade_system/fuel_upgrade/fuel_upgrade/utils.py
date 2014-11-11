@@ -221,6 +221,20 @@ def symlink(source, destination, overwrite=True):
         logger.debug('Skip symlinking process')
 
 
+def symlink_if_src_exists(source, destination, overwrite=True):
+    """Creates a symbolic link to the resource but only if source exists.
+
+    :param source: symlink from
+    :param destination: symlink to
+    :param overwrite: overwrite a destination if True
+    """
+    if not os.path.exists(source):
+        logger.debug(
+            u'Skip creating symlink, because "%s" does not exists', source)
+        return
+    symlink(source, destination, overwrite=overwrite)
+
+
 def hardlink(source, destination, overwrite=True):
     """Creates a hardlink link to the resource.
 

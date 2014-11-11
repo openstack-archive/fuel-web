@@ -24,6 +24,7 @@ from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
 from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import migration
+from nailgun.utils import traverse
 
 
 class TestUtils(BaseIntegrationTest):
@@ -89,3 +90,12 @@ class TestUtils(BaseIntegrationTest):
         self.assertFalse(os.path.exists(file_path))
         versions = get_fuel_release_versions(file_path)
         self.assertDictEqual({}, versions)
+
+
+class TestTraverseUtil(BaseIntegrationTest):
+
+    def test_parameter_is_unchanged(self):
+        pass
+
+    def test_generate_data(self):
+        pass

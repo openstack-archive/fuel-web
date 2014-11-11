@@ -18,6 +18,7 @@ import json
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -43,11 +44,22 @@ class TestNodeGroups(BaseIntegrationTest):
         return resp
 
     def test_nodegroup_creation(self):
-        resp = self.create_node_group()
+        self.assertEquals(
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count(),
+            1
+        )
 
+        resp = self.create_node_group()
         self.assertEquals(resp.status_code, 201)
         response = json.loads(resp.body)
         self.assertEquals(response['cluster'], self.cluster['id'])
+
+        self.assertEquals(
+            objects.NodeGroupCollection.get_by_cluster_id(
+                self.cluster['id']).count(),
+            2
+        )
 
     def test_nodegroup_assignment(self):
         self.env.create(
@@ -82,7 +94,6 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=False
         )
 
-        response = json.loads(resp.body)
         self.assertEquals(resp.status_code, 200)
         self.assertEquals(node.group_id, ng_id)
 

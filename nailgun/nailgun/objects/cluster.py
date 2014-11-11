@@ -58,7 +58,8 @@ class Attributes(NailgunObject):
         :param instance: Attributes instance
         :returns: None
         """
-        instance.generated = traverse(
+        if instance.generated:
+            instance.generated = generate_editables(
             instance.generated,
             AttributesGenerator
         )

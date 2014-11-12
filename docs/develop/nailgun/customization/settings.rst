@@ -108,11 +108,7 @@ Supported types are:
 
 ModelPaths consist of a model name and a field name separated by ":". Nested
 fields (like in settings) are supported, separated by ".". Models available for
-usage are "cluster", "settings", "networking_parameters" and "version". "?" can
-be placed after ModelPaths to prevent throwing an exception and return null
-value in case there is no specified key::
-
-    networking_parameters:segmentation_type?
+usage are "cluster", "settings", "networking_parameters" and "version".
 
 Supported operators are:
 

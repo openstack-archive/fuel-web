@@ -17,26 +17,33 @@ define(['expression/parser', 'expression/objects'], function(ExpressionParser, e
     'use strict';
 
     function Expression(expressionText, models, options) {
-        if (!(this instanceof Expression)) {
-            return new Expression(expressionText, models, options);
-        }
-        options = _.extend({strict: true}, options);
-        _.extend(this, {
-            expressionText: expressionText,
-            models: models || {},
-            options: options
-        });
-        _.extend(ExpressionParser.yy, expressionObjects, {expression: this});
-        this.compiledExpression = ExpressionParser.parse(expressionText);
+        if (!this) return new Expression(expressionText, models, options);
+        this.strict = options && !_.isUndefined(options.strict) ? options.strict : true;
+        this.expressionText = expressionText;
+        this.models = models || {};
+        this.compiledExpression = this.getCompiledExpression();
         return this;
     }
-    Expression.prototype.evaluate = function(extraModels) {
-        this.modelPaths = {};
-        this.knownModels = extraModels ? _.extend({}, this.models, extraModels) : this.models;
-        var value = this.compiledExpression.evaluate();
-        delete this.knownModels;
-        return value;
-    };
+    _.extend(Expression.prototype, {
+        evaluate: function(extraModels) {
+            this.modelPaths = {};
+            this.extraModels = extraModels;
+            var value = this.compiledExpression.evaluate();
+            delete this.extraModels;
+            return value;
+        },
+        getCompiledExpression: function() {
+            ExpressionParser.yy.expression = this;
+            var key = String(this.strict) + ' ' + this.expressionText;
+            if (!this.expressionCache[key]) {
+                this.expressionCache[key] = ExpressionParser.parse(this.expressionText);
+            }
+            return this.expressionCache[key];
+        },
+        expressionCache: {}
+    });
+
+    _.extend(ExpressionParser.yy, expressionObjects);
 
     return Expression;
 });

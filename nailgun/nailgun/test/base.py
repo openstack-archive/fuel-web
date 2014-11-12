@@ -183,7 +183,6 @@ class Environment(object):
             )
         else:
             cluster = Cluster.create(cluster_data)
-            cluster.create_default_group()
             db().commit()
             self.clusters.append(cluster)
 

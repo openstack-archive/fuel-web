@@ -602,6 +602,7 @@ function(React, utils, models, controls) {
         deleteNodes: function() {
             var nodes = this.props.nodes;
             this.setState({actionInProgress: true});
+            this.$('.btn-delete').prop('disabled', true);
             nodes.each(function(node) {
                 if (!node.get('pending_deletion')) {
                     if (node.get('pending_addition')) {
@@ -621,19 +622,24 @@ function(React, utils, models, controls) {
                 });
             };
             nodes.sync('update', nodes)
-                .always(this.close)
                 .done(_.bind(function() {
-                    var cluster = this.props.cluster;
-                    cluster.fetch();
-                    cluster.fetchRelated('nodes');
-                    app.page.tab.screen.nodes.invoke('set', {checked: false});
-                    app.page.tab.screen.updateBatchActionsButtons();
+                    this.$el.modal('hide');
+                    app.page.tab.screen.resetNodeSelection();
+                    app.page.tab.model.fetch();
+                    app.page.tab.model.fetchRelated('nodes');
                     app.navbar.refresh();
                     app.page.removeFinishedNetworkTasks();
                 }, this))
                 .fail(_.bind(function() {
-                    this.showError($.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
+                        message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
+                    });
                 }, this));
+        },
+        render: function() {
+            this.constructor.__super__.render.call(this, {nodes: this.nodes});
+            return this;
         }
     });
 

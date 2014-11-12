@@ -97,6 +97,7 @@ class TestStatistics(BaseTestCase):
             self.assertEquals(node_info['status'], node.status)
             self.assertListEqual(node_info['roles'], node.roles)
             self.assertEquals(node_info['os'], node.os_platform)
+            self.assertEquals(node_info['manufacturer'], node.manufacturer)
 
     def test_installation_info(self):
         info = InstallationInfo()

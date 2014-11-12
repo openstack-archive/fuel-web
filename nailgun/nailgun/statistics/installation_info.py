@@ -76,7 +76,8 @@ class InstallationInfo(object):
                 'id': node.id,
                 'roles': node.roles,
                 'os': node.os_platform,
-                'status': node.status
+                'status': node.status,
+                'manufacturer': node.manufacturer
             }
             nodes_info.append(node_info)
         return nodes_info

@@ -39,13 +39,14 @@ casper.then(function() {
     this.test.assertSelectorAppears('.node-box', 'Add Nodes screen appeared and unallocated nodes loaded');
     this.then(function() {
         this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, 1, 'Number of unallocated nodes is correct');
-        this.evaluate(function() {
-            $('input[name="controller"]').click(); // check the controller role
-            $('.node-checkbox input[type=checkbox]').click(); // check one node
-        });
-        this.click('.btn-apply');
+        this.click('input[name="controller"]');
+        this.click('.node input[type=checkbox]');
+        this.test.assertSelectorAppears('.pending_roles', 'Controller role is applied to the node');
     });
-    this.test.assertSelectorAppears('.cluster-toolbar .btn-add-nodes', 'Return to nodes tab');
+    this.then(function() {
+        this.click('.btn-apply');
+        this.test.assertSelectorAppears('.cluster-toolbar .btn-add-nodes', 'Return to nodes tab');
+    });
     this.then(function() {
         this.test.assertEvalEquals(function() {return $('.node-box').length}, 1, 'Number of available roles is correct');
         this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled now');

@@ -52,6 +52,7 @@ function(React, Expression, utils, controls) {
             _.each(this.refs, function(roleView, role) {
                 roleView.refs.input.getDOMNode().indeterminate = _.contains(this.state.indeterminateRoles, role);
             }, this);
+            this.assignRoles();
         },
         onChange: function(role, checked) {
             var selectedRoles = this.state.selectedRoles;
@@ -63,23 +64,25 @@ function(React, Expression, utils, controls) {
             this.setState({
                 selectedRoles: selectedRoles,
                 indeterminateRoles: _.without(this.state.indeterminateRoles, role)
-            }, this.assignRoles);
+            });
         },
         assignRoles: function() {
             var selectedNodes = this.props.nodes.where({checked: true});
-            _.each(this.props.cluster.get('release').get('roles'), function(name) {
-                _.each(selectedNodes, function(node) {
-                    if (!node.hasRole(name, true)) {
-                        var roles = node.get('pending_roles');
-                        if (this.isRoleSelected(name)) {
-                            if (this.isRoleAvailable(name)) roles = _.uniq(_.union(roles, name));
-                        } else if (!_.contains(this.state.indeterminateRoles, name)) {
-                            roles = _.without(roles, name);
+            if (selectedNodes.length) {
+                _.each(this.props.cluster.get('release').get('roles'), function(name) {
+                    _.each(selectedNodes, function(node) {
+                        if (!node.hasRole(name, true)) {
+                            var roles = node.get('pending_roles');
+                            if (this.isRoleSelected(name)) {
+                                if (this.isRoleAvailable(name)) roles = _.uniq(_.union(roles, name));
+                            } else if (!_.contains(this.state.indeterminateRoles, name)) {
+                                roles = _.without(roles, name);
+                            }
+                            node.set({pending_roles: roles}, {assign: true});
                         }
-                        node.set({pending_roles: roles}, {assign: true});
-                    }
+                    }, this);
                 }, this);
-            }, this);
+            }
         },
         isRoleSelected: function(role) {
             return _.contains(this.state.selectedRoles, role);

@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-casper.start().authenticate();
+casper.start().authenticate().skipWelcomeScreen();
 casper.createCluster({name: 'Test Cluster'});
 casper.createNode({status: 'discover', mac: '84:AA:B8:E6:30:F0', cluster_id: 1});
 casper.loadPage('#cluster/1/logs').waitForSelector('#tab-logs > *');

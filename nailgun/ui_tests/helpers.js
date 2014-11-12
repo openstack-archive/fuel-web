@@ -20,18 +20,18 @@ var baseUrl = 'http://127.0.0.1:' + port + '/';
 
 var authToken;
 
-var withCookieHeader = function(headers) {
+var addTokenHeader = function(headers) {
     var ret = {},
         property;
 
     headers = headers || {};
 
-    if(authToken) {
-        ret.Cookie = 'token=' + authToken;
+    if (authToken) {
+        ret['X-Auth-Token'] = authToken;
     }
 
-    for(property in headers) {
-        if(headers.hasOwnProperty(property)) {
+    for (property in headers) {
+        if (headers.hasOwnProperty(property)) {
             ret[property] = headers[property];
         }
     }
@@ -80,7 +80,7 @@ casper.authenticate = function(options) {
 
     this.thenOpen(baseUrl + 'keystone/v2.0/tokens', {
         method: 'post',
-        headers: withCookieHeader({'Content-Type': 'application/json'}),
+        headers: addTokenHeader({'Content-Type': 'application/json'}),
         data: JSON.stringify({
             auth: {
                 passwordCredentials: {
@@ -111,12 +111,32 @@ casper.authenticate = function(options) {
     return this;
 }
 
+casper.skipWelcomeScreen = function() {
+    return this.then(function() {
+        this.thenOpen(baseUrl + 'api/settings', {
+            method: 'get',
+            headers: addTokenHeader({'Content-Type': 'application/json'})
+        });
+        this.then(function() {
+            var fuelSettings = this.evaluate(function() {
+                return JSON.parse(document.body.innerText);
+            });
+            fuelSettings.settings.statistics.user_choice_saved.value = true;
+            this.thenOpen(baseUrl + 'api/settings', {
+                method: 'put',
+                headers: addTokenHeader({'Content-Type': 'application/json'}),
+                data: JSON.stringify(fuelSettings)
+            });
+        });
+    });
+}
+
 casper.createCluster = function(options) {
     options.release = 1; // centos
     this.then(function() {
         return this.open(baseUrl + 'api/clusters', {
             method: 'post',
-            headers: withCookieHeader({'Content-Type': 'application/json'}),
+            headers: addTokenHeader({'Content-Type': 'application/json'}),
             data: JSON.stringify(options)
         });
     });
@@ -203,7 +223,7 @@ casper.createNode = function(options) {
     };
     return this.thenOpen(baseUrl + 'api/nodes', {
         method: 'post',
-        headers: withCookieHeader({'Content-Type': 'application/json'}),
+        headers: addTokenHeader({'Content-Type': 'application/json'}),
         data: JSON.stringify(options)
     });
 }

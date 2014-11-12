@@ -351,12 +351,7 @@ def save_only(iface):
         sys.exit(1)
     net_ip_list = network.getNetwork(ip, netmask)
     try:
-        half = int(len(net_ip_list) / 2)
-        #In most cases, skip 10.XXX.0.1
-        static_pool = list(net_ip_list[1:half])
-        dhcp_pool = list(net_ip_list[half:])
-        static_start = str(static_pool[0])
-        static_end = str(static_pool[-1])
+        dhcp_pool = net_ip_list[1:]
         dynamic_start = str(dhcp_pool[0])
         dynamic_end = str(dhcp_pool[-1])
     except Exception:
@@ -375,8 +370,6 @@ def save_only(iface):
             "ADMIN_NETWORK/mac": mac,
             "ADMIN_NETWORK/dhcp_pool_start": dynamic_start,
             "ADMIN_NETWORK/dhcp_pool_end": dynamic_end,
-            "ADMIN_NETWORK/static_pool_start": static_start,
-            "ADMIN_NETWORK/static_pool_end": static_end,
             "HOSTNAME": hostname,
             "DNS_DOMAIN": domain,
             "DNS_SEARCH": domain,

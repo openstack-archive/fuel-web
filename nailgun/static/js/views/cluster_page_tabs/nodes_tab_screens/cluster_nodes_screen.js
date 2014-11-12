@@ -38,6 +38,7 @@ function(utils, models, NodeListScreen) {
                 task.on('change:status', this.render, this);
             });
             this.constructor.__super__.initialize.apply(this, arguments);
+            this.updateInitialNodes();
         }
     });
 

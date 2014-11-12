@@ -37,6 +37,7 @@ function(utils, models, NodeListScreen) {
                 return _.filter(response, function(node) {return _.contains(nodeIds, node.id);});
             };
             this.constructor.__super__.initialize.apply(this, arguments);
+            this.updateInitialNodes();
         }
     });
 

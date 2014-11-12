@@ -16,16 +16,37 @@
 define(
 [
     'utils',
-    'models',
-    'views/cluster_page_tabs/nodes_tab_screens/screen'
+    'models'
 ],
-function(utils, models, Screen) {
+function(utils, models) {
     'use strict';
     var EditNodeScreen;
 
-    EditNodeScreen = Screen.extend({
+    EditNodeScreen = Backbone.View.extend({
         constructorName: 'EditNodeScreen',
         keepScrollPosition: true,
+        goToNodeList: function() {
+            app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});
+        },
+        isLocked: function() {
+            return !!this.model.tasks({group: 'deployment', status: 'running'}).length;
+        },
+        initButtons: function() {
+            this.loadDefaultsButton = new Backbone.Model({disabled: false});
+            this.cancelChangesButton = new Backbone.Model({disabled: true});
+            this.applyChangesButton = new Backbone.Model({disabled: true});
+        },
+        setupButtonsBindings: function() {
+            var bindings = {attributes: [{name: 'disabled', observe: 'disabled'}]};
+            this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
+            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': bindings});
+            this.stickit(this.applyChangesButton, {'.btn-apply': bindings});
+        },
+        updateButtonsState: function(state) {
+            this.applyChangesButton.set('disabled', state);
+            this.cancelChangesButton.set('disabled', state);
+            this.loadDefaultsButton.set('disabled',  state);
+        },
         disableControls: function(disable) {
             this.updateButtonsState(disable || this.isLocked());
         },

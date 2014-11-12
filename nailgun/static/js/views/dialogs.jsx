@@ -600,9 +600,8 @@ function(React, utils, models, controls) {
             ];
         },
         deleteNodes: function() {
-            var nodes = this.props.nodes;
             this.setState({actionInProgress: true});
-            nodes.each(function(node) {
+            this.props.nodes.each(function(node) {
                 if (!node.get('pending_deletion')) {
                     if (node.get('pending_addition')) {
                         node.set({
@@ -615,22 +614,21 @@ function(React, utils, models, controls) {
                     }
                 }
             }, this);
-            nodes.toJSON = function() {
+            this.props.nodes.toJSON = function() {
                 return this.map(function(node) {
                     return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
                 });
             };
-            nodes.sync('update', nodes)
+            this.props.nodes.sync('update', this.props.nodes)
+                .then(_.bind(function() {
+                    return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
+                }, this))
                 .always(this.close)
-                .done(_.bind(function() {
-                    var cluster = this.props.cluster;
-                    cluster.fetch();
-                    cluster.fetchRelated('nodes');
-                    app.page.tab.screen.nodes.invoke('set', {checked: false});
-                    app.page.tab.screen.updateBatchActionsButtons();
+                .done(function() {
+                    app.page.tab.screen.resetNodeSelection();
                     app.navbar.refresh();
                     app.page.removeFinishedNetworkTasks();
-                }, this))
+                })
                 .fail(_.bind(function() {
                     this.showError($.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
                 }, this));

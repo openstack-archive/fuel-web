@@ -41,7 +41,7 @@ casper.then(function() {
         this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, 1, 'Number of unallocated nodes is correct');
         this.evaluate(function() {
             $('input[name="controller"]').click(); // check the controller role
-            $('.node-checkbox input[type=checkbox]').click(); // check one node
+            $('.node input[type=checkbox]').click(); // check one node
         });
         this.click('.btn-apply');
     });

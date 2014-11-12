@@ -49,6 +49,7 @@ function(React, Expression, utils, controls) {
             _.each(this.refs, function(roleView, role) {
                 roleView.refs.input.getDOMNode().indeterminate = _.contains(this.state.indeterminateRoles, role);
             }, this);
+            this.assignRoles();
         },
         parseRoleData: function() {
             this.parsedRestrictions = {};

@@ -18,9 +18,9 @@ define(
     'utils',
     'models',
     'views/common',
-    'views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
@@ -60,8 +60,6 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
             this.revertChanges = _.bind(function() {
                 return this.screen && this.screen.revertChanges();
             }, this);
-            this.selectedNodes = new models.Nodes();
-            this.selectedNodes.cluster = this.model;
         },
         routeScreen: function(options) {
             var screens = {

@@ -184,15 +184,10 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
             }
             return resource;
         },
-        sortedRoles: function() {
-            var preferredOrder = this.collection.cluster.get('release').get('roles');
+        sortedRoles: function(preferredOrder) {
             return _.union(this.get('roles'), this.get('pending_roles')).sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
-        },
-        toJSON: function(options) {
-            var result = this.constructor.__super__.toJSON.call(this, options);
-            return _.omit(result, 'checked');
         },
         isSelectable: function() {
             return this.get('status') != 'error' || this.get('cluster');
@@ -201,9 +196,13 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
         },
-        getRolesSummary: function() {
-            var roles = this.collection.cluster.get('release').get('role_models');
-            return _.map(this.sortedRoles(), function(role) {return roles.findWhere({name: role}).get('label');}).join(', ');
+        hasChanges: function() {
+            return this.get('pending_addition') || this.get('pending_deletion');
+        },
+        getRolesSummary: function(releaseRoles) {
+            return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {
+                return releaseRoles.findWhere({name: role}).get('label');
+            }).join(', ');
         },
         getHardwareSummary: function() {
             return $.t('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + $.t('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
@@ -237,15 +236,6 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
         },
         getByIds: function(ids) {
             return this.filter(function(node) {return _.contains(ids, node.id);});
-        },
-        groupByAttribute: function(attr) {
-            if (attr == 'roles') {
-                return this.groupBy(function(node) {return node.getRolesSummary();});
-            }
-            if (attr == 'hardware') {
-                return this.groupBy(function(node) {return node.getHardwareSummary();});
-            }
-            return this.groupBy(function(node) {return node.getRolesSummary() + '; \u00A0' + node.getHardwareSummary();});
         }
     });
 

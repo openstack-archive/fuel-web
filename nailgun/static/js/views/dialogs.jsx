@@ -107,8 +107,6 @@ function(React, utils, models, controls) {
                     return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
                 }, this))
                 .done(_.bind(function() {
-                    // we made changes silently, so trigger resize event to redraw node list
-                    this.props.cluster.get('nodes').trigger('resize');
                     app.navbar.refresh();
                     this.close();
                 }, this))
@@ -600,37 +598,29 @@ function(React, utils, models, controls) {
             ];
         },
         deleteNodes: function() {
-            var nodes = this.props.nodes;
             this.setState({actionInProgress: true});
-            nodes.each(function(node) {
-                if (!node.get('pending_deletion')) {
-                    if (node.get('pending_addition')) {
-                        node.set({
-                            cluster_id: null,
-                            pending_addition: false,
-                            pending_roles: []
-                        });
-                    } else {
-                        node.set({pending_deletion: true});
-                    }
-                }
+            this.props.nodes.each(function(node) {
+                var data = !node.get('pending_addition') ? {pending_deletion: true} : {
+                        cluster_id: null,
+                        pending_addition: false,
+                        pending_roles: []
+                    };
+                node.set(data, {silent: true});
             }, this);
-            nodes.toJSON = function() {
+            this.props.nodes.toJSON = function() {
                 return this.map(function(node) {
                     return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
                 });
             };
-            nodes.sync('update', nodes)
+            this.props.nodes.sync('update', this.props.nodes)
+                .then(_.bind(function() {
+                    return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
+                }, this))
                 .always(this.close)
-                .done(_.bind(function() {
-                    var cluster = this.props.cluster;
-                    cluster.fetch();
-                    cluster.fetchRelated('nodes');
-                    app.page.tab.screen.nodes.invoke('set', {checked: false});
-                    app.page.tab.screen.updateBatchActionsButtons();
+                .done(function() {
                     app.navbar.refresh();
                     app.page.removeFinishedNetworkTasks();
-                }, this))
+                })
                 .fail(_.bind(function() {
                     this.showError($.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
                 }, this));
@@ -733,7 +723,7 @@ function(React, utils, models, controls) {
                     }, this))
                     .fail(_.bind(function() {
                         this.setState({validationError: true, actionInProgress: false});
-                        $(this.refs.currentPassword.refs.input.getDOMNode()).focus();
+                        $(this.refs.currentPassword.getInputDOMNode()).focus();
                     }, this));
             }
         }

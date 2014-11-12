@@ -285,20 +285,19 @@
                     },
                     "node": {
                         "status": {
-                            "discovered": "Discovered",
+                            "discover": "Discovered",
                             "offline": "Offline",
                             "error": "Error",
-                            "view_logs": "View Logs",
                             "pending_addition": "Pending Addition",
                             "pending_deletion": "Pending Deletion",
                             "ready": "Ready",
-                            "installing_os": "Installing __os__",
-                            "os_is_installed": "__os__ is installed",
-                            "installing_openstack": "Installing OpenStack",
-                            "discard_addition": "Discard Addition",
-                            "discard_deletion": "Discard Deletion",
-                            "discard_role_changes": "Discard Role Changes"
+                            "provisioning": "Installing __os__",
+                            "provisioned": "__os__ is installed",
+                            "deploying": "Installing OpenStack"
                         },
+                        "discard_addition": "Discard Addition",
+                        "discard_deletion": "Discard Deletion",
+                        "view_logs": "View Logs",
                         "edit_name": "Edit Name",
                         "unallocated": "unallocated"
                     },
@@ -848,20 +847,20 @@
                     },
                     "node": {
                         "status": {
-                            "discovered": "在线",
+                            "discover": "在线",
                             "offline": "离线",
                             "error": "错误",
-                            "view_logs": "查看日志",
                             "pending_addition": "等待增加",
                             "pending_deletion": "等待删除",
                             "ready": "已就绪",
-                            "installing_os": "正在安装__os__",
-                            "os_is_installed": "__os__已安装",
-                            "installing_openstack": "正在安装OpenStack",
-                            "discard_addition": "取消增加",
-                            "discard_deletion": "取消删除",
-                            "discard_role_changes": "取消角色变更"
+                            "provisioning": "正在安装__os__",
+                            "provisioned": "__os__已安装",
+                            "deploying": "正在安装OpenStack"
                         },
+                        "view_logs": "查看日志",
+                        "discard_addition": "取消增加",
+                        "discard_deletion": "取消删除",
+                        "discard_role_changes": "取消角色变更",
                         "edit_name": "编辑名称"
                     },
                     "back_to_nodes_button": "返回节点列表",
@@ -1417,20 +1416,20 @@
                     },
                     "node": {
                         "status": {
-                            "discovered": "発見状",
+                            "discover": "発見状",
                             "offline": "オフライン状",
                             "error": "エラー",
-                            "view_logs": "ログを見る",
                             "pending_addition": "追加待ち",
                             "pending_deletion": "削除待ち",
                             "ready": "使用可能",
-                            "installing_os": "__os__ インストール中",
-                            "os_is_installed": "__os__ インストール終了",
-                            "installing_openstack": "OpenStack インストール中",
-                            "discard_addition": "追加取消",
-                            "discard_deletion": "削除取消",
-                            "discard_role_changes": "役割変更取消"
+                            "provisioning": "__os__ インストール中",
+                            "provisioned": "__os__ インストール終了",
+                            "deploying": "OpenStack インストール中"
                         },
+                        "view_logs": "ログを見る",
+                        "discard_addition": "追加取消",
+                        "discard_deletion": "削除取消",
+                        "discard_role_changes": "役割変更取消",
                         "edit_name": "名変更",
                         "unallocated": "割り当てられていない"
                     },
@@ -1899,20 +1898,20 @@
                     },
                     "node": {
                         "status": {
-                            "discovered": "발견",
+                            "discover": "발견",
                             "offline": "오프라인",
                             "error": "에러",
-                            "view_logs": "로그 보기",
                             "pending_addition": "추가 보류중",
                             "pending_deletion": "삭제 보류중",
                             "ready": "준비상태",
-                            "installing_os": "__os__설치중",
-                            "os_is_installed": "__os__설치완료",
-                            "installing_openstack": "OpenStack 설치중",
-                            "discard_addition": "추가를 취소",
-                            "discard_deletion": "삭제를 취소",
-                            "discard_role_changes": "역할 변경 내용을 취소"
+                            "provisioning": "__os__설치중",
+                            "provisioned": "__os__설치완료",
+                            "deploying": "OpenStack 설치중"
                         },
+                        "view_logs": "로그 보기",
+                        "discard_addition": "추가를 취소",
+                        "discard_deletion": "삭제를 취소",
+                        "discard_role_changes": "역할 변경 내용을 취소",
                         "edit_name": "이름 바꿈",
                         "unallocated": "할당되지 않음"
                     },

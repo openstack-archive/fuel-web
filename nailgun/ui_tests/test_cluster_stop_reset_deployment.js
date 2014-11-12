@@ -27,25 +27,26 @@ casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
 casper.then(function() {
     this.test.comment('Testing cluster page');
     this.test.assertExists('.deployment-control .deploy-btn:disabled', 'Deploy changes button is disabled');
-    this.test.assertExists('.cluster-toolbar .btn-configure-disks:disabled', 'Button Configure Disks is disabled');
-    this.test.assertExists('.cluster-toolbar .btn-configure-interfaces:disabled', 'Button Configure Interfaces is disabled');
-    this.test.assertExists('.cluster-toolbar .btn-add-nodes:not(:disabled)', 'Add Nodes button is enabled');
-    this.test.assertEvalEquals(function() {return $('.node-box').length}, 0, 'Number of available nodes is correct');
+    this.test.assertDoesntExist('.btn-configure-disks', 'Button Configure Disks is invisible cause no nodes checked');
+    this.test.assertDoesntExist('.btn-configure-interfaces', 'Button Configure Interfaces is invisible cause no nodes checked');
+    this.test.assertExists('.btn-add-nodes:not(:disabled)', 'Add Nodes button is enabled');
+    this.test.assertEvalEquals(function() {return $('.node-box').length}, 0, 'Number of environment nodes is correct');
 });
 
 casper.then(function() {
     this.test.comment('Testing adding node with controller role');
-    this.click('.cluster-toolbar .btn-add-nodes');
+    this.click('.btn-add-nodes');
     this.test.assertSelectorAppears('.node-box', 'Add Nodes screen appeared and unallocated nodes loaded');
     this.then(function() {
         this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, 1, 'Number of unallocated nodes is correct');
-        this.evaluate(function() {
-            $('input[name="controller"]').click(); // check the controller role
-            $('.node-checkbox input[type=checkbox]').click(); // check one node
-        });
-        this.click('.btn-apply');
+        this.click('input[name="controller"]');
+        this.click('.node input[type=checkbox]');
+        this.test.assertSelectorAppears('.pending_roles', 'Controller role is applied to the node');
     });
-    this.test.assertSelectorAppears('.cluster-toolbar .btn-add-nodes', 'Return to nodes tab');
+    this.then(function() {
+        this.click('.btn-apply');
+        this.test.assertSelectorAppears('.btn-add-nodes', 'Return to nodes tab');
+    });
     this.then(function() {
         this.test.assertEvalEquals(function() {return $('.node-box').length}, 1, 'Number of available roles is correct');
         this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled now');

@@ -61,11 +61,10 @@ class ModelPath(object):
 
 
 class ModelPathWrapper(object):
-    def __init__(self, path, expression, strict):
+    def __init__(self, path, expression):
         self.path = path
         self.model_path = ModelPath(path)
         self.expression = expression
-        self.strict = strict
 
     def evaluate(self):
         self.model_path.set_model(self.expression.models)
@@ -73,7 +72,7 @@ class ModelPathWrapper(object):
         try:
             result = self.model_path.get_value()
         except (KeyError, AttributeError):
-            if self.strict:
+            if self.expression.strict:
                 raise TypeError(
                     'Value of {0} is undefined. Set options.strict'
                     ' to false to allow undefined values.'.format(self.path))

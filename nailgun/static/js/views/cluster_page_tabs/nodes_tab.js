@@ -18,13 +18,11 @@ define(
     'utils',
     'models',
     'views/common',
-    'views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function(utils, models, commonViews, NodeListScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
     var NodesTab;
 
@@ -36,7 +34,14 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
             return this.screen && _.result(this.screen, 'hasChanges');
         },
         changeScreen: function(NewScreenView, screenOptions) {
-            var options = _.extend({model: this.model, tab: this, screenOptions: screenOptions || []});
+            var mode = screenOptions.shift(),
+                options = _.extend({
+                    model: this.model,
+                    nodes: mode == 'add' ? new models.Nodes() : this.model.get('nodes'),
+                    tab: this,
+                    mode: mode,
+                    screenOptions: screenOptions || []
+                });
             if (this.screen) {
                 if (this.screen.keepScrollPosition) {
                     this.scrollPositions[this.screen.constructorName || this.screen.displayName] = $(window).scrollTop();
@@ -60,18 +65,11 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
             this.revertChanges = _.bind(function() {
                 return this.screen && this.screen.revertChanges();
             }, this);
-            this.selectedNodes = new models.Nodes();
-            this.selectedNodes.cluster = this.model;
         },
         routeScreen: function(options) {
-            var screens = {
-                list: ClusterNodesScreen,
-                add: AddNodesScreen,
-                edit: EditNodesScreen,
-                disks: EditNodeDisksScreen,
-                interfaces: EditNodeInterfacesScreen
-            };
-            this.changeScreen(screens[options[0]] || screens.list, options.slice(1));
+            options[0] = options[0] || 'list';
+            var screens = {disks: EditNodeDisksScreen, interfaces: EditNodeInterfacesScreen};
+            this.changeScreen(screens[options[0]] || NodeListScreen, options);
         },
         render: function() {
             this.routeScreen(this.tabOptions);

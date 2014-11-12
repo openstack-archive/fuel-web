@@ -47,7 +47,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         mixins: [tooltipMixin],
         propTypes: {
             type: React.PropTypes.string.isRequired,
-            name: React.PropTypes.string,
+            name: React.PropTypes.renderable,
             label: React.PropTypes.renderable,
             description: React.PropTypes.renderable,
             disabled: React.PropTypes.bool,
@@ -71,11 +71,12 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         isCheckboxOrRadio: function() {
             return this.props.type == 'radio' || this.props.type == 'checkbox';
         },
+        getValue: function() {
+            var input = this.refs.input.getDOMNode();
+            return this.props.type == 'checkbox' ? input.checked : input.value;
+        },
         onChange: function() {
-            if (this.props.onChange) {
-                var input = this.refs.input.getDOMNode();
-                return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
-            }
+            if (this.props.onChange) return this.props.onChange(this.props.name, this.getValue());
         },
         renderInput: function() {
             var input = null,

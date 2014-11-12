@@ -137,14 +137,7 @@ case 13:
 this.$ = new yy.ScalarWrapper(null)
 break;
 case 14:
-
-            var strict = yy.expression.options.strict;
-            if (yytext.slice(-1) == '?') {
-                strict = false;
-                yytext = yytext.slice(0, -1);
-            }
-            this.$ = new yy.ModelPathWrapper(yytext, yy.expression, strict);
-        
+this.$ = new yy.ModelPathWrapper(yytext)
 break;
 }
 },

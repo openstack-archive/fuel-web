@@ -231,7 +231,7 @@
             label: "VMware NSX"
             weight: 20
             restrictions:
-              - condition: "cluster:net_provider != 'neutron' or networking_parameters:net_l23_provider? != 'nsx'"
+              - condition: "cluster:net_provider != 'neutron' or networking_parameters:net_l23_provider != 'nsx'"
                 action: "hide"
           nsx_username:
             value: "admin"
@@ -801,7 +801,7 @@
                 label: "Install Mellanox drivers and SR-IOV plugin"
                 description: "If selected, both Mellanox Ethernet drivers and Mellanox network acceleration (Neutron) plugin will be installed."
                 restrictions:
-                  - "settings:common.libvirt_type.value != 'kvm' or not (cluster:net_provider == 'neutron' and networking_parameters:segmentation_type? == 'vlan')"
+                  - "settings:common.libvirt_type.value != 'kvm' or not (cluster:net_provider == 'neutron' and networking_parameters:segmentation_type == 'vlan')"
           vf_num:
             value: "16"
             label: "Number of virtual NICs"

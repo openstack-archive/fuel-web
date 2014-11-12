@@ -17,7 +17,9 @@
 
 from nailgun.test.base import BaseTestCase
 from nailgun.utils.migration import negate_condition
+from nailgun.utils.migration import remove_question_operator
 from nailgun.utils.migration import upgrade_release_attributes_50_to_51
+from nailgun.utils.migration import upgrade_release_attributes_51_to_60
 from nailgun.utils.migration import upgrade_release_roles_50_to_51
 from nailgun.utils.migration import upgrade_release_roles_51_to_60
 
@@ -126,24 +128,83 @@ class TestDataMigration(BaseTestCase):
             'not (a in b)'
         )
 
+    def test_release_attributes_metadata_upgrade_51_to_60(self):
+        sample_group = {
+            "field1": {
+                "type": "text",
+                "restrictions": [{
+                    "action": "hide",
+                    "condition": "cluster:net_provider != 'neutron' or "
+                    "networking_parameters:net_l23_provider? != 'nsx'"
+                }],
+                "description": "Description",
+                "label": "Label"
+            },
+            "field2": {
+                "type": "radio",
+                "values": [{
+                    "restrictions": [
+                        "settings:common.libvirt_type.value != 'kvm' or "
+                        "not (cluster:net_provider == 'neutron' and "
+                        "networking_parameters:segmentation_type? == 'vlan')"
+                    ],
+                    "data": "value1",
+                    "description": "Description1",
+                    "label": "Label1"
+                }, {
+                    "restrictions": [
+                        "settings:common.libvirt_type.value == 'kvm?'"
+                    ],
+                    "data": "value2",
+                    "description": "Description2",
+                    "label": "Label2"
+                }]
+            }
+        }
+        attributes_metadata = {
+            "editable": {
+                "group": sample_group
+            }
+        }
+
+        upgrade_release_attributes_51_to_60(attributes_metadata)
+
+        self.assertEqual(
+            sample_group["field1"]["restrictions"][0]["condition"],
+            "cluster:net_provider != 'neutron' or "
+            "networking_parameters:net_l23_provider != 'nsx'"
+        )
+        self.assertEqual(
+            sample_group["field2"]["values"][0]["restrictions"][0],
+            "settings:common.libvirt_type.value != 'kvm' or "
+            "not (cluster:net_provider == 'neutron' and "
+            "networking_parameters:segmentation_type == 'vlan')"
+        )
+        self.assertEqual(
+            sample_group["field2"]["values"][1]["restrictions"][0],
+            "settings:common.libvirt_type.value == 'kvm?'"
+        )
+
     def test_release_roles_metadata_upgrade_51_to_60(self):
-        operational_condition = {
+        operational_restriction = {
             'condition': "cluster:status != 'operational'",
             'warning': "MongoDB node can not be added to an "
                        "operational environment."
         }
-        ceilometer_condition = {
-            'condition': 'settings:additional_components.ceilometer.value == '
+        ceilometer_restriction = {
+            'condition': 'settings:additional_components.ceilometer.value? == '
                          'true',
             'warning': "Ceilometer should be enabled."
         }
-        new_operational_condition = {
-            'condition': negate_condition(operational_condition['condition']),
-            'message': operational_condition['warning'],
+        new_operational_restriction = {
+            'condition': remove_question_operator(negate_condition(
+                operational_restriction['condition'])),
+            'message': operational_restriction['warning'],
         }
-        new_ceilometer_condition = {
-            'condition': negate_condition(ceilometer_condition['condition']),
-            'message': ceilometer_condition['warning']
+        new_ceilometer_restriction = {
+            'condition': remove_question_operator(negate_condition(
+                ceilometer_restriction['condition'])),
+            'message': ceilometer_restriction['warning']
         }
         false_restriction = {
             'condition': "1 == 2",
@@ -159,8 +220,8 @@ class TestDataMigration(BaseTestCase):
                               'ceph-osd',
                               'zabbix-server'],
                 'depends': [
-                    operational_condition,
-                    ceilometer_condition
+                    operational_restriction,
+                    ceilometer_restriction
                 ],
             },
             'test': {
@@ -168,8 +229,8 @@ class TestDataMigration(BaseTestCase):
                 'description': "Testing restrictions list extend",
                 'conflicts': [],
                 'depends': [
-                    operational_condition,
-                    ceilometer_condition
+                    operational_restriction,
+                    ceilometer_restriction
                 ],
                 'restrictions': [
                     false_restriction
@@ -185,12 +246,12 @@ class TestDataMigration(BaseTestCase):
         self.assertTrue('depends' not in roles_metadata_60["test"])
         self.assertEqual(roles_metadata_60['mongo']['restrictions'],
                          [
-                             new_operational_condition,
-                             new_ceilometer_condition
+                             new_operational_restriction,
+                             new_ceilometer_restriction
                          ])
         self.assertEqual(roles_metadata_60['test']['restrictions'],
                          [
                              false_restriction,
-                             new_operational_condition,
-                             new_ceilometer_condition
+                             new_operational_restriction,
+                             new_ceilometer_restriction
                          ])

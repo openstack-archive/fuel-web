@@ -53,7 +53,6 @@ setup(
     zip_safe=False,
     install_requires=REQUIREMENTS,
     include_package_data=True,
-    package_data={'': ['*.yaml', 'templates/*']},
     entry_points={
         'console_scripts': [
             'fuel-upgrade = fuel_upgrade.cli:main']})

@@ -61,7 +61,7 @@ t_AND = r'and'
 t_OR = r'or'
 t_NOT = r'not'
 t_IN = r'in'
-t_MODELPATH = r'\w*?\:[\w\.\-]+\??'
+t_MODELPATH = r'\w*?\:[\w\.\-]+'
 t_EQUALS = r'=='
 t_NOT_EQUALS = r'!='
 t_LPAREN = r'\('
@@ -134,12 +134,7 @@ def p_expression_scalar(p):
 def p_expression_modelpath(p):
     """expression : MODELPATH
     """
-    path = p[1]
-    strict = expression.strict
-    if path.endswith('?'):
-        strict = False
-        path = path[:-1]
-    p[0] = ModelPathWrapper(path, expression, strict)
+    p[0] = ModelPathWrapper(p[1], expression)
 
 
 def p_error(p):

@@ -18,6 +18,7 @@
 from nailgun.test.base import BaseTestCase
 from nailgun.utils.migration import negate_condition
 from nailgun.utils.migration import upgrade_release_attributes_50_to_51
+from nailgun.utils.migration import upgrade_release_attributes_51_to_60
 from nailgun.utils.migration import upgrade_release_roles_50_to_51
 from nailgun.utils.migration import upgrade_release_roles_51_to_60
 
@@ -124,6 +125,63 @@ class TestDataMigration(BaseTestCase):
         self.assertEqual(
             negate_condition('a in b'),
             'not (a in b)'
+        )
+
+    def test_release_attributes_metadata_upgrade_51_to_60(self):
+        sample_group = {
+            "field1": {
+                "type": "text",
+                "restrictions": [{
+                    "action": "hide",
+                    "condition": "cluster:net_provider != 'neutron' or "
+                    "networking_parameters:net_l23_provider? != 'nsx'"
+                }],
+                "description": "Description",
+                "label": "Label"
+            },
+            "field2": {
+                "type": "radio",
+                "values": [{
+                    "restrictions": [
+                        "settings:common.libvirt_type.value != 'kvm' or "
+                        "not (cluster:net_provider == 'neutron' and "
+                        "networking_parameters:segmentation_type? == 'vlan')"
+                    ],
+                    "data": "value1",
+                    "description": "Description1",
+                    "label": "Label1"
+                }, {
+                    "restrictions": [
+                        "settings:common.libvirt_type.value == 'kvm?'"
+                    ],
+                    "data": "value2",
+                    "description": "Description2",
+                    "label": "Label2"
+                }]
+            }
+        }
+        attributes_metadata = {
+            "editable": {
+                "group": sample_group
+            }
+        }
+
+        upgrade_release_attributes_51_to_60(attributes_metadata)
+
+        self.assertEqual(
+            sample_group["field1"]["restrictions"][0]["condition"],
+            "cluster:net_provider != 'neutron' or "
+            "networking_parameters:net_l23_provider != 'nsx'"
+        )
+        self.assertEqual(
+            sample_group["field2"]["values"][0]["restrictions"][0],
+            "settings:common.libvirt_type.value != 'kvm' or "
+            "not (cluster:net_provider == 'neutron' and "
+            "networking_parameters:segmentation_type == 'vlan')"
+        )
+        self.assertEqual(
+            sample_group["field2"]["values"][1]["restrictions"][0],
+            "settings:common.libvirt_type.value == 'kvm?'"
         )
 
     def test_release_roles_metadata_upgrade_51_to_60(self):

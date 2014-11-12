@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['underscore'], function(_) {
+define(['underscore', 'expression/parser'], function(_, ExpressionParser) {
     'use strict';
 
     function ModelPath(path) {
@@ -28,8 +28,8 @@ define(['underscore'], function(_) {
         return this;
     }
     _.extend(ModelPath.prototype, {
-        setModel: function(models) {
-            this.model = models[this.modelName];
+        setModel: function(models, extraModels) {
+            this.model = extraModels && extraModels[this.modelName] || models[this.modelName];
             if (!this.model) {
                 throw new Error('No model with name "' + this.modelName + '" defined');
             }
@@ -60,23 +60,22 @@ define(['underscore'], function(_) {
         return this.subexpression();
     };
 
-    function ModelPathWrapper(yytext, expression, strict) {
-        this.yytext = yytext;
-        this.expression = expression;
-        this.modelPath = new ModelPath(yytext);
-        this.strict = strict;
+    function ModelPathWrapper(modelPathText) {
+        this.modelPath = new ModelPath(modelPathText);
+        this.modelPathText = modelPathText;
     }
     ModelPathWrapper.prototype.evaluate = function() {
-        this.modelPath.setModel(this.expression.knownModels);
+        var expression = ExpressionParser.yy.expression;
+        this.modelPath.setModel(expression.models, expression.extraModels);
         var result = this.modelPath.get();
         if (_.isUndefined(result)) {
-            if (this.strict) {
-                throw new TypeError('Value of ' + this.yytext + ' is undefined. Set options.strict to false to allow undefined values.');
+            if (expression.strict) {
+                throw new TypeError('Value of ' + this.modelPathText + ' is undefined. Set options.strict to false to allow undefined values.');
             }
             result = null;
         }
         this.lastResult = result;
-        this.expression.modelPaths[this.yytext] = this.modelPath;
+        expression.modelPaths[this.modelPathText] = this.modelPath;
         return this.modelPath;
     };
     ModelPathWrapper.prototype.getValue = function() {

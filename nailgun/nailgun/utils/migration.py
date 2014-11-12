@@ -15,6 +15,7 @@
 from alembic import op
 import json
 import os
+import re
 import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text
@@ -99,6 +100,40 @@ def upgrade_release_attributes_50_to_51(attrs_meta):
                 attr.pop('conflicts')
             if restrictions:
                 attr['restrictions'] = restrictions
+    return attrs_meta
+
+
+def upgrade_release_attributes_51_to_60(attrs_meta):
+    """Remove '?' operator from expressions
+    """
+    if not attrs_meta.get('editable'):
+        return attrs_meta
+
+    def remove_question_operator(expression):
+        return re.sub(r'(:[\w\.\-]+)\?', '\\1', expression)
+
+    def convert_restrictions(restrictions):
+        result = []
+        for restriction in restrictions:
+            if isinstance(restriction, basestring):
+                restriction = remove_question_operator(restriction)
+            else:
+                restriction['condition'] = remove_question_operator(
+                    restriction['condition'])
+            result.append(restriction)
+        return result
+
+    for _, group in six.iteritems(attrs_meta.get('editable')):
+        for _, attr in six.iteritems(group):
+            if 'restrictions' in attr:
+                attr['restrictions'] = convert_restrictions(
+                    attr['restrictions'])
+            if 'values' in attr:
+                for value in attr['values']:
+                    if 'restrictions' in value:
+                        value['restrictions'] = convert_restrictions(
+                            value['restrictions'])
+
     return attrs_meta
 
 

@@ -38,7 +38,10 @@ function(utils, models, NodeListScreen) {
             };
             this.constructor.__super__.initialize.apply(this, arguments);
             this.nodes.on('change:checked', this.removeRoles, this);
-            this.nodes.deferred = this.nodes.fetch().done(_.bind(this.render, this));
+            this.nodes.deferred = this.nodes.fetch().done(_.bind(function() {
+                this.updateInitialNodes();
+                this.render();
+            }, this));
         }
     });
 

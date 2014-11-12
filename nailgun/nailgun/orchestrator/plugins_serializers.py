@@ -70,6 +70,14 @@ def make_shell_task(uids, task, cwd):
             'cwd': cwd}}
 
 
+def make_apt_update_task(uids):
+    task = {
+        'parameters': {
+            'cmd': 'apt-get update',
+            'timeout': 180}}
+    return make_shell_task(uids, task, '/')
+
+
 def make_puppet_task(uids, task, cwd):
     return {
         'type': 'puppet',
@@ -162,13 +170,6 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
     def create_repositories(self, plugins):
         operating_system = self.cluster.release.operating_system
-        if operating_system == 'CentOS':
-            make_repo = make_centos_repo_task
-        elif operating_system == 'Ubuntu':
-            make_repo = make_ubuntu_repo_task
-        else:
-            raise errors.InvalidOperatingSystem(
-                'Operating system {0} is invalid'.format(operating_system))
 
         repo_tasks = []
         for plugin in plugins:
@@ -179,11 +180,29 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
             if not uids or not plugin.repo_files(self.cluster):
                 continue
 
-            repo_tasks.append(
-                self.serialize_task(
-                    plugin, {},
-                    make_repo(plugin.full_name,
-                              plugin.repo_url(self.cluster), uids)))
+            if operating_system == consts.RELEASE_OS.centos:
+                repo_tasks.append(
+                    self.serialize_task(
+                        plugin, {},
+                        make_centos_repo_task(
+                            plugin.full_name,
+                            plugin.repo_url(self.cluster), uids)))
+            elif operating_system == consts.RELEASE_OS.ubuntu:
+                repo_tasks.append(
+                    self.serialize_task(
+                        plugin, {},
+                        make_ubuntu_repo_task(
+                            plugin.full_name,
+                            plugin.repo_url(self.cluster), uids)))
+                #apt-get upgrade executed after every additional source.list
+                #to be able understand what plugin source.list caused error
+                repo_tasks.append(
+                    self.serialize_task(
+                        plugin, {},
+                        make_apt_update_task(uids)))
+            else:
+                raise errors.InvalidOperatingSystem(
+                    'Operating system {0} is invalid'.format(operating_system))
 
         return repo_tasks
 

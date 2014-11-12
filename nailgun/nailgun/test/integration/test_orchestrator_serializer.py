@@ -756,6 +756,13 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 node_db, serialized_node['role'])
             self.assertEqual(serialized_node, expected_node)
 
+    def test_neutron_vlan_ids_tag_present_on_6_0_env(self):
+        serialized_nodes = self.serialize_env_w_version('2014.2-6.0')
+        for node in serialized_nodes:
+            for item in node['network_scheme']['transformations']:
+                if 'tags' in item:
+                    self.assertEqual(item['tags'], item['vlan_ids'])
+
     def check_5x_60_neutron_attrs(self, version):
         serialized_nodes = self.serialize_env_w_version(version)
         for node in serialized_nodes:

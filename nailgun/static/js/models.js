@@ -200,6 +200,9 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
         },
+        hasChanges: function() {
+            return this.get('pending_addition') || this.get('pending_deletion');
+        },
         getRolesSummary: function() {
             var roles = this.collection.cluster.get('release').get('roles');
             return _.map(this.sortedRoles(), function(role) {return roles.findWhere({name: role}).get('label');}).join(', ');

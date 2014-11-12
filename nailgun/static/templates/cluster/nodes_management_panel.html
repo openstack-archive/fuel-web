@@ -7,8 +7,7 @@
         <% var groupings = cluster.groupings() %>
         <% _.each(_.keys(groupings), function(grouping) { %>
           <% if (clusterNodesScreen || edit || grouping == 'hardware') { %>
-          <% var currentGrouping = clusterNodesScreen ? nodes.cluster.get('grouping') : 'hardware' %>
-          <option value="<%= grouping %>" <%= grouping == currentGrouping ? 'selected' : '' %>><%= groupings[grouping] %></option>
+            <option value="<%= grouping %>" <%= grouping == currentGrouping ? 'selected' : '' %>><%= groupings[grouping] %></option>
           <% } %>
         <% }) %>
       </select>

@@ -76,17 +76,12 @@ class TestExpressionParser(BaseTestCase):
                 'settings:common.libvirt_type.value '
                 '!= "{0}")'.format(hypervisor), True),
             # test nonexistent keys
-            ('cluster:nonexistentkey?', None),
-            ('cluster:nonexistentkey? == null', True),
             ('cluster:nonexistentkey', TypeError),
-            ('cluster:mode? == null', False),
             # test evaluation flow
             ('cluster:mode != "ha_compact" and cluster:nonexistentkey == 1',
                 False),
             ('cluster:mode == "ha_compact" and cluster:nonexistentkey == 1',
                 TypeError),
-            ('cluster:mode == "ha_compact" and cluster:nonexistentkey? == 1',
-                False),
         )
 
         def evaluate_expression(expression, models):

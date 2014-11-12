@@ -190,16 +190,15 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
         },
-        toJSON: function(options) {
-            var result = this.constructor.__super__.toJSON.call(this, options);
-            return _.omit(result, 'checked');
-        },
         isSelectable: function() {
             return this.get('status') != 'error' || this.get('cluster');
         },
         hasRole: function(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
+        },
+        hasChanges: function() {
+            return this.get('pending_addition') || this.get('pending_deletion');
         },
         getRolesSummary: function() {
             var roles = this.collection.cluster.get('release').get('role_models');
@@ -237,15 +236,6 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
         },
         getByIds: function(ids) {
             return this.filter(function(node) {return _.contains(ids, node.id);});
-        },
-        groupByAttribute: function(attr) {
-            if (attr == 'roles') {
-                return this.groupBy(function(node) {return node.getRolesSummary();});
-            }
-            if (attr == 'hardware') {
-                return this.groupBy(function(node) {return node.getHardwareSummary();});
-            }
-            return this.groupBy(function(node) {return node.getRolesSummary() + '; \u00A0' + node.getHardwareSummary();});
         }
     });
 

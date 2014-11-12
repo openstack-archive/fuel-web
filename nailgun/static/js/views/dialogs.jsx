@@ -503,43 +503,40 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             'click .btn-delete': 'deleteNodes'
         },
         deleteNodes: function() {
-            if (this.nodes.cluster) {
-                this.$('.btn-delete').prop('disabled', true);
-                this.nodes.each(function(node) {
-                    if (!node.get('pending_deletion')) {
-                        if (node.get('pending_addition')) {
-                            node.set({
-                                cluster_id: null,
-                                pending_addition: false,
-                                pending_roles: []
-                            });
-                        } else {
-                            node.set({pending_deletion: true});
-                        }
-                    }
-                }, this);
-                this.nodes.toJSON = function() {
-                    return this.map(function(node) {
-                        return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
-                    });
-                };
-                this.nodes.sync('update', this.nodes)
-                    .done(_.bind(function() {
-                        this.$el.modal('hide');
-                        app.page.tab.model.fetch();
-                        app.page.tab.screen.nodes.fetch();
-                        _.invoke(app.page.tab.screen.nodes.where({checked: true}), 'set', {checked: false});
-                        app.page.tab.screen.updateBatchActionsButtons();
-                        app.navbar.refresh();
-                        app.page.removeFinishedNetworkTasks();
-                    }, this))
-                    .fail(_.bind(function() {
-                        utils.showErrorDialog({
-                            title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
-                            message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
+            this.$('.btn-delete').prop('disabled', true);
+            this.nodes.each(function(node) {
+                if (!node.get('pending_deletion')) {
+                    if (node.get('pending_addition')) {
+                        node.set({
+                            cluster_id: null,
+                            pending_addition: false,
+                            pending_roles: []
                         });
-                    }, this));
-            }
+                    } else {
+                        node.set({pending_deletion: true});
+                    }
+                }
+            }, this);
+            this.nodes.toJSON = function() {
+                return this.map(function(node) {
+                    return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
+                });
+            };
+            this.nodes.sync('update', this.nodes)
+                .done(_.bind(function() {
+                    this.$el.modal('hide');
+                    app.page.tab.screen.resetNodeSelection();
+                    app.page.tab.model.fetch();
+                    app.page.tab.model.fetchRelated('nodes');
+                    app.navbar.refresh();
+                    app.page.removeFinishedNetworkTasks();
+                }, this))
+                .fail(_.bind(function() {
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
+                        message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
+                    });
+                }, this));
         },
         render: function() {
             this.constructor.__super__.render.call(this, {nodes: this.nodes});

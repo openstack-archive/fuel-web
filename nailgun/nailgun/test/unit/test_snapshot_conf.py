@@ -69,7 +69,8 @@ class TestSnapshotConf(base.TestCase):
             mock_db.return_value.query.return_value.filter.return_value.
             all.return_value
         ) = [
-            mock.Mock(fqdn='node1'), mock.Mock(fqdn='node2')
+            mock.Mock(fqdn='node1', roles=[]),
+            mock.Mock(fqdn='node2', roles=[]),
         ]
 
         conf = task.DumpTask.conf()
@@ -83,3 +84,26 @@ class TestSnapshotConf(base.TestCase):
             'address': 'node2',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['slave']['hosts'])
+
+    @mock.patch('nailgun.task.task.db')
+    def test_controller_generating(self, mock_db):
+
+        (
+            mock_db.return_value.query.return_value.filter.return_value.
+            all.return_value
+        ) = [
+            mock.Mock(fqdn='node1', roles=['controller', 'cinder']),
+            mock.Mock(fqdn='node2', roles=['compute']),
+        ]
+
+        conf = task.DumpTask.conf()
+
+        self.assertIn({
+            'address': 'node1',
+            'ssh-key': settings.SHOTGUN_SSH_KEY,
+        }, conf['dump']['controller']['hosts'])
+
+        self.assertNotIn({
+            'address': 'node2',
+            'ssh-key': settings.SHOTGUN_SSH_KEY,
+        }, conf['dump']['controller']['hosts'])

@@ -46,8 +46,29 @@ class TestStatistics(BaseTestCase):
         libvirt_type = libvirt_dict['value']
 
         self.assertEquals('qemu', libvirt_type)
-        self.assertEquals({'libvirt_type': 'qemu'},
-                          info.get_attributes(cluster.attributes.editable))
+        self.assertDictEqual({'libvirt_type': 'qemu'},
+                             info.get_attributes(cluster.attributes.editable))
+
+    def test_get_empty_attributes(self):
+        info = InstallationInfo()
+        trash_attrs = {'some': 'trash', 'nested': {'n': 't'}}
+        result = info.get_attributes(trash_attrs)
+        self.assertDictEqual({}, result)
+
+    def test_get_attributes_exception_handled(self):
+        info = InstallationInfo()
+        variants = [
+            None,
+            [],
+            {},
+            {'common': None},
+            {'common': []},
+            {'common': {'libvirt_type': {}}},
+            {'common': {'libvirt_type': 3}},
+        ]
+        for attrs in variants:
+            result = info.get_attributes(attrs)
+            self.assertDictEqual({}, result)
 
     def test_clusters_info(self):
         info = InstallationInfo()

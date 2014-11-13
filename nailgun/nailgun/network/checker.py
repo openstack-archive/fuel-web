@@ -89,37 +89,42 @@ class NetworkCheck(object):
             self.err_msgs)
 
     def check_untagged_intersection(self):
-        """check if there are 2 or more untagged networks on the same interface
-        except public and floating networks
+        """check if there are untagged networks on the same interface
         (both nova-net and neutron)
         """
         netw_untagged = lambda n: (n['vlan_start'] is None) \
             and (not n['meta'].get('ext_net_data')) \
             and (not n['meta'].get('neutron_vlan_range'))
-        untagged_nets = set([n['name'] for n in self.networks
-                            if netw_untagged(n)])
-        # check only if we have 2 or more untagged networks
+        untagged_nets = dict([(n['id'], n['name']) for n in self.networks
+                              if netw_untagged(n)])
+        # check if nic have assign only one untagged network
         if len(untagged_nets) >= 2:
             logger.info(
                 "Untagged networks found, "
                 "checking intersection between them...")
-            interfaces = []
-            for node in self.cluster.nodes:
-                for iface in node.interfaces:
-                    interfaces.append(iface)
-            found_intersection = []
 
-            for iface in interfaces:
+            bond_interfaces = (
+                objects.Cluster.get_bond_interfaces_for_all_nodes(
+                    self.cluster,
+                    untagged_nets.keys()))
+            nic_interfaces = (
+                objects.Cluster.get_nic_interfaces_for_all_nodes(
+                    self.cluster,
+                    untagged_nets.keys()))
+            found_intersection = []
+            all_interfaces = bond_interfaces + nic_interfaces
+            for iface in all_interfaces:
                 # network name is changed for Admin on UI
                 nets = [[ng['name'] for ng in self.networks
-                         if n.id == ng['id']][0]
+                        if n.id == ng['id']][0]
                         for n in iface.assigned_networks_list]
-                crossed_nets = set(nets) & untagged_nets
+                crossed_nets = set(nets) & set(untagged_nets.values())
                 if len(crossed_nets) > 1:
                     err_net_names = ['"{0}"'.format(i)
                                      for i in crossed_nets]
-                    found_intersection.append(
-                        [iface.node.name, err_net_names])
+                    found_intersection.append((objects.Node.get_by_mac_or_uid(
+                        node_uid=iface.node_id).name,
+                        err_net_names))
 
             if found_intersection:
                 nodes_with_errors = [

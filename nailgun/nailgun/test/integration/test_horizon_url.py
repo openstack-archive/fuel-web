@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -42,7 +43,8 @@ class TestHorizonURL(BaseIntegrationTest):
 
         network = self.db.query(NetworkGroup).\
             filter(NetworkGroup.group_id ==
-                   self.env.clusters[0].default_group).\
+                   objects.Cluster.get_default_group(
+                       self.env.clusters[0]).id).\
             filter_by(name="public").first()
         lost_ips = self.db.query(IPAddr).filter_by(
             network=network.id,

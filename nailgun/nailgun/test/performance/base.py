@@ -241,3 +241,4 @@ class BaseIntegrationLoadTestCase(BaseLoadTestCase):
                         "than expected: {max_exec_time}".format(
                             exec_time=exec_time,
                             max_exec_time=self.total_time))
+        self.db.remove()

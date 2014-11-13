@@ -13,6 +13,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import functools
+
 from mock import patch
 from nailgun.test.base import fake_tasks
 from nailgun.test.performance.base import BaseIntegrationLoadTestCase
@@ -50,3 +52,13 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
     def test_deploy(self, mock_rpc):
         self.provision(self.cluster['id'], self.nodes_ids)
         self.deployment(self.cluster['id'], self.nodes_ids)
+
+    @fake_tasks()
+    def test_put_cluster_changes(self):
+        func = functools.partial(
+            self.put_handler,
+            'ClusterChangesHandler',
+            [],
+            handler_kwargs={'cluster_id': self.cluster['id']}
+        )
+        self.check_time_exec(func, 10)

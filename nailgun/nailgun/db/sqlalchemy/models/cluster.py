@@ -19,6 +19,7 @@ from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy import or_
 from sqlalchemy import Text
 from sqlalchemy import Unicode
 
@@ -32,6 +33,8 @@ from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Node
 from nailgun.db.sqlalchemy.models.node import NodeGroup
+from nailgun.db.sqlalchemy.models.node import NodeRoles
+from nailgun.db.sqlalchemy.models.node import Role
 
 
 class ClusterChanges(Base):
@@ -138,6 +141,37 @@ class Cluster(Base):
         if not self.node_groups:
             self.create_default_group()
         return [g.id for g in self.node_groups if g.name == "default"][0]
+
+    @property
+    def controllers(self):
+        controllers = db().query(Node).filter_by(cluster_id=self.id).\
+            filter(or_(
+                Node.role_list.any(name='controller'),
+                Node.pending_role_list.any(name='controller'),
+                Node.role_list.any(name='primary-controller'),
+                Node.pending_role_list.any(name='primary-controller')
+            )).all()
+        return controllers
+
+    @property
+    def controllers_group_id(self):
+        roles_ids = [role.id for role in db.query(Role).
+                     filter_by(release_id=self.release_id).
+                     filter(Role.name.in_(['controller', 'primary-controller'])
+                            ).all()]
+        controller = db().query(Node).filter_by(
+            cluster_id=self.id).filter(False == Node.pending_deletion).\
+            join(Node.role_list, aliased=True).\
+            filter(NodeRoles.role.in_(roles_ids)).first()
+        if not controller or controller and not controller.group_id:
+            controller = db().query(Node).\
+                filter(False == Node.pending_deletion).\
+                filter_by(cluster_id=self.id).\
+                join(Node.pending_role_list, aliased=True).\
+                filter(NodeRoles.role.in_(roles_ids)).first()
+        if controller and controller.group_id:
+            return controller.group_id
+        return self.default_group
 
     def get_default_group(self):
         return [g for g in self.node_groups if g.name == "default"][0]

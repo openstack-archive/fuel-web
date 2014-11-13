@@ -213,7 +213,7 @@ class NetworkManager(object):
             if network_name == 'public' and \
                     not objects.Node.should_have_public(node):
                 continue
-            group_id = node.group_id or node.cluster.default_group
+            group_id = node.group_id or node.cluster.default_group_id
 
             network = network_groups.filter(
                 or_(
@@ -289,15 +289,7 @@ class NetworkManager(object):
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
-        group_id = None
-        for node in cluster.nodes:
-            if 'controller' in node.all_roles or \
-               'primary-controller' in node.all_roles:
-                group_id = node.group_id
-                break
-
-        if not group_id:
-            group_id = cluster.default_group
+        group_id = objects.Cluster.get_controllers_group_id(cluster)
 
         network = db().query(NetworkGroup).\
             filter_by(name=network_name, group_id=group_id).first()
@@ -326,7 +318,7 @@ class NetworkManager(object):
             vip = cls.get_free_ips(network)[0]
             ne_db = IPAddr(network=network.id, ip_addr=vip)
             db().add(ne_db)
-            db().commit()
+            db().flush()
 
         return vip
 
@@ -417,7 +409,7 @@ class NetworkManager(object):
         nics = []
         group_id = node.group_id
         if not group_id:
-            group_id = node.cluster.default_group
+            group_id = node.cluster.default_group_id
 
         node_group = db().query(NodeGroup).get(group_id)
         ngs = node_group.networks + [cls.get_admin_network_group(node.id)]
@@ -1009,7 +1001,7 @@ class NetworkManager(object):
         :returns: None
         """
         cluster_db = objects.Cluster.get_by_uid(cluster_id)
-        group_id = gid or cluster_db.default_group
+        group_id = gid or cluster_db.default_group_id
         networks_metadata = cluster_db.release.networks_metadata
         networks_list = networks_metadata[cluster_db.net_provider]["networks"]
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
@@ -1132,7 +1124,7 @@ class NetworkManager(object):
         all_nets = [(n.name, n.cidr)
                 for n in node.cluster.network_groups if n.cidr]
 
-        if node.group_id != node.cluster.default_group:
+        if node.group_id != node.cluster.default_group_id:
             admin_net = cls.get_admin_network_group()
             all_nets.append((admin_net.name, admin_net.cidr))
 

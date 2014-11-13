@@ -233,7 +233,7 @@ class Node(NailgunObject):
                     break
 
         if not instance.group_id:
-            instance.group_id = instance.cluster.default_group
+            instance.group_id = instance.cluster.default_group_id
 
         db().add(instance)
         db().flush()

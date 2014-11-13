@@ -70,7 +70,7 @@ class TestHandlers(BaseIntegrationTest):
         for clstr in (cluster_db, cluster2_db):
             management_net = self.db.query(NetworkGroup).filter_by(
                 name="management",
-                group_id=clstr.default_group
+                group_id=clstr.default_group_id
             ).first()
             NovaNetworkManager.update(
                 clstr,

@@ -58,7 +58,7 @@ class TestNetworkManager(BaseIntegrationTest):
 
         management_net = self.db.query(NetworkGroup).\
             filter(
-                NetworkGroup.group_id == self.env.clusters[0].default_group
+                NetworkGroup.group_id == self.env.clusters[0].default_group_id
             ).filter_by(
                 name='management'
             ).first()

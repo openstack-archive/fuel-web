@@ -99,11 +99,6 @@ class Cluster(Base):
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
 
-    def create_default_group(self):
-        ng = NodeGroup(cluster_id=self.id, name="default")
-        db().add(ng)
-        db().commit()
-
     @property
     def changes(self):
         return [
@@ -134,13 +129,11 @@ class Cluster(Base):
         return True
 
     @property
-    def default_group(self):
+    def default_group_id(self):
         if not self.node_groups:
-            self.create_default_group()
-        return [g.id for g in self.node_groups if g.name == "default"][0]
-
-    def get_default_group(self):
-        return [g for g in self.node_groups if g.name == "default"][0]
+            return self.create_default_group()
+        return db().query(NodeGroup).filter_by(cluster_id=self.id,
+                                               name="default").first().id
 
     @property
     def network_groups(self):
@@ -148,6 +141,12 @@ class Cluster(Base):
         for ng in self.node_groups:
             net_list.extend(ng.networks)
         return net_list
+
+    def create_default_group(self):
+        ng = NodeGroup(cluster_id=self.id, name="default")
+        db().add(ng)
+        db().flush()
+        return ng.id
 
 
 class Attributes(Base):

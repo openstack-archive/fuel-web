@@ -56,7 +56,7 @@ class NetworkDeploymentSerializer(object):
     def get_common_attrs(cls, cluster, attrs):
         """Cluster network attributes."""
         common = cls.network_provider_cluster_attrs(cluster)
-        common.update(cls.network_ranges(cluster.default_group))
+        common.update(cls.network_ranges(cluster.default_group_id))
         common.update({'master_ip': settings.MASTER_IP})
         common['nodes'] = deepcopy(attrs['nodes'])
 
@@ -648,7 +648,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             NetworkGroup.cidr,
             NetworkGroup.gateway
         ).filter_by(
-            group_id=cluster.default_group,
+            group_id=cluster.default_group_id,
             name='public'
         ).first()
         join_range = lambda r: (":".join(map(str, r)) if r else None)

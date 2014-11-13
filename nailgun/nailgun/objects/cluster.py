@@ -532,6 +532,60 @@ class Cluster(NailgunObject):
             return True
         return False
 
+    @classmethod
+    def get_all_controllers(cls, instance):
+        roles_id = db().query(models.Role).\
+            filter_by(release_id=instance.release_id).\
+            filter_by(name='controller').first().id
+        deployed_controllers = db().query(models.Node).filter_by(
+            cluster_id=instance.id).join(models.Node.role_list, aliased=True).\
+            filter(models.Role.id == roles_id).all()
+        pending_controllers = db().query(models.Node).\
+            filter_by(cluster_id=instance.id).\
+            join(models.Node.pending_role_list, aliased=True).\
+            filter(models.Role.id == roles_id).all()
+        return deployed_controllers + pending_controllers
+
+    @classmethod
+    def get_controllers_group_id(cls, instance):
+        roles_id = db().query(models.Role).filter_by(
+            release_id=instance.release_id).\
+            filter_by(name='controller').first().id
+        controller = db().query(models.Node).\
+            filter_by(cluster_id=instance.id).\
+            filter(False == models.Node.pending_deletion).\
+            join(models.Node.role_list, aliased=True).\
+            filter(models.Role.id == roles_id).first()
+        if not controller or controller and not controller.group_id:
+            controller = db().query(models.Node).\
+                filter(False == models.Node.pending_deletion).\
+                filter_by(cluster_id=instance.id).\
+                join(models.Node.pending_role_list, aliased=True).\
+                filter(models.Role.id == roles_id).first()
+        if controller and controller.group_id:
+            return controller.group_id
+        return instance.default_group_id
+
+    @classmethod
+    def get_bond_interfaces_for_all_nodes(cls, instance, networks=None):
+        bond_interfaces_query = db().query(models.NodeBondInterface).\
+            join(models.Node).filter(models.Node.cluster_id == instance.id)
+        if networks:
+            bond_interfaces_query = bond_interfaces_query.join(
+                models.NodeBondInterface.assigned_networks_list,
+                aliased=True).filter(models.NetworkGroup.id.in_(networks))
+        return bond_interfaces_query.all()
+
+    @classmethod
+    def get_nic_interfaces_for_all_nodes(cls, instance, networks=None):
+        nic_interfaces_query = db().query(models.NodeNICInterface).\
+            join(models.Node).filter(models.Node.cluster_id == instance.id)
+        if networks:
+            nic_interfaces_query = nic_interfaces_query.join(
+                models.NodeNICInterface.assigned_networks_list, aliased=True).\
+                filter(models.NetworkGroup.id.in_(networks))
+        return nic_interfaces_query.all()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

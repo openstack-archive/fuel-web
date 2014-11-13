@@ -31,7 +31,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Node
-from nailgun.db.sqlalchemy.models.node import NodeGroup
 
 
 class ClusterChanges(Base):
@@ -99,11 +98,6 @@ class Cluster(Base):
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
 
-    def create_default_group(self):
-        ng = NodeGroup(cluster_id=self.id, name="default")
-        db().add(ng)
-        db().commit()
-
     @property
     def changes(self):
         return [
@@ -132,15 +126,6 @@ class Cluster(Base):
                 ).count():
             return False
         return True
-
-    @property
-    def default_group(self):
-        if not self.node_groups:
-            self.create_default_group()
-        return [g.id for g in self.node_groups if g.name == "default"][0]
-
-    def get_default_group(self):
-        return [g for g in self.node_groups if g.name == "default"][0]
 
     @property
     def network_groups(self):

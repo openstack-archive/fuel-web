@@ -27,6 +27,7 @@ from itertools import ifilter
 import mock
 
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import BaseTestCase
 from nailgun.test.base import reverse
 
 from nailgun.errors import errors
@@ -34,6 +35,7 @@ from nailgun.errors import errors
 from nailgun import consts
 
 from nailgun.db import NoCacheQuery
+from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.openstack.common import jsonutils
@@ -797,3 +799,39 @@ class TestActionLogObject(BaseIntegrationTest):
         self.assertIn('already_present_data', six.iterkeys(al.additional_info))
 
         self.db.rollback()
+
+
+class TestClusterObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestClusterObject, self).setUp()
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+                {'roles': ['cinder']}])
+
+    def test_all_controllers(self):
+        self.assertEqual(len(objects.Cluster.get_all_controllers(
+            self.env.clusters[0])), 2)
+
+    def test_get_group_id(self):
+        controllers = objects.Cluster.get_all_controllers(
+            self.env.clusters[0])
+        group_id = objects.Cluster.get_controllers_group_id(
+            self.env.clusters[0])
+        self.assertEqual(controllers[0].group_id, group_id)
+
+    def test_get_nodes_interface(self):
+        node = self.env.nodes[0]
+        node.bond_interfaces.append(
+            NodeBondInterface(name='ovs-bond0',
+                              slaves=node.nic_interfaces))
+        self.db.flush()
+        bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
+            self.env.clusters[0])
+        self.assertEqual(len(bond_interfaces), 1)
+        nic_interfaces = objects.Cluster.get_nic_interfaces_for_all_nodes(
+            self.env.clusters[0])
+        self.assertEqual(len(nic_interfaces), 8)

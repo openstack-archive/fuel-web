@@ -110,6 +110,10 @@ NODE_ERRORS = Enum(
     'deletion'
 )
 
+NODE_GROUPS_NAMES = Enum(
+    'default'
+)
+
 NETWORK_INTERFACE_TYPES = Enum(
     'ether',
     'bond'

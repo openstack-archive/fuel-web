@@ -729,12 +729,19 @@ class DumpTask(object):
         ).all()
 
         dump_conf = deepcopy(settings.DUMP)
-        dump_conf['dump']['slave']['hosts'] = [
-            {
-                'address': n.fqdn,
+        for node in nodes:
+            # save controllers
+            if 'controller' in node.roles:
+                dump_conf['dump']['controller']['hosts'].append({
+                    'address': node.fqdn,
+                    'ssh-key': settings.SHOTGUN_SSH_KEY,
+                })
+
+            # save slaves
+            dump_conf['dump']['slave']['hosts'].append({
+                'address': node.fqdn,
                 'ssh-key': settings.SHOTGUN_SSH_KEY,
-            } for n in nodes
-        ]
+            })
 
         # render postgres connection data in dump settings
         dump_conf['dump']['local']['objects'].append({

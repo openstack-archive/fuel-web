@@ -77,12 +77,5 @@ e
     | NULL
         {$$ = new yy.ScalarWrapper(null)}
     | MODELPATH
-        {
-            var strict = yy.expression.options.strict;
-            if (yytext.slice(-1) == '?') {
-                strict = false;
-                yytext = yytext.slice(0, -1);
-            }
-            $$ = new yy.ModelPathWrapper(yytext, yy.expression, strict);
-        }
+        {$$ = new yy.ModelPathWrapper(yytext)}
     ;

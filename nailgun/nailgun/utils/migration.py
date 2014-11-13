@@ -15,6 +15,7 @@
 from alembic import op
 import json
 import os
+import re
 import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text
@@ -72,6 +73,12 @@ def negate_condition(condition):
     return "not ({0})".format(condition)
 
 
+def remove_question_operator(expression):
+    """Removes '?' operator from expressions, it was deprecated in 6.0
+    """
+    return re.sub(r'(:[\w\.\-]+)\?', '\\1', expression)
+
+
 def upgrade_release_attributes_50_to_51(attrs_meta):
     if not attrs_meta.get('editable'):
         return attrs_meta
@@ -102,6 +109,37 @@ def upgrade_release_attributes_50_to_51(attrs_meta):
     return attrs_meta
 
 
+def upgrade_release_attributes_51_to_60(attrs_meta):
+    """Remove '?' operator from expressions
+    """
+    if not attrs_meta.get('editable'):
+        return attrs_meta
+
+    def convert_restrictions(restrictions):
+        result = []
+        for restriction in restrictions:
+            if isinstance(restriction, basestring):
+                restriction = remove_question_operator(restriction)
+            else:
+                restriction['condition'] = remove_question_operator(
+                    restriction['condition'])
+            result.append(restriction)
+        return result
+
+    for _, group in six.iteritems(attrs_meta.get('editable')):
+        for _, attr in six.iteritems(group):
+            if 'restrictions' in attr:
+                attr['restrictions'] = convert_restrictions(
+                    attr['restrictions'])
+            if 'values' in attr:
+                for value in attr['values']:
+                    if 'restrictions' in value:
+                        value['restrictions'] = convert_restrictions(
+                            value['restrictions'])
+
+    return attrs_meta
+
+
 def upgrade_release_roles_50_to_51(roles_meta):
     for _, role in six.iteritems(roles_meta):
         if role.get('depends'):
@@ -121,9 +159,8 @@ def upgrade_release_roles_51_to_60(roles_meta):
     for _, role in six.iteritems(roles_meta):
         for depend in role.get('depends', []):
             cond = depend.get('condition')
-            negated_cond = negate_condition(cond)
             new_restriction = {
-                'condition': negated_cond,
+                'condition': remove_question_operator(negate_condition(cond))
             }
             if 'warning' in depend:
                 new_restriction['message'] = depend['warning']

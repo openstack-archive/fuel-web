@@ -17,26 +17,36 @@ define(['expression/parser', 'expression/objects'], function(ExpressionParser, e
     'use strict';
 
     function Expression(expressionText, models, options) {
-        if (!(this instanceof Expression)) {
-            return new Expression(expressionText, models, options);
-        }
-        options = _.extend({strict: true}, options);
-        _.extend(this, {
-            expressionText: expressionText,
-            models: models || {},
-            options: options
-        });
-        _.extend(ExpressionParser.yy, expressionObjects, {expression: this});
-        this.compiledExpression = ExpressionParser.parse(expressionText);
+        if (!this) return new Expression(expressionText, models, options);
+        this.strict = options && !_.isUndefined(options.strict) ? options.strict : true;
+        this.expressionText = expressionText;
+        this.models = models || {};
+        this.compiledExpression = this.getCompiledExpression();
         return this;
     }
-    Expression.prototype.evaluate = function(extraModels) {
-        this.modelPaths = {};
-        this.knownModels = extraModels ? _.extend({}, this.models, extraModels) : this.models;
-        var value = this.compiledExpression.evaluate();
-        delete this.knownModels;
-        return value;
-    };
+    _.extend(Expression.prototype, {
+        evaluate: function(extraModels) {
+            // FIXME(vkramskikh): currently Jison supports sharing state
+            // only via ExpressionParser.yy. It is unsafe and could lead to
+            // issues in case we start to use webworkers
+            ExpressionParser.yy.expression = this;
+            this.modelPaths = {};
+            this.extraModels = extraModels;
+            var value = this.compiledExpression.evaluate();
+            delete this.extraModels;
+            return value;
+        },
+        getCompiledExpression: function() {
+            var cacheEntry = this.expressionCache[this.expressionText];
+            if (!cacheEntry) {
+                cacheEntry = this.expressionCache[this.expressionText] = ExpressionParser.parse(this.expressionText);
+            }
+            return cacheEntry;
+        },
+        expressionCache: {}
+    });
+
+    _.extend(ExpressionParser.yy, expressionObjects);
 
     return Expression;
 });

@@ -32,6 +32,7 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import dump_master_node_settings
+from nailgun.utils.migration import upgrade_release_attributes_51_to_60
 from nailgun.utils.migration import upgrade_release_fill_orchestrator_data
 from nailgun.utils.migration import upgrade_release_roles_51_to_60
 from nailgun.utils.migration import upgrade_release_set_deployable_false
@@ -181,20 +182,23 @@ def upgrade_releases():
     connection = op.get_bind()
 
     select = text(
-        """SELECT id, roles_metadata
+        """SELECT id, attributes_metadata, roles_metadata
         from releases""")
     update = text(
         """UPDATE releases
-        SET roles_metadata = :roles
+        SET attributes_metadata = :attrs, roles_metadata = :roles
         WHERE id = :id""")
     r = connection.execute(select)
 
     for release in r:
-        roles_meta = upgrade_release_roles_51_to_60(
+        attrs_meta = upgrade_release_attributes_51_to_60(
             jsonutils.loads(release[1]))
+        roles_meta = upgrade_release_roles_51_to_60(
+            jsonutils.loads(release[2]))
         connection.execute(
             update,
             id=release[0],
+            attrs=jsonutils.dumps(attrs_meta),
             roles=jsonutils.dumps(roles_meta)
         )
 

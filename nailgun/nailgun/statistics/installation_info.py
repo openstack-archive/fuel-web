@@ -62,11 +62,12 @@ class InstallationInfo(object):
         )
         for path, map_to_name in white_list:
             attr = attributes
-            for p in path:
-                if p not in attr:
-                    break
-                attr = attr.get(p)
-            result[map_to_name] = attr
+            try:
+                for p in path:
+                    attr = attr[p]
+                result[map_to_name] = attr
+            except (KeyError, TypeError):
+                pass
         return result
 
     def get_nodes_info(self, nodes):

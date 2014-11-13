@@ -289,15 +289,7 @@ class NetworkManager(object):
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
-        group_id = None
-        for node in cluster.nodes:
-            if 'controller' in node.all_roles or \
-               'primary-controller' in node.all_roles:
-                group_id = node.group_id
-                break
-
-        if not group_id:
-            group_id = cluster.default_group
+        group_id = cluster.controllers_group_id
 
         network = db().query(NetworkGroup).\
             filter_by(name=network_name, group_id=group_id).first()
@@ -326,7 +318,7 @@ class NetworkManager(object):
             vip = cls.get_free_ips(network)[0]
             ne_db = IPAddr(network=network.id, ip_addr=vip)
             db().add(ne_db)
-            db().commit()
+            db().flush()
 
         return vip
 

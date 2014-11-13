@@ -284,6 +284,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         # check there's exception with one non-controller node
         self.node.roles = ['compute']
+        self.env.db.commit()
         self.assertRaises(
             errors.NotEnoughControllers,
             CheckBeforeDeploymentTask._check_controllers_count,

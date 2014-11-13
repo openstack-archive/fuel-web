@@ -595,10 +595,7 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def _check_controllers_count(cls, task):
         cluster = task.cluster
-        controllers = filter(
-            lambda node: 'controller' in node.all_roles,
-            task.cluster.nodes)
-
+        controllers = cluster.controllers
         # we should make sure that cluster has at least one controller
         if len(controllers) < 1:
             raise errors.NotEnoughControllers(

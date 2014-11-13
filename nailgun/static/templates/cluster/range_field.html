@@ -10,7 +10,7 @@
       <input data-range="<%= index %>" class="range" type="text" name="range1" placeholder="127.0.0.1" <%= disabled %> />
     </div>
   </label>
-  <div class="ip-ranges-control">
+  <div class="ip-ranges-control <%= additionPossible ? '' : 'hide' %>">
     <button class="btn btn-link ip-ranges-add" <%= disabled %>><i class="icon-plus-circle"></i></button>
   </div>
   <div class="ip-ranges-control <%= removalPossible ? '' : 'hide' %>">

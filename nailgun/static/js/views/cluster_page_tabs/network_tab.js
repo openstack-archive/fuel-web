@@ -324,11 +324,13 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             var config = this.ipRangesConfig;
             var $el = this.$('.' + config.domSelector + '-ranges-rows');
             $el.html('');
+            var isFloatingNeutron = (config.attribute == 'floating_ranges') && this.parameters && !this.parameters.get('net_manager');
             var ipRanges = config.model.get(config.attribute);
             _.each(ipRanges, function(range, rangeIndex) {
                 $el.append(this.rangeTemplate({
                     index: rangeIndex,
                     removalPossible: ipRanges.length > 1,
+                    additionPossible: !isFloatingNeutron,
                     locked: this.tab.isLocked()
                 }));
             }, this);

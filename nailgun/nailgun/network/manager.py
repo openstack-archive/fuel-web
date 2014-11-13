@@ -213,7 +213,8 @@ class NetworkManager(object):
             if network_name == 'public' and \
                     not objects.Node.should_have_public(node):
                 continue
-            group_id = node.group_id or node.cluster.default_group
+            group_id = (node.group_id or
+                objects.Cluster.get_default_group(node.cluster).id)
 
             network = network_groups.filter(
                 or_(
@@ -289,15 +290,7 @@ class NetworkManager(object):
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
-        group_id = None
-        for node in cluster.nodes:
-            if 'controller' in node.all_roles or \
-               'primary-controller' in node.all_roles:
-                group_id = node.group_id
-                break
-
-        if not group_id:
-            group_id = cluster.default_group
+        group_id = objects.Cluster.get_controllers_group_id(cluster)
 
         network = db().query(NetworkGroup).\
             filter_by(name=network_name, group_id=group_id).first()
@@ -326,7 +319,7 @@ class NetworkManager(object):
             vip = cls.get_free_ips(network)[0]
             ne_db = IPAddr(network=network.id, ip_addr=vip)
             db().add(ne_db)
-            db().commit()
+            db().flush()
 
         return vip
 
@@ -415,11 +408,10 @@ class NetworkManager(object):
         networks metadata
         """
         nics = []
-        group_id = node.group_id
-        if not group_id:
-            group_id = node.cluster.default_group
-
+        group_id = (node.group_id or
+                    objects.Cluster.get_default_group(node.cluster).id)
         node_group = db().query(NodeGroup).get(group_id)
+
         ngs = node_group.networks + [cls.get_admin_network_group(node.id)]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority
@@ -1001,17 +993,16 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def create_network_groups(cls, cluster_id, neutron_segment_type, gid=None):
+    def create_network_groups(cls, cluster, neutron_segment_type, gid=None):
         """Method for creation of network groups for cluster.
 
-        :param cluster_id: Cluster database ID.
-        :type  cluster_id: int
+        :param cluster: Cluster instance.
+        :type  cluster: instance
         :returns: None
         """
-        cluster_db = objects.Cluster.get_by_uid(cluster_id)
-        group_id = gid or cluster_db.default_group
-        networks_metadata = cluster_db.release.networks_metadata
-        networks_list = networks_metadata[cluster_db.net_provider]["networks"]
+        group_id = gid or objects.Cluster.get_default_group(cluster).id
+        networks_metadata = cluster.release.networks_metadata
+        networks_list = networks_metadata[cluster.net_provider]["networks"]
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
 
         def check_range_in_use_already(cidr_range):
@@ -1053,7 +1044,7 @@ class NetworkManager(object):
                                                        new_ip_range.last))
 
             nw_group = NetworkGroup(
-                release=cluster_db.release.id,
+                release=cluster.release.id,
                 name=net['name'],
                 cidr=str(cidr) if cidr else None,
                 gateway=gw,
@@ -1111,7 +1102,7 @@ class NetworkManager(object):
 
     @classmethod
     def create_network_groups_and_config(cls, cluster, data):
-        cls.create_network_groups(cluster.id,
+        cls.create_network_groups(cluster,
                                   data.get('net_segment_type'))
         if cluster.net_provider == 'neutron':
             cls.create_neutron_config(cluster,
@@ -1132,7 +1123,7 @@ class NetworkManager(object):
         all_nets = [(n.name, n.cidr)
                 for n in node.cluster.network_groups if n.cidr]
 
-        if node.group_id != node.cluster.default_group:
+        if node.group_id != objects.Cluster.get_default_group(node.cluster).id:
             admin_net = cls.get_admin_network_group()
             all_nets.append((admin_net.name, admin_net.cidr))
 

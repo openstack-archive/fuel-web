@@ -174,14 +174,13 @@ class Cluster(NailgunObject):
 
         data["fuel_version"] = settings.VERSION["release"]
         new_cluster = super(Cluster, cls).create(data)
-        new_cluster.create_default_group()
+        cls.create_default_group(new_cluster)
 
         cls.create_attributes(new_cluster)
 
         try:
             cls.get_network_manager(new_cluster).\
                 create_network_groups_and_config(new_cluster, data)
-
             cls.add_pending_changes(new_cluster, "attributes")
             cls.add_pending_changes(new_cluster, "networks")
 
@@ -605,6 +604,73 @@ class Cluster(NailgunObject):
         for role, meta in roles_metadata.items():
             if meta.get('has_primary'):
                 cls.set_primary_role(instance, nodes, role)
+
+    @classmethod
+    def get_all_controllers(cls, instance):
+        roles_id = db().query(models.Role).\
+            filter_by(release_id=instance.release_id).\
+            filter_by(name='controller').first().id
+        deployed_controllers = db().query(models.Node).filter_by(
+            cluster_id=instance.id).join(models.Node.role_list, aliased=True).\
+            filter(models.Role.id == roles_id).all()
+        pending_controllers = db().query(models.Node).\
+            filter_by(cluster_id=instance.id).\
+            join(models.Node.pending_role_list, aliased=True).\
+            filter(models.Role.id == roles_id).all()
+        return deployed_controllers + pending_controllers
+
+    @classmethod
+    def get_controllers_group_id(cls, instance):
+        roles_id = db().query(models.Role).filter_by(
+            release_id=instance.release_id).\
+            filter_by(name='controller').first().id
+        controller = db().query(models.Node).\
+            filter_by(cluster_id=instance.id).\
+            filter(False == models.Node.pending_deletion).\
+            join(models.Node.role_list, aliased=True).\
+            filter(models.Role.id == roles_id).first()
+        if not controller or not controller.group_id:
+            controller = db().query(models.Node).\
+                filter(False == models.Node.pending_deletion).\
+                filter_by(cluster_id=instance.id).\
+                join(models.Node.pending_role_list, aliased=True).\
+                filter(models.Role.id == roles_id).first()
+        if controller and controller.group_id:
+            return controller.group_id
+        return cls.get_default_group(instance).id
+
+    @classmethod
+    def get_bond_interfaces_for_all_nodes(cls, instance, networks=None):
+        bond_interfaces_query = db().query(models.NodeBondInterface).\
+            join(models.Node).filter(models.Node.cluster_id == instance.id)
+        if networks:
+            bond_interfaces_query = bond_interfaces_query.join(
+                models.NodeBondInterface.assigned_networks_list,
+                aliased=True).filter(models.NetworkGroup.id.in_(networks))
+        return bond_interfaces_query.all()
+
+    @classmethod
+    def get_nic_interfaces_for_all_nodes(cls, instance, networks=None):
+        nic_interfaces_query = db().query(models.NodeNICInterface).\
+            join(models.Node).filter(models.Node.cluster_id == instance.id)
+        if networks:
+            nic_interfaces_query = nic_interfaces_query.join(
+                models.NodeNICInterface.assigned_networks_list, aliased=True).\
+                filter(models.NetworkGroup.id.in_(networks))
+        return nic_interfaces_query.all()
+
+    @classmethod
+    def get_default_group(cls, instance):
+        return [g for g in instance.node_groups
+                if g.name == consts.NODE_GROUPS.default][0]
+
+    @classmethod
+    def create_default_group(cls, instance):
+        node_group = models.NodeGroup(name=consts.NODE_GROUPS.default)
+        instance.node_groups.append(node_group)
+        db.add(node_group)
+        db().flush()
+        return node_group
 
 
 class ClusterCollection(NailgunCollection):

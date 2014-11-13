@@ -17,6 +17,8 @@
 from mock import patch
 from sqlalchemy.sql import not_
 
+from nailgun import objects
+
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Release
@@ -70,7 +72,7 @@ class TestHandlers(BaseIntegrationTest):
         for clstr in (cluster_db, cluster2_db):
             management_net = self.db.query(NetworkGroup).filter_by(
                 name="management",
-                group_id=clstr.default_group
+                group_id=objects.Cluster.get_default_group(clstr).id
             ).first()
             NovaNetworkManager.update(
                 clstr,

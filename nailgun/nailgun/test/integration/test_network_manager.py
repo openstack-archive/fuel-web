@@ -24,6 +24,7 @@ from netaddr import IPRange
 from sqlalchemy import not_
 
 import nailgun
+from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
@@ -58,7 +59,8 @@ class TestNetworkManager(BaseIntegrationTest):
 
         management_net = self.db.query(NetworkGroup).\
             filter(
-                NetworkGroup.group_id == self.env.clusters[0].default_group
+                NetworkGroup.group_id ==
+                objects.Cluster.get_default_group(self.env.clusters[0]).id
             ).filter_by(
                 name='management'
             ).first()

@@ -663,6 +663,17 @@ DUMP:
       - type: dir
         path: /var/log
 
+    controller:
+      hosts: []
+
+      objects:
+      - type: command
+        command: pcs status
+        to_file: pcs_status.txt
+      - type: command
+        command: rabbitmqctl report
+        to_file: rabbitmqctl_report.txt
+
     slave:
       hosts: []
 
@@ -705,6 +716,8 @@ DUMP:
         path: /etc/resolv.conf
       - type: dir
         path: /var/run/pcap_dir
+      - type: file
+        path: /var/log/atop/atop*
       - type: command
         command: df -h
         to_file: df.txt
@@ -767,6 +780,9 @@ DUMP:
       - type: command
         command: ceph osd tree
         to_file: ceph_osd_tree.txt
+      - type: command
+        command: cat /proc/interrupts
+        to_file: proc_interrupts.txt
 
 # performance tests settings
 PERFORMANCE_PROFILING_TESTS: 0

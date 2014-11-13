@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import node
@@ -53,25 +54,25 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker = NetworkCheck(FakeTask(cluster_db), {})
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
-                             'name': 'fake1',
+                             'name': consts.NETWORKS.storage,
                              'vlan_start': None,
                              'meta': {'notation': 'cidr'}},
                             {'id': 2,
                              'cidr': '192.168.0.0/26',
-                             'name': 'fake2',
+                             'name': consts.NETWORKS.public,
                              'vlan_start': None,
                              'meta': {'notation': 'cidr'}}]
         ng1 = NetworkGroup()
-        ng1.name = 'fake1'
+        ng1.name = consts.NETWORKS.storage
         ng1.id = 1
         ng2 = NetworkGroup()
-        ng2.name = 'fake2'
+        ng2.name = consts.NETWORKS.public
         ng2.id = 2
         checker.cluster.nodes[0].interfaces[0].assigned_networks_list = \
             [ng1, ng2]
         checker.cluster.nodes[0].interfaces[1].assigned_networks_list = \
             [ng1, ng2]
-
+        self.env.db.commit()
         self.assertRaises(errors.NetworkCheckError,
                           checker.check_untagged_intersection)
 

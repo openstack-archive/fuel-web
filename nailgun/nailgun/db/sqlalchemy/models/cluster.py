@@ -30,8 +30,12 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.network import NetworkGroup
 from nailgun.db.sqlalchemy.models.node import Node
+from nailgun.db.sqlalchemy.models.node import NodeBondInterface
 from nailgun.db.sqlalchemy.models.node import NodeGroup
+from nailgun.db.sqlalchemy.models.node import NodeNICInterface
+from nailgun.db.sqlalchemy.models.node import Role
 
 
 class ClusterChanges(Base):
@@ -99,11 +103,6 @@ class Cluster(Base):
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
 
-    def create_default_group(self):
-        ng = NodeGroup(cluster_id=self.id, name="default")
-        db().add(ng)
-        db().commit()
-
     @property
     def changes(self):
         return [
@@ -139,8 +138,39 @@ class Cluster(Base):
             self.create_default_group()
         return [g.id for g in self.node_groups if g.name == "default"][0]
 
-    def get_default_group(self):
-        return [g for g in self.node_groups if g.name == "default"][0]
+    @property
+    def controllers(self):
+        roles_ids = [role.id for role in db.query(Role).
+                     filter_by(release_id=self.release_id).
+                     filter(Role.name.in_(['controller', 'primary-controller'])
+                            ).all()]
+        deployed_controllers = db().query(Node).filter_by(
+            cluster_id=self.id).join(Node.role_list, aliased=True).\
+            filter(Role.id.in_(roles_ids)).all()
+        pending_controllers = db().query(Node).filter_by(
+            cluster_id=self.id).join(Node.pending_role_list, aliased=True).\
+            filter(Role.id.in_(roles_ids)).all()
+        return deployed_controllers + pending_controllers
+
+    @property
+    def controllers_group_id(self):
+        roles_ids = [role.id for role in db.query(Role).
+                     filter_by(release_id=self.release_id).
+                     filter(Role.name.in_(['controller', 'primary-controller'])
+                            ).all()]
+        controller = db().query(Node).filter_by(
+            cluster_id=self.id).filter(False == Node.pending_deletion).\
+            join(Node.role_list, aliased=True).\
+            filter(Role.id.in_(roles_ids)).first()
+        if not controller or controller and not controller.group_id:
+            controller = db().query(Node).\
+                filter(False == Node.pending_deletion).\
+                filter_by(cluster_id=self.id).\
+                join(Node.pending_role_list, aliased=True).\
+                filter(Role.id.in_(roles_ids)).first()
+        if controller and controller.group_id:
+            return controller.group_id
+        return self.default_group
 
     @property
     def network_groups(self):
@@ -148,6 +178,32 @@ class Cluster(Base):
         for ng in self.node_groups:
             net_list.extend(ng.networks)
         return net_list
+
+    def get_default_group(self):
+        return [g for g in self.node_groups if g.name == "default"][0]
+
+    def create_default_group(self):
+        ng = NodeGroup(cluster_id=self.id, name="default")
+        db().add(ng)
+        db().commit()
+
+    def bond_interfaces(self, networks=None):
+        bond_interfaces_query = db().query(
+            NodeBondInterface).join(Node).filter(Node.cluster_id == self.id)
+        if networks:
+            bond_interfaces_query = bond_interfaces_query.join(
+                NodeBondInterface.assigned_networks_list, aliased=True).\
+                filter(NetworkGroup.id.in_(networks))
+        return bond_interfaces_query.all()
+
+    def nic_interfaces(self, networks=None):
+        nic_interfaces_query = db().query(NodeNICInterface).join(Node).filter(
+            Node.cluster_id == self.id)
+        if networks:
+            nic_interfaces_query = nic_interfaces_query.join(
+                NodeNICInterface.assigned_networks_list, aliased=True).\
+                filter(NetworkGroup.id.in_(networks))
+        return nic_interfaces_query.all()
 
 
 class Attributes(Base):

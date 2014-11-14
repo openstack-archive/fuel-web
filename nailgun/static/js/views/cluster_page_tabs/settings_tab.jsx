@@ -277,7 +277,7 @@ function(React, utils, models, Expression, controls) {
                                 checked={metadata.enabled}
                                 label={metadata.label || this.props.groupName}
                                 disabled={this.props.disabled}
-                                tooltipText={this.props.message}
+                                tooltipText={this.props.message || metadata.message}
                                 onChange={this.props.onChange}
                             />
                             :
@@ -300,7 +300,7 @@ function(React, utils, models, Expression, controls) {
                                             if (!this.checkRestrictions('hide', valuePath).result) {
                                                 value.disabled = this.props.disabled || disabled || processedValueRestrictions.result;
                                                 value.checked = value.data == setting.value;
-                                                value.tooltipText = processedValueRestrictions.message;
+                                                value.tooltipText = processedValueRestrictions.message || value.message;
                                                 return value;
                                             }
                                         }, this)
@@ -312,7 +312,7 @@ function(React, utils, models, Expression, controls) {
                                         label={setting.label}
                                         values={values}
                                         error={error}
-                                        tooltipText={processedRestrictions.message}
+                                        tooltipText={processedRestrictions.message || setting.message}
                                     />;
                                 }
                                 return <controls.Input {...this.props}
@@ -328,7 +328,7 @@ function(React, utils, models, Expression, controls) {
                                     error={error}
                                     disabled={this.props.disabled || disabled}
                                     wrapperClassName='tablerow-wrapper'
-                                    tooltipText={processedRestrictions.message}
+                                    tooltipText={processedRestrictions.message || setting.message}
                                 />;
                             }
                         }, this)}

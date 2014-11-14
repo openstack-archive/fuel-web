@@ -125,6 +125,8 @@ class TestStatistics(BaseTestCase):
         self.assertEquals(len(unallocated_nodes_params),
                           info['unallocated_nodes_num'])
         self.assertTrue('master_node_uid' in info)
+        self.assertTrue('contact_info_provided' in info['user_information'])
+        self.assertFalse(info['user_information']['contact_info_provided'])
         self.assertDictEqual(settings.VERSION, info['fuel_release'])
 
     def check_collector_urls(self, server):

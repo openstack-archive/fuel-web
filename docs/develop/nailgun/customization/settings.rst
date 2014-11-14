@@ -12,11 +12,14 @@ with the following attributes::
     toggleable: true
     enabled: false
     weight: 40
+    message: "Some text"
 
 * *toggleable* defines an ability to enable/disable the whole setting group
   on UI (checkbox control is presented near a setting group label)
 * *enabled* indicates whether the group is checked on the UI
 * *weight* defines the order in which this group is displayed on the tab.
+* *message* is a message that is shown in tooltip for toggleable setting
+  group.
 * *restrictions*: see restrictions_.
 
 Other sections of a setting group represent separate settings. A setting
@@ -28,6 +31,7 @@ structure includes the following attributes::
     description: ""
     weight: 30
     type: "radio"
+    message: "Some text"
     values:
       - data: "udp"
         label: "UDP"
@@ -37,6 +41,7 @@ structure includes the following attributes::
       - data: "tcp"
         label: "TCP"
         description: ""
+        message: "Some text"
     regex:
       source: "^[A-z0-9]+$"
       error: "Invalid data"
@@ -51,6 +56,7 @@ structure includes the following attributes::
 * *restrictions*: see restrictions_.
 * *description* section should also contain information about setting
   restrictions (dependencies, conflicts)
+* *message* is a message that is shown in setting tooltip.
 * *values* list is needed for settings of "radio" type to declare its
   possible values. Options from "values" list also support dependencies
   and conflcits declaration.

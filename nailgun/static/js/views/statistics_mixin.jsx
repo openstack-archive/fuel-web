@@ -74,7 +74,6 @@ define([
         componentDidMount: function() {
             this.props.settings.fetch({cache: true})
                 .always(_.bind(function() {
-                    this.props.settings.processRestrictions();
                     this.configModels = {
                         fuel_settings: this.props.settings,
                         version: app.version,

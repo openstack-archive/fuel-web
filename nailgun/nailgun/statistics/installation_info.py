@@ -89,6 +89,7 @@ class InstallationInfo(object):
             None, cluster_id=None).count()
 
         info = {
+            'user_information': self.get_user_info(),
             'master_node_uid': self.get_master_node_uid(),
             'fuel_release': self.fuel_release_info(),
             'clusters': clusters_info,
@@ -101,3 +102,15 @@ class InstallationInfo(object):
 
     def get_master_node_uid(self):
         return MasterNodeSettings.get_one().master_node_uid
+
+    def get_user_info(self):
+        try:
+            stat_settings = MasterNodeSettings.get_one(). \
+                settings.get("statistics", {})
+            return {
+                "contact_info_provided":
+                stat_settings.get("user_choice_saved", {}).get("value", False)
+                and stat_settings.get("send_user_info", {}).get("value", False)
+            }
+        except Exception:
+            return {"contact_info_provided": False}

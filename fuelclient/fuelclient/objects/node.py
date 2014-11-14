@@ -152,7 +152,5 @@ class NodeCollection(object):
         return cls(Node.get_all())
 
     def filter_by_env_id(self, env_id):
-        self.collection = filter(
-            lambda node: node.env_id == env_id,
-            self.collection
-        )
+        predicate = lambda node: node.data['cluster'] == env_id
+        self.collection = filter(predicate, self.collection)

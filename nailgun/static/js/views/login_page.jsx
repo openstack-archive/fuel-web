@@ -82,6 +82,7 @@ function($, React, controls) {
         },
         getInitialState: function() {
             return {
+                actionInProgress: false,
                 hasError: false
             };
         },
@@ -96,9 +97,16 @@ function($, React, controls) {
             username = this.refs.username.getDOMNode().value;
             password = this.refs.password.getDOMNode().value;
 
-            this.login(username, password);
+            this.setState({actionInProgress: true});
+
+            this.login(username, password)
+                .always(_.bind(function() {
+                    this.setState({actionInProgress: false});
+                }, this));
         },
         render: function() {
+            var loginButtonDisabled = this.state.hasError || this.state.actionInProgress;
+
             return (
                 <form className='form-horizontal' onSubmit={this.onSubmit}>
                     <fieldset>
@@ -126,7 +134,7 @@ function($, React, controls) {
                         }
                         <div className='control-group'>
                             <div id='login-button-control' className='controls'>
-                                <button type='submit' className='btn btn-success login-btn' disabled={this.state.hasError}>{$.t('login_page.log_in')}</button>
+                                <button type='submit' className='btn btn-success login-btn' disabled={loginButtonDisabled}>{$.t('login_page.log_in')}</button>
                             </div>
                         </div>
                     </fieldset>

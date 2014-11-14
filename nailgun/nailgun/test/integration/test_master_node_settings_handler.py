@@ -21,6 +21,7 @@ from nailgun.openstack.common import jsonutils
 
 from nailgun import objects
 
+from nailgun.statistics.installation_info import InstallationInfo
 from nailgun.statistics.statsenderd import StatsSender
 
 
@@ -423,3 +424,48 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(StatsSender().must_send_stats(), False)
+
+    def test_user_contacts_info_disabled_while_not_confirmed_by_user(self):
+        self.assertEqual(
+            InstallationInfo().get_installation_info()['user_information'],
+            {'contact_info_provided': False})
+
+    def test_user_contacts_info_disabled_by_default(self):
+        resp = self.app.get(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        data = resp.json_body
+
+        # emulate user confirmed settings in UI
+        data["settings"]["statistics"]["user_choice_saved"]["value"] = True
+        resp = self.app.put(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            InstallationInfo().get_installation_info()['user_information'],
+            {'contact_info_provided': False})
+
+    def test_user_contacts_info_enabled_by_user(self):
+        resp = self.app.get(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        data = resp.json_body
+
+        # emulate user enabled contact info sending to support team
+        data["settings"]["statistics"]["user_choice_saved"]["value"] = True
+        data["settings"]["statistics"]["send_user_info"]["value"] = \
+            True
+        resp = self.app.put(
+            reverse("MasterNodeSettingsHandler"),
+            headers=self.default_headers,
+            params=jsonutils.dumps(data)
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            InstallationInfo().get_installation_info()['user_information'],
+            {'contact_info_provided': True})

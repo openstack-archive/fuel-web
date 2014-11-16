@@ -129,6 +129,12 @@ your Fuel ISO build environment on Ubuntu 14.04:
     make clean          #remove build/ directory
     make deep_clean     #remove build/ and local_mirror/
 
+.. note:: In case you are using Virtualbox for building iso, please ensure that the build
+    directory BUILD_DIR and LOCAL_MIRROR
+    (see `config.mk <https://github.com/stackforge/fuel-main/blob/master/config.mk>`_)
+    both ``are OUT`` of the Virtualbox
+    `shared folder path <https://www.virtualbox.org/manual/ch04.html#sharedfolders>`_
+
 Nailgun (Fuel-Web)
 ------------------
 

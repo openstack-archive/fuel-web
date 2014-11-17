@@ -76,16 +76,6 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
             close: function() {
                 $(this.getDOMNode()).modal('hide');
             },
-            displayError: function(options) {
-                var data = {error: true};
-                // FIXME: after all dialogs moved to React the folowing assignments should be reverted to _.extend(options, ...) format
-                if (options) {
-                    if (options.hideLogsLink) data.hideLogsLink = options.hideLogsLink;
-                    if (options.title) data.errorTitle = options.title;
-                    if (options.message) data.errorMessage = options.title;
-                }
-                this.setState(data);
-            },
             render: function() {
                 var classes = {'modal fade': true};
                 if (!this.state.error) classes[this.props.modalClass] = this.props.modalClass;

@@ -18,6 +18,7 @@ from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
 from nailgun.objects import Cluster
+from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
 from nailgun.statistics.statsenderd import StatsSender
@@ -34,20 +35,38 @@ class TestStatistics(BaseTestCase):
         f_info = info.fuel_release_info()
         self.assertDictEqual(f_info, settings.VERSION)
 
-    def test_get_attributes(self):
+    def test_get_attributes_centos(self):
+        self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()
-        cluster_data = self.env.create(
-            release_kwargs={
-                'operating_system': consts.RELEASE_OS.centos
-            }
+        release = ReleaseCollection.filter_by(None, operating_system='CentOS')
+        cluster_data = self.env.create_cluster(
+            release_id=release[0].id
         )
         cluster = Cluster.get_by_uid(cluster_data['id'])
-        libvirt_dict = cluster.attributes.editable['common']['libvirt_type']
-        libvirt_type = libvirt_dict['value']
+        editable = cluster.attributes.editable
+        attr_key_list = [a[1] for a in info.attributes_white_list]
+        attrs_dict = info.get_attributes(editable)
+        self.assertEqual(
+            set(attr_key_list),
+            set(attrs_dict.keys())
+        )
 
-        self.assertEquals('qemu', libvirt_type)
-        self.assertDictEqual({'libvirt_type': 'qemu'},
-                             info.get_attributes(cluster.attributes.editable))
+    def test_get_attributes_ubuntu(self):
+        self.env.upload_fixtures(['openstack'])
+        info = InstallationInfo()
+        release = ReleaseCollection.filter_by(None, operating_system='Ubuntu')
+        cluster_data = self.env.create_cluster(
+            release_id=release[0].id
+        )
+        cluster = Cluster.get_by_uid(cluster_data['id'])
+        editable = cluster.attributes.editable
+        attr_key_list = [a[1] for a in info.attributes_white_list]
+        attrs_dict = info.get_attributes(editable)
+        self.assertEqual(
+            # no vlan splinters for ubuntu
+            set(attr_key_list) - set(('vlan_splinters', 'vlan_splinters_ovs')),
+            set(attrs_dict.keys())
+        )
 
     def test_get_empty_attributes(self):
         info = InstallationInfo()

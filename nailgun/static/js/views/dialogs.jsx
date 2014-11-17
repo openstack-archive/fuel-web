@@ -25,11 +25,9 @@ define(
     'text!templates/dialogs/reset_environment.html',
     'text!templates/dialogs/update_environment.html',
     'text!templates/dialogs/show_node.html',
-    'text!templates/dialogs/dismiss_settings.html',
-    'text!templates/dialogs/delete_nodes.html',
     'jsx!views/controls'
 ],
-function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, controls) {
+function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, controls) {
     'use strict';
 
     var cx = React.addons.classSet;
@@ -459,36 +457,58 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         }
     });
 
-    views.DiscardSettingsChangesDialog = views.Dialog.extend({
-        template: _.template(discardSettingsChangesTemplate),
-        events: {
-            'click .proceed-btn': 'proceed'
+    views.DiscardSettingsChangesDialog = React.createClass({
+        mixins: [componentMixins.dialogMixin],
+        getDefaultProps: function() {
+            return {title: $.t('dialog.dismiss_settings.title')};
         },
         proceed: function() {
-            this.$el.modal('hide');
-            app.page.removeFinishedNetworkTasks().always(_.bind(this.cb, this));
+            this.close();
+            app.page.removeFinishedNetworkTasks().always(_.bind(this.props.cb, this.props));
         },
-        render: function() {
-            if (this.verification) {
-                this.message = $.t('dialog.dismiss_settings.verify_message');
-            }
-            this.constructor.__super__.render.call(this, {
-                message: this.message || $.t('dialog.dismiss_settings.default_message'),
-                verification: this.verification || false
-            });
-            return this;
+        renderBody: function() {
+            var message;
+            if (this.props.verification) {message = $.t('dialog.dismiss_settings.verify_message');}
+            return (
+                <div className="msg-error">
+                    <span className="label label-important">{$.t('dialog.dismiss_settings.important')}</span>
+                    {message || $.t('dialog.dismiss_settings.default_message')}
+                </div>
+            );
+        },
+        renderFooter: function() {
+            var verification = this.props.verification || false;
+            return (
+                <div>
+                    <button key="stay" className="btn btn-return" onClick={this.close}>{$.t('dialog.dismiss_settings.stay_button')}</button>
+                    {!verification && <button key="leave" className="btn btn-danger proceed-btn" onClick={this.proceed}>{$.t('dialog.dismiss_settings.leave_button')}</button>}
+                </div>
+            );
         }
     });
 
-    views.DeleteNodesDialog = views.Dialog.extend({
-        template: _.template(deleteNodesTemplate),
-        events: {
-            'click .btn-delete': 'deleteNodes'
+    views.DeleteNodesDialog = React.createClass({
+        mixins: [componentMixins.dialogMixin],
+        getInitialState: function() {
+            return {disabled: false};
+        },
+        getDefaultProps: function() {
+            return {title: $.t('dialog.delete_nodes.title')};
+        },
+        renderBody: function() {
+            return (<div className='deploy-task-notice'><span className="label label-important">{$.t('common.important')}</span> {$.t('dialog.delete_nodes.message')}</div>);
+        },
+        renderFooter: function() {
+            return [
+                <button key='cancel' className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.disabled}>{$.t('common.delete_button')}</button>
+            ];
         },
         deleteNodes: function() {
-            if (this.nodes.cluster) {
-                this.$('.btn-delete').prop('disabled', true);
-                this.nodes.each(function(node) {
+            var nodes = this.props.nodes;
+            if (nodes.cluster) {
+                this.setState({disabled: true});
+                nodes.each(function(node) {
                     if (!node.get('pending_deletion')) {
                         if (node.get('pending_addition')) {
                             node.set({
@@ -496,19 +516,19 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                                 pending_addition: false,
                                 pending_roles: []
                             });
-                        } else {
+                        } else{
                             node.set({pending_deletion: true});
                         }
                     }
                 }, this);
-                this.nodes.toJSON = function(options) {
+                nodes.toJSON = function(options) {
                     return this.map(function(node) {
                         return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
                     });
                 };
-                this.nodes.sync('update', this.nodes)
+                nodes.sync('update', nodes)
                     .done(_.bind(function() {
-                        this.$el.modal('hide');
+                        this.close();
                         app.page.tab.model.fetch();
                         app.page.tab.screen.nodes.fetch();
                         _.invoke(app.page.tab.screen.nodes.where({checked: true}), 'set', {checked: false});
@@ -517,16 +537,13 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                         app.page.removeFinishedNetworkTasks();
                     }, this))
                     .fail(_.bind(function() {
+                        this.close();
                         utils.showErrorDialog({
                             title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
                             message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
                         });
                     }, this));
             }
-        },
-        render: function() {
-            this.constructor.__super__.render.call(this, {nodes: this.nodes});
-            return this;
         }
     });
 

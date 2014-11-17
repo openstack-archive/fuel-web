@@ -617,6 +617,10 @@
                     "drive": "drive",
                     "drive_plural": "drives"
                 },
+                "delete_nodes": {
+                    "title": "Delete Nodes",
+                    "message": "Are you sure you want to delete the selected nodes?"
+                },
                 "rhel_license": {
                     "title": "Red Hat Enterprise Linux Account Settings",
                     "description": "To deploy the Red Hat Enterprise Linux OpenStack Platform, you must first download it to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  The RHEL OpenStack Platform will be automatically downloaded and cached after you create the environment.",

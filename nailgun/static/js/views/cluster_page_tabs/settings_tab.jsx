@@ -19,7 +19,8 @@ define(
     'utils',
     'models',
     'expression',
-    'jsx!views/controls'
+    'jsx!views/controls',
+    'text!templates/dialogs/base_dialog.html'
 ],
 function(React, utils, models, Expression, controls) {
     'use strict';

@@ -108,14 +108,11 @@ define(['require', 'underscore', 'expression', 'expression/objects', 'react'], f
             }
         },
         showDialog: function(Dialog, options) {
-            return React.render(React.createElement(Dialog, options), $('#modal-container')[0]);
+            return utils.universalMount(Dialog, options, $('#modal-container'));
         },
-        showErrorDialog: function(options, parentView) {
-            parentView = parentView || app.page;
-            var dialogViews = require('jsx!views/dialogs'); // avoid circular dependencies
-            var dialog = new dialogViews.Dialog();
-            parentView.registerSubView(dialog);
-            dialog.render(_.extend({error: true}, options));
+        showErrorDialog: function(options) {
+            var dialogs = require('jsx!views/dialogs'); // avoid circular dependencies
+            this.showDialog(dialogs.ErrorDialog, options);
         },
         showBandwidth: function(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);

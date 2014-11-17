@@ -51,7 +51,7 @@ function(React, utils, models, dialogs) {
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
             node.deferred = node.fetch();
-            (new dialogs.ShowNodeInfoDialog({node: node})).render();
+            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: node, title: node.get('name')});
         },
         markAsRead: function() {
             var notification = this.props.notification;

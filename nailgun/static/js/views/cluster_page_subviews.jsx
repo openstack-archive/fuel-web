@@ -103,8 +103,8 @@ function(React, utils, dialogs) {
                 renderOn: 'add remove change'
             })
         ],
-        showDialog: function(Constructor) {
-            utils.showDialog(Constructor, {cluster: this.props.model});
+        showDialog: function(Dialog) {
+            utils.showDialog(Dialog, {cluster: this.props.model});
         },
         onDeployRequest: function() {
             var page = this.props.page;

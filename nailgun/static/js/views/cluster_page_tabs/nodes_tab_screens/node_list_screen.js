@@ -231,9 +231,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
         showDeleteNodesDialog: function() {
             var nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
             nodes.cluster = this.nodes.cluster;
-            var dialog = new dialogs.DeleteNodesDialog({nodes: nodes});
-            app.page.tab.registerSubView(dialog);
-            dialog.render();
+            utils.showDialog(dialogs.DeleteNodesDialog, {nodes: nodes, cluster: this.cluster});
         },
         applyChanges: function() {
             this.$('.btn-apply').prop('disabled', true);
@@ -285,11 +283,10 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
             this.screen.nodeFilter.set('value', '');
         },
         showUnavailableGroupConfigurationDialog: function(e) {
-            var action = this.$(e.currentTarget).data('action');
+            var ns = 'cluster_page.nodes_tab.node_management_panel.node_management_error.';
             utils.showErrorDialog({
-                title: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.title'),
-                message: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.' + action + '_configuration_warning'),
-                hideLogsLink: true
+                title: $.t(ns + 'title'),
+                message: $.t(ns + this.$(e.currentTarget).data('action') + '_configuration_warning')
             });
         },
         render: function() {
@@ -713,9 +710,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
         },
         showNodeDetails: function(e) {
             e.preventDefault();
-            var dialog = new dialogs.ShowNodeInfoDialog({node: this.node});
-            app.page.tab.registerSubView(dialog);
-            dialog.render();
+            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: this.node, title: this.node.get('name')});
         },
         updateNode: function(data) {
             this.node.save(data, {patch: true, wait: true})

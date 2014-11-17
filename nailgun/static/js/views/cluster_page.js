@@ -29,7 +29,7 @@ define(
     'jsx!views/cluster_page_tabs/healthcheck_tab',
     'text!templates/cluster/page.html'
 ],
-function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
+function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
     'use strict';
 
     var ClusterPage = commonViews.Page.extend({
@@ -62,7 +62,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
             return $.when.apply($, requests);
         },
         discardSettingsChanges: function(options) {
-            this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
+            utils.showDialog(dialogs.DiscardSettingsChangesDialog, options);
         },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');
@@ -118,7 +118,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
         },
         onBeforeunloadEvent: function() {
             if (_.result(this.tab, 'hasChanges')) {
-                return dialogViews.DiscardSettingsChangesDialog.prototype.defaultMessage;
+                return $.t('dialog.dismiss_settings.default_message');
             }
         },
         initialize: function(options) {

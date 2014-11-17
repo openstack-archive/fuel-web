@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Mirantis, Inc.
+ * Copyright 2014 Mirantis, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -19,29 +19,26 @@ define(
     'utils',
     'models',
     'view_mixins',
-    'jsx!views/dialogs',
-    'text!templates/dialogs/create_cluster_wizard.html',
-    'text!templates/dialogs/create_cluster_wizard/name_and_release.html',
-    'text!templates/dialogs/create_cluster_wizard/common_wizard_panel.html',
-    'text!templates/dialogs/create_cluster_wizard/mode.html',
-    'text!templates/dialogs/create_cluster_wizard/network.html',
-    'text!templates/dialogs/create_cluster_wizard/storage.html',
-    'text!templates/dialogs/create_cluster_wizard/ready.html',
-    'text!templates/dialogs/create_cluster_wizard/control_template.html',
-    'text!templates/dialogs/create_cluster_wizard/warning.html',
-    'text!templates/dialogs/create_cluster_wizard/text_input.html'
+    'text!templates/wizard/create_cluster_wizard.html',
+    'text!templates/wizard/name_and_release.html',
+    'text!templates/wizard/common_wizard_panel.html',
+    'text!templates/wizard/mode.html',
+    'text!templates/wizard/network.html',
+    'text!templates/wizard/storage.html',
+    'text!templates/wizard/ready.html',
+    'text!templates/wizard/control_template.html',
+    'text!templates/wizard/warning.html',
+    'text!templates/wizard/text_input.html'
 ],
-function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, utils, models, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
-    var views = {};
+    var views = {},
+        clusterWizardPanes = {};
 
-    var clusterWizardPanes = {};
-
-    views.CreateClusterWizard = dialogs.Dialog.extend({
+    views.CreateClusterWizard = Backbone.View.extend({
         className: 'modal fade create-cluster-modal',
         template: _.template(createClusterWizardTemplate),
-        modalOptions: {backdrop: 'static'},
         events: {
             keydown: 'onKeydown',
             'click .next-pane-btn': 'nextPane',
@@ -298,7 +295,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                                 app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
                             }, this))
                             .fail(_.bind(function() {
-                                this.displayError({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});
+                                this.$el.modal('hide');
+                                utils.showErrorDialog({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});
                             }, this));
                     }, this))
                     .fail(_.bind(function(response) {
@@ -307,24 +305,30 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                             this.panesModel.set('activePaneIndex', 0);
                             cluster.trigger('invalid', cluster, {name: response.responseText});
                         } else {
-                            var options = {
+                            this.$el.modal('hide');
+                            utils.showErrorDialog({
                                 title: $.t('dialog.create_cluster_wizard.create_cluster_error.title'),
                                 message: response.status == 400 ? response.responseText : undefined
-                            };
-                            this.displayError(options);
+                            });
                         }
                     }, this));
             }
         },
         render: function() {
-            var panesTitles = _.map(this.panesConstructors, function(PaneConstructor) {
-                return PaneConstructor.prototype.title;
-            });
-            this.constructor.__super__.render.call(this, _.extend({
-                panesTitles: panesTitles,
+            this.$el.attr('tabindex', -1);
+            this.$el.html(this.template({
+                panesTitles: this.panesConstructors.map(function(Constructor) {return Constructor.prototype.title;}),
                 currentStep: this.panesModel.get('activePaneIndex'),
                 maxAvailableStep: this.panesModel.get('maxAvailablePaneIndex')
-            }));
+            })).i18n();
+            if (!this.modalBound) {
+                this.$el.on('hidden', _.bind(this.tearDown, this));
+                this.$el.on('shown', _.bind(function() {
+                    this.$('[autofocus]:first').focus();
+                }, this));
+                this.$el.modal({backdrop: 'static', background: true, keyboard: true});
+                this.modalBound = true;
+            }
             this.$('.wizard-footer .btn-success:visible').focus();
             this.renderPane(this.panesConstructors[this.panesModel.get('activePaneIndex')]);
             this.composeStickitBindings();

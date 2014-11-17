@@ -184,7 +184,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             return resource;
         },
         sortedRoles: function() {
-            var preferredOrder = this.collection.cluster.get('release').get('roles');
+            var preferredOrder = this.collection.cluster.get('release').get('roles').pluck('name');
             return _.union(this.get('roles'), this.get('pending_roles')).sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });

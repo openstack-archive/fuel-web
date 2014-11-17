@@ -351,7 +351,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
             var nodeGroups = _.pairs(this.filteredNodes.groupByAttribute(grouping));
             // sort node groups
             if (grouping != 'hardware') {
-                var preferredOrder = this.screen.tab.model.get('release').get('roles');
+                var preferredOrder = this.screen.tab.model.get('release').get('roles').pluck('name');
                 nodeGroups.sort(function(firstGroup, secondGroup) {
                     var firstGroupRoles = firstGroup[1][0].sortedRoles();
                     var secondGroupRoles = secondGroup[1][0].sortedRoles();
@@ -595,7 +595,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
         },
         sortRoles: function(roles) {
             roles = roles || [];
-            var preferredOrder = this.screen.tab.model.get('release').get('roles');
+            var preferredOrder = this.screen.tab.model.get('release').get('roles').pluck('name');
             return roles.sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });

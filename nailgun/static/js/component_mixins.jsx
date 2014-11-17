@@ -51,7 +51,6 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
             getInitialState: function() {
                 return {
                     actionInProgress: false,
-                    error: false,
                     errorTitle: $.t('dialog.error_dialog.title'),
                     errorMessage: $.t('dialog.error_dialog.warning'),
                     hideLogsLink: true
@@ -76,16 +75,7 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
             close: function() {
                 $(this.getDOMNode()).modal('hide');
             },
-            displayError: function(options) {
-                var data = {error: true};
-                // FIXME: after all dialogs moved to React the folowing assignments should be reverted to _.extend(options, ...) format
-                if (options) {
-                    if (options.hideLogsLink) data.hideLogsLink = options.hideLogsLink;
-                    if (options.title) data.errorTitle = options.title;
-                    if (options.message) data.errorMessage = options.title;
-                }
-                this.setState(data);
-            },
+            renderImportantLabel: function() {return (<span className='label label-important'>{$.t('common.important')}</span>);},
             render: function() {
                 var classes = {'modal fade': true};
                 if (!this.state.error) classes[this.props.modalClass] = this.props.modalClass;
@@ -95,12 +85,12 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
                     <div className={React.addons.classSet(classes)} tabIndex="-1">
                         <div className='modal-header'>
                             <button type='button' className='close' onClick={this.close}>&times;</button>
-                            <h3>{this.state.error ? this.state.errorTitle : this.props.title}</h3>
+                            <h3>{this.props.title || this.state.errorTitle}</h3>
                         </div>
                         <div className='modal-body'>
-                            {this.state.error ?
+                            {this.props.error ?
                                 <div className='text-error'>
-                                    {this.state.errorMessage}
+                                    {this.props.message || this.state.errorMessage}
                                     {logsLink &&
                                         <div><a className='no-leave-check' href={logsLink} target='_blank'>{$.t('common.see_logs')}</a></div>
                                     }
@@ -108,7 +98,7 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
                             : this.renderBody()}
                         </div>
                         <div className='modal-footer'>
-                            {this.renderFooter && !this.state.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{$.t('common.close_button')}</button>}
+                            {this.renderFooter && !this.props.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{$.t('common.close_button')}</button>}
                         </div>
                     </div>
                 );

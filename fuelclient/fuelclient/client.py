@@ -44,12 +44,11 @@ class Client(object):
             "KEYSTONE_USER": "admin",
             "KEYSTONE_PASS": "admin",
         }
-        if os.path.exists(path_to_config):
+        if os.access(path_to_config, os.R_OK):
             with open(path_to_config, "r") as fh:
                 config = yaml.load(fh.read())
             defaults.update(config)
-        else:
-            defaults.update(os.environ)
+        defaults.update(os.environ)
         self.root = "http://{SERVER_ADDRESS}:{LISTEN_PORT}".format(**defaults)
         self.keystone_base = (
             "http://{SERVER_ADDRESS}:{LISTEN_PORT}/keystone/v2.0"

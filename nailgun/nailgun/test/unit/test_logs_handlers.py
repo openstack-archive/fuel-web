@@ -43,8 +43,8 @@ class TestLogs(BaseIntegrationTest):
         self.local_log_file = os.path.join(self.log_dir, 'nailgun.log')
         regexp = (r'^(?P<date>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}):'
                   '(?P<level>\w+):(?P<text>.+)$')
-        settings.update({
-            'LOGS': [
+        self.patcher = patch.object(
+            settings, 'LOGS', [
                 {
                     'id': 'nailgun',
                     'name': 'Nailgun',
@@ -64,10 +64,12 @@ class TestLogs(BaseIntegrationTest):
                     'path': 'test-syslog.log'
                 }
             ]
-        })
+        )
+        self.patcher.start()
 
     def tearDown(self):
         shutil.rmtree(self.log_dir)
+        self.patcher.stop()
         super(TestLogs, self).tearDown()
 
     def test_log_source_collection_handler(self):
@@ -143,7 +145,9 @@ class TestLogs(BaseIntegrationTest):
         self.assertEqual(response['entries'], log_entries)
 
     def test_multiline_log_entry(self):
+        # we can do this because we have patched settings in setUp
         settings.LOGS[0]['multiline'] = True
+
         log_entries = [
             [
                 time.strftime(settings.UI_LOG_DATE_FORMAT),
@@ -173,7 +177,6 @@ class TestLogs(BaseIntegrationTest):
         response = resp.json_body
         response['entries'].reverse()
         self.assertEqual(response['entries'], log_entries)
-        settings.LOGS[0]['multiline'] = False
 
     def test_incremental_older_fetch(self):
         """Older entries should be fetched incrementally.

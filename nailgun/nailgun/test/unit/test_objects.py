@@ -24,6 +24,7 @@ import uuid
 from itertools import cycle
 from itertools import ifilter
 
+import mock
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -612,12 +613,12 @@ class TestTaskObject(BaseIntegrationTest):
         self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
 
 
+@mock.patch.object(settings, 'MASTER_IP', '127.0.0.1')
 class TestReleaseOrchestratorData(BaseIntegrationTest):
 
     def setUp(self):
         super(TestReleaseOrchestratorData, self).setUp()
 
-        settings.MASTER_IP = '127.0.0.1'
         self.release = self.env.create_release(api=False)
 
         self.data = {
@@ -646,18 +647,19 @@ class TestReleaseOrchestratorData(BaseIntegrationTest):
     def test_render_data_in_update(self):
         instance = objects.ReleaseOrchestratorData.create(self.data)
 
-        settings.MASTER_IP = '192.168.1.1'
-        instance = objects.ReleaseOrchestratorData.update(instance, self.data)
+        with mock.patch.object(settings, 'MASTER_IP', '192.168.1.1'):
+            instance = \
+                objects.ReleaseOrchestratorData.update(instance, self.data)
 
-        self.assertEqual(instance.repo_metadata, {
-            '5.1': 'http://192.168.1.1:8080/centos/x86_64',
-            '5.1-user': 'http://192.168.1.1:8080/centos-user/x86_64'})
-        self.assertEqual(
-            instance.puppet_manifests_source,
-            'rsync://192.168.1.1:/puppet/modules/')
-        self.assertEqual(
-            instance.puppet_modules_source,
-            'rsync://192.168.1.1:/puppet/manifests/')
+            self.assertEqual(instance.repo_metadata, {
+                '5.1': 'http://192.168.1.1:8080/centos/x86_64',
+                '5.1-user': 'http://192.168.1.1:8080/centos-user/x86_64'})
+            self.assertEqual(
+                instance.puppet_manifests_source,
+                'rsync://192.168.1.1:/puppet/modules/')
+            self.assertEqual(
+                instance.puppet_modules_source,
+                'rsync://192.168.1.1:/puppet/manifests/')
 
     def test_render_unmasked_data(self):
         self.data = {

@@ -226,9 +226,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
         showDeleteNodesDialog: function() {
             var nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
             nodes.cluster = this.nodes.cluster;
-            var dialog = new dialogs.DeleteNodesDialog({nodes: nodes});
-            app.page.tab.registerSubView(dialog);
-            dialog.render();
+            utils.showDialog(dialogs.DeleteNodesDialog({nodes: nodes}));
         },
         applyChanges: function() {
             this.$('.btn-apply').prop('disabled', true);

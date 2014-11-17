@@ -260,16 +260,17 @@ class OpenStackUpgrader(UpgradeEngine):
         metadata_path = self.config.openstack['metadata']
 
         # do nothing in case of metadata.yaml absence - just assume
-        # that we full repos
+        # that we have full repos
         if not os.path.exists(metadata_path):
             return
 
         with io.open(metadata_path, 'r', encoding='utf-8') as f:
-            metadata = yaml.load(f)
+            metadata = yaml.load(f) or {}
 
         # keep diff-based releases
         releases = filter(
-            lambda r: r['version'] in metadata['diff_releases'], releases)
+            lambda r: r['version'] in metadata.get('diff_releases', {}),
+            releases)
 
         # inject repos from base releases
         for release in releases:

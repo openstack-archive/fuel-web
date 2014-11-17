@@ -26,6 +26,7 @@ from fuel_upgrade.engines.openstack import OpenStackUpgrader
 from fuel_upgrade.before_upgrade_checker import CheckFreeSpace
 from fuel_upgrade.before_upgrade_checker import CheckNoRunningOstf
 from fuel_upgrade.before_upgrade_checker import CheckNoRunningTasks
+from fuel_upgrade.before_upgrade_checker import CheckRequiredVersion
 from fuel_upgrade.before_upgrade_checker import CheckUpgradeVersions
 
 
@@ -51,6 +52,7 @@ class CheckerManager(object):
     CHECKERS_MAPPING = {
         DockerUpgrader: [
             CheckUpgradeVersions,
+            CheckRequiredVersion,
             CheckFreeSpace,
             CheckNoRunningTasks,
             CheckNoRunningOstf],

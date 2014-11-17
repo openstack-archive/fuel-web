@@ -16,14 +16,13 @@
 define(
 [
     'react',
-    'models',
     'utils',
     'jsx!component_mixins',
     'views/wizard'
 ],
-function(React, models, utils, componentMixins, wizard) {
+function(React, utils, componentMixins, wizard) {
     'use strict';
-    var ClustersPage, ClusterList, Cluster, RegisterTrial;
+    var ClustersPage, ClusterList, Cluster;
 
     ClustersPage = React.createClass({
         navbarActiveElement: 'clusters',
@@ -36,13 +35,9 @@ function(React, models, utils, componentMixins, wizard) {
             $(app.breadcrumbs.getDOMNode()).toggle(app.user.get('authenticated'));
             $(app.navbar.getDOMNode()).toggle(app.user.get('authenticated'));
         },
-        getInitialState: function() {
-            return {fuelKey: new models.FuelKey()};
-        },
         render: function() {
             return (
                 <div>
-                    <RegisterTrial fuelKey={this.state.fuelKey} />
                     <h3 className="page-title">{$.t('clusters_page.title')}</h3>
                     <ClusterList clusters={this.props.clusters} />
                 </div>
@@ -152,42 +147,6 @@ function(React, models, utils, componentMixins, wizard) {
                     </div>
                 </a>
             );
-        }
-    });
-
-    RegisterTrial = React.createClass({
-        mixins: [React.BackboneMixin('fuelKey')],
-        shouldShowMessage: function() {
-            return _.contains(app.version.get('feature_groups'), 'mirantis') && !_.contains(app.version.get('feature_groups'), 'techpreview') && !localStorage.trialRemoved;
-        },
-        closeTrialWarning: function() {
-            localStorage.setItem('trialRemoved', 'true');
-            this.forceUpdate();
-        },
-        componentWillMount: function() {
-            if (this.shouldShowMessage()) {
-                this.props.fuelKey.fetch();
-            }
-        },
-        render: function() {
-            if (this.shouldShowMessage()) {
-                var key = this.props.fuelKey.get('key');
-                return (
-                    <div className="alert alert-info alert-dismissable register-trial">
-                        <button type="button" className="close" onClick={this.closeTrialWarning}>&times;</button>
-                        <p>
-                            <i className="icon-mirantis"></i>
-                            {$.t('clusters_page.register_trial_message.part1')}<br />
-                            {$.t('clusters_page.register_trial_message.part2')}
-                            <a target="_blank" className="registration-link" href={!_.isUndefined(key) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + key : '/'}>
-                                {$.t('clusters_page.register_trial_message.part3')}
-                            </a>
-                            {$.t('clusters_page.register_trial_message.part4')}
-                        </p>
-                    </div>
-                );
-            }
-            return null;
         }
     });
 

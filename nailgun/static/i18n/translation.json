@@ -141,7 +141,12 @@
                 "provide_contacts": "Please provide your contact information below.",
                 "start_fuel": "Start Using Fuel",
                 "change_settings": "You can change your settings at any time by updating your user profile information.",
-                "thanks": "Thanks for helping to improve Mirantis OpenStack!"
+                "thanks": "Thanks for helping to improve Mirantis OpenStack!",
+                "register_trial": {
+                    "register_installation": "Register your installation and get free support!",
+                    "register_now": "Ensure that you receive important notifications about issues and updates. Register now and you will receive complimentary access to our basic support services for the next 30 days.",
+                    "link_text": "Register Now"
+                }
             },
             "navbar": {
                 "environments": "Environments",
@@ -205,13 +210,7 @@
                 "cluster_hardware_nodes": "Nodes",
                 "cluster_hardware_cpu": "CPU (cores)",
                 "cluster_hardware_hdd": "HDD",
-                "cluster_hardware_ram": "RAM",
-                "register_trial_message": {
-                    "part1": "Master node installation completed successfully.",
-                    "part2": "If you want to register your installation and sign up for trial support, please click ",
-                    "part3": "here",
-                    "part4": ". Otherwise you can close this panel."
-                }
+                "cluster_hardware_ram": "RAM"
             },
             "cluster_page": {
                 "tabs": {

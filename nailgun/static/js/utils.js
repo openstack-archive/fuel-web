@@ -88,14 +88,22 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                     parentView.registerSubView(view);
                 }
                 return view;
+            } else {
+                var node = $(el)[0];
+                var mountedComponent = React.renderComponent(view, node);
+                // FIXME(vkramskikh): we need to store node to which
+                // we mounted the component since it is not always
+                // possible to determine the node: if render() returns
+                // null, getDOMNode() also returns null
+                mountedComponent._mountNode = node;
+                return mountedComponent;
             }
-            return React.renderComponent(view, $(el)[0]);
         },
         universalUnmount: function(view) {
             if (view instanceof Backbone.View) {
                 view.tearDown();
             } else {
-                React.unmountComponentAtNode(view.getDOMNode().parentNode);
+                React.unmountComponentAtNode(view._mountNode || view.getDOMNode().parentNode);
             }
         },
         showDialog: function(dialog) {

@@ -62,7 +62,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
             return $.when.apply($, requests);
         },
         discardSettingsChanges: function(options) {
-            this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
+            utils.showDialog(dialogViews.DiscardSettingsChangesDialog(options));
         },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');

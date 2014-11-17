@@ -100,7 +100,7 @@ function($, React, controls) {
             this.setState({actionInProgress: true});
 
             this.login(username, password)
-                .always(_.bind(function() {
+                .fail(_.bind(function() {
                     this.setState({actionInProgress: false});
                 }, this));
         },

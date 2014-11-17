@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Mirantis, Inc.
+ * Copyright 2014 Mirantis, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -15,78 +15,79 @@
 **/
 define(
 [
-    'require',
     'react',
     'utils',
     'models',
-    'view_mixins',
-    'jsx!component_mixins',
-    'text!templates/dialogs/base_dialog.html',
-    'text!templates/dialogs/reset_environment.html',
-    'text!templates/dialogs/update_environment.html',
-    'text!templates/dialogs/show_node.html',
-    'text!templates/dialogs/dismiss_settings.html',
-    'text!templates/dialogs/delete_nodes.html',
     'jsx!views/controls'
 ],
-function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, controls) {
+function(React, utils, models, controls) {
     'use strict';
 
-    var cx = React.addons.classSet;
+    var dialogs = {},
+        cx = React.addons.classSet;
 
-    var views = {};
+    var dialogMixin = {
+        propTypes: {
+            title: React.PropTypes.node,
+            message: React.PropTypes.node,
+            modalClass: React.PropTypes.node,
+            error: React.PropTypes.bool
+        },
+        getInitialState: function() {
+            return {actionInProgress: false};
+        },
+        componentDidMount: function() {
+            var $el = $(this.getDOMNode());
+            $el.modal({background: true, keyboard: true});
+            $el.on('hidden', this.handleHidden);
+            $el.on('shown', function() {$el.find('input:first').focus();});
+        },
+        componentWillUnmount: function() {
+            $(this.getDOMNode()).off('shown hidden');
+        },
+        handleHidden: function() {
+            React.unmountComponentAtNode(this.getDOMNode().parentNode);
+        },
+        close: function() {
+            $(this.getDOMNode()).modal('hide');
+        },
+        renderImportantLabel: function() {
+            return <span className='label label-important'>{$.t('common.important')}</span>;
+        },
+        render: function() {
+            var classes = {'modal fade': true};
+            classes[this.props.modalClass] = this.props.modalClass;
+            return (
+                <div className={cx(classes)} tabIndex="-1">
+                    <div className='modal-header'>
+                        <button type='button' className='close' onClick={this.close}>&times;</button>
+                        <h3>{this.props.title || (this.props.error ? $.t('dialog.error_dialog.title') : '')}</h3>
+                    </div>
+                    <div className='modal-body'>
+                        {this.props.error ?
+                            <div className='text-error'>
+                                {this.props.message || $.t('dialog.error_dialog.warning')}
+                            </div>
+                        : this.renderBody()}
+                    </div>
+                    <div className='modal-footer'>
+                        {this.renderFooter && !this.props.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{$.t('common.close_button')}</button>}
+                    </div>
+                </div>
+            );
+        }
+    };
 
-    views.Dialog = Backbone.View.extend({
-        className: 'modal fade',
-        template: _.template(baseDialogTemplate),
-        modalBound: false,
-        beforeTearDown: function() {
-            this.unstickit();
-            this.$el.modal('hide');
-        },
-        displayError: function(options) {
-            var logsLink;
-            var cluster = app.page.model;
-            if (!options.hideLogsLink && cluster && cluster.constructor == models.Cluster) {
-                var logOptions = {type: 'local', source: 'api', level: 'error'};
-                logsLink = '#cluster/' + cluster.id + '/logs/' + utils.serializeTabOptions(logOptions);
-            }
-            var dialogOptions = _.defaults(options, {
-                error: true,
-                title: $.t('dialog.error_dialog.title'),
-                message: $.t('dialog.error_dialog.warning'),
-                logsLink: logsLink
-            });
-            this.$el.removeClass().addClass('modal').html(views.Dialog.prototype.template(dialogOptions)).i18n();
-        },
-        initialize: function(options) {
-            _.defaults(this, options);
-        },
-        render: function(options) {
-            this.$el.attr('tabindex', -1);
-            if (options && options.error) {
-                this.displayError(options);
-            } else {
-                var templateOptions = _.extend({title: '', message: '', error: false, logsLink: ''}, options);
-                this.$el.html(this.template(templateOptions)).i18n();
-            }
-            if (!this.modalBound) {
-                this.$el.on('hidden', _.bind(this.tearDown, this));
-                this.$el.on('shown', _.bind(function() {
-                    this.$('[autofocus]:first').focus();
-                }, this));
-                this.$el.modal(_.extend({}, this.modalOptions));
-                this.modalBound = true;
-            }
-            return this;
+    dialogs.ErrorDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {error: true};
         }
     });
 
-    views.DiscardNodeChangesDialog = React.createClass({
-        mixins: [componentMixins.dialogMixin],
-        getDefaultProps: function() {
-            return {title: $.t('dialog.discard_changes.title')};
-        },
+    dialogs.DiscardNodeChangesDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: $.t('dialog.discard_changes.title')};},
         discardNodeChanges: function() {
             this.setState({actionInProgress: true});
             var cluster = this.props.cluster,
@@ -104,19 +105,16 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 });
             };
             Backbone.sync('update', nodes)
+                .always(_.bind(this.close, this))
                 .done(_.bind(function() {
                     $.when(cluster.fetch(), cluster.get('nodes').fetch({data: {cluster_id: cluster.id}}))
-                        .always(_.bind(function() {
+                        .always(function() {
                             // we set node flags silently, so trigger resize event to redraw node list
                             cluster.get('nodes').trigger('resize');
                             app.navbar.refresh();
-                            this.close();
-                        }, this));
+                        });
                 }, this))
-                .fail(_.bind(function() {
-                    this.displayError();
-                    this.setState({actionInProgress: false});
-                }, this));
+                .fail(utils.showErrorDialog);
         },
         renderChangedNodeAmount: function(nodes, dictKey) {
             return nodes.length ? <div key={dictKey} className='deploy-task-name'>
@@ -145,11 +143,9 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         }
     });
 
-    views.DeployChangesDialog = React.createClass({
-        mixins: [componentMixins.dialogMixin],
-        getDefaultProps: function() {
-            return {title: $.t('dialog.display_changes.title')};
-        },
+    dialogs.DeployChangesDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: $.t('dialog.display_changes.title')};},
         getInitialState: function() {
             // FIXME: the following amount restrictions shoud be described declaratively in configuration file
             var cluster = this.props.cluster,
@@ -179,14 +175,9 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             app.page.removeFinishedDeploymentTasks();
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
-                .done(_.bind(function() {
-                    app.page.deploymentTaskStarted();
-                    this.close();
-                }, this))
-                .fail(_.bind(function() {
-                    this.displayError();
-                    this.setState({actionInProgress: false});
-                }, this));
+                .always(_.bind(this.close, this))
+                .done(_.bind(app.page.deploymentTaskStarted, app.page))
+                .fail(utils.showErrorDialog);
         },
         renderChangedNodeAmount: function(nodes, dictKey) {
             return nodes.length ? <div key={dictKey} className='deploy-task-name'>
@@ -265,31 +256,26 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         }
     });
 
-    views.StopDeploymentDialog = React.createClass({
-        mixins: [componentMixins.dialogMixin],
-        getDefaultProps: function() {
-            return {title: $.t('dialog.stop_deployment.title')};
-        },
+    dialogs.StopDeploymentDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: $.t('dialog.stop_deployment.title')};},
         stopDeployment: function() {
             this.setState({actionInProgress: true});
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/stop_deployment', type: 'PUT'})
-                .done(_.bind(function() {
-                    this.close();
-                    app.page.deploymentTaskStarted();
-                }, this))
-                .fail(_.bind(function(response) {
-                    this.displayError({
+                .always(_.bind(this.close, this))
+                .done(_.bind(app.page.deploymentTaskStarted, app.page))
+                .fail(function(response) {
+                    utils.showErrorDialog({
                         title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
                         message: utils.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
                     });
-                    this.setState({actionInProgress: false});
-                }, this));
+                });
         },
         renderBody: function() {
             return (
                 <div className='msg-error'>
-                    <span className='label label-important'>{$.t('common.important')}</span>
+                    {this.renderImportantLabel()}
                     {$.t('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
                 </div>
             );
@@ -302,28 +288,23 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         }
     });
 
-    views.RemoveClusterDialog = React.createClass({
-        mixins: [componentMixins.dialogMixin],
-        getDefaultProps: function() {
-            return {title: $.t('dialog.remove_cluster.title')};
-        },
+    dialogs.RemoveClusterDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: $.t('dialog.remove_cluster.title')};},
         removeCluster: function() {
             this.setState({actionInProgress: true});
             this.props.cluster.destroy({wait: true})
-                .done(_.bind(function() {
-                    this.close();
+                .always(_.bind(this.close, this))
+                .done(function() {
                     app.navbar.refresh();
                     app.navigate('#clusters', {trigger: true});
-                }, this))
-                .fail(_.bind(function() {
-                    this.displayError();
-                    this.setState({actionInProgress: false});
-                }, this));
+                })
+                .fail(utils.showErrorDialog);
         },
         renderBody: function() {
             return (
                 <div className='msg-error'>
-                    <span className='label label-important'>{$.t('common.important')}</span>
+                    {this.renderImportantLabel()}
                     {$.t('dialog.remove_cluster.' + (this.props.cluster.tasks({status: 'running'}).length ? 'incomplete_actions_text' : 'node_returned_text'))}
                 </div>
             );
@@ -336,220 +317,334 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         }
     });
 
-    views.ResetEnvironmentDialog = views.Dialog.extend({
-        template: _.template(resetEnvironmentDialogTemplate),
-        events: {
-            'click .reset-environment-btn:not(:disabled)': 'resetEnvironment'
-        },
+    dialogs.ResetEnvironmentDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: $.t('dialog.reset_environment.title')};},
         resetEnvironment: function() {
-            this.$('.reset-environment-btn').attr('disabled', true);
+            this.setState({actionInProgress: true});
             app.page.removeFinishedDeploymentTasks();
             var task = new models.Task();
-            task.save({}, {url: _.result(this.model, 'url') + '/reset', type: 'PUT'})
-                .done(_.bind(function() {
-                    this.$el.modal('hide');
-                    app.page.deploymentTaskStarted();
-                }, this))
-                .fail(_.bind(this.displayError, this));
+            task.save({}, {url: _.result(this.props.cluster, 'url') + '/reset', type: 'PUT'})
+                .always(_.bind(this.close, this))
+                .done(_.bind(app.page.deploymentTaskStarted, app.page))
+                .fail(utils.showErrorDialog);
+        },
+        renderBody: function() {
+            return (
+                <div className='msg-error'>
+                    {this.renderImportantLabel()}
+                    {$.t('dialog.reset_environment.text')}
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='reset' className='btn btn-danger reset-environment-btn' onClick={this.resetEnvironment} disabled={this.state.actionInProgress}>{$.t('common.reset_button')}</button>
+            ]);
         }
     });
 
-    views.UpdateEnvironmentDialog = views.Dialog.extend({
-        template: _.template(updateEnvironmentDialogTemplate),
-        events: {
-            'click .update-environment-btn:not(:disabled)': 'updateEnvironment'
-        },
+    dialogs.UpdateEnvironmentDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: $.t('dialog.update_environment.title')};},
         updateEnvironment: function() {
-            this.$('.update-environment-btn').attr('disabled', true);
-            var deferred = this.cluster.save({
-                pending_release_id: this.pendingReleaseId || this.cluster.get('release_id')
-            }, {patch: true, wait: true});
-            if (deferred) {
-                deferred.done(_.bind(function() {
-                    app.page.removeFinishedDeploymentTasks();
-                    var task = new models.Task();
-                    task.save({}, {url: _.result(this.cluster, 'url') + '/update', type: 'PUT'})
-                        .done(_.bind(function() {
-                            this.$el.modal('hide');
-                            app.page.deploymentTaskStarted();
-                        }, this))
-                        .fail(_.bind(this.displayError, this));
-                }, this))
-                .fail(_.bind(this.displayError, this));
-            }
+            this.setState({actionInProgress: true});
+            var cluster = this.props.cluster;
+            cluster.save({pending_release_id: this.props.pendingReleaseId || cluster.get('release_id')}, {patch: true, wait: true})
+                .always(_.bind(this.close, this))
+                .fail(utils.showErrorDialog)
+                .done(_.bind(function() {
+                    (new models.Task()).save({}, {url: _.result(cluster, 'url') + '/update', type: 'PUT'})
+                        .done(_.bind(app.page.deploymentTaskStarted, app.page));
+                }, this));
         },
-        render: function() {
-            this.constructor.__super__.render.call(this, {cluster: this.cluster, action: this.action, isDowngrade: this.isDowngrade});
-            return this;
+        renderBody: function() {
+            var action = this.props.action;
+            return (
+                <div>
+                    {action == 'update' && this.props.isDowngrade ?
+                        <div className='msg-error'>
+                            {this.renderImportantLabel()}
+                            {$.t('dialog.' + action + '_environment.downgrade_warning')}
+                        </div>
+                    :
+                        <div>{$.t('dialog.' + action + '_environment.text')}</div>
+                    }
+                </div>
+            );
+        },
+        renderFooter: function() {
+            var action = this.props.action,
+                classes = React.addons.classSet({
+                    'btn update-environment-btn': true,
+                    'btn-success': action == 'update',
+                    'btn-danger': action != 'update'
+                });
+            return ([
+                <button key='cancel' className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='reset' className={classes} onClick={this.updateEnvironment} disabled={this.state.actionInProgress}>{$.t('common.' + action + '_button')}</button>
+            ]);
         }
     });
 
-    views.ShowNodeInfoDialog = views.Dialog.extend({
-        template: _.template(showNodeInfoTemplate),
-        templateHelpers: {
-            showPropertyName: function(propertyName) {
-                return propertyName.replace(/_/g, ' ');
-            },
-            showPropertyValue: function(group, name, value) {
-                try {
-                    if (group == 'memory' && (name == 'total' || name == 'maximum_capacity' || name == 'size')) {
-                        value = utils.showMemorySize(value);
-                    } else if (group == 'disks' && name == 'size') {
-                        value = utils.showDiskSize(value);
-                    } else if (name == 'size') {
-                        value = utils.showSize(value);
-                    } else if (name == 'frequency') {
-                        value = utils.showFrequency(value);
-                    } else if (name == 'max_speed' || name == 'current_speed') {
-                        value = utils.showBandwidth(value);
-                    }
-                } catch (ignore) {}
-                return (_.isUndefined(value) || _.isNull(value) || !$.trim(value.toString()).length) ? '\u00A0' : value;
-            },
-            showSummary: function(meta, group) {
-                var summary = '';
-                try {
-                    if (group == 'system') {
+    dialogs.ShowNodeInfoDialog = React.createClass({
+        mixins: [dialogMixin],
+        goToConfigurationScreen: function(url) {
+            this.close();
+            app.navigate('#cluster/' + this.props.node.get('cluster') + '/nodes/' + url + '/' + utils.serializeTabOptions({nodes: this.props.node.id}), {trigger: true});
+        },
+        showSummary: function(meta, group) {
+            var summary = '';
+            try {
+                switch (group) {
+                    case 'system':
                         summary = (meta.system.manufacturer || '') + ' ' + (meta.system.product || '');
-                    } else if (group == 'memory') {
+                        break;
+                    case 'memory':
                         if (_.isArray(meta.memory.devices) && meta.memory.devices.length) {
-                            var sizes = _.groupBy(_.pluck(meta.memory.devices, 'size'), utils.showMemorySize);
-                            summary = _.map(_.keys(sizes).sort(), function(size) {return sizes[size].length + ' x ' + size;}).join(', ');
+                            var sizes = _.countBy(_.pluck(meta.memory.devices, 'size'), utils.showMemorySize);
+                            summary = _.map(_.keys(sizes).sort(), function(size) {return sizes[size] + ' x ' + size;}).join(', ');
                             summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
-                        } else {
-                            summary = utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
-                        }
-                    } else if (group == 'disks') {
+                        } else summary = utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
+                        break;
+                    case 'disks':
                         summary = meta.disks.length + ' ';
                         summary += $.t('dialog.show_node.drive', {count: meta.disks.length});
                         summary += ', ' + utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), function(sum, n) {return sum + n;}, 0)) + ' ' + $.t('dialog.show_node.total');
-                    } else if (group == 'cpu') {
-                        var frequencies = _.groupBy(_.pluck(meta.cpu.spec, 'frequency'), utils.showFrequency);
-                        summary = _.map(_.keys(frequencies).sort(), function(frequency) {return frequencies[frequency].length + ' x ' + frequency;}).join(', ');
-                    } else if (group == 'interfaces') {
-                        var bandwidths = _.groupBy(_.pluck(meta.interfaces, 'current_speed'), utils.showBandwidth);
-                        summary = _.map(_.keys(bandwidths).sort(), function(bandwidth) {return bandwidths[bandwidth].length + ' x ' + bandwidth;}).join(', ');
+                        break;
+                    case 'cpu':
+                        var frequencies = _.countBy(_.pluck(meta.cpu.spec, 'frequency'), utils.showFrequency);
+                        summary = _.map(_.keys(frequencies).sort(), function(frequency) {return frequencies[frequency] + ' x ' + frequency;}).join(', ');
+                        break;
+                    case 'interfaces':
+                        var bandwidths = _.countBy(_.pluck(meta.interfaces, 'current_speed'), utils.showBandwidth);
+                        summary = _.map(_.keys(bandwidths).sort(), function(bandwidth) {return bandwidths[bandwidth] + ' x ' + bandwidth;}).join(', ');
+                        break;
+                }
+            } catch (ignore) {}
+            return summary;
+        },
+        showPropertyName: function(propertyName) {
+            return String(propertyName).replace(/_/g, ' ');
+        },
+        showPropertyValue: function(group, name, value) {
+            try {
+                if (group == 'memory' && (name == 'total' || name == 'maximum_capacity' || name == 'size')) {
+                    value = utils.showMemorySize(value);
+                } else if (group == 'disks' && name == 'size') {
+                    value = utils.showDiskSize(value);
+                } else if (name == 'size') {
+                    value = utils.showSize(value);
+                } else if (name == 'frequency') {
+                    value = utils.showFrequency(value);
+                } else if (name == 'max_speed' || name == 'current_speed') {
+                    value = utils.showBandwidth(value);
+                }
+            } catch (ignore) {}
+            return _.isEmpty(value) ? '\u00A0' : value;
+        },
+        componentDidMount: function() {
+            $('.accordion-body')
+                .on('show', function(e) {$(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-expand').addClass('icon-collapse');})
+                .on('hide', function(e) {$(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-collapse').addClass('icon-expand');})
+                .on('hidden', function(e) {e.stopPropagation();});
+        },
+        toggle: function(groupIndex) {
+            $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
+        },
+        renderBody: function() {
+            var node = this.props.node,
+                meta = node.get('meta'),
+                groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'],
+                groups = _.sortBy(_.keys(meta), function(group) {return _.indexOf(groupOrder, group)}),
+                sortOrder = {
+                    disks: ['name', 'model', 'size'],
+                    interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed']
+                };
+            return (
+                <div>
+                    {(node.deferred && node.deferred.state() == 'pending') ?
+                        <controls.ProgressBar />
+                        :
+                        <div>
+                            <div className='row-fluid'>
+                                <div className='span5'><div className='node-image-outline'></div></div>
+                                <div className='span7'>
+                                    <div><strong>{$.t('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || $.t('common.not_available')}</div>
+                                    <div><strong>{$.t('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || $.t('common.not_available')}</div>
+                                    <div><strong>{$.t('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || $.t('common.not_available')}</div>
+                                </div>
+                            </div>
+                            <div className='accordion' id='nodeDetailsAccordion'>
+                                {_.map(groups, function(group, groupIndex) {
+                                    var groupEntries = meta[group],
+                                        subEntries = [];
+                                    if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries, 'name');
+                                    if (_.isPlainObject(groupEntries)) subEntries = _.find(_.values(groupEntries), _.isArray);
+                                    return (
+                                        <div className='accordion-group' key={group}>
+                                            <div className='accordion-heading' onClick={this.toggle.bind(this, groupIndex)}>
+                                                <div className='accordion-toggle' data-group={group}>
+                                                    <b>{$.t('node_details.' + group, {defaultValue: group})}</b>
+                                                    <span>{this.showSummary(meta, group)}</span>
+                                                    <i className='icon-expand pull-right'></i>
+                                                </div>
+                                            </div>
+                                            <div className='accordion-body collapse' ref={'togglable_' + groupIndex}>
+                                                <div className='accordion-inner'>
+                                                    {_.isArray(groupEntries) &&
+                                                        <div>
+                                                            {_.map(groupEntries, function(entry, entryIndex) {
+                                                                return (
+                                                                    <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
+                                                                        {_.map(utils.sortEntryProperties(entry, sortOrder[group]), function(propertyName, propertyArrIndex) {
+                                                                            return this.renderNodeInfo($.t('dialog.show_node.' + propertyName, {defaultValue: this.showPropertyName(propertyName)}), this.showPropertyValue(group, propertyName, entry[propertyName]), 'entry_' + groupIndex + entryIndex + propertyArrIndex);
+                                                                        }, this)}
+                                                                    </div>
+                                                                );
+                                                            }, this)}
+                                                        </div>
+                                                    }
+                                                    {_.isPlainObject(groupEntries) &&
+                                                        <div>
+                                                            {_.map(groupEntries, function(propertyValue, propertyName) {
+                                                                if (!_.isArray(propertyValue) && !_.isNumber(propertyName))
+                                                                    return this.renderNodeInfo($.t('dialog.show_node.' + propertyName, {defaultValue: this.showPropertyName(propertyName)}), this.showPropertyValue(group, propertyName, propertyValue), 'entry_' + groupIndex + propertyName);
+                                                            }, this)}
+                                                            {!_.isEmpty(subEntries) &&
+                                                                <div>
+                                                                    {_.map(subEntries, function(subentry, subentrysIndex) {
+                                                                        return (
+                                                                            <div className='nested-object' key={'subentries_' + groupIndex + subentrysIndex}>
+                                                                                {_.map(utils.sortEntryProperties(subentry), function(propertyName, subentryIndex) {
+                                                                                    return this.renderNodeInfo($.t('dialog.show_node.' + propertyName, {defaultValue: this.showPropertyName(propertyName)}), this.showPropertyValue(group, propertyName, subentry[propertyName]), 'subentry_' + groupIndex + subentryIndex);
+                                                                                }, this)}
+                                                                            </div>
+                                                                        );
+                                                                    }, this)}
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries)) &&
+                                                        <div>{groupEntries}</div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }, this)}
+                            </div>
+                        </div>
                     }
-                } catch (ignore) {}
-                return summary;
-            },
-            sortEntryProperties: utils.sortEntryProperties
+                </div>
+            );
         },
-        events: {
-            'click .accordion-heading': 'toggle',
-            'click .btn-edit-disks': 'goToDisksConfiguration',
-            'click .btn-edit-networks': 'goToInterfacesConfiguration',
-            'click .btn-node-console': 'goToSSHConsole'
+        renderFooter: function() {
+            var node = this.props.node;
+            return (
+                <div>
+                    {node.get('cluster') &&
+                        <span>
+                            <button className='btn btn-edit-networks' onClick={this.goToConfigurationScreen.bind(this, 'interfaces')}>{$.t('dialog.show_node.network_configuration_button')}</button>
+                            <button className='btn btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>{$.t('dialog.show_node.disk_configuration_button')}</button>
+                        </span>
+                    }
+                    <button className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>
+                </div>
+            );
         },
-        toggle: function(e) {
-            $(e.currentTarget).siblings('.accordion-body').collapse('toggle');
-        },
-        goToDisksConfiguration: function() {
-            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/disks/' + utils.serializeTabOptions({nodes: this.node.id}), {trigger: true});
-        },
-        goToInterfacesConfiguration: function() {
-            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/interfaces/' + utils.serializeTabOptions({nodes: this.node.id}), {trigger: true});
-        },
-        initialize: function(options) {
-            _.defaults(this, options);
-            this.node.on('sync', this.render, this);
-        },
-        goToSSHConsole: function() {
-            window.open('http://' + window.location.hostname + ':2443/?' + $.param({
-                ssh: 'ssh://root@' + this.node.get('ip'),
-                location: this.node.get('ip').replace(/\./g, '')
-            }), '_blank');
-        },
-        render: function() {
-            this.constructor.__super__.render.call(this, _.extend({node: this.node}, this.templateHelpers));
-            this.$('.accordion-body').collapse({
-                parent: this.$('.accordion'),
-                toggle: false
-            }).on('show', function(e) {
-                $(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-expand').addClass('icon-collapse');
-            }).on('hide', function(e) {
-                $(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-collapse').addClass('icon-expand');
-            }).on('hidden', function(e) {
-                e.stopPropagation();
-            });
-            return this;
+        renderNodeInfo: function(label, span, key) {
+            return (
+                <div key={key}>
+                    <label>{label}</label>
+                    <span>{span}</span>
+                </div>
+            );
         }
     });
 
-    views.DiscardSettingsChangesDialog = views.Dialog.extend({
-        template: _.template(discardSettingsChangesTemplate),
-        events: {
-            'click .proceed-btn': 'proceed'
-        },
+    dialogs.DiscardSettingsChangesDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: $.t('dialog.dismiss_settings.title'), defaultMessage: $.t('dialog.dismiss_settings.default_message')};},
         proceed: function() {
-            this.$el.modal('hide');
-            app.page.removeFinishedNetworkTasks().always(_.bind(this.cb, this));
+            this.close();
+            app.page.removeFinishedNetworkTasks().always(_.bind(this.props.cb, this.props));
         },
-        render: function() {
-            if (this.verification) {
-                this.message = $.t('dialog.dismiss_settings.verify_message');
-            }
-            this.constructor.__super__.render.call(this, {
-                message: this.message || $.t('dialog.dismiss_settings.default_message'),
-                verification: this.verification || false
-            });
-            return this;
+        renderBody: function() {
+            var message = this.props.verification ? $.t('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
+            return (
+                <div className='msg-error dismiss-settings-dialog'>
+                    {this.renderImportantLabel()}
+                    {message}
+                </div>
+            );
+        },
+        renderFooter: function() {
+            var verification = !!this.props.verification,
+                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{$.t('dialog.dismiss_settings.stay_button')}</button>];
+            if (!verification) buttons.push(<button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>{$.t('dialog.dismiss_settings.leave_button')}</button>);
+            return buttons;
         }
     });
 
-    views.DeleteNodesDialog = views.Dialog.extend({
-        template: _.template(deleteNodesTemplate),
-        events: {
-            'click .btn-delete': 'deleteNodes'
+    dialogs.DeleteNodesDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: $.t('dialog.delete_nodes.title')};},
+        renderBody: function() {
+            return (<div className='deploy-task-notice'>{this.renderImportantLabel()} {$.t('dialog.delete_nodes.message')}</div>);
+        },
+        renderFooter: function() {
+            return [
+                <button key='cancel' className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.actionInProgress}>{$.t('common.delete_button')}</button>
+            ];
         },
         deleteNodes: function() {
-            if (this.nodes.cluster) {
-                this.$('.btn-delete').prop('disabled', true);
-                this.nodes.each(function(node) {
-                    if (!node.get('pending_deletion')) {
-                        if (node.get('pending_addition')) {
-                            node.set({
-                                cluster_id: null,
-                                pending_addition: false,
-                                pending_roles: []
-                            });
-                        } else {
-                            node.set({pending_deletion: true});
-                        }
-                    }
-                }, this);
-                this.nodes.toJSON = function() {
-                    return this.map(function(node) {
-                        return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
-                    });
-                };
-                this.nodes.sync('update', this.nodes)
-                    .done(_.bind(function() {
-                        this.$el.modal('hide');
-                        app.page.tab.model.fetch();
-                        app.page.tab.screen.nodes.fetch();
-                        _.invoke(app.page.tab.screen.nodes.where({checked: true}), 'set', {checked: false});
-                        app.page.tab.screen.updateBatchActionsButtons();
-                        app.navbar.refresh();
-                        app.page.removeFinishedNetworkTasks();
-                    }, this))
-                    .fail(_.bind(function() {
-                        utils.showErrorDialog({
-                            title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
-                            message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
+            var nodes = this.props.nodes;
+            this.setState({actionInProgress: true});
+            nodes.each(function(node) {
+                if (!node.get('pending_deletion')) {
+                    if (node.get('pending_addition')) {
+                        node.set({
+                            cluster_id: null,
+                            pending_addition: false,
+                            pending_roles: []
                         });
-                    }, this));
-            }
-        },
-        render: function() {
-            this.constructor.__super__.render.call(this, {nodes: this.nodes});
-            return this;
+                    } else {
+                        node.set({pending_deletion: true});
+                    }
+                }
+            }, this);
+            nodes.toJSON = function() {
+                return this.map(function(node) {
+                    return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
+                });
+            };
+            nodes.sync('update', nodes)
+                .always(_.bind(this.close, this))
+                .done(_.bind(function() {
+                    var cluster = this.props.cluster;
+                    cluster.fetch();
+                    cluster.fetchRelated('nodes');
+                    app.page.tab.screen.nodes.invoke('set', {checked: false});
+                    app.page.tab.screen.updateBatchActionsButtons();
+                    app.navbar.refresh();
+                    app.page.removeFinishedNetworkTasks();
+                }, this))
+                .fail(function() {
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
+                        message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
+                    });
+                });
         }
     });
 
-    views.ChangePasswordDialog = React.createClass({
+    dialogs.ChangePasswordDialog = React.createClass({
         mixins: [
-            componentMixins.dialogMixin,
+            dialogMixin,
             React.addons.LinkedStateMixin
         ],
         getDefaultProps: function() {
@@ -649,5 +744,5 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         }
     });
 
-    return views;
+    return dialogs;
 });

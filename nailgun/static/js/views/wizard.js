@@ -99,7 +99,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                         bind: {id: 'cluster:release'},
                         aliases: {
                             operating_system: 'NameAndRelease.release_operating_system',
-                            roles: 'NameAndRelease.release_roles',
+                            role_list: 'NameAndRelease.release_roles',
                             name: 'NameAndRelease.release_name'
                         }
                     }

@@ -82,6 +82,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         constructorName: 'Release',
         urlRoot: '/api/releases',
         parse: function(response) {
+            response.role_list = response.roles;
             response.roles = new models.Roles(_.map(response.roles, function(roleName) {
                 var roleData = response.roles_metadata[roleName];
                 roleData.label = roleData.name;

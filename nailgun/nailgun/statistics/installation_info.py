@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
@@ -24,6 +25,45 @@ class InstallationInfo(object):
     Master nodes, clusters, networks, e.t.c.
     Used for collecting info for fuel statistics
     """
+
+    attributes_white_list = (
+        # ((path, to, property), 'map_to_name')
+        (('common', 'libvirt_type', 'value'), 'libvirt_type'),
+        (('common', 'debug', 'value'), 'debug_mode'),
+        (('common', 'use_cow_images', 'value'), 'use_cow_images'),
+
+        (('nsx_plugin', 'metadata', 'enabled'), 'nsx'),
+        (('nsx_plugin', 'connector_type', 'value'), 'nsx_transport'),
+        (('nsx_plugin', 'replication_mode', 'value'), 'nsx_replication'),
+
+        (('vcenter', 'use_vcenter', 'value'), 'vcenter'),
+        (('public_network_assignment', 'assign_to_all_nodes', 'value'),
+         'assign_public_to_all_nodes'),
+        (('syslog', 'syslog_transport', 'value'), 'syslog_transport'),
+        (('provision', 'method', 'value'), 'provision_method'),
+        (('kernel_params', 'kernel', 'value'), 'kernel_params'),
+
+        (('storage', 'volumes_lvm', 'value'), 'volumes_lvm'),
+        (('storage', 'volumes_vmdk', 'value'), 'volumes_vmdk'),
+        (('storage', 'iser', 'value'), 'iser'),
+        (('storage', 'volumes_ceph', 'value'), 'volumes_ceph'),
+        (('storage', 'images_ceph', 'value'), 'images_ceph'),
+        (('storage', 'images_vcenter', 'value'), 'images_vcenter'),
+        (('storage', 'ephemeral_ceph', 'value'), 'ephemeral_ceph'),
+        (('storage', 'objects_ceph', 'value'), 'objects_ceph'),
+        (('storage', 'osd_pool_size', 'value'), 'osd_pool_size'),
+
+        (('neutron_mellanox', 'plugin', 'value'), 'mellanox'),
+        (('neutron_mellanox', 'vf_num', 'value'), 'mellanox_vf_num'),
+
+        (('additional_components', 'sahara', 'value'), 'sahara'),
+        (('additional_components', 'murano', 'value'), 'murano'),
+        (('additional_components', 'heat', 'value'), 'heat'),
+        (('additional_components', 'ceilometer', 'value'), 'ceilometer'),
+
+        (('vlan_splinters', 'metadata', 'enabled'), 'vlan_splinters'),
+        (('vlan_splinters', 'vswitch', 'value'), 'vlan_splinters_ovs')
+    )
 
     def fuel_release_info(self):
         versions = utils.get_fuel_release_versions(settings.FUEL_VERSION_FILE)
@@ -48,19 +88,19 @@ class InstallationInfo(object):
                 },
                 'mode': cluster.mode,
                 'nodes': self.get_nodes_info(cluster.nodes),
+                'node_groups': self.get_node_groups_info(cluster.node_groups),
                 'status': cluster.status,
-                'attributes': self.get_attributes(cluster.attributes.editable)
+                'attributes': self.get_attributes(cluster.attributes.editable),
+                'net_provider': cluster.net_provider,
+                'fuel_version': cluster.fuel_version,
+                'is_customized': cluster.is_customized
             }
             clusters_info.append(cluster_info)
         return clusters_info
 
     def get_attributes(self, attributes):
         result = {}
-        white_list = (
-            # ((path, to, property), 'map_to_name')
-            (('common', 'libvirt_type', 'value'), 'libvirt_type'),
-        )
-        for path, map_to_name in white_list:
+        for path, map_to_name in self.attributes_white_list:
             attr = attributes
             try:
                 for p in path:
@@ -75,13 +115,49 @@ class InstallationInfo(object):
         for node in nodes:
             node_info = {
                 'id': node.id,
+                'group_id': node.group_id,
                 'roles': node.roles,
                 'os': node.os_platform,
+
                 'status': node.status,
-                'manufacturer': node.manufacturer
+                'error_type': node.error_type,
+                'online': node.online,
+
+                'manufacturer': node.manufacturer,
+                'platform_name': node.platform_name,
+
+                'pending_addition': node.pending_addition,
+                'pending_deletion': node.pending_deletion,
+                'pending_roles': node.pending_roles,
+
+                'nic_interfaces':
+                self.get_node_intefaces_info(node.nic_interfaces, bond=False),
+                'bond_interfaces':
+                self.get_node_intefaces_info(node.bond_interfaces, bond=True),
             }
             nodes_info.append(node_info)
         return nodes_info
+
+    def get_node_intefaces_info(self, interfaces, bond):
+        ifs_info = []
+        for interface in interfaces:
+            if_info = {
+                'id': interface.id
+            }
+            if bond:
+                if_info['slaves'] = [s.id for s in interface.slaves]
+            ifs_info.append(if_info)
+        return ifs_info
+
+    def get_node_groups_info(self, node_groups):
+        groups_info = []
+        for group in node_groups:
+            group_info = {
+                'id': group.id,
+                'nodes': [n.id for n in group.nodes]
+            }
+            groups_info.append(group_info)
+        return groups_info
 
     def get_installation_info(self):
         clusters_info = self.get_clusters_info()

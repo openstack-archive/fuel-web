@@ -226,9 +226,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
         showDeleteNodesDialog: function() {
             var nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
             nodes.cluster = this.nodes.cluster;
-            var dialog = new dialogs.DeleteNodesDialog({nodes: nodes});
-            app.page.tab.registerSubView(dialog);
-            dialog.render();
+            utils.showDialog(dialogs.DeleteNodesDialog({nodes: nodes}));
         },
         applyChanges: function() {
             this.$('.btn-apply').prop('disabled', true);
@@ -708,9 +706,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
         },
         showNodeDetails: function(e) {
             e.preventDefault();
-            var dialog = new dialogs.ShowNodeInfoDialog({node: this.node});
-            app.page.tab.registerSubView(dialog);
-            dialog.render();
+            utils.showDialog(dialogs.ShowNodeInfoDialog({node: this.node}));
         },
         updateNode: function(data) {
             this.node.save(data, {patch: true, wait: true})

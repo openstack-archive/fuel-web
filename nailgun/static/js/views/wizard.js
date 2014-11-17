@@ -19,7 +19,6 @@ define(
     'utils',
     'models',
     'view_mixins',
-    'jsx!views/dialogs',
     'text!templates/dialogs/create_cluster_wizard.html',
     'text!templates/dialogs/create_cluster_wizard/name_and_release.html',
     'text!templates/dialogs/create_cluster_wizard/common_wizard_panel.html',
@@ -29,16 +28,63 @@ define(
     'text!templates/dialogs/create_cluster_wizard/ready.html',
     'text!templates/dialogs/create_cluster_wizard/control_template.html',
     'text!templates/dialogs/create_cluster_wizard/warning.html',
-    'text!templates/dialogs/create_cluster_wizard/text_input.html'
+    'text!templates/dialogs/create_cluster_wizard/text_input.html',
+    'text!templates/dialogs/base_dialog.html'
 ],
-function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, utils, models, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate, baseDialogTemplate) {
     'use strict';
 
     var views = {};
 
     var clusterWizardPanes = {};
 
-    views.CreateClusterWizard = dialogs.Dialog.extend({
+    views.Dialog = Backbone.View.extend({
+        className: 'modal fade',
+        template: _.template(baseDialogTemplate),
+        modalBound: false,
+        beforeTearDown: function() {
+            this.unstickit();
+            this.$el.modal('hide');
+        },
+        displayError: function(options) {
+            var logsLink;
+            var cluster = app.page.model;
+            if (!options.hideLogsLink && cluster && cluster.constructor == models.Cluster) {
+                var logOptions = {type: 'local', source: 'api', level: 'error'};
+                logsLink = '#cluster/' + cluster.id + '/logs/' + utils.serializeTabOptions(logOptions);
+            }
+            var dialogOptions = _.defaults(options, {
+                error: true,
+                title: $.t('dialog.error_dialog.title'),
+                message: $.t('dialog.error_dialog.warning'),
+                logsLink: logsLink
+            });
+            this.$el.removeClass().addClass('modal').html(views.Dialog.prototype.template(dialogOptions)).i18n();
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+        },
+        render: function(options) {
+            this.$el.attr('tabindex', -1);
+            if (options && options.error) {
+                this.displayError(options);
+            } else {
+                var templateOptions = _.extend({title: '', message: '', error: false, logsLink: ''}, options);
+                this.$el.html(this.template(templateOptions)).i18n();
+            }
+            if (!this.modalBound) {
+                this.$el.on('hidden', _.bind(this.tearDown, this));
+                this.$el.on('shown', _.bind(function() {
+                    this.$('[autofocus]:first').focus();
+                }, this));
+                this.$el.modal(_.extend({}, this.modalOptions));
+                this.modalBound = true;
+            }
+            return this;
+        }
+    });
+
+    views.CreateClusterWizard = views.Dialog.extend({
         className: 'modal fade create-cluster-modal',
         template: _.template(createClusterWizardTemplate),
         modalOptions: {backdrop: 'static'},

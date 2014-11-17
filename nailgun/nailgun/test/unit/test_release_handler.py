@@ -14,8 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.openstack.common import jsonutils
+from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -63,11 +66,9 @@ class TestHandlers(BaseIntegrationTest):
             "clusters assigned"
         )
 
+    @mock.patch.object(
+        settings, 'VERSION', {'feature_groups': ['mirantis']})
     def test_release_put_deployable(self):
-        # make sure that we don't have experimental mode
-        from nailgun.settings import settings
-        settings.VERSION['feature_groups'] = ['mirantis']
-
         release = self.env.create_release(api=False)
 
         for deployable in (False, True):
@@ -80,11 +81,9 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(200, resp.status_code)
             self.assertEqual(resp.json_body['is_deployable'], deployable)
 
+    @mock.patch.object(
+        settings, 'VERSION', {'feature_groups': ['experimental']})
     def test_release_deployable_in_experimental(self):
-        # make sure that we have experimental mode
-        from nailgun.settings import settings
-        settings.VERSION['feature_groups'] = ['experimental']
-
         # set deployable to False
         release = self.env.create_release(api=False)
         resp = self.app.put(
@@ -103,6 +102,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual(resp.json_body['is_deployable'], True)
 
+    @mock.patch.object(settings, 'MASTER_IP', '127.0.0.1')
     def test_release_put_orchestrator_data_w_masks(self):
         release = self.env.create_release(api=False)
 

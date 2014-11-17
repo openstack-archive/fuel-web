@@ -17,10 +17,11 @@ define(
 [
     'jquery',
     'react',
+    'models',
     'jsx!views/controls',
     'jsx!views/statistics_mixin'
 ],
-function($, React, controls, statisticsMixin) {
+function($, React, models, controls, statisticsMixin) {
     'use strict';
 
     var WelcomePage = React.createClass({
@@ -32,6 +33,9 @@ function($, React, controls, statisticsMixin) {
         hiddenLayout: true,
         title: function() {
             return $.t('welcome_page.title');
+        },
+        getInitialState: function() {
+            return {fuelKey: new models.FuelKey()};
         },
         onStartButtonClick: function(e) {
             this.props.settings.get('statistics').user_choice_saved.value = true;
@@ -52,6 +56,7 @@ function($, React, controls, statisticsMixin) {
                 <div className='welcome-page'>
                     <div>
                         <h2 className='center'>{$.t(ns + 'title')}</h2>
+                        <RegisterTrial fuelKey={this.state.fuelKey} />
                         {this.renderIntro()}
                         {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
                         <div className='welcome-text-box'>
@@ -83,6 +88,34 @@ function($, React, controls, statisticsMixin) {
                     </div>
                 </div>
             );
+        }
+    });
+
+    var RegisterTrial = React.createClass({
+        mixins: [React.BackboneMixin('fuelKey')],
+        shouldShowMessage: function() {
+            return _.contains(app.version.get('feature_groups'), 'mirantis') && !_.contains(app.version.get('feature_groups'), 'techpreview');
+        },
+        componentWillMount: function() {
+            if (this.shouldShowMessage()) {
+                this.props.fuelKey.fetch();
+            }
+        },
+        render: function() {
+            if (this.shouldShowMessage()) {
+                var ns = 'welcome_page.register_trial.',
+                    key = this.props.fuelKey.get('key');
+                return (
+                    <div className='register-trial'>
+                        <p>{$.t(ns + 'register_installation')}</p>
+                        <p>{$.t(ns + 'register_now')}</p>
+                        <p>
+                            <a target="_blank" className="registration-link" href={!_.isUndefined(key) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + key : '/'}>{$.t(ns + 'link_text')}</a>
+                        </p>
+                    </div>
+                );
+            }
+            return null;
         }
     });
 

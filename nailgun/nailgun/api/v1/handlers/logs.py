@@ -50,7 +50,10 @@ def read_backwards(file, from_byte=None, bufsize=0x20000):
         from_byte = size
     lines = ['']
     rem = from_byte % bufsize
-    pos = max(0, (from_byte // bufsize - 1) * bufsize)
+    if rem == 0:
+        pos = max(0, (from_byte // bufsize - 1) * bufsize)
+    else:
+        pos = (from_byte // bufsize) * bufsize
     while pos >= 0:
         read_size = bufsize
         if rem > 0:
@@ -63,7 +66,7 @@ def read_backwards(file, from_byte=None, bufsize=0x20000):
         while ix > 0:
             yield lines[ix]
             ix -= 1
-        pos -= read_size
+        pos -= bufsize
     else:
         yield lines[0]
         # Set cursor position to last read byte

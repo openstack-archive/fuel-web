@@ -306,6 +306,32 @@ class TestLogs(BaseIntegrationTest):
 
         f.close()
 
+        # Some special cases not caught by the tests above -- test with
+        # different from_byte's
+        f = tempfile.TemporaryFile(mode='r+')
+        written = '\n'.join(contents)
+        f.write(written)
+
+        for from_byte in range(1, len(written)):
+            ss = written[:from_byte].split('\n')
+            if ss[-1] == '':
+                ss = ss[:-1]
+            append_newline = written[from_byte - 1] == '\n'
+            if append_newline:
+                ss = ['%s\n' % s for s in ss]
+            else:
+                ss[:-1] = ['%s\n' % s for s in ss[:-1]]
+
+            ss = list(reversed(ss))
+
+            for bufsize in range(1, 30):
+                self.assertEqual(
+                    list(read_backwards(f,
+                                        from_byte=from_byte,
+                                        bufsize=bufsize)),
+                    ss
+                )
+
     def _format_log_entry(self, log_entry):
         return ':'.join(log_entry) + '\n'
 

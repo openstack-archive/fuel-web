@@ -397,25 +397,13 @@ label {cursor: default;}
   .action-btn {margin-top: 7px;}
 }
 
-#content .register-trial {
-  margin-bottom: 0px;
-  background-color: #70869b;
-  color: #e8f1f6;
-  border: medium none;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
-  .icon-mirantis {
-    font-size: 56px;
-    float: left;
-    margin: -8px;
-    margin-right: 8px;
-  }
-  p {
-    margin: 0px;
-  }
-  a {
-    color: #e8d88e;
-    text-decoration: underline;
-  }
+.register-trial {
+  border: 1px solid @fuel-grey-light;
+  .border-radius-mixin(8px);
+  padding: 8px 10px 4px 10px;
+  text-align: center;
+  margin-bottom: 20px;
+  background-color: #f0f4f4;
 }
 
 // Footer
@@ -3654,7 +3642,7 @@ i.btn-cluster-details {
     }
     .welcome-checkbox-box {
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 11px;
       padding-top: 4px;
       div {
         display: inline-block;
@@ -3662,6 +3650,7 @@ i.btn-cluster-details {
       }
       /* overrides for reusable inputs */
       .parameter-name, .custom-tumbler {
+        margin-top: 0;
         float: none;
         font-weight: normal;
       }
@@ -3677,6 +3666,9 @@ i.btn-cluster-details {
         font-weight: normal;
         overflow: visible;
       }
+      .label-wrapper {
+        margin-top: 5px;
+      }
     }
     .welcome-form-error {
       text-align: center;
@@ -3684,6 +3676,7 @@ i.btn-cluster-details {
       margin-bottom: 20px;
     }
     .welcome-button-box {
+      margin-top: 20px;
       text-align: center;
       button { .width-height-mixin(230px, 44px); }
     }
@@ -3712,13 +3705,13 @@ i.btn-cluster-details {
 
 .statistics-text-box {
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   .font-layout-mixin(14px, #4d545b, lighter);
   a { cursor: pointer; }
   p {
     text-align: justify;
     margin: 0px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
 }
 .statistics-disclaimer-box {

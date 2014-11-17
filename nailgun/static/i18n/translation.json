@@ -589,7 +589,7 @@
                     "important": "Important",
                     "stay_button": "Stay on page",
                     "leave_button": "Leave page and discard changes",
-                    "default_message": "Settings were modified but not saved. Do you want to discard your changes and leave the page?",
+                    "default_message": "You have unsaved changes on this page. Do you want to discard your changes and leave the page?",
                     "verify_message": "Network verification is in progress. You should save changes or stay on the tab."
                 },
                 "display_changes": {
@@ -630,6 +630,10 @@
                     "bytes": "bytes",
                     "drive": "drive",
                     "drive_plural": "drives"
+                },
+                "delete_nodes": {
+                    "title": "Delete Nodes",
+                    "message": "Are you sure you want to delete the selected nodes?"
                 },
                 "rhel_license": {
                     "title": "Red Hat Enterprise Linux Account Settings",

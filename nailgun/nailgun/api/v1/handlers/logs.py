@@ -49,21 +49,27 @@ def read_backwards(file, from_byte=None, bufsize=0x20000):
     if from_byte is None:
         from_byte = size
     lines = ['']
+    read_size = bufsize
     rem = from_byte % bufsize
-    pos = max(0, (from_byte // bufsize - 1) * bufsize)
+    if rem == 0:
+        # Perform bufsize reads only
+        pos = max(0, (from_byte // bufsize - 1) * bufsize)
+    else:
+        # One more iteration will be done to read rem bytes so that we
+        # are aligned to exactly bufsize reads later on
+        read_size = rem
+        pos = (from_byte // bufsize) * bufsize
+
     while pos >= 0:
-        read_size = bufsize
-        if rem > 0:
-            read_size = rem
         file.seek(pos, os.SEEK_SET)
         data = file.read(read_size) + lines[0]
-        rem = 0
         lines = re.findall('[^\n]*\n?', data)
         ix = len(lines) - 2
         while ix > 0:
             yield lines[ix]
             ix -= 1
-        pos -= read_size
+        pos -= bufsize
+        read_size = bufsize
     else:
         yield lines[0]
         # Set cursor position to last read byte

@@ -303,7 +303,7 @@
             label: "NSX connector type"
             description: "Default network transport type to use"
             weight: 80
-            type: "dropdown"
+            type: "select"
           replication_mode:
             description: ""
             label: "NSX cluster has Service nodes"

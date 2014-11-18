@@ -240,6 +240,15 @@ function(React, utils, models, Expression, controls) {
 
     var SettingGroup = React.createClass({
         mixins: [dependenciesMixin],
+        composeOptions: function(values) {
+            return _.map(values, function(value, index) {
+                return (
+                    <option key={index} value={value.data} disabled={value.disabled}>
+                        {value.label}
+                    </option>
+                );
+            });
+        },
         render: function() {
             var group = this.settings.get(this.props.groupName),
                 metadata = group.metadata,
@@ -282,7 +291,7 @@ function(React, utils, models, Expression, controls) {
                                         }, this)
                                         .compact()
                                         .value();
-                                    return this.transferPropsTo(
+                                    if (setting.type == 'radio') return this.transferPropsTo(
                                         <controls.RadioGroup
                                             key={settingName}
                                             name={settingName}
@@ -301,6 +310,7 @@ function(React, utils, models, Expression, controls) {
                                         checked={_.isBoolean(setting.value) ? setting.value : false}
                                         label={setting.label}
                                         description={setting.description}
+                                        children={setting.type == 'select' && this.composeOptions(setting.values)}
                                         toggleable={setting.type == 'password'}
                                         error={error}
                                         disabled={this.props.disabled || disabled}

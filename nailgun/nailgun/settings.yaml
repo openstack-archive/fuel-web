@@ -55,6 +55,12 @@ KEEPALIVE:
   interval: 30  # How often to check if node went offline. If node powered on, it is immediately switched to online state.
   timeout: 180  # Node will be switched to offline if there are no updates from agent for this period of time
 
+# Monitord settings
+MONITORD:
+  states_file: /var/cache/monitord-states.yaml  # Where to keep current running state
+  free_disk_error: 5  # Error if free disk space is lower than this number of GB
+  interval: 60        # Checking interval (in seconds)
+
 STATIC_DIR: "/var/tmp/nailgun_static"
 TEMPLATE_DIR: "/var/tmp/nailgun_static"
 

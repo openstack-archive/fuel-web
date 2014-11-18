@@ -253,7 +253,25 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
         getResponseText: function(response) {
             return _.contains([400, 409], response.status) ? response.responseText : '';
         },
-        natsort:  function alphanum(a, b) {
+        multiSort: function(model1, model2, attributes) {
+            var result = utils.compare(model1, model2, attributes[0]);
+            if (result === 0 && attributes.length > 1) {
+                attributes.splice(0, 1);
+                result = utils.multiSort(model1, model2, attributes);
+            }
+            return result;
+        },
+        compare: function(model1, model2, attributeObj) {
+            var getValue = function(model) {
+                var attr = attributeObj.attr;
+                return _.isFunction(model[attr]) ? model[attr]() : model.get(attr);
+            };
+            var model1Value = getValue(model1),
+                model2Value = getValue(model2),
+                result = _.isString(model1Value) ? utils.stringNaturalSort(model1Value, model2Value) : model1Value - model2Value;
+            return attributeObj.desc ? -result : result;
+        },
+        stringNaturalSort: function(a, b) {
             // Compare 2 strings naturally, i.e. [z1, z11, z2,z12] is sorted as
             // [z1, z2, z11, z12] instead of lexicographically as
             // [z1, z11, z12, z2]
@@ -290,7 +308,6 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             }
             return aa.length - bb.length;
         }
-
     };
 
     return utils;

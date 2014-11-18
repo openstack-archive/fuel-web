@@ -135,6 +135,16 @@ modification of only two files in the fuel-main repository::
     bootstrap/module.mk
     requirements-rpm.txt
 
+.. note:: Any package specified in bootstrap building procedure
+    must be listed in the requirements-rpm.txt file explicitly.
+    The Fuel mirrors must be rebuilt by the OSCI team prior to
+    merging requests like this one.
+
+.. note:: Changes made to bootstrap do not affect package sets for
+    target systems, so in case if you're adding support for NIC,
+    for example, you have to add installation of all related
+    packages to kickstart/preceed as well.
+
 The `Adding OFED drivers installation
 <https://review.openstack.org/#/c/103427>`_ commit shows the
 changes made to the preseed (for Ubuntu) and kickstart (for
@@ -160,10 +170,29 @@ Adding to Fuel package repositories
 If the addition will be committed back to the public Fuel
 codebase to benefit others, you will need to submit a bug in
 the Fuel project to request the package be added to the
-repositories. This `Add neutron-lbaas-agent package
-<https://bugs.launchpad.net/bugs/1330610>`_ bug is a good
-example. The package must also include a license that
-complies with the Fedora project license requirements for
-binary firmware. See the `Fedora Project licensing page
-<https://fedoraproject.org/wiki/Licensing:Main#Binary_Firmware>`_
-for more information.
+repositories.
+
+Let's look at this process step by step by the example
+of `Add neutron-lbaas-agent package
+<https://bugs.launchpad.net/bugs/1330610>`_ bug:
+
+* you create a bug in the Fuel project providing full description on
+  the packages to be added, and assign it to the Fuel OSCI team
+* you create a request to add these packages to Fuel requirements-\*.txt
+  files `Add all neutron packages to requirements
+  <https://review.openstack.org/#/c/104633/>`_
+  You receive +1 vote from Fuel CI if these packages already exist on
+  either Fuel internal mirrors or upstream mirrors for respective OS
+  type (rpm/deb), or -1 vote in any other case.
+* if requested packages do not exist in the upstream OS distributive,
+  OSCI team builds them and then places on internal Fuel mirrors
+* OSCI team rebuilds public Fuel mirrors with `Add all neutron packages to
+  requirements <https://review.openstack.org/#/c/104633/>`_ request
+* `Add all neutron packages to requirements
+  <https://review.openstack.org/#/c/104633/>`_ request is merged
+
+.. note:: The package must include a license that complies
+    with the Fedora project license requirements for binary
+    firmware. See the `Fedora Project licensing page
+    <https://fedoraproject.org/wiki/Licensing:Main#Binary_Firmware>`_
+    for more information.

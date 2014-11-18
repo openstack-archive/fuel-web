@@ -221,20 +221,6 @@ def symlink(source, destination, overwrite=True):
         logger.debug('Skip symlinking process')
 
 
-def symlink_if_src_exists(source, destination, overwrite=True):
-    """Creates a symbolic link to the resource but only if source exists.
-
-    :param source: symlink from
-    :param destination: symlink to
-    :param overwrite: overwrite a destination if True
-    """
-    if not os.path.exists(source):
-        logger.debug(
-            u'Skip creating symlink, because "%s" does not exists', source)
-        return
-    symlink(source, destination, overwrite=overwrite)
-
-
 def hardlink(source, destination, overwrite=True):
     """Creates a hardlink link to the resource.
 
@@ -735,6 +721,33 @@ def get_base_release(release, depends_on, existing_releases):
 
     # nothing found
     return None
+
+
+def sanitize(obj, keywords, mask='******'):
+    """Find and hide private data in obj using keywords.
+
+    :param obj: object to be sanitized
+    :param keywords: describe keywords to be found in obj
+    :param mask: a string for substitution of sanitized values
+    :return: sanitized copy of obj
+    """
+    def _helper(_obj):
+        if isinstance(_obj, dict):
+            for option in _obj:
+                if any([key in option for key in keywords]):
+                    _obj[option] = mask
+                else:
+                    _helper(_obj[option])
+
+        elif isinstance(_obj, (list, set, tuple)):
+            for value in _obj:
+                _helper(value)
+
+        return _obj
+
+    # Making sure the original object remains untouched
+    obj_copy = deepcopy(obj)
+    return _helper(obj_copy)
 
 
 class VersionedFile(object):

@@ -16,7 +16,6 @@
 
 import glob
 import json
-import logging
 import os
 import re
 import shutil
@@ -33,8 +32,10 @@ import six
 import yaml
 
 from fuel_upgrade import errors
+from fuel_upgrade.logger import upgrade_logger
 
-logger = logging.getLogger(__name__)
+
+logger = upgrade_logger(__name__)
 
 
 def exec_cmd(cmd):
@@ -44,13 +45,13 @@ def exec_cmd(cmd):
 
     :param cmd: shell command
     """
-    logger.debug(u'Execute command "{0}"'.format(cmd))
+    logger.debug(u'Execute command "%s"', cmd)
     child = subprocess.Popen(
         cmd, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         shell=True)
 
-    logger.debug(u'Stdout and stderr of command "{0}":'.format(cmd))
+    logger.debug(u'Stdout and stderr of command "%s":', cmd)
     for line in child.stdout:
         logger.debug(line.rstrip())
 
@@ -78,13 +79,13 @@ def exec_cmd_iterator(cmd):
     :returns: generator where yeach item
               is line from stdout
     """
-    logger.debug(u'Execute command "{0}"'.format(cmd))
+    logger.debug(u'Execute command "%s"', cmd)
     child = subprocess.Popen(
         cmd, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         shell=True)
 
-    logger.debug(u'Stdout and stderr of command "{0}":'.format(cmd))
+    logger.debug(u'Stdout and stderr of command "%s":', cmd)
     for line in child.stdout:
         logger.debug(line.rstrip())
         yield line
@@ -107,7 +108,7 @@ def _wait_and_check_exit_code(cmd, child):
             u'Shell command executed with "{0}" '
             'exit code: {1} '.format(exit_code, cmd))
 
-    logger.debug(u'Command "{0}" successfully executed'.format(cmd))
+    logger.debug(u'Command "%s" successfully executed', cmd)
 
 
 def get_request(url):
@@ -116,12 +117,12 @@ def get_request(url):
     :param url: url
     :returns list|dict: deserialized response
     """
-    logger.debug('GET request to {0}'.format(url))
+    logger.debug('GET request to %s', url)
     response = urllib2.urlopen(url)
     response_data = response.read()
     response_code = response.getcode()
-    logger.debug('GET response from {0}, code {1}, data: {2}'.format(
-        url, response_code, response_data))
+    logger.debug('GET response from %s, code %d, data: %s',
+                 url, response_code, response_data)
 
     return json.loads(response_data), response_code
 
@@ -171,8 +172,8 @@ def render_template_to_file(src, dst, params):
     :param src: path to template
     :param dst: path where rendered template will be saved
     """
-    logger.debug('Render template from {0} to {1} with params: {2}'.format(
-        src, dst, params))
+    logger.debug('Render template from %s to %s with params: %s',
+                 src, dst, params)
     with open(src, 'r') as f:
         template_cfg = f.read()
 
@@ -259,7 +260,7 @@ def remove_if_exists(path):
     :param path: path to file for removal
     """
     if os.path.exists(path):
-        logger.debug(u'Remove file "{0}"'.format(path))
+        logger.debug(u'Remove file "%s"', path)
         os.remove(path)
 
 
@@ -273,8 +274,7 @@ def file_contains_lines(file_path, patterns):
               False if file doesn't match one or more patterns
     """
     logger.debug(
-        u'Check if file "{0}" matches to pattern "{1}"'.format(
-            file_path, patterns))
+        u'Check if file "%s" matches to pattern "%s"', file_path, patterns)
 
     regexps = [re.compile(pattern) for pattern in patterns]
 
@@ -286,8 +286,7 @@ def file_contains_lines(file_path, patterns):
                     del regexps[i]
 
     if regexps:
-        logger.warn('Cannot find lines {0} in file {1}'.format(
-            regexps, file_path))
+        logger.warn('Cannot find lines %s in file %s', regexps, file_path)
         return False
 
     return True
@@ -301,8 +300,8 @@ def copy_if_does_not_exist(from_path, to_path):
     """
     if os.path.exists(to_path):
         logger.debug(
-            'Skip file copying, because file {0} '
-            'already exists'.format(to_path))
+            'Skip file copying, because file %s '
+            'already exists', to_path)
         return
 
     copy(from_path, to_path)
@@ -316,8 +315,8 @@ def copy_if_exists(from_path, to_path):
     """
     if not os.path.exists(from_path):
         logger.debug(
-            'Skip file copying, because file {0} '
-            'does not exist'.format(from_path))
+            'Skip file copying, because file %s '
+            'does not exist', from_path)
         return
 
     copy(from_path, to_path)
@@ -735,6 +734,33 @@ def get_base_release(release, depends_on, existing_releases):
 
     # nothing found
     return None
+
+
+def sanitize(obj, keywords, mask='******'):
+    """Find and hide private data in obj using keywords.
+
+    :param obj: object to be sanitized
+    :param keywords: describe keywords to be found in obj
+    :param mask: a string for substitution of sanitized values
+    :return: sanitized copy of obj
+    """
+    def _helper(_obj):
+        if isinstance(_obj, dict):
+            for option in _obj:
+                if any([key in option for key in keywords]):
+                    _obj[option] = mask
+                else:
+                    _helper(_obj[option])
+
+        elif isinstance(_obj, (list, set, tuple)):
+            for value in _obj:
+                _helper(value)
+
+        return _obj
+
+    # Making sure the original object remains untouched
+    obj_copy = deepcopy(obj)
+    return _helper(obj_copy)
 
 
 class VersionedFile(object):

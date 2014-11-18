@@ -15,10 +15,12 @@
 #    under the License.
 
 import json
-import logging
 import requests
 
-logger = logging.getLogger(__name__)
+from fuel_upgrade.logger import upgrade_logger
+
+
+logger = upgrade_logger(__name__)
 
 
 class KeystoneClient(object):
@@ -76,6 +78,6 @@ class KeystoneClient(object):
             return (isinstance(resp, dict) and
                     resp.get('access', {}).get('token', {}).get('id'))
         except (ValueError, requests.exceptions.RequestException) as exc:
-            logger.debug('Cannot authenticate in keystone: {0}'.format(exc))
+            logger.debug('Cannot authenticate in keystone: %s', exc)
 
         return None

@@ -70,6 +70,7 @@ if __name__ == "__main__":
                       nailgun.db.sqlalchemy.fixman:upload_fixtures',
                   'nailgund = nailgun.app:appstart',
                   'assassind = nailgun.assassin.assassind:run',
+                  'monitord = nailgun.monitor.monitord:run',
                   'receiverd = nailgun.rpc.receiverd:run',
                   'statsenderd = nailgun.statistics.statsenderd:run'
               ],

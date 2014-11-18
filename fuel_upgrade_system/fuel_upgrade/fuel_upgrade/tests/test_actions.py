@@ -159,3 +159,22 @@ class TestSymlinkAction(BaseTestCase):
     def test_undo(self, remove):
         self.action.undo()
         remove.assert_called_once_with('path/to/dst')
+
+
+class TestSymlinkIfSrcExistsAction(BaseTestCase):
+
+    def setUp(self):
+        self.action = actions.SymlinkIfSrcExists(**{
+            'from': 'path/to/src',
+            'to': 'path/to/dst',
+        })
+
+    @mock.patch('fuel_upgrade.actions.symlink_if_src_exists')
+    def test_do(self, symlink):
+        self.action.do()
+        symlink.assert_called_once_with('path/to/src', 'path/to/dst', True)
+
+    @mock.patch('fuel_upgrade.actions.remove')
+    def test_undo(self, remove):
+        self.action.undo()
+        remove.assert_called_once_with('path/to/dst')

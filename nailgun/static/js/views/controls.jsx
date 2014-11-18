@@ -190,6 +190,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                         <label className={cx(labelClasses)}>
                             {this.props.label}
                             {this.renderTooltipIcon()}
+                            <hr />
                         </label>
                     }
                     {_.map(this.props.values, function(value) {

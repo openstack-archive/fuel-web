@@ -93,6 +93,8 @@ from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
 from nailgun.api.v1.handlers.master_node_settings \
     import MasterNodeSettingsHandler
 
+from nailgun.api.v1.handlers.ping import PingHandler
+
 urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
@@ -225,6 +227,9 @@ urls = (
 
     r'/settings/?$',
     MasterNodeSettingsHandler,
+
+    r'/ping/?$',
+    PingHandler,
 )
 
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]

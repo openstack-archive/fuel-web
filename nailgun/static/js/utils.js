@@ -289,8 +289,25 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 }
             }
             return aa.length - bb.length;
+        },
+        multiSort: function(model1, model2, attributes) {
+            var result = utils.compare(model1, model2, attributes[0]);
+            if (result === 0 && attributes.length > 1) {
+                attributes.splice(0, 1);
+                result = utils.multiSort(model1, model2, attributes);
+            }
+            return result;
+        },
+        compare: function(model1, model2, attributeObj) {
+            var getValue = function(model) {
+                var attr = attributeObj.attr;
+                return _.isFunction(model[attr]) ? model[attr]() : model.get(attr);
+            };
+            var model1Value = getValue(model1),
+                model2Value = getValue(model2),
+                result = _.isString(model1Value) ? utils.natsort(model1Value, model2Value) : model1Value - model2Value;
+            return attributeObj.desc ? -result : result;
         }
-
     };
 
     return utils;

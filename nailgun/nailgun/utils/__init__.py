@@ -113,6 +113,16 @@ class AttributesGenerator(object):
         return "127.0.0.1"
 
     @classmethod
+    def cobbler_profile(cls, arg):
+        """Generate cobbler profile with fuel version
+
+        :param arg: mask in form of 'ubuntu-x86_64_{RELEASE}'
+        :type arg: string
+        :returns: string generated from mask
+        """
+        return arg.format(RELEASE=settings.VERSION['release'])
+
+    @classmethod
     def identical(cls, arg=None):
         return str(arg)
 

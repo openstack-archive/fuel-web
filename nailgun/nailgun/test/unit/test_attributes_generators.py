@@ -19,6 +19,8 @@ import string
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import AttributesGenerator
 
+from mock import patch
+
 
 class TestAttributesGenerators(BaseTestCase):
 
@@ -33,3 +35,10 @@ class TestAttributesGenerators(BaseTestCase):
         hex_str = AttributesGenerator.hexstring(32)
         self.assertEqual(len(hex_str), 32)
         self.assertTrue(all(hex_str))
+
+    @patch.dict('nailgun.utils.settings.VERSION', {'release': "6.0"})
+    def test_cobbler_profile_generator(self):
+        mask = "operation_system-{RELEASE}"
+        self.assertEqual(
+            AttributesGenerator.cobbler_profile(mask),
+            "operation_system-6.0")

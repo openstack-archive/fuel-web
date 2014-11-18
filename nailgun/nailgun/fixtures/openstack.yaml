@@ -563,9 +563,6 @@
           syslog_port:
             generator: "identical"
             generator_arg: "514"
-        cobbler:
-          profile:
-            generator: "identical"
 - &full_release
   extend: *base_release
   fields:
@@ -1247,7 +1244,8 @@
       generated:
         cobbler:
           profile:
-            generator_arg: "centos-x86_64"
+            generator: "cobbler_profile"
+            generator_arg: "centos-x86_64_{RELEASE}"
         provision:
           image_data:
             /:
@@ -1270,7 +1268,8 @@
       generated:
         cobbler:
           profile:
-            generator_arg: "ubuntu_1204_x86_64"
+            generator: "cobbler_profile"
+            generator_arg: "ubuntu-x86_64_{RELEASE}"
         provision:
           image_data:
             /:

@@ -137,8 +137,6 @@
             },
             "welcome_page": {
                 "title": "Welcome to Mirantis OpenStack",
-                "support": "Our support team can optionally use your error reports to assist you.",
-                "provide_contacts": "Please provide your contact information below.",
                 "start_fuel": "Start Using Fuel",
                 "change_settings": "You can change your settings at any time by updating your user profile information.",
                 "thanks": "Thanks for helping to improve Mirantis OpenStack!"

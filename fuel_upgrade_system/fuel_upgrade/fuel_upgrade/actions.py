@@ -15,7 +15,6 @@
 #    under the License.
 
 import abc
-import logging
 import os
 import six
 
@@ -24,9 +23,6 @@ from fuel_upgrade.utils import remove
 from fuel_upgrade.utils import rename
 from fuel_upgrade.utils import symlink
 from fuel_upgrade.utils import symlink_if_src_exists
-
-
-logger = logging.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)

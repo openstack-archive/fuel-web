@@ -32,6 +32,7 @@ from fuel_upgrade.version_file import VersionFile
 from fuel_upgrade import errors
 from fuel_upgrade import utils
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -206,7 +207,7 @@ class DockerUpgrader(UpgradeEngine):
                 errors.CannotFindContainerError) as exc:
             utils.remove_if_exists(pg_dump_tmp_path)
             if not utils.file_exists(pg_dump_path):
-                logger.debug('Failed to make database dump {0}'.format(exc))
+                logger.debug('Failed to make database dump %s', exc)
                 return False
 
             logger.debug(
@@ -285,12 +286,11 @@ class DockerUpgrader(UpgradeEngine):
         logger.info(u'Start image uploading')
 
         for image in self.new_release_images:
-            logger.debug(u'Try to upload docker image {0}'.format(image))
+            logger.debug(u'Try to upload docker image %s', image)
 
             docker_image = image['docker_image']
             if not os.path.exists(docker_image):
-                logger.warn(u'Cannot find docker image "{0}"'.format(
-                    docker_image))
+                logger.warn(u'Cannot find docker image "%s"', docker_image)
                 continue
             # NOTE(eli): docker-py binding
             # doesn't have equal call for
@@ -303,14 +303,13 @@ class DockerUpgrader(UpgradeEngine):
         """
         logger.info(u'Started containers creation')
         graph = self.build_dependencies_graph(self.new_release_containers)
-        logger.debug(u'Built dependencies graph {0}'.format(graph))
+        logger.debug(u'Built dependencies graph %s', graph)
         containers_to_creation = utils.topological_sorting(graph)
-        logger.debug(u'Resolved creation order {0}'.format(
-            containers_to_creation))
+        logger.debug(u'Resolved creation order %s', containers_to_creation)
 
         for container_id in containers_to_creation:
             container = self.container_by_id(container_id)
-            logger.debug(u'Start container {0}'.format(container))
+            logger.debug(u'Start container %s', container)
 
             links = self.get_container_links(container)
 
@@ -481,7 +480,7 @@ class DockerUpgrader(UpgradeEngine):
         self.remove_new_release_images()
 
         for image in self.new_release_images:
-            logger.info(u'Start image building: {0}'.format(image))
+            logger.info(u'Start image building: %s', image)
             self.docker_client.build(
                 path=image['docker_file'],
                 tag=image['name'],
@@ -535,7 +534,7 @@ class DockerUpgrader(UpgradeEngine):
             containers)
 
         for container in containers_to_stop:
-            logger.debug(u'Stop container: {0}'.format(container))
+            logger.debug(u'Stop container: %s', container)
 
             self.stop_container(container['Id'])
 
@@ -604,7 +603,7 @@ class DockerUpgrader(UpgradeEngine):
 
         :param container_id: container id
         """
-        logger.debug(u'Stop container: {0}'.format(container_id))
+        logger.debug(u'Stop container: %s', container_id)
 
         try:
             self.docker_client.stop(
@@ -617,7 +616,7 @@ class DockerUpgrader(UpgradeEngine):
             # container was stopped.
             logger.warn(
                 u'Couldn\'t stop ctonainer, try '
-                'to stop it again: {0}'.format(container_id))
+                'to stop it again: %s', container_id)
             self.docker_client.stop(
                 container_id, self.config.docker['stop_container_timeout'])
 
@@ -627,8 +626,7 @@ class DockerUpgrader(UpgradeEngine):
         :param container: container name
         :param params: dict of arguments for container starting
         """
-        logger.debug(u'Start container "{0}": {1}'.format(
-            container['Id'], params))
+        logger.debug(u'Start container "%s": %s', container['Id'], params)
         self.docker_client.start(container['Id'], **params)
 
     def create_container(self, image_name, **params):
@@ -648,8 +646,8 @@ class DockerUpgrader(UpgradeEngine):
         new_params = deepcopy(params)
         new_params['ports'] = self.get_ports(new_params)
 
-        logger.debug(u'Create container from image {0}: {1}'.format(
-            image_name, new_params))
+        logger.debug(u'Create container from image %s: %s',
+                     image_name, new_params)
 
         def func_create():
             return self.docker_client.create_container(
@@ -790,8 +788,7 @@ class DockerUpgrader(UpgradeEngine):
         for image in image_names:
             self._delete_containers_for_image(image)
             if self.docker_client.images(name=image):
-                logger.info(u'Remove image for new version {0}'.format(
-                    image))
+                logger.info(u'Remove image for new version %s', image)
                 self.docker_client.remove_image(image)
 
     def _delete_container_if_exist(self, container_name):
@@ -803,7 +800,7 @@ class DockerUpgrader(UpgradeEngine):
 
         for container in found_containers:
             self.stop_container(container['Id'])
-            logger.debug(u'Delete container {0}'.format(container))
+            logger.debug(u'Delete container %s', container)
 
             # TODO(eli): refactor it and make retries
             # as a decorator
@@ -836,11 +833,11 @@ class DockerUpgrader(UpgradeEngine):
             all_containers)
 
         for container in containers:
-            logger.debug(u'Try to stop container {0} which '
-                         'depends on image {1}'.format(container['Id'], image))
+            logger.debug(u'Try to stop container %s which '
+                         'depends on image %s', container['Id'], image)
             self.docker_client.stop(container['Id'])
-            logger.debug(u'Delete container {0} which '
-                         'depends on image {1}'.format(container['Id'], image))
+            logger.debug(u'Delete container %s which '
+                         'depends on image %s', container['Id'], image)
             self.docker_client.remove_container(container['Id'])
 
 

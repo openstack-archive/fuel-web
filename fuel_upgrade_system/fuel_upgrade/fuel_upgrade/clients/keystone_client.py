@@ -14,9 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import logging
+
+import json
 import requests
+
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +78,6 @@ class KeystoneClient(object):
             return (isinstance(resp, dict) and
                     resp.get('access', {}).get('token', {}).get('id'))
         except (ValueError, requests.exceptions.RequestException) as exc:
-            logger.debug('Cannot authenticate in keystone: {0}'.format(exc))
+            logger.debug('Cannot authenticate in keystone: %s', exc)
 
         return None

@@ -15,7 +15,6 @@
 #    under the License.
 
 import logging
-
 import six
 
 from fuel_upgrade.engines.docker_engine import DockerInitializer

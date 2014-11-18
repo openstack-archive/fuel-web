@@ -19,6 +19,7 @@ import os
 
 from fuel_upgrade import utils
 
+
 logger = logging.getLogger(__name__)
 
 

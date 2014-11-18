@@ -20,6 +20,7 @@ from fuel_upgrade.actions import ActionManager
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.utils import get_required_size_for_actions
 
+
 logger = logging.getLogger(__name__)
 
 

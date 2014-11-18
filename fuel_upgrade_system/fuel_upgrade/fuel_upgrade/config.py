@@ -27,13 +27,14 @@ Why python based config?
   and it's hard to create variables nesting more than 1
 """
 
-import glob
 import logging
+import glob
 import yaml
 
 from os.path import basename
 from os.path import exists
 from os.path import join
+
 
 logger = logging.getLogger(__name__)
 
@@ -96,8 +97,8 @@ def from_fuel_version(current_version_path, from_version_path):
     # for some reasons interrupted
     if exists(from_version_path):
         from_version = get_version_from_config(from_version_path)
-        logger.debug('Retrieve version from {0}, '
-                     'version is {1}'.format(from_version_path, from_version))
+        logger.debug('Retrieve version from %s, '
+                     'version is %s', from_version_path, from_version)
         return from_version
 
     return get_version_from_config(current_version_path)

@@ -213,8 +213,10 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         constructorName: 'Nodes',
         model: models.Node,
         url: '/api/nodes',
-        comparator: function(node) {
-            return [!node.get('online'), node.id];
+        comparator: function(node1, node2) {
+            var onlineAttrDifference = node1.get('online') - node2.get('online');
+            if (onlineAttrDifference) return -onlineAttrDifference;
+            return node1.id - node2.id;
         },
         hasChanges: function() {
             return !!this.filter(function(node) {

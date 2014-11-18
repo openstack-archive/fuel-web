@@ -304,6 +304,25 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 if (numerical1 > numerical2) return 1 * mult;
             }
             return 0;
+        },
+        multiSort: function(model1, model2, attributes) {
+            var result = utils.compare(model1, model2, attributes[0]);
+            if (result === 0 && attributes.length > 1) {
+                attributes.splice(0, 1);
+                result = utils.multiSort(model1, model2, attributes);
+            }
+            return result;
+        },
+        compare: function(model1, model2, options) {
+            var getValue = function(model) {
+                var attr = options.attr;
+                return _.isFunction(model[attr]) ? model[attr]() : model.get(attr);
+            };
+            var model1Value = getValue(model1),
+                model2Value = getValue(model2);
+            if (_.isString(model1Value)) return utils.natsort(model1Value, model2Value, options);
+            var result = model1Value - model2Value;
+            return options.desc ? -result : result;
         }
     };
 

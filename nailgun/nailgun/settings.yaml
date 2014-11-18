@@ -97,6 +97,9 @@ COLLECTOR_PING_INTERVAL: 300
 # statistics collector response timeout
 COLLECTOR_RESP_TIMEOUT: 5
 
+# version of api for novaclient (is used for OpenStack info retrival)
+NOVACLIENT_VERSION: "2"
+
 FUEL_VERSION_FILE: "/etc/fuel/version.yaml"
 FUEL_VERSION_KEY: "VERSION"
 

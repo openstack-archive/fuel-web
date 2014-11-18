@@ -54,13 +54,15 @@ function($, React, controls, statisticsMixin) {
                         <h2 className='center'>{$.t(ns + 'title')}</h2>
                         {this.renderIntro()}
                         {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
-                        <div className='welcome-text-box'>
-                            <p className='center'>
-                                {$.t(ns + 'support')}<br/>
-                                {$.t(ns + 'provide_contacts')}
-                            </p>
-                        </div>
                         {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
+                        {_.contains(app.version.get('feature_groups'), 'mirantis') &&
+                            <div className='welcome-text-box'>
+                                <p className='center'>
+                                    {$.t(ns + 'support')}<br/>
+                                    {$.t(ns + 'provide_contacts')}
+                                </p>
+                            </div>
+                        }
                         <form className='form-horizontal'>
                             { _.map(contacts, function(settingName) {
                                 return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box', true);

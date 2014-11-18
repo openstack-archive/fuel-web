@@ -13,11 +13,18 @@
 #    under the License.
 
 
+import six
+
+from nailgun import consts
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
 from nailgun.settings import settings
 from nailgun import utils
+
+from nailgun.logger import logger
+
+from nailgun.statistics import openstack_info_collector
 
 
 class InstallationInfo(object):
@@ -93,10 +100,33 @@ class InstallationInfo(object):
                 'attributes': self.get_attributes(cluster.attributes.editable),
                 'net_provider': cluster.net_provider,
                 'fuel_version': cluster.fuel_version,
-                'is_customized': cluster.is_customized
+                'is_customized': cluster.is_customized,
+                'openstack_info': self.get_opestack_info(
+                    cluster,
+                    cluster.nodes
+                ) if cluster.status == consts.CLUSTER_STATUSES.operational
+                else {},
             }
             clusters_info.append(cluster_info)
         return clusters_info
+
+    def get_opestack_info(self, cluster, cluster_nodes):
+        os_info = {}
+        try:
+            getter = \
+                openstack_info_collector.OpenStackInfoCollector(
+                    cluster,
+                    cluster_nodes
+                )
+
+            os_info = getter.get_info()
+        except Exception as e:
+            logger.warning(
+                "Cannot collect OpenStack info due to error: %s",
+                six.text_type(e)
+            )
+
+        return os_info
 
     def get_attributes(self, attributes):
         result = {}

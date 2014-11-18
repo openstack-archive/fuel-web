@@ -12,7 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
+from mock import Mock
 from mock import patch
+
+import requests
 
 from nailgun.test.base import BaseTestCase
 
@@ -245,3 +249,91 @@ class TestStatistics(BaseTestCase):
     @patch.dict('nailgun.settings.settings.VERSION', FEATURE_EXPERIMENTAL)
     def test_community_collector_urls(self):
         self.check_collector_urls(StatsSender.COLLECTOR_COMMUNITY_SERVER)
+
+    @patch('nailgun.statistics.statsenderd.requests.get')
+    def test_ping_ok(self, requests_get):
+        requests_get.return_value = Mock(status_code=200)
+        sender = StatsSender()
+        self.assertEqual(
+            sender.ping_collector(),
+            True
+        )
+        requests_get.assert_called_once_with(
+            sender.build_collector_url("COLLECTOR_PING_URL"),
+            timeout=settings.COLLECTOR_RESP_TIMEOUT)
+
+    @patch('nailgun.statistics.statsenderd.requests.get')
+    @patch('nailgun.statistics.statsenderd.logger.error')
+    def test_ping_failed_on_connection_error(self, log_error, requests_get):
+        def raise_connect_error(url, timeout):
+            raise requests.exceptions.ConnectionError()
+
+        requests_get.side_effect = raise_connect_error
+        self.assertEqual(
+            StatsSender().ping_collector(),
+            False
+        )
+        log_error.assert_called_once_with("Collector ping failed")
+
+    @patch('nailgun.statistics.statsenderd.requests.get')
+    @patch('nailgun.statistics.statsenderd.logger.exception')
+    def test_ping_failed_on_exception(self, log_error, requests_get):
+        def raise_exception(url, timeout):
+            raise Exception("custom")
+
+        requests_get.side_effect = raise_exception
+        self.assertEqual(
+            StatsSender().ping_collector(),
+            False
+        )
+        log_error.assert_called_once_with(
+            "Collector ping failed: %s", "custom")
+
+    @patch('nailgun.statistics.statsenderd.requests.post')
+    def test_send_ok(self, requests_post):
+        requests_post.return_value = Mock(status_code=200)
+        sender = StatsSender()
+        self.assertEqual(
+            sender.send_data_to_url(
+                url=sender.build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
+                data={}),
+            requests_post.return_value
+        )
+        requests_post.assert_called_once_with(
+            sender.build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
+            headers={'content-type': 'application/json'},
+            data='{}',
+            timeout=settings.COLLECTOR_RESP_TIMEOUT)
+
+    @patch('nailgun.statistics.statsenderd.requests.post')
+    @patch('nailgun.statistics.statsenderd.logger.error')
+    def test_send_failed_on_connection_error(self, log_error, requests_post):
+        def raise_connect_error(url, headers, data, timeout):
+            raise requests.exceptions.ConnectionError()
+
+        requests_post.side_effect = raise_connect_error
+        sender = StatsSender()
+        self.assertEqual(
+            sender.send_data_to_url(
+                url=sender.build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
+                data={}),
+            None
+        )
+        log_error.assert_called_once_with("Sending data to collector failed")
+
+    @patch('nailgun.statistics.statsenderd.requests.post')
+    @patch('nailgun.statistics.statsenderd.logger.exception')
+    def test_send_failed_on_exception(self, log_error, requests_post):
+        def raise_exception(url, headers, data, timeout):
+            raise Exception("custom")
+
+        requests_post.side_effect = raise_exception
+        sender = StatsSender()
+        self.assertEqual(
+            sender.send_data_to_url(
+                url=sender.build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
+                data={}),
+            None
+        )
+        log_error.assert_called_once_with(
+            "Sending data to collector failed: %s", "custom")

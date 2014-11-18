@@ -49,11 +49,17 @@ class StatsSender(object):
                                 timeout=settings.COLLECTOR_RESP_TIMEOUT)
             resp.raise_for_status()
             return True
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.TooManyRedirects,
+                requests.exceptions.HTTPError):
+            logger.error("Collector ping failed")
         except Exception as e:
             logger.exception("Collector ping failed: %s", six.text_type(e))
-            return False
+        return False
 
     def send_data_to_url(self, url, data):
+        resp = None
         try:
             headers = {'content-type': 'application/json'}
             resp = requests.post(
@@ -61,11 +67,13 @@ class StatsSender(object):
                 headers=headers,
                 data=jsonutils.dumps(data),
                 timeout=settings.COLLECTOR_RESP_TIMEOUT)
-            resp.raise_for_status()
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.TooManyRedirects):
+            logger.error("Sending data to collector failed")
         except Exception as e:
             logger.exception(
-                "Sending data to collector failed: %s",
-                six.text_type(e))
+                "Sending data to collector failed: %s", six.text_type(e))
         return resp
 
     def is_status_acceptable(

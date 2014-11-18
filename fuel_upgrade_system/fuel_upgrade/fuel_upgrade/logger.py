@@ -14,11 +14,31 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from fuel_upgrade.config import Config
+from fuel_upgrade.utils import sanitize
 import logging
 import sys
 
 
+class UpgradeLogger(logging.Logger):
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None,
+                   extra=None):
+        _args = []
+        for arg in args:
+            if isinstance(arg, (list, dict)):
+                _arg = sanitize(arg, ['password', 'token'])
+            elif isinstance(arg, Config):
+                _arg = sanitize(arg._config, ['password', 'token'])
+            else:
+                _arg = arg
+            _args.append(_arg)
+
+        return logging.Logger.makeRecord(self, name, level, fn, lno, msg,
+                                         tuple(_args), exc_info, func, extra)
+
+
 def configure_logger(path):
+    logging.setLoggerClass(UpgradeLogger)
     logger = logging.getLogger('fuel_upgrade')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(

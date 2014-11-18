@@ -723,6 +723,31 @@ def get_base_release(release, depends_on, existing_releases):
     return None
 
 
+def sanitize(obj, keywords, mask='******'):
+    """Find and hide private data in obj using keywords.
+
+    :param keywords: describe keywords to be found in obj
+    :return: sanitized copy of obj
+    """
+    def _helper(_obj):
+        if isinstance(_obj, dict):
+            for option in _obj:
+                if any([key in option for key in keywords]):
+                    _obj[option] = mask
+                else:
+                    _helper(_obj[option])
+
+        elif isinstance(_obj, (list, set, tuple)):
+            for value in _obj:
+                _helper(value)
+
+        return _obj
+
+    # Making sure the original object remains untouched
+    obj_copy = deepcopy(obj)
+    return _helper(obj_copy)
+
+
 class VersionedFile(object):
     """Set of methods for versioned files.
     If `basename` is '/tmp/file.ext' it allows

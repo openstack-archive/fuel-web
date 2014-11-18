@@ -46,7 +46,7 @@ function(React, utils, models, Expression, controls) {
         checkDependentRoles: function(path) {
             var setting = this.settings.get(path);
             if (_.contains(['text', 'password', 'hidden'], setting.type)) return false;
-            var roles = this.props.model.get('release').get('roles');
+            var roles = this.props.model.get('release').get('role_models');
             return _.compact(_.map(this.allocatedRoles, function(roleName) {
                 var role = roles.findWhere({name: roleName});
                 if (_.any(role.expandedRestrictions.restrictions, function(restriction) {

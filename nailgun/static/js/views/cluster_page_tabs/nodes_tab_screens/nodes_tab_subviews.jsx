@@ -27,7 +27,7 @@ function(React, Expression, utils, controls) {
     panels.RolesPanel = React.createClass({
         mixins: [React.BackboneMixin('nodes', 'add remove change:checked change:status')],
         getInitialState: function() {
-            var roles = this.props.cluster.get('release').get('roles').pluck('name'),
+            var roles = this.props.cluster.get('release').get('roles'),
                 nodes = this.props.nodes,
                 getAssignedNodes = function(role) {
                     return nodes.filter(function(node) { return node.hasRole(role); });
@@ -67,8 +67,7 @@ function(React, Expression, utils, controls) {
         },
         assignRoles: function() {
             var selectedNodes = this.props.nodes.where({checked: true});
-            this.props.cluster.get('release').get('roles').each(function(role) {
-                var name = role.get('name');
+            _.each(this.props.cluster.get('release').get('roles'), function(name) {
                 _.each(selectedNodes, function(node) {
                     if (!node.hasRole(name, true)) {
                         var roles = node.get('pending_roles');
@@ -104,7 +103,7 @@ function(React, Expression, utils, controls) {
                     version: app.version,
                     default: settings
                 },
-                roles = this.props.cluster.get('release').get('roles'),
+                roles = this.props.cluster.get('release').get('role_models'),
                 conflicts = _.chain(this.state.selectedRoles)
                     .union(this.state.indeterminateRoles)
                     .map(function(role) {return roles.findWhere({name: role}).conflicts;})

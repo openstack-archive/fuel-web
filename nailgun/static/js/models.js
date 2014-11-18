@@ -82,15 +82,15 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         constructorName: 'Release',
         urlRoot: '/api/releases',
         parse: function(response) {
-            response.roles = new models.Roles(_.map(response.roles, function(roleName) {
+            response.role_models = new models.Roles(_.map(response.roles, function(roleName) {
                 var roleData = response.roles_metadata[roleName];
                 roleData.label = roleData.name;
                 return _.extend(roleData, {name: roleName});
             }));
-            response.roles.each(function(role) {
+            response.role_models.each(function(role) {
                 role.expandRestrictions(role.get('restrictions'));
             });
-            response.roles.processConflicts();
+            response.role_models.processConflicts();
             delete response.roles_metadata;
             return response;
         }
@@ -201,7 +201,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             return _.contains(roles, role);
         },
         getRolesSummary: function() {
-            var roles = this.collection.cluster.get('release').get('roles');
+            var roles = this.collection.cluster.get('release').get('role_models');
             return _.map(this.sortedRoles(), function(role) {return roles.findWhere({name: role}).get('label');}).join(', ');
         },
         getHardwareSummary: function() {

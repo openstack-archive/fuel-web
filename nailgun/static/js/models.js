@@ -213,8 +213,11 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         constructorName: 'Nodes',
         model: models.Node,
         url: '/api/nodes',
-        comparator: function(node) {
-            return [!node.get('online'), node.id];
+        comparator: function(node1, node2) {
+            return utils.multiSort(node1, node2, [{attr: 'online', desc: true}, {attr: 'id'}]);
+            //var onlineAttrDifference = node1.get('online') - node2.get('online');
+            //if (onlineAttrDifference) return -onlineAttrDifference;
+            //return node1.id - node2.id;
         },
         hasChanges: function() {
             return !!this.filter(function(node) {
@@ -515,14 +518,15 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             }
         },
         comparator: function(ifc1, ifc2) {
+            return utils.multiSort(ifc1, ifc2, [{attr: 'isBond', desc: true}, {attr: 'name'}]);
             // Sorting in order of: [!ifc.isBond(), ifc.get('name')]
             // but 'name' is in natural order, not lexicographic
 
-            if (ifc1.isBond() == ifc2.isBond()) {
-                return utils.natsort(ifc1.get('name'), ifc2.get('name'));
-            }
+            //if (ifc1.isBond() == ifc2.isBond()) {
+            //    return utils.natsort(ifc1.get('name'), ifc2.get('name'));
+            //}
 
-            return !ifc1.isBond() ? -1 : 1;
+            //return !ifc1.isBond() ? -1 : 1;
         }
     });
 

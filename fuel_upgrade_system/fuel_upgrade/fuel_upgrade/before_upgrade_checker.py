@@ -242,3 +242,25 @@ class CheckUpgradeVersions(BaseBeforeUpgradeChecker):
 
         if err_msg:
             raise errors.WrongVersionError(err_msg)
+
+
+class CheckRequiredVersion(BaseBeforeUpgradeChecker):
+    """Checks that user's going to upgrade Fuel from the required version.
+
+    :param context: a context object with config and required space info
+    """
+
+    def __init__(self, context):
+        #: version of fuel which user wants to upgrade from
+        self.from_version = context.config.from_version
+        #: a list of versions from which user can upgrade
+        self.can_upgrade_from = context.config.can_upgrade_from
+
+    def check(self):
+        logger.info('Check required Fuel version')
+
+        if self.from_version not in self.can_upgrade_from:
+            raise errors.WrongVersionError(
+                'Cannot upgrade from Fuel {0}. You can upgrade only from '
+                'one of next versions: {1}'.format(
+                    self.from_version, ', '.join(self.can_upgrade_from)))

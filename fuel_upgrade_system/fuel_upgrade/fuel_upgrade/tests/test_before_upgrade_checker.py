@@ -17,10 +17,12 @@
 import mock
 
 import requests
+import six
 
 from fuel_upgrade.before_upgrade_checker import CheckFreeSpace
 from fuel_upgrade.before_upgrade_checker import CheckNoRunningOstf
 from fuel_upgrade.before_upgrade_checker import CheckNoRunningTasks
+from fuel_upgrade.before_upgrade_checker import CheckRequiredVersion
 from fuel_upgrade.before_upgrade_checker import CheckUpgradeVersions
 from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
@@ -202,3 +204,26 @@ class TestCheckUpgradeVersions(BaseTestCase):
             err_msg,
             self.checker.check)
         compare_mock.assert_called_once_with('0', '9999')
+
+
+class TestCheckRequiredVersions(BaseTestCase):
+
+    def get_checker(self, user_conf={}):
+        config = self.fake_config
+
+        for key, value in six.iteritems(user_conf):
+            setattr(config, key, value)
+
+        return CheckRequiredVersion(mock.Mock(config=config))
+
+    def test_check_support_version(self):
+        checker = self.get_checker({
+            'from_version': '5.1.1',
+            'can_upgrade_from': ['5.1.1']})
+        checker.check()
+
+    def test_check_unsupport_version(self):
+        checker = self.get_checker({
+            'from_version': '5.1',
+            'can_upgrade_from': ['5.1.1']})
+        self.assertRaises(errors.WrongVersionError, checker.check)

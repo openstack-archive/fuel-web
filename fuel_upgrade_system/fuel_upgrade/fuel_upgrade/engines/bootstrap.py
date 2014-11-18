@@ -14,14 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
-
 from fuel_upgrade.actions import ActionManager
 from fuel_upgrade.engines.base import UpgradeEngine
+from fuel_upgrade.logger import upgrade_logger
 from fuel_upgrade.utils import get_required_size_for_actions
 
 
-logger = logging.getLogger(__name__)
+logger = upgrade_logger(__name__)
 
 
 class BootstrapUpgrader(UpgradeEngine):

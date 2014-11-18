@@ -16,17 +16,16 @@
 
 import argparse
 import getpass
-import logging
 import requests
 import sys
 
-from fuel_upgrade.logger import configure_logger
 
 from fuel_upgrade import errors
 from fuel_upgrade import messages
 
 from fuel_upgrade.checker_manager import CheckerManager
 from fuel_upgrade.config import build_config
+from fuel_upgrade.logger import upgrade_logger
 from fuel_upgrade.upgrade import UpgradeManager
 
 from fuel_upgrade.engines.bootstrap import BootstrapUpgrader
@@ -39,7 +38,7 @@ from fuel_upgrade.engines.targetimages import TargetImagesUpgrader
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
 
 
-logger = logging.getLogger(__name__)
+logger = upgrade_logger('fuel_upgrade')
 
 #: A dict with supported systems.
 #: The key is used for system option in CLI.
@@ -61,7 +60,7 @@ UNCOMPATIBLE_SYSTEMS = (
 
 
 def handle_exception(exc):
-    logger.exception(exc)
+    logger.exception('%s', exc)
 
     print(messages.header)
 
@@ -148,7 +147,7 @@ def run_upgrade(args):
 
     # Initialize config
     config = build_config(args.src, args.password)
-    logger.debug('Configuration data: {0}'.format(config))
+    logger.debug('Configuration data: %s', config)
 
     # Initialize upgrade engines
     upgraders_to_use = [
@@ -172,7 +171,6 @@ def run_upgrade(args):
 def main():
     """Entry point
     """
-    configure_logger('/var/log/fuel_upgrade.log')
     try:
         run_upgrade(parse_args(sys.argv[1:]))
     except Exception as exc:

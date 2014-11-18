@@ -14,12 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import os
 
+from fuel_upgrade.logger import upgrade_logger
 from fuel_upgrade import utils
 
-logger = logging.getLogger(__name__)
+
+logger = upgrade_logger(__name__)
 
 
 class VersionFile(object):

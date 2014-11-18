@@ -15,7 +15,6 @@
 #    under the License.
 
 import abc
-import logging
 
 import requests
 import six
@@ -25,8 +24,10 @@ from fuel_upgrade import utils
 
 from fuel_upgrade.clients import NailgunClient
 from fuel_upgrade.clients import OSTFClient
+from fuel_upgrade.logger import upgrade_logger
 
-logger = logging.getLogger(__name__)
+
+logger = upgrade_logger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -64,7 +65,7 @@ class CheckNoRunningTasks(BaseBeforeUpgradeChecker):
             raise errors.NailgunIsNotRunningError(
                 'Cannot connect to rest api service')
 
-        logger.debug('Nailgun tasks {0}'.format(tasks))
+        logger.debug('Nailgun tasks %s', tasks)
 
         running_tasks = filter(
             lambda t: t['status'] == 'running', tasks)
@@ -124,17 +125,17 @@ class CheckFreeSpace(BaseBeforeUpgradeChecker):
         logger.info('Check if devices have enough free space')
         logger.debug(
             'Required spaces from upgrade '
-            'engines {0}'.format(self.required_spaces))
+            'engines %s', self.required_spaces)
 
         mount_points = self.space_required_for_mount_points()
         logger.debug(
             'Mount points and sum of required spaces '
-            '{0}'.format(mount_points))
+            '%s', mount_points)
 
         error_mount_point = self.list_of_error_mount_points(mount_points)
         logger.debug(
             "Mount points which don't have "
-            "enough free space {0}".format(error_mount_point))
+            "enough free space %s", error_mount_point)
 
         self.check_result(error_mount_point)
 

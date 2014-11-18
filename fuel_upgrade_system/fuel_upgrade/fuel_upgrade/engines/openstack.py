@@ -16,7 +16,6 @@
 
 import glob
 import io
-import logging
 import os
 
 import requests
@@ -26,10 +25,11 @@ import yaml
 from fuel_upgrade.clients import NailgunClient
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade import errors
+from fuel_upgrade.logger import upgrade_logger
 from fuel_upgrade import utils
 
 
-logger = logging.getLogger(__name__)
+logger = upgrade_logger(__name__)
 
 
 class OpenStackUpgrader(UpgradeEngine):
@@ -179,7 +179,7 @@ class OpenStackUpgrader(UpgradeEngine):
             except (
                 requests.exceptions.HTTPError
             ) as exc:
-                logger.exception(six.text_type(exc))
+                logger.exception('%s', six.text_type(exc))
 
         for notif_id in reversed(self._rollback_ids['notification']):
             try:
@@ -188,7 +188,7 @@ class OpenStackUpgrader(UpgradeEngine):
             except (
                 requests.exceptions.HTTPError
             ) as exc:
-                logger.exception(six.text_type(exc))
+                logger.exception('%s', six.text_type(exc))
 
     def _reset_state(self):
         """Remove rollback IDs from the arrays.

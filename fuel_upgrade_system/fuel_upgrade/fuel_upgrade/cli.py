@@ -61,7 +61,7 @@ UNCOMPATIBLE_SYSTEMS = (
 
 
 def handle_exception(exc):
-    logger.exception(exc)
+    logger.exception('%s', exc)
 
     print(messages.header)
 
@@ -148,7 +148,7 @@ def run_upgrade(args):
 
     # Initialize config
     config = build_config(args.src, args.password)
-    logger.debug('Configuration data: {0}'.format(config))
+    logger.debug('Configuration data: %s', config)
 
     # Initialize upgrade engines
     upgraders_to_use = [

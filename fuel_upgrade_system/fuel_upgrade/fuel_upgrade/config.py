@@ -96,8 +96,8 @@ def from_fuel_version(current_version_path, from_version_path):
     # for some reasons interrupted
     if exists(from_version_path):
         from_version = get_version_from_config(from_version_path)
-        logger.debug('Retrieve version from {0}, '
-                     'version is {1}'.format(from_version_path, from_version))
+        logger.debug('Retrieve version from %s, '
+                     'version is %s', from_version_path, from_version)
         return from_version
 
     return get_version_from_config(current_version_path)

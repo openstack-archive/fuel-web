@@ -179,7 +179,7 @@ class OpenStackUpgrader(UpgradeEngine):
             except (
                 requests.exceptions.HTTPError
             ) as exc:
-                logger.exception(six.text_type(exc))
+                logger.exception('%s', six.text_type(exc))
 
         for notif_id in reversed(self._rollback_ids['notification']):
             try:
@@ -188,7 +188,7 @@ class OpenStackUpgrader(UpgradeEngine):
             except (
                 requests.exceptions.HTTPError
             ) as exc:
-                logger.exception(six.text_type(exc))
+                logger.exception('%s', six.text_type(exc))
 
     def _reset_state(self):
         """Remove rollback IDs from the arrays.

@@ -76,6 +76,6 @@ class KeystoneClient(object):
             return (isinstance(resp, dict) and
                     resp.get('access', {}).get('token', {}).get('id'))
         except (ValueError, requests.exceptions.RequestException) as exc:
-            logger.debug('Cannot authenticate in keystone: {0}'.format(exc))
+            logger.debug('Cannot authenticate in keystone: %s', exc)
 
         return None

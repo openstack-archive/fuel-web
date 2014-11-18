@@ -134,15 +134,14 @@ class SupervisorClient(object):
             self.get_all_processes_safely,
             timeout=self.config.supervisor['restart_timeout'])
 
-        logger.debug(u'List of supervisor processes {0}'.format(
-            all_processes))
+        logger.debug(u'List of supervisor processes %s', all_processes)
 
     def start(self, service_name):
         """Start the process under supervisor
 
         :param str service_name: name of supervisor's process
         """
-        logger.debug(u'Start supervisor process {0}'.format(service_name))
+        logger.debug(u'Start supervisor process %s', service_name)
         self.supervisor.startProcess(service_name)
 
     def get_all_processes_safely(self):
@@ -168,7 +167,7 @@ class SupervisorClient(object):
                          `autostart` - run the service on supervisor start
         """
         logger.info(
-            u'Generate supervisor configs for services {0}'.format(services))
+            u'Generate supervisor configs for services %s', services)
 
         for service in services:
             self.generate_config(

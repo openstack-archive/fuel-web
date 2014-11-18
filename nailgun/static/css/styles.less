@@ -1276,8 +1276,15 @@ label {cursor: default;}
   padding: 15px 20px 20px 20px;
   .box-sizing-mixin;
   .parameter-name { min-width: 0; }
-  .parameter-box.text-type {margin: 10px; }
-  .text-type .parameter-name { min-width: 70px; }
+  .parameter-control { margin-right: 6px; }
+  .parameter-box.text-type {
+    margin: 10px;
+    margin-left: 5px;
+    .parameter-name {
+      min-width: 70px;
+      margin-right: 10px;
+    }
+  }
   input.input-append { width: 175px; }
 }
 
@@ -2423,32 +2430,12 @@ input.error:focus,
   .indent-mixin;
   > .tablerow-wrapper {
     display: table-row;
-    height:40px;
-    .change {
-      display: table-cell;
-      word-break: break-word !important;
-      vertical-align: middle;
-      padding: 0 10px 0 12px;
-      max-width: 220px;
-      float: none;
-    }
-    .parameter-control {
-      display: table-cell;
-      vertical-align: middle;
-      float: none;
-      .box-sizing-mixin;
-      padding: 5px 10px 0 0;
-      [type="text"], [type="password"] { margin-bottom: 5px; }
-      &.input-append {
-        vertical-align: middle;
-        padding-top: 0;
-      }
-    }
+    .label-wrapper { max-width: 190px; }
     .parameter-description {
       display: table-cell;
       vertical-align: middle;
       margin-top: 0;
-      padding: 0;
+      padding: 0 0 10px;
       max-width: 550px;
       float: none;
     }
@@ -2496,40 +2483,56 @@ legend {
     font-size: @font-size-base;
     .position(relative, @top: -6px, @left: -2px);
   }
-  .radio-group {
-    margin-bottom: 20px;
-    .parameter-name { margin: 7px 0 10px 12px; }
-    .label-wrapper { float: none; }
-  }
   .parameter-box {
     clear: both;
     .parameter-name {
+      width: 100%;
+      text-align: right;
       margin: 0 10px 0 0;
+      padding: 0 10px;
       .label-wrapper {
         min-width: 120px;
         margin-top: 6px;
         margin-right: 10px;
+        text-align: left;
+      }
+      input {
+        margin-bottom: 10px;
+        &.input-append { width: 175px; }
       }
     }
-    .parameter-description {
-      float: none;
-      margin: 4px 0 0 30px;
+    .parameter-description { margin: 4px 0 0 30px; }
+    .custom-tumbler {
+      top: -6px;
+      left: -4px;
     }
-    .custom-tumbler { top: -6px; }
     &.checkbox-or-radio {
+      .parameter-name { padding: 0; }
+      &.tablerow-wrapper { display: block; }
       .label-wrapper {
         margin-top: 0;
         float: none;
+        max-width: none;
       }
       .parameter-description {
         clear: both;
+        display: block;
+        max-width: none;
         .position(relative, -8px);
       }
     }
-    input {
-      margin-bottom: 10px;
-      &.input-append { width: 175px; }
+  }
+  .radio-group {
+    margin-bottom: 20px;
+    .parameter-name {
+      margin: 7px 0 0;
+      .label-wrapper { float: none; }
     }
+    > .parameter-name {
+      margin: 10px;
+      margin-top: 0;
+    }
+    .parameter-description { margin-left: 29px; }
   }
 }
 
@@ -3309,7 +3312,7 @@ form.create-cluster-form {
 
 .cluster-toolbar-item {
   .float-mixin;
-  margin-left: 20px;
+  margin-left: 5px;
   &:first-child {
     margin-left: 0px;
   }
@@ -3625,6 +3628,7 @@ i.btn-cluster-details {
     }
     .label-wrapper {
       min-width: 170px;
+      margin-top: 5px;
     }
   }
 }
@@ -3700,7 +3704,10 @@ i.btn-cluster-details {
 .statistics-settings {
   margin-bottom: 10px;
   /* overrides for reusable inputs */
-  .checkbox-or-radio .parameter-name { float: none; }
+  .checkbox-or-radio .parameter-name {
+    float: none;
+    .label-wrapper { float: none; }
+  }
   .parameter-name {
     font-weight: normal;
     margin: 0;

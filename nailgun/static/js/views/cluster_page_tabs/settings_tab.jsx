@@ -304,6 +304,7 @@ function(React, utils, models, Expression, controls) {
                                         toggleable={setting.type == 'password'}
                                         error={error}
                                         disabled={this.props.disabled || disabled}
+                                        wrapperClassName='tablerow-wrapper'
                                     />
                                 );
                             }

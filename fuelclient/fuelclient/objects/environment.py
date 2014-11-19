@@ -52,6 +52,10 @@ class Environment(BaseObject):
         data = cls.connection.post_request("clusters/", data)
         return cls.init_with_data(data)
 
+    def __init__(self, *args, **kwargs):
+        super(Environment, self).__init__(*args, **kwargs)
+        self._testruns_ids = []
+
     def set(self, data):
         if data.get('mode'):
             data["mode"] = "ha_compact" \
@@ -308,7 +312,7 @@ class Environment(BaseObject):
         return data["is_customized"]
 
     def is_in_running_test_sets(self, test_set):
-        return test_set["testset"] in self._test_sets_to_run,
+        return test_set["testset"] in self._test_sets_to_run
 
     def run_test_sets(self, test_sets_to_run):
         self._test_sets_to_run = test_sets_to_run
@@ -322,17 +326,18 @@ class Environment(BaseObject):
             },
             test_sets_to_run
         )
-        return self.connection.post_request(
-            "testruns",
-            tests_data,
-            ostf=True
-        )
+
+        testruns = self.connection.post_request(
+            "testruns", tests_data, ostf=True)
+        self._testruns_ids = [tr['id'] for tr in testruns]
+        return testruns
 
     def get_state_of_tests(self):
-        return self.connection.get_request(
-            "testruns/last/{0}".format(self.id),
-            ostf=True
-        )
+        return [
+            self.connection.get_request(
+                "testruns/{0}".format(testrun_id), ostf=True)
+            for testrun_id in self._testruns_ids
+        ]
 
     def stop(self):
         return Task.init_with_data(

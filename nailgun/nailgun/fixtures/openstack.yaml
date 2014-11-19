@@ -12,6 +12,9 @@
       - controller
       - compute
       - cinder
+      - ceph-osd
+      - mongo
+      - zabbix-server
     roles_metadata:
       controller:
         name: "Controller"
@@ -33,6 +36,35 @@
         restrictions:
           - condition: "settings:storage.volumes_lvm.value == false and settings:storage.volumes_vmdk.value == false"
             message: "Cinder LVM or VMDK should be enabled in settings"
+      ceph-osd:
+        name: "Storage - Ceph OSD"
+        description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+        restrictions:
+          - condition: "settings:common.libvirt_type.value == 'vcenter'"
+            message: "Ceph cannot be used with vCenter"
+      mongo:
+        name: "Telemetry - MongoDB"
+        description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
+        conflicts:
+          - compute
+          - ceph-osd
+        restrictions:
+          - condition: "cluster:status == 'operational'"
+            message: "MongoDB node can not be added to an operational environment."
+          - condition: "settings:additional_components.ceilometer.value != true"
+            message: "Ceilometer should be enabled."
+      zabbix-server:
+        name: "Zabbix Server"
+        description: "Zabbix monitoring system server."
+        conflicts:
+          - controller
+          - compute
+          - cinder
+          - ceph-osd
+          - mongo
+        restrictions:
+          - condition: "not ('experimental' in version:feature_groups)"
+            action: "hide"
     networks_metadata:
       nova_network:
         networks:
@@ -85,6 +117,75 @@
           fixed_network_size: 256
           fixed_networks_amount: 1
           floating_ranges: [["172.16.0.128", "172.16.0.254"]]
+      neutron:
+        networks:
+          - name: "public"
+            cidr: "172.16.0.0/24"
+            ip_range: ["172.16.0.2", "172.16.0.126"]
+            vlan_start: null
+            use_gateway: true
+            notation: "ip_ranges"
+            render_type: null
+            render_addr_mask: "public"
+            map_priority: 1
+            configurable: true
+            floating_range_var: "floating_ranges"
+            assign_vip: true
+          - name: "management"
+            cidr: "192.168.0.0/24"
+            vlan_start: 101
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "internal"
+            map_priority: 2
+            configurable: true
+            assign_vip: true
+          - name: "storage"
+            cidr: "192.168.1.0/24"
+            vlan_start: 102
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "storage"
+            map_priority: 2
+            configurable: true
+            assign_vip: false
+          - name: "private"
+            seg_type: "vlan"
+            vlan_start: null
+            use_gateway: false
+            notation: null
+            render_type: null
+            render_addr_mask: null
+            map_priority: 2
+            neutron_vlan_range: true
+            configurable: false
+            assign_vip: false
+        config:
+          vlan_range: [1000, 1030]
+          gre_id_range: [2, 65535]
+          base_mac: "fa:16:3e:00:00:00"
+          internal_cidr: "192.168.111.0/24"
+          internal_gateway: "192.168.111.1"
+          floating_ranges: [["172.16.0.130", "172.16.0.254"]]
+          parameters:
+            amqp:
+              provider: "rabbitmq"
+              username: null
+              passwd: ""
+              hosts: "hostname1:5672, hostname2:5672"
+            database:
+              provider: "mysql"
+              port: "3306"
+              database: null
+              username: null
+              passwd:   ""
+            keystone:
+              admin_user: null
+              admin_password: ""
+            metadata:
+              metadata_proxy_shared_secret: ""
     volumes_metadata:
       volumes_roles_mapping:
         controller:
@@ -96,6 +197,16 @@
         cinder:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "cinder"}
+        ceph-osd:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "cephjournal"}
+          - {allocate_size: "full-disk", id: "ceph"}
+        mongo:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "mongo"}
+        zabbix-server:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "mysql"}
         other:
           - {allocate_size: "all", id: "os"}
       volumes:
@@ -114,6 +225,61 @@
               name: "swap"
               size: {generator: "calc_swap_size"}
               file_system: "swap"
+        - id: "mongo"
+          type: "vg"
+          label: "MongoDB"
+          min_size: {generator: "calc_min_mongo_size"}
+          volumes:
+            - mount: "/var/lib/mongo"
+              type: "lv"
+              name: "mongodb"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["mongo"]
+              file_system: "ext4"
+        - id: "ceph"
+          type: "partition"
+          min_size: {generator: "calc_min_ceph_size"}
+          label: "Ceph"
+          name: "Ceph"
+          mount: "none"
+          partition_guid: "4fbd7e29-9d25-41b8-afd0-062c0ceff05d"
+          file_system: "none"
+        - id: "cephjournal"
+          type: "partition"
+          min_size: {generator: "calc_min_ceph_journal_size"}
+          name: "Ceph Journal"
+          label: "Ceph Journal"
+          mount: "none"
+          partition_guid: "45b0969e-9b03-4f30-b4c6-b4b80ceff106"
+          file_system: "none"
+        - id: "os"
+          type: "vg"
+          min_size: {generator: "calc_min_os_size"}
+          label: "Base System"
+          volumes:
+            - mount: "/"
+              type: "lv"
+              name: "root"
+              size: {generator: "calc_total_root_vg"}
+              file_system: "ext4"
+            - mount: "swap"
+              type: "lv"
+              name: "swap"
+              size: {generator: "calc_swap_size"}
+              file_system: "swap"
+        - id: "mysql"
+          type: "vg"
+          min_size: {generator: "calc_min_mysql_size"}
+          label: "Mysql Database"
+          volumes:
+            - mount: "/var/lib/mysql"
+              type: "lv"
+              name: "root"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["mysql"]
+              file_system: "ext4"
         - id: "vm"
           type: "vg"
           min_size: {generator: "calc_min_vm_size"}
@@ -313,6 +479,71 @@
             value: true
             type: "checkbox"
             weight: 90
+        neutron_mellanox:
+          metadata:
+            toggleable: false
+            enabled: true
+            label: "Mellanox Neutron components"
+            weight: 50
+          plugin:
+            value: "disabled"
+            label: "Mellanox drivers and SR-IOV plugin"
+            weight: 60
+            type: "radio"
+            values:
+              - data: "disabled"
+                label: "Mellanox drivers and plugins disabled"
+                description: "If selected, Mellanox drivers, Neutron and Cinder plugin will not be installed."
+                restrictions:
+                  - "settings:storage.iser.value == true"
+              - data: "drivers_only"
+                label: "Install only Mellanox drivers"
+                description: "If selected, Mellanox Ethernet drivers will be installed to support networking over Mellanox NIC. Mellanox Neutron plugin will not be installed."
+                restrictions:
+                  - "settings:common.libvirt_type.value != 'kvm'"
+              - data: "ethernet"
+                label: "Install Mellanox drivers and SR-IOV plugin"
+                description: "If selected, both Mellanox Ethernet drivers and Mellanox network acceleration (Neutron) plugin will be installed."
+                restrictions:
+                  - "settings:common.libvirt_type.value != 'kvm' or not (cluster:net_provider == 'neutron' and networking_parameters:segmentation_type == 'vlan')"
+          vf_num:
+            value: "16"
+            label: "Number of virtual NICs"
+            description: "Note that one virtual function will be reserved to the storage network, in case of choosing iSER."
+            weight: 70
+            type: "text"
+            restrictions:
+              - "settings:neutron_mellanox.plugin.value != 'ethernet'"
+        additional_components:
+          metadata:
+            label: "Additional Components"
+            weight: 20
+          sahara:
+            value: false
+            label: "Install Sahara"
+            description: "If selected, Sahara component will be installed"
+            weight: 10
+            type: "checkbox"
+          murano:
+            value: false
+            label: "Install Murano"
+            description: "If selected, Murano component will be installed"
+            weight: 20
+            type: "checkbox"
+            restrictions:
+              - "cluster:net_provider != 'neutron'"
+          heat:
+            value: true
+            label: ""
+            description: ""
+            weight: 30
+            type: "hidden"
+          ceilometer:
+            value: false
+            label: "Install Ceilometer"
+            description: "If selected, Ceilometer component will be installed"
+            weight: 40
+            type: "checkbox"
         common:
           metadata:
             label: "Common"
@@ -528,291 +759,6 @@
             description: "List of upstream NTP servers separated by comma"
             weight: 10
             type: "text"
-      generated:
-        mysql:
-          root_password:
-            generator: "password"
-        keystone:
-          db_password:
-            generator: "password"
-          admin_token:
-            generator: "password"
-        glance:
-          db_password:
-            generator: "password"
-          user_password:
-            generator: "password"
-        nova:
-          db_password:
-            generator: "password"
-          user_password:
-            generator: "password"
-          state_path: "/var/lib/nova"
-        rabbit:
-          password:
-            generator: "password"
-        swift:
-          user_password:
-            generator: "password"
-        cinder:
-          db_password:
-            generator: "password"
-          user_password:
-            generator: "password"
-        base_syslog:
-          syslog_server:
-            generator: "ip"
-            generator_arg: "admin"
-          syslog_port:
-            generator: "identical"
-            generator_arg: "514"
-        cobbler:
-          profile:
-            generator: "identical"
-- &full_release
-  extend: *base_release
-  fields:
-    roles:
-      - controller
-      - compute
-      - cinder
-      - ceph-osd
-      - mongo
-      - zabbix-server
-    roles_metadata:
-      ceph-osd:
-        name: "Storage - Ceph OSD"
-        description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
-        restrictions:
-          - condition: "settings:common.libvirt_type.value == 'vcenter'"
-            message: "Ceph cannot be used with vCenter"
-      mongo:
-        name: "Telemetry - MongoDB"
-        description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
-        conflicts:
-          - compute
-          - ceph-osd
-        restrictions:
-          - condition: "cluster:status == 'operational'"
-            message: "MongoDB node can not be added to an operational environment."
-          - condition: "settings:additional_components.ceilometer.value != true"
-            message: "Ceilometer should be enabled."
-      zabbix-server:
-        name: "Zabbix Server"
-        description: "Zabbix monitoring system server."
-        conflicts:
-          - controller
-          - compute
-          - cinder
-          - ceph-osd
-          - mongo
-        restrictions:
-          - condition: "not ('experimental' in version:feature_groups)"
-            action: "hide"
-    networks_metadata:
-      neutron:
-        networks:
-          - name: "public"
-            cidr: "172.16.0.0/24"
-            ip_range: ["172.16.0.2", "172.16.0.126"]
-            vlan_start: null
-            use_gateway: true
-            notation: "ip_ranges"
-            render_type: null
-            render_addr_mask: "public"
-            map_priority: 1
-            configurable: true
-            floating_range_var: "floating_ranges"
-            assign_vip: true
-          - name: "management"
-            cidr: "192.168.0.0/24"
-            vlan_start: 101
-            use_gateway: false
-            notation: "cidr"
-            render_type: "cidr"
-            render_addr_mask: "internal"
-            map_priority: 2
-            configurable: true
-            assign_vip: true
-          - name: "storage"
-            cidr: "192.168.1.0/24"
-            vlan_start: 102
-            use_gateway: false
-            notation: "cidr"
-            render_type: "cidr"
-            render_addr_mask: "storage"
-            map_priority: 2
-            configurable: true
-            assign_vip: false
-          - name: "private"
-            seg_type: "vlan"
-            vlan_start: null
-            use_gateway: false
-            notation: null
-            render_type: null
-            render_addr_mask: null
-            map_priority: 2
-            neutron_vlan_range: true
-            configurable: false
-            assign_vip: false
-        config:
-          vlan_range: [1000, 1030]
-          gre_id_range: [2, 65535]
-          base_mac: "fa:16:3e:00:00:00"
-          internal_cidr: "192.168.111.0/24"
-          internal_gateway: "192.168.111.1"
-          floating_ranges: [["172.16.0.130", "172.16.0.254"]]
-          parameters:
-            amqp:
-              provider: "rabbitmq"
-              username: null
-              passwd: ""
-              hosts: "hostname1:5672, hostname2:5672"
-            database:
-              provider: "mysql"
-              port: "3306"
-              database: null
-              username: null
-              passwd:   ""
-            keystone:
-              admin_user: null
-              admin_password: ""
-            metadata:
-              metadata_proxy_shared_secret: ""
-    volumes_metadata:
-      volumes_roles_mapping:
-        ceph-osd:
-          - {allocate_size: "min", id: "os"}
-          - {allocate_size: "min", id: "cephjournal"}
-          - {allocate_size: "full-disk", id: "ceph"}
-        mongo:
-          - {allocate_size: "min", id: "os"}
-          - {allocate_size: "all", id: "mongo"}
-        zabbix-server:
-          - {allocate_size: "min", id: "os"}
-          - {allocate_size: "all", id: "mysql"}
-      volumes:
-        - id: "mongo"
-          type: "vg"
-          label: "MongoDB"
-          min_size: {generator: "calc_min_mongo_size"}
-          volumes:
-            - mount: "/var/lib/mongo"
-              type: "lv"
-              name: "mongodb"
-              size:
-                generator: "calc_total_vg"
-                generator_args: ["mongo"]
-              file_system: "ext4"
-        - id: "ceph"
-          type: "partition"
-          min_size: {generator: "calc_min_ceph_size"}
-          label: "Ceph"
-          name: "Ceph"
-          mount: "none"
-          partition_guid: "4fbd7e29-9d25-41b8-afd0-062c0ceff05d"
-          file_system: "none"
-        - id: "cephjournal"
-          type: "partition"
-          min_size: {generator: "calc_min_ceph_journal_size"}
-          name: "Ceph Journal"
-          label: "Ceph Journal"
-          mount: "none"
-          partition_guid: "45b0969e-9b03-4f30-b4c6-b4b80ceff106"
-          file_system: "none"
-        - id: "os"
-          type: "vg"
-          min_size: {generator: "calc_min_os_size"}
-          label: "Base System"
-          volumes:
-            - mount: "/"
-              type: "lv"
-              name: "root"
-              size: {generator: "calc_total_root_vg"}
-              file_system: "ext4"
-            - mount: "swap"
-              type: "lv"
-              name: "swap"
-              size: {generator: "calc_swap_size"}
-              file_system: "swap"
-        - id: "mysql"
-          type: "vg"
-          min_size: {generator: "calc_min_mysql_size"}
-          label: "Mysql Database"
-          volumes:
-            - mount: "/var/lib/mysql"
-              type: "lv"
-              name: "root"
-              size:
-                generator: "calc_total_vg"
-                generator_args: ["mysql"]
-              file_system: "ext4"
-        - id: "vm"
-          type: "vg"
-          min_size: {generator: "calc_min_vm_size"}
-          label: "Virtual Storage"
-          volumes:
-            - mount: "/var/lib/nova"
-              type: "lv"
-              name: "nova"
-              size:
-                generator: "calc_total_vg"
-                generator_args: ["vm"]
-              file_system: "xfs"
-        - id: "image"
-          type: "vg"
-          min_size: {generator: "calc_min_glance_size"}
-          label: "Image Storage"
-          volumes:
-            - mount: "/var/lib/glance"
-              type: "lv"
-              name: "glance"
-              size:
-                generator: "calc_total_vg"
-                generator_args: ["image"]
-              file_system: "xfs"
-        - id: "cinder"
-          type: "vg"
-          label: "Cinder"
-          min_size: {generator: "calc_min_cinder_size"}
-          volumes: []
-    attributes_metadata:
-      editable:
-        neutron_mellanox:
-          metadata:
-            toggleable: false
-            enabled: true
-            label: "Mellanox Neutron components"
-            weight: 50
-          plugin:
-            value: "disabled"
-            label: "Mellanox drivers and SR-IOV plugin"
-            weight: 60
-            type: "radio"
-            values:
-              - data: "disabled"
-                label: "Mellanox drivers and plugins disabled"
-                description: "If selected, Mellanox drivers, Neutron and Cinder plugin will not be installed."
-                restrictions:
-                  - "settings:storage.iser.value == true"
-              - data: "drivers_only"
-                label: "Install only Mellanox drivers"
-                description: "If selected, Mellanox Ethernet drivers will be installed to support networking over Mellanox NIC. Mellanox Neutron plugin will not be installed."
-                restrictions:
-                  - "settings:common.libvirt_type.value != 'kvm'"
-              - data: "ethernet"
-                label: "Install Mellanox drivers and SR-IOV plugin"
-                description: "If selected, both Mellanox Ethernet drivers and Mellanox network acceleration (Neutron) plugin will be installed."
-                restrictions:
-                  - "settings:common.libvirt_type.value != 'kvm' or not (cluster:net_provider == 'neutron' and networking_parameters:segmentation_type == 'vlan')"
-          vf_num:
-            value: "16"
-            label: "Number of virtual NICs"
-            description: "Note that one virtual function will be reserved to the storage network, in case of choosing iSER."
-            weight: 70
-            type: "text"
-            restrictions:
-              - "settings:neutron_mellanox.plugin.value != 'ethernet'"
         kernel_params:
           metadata:
             label: "Kernel parameters"
@@ -823,36 +769,6 @@
             description: "Default kernel parameters"
             weight: 45
             type: "text"
-        additional_components:
-          metadata:
-            label: "Additional Components"
-            weight: 20
-          sahara:
-            value: false
-            label: "Install Sahara"
-            description: "If selected, Sahara component will be installed"
-            weight: 10
-            type: "checkbox"
-          murano:
-            value: false
-            label: "Install Murano"
-            description: "If selected, Murano component will be installed"
-            weight: 20
-            type: "checkbox"
-            restrictions:
-              - "cluster:net_provider != 'neutron'"
-          heat:
-            value: true
-            label: ""
-            description: ""
-            weight: 30
-            type: "hidden"
-          ceilometer:
-            value: false
-            label: "Install Ceilometer"
-            description: "If selected, Ceilometer component will be installed"
-            weight: 40
-            type: "checkbox"
         storage:
           volumes_vmdk:
             value: false
@@ -984,6 +900,46 @@
               source: '^[1-9]\d*$'
               error: "Invalid number"
       generated:
+        mysql:
+          root_password:
+            generator: "password"
+        keystone:
+          db_password:
+            generator: "password"
+          admin_token:
+            generator: "password"
+        glance:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+        nova:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+          state_path: "/var/lib/nova"
+        rabbit:
+          password:
+            generator: "password"
+        swift:
+          user_password:
+            generator: "password"
+        cinder:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+        base_syslog:
+          syslog_server:
+            generator: "ip"
+            generator_arg: "admin"
+          syslog_port:
+            generator: "identical"
+            generator_arg: "514"
+        cobbler:
+          profile:
+            generator: "identical"
         sahara:
           user_password:
             generator: "password"
@@ -1211,7 +1167,7 @@
           weight: 30
       Ready: {}
 - pk: 1
-  extend: *full_release
+  extend: *base_release
   fields:
     name: "Juno on CentOS 6.5"
     version: "2014.2-6.0"
@@ -1262,7 +1218,7 @@
               format: "ext2"
               container: "gzip"
 - pk: 2
-  extend: *full_release
+  extend: *base_release
   fields:
     name: "Juno on Ubuntu 12.04.4"
     version: "2014.2-6.0"

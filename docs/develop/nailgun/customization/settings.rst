@@ -51,8 +51,8 @@ structure includes the following attributes::
 * *restrictions*: see restrictions_.
 * *description* section should also contain information about setting
   restrictions (dependencies, conflicts)
-* *values* list is needed for settings of "radio" type to declare its
-  possible values. Options from "values" list also support dependencies
+* *values* list is needed for settings of "radio" or "select" type to declare
+  its possible values. Options from "values" list also support dependencies
   and conflcits declaration.
 
 .. _restrictions:

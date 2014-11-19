@@ -221,6 +221,12 @@ LOGS:
     <<: *remote_syslog_log_format
     <<: *main_install_log_group
     path: 'puppet-apply.log'
+  - id: 'install/mco'
+    name: "mcollective"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *main_install_log_group
+    path: 'mcollective.log'
   - id: 'zabbix'
     name: "zabbix"
     <<: *remote_log_type

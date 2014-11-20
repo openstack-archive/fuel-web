@@ -388,6 +388,15 @@
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
             type: "text"
+          disable_offload:
+            value: true
+            label: "Disable generic offload on physical nics"
+            description: "If set, generic segmentation offload (gso) and generic receive offload (gro) on physical nics will be disabled. See ethtool man."
+            weight: 70
+            type: "checkbox"
+            restrictions:
+              - condition: "cluster:net_provider == 'neutron' and networking_parameters:segmentation_type== 'gre'"
+                action: "hide"
         public_network_assignment:
           metadata:
             weight: 50

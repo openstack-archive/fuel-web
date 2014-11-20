@@ -52,7 +52,8 @@ cloud-init-per instance conntrack_max_set sysctl -w "net.nf_conntrack_max=104857
 cloud-init-per instance dhclient echo 'supersede routers 0;' | tee /etc/dhcp/dhclient.conf
 
 # ntp sync
-cloud-init-per instance service ntp stop | tee /dev/null
+# '| tee /dev/null' is needed for returning zero execution code always
+cloud-init-per instance stop_ntp service ntp stop | tee /dev/null
 cloud-init-per instance sync_date ntpdate -t 4 -b {{ common.master_ip }}
 cloud-init-per instance sync_hwclock hwclock --systohc
 
@@ -61,6 +62,7 @@ cloud-init-per instance edit_ntp_conf2 sed -i '1 i tinker panic 0' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf3 echo 0 > /var/lib/ntp/drift
 cloud-init-per instance edit_ntp_conf4 sed -i '/^\s*server/ d' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf5 echo "server {{ common.master_ip }} burst iburst" | tee -a /etc/ntp.conf
+cloud-init-per instance start_ntp service ntp start
 
 cloud-init-per instance removeUseDNS sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config
 add_str_to_file_if_not_exists /etc/ssh/sshd_config 'UseDNS' 'UseDNS no'

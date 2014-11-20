@@ -30,6 +30,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
+from nailgun.statistics.params_white_lists import task_output_white_list
 
 
 tasks_names_actions_groups_mapping = {
@@ -325,14 +326,6 @@ class TaskHelper(object):
                 return True
         return False
 
-    @classmethod
-    def set_error(cls, task_uuid, message):
-        cls.update_task_status(
-            task_uuid,
-            status="error",
-            progress=100,
-            msg=str(message))
-
     @staticmethod
     def expose_network_check_error_messages(task, result, err_messages):
         if err_messages:
@@ -373,3 +366,34 @@ class TaskHelper(object):
         create_kwargs['additional_info'] = additional_info
 
         return create_kwargs
+
+    @classmethod
+    def sanitize_task_output(cls, task_output, al):
+
+        def sanitize_sub_tree(raw, white_list):
+            sanitized = None
+            if isinstance(raw, list) and isinstance(white_list, dict):
+                sanitized = []
+                for item in raw:
+                    sanitized.append(sanitize_sub_tree(item, white_list))
+            elif isinstance(raw, dict) and isinstance(white_list, dict):
+                sanitized = {}
+                for key in raw:
+                    if key in white_list:
+                        if isinstance(white_list[key], dict):
+                            sanitized[key] = \
+                                sanitize_sub_tree(raw[key], white_list[key])
+                        else:
+                            sanitized[key] = raw[key]
+                    elif "*" in white_list:
+                        if isinstance(white_list["*"], dict):
+                            sanitized[key] = \
+                                sanitize_sub_tree(raw[key], white_list["*"])
+                        else:
+                            sanitized[key] = raw[key]
+            return sanitized
+
+        if al.action_name not in task_output_white_list:
+            return None
+        white_list = task_output_white_list[al.action_name]
+        return sanitize_sub_tree(task_output, white_list)

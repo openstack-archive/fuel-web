@@ -87,6 +87,10 @@ class MDWrongSpecError(BaseError):
     pass
 
 
+class MDRemovingError(BaseError):
+    pass
+
+
 class WrongConfigDriveDataError(BaseError):
     pass
 

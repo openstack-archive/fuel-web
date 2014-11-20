@@ -40,7 +40,6 @@ def pytest_configure(config):
             create_database(connection, cursor, db_name)
     settings.DATABASE['name'] = db_name
 
-
 def create_database(connection, cursor, name):
     connection.set_isolation_level(0)
     cursor.execute('create database {0}'.format(name))

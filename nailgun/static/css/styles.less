@@ -2467,6 +2467,13 @@ legend {
 .network-settings .parameter-box { clear: inherit; }
 
 .openstack-settings {
+  &.wrapper {
+    .fieldset-group {
+      legend.openstack-settings {
+        margin: 5px 0 20px 0;
+      }
+    }
+  }
   .icon-attention {
     font-size: @font-size-base;
     .position(relative, @top: -6px, @left: -2px);
@@ -2511,14 +2518,17 @@ legend {
     }
   }
   .radio-group {
-    margin-bottom: 20px;
+    margin: 5px 0  20px 0;
     .parameter-name {
       margin: 7px 0 0;
       .label-wrapper { float: none; }
     }
     > .parameter-name {
-      margin: 10px;
-      margin-top: 0;
+      margin: 0 10px 10px 10px;
+      width: 100%;
+      hr {
+        margin: 5px 0 0 0;
+      }
     }
     .parameter-description { margin-left: 29px; }
   }

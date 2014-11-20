@@ -49,7 +49,7 @@ class TaskManager(object):
 
         return objects.ActionLog.create(create_kwargs)
 
-    def update_action_log(self, task_status, al_instance):
+    def update_action_log(self, task_status, task_output, al_instance):
         update_data = {
             "end_timestamp": datetime.datetime.utcnow(),
             "additional_info": {
@@ -64,7 +64,7 @@ class TaskManager(object):
 
         method = getattr(instance, kwargs.pop('method_name', 'execute'))
         if task.status == TASK_STATUSES.error:
-            self.update_action_log(task.status, al)
+            self.update_action_log(task.status, None, al)
             return
         try:
             to_return = method(task, *args, **kwargs)
@@ -72,7 +72,11 @@ class TaskManager(object):
             # update action_log instance for task
             # for asynchronous task it will be not final update
             # as they also are updated in rpc receiver
-            self.update_action_log(task.status, al)
+            self.update_action_log(
+                task.status,
+                TaskHelper.sanitize_task_output(to_return, al),
+                al
+            )
 
             return to_return
         except Exception as exc:

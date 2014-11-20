@@ -15,11 +15,8 @@
 #    under the License.
 
 import json
-import logging
 
 from fuel_upgrade.clients import KeystoneClient
-
-logger = logging.getLogger(__name__)
 
 
 class NailgunClient(object):

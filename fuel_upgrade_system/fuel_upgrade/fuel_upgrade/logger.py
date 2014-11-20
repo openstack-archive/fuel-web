@@ -17,8 +17,49 @@
 import logging
 import sys
 
+from fuel_upgrade.config import Config
+from fuel_upgrade.utils import sanitize
+
+
+class SanitizingLogger(logging.Logger):
+    """Logger subclass which sanitizes passed positional arguments.
+    It traverses the arguments one by one and recursively looks them up for
+    dictionaries. If a key of the dictionary contains a keyword listed in
+    `SanitizingLogger.keywords` corresponding value is masked.
+    Instances of the following types are sanitized:
+     - dict
+     - list containing dicts
+     - fuel_upgrade.config.Config
+    arguments of other types are not changed.
+
+    Example:
+
+    >>> auth_params = {'password': 'secure_password'}
+    >>> auth_info = [{'admin_token': 'secure_token'}]
+    >>> logging.setLoggerClass(SanitizingLogger)
+    >>> logger = logging.getLogger()
+    >>> logger.info("%s %s %s %s", 'Auth', 'password:', auth_params, auth_info)
+    Auth password: {'password': '******'} [{'admin_token': '******'}]
+    """
+
+    keywords = ('password', 'token')
+
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None,
+                   extra=None):
+        _args = []
+        for arg in args:
+            if isinstance(arg, Config):
+                _arg = sanitize(arg._config, self.keywords)
+            else:
+                _arg = sanitize(arg, self.keywords)
+            _args.append(_arg)
+
+        return logging.Logger.makeRecord(self, name, level, fn, lno, msg,
+                                         tuple(_args), exc_info, func, extra)
+
 
 def configure_logger(path):
+    logging.setLoggerClass(SanitizingLogger)
     logger = logging.getLogger('fuel_upgrade')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(

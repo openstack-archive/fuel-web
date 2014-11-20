@@ -39,7 +39,8 @@ def pytest_configure(config):
         if not_present(cursor, db_name):
             create_database(connection, cursor, db_name)
     settings.DATABASE['name'] = db_name
-
+    from nailgun.db import dropdb   43
+    dropdb()
 
 def create_database(connection, cursor, name):
     connection.set_isolation_level(0)
@@ -47,7 +48,7 @@ def create_database(connection, cursor, name):
     connection.set_isolation_level(1)
     cursor.close()
     connection.close()
-
+    
 
 def not_present(cur, name):
     cur.execute('select datname from pg_database;')

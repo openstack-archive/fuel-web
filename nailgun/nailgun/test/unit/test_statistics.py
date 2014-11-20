@@ -19,14 +19,15 @@ from mock import patch
 import requests
 
 from nailgun.test.base import BaseTestCase
+from nailgun.test.base import fake_tasks
 
 from nailgun import consts
 from nailgun.objects import Cluster
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
+from nailgun.statistics.params_white_lists import task_output_white_list
 from nailgun.statistics.statsenderd import StatsSender
-
 
 FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
 FEATURE_EXPERIMENTAL = {'feature_groups': ['experimental']}
@@ -338,3 +339,46 @@ class TestStatisticsSender(BaseTestCase):
         )
         log_error.assert_called_once_with(
             "Sending data to collector failed: %s", "custom")
+
+
+class TestTasksLogging(BaseTestCase):
+
+    def check_keys_included(self, keys, data):
+        """Check that only values with keys from 'keys' are present in 'data'
+        """
+        if isinstance(data, list):
+            for d in data:
+                self.check_keys_included(keys, d)
+        elif isinstance(data, dict):
+            for k in data:
+                if k in keys:
+                    self.check_keys_included(keys[k], data[k])
+                elif "*" in keys:
+                    self.check_keys_included(keys["*"], data[k])
+                else:
+                    self.fail("key {0} is not present in {1}".format(k, keys))
+        else:
+            self.assertEqual("", keys)
+
+    @fake_tasks(god_mode=True)
+    @patch('nailgun.task.manager.TaskManager.update_action_log')
+    def test_deployment_task_logging(self, logger):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ["controller"]},
+                {"pending_addition": True, "pending_roles": ["cinder"]},
+                {"pending_addition": True, "pending_roles": ["compute"]},
+            ]
+        )
+        supertask = self.env.launch_deployment()
+        self.env.wait_ready(supertask, 15)
+        log_args = logger.call_args_list
+        self.assertGreaterEqual(len(log_args), 2)
+        provision_args = log_args[-2][0][1]
+        deployment_args = log_args[-1][0][1]
+        self.check_keys_included(
+            task_output_white_list[consts.TASK_NAMES.provision],
+            provision_args)
+        self.check_keys_included(
+            task_output_white_list[consts.TASK_NAMES.deployment],
+            deployment_args)

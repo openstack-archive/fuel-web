@@ -58,14 +58,14 @@ function($, React, models, statisticsMixin) {
                         <RegisterTrial fuelKey={this.state.fuelKey} />
                         {this.renderIntro()}
                         {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
-                        <div className='welcome-text-box'>
-                            <p className='center'>
-                                {$.t(ns + 'support')}<br/>
-                                {$.t(ns + 'provide_contacts')}
-                            </p>
-                        </div>
+                        {_.contains(app.version.get('feature_groups'), 'mirantis') &&
+                            <div className='welcome-text-box center'>{$.t(ns + 'support')}</div>
+                        }
                         {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
                         <form className='form-horizontal'>
+                            {this.props.settings.get('statistics').send_user_info.value &&
+                                <div className='welcome-text-box center'>{$.t(ns + 'provide_contacts')}</div>
+                            }
                             { _.map(contacts, function(settingName) {
                                 return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box', true);
                             }, this)}

@@ -8,15 +8,23 @@ For information on how to get source code see :ref:`getting-source`.
 Preparing Development Environment
 ---------------------------------
 
-.. warning:: Nailgun requires Python 2.6. with development files.  Please check
+.. warning:: Nailgun requires Python 2.6 with development files.  Please check
     installed Python version using ``python --version``. If the version check
-    does not match, you can use `PPA
-    <https://launchpad.net/~fkrull/+archive/ubuntu/deadsnakes>`_ (Ubuntu) or
-    `pyenv <https://github.com/yyuu/pyenv>`_ (Universal)
+    does not match, please install Python 2.6 as described in step 1.
+    If Python version matches, skip step 1.
 
-    For PPA::
+    Please note that these instructions were tested on Ubuntu 12.04.4 (64 bit)
+    that contains Python 2.7 and requires downgrade to Python 2.6.
+    PPA instructions listed below install Python 2.6 but do not remove Python 2.7.
+    The default Python version remains 2.7.
+    You will have to specify Python version when you create virtual environment (see 8.1.1.1. step 5).
+
+
+#. Install Python 2.6 using
+   `PPA <https://launchpad.net/~fkrull/+archive/ubuntu/deadsnakes>`::
 
      sudo add-apt-repository ppa:fkrull/deadsnakes
+     sudo apt-get update
      sudo apt-get install python2.6 python2.6-dev
 
 #. Nailgun can be found in fuel-web/nailgun
@@ -24,6 +32,7 @@ Preparing Development Environment
 #. Install and configure PostgreSQL database::
 
     sudo apt-get install postgresql postgresql-server-dev-9.1
+    sudo chmod -R a+rwx /root  # Commands below will require write acccess to /root folder
     sudo -u postgres createuser -SDRP nailgun  # enter password "nailgun"
     sudo -u postgres createdb nailgun
 
@@ -31,18 +40,24 @@ Preparing Development Environment
 
     sudo apt-get install python-dev python-pip
 
-#. Install virtualenv. This is an optional step that increases flexibility
-   when dealing with environment settings and package installation::
+#. Install virtualenv. This step increases flexibility
+   when dealing with environment settings and package installation.
+   This step is obligatory if you need to downgrade to Python version 2.6
+   (that Nailgun depends on)::
 
     sudo pip install virtualenv virtualenvwrapper
     source /usr/local/bin/virtualenvwrapper.sh  # you can save this to .bashrc
-    mkvirtualenv fuel  # you can use any name instead of 'fuel'
+    whereis python2.6 # Prints the intall path of python 2.6, let's say /usr/bin/python2.6.
+                      # Copy the output and paste it in the command below for option -p
+    mkvirtualenv fuel -p /usr/bin/python2.6  # you can use any name instead of 'fuel'
     workon fuel  # command selects the particular environment
+    python --version # verify that default Python version inside virtual environment is 2.6
 
 #. Install Python dependencies. This section assumes that you use virtual environment.
    Otherwise, you must install all packages globally.
-   You can install pip and use it to require all the other packages at once.::
+   You can install pip and use it to require all the other packages at once::
 
+    cd fuel-web
     pip install ./shotgun  # this fuel project is listed in setup.py requirements
     pip install --allow-all-external -r nailgun/test-requirements.txt
 
@@ -50,6 +65,7 @@ Preparing Development Environment
 
     sudo mkdir /var/log/nailgun
     sudo chown -R `whoami`.`whoami` /var/log/nailgun
+    sudo chmod -R a+w /var/log/nailgun
 
 
 Setup for Nailgun Unit Tests
@@ -62,10 +78,12 @@ Setup for Nailgun Unit Tests
 #. First, create a virtualenv the way it's described in previous section. Then, install
    the Tox package::
 
+    workon fuel #activate virtual environment created in the previous section
     pip install tox
 
 #. Run the Nailgun backend unit tests::
 
+    sudo apt-get install puppet-common #install missing package required by tasklib tests
     ./run_tests.sh --no-lint-ui --no-webui
 
 #. Run the Nailgun flake8 test::
@@ -113,12 +131,17 @@ Setup for Web UI Tests
 
     cd fuel-web
     ./run_tests.sh --lint-ui
+    sudo apt-get install libfontconfig  #install missing package required by webui tests
     ./run_tests.sh --webui
 
 .. _running-nailgun-in-fake-mode:
 
 Running Nailgun in Fake Mode
 ----------------------------
+
+#. Switch to virtual environment::
+
+    workon fuel
 
 #. Fetch JS dependencies::
 

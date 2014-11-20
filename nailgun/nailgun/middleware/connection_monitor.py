@@ -15,7 +15,6 @@
 import datetime
 import hashlib
 import itertools
-import json
 import six
 
 from nailgun.middleware import utils
@@ -218,15 +217,6 @@ class ConnectionMonitorMiddleware(object):
             'data': {},
         }
 
-        if request_body:
-            try:
-                request_data['data'] = json.loads(request_body)
-            except Exception as e:
-                request_data['data'] = {
-                    'message': ('Error while loading incomming'
-                                ' JSON. Details: {0}'.format(e))
-                }
-
         return request_data
 
     def _get_response_data(self, response_iterator):
@@ -246,13 +236,5 @@ class ConnectionMonitorMiddleware(object):
             # useful data always will be stored in first element of
             # response
             response_data['data'] = {'message': six.next(response_iterator)}
-        else:
-            # some handlers return no data after successful processing
-            # in that case json.loads() fails so we need following workflow
-            to_check, to_write = itertools.tee(response_iterator)
-            try:
-                response_data['data'] = json.loads(six.next(to_check))
-            except ValueError:
-                response_data['data'] = {'content': six.next(to_write)}
 
         return response_data

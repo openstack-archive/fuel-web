@@ -34,11 +34,11 @@ class Manager(object):
             driver = Driver.getDriver(obj_data, self.conf)
             driver.snapshot()
         logger.debug("Archiving dump directory: %s", self.conf.target)
-        execute("tar zcf {0}.tgz -C {1} {2}"
+        execute("tar Jcf {0}.tar.xz -C {1} {2}"
                 "".format(self.conf.target,
                           os.path.dirname(self.conf.target),
                           os.path.basename(self.conf.target)))
         execute("rm -r {0}".format(self.conf.target))
         with open(self.conf.lastdump, "w") as fo:
-            fo.write("{0}.tgz".format(self.conf.target))
-        return "{0}.tgz".format(self.conf.target)
+            fo.write("{0}.tar.xz".format(self.conf.target))
+        return "{0}.tar.xz".format(self.conf.target)

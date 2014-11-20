@@ -54,7 +54,6 @@ def pytest_unconfigure(config):
         from nailgun.db import dropdb
         dropdb()
 
-
 def create_database(connection, cursor, name):
     connection.set_isolation_level(0)
     cursor.execute('create database {0}'.format(name))

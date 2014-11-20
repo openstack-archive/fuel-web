@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import logging
 import sys
 
@@ -97,6 +98,21 @@ class HTTPLoggerMiddleware(object):
         else:
             self.api_logger.debug(response_info)
 
+    def _shorten_agent_message(self, msg):
+        try:
+            d_msg = json.loads(msg)
+        except ValueError:
+            return msg
+
+        status_msg = {'status': d_msg.get('status'),
+                      'mac': d_msg.get('mac'),
+                      'ip': d_msg.get('ip')}
+
+        if all(status_msg.values()):
+            return json.dumps(status_msg)
+
+        return msg
+
     def __logging_request(self, env):
         content_length = env.get('CONTENT_LENGTH', 0)
         if content_length == '':
@@ -107,6 +123,10 @@ class HTTPLoggerMiddleware(object):
         if length != 0:
             body = env['wsgi.input'].read(length)
             env['wsgi.input'] = StringIO(body)
+
+        # Shorten only agent's messages
+        if env['REQUEST_URI'].startswith('/api/nodes/'):
+            body = self._shorten_agent_message(body)
 
         request_info = "Request %s %s from %s:%s %s" % (
             env['REQUEST_METHOD'],

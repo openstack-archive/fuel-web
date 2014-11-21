@@ -25,48 +25,22 @@ from nailgun.settings import settings
 from nailgun.test import base
 
 
-SAMPLE_PLUGIN = {
-    'version': '0.1.0',
-    'name': 'testing_plugin',
-    'title': 'Test plugin',
-    'package_version': '1.0.0',
-    'description': 'Enable to use plugin X for Neutron',
-    'fuel_version': ['6.0'],
-    'releases': [
-        {'repository_path': 'repositories/ubuntu',
-         'version': '2014.2-6.0', 'os': 'ubuntu',
-         'mode': ['ha', 'multinode'],
-         'deployment_scripts_path': 'deployment_scripts/'},
-        {'repository_path': 'repositories/centos',
-         'version': '2014.2-6.0', 'os': 'centos',
-         'mode': ['ha', 'multinode'],
-         'deployment_scripts_path': 'deployment_scripts/'}]}
-
-ENVIRONMENT_CONFIG = {
-    'attributes': {
-        'lbaas_simple_text': {
-            'value': 'Set default value',
-            'type': 'text',
-            'description': 'Description for text field',
-            'weight': 25,
-            'label': 'Text field'}}}
-
-
-def get_config(*args):
-    return mock.mock_open(read_data=yaml.dump(ENVIRONMENT_CONFIG))()
-
-
 class TestPlugin(base.BaseTestCase):
 
     def setUp(self):
         super(TestPlugin, self).setUp()
-        self.plugin = Plugin.create(SAMPLE_PLUGIN)
+        self.plugin_metadata = self.env.get_default_plugin_metadata()
+        self.plugin = Plugin.create(self.plugin_metadata)
         self.env.create(
             cluster_kwargs={'mode': 'multinode'},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'})
         self.cluster = self.env.clusters[0]
         self.attr_plugin = attr_plugin.ClusterAttributesPlugin(self.plugin)
+        self.env_config = self.env.get_default_plugin_env_config()
+        self.get_config = lambda *args: mock.mock_open(
+            read_data=yaml.dump(self.env_config))()
+
         db().flush()
 
     @mock.patch('nailgun.plugins.attr_plugin.open', create=True)
@@ -79,12 +53,11 @@ class TestPlugin(base.BaseTestCase):
         """
         maccess.return_value = True
         mexists.return_value = True
-        mopen.side_effect = get_config
-        attributes = self.attr_plugin.get_plugin_attributes(
-            self.cluster)
+        mopen.side_effect = self.get_config
+        attributes = self.attr_plugin.get_plugin_attributes(self.cluster)
         self.assertEqual(
-            attributes['testing_plugin']['lbaas_simple_text'],
-            ENVIRONMENT_CONFIG['attributes']['lbaas_simple_text'])
+            attributes['testing_plugin']['plugin_name_text'],
+            self.env_config['attributes']['plugin_name_text'])
         self.assertEqual(
             attributes['testing_plugin']['metadata'],
             self.attr_plugin.default_metadata)
@@ -107,7 +80,7 @@ class TestPlugin(base.BaseTestCase):
            provided release.
         """
         release = self.attr_plugin.get_release_info(self.cluster.release)
-        self.assertEqual(release, SAMPLE_PLUGIN['releases'][0])
+        self.assertEqual(release, self.plugin_metadata['releases'][0])
 
     def test_slaves_scripts_path(self):
         expected = settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
@@ -145,7 +118,7 @@ class TestClusterCompatiblityValidation(base.BaseTestCase):
 
     def setUp(self):
         super(TestClusterCompatiblityValidation, self).setUp()
-        self.plugin = Plugin.create(SAMPLE_PLUGIN)
+        self.plugin = Plugin.create(self.env.get_default_plugin_metadata())
         self.attr_plugin = attr_plugin.ClusterAttributesPlugin(self.plugin)
 
     def get_cluster(self, os, mode, version):

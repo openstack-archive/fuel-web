@@ -46,7 +46,7 @@ class MetaInterfacesValidator(BasicValidator):
 
         def filter_valid_nic(nic):
             for key in ('mac', 'name'):
-                if not key in nic or not isinstance(nic[key], basestring)\
+                if key not in nic or not isinstance(nic[key], basestring)\
                         or not nic[key]:
                     return False
             return True
@@ -102,6 +102,7 @@ class MetaValidator(BasicValidator):
 
 
 class NodeValidator(BasicValidator):
+
     @classmethod
     def validate(cls, data):
         # TODO(enchantner): rewrite validators to use Node object
@@ -140,7 +141,7 @@ class NodeValidator(BasicValidator):
 
     @classmethod
     def does_node_exist_in_db(cls, data):
-        mac = data['mac']
+        mac = data['mac'].lower()
         q = db().query(Node)
 
         if q.filter(Node.mac == mac).first() or \
@@ -157,7 +158,7 @@ class NodeValidator(BasicValidator):
                 existent_node = db().query(Node).\
                     join(NodeNICInterface, Node.nic_interfaces).\
                     filter(NodeNICInterface.mac.in_(
-                        [n['mac'] for n in data['meta']['interfaces']]
+                        [n['mac'].lower() for n in data['meta']['interfaces']]
                     )).first()
                 return existent_node
 
@@ -211,7 +212,7 @@ class NodeValidator(BasicValidator):
                     log_message=True
                 )
             else:
-                existent_node = q.filter_by(mac=d["mac"]).first() \
+                existent_node = q.filter_by(mac=d["mac"].lower()).first() \
                     or cls.validate_existent_node_mac_update(d)
                 if not existent_node:
                     raise errors.InvalidData(

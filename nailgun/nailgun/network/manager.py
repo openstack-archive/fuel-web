@@ -680,7 +680,7 @@ class NetworkManager(object):
         for interface in node.meta["interfaces"]:
             # try to get interface by mac address
             interface_db = next((
-                n for n in node.nic_interfaces if n.mac == interface['mac']),
+                n for n in node.nic_interfaces if n.mac == interface['mac'].lower()),
                 None)
 
             # try to get interface instance by interface name. this protects

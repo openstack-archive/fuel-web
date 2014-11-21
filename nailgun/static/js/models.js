@@ -54,6 +54,11 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         }
     };
 
+    models.Globals = {
+        networkingParameters: null,
+        networks: null
+    };
+
     models.Role = Backbone.Model.extend({
         constructorName: 'Role'
     });
@@ -523,7 +528,10 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
     });
 
     models.InterfaceNetwork = Backbone.Model.extend({
-        constructorName: 'InterfaceNetwork'
+        constructorName: 'InterfaceNetwork',
+        getFullNetwork: function() {
+            return models.Globals.networks.findWhere({name: this.get('name')});
+        }
     });
 
     models.InterfaceNetworks = Backbone.Collection.extend({
@@ -536,7 +544,15 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
     });
 
     models.Network = Backbone.Model.extend({
-        constructorName: 'Network'
+        constructorName: 'Network',
+        getVlanRange: function() {
+            if (!this.get('meta').neutron_vlan_range) {
+                var externalNetworkData = this.get('meta').ext_net_data;
+                var vlanStart = externalNetworkData ? models.Globals.networkingParameters.get(externalNetworkData[0]) : this.get('vlan_start');
+                return _.isNull(vlanStart) ? vlanStart : [vlanStart, externalNetworkData ? vlanStart + models.Globals.networkingParameters.get(externalNetworkData[1]) - 1 : vlanStart];
+            }
+            return models.Globals.networkingParameters.get('vlan_range');
+        }
     });
 
     models.Networks = Backbone.Collection.extend({

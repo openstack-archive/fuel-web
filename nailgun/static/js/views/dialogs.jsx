@@ -32,8 +32,6 @@ define(
 function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, controls) {
     'use strict';
 
-    var cx = React.addons.classSet;
-
     var views = {};
 
     views.Dialog = Backbone.View.extend({
@@ -501,7 +499,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                         }
                     }
                 }, this);
-                this.nodes.toJSON = function(options) {
+                this.nodes.toJSON = function() {
                     return this.map(function(node) {
                         return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
                     });

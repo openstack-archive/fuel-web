@@ -18,7 +18,7 @@ define(
     'utils',
     'models'
 ],
-function(utils, models) {
+function() {
         'use strict';
         var Screen;
 

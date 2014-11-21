@@ -111,7 +111,7 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
                 this.volumesColors[volume.get('name')] = colors[index];
             }, this);
         },
-        initialize: function(options) {
+        initialize: function() {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
                 this.model.on('change:status', this.revertChanges, this);
@@ -198,12 +198,12 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
             '.disk-form': {
                 observe: 'visible',
                 visible: true,
-                visibleFn: function($el, isVisible, options) {
+                visibleFn: function($el, isVisible) {
                     $el.collapse(isVisible ? 'show' : 'hide');
                 }
             }
         },
-        toggleEditDiskForm: function(e) {
+        toggleEditDiskForm: function() {
             this.diskForm.set({visible: !this.diskForm.get('visible')});
         },
         getVolumeMinimum: function(name) {
@@ -225,7 +225,7 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
             this.disk.set({volumes: this.disk.get('volumes')}, {validate: true}); // disk validation (maximum)
             this.renderVisualGraph();
         },
-        updateDisks: function(e) {
+        updateDisks: function() {
             this.updateDisk();
             _.invoke(_.omit(this.screen.subViews, this.cid), 'updateDisk', this);
             this.screen.checkForChanges();

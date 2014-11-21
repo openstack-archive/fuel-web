@@ -91,6 +91,7 @@ module.exports = function(grunt) {
                 laxbreak: true,
                 newcap: false,
                 undef: true,
+                unused: true,
                 predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
                 strict: true,
                 lastsemic: true,

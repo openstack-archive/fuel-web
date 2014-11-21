@@ -283,7 +283,7 @@ function(React, utils, models, dialogs) {
                 pendingRelease = this.props.releases.findWhere({id: this.state.pendingReleaseId}) || null,
                 action = this.getAction(),
                 isLocked = this.isLocked(),
-                options = releases.map(function(release, i) {
+                options = releases.map(function(release) {
                     return <option value={release.id} key={release.id}>{release.get('name') + ' (' + release.get('version') + ')'}</option>;
                 }, this);
             return (

@@ -18,7 +18,7 @@ define(['jquery', 'lessLibrary'], function($, less) {
     'use strict';
 
     return {
-        load: function(name, req, onLoad, config) {
+        load: function(name, req, onLoad) {
             var url = req.toUrl(name + '.less');
             var link = $('<link/>', {href: url, rel: 'stylesheet/less'});
             link.appendTo('head');

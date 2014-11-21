@@ -290,7 +290,7 @@ function(React, utils, models, componentMixins, dialogs) {
         getDefaultProps: function() {
             return {locales: this.prototype.getAvailableLocales()};
         },
-        componentWillMount: function(options) {
+        componentWillMount: function() {
             this.setDefaultLocale();
         }
     });

@@ -293,7 +293,7 @@ function(React, models, utils, componentMixins, controls) {
                             <div className='clearfix note'>
                                 {$.t('cluster_page.healthcheck_tab.credentials_description')}
                             </div>
-                            {_.map(inputFields, function(name, index) {
+                            {_.map(inputFields, function(name) {
                                 return (<controls.Input
                                     key={name}
                                     type={(name == 'password') ? 'password' : 'text'}

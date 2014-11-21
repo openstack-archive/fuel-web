@@ -30,7 +30,7 @@ class PluginManager(object):
     @classmethod
     def get_plugin_attributes(cls, cluster):
         plugins_attrs = {}
-        for plugin_db in PluginCollection.all():
+        for plugin_db in PluginCollection.all_newest():
             attr_plugin = ClusterAttributesPlugin(plugin_db)
             attrs = attr_plugin.get_plugin_attributes(cluster)
             plugins_attrs.update(attrs)

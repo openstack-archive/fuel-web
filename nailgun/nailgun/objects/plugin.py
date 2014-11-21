@@ -14,11 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from distutils.version import LooseVersion
+from itertools import groupby
+
+from nailgun.db import db
 from nailgun.db.sqlalchemy.models import plugins as plugin_db_model
 from nailgun.objects import base
 from nailgun.objects.serializers import plugin
-
-from nailgun.db import db
 
 
 class Plugin(base.NailgunObject):
@@ -35,3 +37,30 @@ class Plugin(base.NailgunObject):
 class PluginCollection(base.NailgunCollection):
 
     single = Plugin
+
+    @classmethod
+    def all_newest(cls):
+        """Returns new plugins.
+        Example:
+        There are 4 plugins:
+        - name: plugin_name, version: 1.0.0
+        - name: plugin_name, version: 2.0.0
+        - name: plugin_name, version: 0.1.0
+        - name: plugin_another_name, version: 1.0.0
+        In this case the method returns 2 plugins:
+        - name: plugin_name, version: 2.0.0
+        - name: plugin_another_name, version: 1.0.0
+
+        :returns: list of Plugin models
+        """
+        newest_plugins = []
+        grouped_by_name = groupby(cls.all(), lambda p: p.name)
+        for name, plugins in grouped_by_name:
+            newest_plugin = sorted(
+                plugins,
+                key=lambda p: LooseVersion(p.version),
+                reverse=True)[0]
+
+            newest_plugins.append(newest_plugin)
+
+        return newest_plugins

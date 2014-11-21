@@ -96,7 +96,13 @@ class ClusterAttributesPlugin(object):
         enabled field.
         """
         custom_attrs = cluster_attrs.get(self.plugin.name, {})
+
         if custom_attrs:
+            # Skip if it's wrong plugin version
+            attr_plugin_version = custom_attrs['metadata']['plugin_version']
+            if attr_plugin_version != self.plugin.version:
+                return
+
             enable = custom_attrs['metadata']['enabled']
             # value is true and plugin is not enabled for this cluster
             # that means plugin was enabled on this request
@@ -119,7 +125,8 @@ class ClusterAttributesPlugin(object):
     @property
     def default_metadata(self):
         return {u'enabled': False, u'toggleable': True,
-                u'weight': 70, u'label': self.plugin.title}
+                u'weight': 70, u'label': self.plugin.title,
+                'plugin_version': self.plugin.version}
 
     def set_cluster_tasks(self, cluster):
         """Loads plugins provided tasks from tasks config file and

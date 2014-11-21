@@ -292,7 +292,7 @@ function(React, utils, models, componentMixins, controls) {
             if (this.props.cluster.get('nodes').length) {
                 types.push(['remote', 'Other servers']);
             }
-            var typeOptions = types.map(function(type, i) {
+            var typeOptions = types.map(function(type) {
                 return <option value={type[0]} key={type[0]}>{type[1]}</option>;
             });
             return <controls.Input

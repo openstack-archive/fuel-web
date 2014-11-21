@@ -63,7 +63,7 @@ define(['jquery', 'underscore'], function($, _) {
                 } catch(e) {
                     return $.Deferred().reject();
                 }
-            }, this)).fail(_.bind(function(xhr, status, error) {
+            }, this)).fail(_.bind(function() {
                 delete this.tokenUpdateTime;
             }, this)).always(_.bind(function() {
                 delete this.tokenUpdateRequest;

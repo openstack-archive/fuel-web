@@ -191,7 +191,7 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
                 });
             });
         },
-        initialize: function(options) {
+        initialize: function() {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
                 this.model.on('change:status', function() {
@@ -316,14 +316,14 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
                 this.model.get('assigned_networks').remove(this.screen.draggedNetworks);
             }
         },
-        dragStop: function(event, ui) {
+        dragStop: function(event) {
             if (event.type == 'sortreceive') {
                 this.model.get('assigned_networks').add(this.screen.draggedNetworks);
             }
             this.render();
             this.screen.draggedNetworks = null;
         },
-        updateDropTarget: function(event) {
+        updateDropTarget: function() {
             this.screen.dropTarget = this;
         },
         checkIfEmpty: function() {

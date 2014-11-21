@@ -13,12 +13,8 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(
-[
-    'utils',
-    'models'
-],
-function(utils, models) {
+define(['backbone'],
+function(Backbone) {
     'use strict';
 
     var views = {};

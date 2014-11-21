@@ -112,7 +112,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
                 node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
             }
         },
-        actualizeFilteredNode: function(node, options) {
+        actualizeFilteredNode: function(node) {
             var filteredNode = this.nodeList.filteredNodes.get(node.id);
             if (filteredNode) {
                 filteredNode.set(node.attributes);
@@ -188,7 +188,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
                 },
                 '.btn-clear-filter': {
                     observe: 'value',
-                    visible: function(value, options) {
+                    visible: function(value) {
                         return !!value;
                     }
                 }
@@ -241,7 +241,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
                     node.set({cluster_id: null, pending_addition: false});
                 }
             }, this);
-            nodes.toJSON = function(options) {
+            nodes.toJSON = function() {
                 return this.map(function(node) {
                     return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition');
                 });
@@ -506,7 +506,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
                 attributes: [{
                     name: 'class',
                     observe: 'checked',
-                    onGet: function(value, options) {
+                    onGet: function(value) {
                         return value ? 'node checked' : 'node';
                     }
                 }]
@@ -540,7 +540,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
                 attributes: [{
                     name: 'class',
                     observe: 'status',
-                    onGet: function(value, options) {
+                    onGet: function(value) {
                         var progressBarClass = value == 'deploying' ? 'progress-success' : value == 'provisioning' ? '' : 'hide';
                         return 'progress ' + progressBarClass;
                     }
@@ -603,11 +603,11 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
         defineNodeViewStatus: function() {
             return !this.node.get('online') ? 'offline' : this.node.get('pending_addition') ? 'pending_addition' : this.node.get('pending_deletion') ? 'pending_deletion' : this.node.get('status');
         },
-        formatNodePanelClass: function(value, options) {
+        formatNodePanelClass: function() {
             var nodeClass = this.node.get('pending_deletion') ? 'node-delete' : this.node.get('pending_addition') ? 'node-new' : this.node.get('online') ? this.node.get('status') : 'node-offline';
             return 'node-box ' + nodeClass + (this.node.get('disabled') ? ' disabled' : '');
         },
-        formatStatusIconClass: function(value, options) {
+        formatStatusIconClass: function() {
             var icons = {
                 offline: 'icon-block',
                 pending_addition: 'icon-ok-circle-empty',
@@ -619,7 +619,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
             };
             return icons[this.defineNodeViewStatus()] || '';
         },
-        formatStatusBlockClass: function(value, options) {
+        formatStatusBlockClass: function() {
             var classes = {
                 offline: 'msg-offline',
                 pending_addition: 'msg-ok',
@@ -633,7 +633,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
             };
             return 'node-status ' + classes[this.defineNodeViewStatus()];
         },
-        formatStatusLabel: function(value) {
+        formatStatusLabel: function() {
             var operatingSystem;
             try {
                 operatingSystem = this.node.collection.cluster.get('release').get('operating_system');
@@ -655,15 +655,15 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
         hasChanges: function() {
             return this.node.get('pending_addition') || this.node.get('pending_deletion') || (this.node.get('pending_roles') && this.node.get('pending_roles').length);
         },
-        formatNodeButtonClass: function(value, options) {
+        formatNodeButtonClass: function() {
             var btnClass = this.node.get('pending_addition') ? 'addition' : this.node.get('pending_deletion') ? 'deletion' : 'role-changes';
             return this.hasChanges() && !(this.screen instanceof this.screen.EditNodesScreen) ? 'btn btn-link btn-discard-node-changes btn-discard-' + btnClass : 'btn btn-link btn-view-logs';
         },
-        formatNodeButtonTitle: function(value, options) {
+        formatNodeButtonTitle: function() {
             var title = this.node.get('pending_addition') ? $.t('cluster_page.nodes_tab.node.status.discard_addition') : this.node.get('pending_deletion') ? $.t('cluster_page.nodes_tab.node.status.discard_deletion') : $.t('cluster_page.nodes_tab.node.status.discard_role_changes');
             return this.hasChanges() && !(this.screen instanceof this.screen.EditNodesScreen) ? title : $.t('cluster_page.nodes_tab.node.status.view_logs');
         },
-        formatNodeButtonIcon: function(value, options) {
+        formatNodeButtonIcon: function() {
             return this.hasChanges() && !(this.screen instanceof this.screen.EditNodesScreen) ? 'icon-back-in-time' : 'icon-logs';
         },
         calculateNodeState: function() {
@@ -763,7 +763,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
             _.defaults(this, options);
             this.screen = this.group.nodeList.screen;
             this.eventNamespace = 'click.editnodename' + this.node.id;
-            this.node.on('change:checked', function(node, checked, options) {
+            this.node.on('change:checked', function(node, checked) {
                 this.screen.nodes.get(node.id).set('checked', checked);
             }, this);
             this.node.on('change:status', this.calculateNodeState, this);

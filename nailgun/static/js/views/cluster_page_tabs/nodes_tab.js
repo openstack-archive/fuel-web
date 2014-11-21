@@ -15,6 +15,7 @@
 **/
 define(
 [
+    'underscore',
     'utils',
     'models',
     'views/common',
@@ -22,9 +23,10 @@ define(
     'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
+    //'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function(_, utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
     var NodesTab;
 
@@ -36,6 +38,8 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
             return this.screen && _.result(this.screen, 'hasChanges');
         },
         changeScreen: function(NewScreenView, screenOptions) {
+            var jsxViews = [EditNodeInterfacesScreen];
+
             var options = _.extend({model: this.model, tab: this, screenOptions: screenOptions || []});
             if (this.screen) {
                 if (this.screen.keepScrollPosition) {
@@ -44,18 +48,27 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
                 this.screen.$el.fadeOut('fast', _.bind(function() {
                     this.screen.tearDown();
                     this.screen = new NewScreenView(options);
-                    this.screen.render();
-                    this.screen.$el.hide().fadeIn('fast');
-                    this.$el.html(this.screen.el);
-                    if (this.screen.keepScrollPosition && this.scrollPositions[this.screen.constructorName]) {
-                        $(window).scrollTop(this.scrollPositions[this.screen.constructorName]);
+                    if(_.contains(jsxViews, NewScreenView)) {
+                        utils.universalMount(this.screen, this.$el);
+                    } else {
+                        this.screen.render();
+                        this.screen.$el.hide().fadeIn('fast');
+                        this.$el.html(this.screen.el);
+                        if (this.screen.keepScrollPosition && this.scrollPositions[this.screen.constructorName]) {
+                            $(window).scrollTop(this.scrollPositions[this.screen.constructorName]);
+                        }
+                        this.registerSubView(this.screen);
                     }
-                    this.registerSubView(this.screen);
                 }, this));
             } else {
                 this.screen = new NewScreenView(options);
-                this.$el.html(this.screen.render().el);
-                this.registerSubView(this.screen);
+
+                if(_.contains(jsxViews, NewScreenView)) {
+                    utils.universalMount(this.screen, this.$el);
+                } else {
+                    this.$el.html(this.screen.render().el);
+                    this.registerSubView(this.screen);
+                }
             }
         },
         initialize: function(options) {

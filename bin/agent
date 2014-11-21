@@ -531,7 +531,13 @@ def write_data_to_file(logger, filename, data)
 end
 
 logger = Logger.new(STDOUT)
-logger.level = Logger::DEBUG
+
+if File.exist?('/etc/nailgun_uid')
+  logger.level = Logger::INFO
+else
+  logger.level = Logger::DEBUG
+end
+
 
 if File.exist?('/var/run/nodiscover')
   logger.info("Discover prevented by /var/run/nodiscover presence.")

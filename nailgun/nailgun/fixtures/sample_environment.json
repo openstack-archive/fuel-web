@@ -322,6 +322,72 @@
                         "max_speed": 100,
                         "name": "eth1",
                         "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:bb",
+                        "max_speed": 100,
+                        "name": "eth2",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:bc",
+                        "max_speed": 100,
+                        "name": "eth3",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:bd",
+                        "max_speed": 100,
+                        "name": "eth4",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:be",
+                        "max_speed": 100,
+                        "name": "eth5",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:bf",
+                        "max_speed": 100,
+                        "name": "eth6",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:c0",
+                        "max_speed": 100,
+                        "name": "eth7",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:c1",
+                        "max_speed": 100,
+                        "name": "eth8",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:c2",
+                        "max_speed": 100,
+                        "name": "eth9",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:c3",
+                        "max_speed": 100,
+                        "name": "eth10",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:c4",
+                        "max_speed": 100,
+                        "name": "eth11",
+                        "current_speed": 20
+                    },
+                    {
+                        "mac": "54:78:ea:05:17:c5",
+                        "max_speed": 100,
+                        "name": "eth12",
+                        "current_speed": 20
                     }
                 ],
                 "disks": [

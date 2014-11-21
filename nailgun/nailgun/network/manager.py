@@ -39,6 +39,7 @@ from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.network import utils
 from nailgun.utils.zabbix import ZabbixManager
 
 
@@ -641,7 +642,7 @@ class NetworkManager(object):
         for interface in node.meta["interfaces"]:
             # try to get interface by mac address
             interface_db = next((
-                n for n in node.nic_interfaces if n.mac == interface['mac']),
+                n for n in node.nic_interfaces if utils.is_same_mac(n.mac, interface['mac'])),
                 None)
 
             # try to get interface instance by interface name. this protects
@@ -682,7 +683,7 @@ class NetworkManager(object):
                 # Interface was founded
                 admin_interface = interface
                 break
-            elif interface['mac'].lower() == node.mac:
+            elif utils.is_same_mac(interface['mac'], node.mac):
                 admin_interface = interface
                 break
 
@@ -737,7 +738,7 @@ class NetworkManager(object):
     @classmethod
     def __delete_not_found_interfaces(cls, node, interfaces):
         interfaces_mac_addresses = map(
-            lambda interface: interface['mac'], interfaces)
+            lambda interface: interface['mac'].lower(), interfaces)
 
         interfaces_to_delete = db().query(NodeNICInterface).filter(
             NodeNICInterface.node_id == node.id

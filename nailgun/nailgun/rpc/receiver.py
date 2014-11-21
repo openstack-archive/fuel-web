@@ -33,6 +33,7 @@ from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.logger import logger
+from nailgun.network import utils as net_utils
 from nailgun.openstack.common import jsonutils
 from nailgun.task.helpers import TaskHelper
 
@@ -919,7 +920,8 @@ class NailgunReceiver(object):
         for node in nodes:
             if node['status'] == 'ready':
                 for row in node.get('data', []):
-                    if row['mac'] != master_network_mac:
+                    if not net_utils.is_same_mac(row['mac'],
+                                                 master_network_mac):
                         node_db = nodes_map.get(node['uid'])
                         if node_db:
                             row['node_name'] = node_db.name

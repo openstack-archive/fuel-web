@@ -169,6 +169,69 @@ class TestHandlers(BaseIntegrationTest):
             for conn in ('assigned_networks', ):
                 self.assertEqual(resp_nic[conn], [])
 
+    def test_nic_mac_swap(self):
+        mac_eth0 = '00:11:22:dd:ee:ff'
+        mac_eth1 = 'aa:bb:cc:33:44:55'
+
+        eth0 = {
+            'name': 'eth0',
+            'mac': mac_eth0,
+            'current_speed': 1,
+            'state': 'up'
+        }
+
+        eth1 = {
+            'name': 'eth1',
+            'mac': mac_eth1,
+            'current_speed': 1,
+            'state': 'up'
+        }
+
+        # prepare metadata with our interfaces
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [eth0, eth1])
+
+        # NOTE(prmtl) hack to have all mac set as we want
+        # crete_node() will generate random mac for 1st iface
+        # if we will not set it like that
+        node_mac = meta['interfaces'][0]['mac']
+        node = self.env.create_node(api=True, meta=meta, mac=node_mac)
+        self.env.create_cluster(api=True, nodes=[node['id']])
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        original_nic_info = resp.json
+
+        # swap macs, make them uppercase to check that we handle that correctly
+        eth0['mac'], eth1['mac'] = eth1['mac'].upper(), eth0['mac'].upper()
+
+        # update nodes with swapped macs
+        new_meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(new_meta, [eth0, eth1])
+        node_data = {'mac': node['mac'], 'meta': new_meta}
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps(node_data),
+            headers=self.default_headers)
+
+        # check that networks are assigned to the same interfaces
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        updated_nic_info = resp.json
+
+        for orig_iface in original_nic_info:
+            updated_iface = next(
+                iface for iface in updated_nic_info
+                if iface['mac'] == orig_iface['mac'])
+
+            self.assertEqual(
+                orig_iface['assigned_networks'],
+                orig_iface['assigned_networks'])
+            # nic names were swapped
+            self.assertNotEqual(orig_iface['name'], updated_iface['name'])
+
     def test_NIC_updates_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [

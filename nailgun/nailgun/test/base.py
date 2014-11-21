@@ -438,6 +438,37 @@ class Environment(object):
         return self.read_fixtures(
             ['openstack'])[0]['fields']['attributes_metadata']
 
+    def get_default_plugin_env_config(self, **kwargs):
+        return {
+            'attributes': {
+                '{0}_text'.format(kwargs.get('plugin_name', 'plugin_name')): {
+                    'value': kwargs.get('value', 'value'),
+                    'type': kwargs.get('type', 'type'),
+                    'description': kwargs.get('description', 'description'),
+                    'weight': kwargs.get('weight', 25),
+                    'label': kwargs.get('label', 'label')}}}
+
+    def get_default_plugin_metadata(self, **kwargs):
+        sample_plugin = {
+            'version': '0.1.0',
+            'name': 'testing_plugin',
+            'title': 'Test plugin',
+            'package_version': '1.0.0',
+            'description': 'Enable to use plugin X for Neutron',
+            'fuel_version': ['6.0'],
+            'releases': [
+                {'repository_path': 'repositories/ubuntu',
+                 'version': '2014.2-6.0', 'os': 'ubuntu',
+                 'mode': ['ha', 'multinode'],
+                 'deployment_scripts_path': 'deployment_scripts/'},
+                {'repository_path': 'repositories/centos',
+                 'version': '2014.2-6.0', 'os': 'centos',
+                 'mode': ['ha', 'multinode'],
+                 'deployment_scripts_path': 'deployment_scripts/'}]}
+
+        sample_plugin.update(kwargs)
+        return sample_plugin
+
     def upload_fixtures(self, fxtr_names):
         for fxtr_path in self.fxtr_paths_by_names(fxtr_names):
             with open(fxtr_path, "r") as fxtr_file:

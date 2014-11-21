@@ -32,33 +32,6 @@ def get_config(config):
 
 class BasePluginTest(base.BaseIntegrationTest):
 
-    SAMPLE_PLUGIN = {
-        'version': '1.1.0',
-        'name': 'testing',
-        'title': 'Test plugin',
-        'package_version': '1.0.0',
-        'description': 'Enable to use plugin X for Neutron',
-        'fuel_version': ["6.0"],
-        'releases': [
-            {'repository_path': 'repositories/ubuntu',
-             'version': '2014.2-6.0',
-             'os': 'ubuntu',
-             'mode': ['ha_compact', 'multinode'],
-             'deployment_scripts_path': 'deployment_scripts/'},
-            {'repository_path': 'repositories/centos',
-             'version': '2014.2-6.0', 'os': 'centos',
-             'mode': ['ha', 'multinode'],
-             'deployment_scripts_path': 'deployment_scripts/'}]}
-
-    ENVIRONMENT_CONFIG = {
-        'attributes': {
-            'lbaas_simple_text': {
-                'value': 'Set default value',
-                'type': 'text',
-                'description': 'Description for text field',
-                'weight': 25,
-                'label': 'Text field'}}}
-
     TASKS_CONFIG = [
         {'priority': 10,
          'role': ['controller'],
@@ -71,8 +44,13 @@ class BasePluginTest(base.BaseIntegrationTest):
          'parameters': {'cmd': 'echo all > /tmp/plugin.all', 'timeout': 42},
          'stage': 'pre_deployment'}]
 
+    def setUp(self):
+        super(BasePluginTest, self).setUp()
+        self.sample_plugin = self.env.get_default_plugin_metadata()
+        self.plugin_env_config = self.env.get_default_plugin_env_config()
+
     def create_plugin(self, sample=None, expect_errors=False):
-        sample = sample or self.SAMPLE_PLUGIN
+        sample = sample or self.sample_plugin
         resp = self.app.post(
             base.reverse('PluginCollectionHandler'),
             jsonutils.dumps(sample),
@@ -95,7 +73,7 @@ class BasePluginTest(base.BaseIntegrationTest):
                             create=True) as f_m:
                 os.access.return_value = True
                 os.path.exists.return_value = True
-                f_m.side_effect = get_config(self.ENVIRONMENT_CONFIG)
+                f_m.side_effect = get_config(self.plugin_env_config)
                 self.env.create(
                     release_kwargs={'version': '2014.2-6.0',
                                     'operating_system': 'Ubuntu'},
@@ -163,7 +141,7 @@ class TestPluginsApi(BasePluginTest):
     def test_env_create_and_load_env_config(self):
         self.create_plugin()
         cluster = self.create_cluster()
-        self.assertIn(self.SAMPLE_PLUGIN['name'], cluster.attributes.editable)
+        self.assertIn(self.sample_plugin['name'], cluster.attributes.editable)
 
     def test_enable_disable_plugin(self):
         resp = self.create_plugin()
@@ -201,7 +179,29 @@ class TestPluginsApi(BasePluginTest):
         self.create_plugin()
         cluster = self.create_cluster()
         default_attributes = self.default_attributes(cluster)
-        self.assertIn(self.SAMPLE_PLUGIN['name'], default_attributes)
+        self.assertIn(self.sample_plugin['name'], default_attributes)
+
+    def test_plugins_multiversioning(self):
+        def create_with_version(version):
+            self.create_plugin(sample=self.env.get_default_plugin_metadata(
+                name='multiversion_plugin', version=version))
+
+        for version in ['1.0.0', '2.0.0', '0.0.1']:
+            create_with_version(version)
+
+        cluster = self.create_cluster()
+        # Create new plugin after environment is created
+        create_with_version('5.0.0')
+
+        self.enable_plugin(cluster, 'multiversion_plugin')
+        self.assertEqual(len(cluster.plugins), 1)
+        enabled_plugin = cluster.plugins[0]
+        # Should be enabled the newest plugin,
+        # at the moment of environment creation
+        self.assertEqual(enabled_plugin.version, '2.0.0')
+
+        resp = self.disable_plugin(cluster, 'multiversion_plugin')
+        self.assertEqual(len(cluster.plugins), 0)
 
 
 class TestPrePostHooks(BasePluginTest):
@@ -214,7 +214,7 @@ class TestPrePostHooks(BasePluginTest):
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True}])
-        self.enable_plugin(self.cluster, self.SAMPLE_PLUGIN['name'])
+        self.enable_plugin(self.cluster, self.sample_plugin['name'])
 
     def test_generate_pre_hooks(self):
         tasks = self.get_pre_hooks(self.cluster).json

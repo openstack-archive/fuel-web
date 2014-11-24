@@ -67,7 +67,8 @@ cloud-init-per instance set_limits echo -e "* soft core unlimited\n* hard core u
 #cloud-init-per instance dhclient echo 'supersede routers 0;' | tee /etc/dhcp/dhclient.conf
 
 # ntp sync
-cloud-init-per instance service ntp stop | tee /dev/null
+# '| tee /dev/null' is needed for returning zero execution code always
+cloud-init-per instance stop_ntpd service ntpd stop | tee /dev/null
 cloud-init-per instance sync_date ntpdate -t 4 -b {{ common.master_ip }}
 cloud-init-per instance sync_hwclock hwclock --systohc
 
@@ -83,6 +84,7 @@ cloud-init-per instance edit_ntp_conf6 echo "server {{ common.master_ip }} burst
 cloud-init-per instance set_ntpdate sed -i 's/SYNC_HWCLOCK\s*=\s*no/SYNC_HWCLOCK=yes/' /etc/sysconfig/ntpdate
 cloud-init-per instance set_ntpd_0 chkconfig ntpd on
 cloud-init-per instance set_ntpd_1 chkconfig ntpdate on
+cloud-init-per instance start_ntpd service ntpd start
 
 cloud-init-per instance removeUseDNS sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config
 add_str_to_file_if_not_exists /etc/ssh/sshd_config 'UseDNS' 'UseDNS no'

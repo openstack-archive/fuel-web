@@ -210,7 +210,7 @@ class ConnectionMonitorMiddleware(object):
         }
         return additional_info
 
-    def _get_request_data(self, env, request_body):
+    def _get_request_data(self, env):
         request_data = {
             'http_method': env['REQUEST_METHOD'],
             'url': env['PATH_INFO'],

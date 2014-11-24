@@ -228,7 +228,7 @@ class TaskHelper(object):
         cls.add_required_for_update_nodes(
             cluster, nodes_to_deploy, set(update_required))
         if cluster.is_ha_mode:
-            return cls.__nodes_to_deploy_ha(cluster, nodes_to_deploy)
+            return cls.nodes_to_deploy_ha(cluster, nodes_to_deploy)
 
         return nodes_to_deploy
 
@@ -279,12 +279,12 @@ class TaskHelper(object):
         )
 
         if cluster.is_ha_mode:
-            return cls.__nodes_to_deploy_ha(cluster, nodes_to_upgrade)
+            return cls.nodes_to_deploy_ha(cluster, nodes_to_upgrade)
 
         return sorted(nodes_to_upgrade, key=lambda n: n.id)
 
     @classmethod
-    def __nodes_to_deploy_ha(cls, cluster, nodes):
+    def nodes_to_deploy_ha(cls, cluster, nodes):
         """Get nodes for deployment for ha mode
         * in case of failed controller should be redeployed
           all controllers

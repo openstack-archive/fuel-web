@@ -723,7 +723,7 @@ DUMP:
       - type: dir
         path: /var/run/pcap_dir
       - type: file
-        path: /var/log/atop/atop*
+        path: /var/log/atop/atop_current
       - type: command
         command: df -h
         to_file: df.txt

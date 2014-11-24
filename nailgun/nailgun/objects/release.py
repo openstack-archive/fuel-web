@@ -24,6 +24,8 @@ from sqlalchemy import not_
 
 from nailgun import consts
 
+from nailgun.objects.serializers.release import \
+    ReleaseOrchestratorDataSerializer
 from nailgun.objects.serializers.release import ReleaseSerializer
 
 from nailgun.db import db
@@ -42,6 +44,9 @@ class ReleaseOrchestratorData(NailgunObject):
 
     #: SQLAlchemy model
     model = models.ReleaseOrchestratorData
+
+    #: Serializer for ReleaseOrchestratorData
+    serializer = ReleaseOrchestratorDataSerializer
 
     #: JSON schema
     schema = {
@@ -220,41 +225,16 @@ class Release(NailgunObject):
 
     @classmethod
     def update_orchestrator_data(cls, instance, orchestrator_data):
-        for k in ["id", "release_id"]:
-            orchestrator_data.pop(k, None)
-        if orchestrator_data:
-            if instance.orchestrator_data:
-                ReleaseOrchestratorData.update(
-                    instance.orchestrator_data, orchestrator_data)
-            else:
-                orchestrator_data["release_id"] = instance.id
-                ReleaseOrchestratorData.create(orchestrator_data)
+        orchestrator_data.pop("id", None)
+        orchestrator_data["release_id"] = instance.id
+
+        ReleaseOrchestratorData.update(
+            instance.orchestrator_data, orchestrator_data)
 
     @classmethod
     def get_orchestrator_data_dict(cls, instance):
-        os = instance.operating_system.lower()
-        default_orchestrator_data = {
-            "repo_metadata": {
-                "nailgun":
-                settings.DEFAULT_REPO[os].format(
-                    MASTER_IP=settings.MASTER_IP),
-            },
-            "puppet_modules_source":
-            settings.DEFAULT_PUPPET['modules'].format(
-                MASTER_IP=settings.MASTER_IP),
-            "puppet_manifests_source":
-            settings.DEFAULT_PUPPET['manifests'].format(
-                MASTER_IP=settings.MASTER_IP),
-        }
-
-        return {
-            "repo_metadata":
-            instance.orchestrator_data.repo_metadata,
-            "puppet_modules_source":
-            instance.orchestrator_data.puppet_modules_source,
-            "puppet_manifests_source":
-            instance.orchestrator_data.puppet_manifests_source
-        } if instance.orchestrator_data else default_orchestrator_data
+        data = instance.orchestrator_data
+        return ReleaseOrchestratorData.serializer.serialize(data)
 
     @classmethod
     def is_deployable(cls, instance):

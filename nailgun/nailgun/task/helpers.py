@@ -17,6 +17,7 @@
 import datetime
 import os
 import shutil
+import six
 
 import web
 
@@ -29,11 +30,13 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects import ActionLog
 from nailgun.settings import settings
 from nailgun.statistics.params_white_lists import task_output_white_list
 
 
 tasks_names_actions_groups_mapping = {
+    consts.TASK_NAMES.deploy: "cluster_changes",
     consts.TASK_NAMES.deployment: "cluster_changes",
     consts.TASK_NAMES.provision: "cluster_changes",
     consts.TASK_NAMES.node_deletion: "cluster_changes",
@@ -406,3 +409,30 @@ class TaskHelper(object):
             return None
         white_list = task_output_white_list[al.action_name]
         return sanitize_sub_tree(task_output, white_list)
+
+    @classmethod
+    def create_action_log(cls, task):
+        try:
+            create_kwargs = cls.prepare_action_log_kwargs(task)
+            return ActionLog.create(create_kwargs)
+        except Exception as e:
+            logger.error("create_action_log failed: %s", six.text_type(e))
+
+    @classmethod
+    def update_action_log(cls, task, al_instance=None):
+        try:
+            if not al_instance:
+                al_instance = ActionLog.get_by_task_uuid(task.uuid)
+            if al_instance:
+                update_data = {
+                    "end_timestamp": datetime.datetime.utcnow(),
+                    "additional_info": {
+                        "ended_with_status": task.status,
+                        "message": task.message,
+                        "output": cls.sanitize_task_output(task.cache,
+                                                           al_instance)
+                    }
+                }
+                ActionLog.update(al_instance, update_data)
+        except Exception as e:
+            logger.error("update_action_log failed: %s", six.text_type(e))

@@ -131,6 +131,7 @@ class Task(NailgunObject):
                         lambda s: s.message is not None, subtasks)))
 
                 cls.update(instance, data)
+                TaskHelper.update_action_log(instance)
 
             elif any(map(lambda s: s.status in ('error',), subtasks)):
                 for subtask in subtasks:
@@ -150,6 +151,8 @@ class Task(NailgunObject):
                         ), subtasks)))))
 
                 cls.update(instance, data)
+                TaskHelper.update_action_log(instance)
+
             else:
                 subtasks_with_progress = filter(
                     lambda s: s.progress is not None,

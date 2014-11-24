@@ -37,6 +37,8 @@ from webtest import app
 import nailgun
 from nailgun.api.v1.urls import urls
 
+from nailgun import consts
+
 from nailgun.db import db
 from nailgun.db import flush
 from nailgun.db import syncdb
@@ -590,6 +592,48 @@ class Environment(object):
         else:
             raise NotImplementedError(
                 "Nothing to reset - try creating cluster"
+            )
+
+    def delete_environment(self, expect_http=202):
+        if self.clusters:
+            resp = self.app.delete(
+                reverse(
+                    'ClusterHandler',
+                    kwargs={'obj_id': self.clusters[0].id}),
+                expect_errors=True,
+                headers=self.default_headers)
+            self.tester.assertEqual(resp.status_code, expect_http)
+            if not str(expect_http).startswith("2"):
+                return resp.body
+            return self.db.query(Task).filter_by(
+                name=consts.TASK_NAMES.cluster_deletion
+            ).first()
+        else:
+            raise NotImplementedError(
+                "Nothing to delete - try creating cluster"
+            )
+
+    def update_environment(self, pending_release_id=None, expect_http=202):
+        if self.clusters:
+            if not pending_release_id:
+                pending_release_id = self.clusters[0].release_id
+            self.clusters[0].pending_release_id = pending_release_id
+            self.db.commit()
+            resp = self.app.put(
+                reverse(
+                    'ClusterUpdateHandler',
+                    kwargs={'cluster_id': self.clusters[0].id}),
+                expect_errors=True,
+                headers=self.default_headers)
+            self.tester.assertEqual(expect_http, resp.status_code)
+            if not str(expect_http).startswith("2"):
+                return resp.body
+            return self.db.query(Task).filter_by(
+                name=consts.TASK_NAMES.update
+            ).first()
+        else:
+            raise NotImplementedError(
+                "Nothing to update - try creating cluster"
             )
 
     def launch_verify_networks(self, data=None):

@@ -46,13 +46,15 @@ from nailgun.task.helpers import TaskHelper
 from nailgun.utils.zabbix import ZabbixManager
 
 
-def make_astute_message(method, respond_to, args):
-    return {
+def make_astute_message(task, method, respond_to, args):
+    message = {
         'api_version': settings.VERSION['api'],
         'method': method,
         'respond_to': respond_to,
         'args': args
     }
+    task.cache = message
+    return message
 
 
 def fake_cast(queue, messages, **kwargs):
@@ -146,9 +148,9 @@ class DeploymentTask(object):
         # After serialization set pending_addition to False
         for node in nodes:
             node.pending_addition = False
-        db().commit()
 
-        return make_astute_message(
+        rpc_message = make_astute_message(
+            task,
             'deploy',
             'deploy_resp',
             {
@@ -158,6 +160,8 @@ class DeploymentTask(object):
                 'post_deployment': post_deployment
             }
         )
+        db().commit()
+        return rpc_message
 
 
 class UpdateTask(object):
@@ -180,9 +184,9 @@ class UpdateTask(object):
         # After serialization set pending_addition to False
         for node in nodes:
             node.pending_addition = False
-        db().commit()
 
-        return make_astute_message(
+        rpc_message = make_astute_message(
+            task,
             'deploy',
             'deploy_resp',
             {
@@ -190,6 +194,8 @@ class UpdateTask(object):
                 'deployment_info': serialized_cluster
             }
         )
+        db().commit()
+        return rpc_message
 
 
 class ProvisionTask(object):
@@ -215,9 +221,9 @@ class ProvisionTask(object):
             ).get_admin_network_group_id(node.id)
 
             TaskHelper.prepare_syslog_dir(node, admin_net_id)
-        db().commit()
 
-        return make_astute_message(
+        rpc_message = make_astute_message(
+            task,
             'provision',
             'provision_resp',
             {
@@ -225,6 +231,8 @@ class ProvisionTask(object):
                 'provisioning_info': serialized_cluster
             }
         )
+        db().commit()
+        return rpc_message
 
 
 class DeletionTask(object):
@@ -318,9 +326,9 @@ class DeletionTask(object):
                 db().delete(node_db)
                 db().flush()
                 nodes_to_delete.remove(node)
-        db().commit()
 
         msg_delete = make_astute_message(
+            task,
             'remove_nodes',
             respond_to,
             {
@@ -334,6 +342,7 @@ class DeletionTask(object):
                 }
             }
         )
+        db().commit()
         # only fake tasks
         if USE_FAKE and nodes_to_restore:
             msg_delete['args']['nodes_to_restore'] = nodes_to_restore
@@ -351,7 +360,8 @@ class StopDeploymentTask(object):
         ).filter(
             not_(Node.status == 'ready')
         ).yield_per(100)
-        return make_astute_message(
+        rpc_message = make_astute_message(
+            task,
             "stop_deploy_task",
             "stop_deployment_resp",
             {
@@ -375,6 +385,8 @@ class StopDeploymentTask(object):
                 }
             }
         )
+        db().commit()
+        return rpc_message
 
     @classmethod
     def execute(cls, task, deploy_task, provision_task):
@@ -399,7 +411,8 @@ class ResetEnvironmentTask(object):
         nodes_to_reset = db().query(Node).filter(
             Node.cluster_id == task.cluster.id
         ).yield_per(100)
-        return make_astute_message(
+        rpc_message = make_astute_message(
+            task,
             "reset_environment",
             "reset_environment_resp",
             {
@@ -419,6 +432,8 @@ class ResetEnvironmentTask(object):
                 }
             }
         )
+        db().commit()
+        return rpc_message
 
     @classmethod
     def execute(cls, task):
@@ -476,6 +491,7 @@ class BaseNetworkVerification(object):
     def get_message(self):
         nodes = self.get_message_body()
         message = make_astute_message(
+            self.task,
             self.task.name,
             '{0}_resp'.format(self.task.name),
             {
@@ -483,7 +499,6 @@ class BaseNetworkVerification(object):
                 'nodes': nodes
             }
         )
-        self.task.cache = message
         return message
 
     def execute(self, task=None):
@@ -776,6 +791,7 @@ class DumpTask(object):
     def execute(cls, task):
         logger.debug("DumpTask: task={0}".format(task.uuid))
         message = make_astute_message(
+            task,
             'dump_environment',
             'dump_environment_resp',
             {
@@ -783,8 +799,6 @@ class DumpTask(object):
                 'settings': cls.conf()
             }
         )
-        task.cache = message
-        db().add(task)
         db().commit()
         rpc.cast('naily', message)
 
@@ -835,5 +849,4 @@ class GenerateCapacityLogTask(object):
         task.result = {'log_id': capacity_log.id}
         task.status = 'ready'
         task.progress = '100'
-        db().add(task)
         db().commit()

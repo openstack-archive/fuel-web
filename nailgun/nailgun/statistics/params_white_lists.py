@@ -18,9 +18,10 @@ from nailgun import consts
 
 # "*" means any key name
 # "" means any value
-task_output_white_list = {
-    consts.TASK_NAMES.provision: {
+_task_output_white_list_template = {
+    "provision_template": {
         "method": "",
+        "respond_to": "",
         "api_version": "",
         "args": {
             "task_uuid": "",
@@ -75,8 +76,9 @@ task_output_white_list = {
             }
         }
     },
-    consts.TASK_NAMES.deployment: {
+    "deployment_template": {
         "method": "",
+        "respond_to": "",
         "api_version": "",
         "args": {
             "task_uuid": "",
@@ -248,5 +250,66 @@ task_output_white_list = {
                 "*": {}
             }
         }
+    },
+    "delete_template": {
+        "method": "",
+        "respond_to": "",
+        "api_version": "",
+        "args": {
+            "engine": {
+                "url": ""
+            },
+            "task_uuid": "",
+            "nodes": {
+                "id": "",
+                "uid": "",
+                "roles": ""
+            }
+        }
+    },
+    "dump_template": {
+        "method": "",
+        "respond_to": "",
+        "api_version": "",
+        "args": {
+            "task_uuid": "",
+            "settings": {
+                'timestamp': "",
+                'lastdump': "",
+                'target': "",
+                'dump': {
+                    '*': {
+                        'objects': {
+                            'type': "",
+                            'command': "",
+                            'path': "",
+                        },
+                        'hosts': {}
+                    }
+                }
+            }
+        }
     }
+}
+
+
+task_output_white_list = {
+    consts.TASK_NAMES.provision:
+    _task_output_white_list_template["provision_template"],
+    consts.TASK_NAMES.deployment:
+    _task_output_white_list_template["deployment_template"],
+    consts.TASK_NAMES.update:
+    _task_output_white_list_template["deployment_template"],
+
+    consts.TASK_NAMES.node_deletion:
+    _task_output_white_list_template["delete_template"],
+    consts.TASK_NAMES.cluster_deletion:
+    _task_output_white_list_template["delete_template"],
+    consts.TASK_NAMES.reset_environment:
+    _task_output_white_list_template["delete_template"],
+    consts.TASK_NAMES.stop_deployment:
+    _task_output_white_list_template["delete_template"],
+
+    consts.TASK_NAMES.dump:
+    _task_output_white_list_template["dump_template"],
 }

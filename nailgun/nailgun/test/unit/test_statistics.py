@@ -20,14 +20,17 @@ import requests
 
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import reverse
 
 from nailgun import consts
 from nailgun.objects import Cluster
 from nailgun.objects import ReleaseCollection
+from nailgun.objects import TaskCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
 from nailgun.statistics.params_white_lists import task_output_white_list
 from nailgun.statistics.statsenderd import StatsSender
+from nailgun.task.helpers import TaskHelper
 
 FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
 FEATURE_EXPERIMENTAL = {'feature_groups': ['experimental']}
@@ -360,6 +363,23 @@ class TestTasksLogging(BaseTestCase):
         else:
             self.assertEqual("", keys)
 
+    def check_task_name_and_sanitized_data(self, pos, logger, task_name):
+        log_args = logger.call_args_list
+        task = log_args[pos][0][0]
+        log_record = log_args[pos][0][1]
+        self.assertEqual(task.name, task_name)
+        self.check_keys_included(
+            task_output_white_list[task_name],
+            TaskHelper.sanitize_task_output(task.cache, log_record))
+
+    def wait_tasks_to_be_done(self):
+        def tasks_are_not_running():
+            return TaskCollection.filter_by(
+                None, status="running"
+            ).count() == 0
+
+        self.env.wait_for_true(tasks_are_not_running, timeout=15)
+
     @fake_tasks(god_mode=True)
     @patch('nailgun.task.manager.TaskManager.update_action_log')
     def test_deployment_task_logging(self, logger):
@@ -368,17 +388,99 @@ class TestTasksLogging(BaseTestCase):
                 {"pending_addition": True, "pending_roles": ["controller"]},
                 {"pending_addition": True, "pending_roles": ["cinder"]},
                 {"pending_addition": True, "pending_roles": ["compute"]},
+                {"pending_deletion": True, "pending_roles": ["compute"]},
             ]
         )
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, 15)
-        log_args = logger.call_args_list
-        self.assertGreaterEqual(len(log_args), 2)
-        provision_args = log_args[-2][0][1]
-        deployment_args = log_args[-1][0][1]
-        self.check_keys_included(
-            task_output_white_list[consts.TASK_NAMES.provision],
-            provision_args)
-        self.check_keys_included(
-            task_output_white_list[consts.TASK_NAMES.deployment],
-            deployment_args)
+
+        self.assertGreaterEqual(len(logger.call_args_list), 3)
+        self.check_task_name_and_sanitized_data(
+            -3, logger, consts.TASK_NAMES.node_deletion)
+        self.check_task_name_and_sanitized_data(
+            -2, logger, consts.TASK_NAMES.provision)
+        self.check_task_name_and_sanitized_data(
+            -1, logger, consts.TASK_NAMES.deployment)
+        self.wait_tasks_to_be_done()
+
+    @fake_tasks(god_mode=True)
+    @patch('nailgun.task.manager.TaskManager.update_action_log')
+    def test_delete_task_logging(self, logger):
+        self.env.create(
+            nodes_kwargs=[
+                {"roles": ["controller"]},
+                {"roles": ["cinder"]},
+                {"roles": ["compute"]},
+            ]
+        )
+        self.env.delete_environment()
+
+        self.assertGreaterEqual(len(logger.call_args_list), 1)
+        self.check_task_name_and_sanitized_data(
+            -1, logger, consts.TASK_NAMES.cluster_deletion)
+        self.wait_tasks_to_be_done()
+
+    @fake_tasks(god_mode=True)
+    @patch('nailgun.task.manager.TaskManager.update_action_log')
+    def test_reset_task_logging(self, logger):
+        self.env.create(
+            nodes_kwargs=[
+                {"roles": ["controller"]},
+                {"roles": ["cinder"]},
+                {"roles": ["compute"]},
+            ]
+        )
+        self.env.reset_environment()
+
+        self.assertGreaterEqual(len(logger.call_args_list), 1)
+        self.check_task_name_and_sanitized_data(
+            -1, logger, consts.TASK_NAMES.reset_environment)
+        self.wait_tasks_to_be_done()
+
+    @fake_tasks(god_mode=True, recover_nodes=False)
+    @patch('nailgun.task.manager.TaskManager.update_action_log')
+    def test_stop_task_logging(self, logger):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ["controller"]},
+                {"pending_addition": True, "pending_roles": ["cinder"]},
+                {"pending_addition": True, "pending_roles": ["compute"]},
+            ]
+        )
+        self.env.launch_deployment()
+        self.env.stop_deployment()
+
+        self.assertGreaterEqual(len(logger.call_args_list), 1)
+        self.check_task_name_and_sanitized_data(
+            -1, logger, consts.TASK_NAMES.stop_deployment)
+        self.wait_tasks_to_be_done()
+
+    @fake_tasks(god_mode=True)
+    @patch('nailgun.task.manager.TaskManager.update_action_log')
+    def test_update_task_logging(self, logger):
+        self.env.create(
+            nodes_kwargs=[
+                {"roles": ["controller"], "status": "ready"},
+                {"roles": ["cinder"], "status": "ready"},
+                {"roles": ["compute"], "status": "ready"},
+            ]
+        )
+        self.env.update_environment()
+
+        self.assertGreaterEqual(len(logger.call_args_list), 1)
+        self.check_task_name_and_sanitized_data(
+            -1, logger, consts.TASK_NAMES.update)
+        self.wait_tasks_to_be_done()
+
+    @fake_tasks(god_mode=True)
+    @patch('nailgun.task.manager.TaskManager.update_action_log')
+    def test_dump_task_logging(self, logger):
+        resp = self.app.put(
+            reverse('LogPackageHandler'), "[]", headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 202)
+
+        self.assertGreaterEqual(len(logger.call_args_list), 1)
+        self.check_task_name_and_sanitized_data(
+            -1, logger, consts.TASK_NAMES.dump)
+        self.wait_tasks_to_be_done()

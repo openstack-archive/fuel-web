@@ -91,7 +91,9 @@ class Release(Base):
 
     @property
     def roles(self):
-        return [role.name for role in self.role_list]
+        #NOTE(dshulyak) primary is internal fuel thing, should not be
+        #present in api responses
+        return [role.name for role in self.role_list if not role.primary]
 
     @roles.setter
     def roles(self, new_roles):

@@ -42,6 +42,8 @@ from nailgun.utils import dict_merge
 from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
+from sqlalchemy import or_
+
 
 class Attributes(NailgunObject):
     """Cluster attributes object
@@ -531,6 +533,59 @@ class Cluster(NailgunObject):
         if not assignment or assignment['assign_to_all_nodes']['value']:
             return True
         return False
+
+    @classmethod
+    def set_primary_role(cls, instance, nodes, role):
+        """Idempotently set primary role of a given type for cluster
+        - if there is already primary role of certain type, do not add
+          one more
+        - if primary assigned to pending_roles - it means deployment info
+          was requested from cli, without invocation of deployment itself
+        - if primary assigned to roles - cluster was deployed
+        - if node with primary role was deleted - new one will be picked up,
+          if there is one with ready status - we should prefer it to others
+
+        :param instance: Cluster db object
+        :param nodes: list of Node db objects
+        :param role: string with role name
+        """
+        all_roles = instance.release.role_list
+        primary = next(r for r in all_roles if r.name == role and r.primary)
+        non_primary = next(r for r in all_roles
+                           if r.name == role and not r.primary)
+        node = db().query(models.Node).filter(or_(
+            models.Node.role_list.contains(primary),
+            models.Node.pending_role_list.contains(primary))).first()
+        if node is None:
+            nodes = sorted(
+                (n for n in nodes if non_primary in n.role_list
+                 or non_primary in n.pending_role_list),
+                key=lambda node: node.id)
+            if nodes:
+                ready = None
+                for node in nodes:
+                    if node.status is consts.NODE_STATUSES.ready:
+                        ready = node
+                        break
+                primary_node = ready if ready else nodes[0]
+                if non_primary in primary_node.role_list:
+                    primary_node.role_list.remove(non_primary)
+                    primary_node.role_list.append(primary)
+                elif non_primary in primary_node.pending_role_list:
+                    primary_node.pending_role_list.remove(non_primary)
+                    primary_node.pending_role_list.append(primary)
+
+    @classmethod
+    def set_primary_roles(cls, instance, nodes):
+        """Set primary roles for all required nodes in cluster
+        Method should be indempotent. It means if there is already
+        primary role of given type is assigned it should not reasign
+        it to another
+        """
+        roles_metadata = instance.release.roles_metadata
+        for role, meta in roles_metadata.items():
+            if meta.get('has_primary'):
+                cls.set_primary_role(instance, nodes, role)
 
 
 class ClusterCollection(NailgunCollection):

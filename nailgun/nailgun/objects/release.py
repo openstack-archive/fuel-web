@@ -35,6 +35,8 @@ from nailgun.objects import NailgunObject
 
 from nailgun.settings import settings
 
+from nailgun.logger import logger
+
 
 class ReleaseOrchestratorData(NailgunObject):
     """ReleaseOrchestratorData object
@@ -206,9 +208,11 @@ class Release(NailgunObject):
             models.Role.release_id == instance.id
         ).delete(synchronize_session='fetch')
         db().refresh(instance)
-
         added_roles = instance.roles
         for role in roles:
+            meta = instance.roles_metadata.get(role, {})
+            if meta == {}:
+                logger.warning("No metadata for role %s", role)
             if role not in added_roles:
                 new_role = models.Role(
                     name=role,
@@ -216,6 +220,14 @@ class Release(NailgunObject):
                 )
                 db().add(new_role)
                 added_roles.append(role)
+                if meta.get('has_primary'):
+                    primary_role = models.Role(
+                        name=role,
+                        release=instance,
+                        primary=True
+                    )
+                    db().add(primary_role)
+                    added_roles.append(primary_role)
         db().flush()
 
     @classmethod

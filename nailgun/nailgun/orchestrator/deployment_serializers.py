@@ -810,7 +810,7 @@ class DeploymentMultinodeSerializer(object):
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
-        nodes = self.serialize_nodes(nodes)
+        nodes = self.serialize_nodes(cluster, nodes)
         common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
@@ -906,7 +906,7 @@ class DeploymentMultinodeSerializer(object):
         node_list = []
 
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in objects.Node.all_roles(node):
                 node_list.append({
                     'uid': node.uid,
                     'fqdn': node.fqdn,
@@ -932,7 +932,7 @@ class DeploymentMultinodeSerializer(object):
         for n in nodes:
             n['fail_if_error'] = n['role'] in self.critical_roles
 
-    def serialize_nodes(self, nodes):
+    def serialize_nodes(self, cluster, nodes):
         """Serialize node for each role.
         For example if node has two roles then
         in orchestrator will be passed two serialized
@@ -940,7 +940,7 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in objects.Node.all_roles(node):
                 serialized_nodes.append(self.serialize_node(node, role))
         self.set_primary_mongo(serialized_nodes)
         return serialized_nodes
@@ -1062,12 +1062,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                       'primary-swift-proxy',
                       'ceph-osd']
 
-    def serialize_nodes(self, nodes):
+    def serialize_nodes(self, cluster, nodes):
         """Serialize nodes and set primary-controller
         """
+        objects.Cluster.set_primary_roles(cluster, nodes)
         serialized_nodes = super(
             DeploymentHASerializer, self).serialize_nodes(nodes)
-        self.set_primary_controller(serialized_nodes)
         return serialized_nodes
 
     def set_primary_controller(self, nodes):

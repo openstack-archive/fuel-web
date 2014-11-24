@@ -31,8 +31,8 @@
           - condition: "settings:common.libvirt_type.value == 'vcenter'"
             message: "Computes cannot be used with vCenter"
       cinder:
-        name: "Storage - Cinder LVM"
-        description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+        name: "Storage - Cinder"
+        description: "Cinder provides block storage over iSCSI or using VMware vCenter as a backend. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
         restrictions:
           - condition: "settings:storage.volumes_lvm.value == false and settings:storage.volumes_vmdk.value == false"
             message: "Cinder LVM or VMDK should be enabled in settings"

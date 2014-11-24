@@ -192,7 +192,6 @@ class Node(NailgunObject):
 
         roles = data.pop("roles", None)
         pending_roles = data.pop("pending_roles", None)
-
         new_node_meta = data.pop("meta", {})
         new_node_cluster_id = data.pop("cluster_id", None)
         new_node = super(Node, cls).create(data)
@@ -577,7 +576,8 @@ class Node(NailgunObject):
                 release_id=instance.cluster.release_id,
             ).filter(
                 models.Role.name.in_(new_roles)
-            ).all()
+            ).filter(
+                models.Role.primary != True).all()
         else:
             instance.role_list = []
         db().flush()
@@ -620,7 +620,8 @@ class Node(NailgunObject):
                 release_id=instance.cluster.release_id,
             ).filter(
                 models.Role.name.in_(new_pending_roles)
-            ).all()
+            ).filter(
+                models.Role.primary != True).all()
 
         db().flush()
         db().refresh(instance)
@@ -728,6 +729,19 @@ class Node(NailgunObject):
     def remove_replaced_params(cls, instance):
         instance.replaced_deployment_info = []
         instance.replaced_provisioning_info = {}
+
+    @classmethod
+    def all_roles(cls, instance):
+        """This helper add primary prefix to roles. It should not
+        be shown in api calls, only for deployment cases
+        """
+        roles = []
+        for role in set(instance.role_list + instance.pending_role_list):
+            if role.primary:
+                roles.append('primary-{0}'.format(role.name))
+            else:
+                roles.append(role.name)
+        return roles
 
 
 class NodeCollection(NailgunCollection):

@@ -533,7 +533,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         ]
         if objects.Node.should_have_public(node):
             netgroup_mapping.append(('public', 'br-ex'))
-
         # Include information about all subnets that don't belong to this node.
         # This is used during deployment to configure routes to all other
         # networks in the environment.
@@ -553,7 +552,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 other_nets.get(ngname, [])
 
             netgroups[ngname] = netgroup
-
         if objects.Node.should_have_public(node):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
@@ -810,7 +808,7 @@ class DeploymentMultinodeSerializer(object):
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
-        nodes = self.serialize_nodes(nodes)
+        nodes = self.serialize_nodes(cluster, nodes)
         common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
@@ -906,7 +904,7 @@ class DeploymentMultinodeSerializer(object):
         node_list = []
 
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in objects.Node.all_roles(node):
                 node_list.append({
                     'uid': node.uid,
                     'fqdn': node.fqdn,
@@ -932,7 +930,7 @@ class DeploymentMultinodeSerializer(object):
         for n in nodes:
             n['fail_if_error'] = n['role'] in self.critical_roles
 
-    def serialize_nodes(self, nodes):
+    def serialize_nodes(self, cluster, nodes):
         """Serialize node for each role.
         For example if node has two roles then
         in orchestrator will be passed two serialized
@@ -940,7 +938,7 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in objects.Node.all_roles(node):
                 serialized_nodes.append(self.serialize_node(node, role))
         self.set_primary_mongo(serialized_nodes)
         return serialized_nodes
@@ -1062,13 +1060,10 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                       'primary-swift-proxy',
                       'ceph-osd']
 
-    def serialize_nodes(self, nodes):
-        """Serialize nodes and set primary-controller
-        """
-        serialized_nodes = super(
-            DeploymentHASerializer, self).serialize_nodes(nodes)
-        self.set_primary_controller(serialized_nodes)
-        return serialized_nodes
+    def serialize(self, cluster, nodes, ignore_customized=False):
+        objects.Cluster.set_primary_roles(cluster, nodes)
+        return super(DeploymentHASerializer, self).serialize(
+            cluster, nodes, ignore_customized)
 
     def set_primary_controller(self, nodes):
         """Set primary controller for the first controller
@@ -1123,9 +1118,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         last_controller = self.get_last_controller(common_attrs['nodes'])
         common_attrs.update(last_controller)
-
-        # Assign primary controller in nodes list
-        self.set_primary_controller(common_attrs['nodes'])
 
         return common_attrs
 

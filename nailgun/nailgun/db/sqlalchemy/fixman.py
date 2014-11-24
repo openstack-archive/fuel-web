@@ -106,8 +106,11 @@ def upload_fixture(fileobj, loader=None):
         except Exception:
             break
 
-        new_obj = obj['model']()
+        if obj['model'] == objects.Release.model:
+            objects.Release.create(obj['fields'])
+            continue
 
+        new_obj = obj['model']()
         fk_fields = {}
         for field, value in obj["fields"].iteritems():
             f = getattr(obj['model'], field)
@@ -175,6 +178,7 @@ def upload_fixture(fileobj, loader=None):
         db().add(new_obj)
         db().commit()
         keys[obj['model'].__tablename__][obj["pk"]] = new_obj
+
 
         # UGLY HACK for testing
         if new_obj.__class__.__name__ == 'Node':

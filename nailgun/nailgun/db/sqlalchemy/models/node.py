@@ -25,7 +25,6 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import Unicode
-from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 
 from nailgun import consts
@@ -55,9 +54,6 @@ class PendingNodeRoles(Base):
 
 class Role(Base):
     __tablename__ = 'roles'
-    __table_args__ = (
-        UniqueConstraint('name', 'release_id'),
-    )
     id = Column(Integer, primary_key=True)
     release_id = Column(
         Integer,
@@ -65,6 +61,7 @@ class Role(Base):
         nullable=False
     )
     name = Column(String(50), nullable=False)
+    primary = Column(Boolean, default=False)
 
 
 class NodeGroup(Base):
@@ -112,12 +109,12 @@ class Node(Base):
     role_list = relationship(
         "Role",
         secondary=NodeRoles.__table__,
-        backref=backref("nodes", cascade="all,delete")
+        backref=backref("nodes", cascade="all,delete", lazy="dynamic")
     )
     pending_role_list = relationship(
         "Role",
         secondary=PendingNodeRoles.__table__,
-        backref=backref("pending_nodes", cascade="all,delete")
+        backref=backref("pending_nodes", cascade="all,delete", lazy="dynamic")
     )
     attributes = relationship("NodeAttributes",
                               backref=backref("node"),
@@ -183,7 +180,9 @@ class Node(Base):
 
     @property
     def roles(self):
-        return [role.name for role in self.role_list]
+        #NOTE(dshulyak) primary is internal thing, and should not be present in
+        # api responses
+        return [role.name for role in self.role_list if not role.primary]
 
     @roles.setter
     def roles(self, new_roles):
@@ -206,7 +205,8 @@ class Node(Base):
 
     @property
     def pending_roles(self):
-        return [role.name for role in self.pending_role_list]
+        return [role.name for role in self.pending_role_list
+                if not role.primary]
 
     @property
     def all_roles(self):

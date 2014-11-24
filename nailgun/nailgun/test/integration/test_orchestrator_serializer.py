@@ -124,7 +124,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assert_nodes_with_role(nodes, 'mongo', 1)
 
     def test_serialize_nodes(self):
-        serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
+        serialized_nodes = self.serializer.serialize_nodes(
+            self.cluster, self.cluster.nodes)
         self.assert_roles_flattened(serialized_nodes)
 
         # Each not should be same as result of
@@ -744,7 +745,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         )
 
     def test_serialize_nodes(self):
-        serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
+        serialized_nodes = self.serializer.serialize_nodes(
+            self.cluster, self.cluster.nodes)
         self.assert_roles_flattened(serialized_nodes)
 
         # Each not should be same as result of
@@ -1433,14 +1435,14 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
 
     def test_mongo_roles_equals_in_defferent_modes(self):
         cluster = self.create_env()
-        ha_nodes = self.serializer_ha.serialize_nodes(cluster.nodes)
-        mn_nodes = self.serializer_mn.serialize_nodes(cluster.nodes)
+        ha_nodes = self.serializer_ha.serialize_nodes(cluster, cluster.nodes)
+        mn_nodes = self.serializer_mn.serialize_nodes(cluster, cluster.nodes)
         self.assertEqual(mn_nodes, ha_nodes)
 
     def test_primary_node_selected(self):
         cluster = self.create_env()
-        ha_nodes = self.serializer_ha.serialize_nodes(cluster.nodes)
-        mn_nodes = self.serializer_mn.serialize_nodes(cluster.nodes)
+        ha_nodes = self.serializer_ha.serialize_nodes(cluster, cluster.nodes)
+        mn_nodes = self.serializer_mn.serialize_nodes(cluster, cluster.nodes)
 
         def primary_nodes_count(nodes):
             return len(filter(lambda x: x['role'] == 'primary-mongo', nodes))

@@ -404,5 +404,5 @@ class TaskHelper(object):
 
         if al.action_name not in task_output_white_list:
             return None
-        white_list = task_output_white_list[al.action_name]
-        return sanitize_sub_tree(task_output, white_list)
+        action_wl = task_output_white_list[al.action_name]
+        return sanitize_sub_tree(task_output, action_wl)

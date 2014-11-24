@@ -19,6 +19,7 @@ import copy
 import datetime
 import itertools
 import os
+import six
 import traceback
 
 from sqlalchemy import or_
@@ -348,19 +349,32 @@ class NailgunReceiver(object):
 
     @classmethod
     def _update_action_log_entry(cls, task_status, task_uuid, nodes_from_resp):
-        if task_status in (consts.TASK_STATUSES.ready,
-                           consts.TASK_STATUSES.error):
-            al = objects.ActionLog.get_by_task_uuid(task_uuid)
+        try:
+            if task_status in (consts.TASK_STATUSES.ready,
+                               consts.TASK_STATUSES.error):
+                al = objects.ActionLog.get_by_task_uuid(task_uuid)
 
-            if al:
-                data = {
-                    'end_timestamp': datetime.datetime.utcnow(),
-                    'additional_info': {
-                        'nodes_from_resp': nodes_from_resp,
-                        'ended_with_status': task_status
+                if al:
+                    data = {
+                        'end_timestamp': datetime.datetime.utcnow(),
+                        'additional_info': {
+                            'nodes_from_resp': cls.sanitize_nodes_from_resp(
+                                nodes_from_resp),
+                            'ended_with_status': task_status
+                        }
                     }
-                }
-                objects.ActionLog.update(al, data)
+                    objects.ActionLog.update(al, data)
+        except Exception as e:
+            logger.error("_update_action_log_entry failed: ", six.text_type(e))
+
+    @classmethod
+    def sanitize_nodes_from_resp(cls, nodes):
+        resp = []
+        if isinstance(nodes, list):
+            for n in nodes:
+                if isinstance(n, dict) and 'uid' in n:
+                    resp.append(n['uid'])
+        return resp
 
     @classmethod
     def _generate_error_message(cls, task, error_types, names_only=False):

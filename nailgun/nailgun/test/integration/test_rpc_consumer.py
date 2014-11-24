@@ -881,7 +881,10 @@ class TestConsumer(BaseIntegrationTest):
             # check that action_log entry was updated
             # in receiver's methods' code
             self.assertIsNotNone(al.end_timestamp)
-            self.assertIn('nodes_from_resp', six.iterkeys(al.additional_info))
+            self.assertIn('nodes_from_resp',
+                          six.iterkeys(al.additional_info))
+            self.assertEqual(set(al.additional_info['nodes_from_resp']),
+                             set(kwargs['node_ids']))
             self.assertEqual(kwargs['task_status'],
                              al.additional_info.get('ended_with_status'))
 

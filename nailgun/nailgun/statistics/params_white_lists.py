@@ -18,9 +18,10 @@ from nailgun import consts
 
 # "*" means any key name
 # "" means any value
-task_output_white_list = {
-    consts.TASK_NAMES.provision: {
+_task_output_white_list_template = {
+    "provision_template": {
         "method": "",
+        "respond_to": "",
         "api_version": "",
         "args": {
             "task_uuid": "",
@@ -30,18 +31,6 @@ task_output_white_list = {
                 },
                 "nodes": {
                     "uid": "",
-                    "interfaces": {
-                        "*": {
-                            "static": "",
-                            "netmask": ""
-                        }
-                    },
-                    "interfaces_extra": {
-                        "*": {
-                            "onboot": "",
-                            "peerdns": ""
-                        }
-                    },
                     "ks_meta": {
                         "mco_enable": "",
                         "mlnx_iser_enabled": "",
@@ -75,8 +64,9 @@ task_output_white_list = {
             }
         }
     },
-    consts.TASK_NAMES.deployment: {
+    "deployment_template": {
         "method": "",
+        "respond_to": "",
         "api_version": "",
         "args": {
             "task_uuid": "",
@@ -124,8 +114,7 @@ task_output_white_list = {
                             },
                             "L3": {
                                 "enable_dhcp": ""
-                            },
-                            "tenant": ""
+                            }
                         }
                     }
                 },
@@ -135,7 +124,6 @@ task_output_white_list = {
                     "image_data": {
                         "*": {
                             "container": "",
-                            "uri": "",
                             "format": ""
                         }
                     },
@@ -178,20 +166,9 @@ task_output_white_list = {
                 "status": "",
                 "deployment_mode": "",
                 "fail_if_error": "",
-                "puppet_manifests_source": "",
                 "network_scheme": {
-                    "transformations": {
-                        "*": "",
-                    },
                     "roles": {
                         "*": ""
-                    },
-                    "interfaces": {
-                        "*": {
-                            "L2": {
-                                "vlan_splinters": ""
-                            }
-                        }
                     },
                     "version": "",
                     "provider": "",
@@ -211,7 +188,6 @@ task_output_white_list = {
                     "min_ram": "",
                     "disk_format": "",
                     "glance_properties": "",
-                    "img_name": "",
                     "public": ""
                 },
                 "fuel_version": "",
@@ -223,9 +199,6 @@ task_output_white_list = {
                     "uid": "",
                     "role": ""
                 },
-                "repo_metadata": {
-                    "nailgun": ""
-                },
                 "kernel_params": {
                     "kernel": ""
                 },
@@ -236,7 +209,6 @@ task_output_white_list = {
                         "enabled": ""
                     }
                 },
-                "puppet_modules_source": "",
                 "debug": "",
                 "deployment_id": "",
                 "openstack_version_prev": ""
@@ -248,5 +220,89 @@ task_output_white_list = {
                 "*": {}
             }
         }
+    },
+    "delete_template": {
+        "method": "",
+        "respond_to": "",
+        "api_version": "",
+        "args": {
+            "task_uuid": "",
+            "nodes": {
+                "id": "",
+                "uid": "",
+                "roles": ""
+            }
+        }
+    },
+    "dump_template": {
+        "method": "",
+        "respond_to": "",
+        "api_version": "",
+        "args": {
+            "task_uuid": "",
+            "settings": {
+                'timestamp': "",
+                'lastdump': "",
+                'target': "",
+                'dump': {
+                    '*': {
+                        'objects': {
+                            'type': "",
+                            'command': "",
+                            'path': "",
+                        },
+                        'hosts': {}
+                    }
+                }
+            }
+        }
+    },
+    "networks_verify_template": {
+        "method": "",
+        "respond_to": "",
+        "api_version": "",
+        "args": {
+            "task_uuid": "",
+            "nodes": {
+                "uid": ""
+            }
+        },
+        "subtasks": {
+            "method": "",
+            "respond_to": "",
+            "api_version": "",
+            "args": {
+                "task_uuid": ""
+            }
+        }
     }
+}
+
+
+task_output_white_list = {
+    consts.TASK_NAMES.provision:
+    _task_output_white_list_template["provision_template"],
+    consts.TASK_NAMES.deployment:
+    _task_output_white_list_template["deployment_template"],
+    consts.TASK_NAMES.update:
+    _task_output_white_list_template["deployment_template"],
+
+    consts.TASK_NAMES.node_deletion:
+    _task_output_white_list_template["delete_template"],
+    consts.TASK_NAMES.cluster_deletion:
+    _task_output_white_list_template["delete_template"],
+    consts.TASK_NAMES.reset_environment:
+    _task_output_white_list_template["delete_template"],
+    consts.TASK_NAMES.stop_deployment:
+    _task_output_white_list_template["delete_template"],
+
+    consts.TASK_NAMES.verify_networks:
+    _task_output_white_list_template["networks_verify_template"],
+    consts.TASK_NAMES.check_dhcp:
+    _task_output_white_list_template["networks_verify_template"],
+    consts.TASK_NAMES.multicast_verification:
+    _task_output_white_list_template["networks_verify_template"],
+
+    consts.TASK_NAMES.dump:
+    _task_output_white_list_template["dump_template"],
 }

@@ -50,19 +50,20 @@ class TaskManager(object):
 
         return objects.ActionLog.create(create_kwargs)
 
-    def update_action_log(self, task, task_output, al_instance):
+    def update_action_log(self, task, al_instance):
         try:
             update_data = {
                 "end_timestamp": datetime.datetime.utcnow(),
                 "additional_info": {
                     "ended_with_status": task.status,
                     "message": task.message,
-                    "output": task_output
+                    "output": TaskHelper.sanitize_task_output(task.cache,
+                                                              al_instance)
                 }
             }
             objects.ActionLog.update(al_instance, update_data)
         except Exception as e:
-            logger.error("update_action_log failed: ", six.text_type(e))
+            logger.error("update_action_log failed: %s", six.text_type(e))
 
     def _call_silently(self, task, instance, *args, **kwargs):
         # create action_log for task
@@ -70,7 +71,7 @@ class TaskManager(object):
 
         method = getattr(instance, kwargs.pop('method_name', 'execute'))
         if task.status == TASK_STATUSES.error:
-            self.update_action_log(task, None, al)
+            self.update_action_log(task, al)
             return
         try:
             to_return = method(task, *args, **kwargs)
@@ -78,11 +79,7 @@ class TaskManager(object):
             # update action_log instance for task
             # for asynchronous task it will be not final update
             # as they also are updated in rpc receiver
-            self.update_action_log(
-                task,
-                TaskHelper.sanitize_task_output(to_return, al),
-                al
-            )
+            self.update_action_log(task, al)
 
             return to_return
         except Exception as exc:
@@ -99,7 +96,7 @@ class TaskManager(object):
                     'message': err}
             objects.Task.update(task, data)
 
-            self.update_action_log(task, None, al)
+            self.update_action_log(task, al)
 
     def check_running_task(self, task_name):
         current_tasks = db().query(Task).filter_by(
@@ -611,8 +608,6 @@ class UpdateEnvironmentTaskManager(TaskManager):
             method_name='message')
 
         db().refresh(task_update)
-
-        task_update.cache = deployment_message
 
         for node in nodes_to_change:
             node.status = 'deploying'

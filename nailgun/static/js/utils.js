@@ -252,7 +252,45 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
         },
         getResponseText: function(response) {
             return _.contains([400, 409], response.status) ? response.responseText : '';
+        },
+        natsort:  function alphanum(a, b) {
+            // Compare 2 strings naturally, i.e. [z1, z11, z2,z12] is sorted as
+            // [z1, z2, z11, z12] instead of lexicographically as
+            // [z1, z11, z12, z2]
+            var x;
+
+            function chunkify(t) {
+                var tz = [], x = 0, y = -1, n = 0, i, j;
+
+                j = t.charAt(x++).charCodeAt(0);
+                i = j;
+                while (i) {
+                    var m = (i == 46 || (i >= 48 && i <= 57));
+                    if (m !== n) {
+                        tz[++y] = "";
+                        n = m;
+                    }
+                    tz[y] += j;
+                    j = t.charAt(x++).charCodeAt(0);
+                    i = j;
+                }
+                return tz;
+            }
+
+            var aa = chunkify(a);
+            var bb = chunkify(b);
+
+            for (x = 0; aa[x] && bb[x]; x++) {
+                if (aa[x] !== bb[x]) {
+                    var c = Number(aa[x]), d = Number(bb[x]);
+                    if (c == aa[x] && d == bb[x]) {
+                        return c - d;
+                    } else return (aa[x] > bb[x]) ? 1 : -1;
+                }
+            }
+            return aa.length - bb.length;
         }
+
     };
 
     return utils;

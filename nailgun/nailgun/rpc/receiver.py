@@ -356,11 +356,21 @@ class NailgunReceiver(object):
                 data = {
                     'end_timestamp': datetime.datetime.utcnow(),
                     'additional_info': {
-                        'nodes_from_resp': nodes_from_resp,
+                        'nodes_from_resp': cls.sanitize_nodes_from_resp(
+                            nodes_from_resp),
                         'ended_with_status': task_status
                     }
                 }
                 objects.ActionLog.update(al, data)
+
+    @classmethod
+    def sanitize_nodes_from_resp(cls, nodes):
+        resp = []
+        if isinstance(nodes, list):
+            for n in nodes:
+                if isinstance(n, dict) and 'uid' in n:
+                    resp.append(n['uid'])
+        return resp
 
     @classmethod
     def _generate_error_message(cls, task, error_types, names_only=False):

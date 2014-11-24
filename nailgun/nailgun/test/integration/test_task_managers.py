@@ -121,6 +121,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertIsNotNone(action_log.end_timestamp)
                 self.assertIn("ended_with_status", action_log.additional_info)
                 self.assertIn("message", action_log.additional_info)
+                self.assertIn("output", action_log.additional_info)
 
     def test_check_before_deployment_with_error(self):
         self.env.create(
@@ -140,6 +141,7 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertIsNotNone(al.end_timestamp)
             self.assertIn("ended_with_status", al.additional_info)
             self.assertIn("message", al.additional_info)
+            self.assertIn("output", al.additional_info)
 
             if al.additional_info["operation"] == TASK_NAMES.check_networks:
                 # check_networks task is not updated to "ready" status in case

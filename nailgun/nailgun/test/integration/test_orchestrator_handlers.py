@@ -236,10 +236,14 @@ class TestSelectedNodesAction(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_start_deployment_on_selected_nodes(self, mock_rpc):
+        # if cluster is ha, then DeploySelectedNodes must call
+        # TaskHelper.nodes_to_deploy_ha(cluster, nodes) and it must
+        # append third controller to the list of nodes which are to deploy
+        node_uids = [n.uid for n in self.cluster.nodes][2:3]
         action_url = reverse(
             'DeploySelectedNodes',
             kwargs={'cluster_id': self.cluster.id}) + \
-            nodes_filter_param(self.node_uids)
+            nodes_filter_param(node_uids)
 
         self.send_empty_put(action_url)
 

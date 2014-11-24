@@ -228,4 +228,10 @@ class DeploySelectedNodes(SelectedNodesBase):
     task_manager = DeploymentTaskManager
 
     def get_default_nodes(self, cluster):
-        TaskHelper.nodes_to_deploy(cluster)
+        return TaskHelper.nodes_to_deploy(cluster)
+
+    def get_nodes(self, cluster):
+        nodes_to_deploy = super(DeploySelectedNodes, self).get_nodes(cluster)
+        if cluster.is_ha_mode:
+            return TaskHelper.nodes_to_deploy_ha(cluster, nodes_to_deploy)
+        return nodes_to_deploy

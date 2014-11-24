@@ -69,7 +69,7 @@ cloud-init-per instance set_limits echo -e "* soft core unlimited\n* hard core u
 # ntp sync
 # '| tee /dev/null' is needed for returning zero execution code always
 cloud-init-per instance stop_ntpd service ntpd stop | tee /dev/null
-cloud-init-per instance sync_date ntpdate -t 4 -b {{ common.master_ip }}
+cloud-init-per instance sync_date sntp -t 4 -S {{ common.master_ip }}
 cloud-init-per instance sync_hwclock hwclock --systohc
 
 cloud-init-per instance edit_ntp_conf1 sed -i '/^\s*tinker panic/ d' /etc/ntp.conf
@@ -83,7 +83,7 @@ cloud-init-per instance edit_ntp_conf6 echo "server {{ common.master_ip }} burst
 # Point installed ntpd to Master node
 cloud-init-per instance set_ntpdate sed -i 's/SYNC_HWCLOCK\s*=\s*no/SYNC_HWCLOCK=yes/' /etc/sysconfig/ntpdate
 cloud-init-per instance set_ntpd_0 chkconfig ntpd on
-cloud-init-per instance set_ntpd_1 chkconfig ntpdate on
+cloud-init-per instance set_ntpd_1 chkconfig sntp on
 cloud-init-per instance start_ntpd service ntpd start
 
 cloud-init-per instance removeUseDNS sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config

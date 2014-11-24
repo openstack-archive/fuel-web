@@ -36,7 +36,9 @@ class TestHandlers(BaseIntegrationTest):
             params=jsonutils.dumps({
                 'name': 'Another test release',
                 'version': '1.0',
-                'operating_system': 'CentOS'
+                'operating_system': 'CentOS',
+                'orchestrator_data':
+                self.env.get_default_orchestrator_data(),
             }),
             headers=self.default_headers
         )
@@ -80,7 +82,9 @@ class TestHandlers(BaseIntegrationTest):
                             }
                             ]
                     }
-                }
+                },
+                'orchestrator_data':
+                self.env.get_default_orchestrator_data(),
             }),
             headers=self.default_headers
         )
@@ -109,7 +113,9 @@ class TestHandlers(BaseIntegrationTest):
                             }
                             ]
                     }
-                }
+                },
+                'orchestrator_data':
+                self.env.get_default_orchestrator_data()
             }),
             headers=self.default_headers,
             expect_errors=True
@@ -161,7 +167,9 @@ class TestHandlers(BaseIntegrationTest):
                             }
                             ]
                     }
-                }
+                },
+                'orchestrator_data':
+                self.env.get_default_orchestrator_data()
             }),
             headers=self.default_headers
         )
@@ -190,7 +198,9 @@ class TestHandlers(BaseIntegrationTest):
                             }
                             ]
                     }
-                }
+                },
+                'orchestrator_data':
+                self.env.get_default_orchestrator_data(),
             }),
             headers=self.default_headers,
             expect_errors=True

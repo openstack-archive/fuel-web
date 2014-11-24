@@ -53,16 +53,18 @@ cloud-init-per instance dhclient echo 'supersede routers 0;' | tee /etc/dhcp/dhc
 
 # ntp sync
 # '| tee /dev/null' is needed for returning zero execution code always
-cloud-init-per instance stop_ntp service ntp stop | tee /dev/null
-cloud-init-per instance sync_date ntpdate -t 4 -b {{ common.master_ip }}
+cloud-init-per instance stop_ntp_dev service ntp-dev stop | tee /dev/null
+cloud-init-per instance sync_date sntp -t 4 -S {{ common.master_ip }}
 cloud-init-per instance sync_hwclock hwclock --systohc
 
+cloud-init-per instance mkdir_var_lib_ntp mkdir -p /var/lib/ntp
 cloud-init-per instance edit_ntp_conf1 sed -i '/^\s*tinker panic/ d' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf2 sed -i '1 i tinker panic 0' /etc/ntp.conf
-cloud-init-per instance edit_ntp_conf3 echo 0 > /var/lib/ntp/drift
+cloud-init-per instance edit_ntp_conf3 echo 0 > /var/lib/ntp/ntp.drift
 cloud-init-per instance edit_ntp_conf4 sed -i '/^\s*server/ d' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf5 echo "server {{ common.master_ip }} burst iburst" | tee -a /etc/ntp.conf
-cloud-init-per instance start_ntp service ntp start
+cloud-init-per instance start_ntp_dev service ntp-dev start
+cloud-init-per instance set_ntp_dev_defaults /usr/sbin/update-rc.d ntp-dev defaults
 
 cloud-init-per instance removeUseDNS sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config
 add_str_to_file_if_not_exists /etc/ssh/sshd_config 'UseDNS' 'UseDNS no'

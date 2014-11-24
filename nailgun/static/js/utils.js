@@ -252,7 +252,42 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
         },
         getResponseText: function(response) {
             return _.contains([400, 409], response.status) ? response.responseText : '';
+        },
+        // chunkify and natsort are based on
+        // http://web.archive.org/web/20130826203933/http://my.opera.com/GreyWyvern/blog/show.dml/1671288
+        chunkify: function(str) {
+            var ret = [], idx, listIndex = -1, intInProgress = null, charCode, isInt;
+
+            for (idx = 0; idx < str.length; idx++) {
+                charCode = str.charAt(idx).charCodeAt(0);
+                isInt = (charCode == 46 || (charCode >= 48 && charCode <= 57));
+                if (isInt !== intInProgress) {
+                    ret[++listIndex] = '';
+                    intInProgress = isInt;
+                }
+                ret[listIndex] += charCode;
+            }
+            return ret;
+        },
+        natsort:  function alphanum(str1, str2) {
+            // Compare 2 strings naturally, i.e. [z1, z11, z2,z12] is sorted as
+            // [z1, z2, z11, z12] instead of lexicographically as
+            // [z1, z11, z12, z2]
+            var idx;
+            var str1Chunked = utils.chunkify(str1);
+            var str2Chunked = utils.chunkify(str2);
+
+            for (idx = 0; str1Chunked[idx] && str2Chunked[idx]; idx++) {
+                if (str1Chunked[idx] !== str2Chunked[idx]) {
+                    var num1 = Number(str1Chunked[idx]), num2 = Number(str2Chunked[idx]);
+                    if (num1 == str1Chunked[idx] && num2 == str2Chunked[idx]) {
+                        return num1 - num2;
+                    } else return (str1Chunked[idx] > str2Chunked[idx]) ? 1 : -1;
+                }
+            }
+            return str1Chunked.length - str2Chunked.length;
         }
+
     };
 
     return utils;

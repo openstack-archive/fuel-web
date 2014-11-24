@@ -105,7 +105,7 @@ class Node(NailgunObject):
 
         q = db().query(cls.model)
         if mac:
-            node = q.filter_by(mac=mac).first()
+            node = q.filter_by(mac=mac.lower()).first()
         else:
             node = q.get(node_uid)
         return node
@@ -141,7 +141,7 @@ class Node(NailgunObject):
             cls.model.nic_interfaces
         ).filter(
             models.NodeNICInterface.mac.in_(
-                [n["mac"] for n in interfaces]
+                [n["mac"].lower() for n in interfaces]
             )
         ).first()
 

@@ -810,7 +810,7 @@ class DeploymentMultinodeSerializer(object):
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
-        nodes = self.serialize_nodes(nodes)
+        nodes = self.serialize_nodes(cluster, nodes)
         common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
@@ -1062,12 +1062,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                       'primary-swift-proxy',
                       'ceph-osd']
 
-    def serialize_nodes(self, nodes):
+    def serialize_nodes(self, cluster, nodes):
         """Serialize nodes and set primary-controller
         """
+        objects.Cluster.set_primary_roles(cluster, nodes)
         serialized_nodes = super(
             DeploymentHASerializer, self).serialize_nodes(nodes)
-        self.set_primary_controller(serialized_nodes)
         return serialized_nodes
 
     def set_primary_controller(self, nodes):

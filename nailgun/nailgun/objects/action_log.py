@@ -77,7 +77,9 @@ class ActionLog(NailgunObject):
         # one should take precaution as such construction overrides keys
         # that are already present in additional_info
         if data.get('additional_info'):
-            data['additional_info'].update(instance.additional_info)
+            add_info = dict(instance.additional_info)
+            add_info.update(data['additional_info'])
+            data['additional_info'] = add_info
 
         return super(ActionLog, cls).update(instance, data)
 

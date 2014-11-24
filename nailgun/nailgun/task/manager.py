@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import datetime
-import six
 import traceback
 
 from nailgun.objects.serializers.network_configuration \
@@ -45,32 +43,13 @@ class TaskManager(object):
         if cluster_id:
             self.cluster = db().query(Cluster).get(cluster_id)
 
-    def create_action_log(self, task_instance):
-        create_kwargs = TaskHelper.prepare_action_log_kwargs(task_instance)
-
-        return objects.ActionLog.create(create_kwargs)
-
-    def update_action_log(self, task, task_output, al_instance):
-        try:
-            update_data = {
-                "end_timestamp": datetime.datetime.utcnow(),
-                "additional_info": {
-                    "ended_with_status": task.status,
-                    "message": task.message,
-                    "output": task_output
-                }
-            }
-            objects.ActionLog.update(al_instance, update_data)
-        except Exception as e:
-            logger.error("update_action_log failed: ", six.text_type(e))
-
     def _call_silently(self, task, instance, *args, **kwargs):
         # create action_log for task
-        al = self.create_action_log(task)
+        al = TaskHelper.create_action_log(task)
 
         method = getattr(instance, kwargs.pop('method_name', 'execute'))
         if task.status == TASK_STATUSES.error:
-            self.update_action_log(task, None, al)
+            TaskHelper.update_action_log(task, al)
             return
         try:
             to_return = method(task, *args, **kwargs)
@@ -78,11 +57,7 @@ class TaskManager(object):
             # update action_log instance for task
             # for asynchronous task it will be not final update
             # as they also are updated in rpc receiver
-            self.update_action_log(
-                task,
-                TaskHelper.sanitize_task_output(to_return, al),
-                al
-            )
+            TaskHelper.update_action_log(task, al)
 
             return to_return
         except Exception as exc:
@@ -99,7 +74,7 @@ class TaskManager(object):
                     'message': err}
             objects.Task.update(task, data)
 
-            self.update_action_log(task, None, al)
+            TaskHelper.update_action_log(task, al)
 
     def check_running_task(self, task_name):
         current_tasks = db().query(Task).filter_by(
@@ -183,6 +158,7 @@ class ApplyChangesTaskManager(TaskManager):
 
         # we should have task committed for processing in other threads
         db().commit()
+        TaskHelper.create_action_log(supertask)
 
         # Run validation if user didn't redefine
         # provisioning and deployment information
@@ -611,8 +587,6 @@ class UpdateEnvironmentTaskManager(TaskManager):
             method_name='message')
 
         db().refresh(task_update)
-
-        task_update.cache = deployment_message
 
         for node in nodes_to_change:
             node.status = 'deploying'

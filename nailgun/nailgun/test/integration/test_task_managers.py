@@ -121,6 +121,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertIsNotNone(action_log.end_timestamp)
                 self.assertIn("ended_with_status", action_log.additional_info)
                 self.assertIn("message", action_log.additional_info)
+                self.assertIn("output", action_log.additional_info)
 
     def test_check_before_deployment_with_error(self):
         self.env.create(
@@ -133,25 +134,37 @@ class TestTaskManagers(BaseIntegrationTest):
 
         action_logs = objects.ActionLogCollection.all()
 
+        self.assertEqual(action_logs.count(), 3)
         for al in action_logs:
             self.assertEqual(al.action_type, ACTION_TYPES.nailgun_task)
-            self.assertEqual(al.additional_info["parent_task_id"],
-                             supertask.id)
-            self.assertIsNotNone(al.end_timestamp)
-            self.assertIn("ended_with_status", al.additional_info)
-            self.assertIn("message", al.additional_info)
+            if al.additional_info["operation"] == TASK_NAMES.deploy:
+                self.assertEqual(al.additional_info["parent_task_id"],
+                                 None)
+                self.assertEqual(al.task_uuid, supertask.uuid)
+            else:
+                self.assertIsNotNone(al.end_timestamp)
+                self.assertIn("ended_with_status", al.additional_info)
+                self.assertIn("message", al.additional_info)
+                self.assertIn("output", al.additional_info)
 
-            if al.additional_info["operation"] == TASK_NAMES.check_networks:
-                # check_networks task is not updated to "ready" status in case
-                # of success but left with "running" value
-                self.assertEqual(al.additional_info["ended_with_status"],
-                                 TASK_STATUSES.running)
-            elif (
-                al.additional_info["operation"] ==
-                TASK_NAMES.check_before_deployment
-            ):
-                self.assertEqual(al.additional_info["ended_with_status"],
-                                 TASK_STATUSES.error)
+                if (
+                    al.additional_info["operation"] ==
+                    TASK_NAMES.check_networks
+                ):
+                    # check_networks task is not updated to "ready" status in
+                    # case of success but left with "running" value
+                    self.assertEqual(al.additional_info["ended_with_status"],
+                                     TASK_STATUSES.running)
+                    self.assertEqual(al.additional_info["parent_task_id"],
+                                     supertask.id)
+                elif (
+                    al.additional_info["operation"] ==
+                    TASK_NAMES.check_before_deployment
+                ):
+                    self.assertEqual(al.additional_info["ended_with_status"],
+                                     TASK_STATUSES.error)
+                    self.assertEqual(al.additional_info["parent_task_id"],
+                                     supertask.id)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -341,7 +354,7 @@ class TestTaskManagers(BaseIntegrationTest):
         tasks = self.db.query(Task).all()
         self.assertEqual(tasks, [])
 
-    @fake_tasks()
+    @fake_tasks(recover_nodes=False)
     def test_deletion_during_deployment(self):
         self.env.create(
             nodes_kwargs=[

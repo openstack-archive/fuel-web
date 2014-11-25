@@ -810,8 +810,8 @@ class DeploymentMultinodeSerializer(object):
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
-        nodes = self.serialize_nodes(nodes)
         common_attrs = self.get_common_attrs(cluster)
+        nodes = self.serialize_nodes(nodes, common_attrs)
 
         self.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
@@ -842,7 +842,8 @@ class DeploymentMultinodeSerializer(object):
         attrs.update(
             objects.Release.get_orchestrator_data_dict(release)
         )
-        attrs['nodes'] = self.node_list(get_nodes_not_for_deletion(cluster))
+        attrs['nodes'] = self.node_list(get_nodes_not_for_deletion(cluster),
+                                        attrs)
 
         for node in attrs['nodes']:
             if node['role'] in 'cinder':
@@ -899,19 +900,28 @@ class DeploymentMultinodeSerializer(object):
             pg_num = 128
         attrs['storage']['pg_num'] = pg_num
 
-    def node_list(self, nodes):
+    def node_list(self, nodes, cluster_attrs):
         """Generate nodes list. Represents
         as "nodes" parameter in facts.
         """
         node_list = []
 
+        def node_to_simple_dict(node, role):
+            """Converts node with to a simple dict with one role
+            """
+            return {
+                'uid': node.uid,
+                'fqdn': node.fqdn,
+                'name': objects.Node.make_slave_name(node),
+                'role': role
+            }
+
         for node in nodes:
-            for role in objects.Node.all_roles(node):
-                node_list.append({
-                    'uid': node.uid,
-                    'fqdn': node.fqdn,
-                    'name': objects.Node.make_slave_name(node),
-                    'role': role})
+            for role in sorted(node.all_roles):
+                node_list.append(node_to_simple_dict(node, role))
+            if self.is_zabbix_enabled(cluster_attrs):
+                node_list.append(
+                    node_to_simple_dict(node, consts.ZABBIX_MONITORING))
 
         return node_list
 
@@ -932,7 +942,7 @@ class DeploymentMultinodeSerializer(object):
         for n in nodes:
             n['fail_if_error'] = n['role'] in self.critical_roles
 
-    def serialize_nodes(self, nodes):
+    def serialize_nodes(self, nodes, cluster_attrs):
         """Serialize node for each role.
         For example if node has two roles then
         in orchestrator will be passed two serialized
@@ -942,6 +952,9 @@ class DeploymentMultinodeSerializer(object):
         for node in nodes:
             for role in objects.Node.all_roles(node):
                 serialized_nodes.append(self.serialize_node(node, role))
+            if self.is_zabbix_enabled(cluster_attrs):
+                serialized_nodes.append(self.get_zabbix_node(node))
+
         self.set_primary_mongo(serialized_nodes)
         return serialized_nodes
 
@@ -1053,6 +1066,16 @@ class DeploymentMultinodeSerializer(object):
         return filter(
             lambda node: node['role'] in roles, nodes)
 
+    def is_zabbix_enabled(self, cluster_attrs):
+        """Did user enable Zabbix for cluster
+        """
+        return cluster_attrs.get('zabbix', {}).get('enabled', False)
+
+    def get_zabbix_node(self, node):
+        """Get node serialized as zabbix-monitoring
+        """
+        return self.serialize_node(node, consts.ZABBIX_MONITORING)
+
 
 class DeploymentHASerializer(DeploymentMultinodeSerializer):
     """Serializer for ha mode."""
@@ -1075,13 +1098,13 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         return {'last_controller': last_controller}
 
-    def node_list(self, nodes):
+    def node_list(self, nodes, cluster_attrs):
         """Node list
         """
         node_list = super(
             DeploymentHASerializer,
             self
-        ).node_list(nodes)
+        ).node_list(nodes, cluster_attrs)
 
         for node in node_list:
             node['swift_zone'] = node['uid']

@@ -221,3 +221,7 @@ OPENSTACK_IMAGES_SETTINGS = Enum(
         "size_unit"
     )
 )
+
+#: name of the role that will be used to mark all nodes that require
+# zabbix monitoring
+ZABBIX_MONITORING = 'zabbix-monitoring'

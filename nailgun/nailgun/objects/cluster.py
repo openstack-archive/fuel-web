@@ -42,6 +42,8 @@ from nailgun.utils import dict_merge
 from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
+from sqlalchemy import or_
+
 
 class Attributes(NailgunObject):
     """Cluster attributes object
@@ -531,6 +533,47 @@ class Cluster(NailgunObject):
         if not assignment or assignment['assign_to_all_nodes']['value']:
             return True
         return False
+
+    @classmethod
+    def set_primary_role(cls, intance, nodes, role):
+        all_roles = intance.release.role_list
+        role = next(r for r in all_roles if r.name == role)
+        node = db().query(models.Node).filter_by(
+            pending_deletion=False).filter(or_(
+                models.Node.role_associations.any(role=role.id, primary=True),
+                models.Node.pending_role_associations.any(
+                    role=role.id, primary=True))).filter(
+                        models.Node.cluster == intance).first()
+        if node is None:
+            filtered_nodes = []
+            for node in nodes:
+                if (role in node.role_list
+                        or role in node.pending_role_list):
+                        filtered_nodes.append(node)
+            filtered_nodes = sorted(filtered_nodes, key=lambda node: node.id)
+            if filtered_nodes:
+                ready = None
+                for node in filtered_nodes:
+                    if node.status == consts.NODE_STATUSES.ready:
+                        ready = node
+                        break
+                primary_node = ready if ready else filtered_nodes[0]
+                if role in primary_node.role_list:
+                    for assoc in primary_node.role_associations:
+                        if assoc.role == role.id:
+                            assoc.primary = True
+                elif role in primary_node.pending_role_list:
+                    for assoc in primary_node.pending_role_associations:
+                        if assoc.role == role.id:
+                            assoc.primary = True
+        db().flush()
+
+    @classmethod
+    def set_primary_roles(cls, instance, nodes):
+        roles_metadata = instance.release.roles_metadata
+        for role, meta in roles_metadata.items():
+            if meta.get('has_primary'):
+                cls.set_primary_role(instance, nodes, role)
 
 
 class ClusterCollection(NailgunCollection):

@@ -152,10 +152,11 @@ def upgrade_release_roles_50_to_51(roles_meta):
     return roles_meta
 
 
-def upgrade_release_roles_51_to_60(roles_meta):
+def upgrade_release_roles_51_to_60(roles_meta, add_meta=None):
     """Convert all role_metadata.depends values into
     roles_metadata.restrictions.
     """
+    add_meta = add_meta or {}
     for _, role in six.iteritems(roles_meta):
         for depend in role.get('depends', []):
             cond = depend.get('condition')
@@ -170,6 +171,9 @@ def upgrade_release_roles_51_to_60(roles_meta):
 
         if 'depends' in role:
             del role['depends']
+
+        if role in add_meta:
+            role.update(add_meta[role])
     return roles_meta
 
 

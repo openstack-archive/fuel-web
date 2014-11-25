@@ -44,6 +44,9 @@ class NodeRoles(Base):
     id = Column(Integer, primary_key=True)
     role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id'))
+    primary = Column(Boolean, default=False)
+
+    role_obj = relationship("Role")
 
 
 class PendingNodeRoles(Base):
@@ -51,6 +54,9 @@ class PendingNodeRoles(Base):
     id = Column(Integer, primary_key=True)
     role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id'))
+    primary = Column(Boolean, default=False)
+
+    role_obj = relationship("Role")
 
 
 class Role(Base):
@@ -114,6 +120,8 @@ class Node(Base):
         secondary=NodeRoles.__table__,
         backref=backref("nodes", cascade="all,delete")
     )
+    role_associations = relationship("NodeRoles", viewonly=True)
+    pending_role_associations = relationship("PendingNodeRoles", viewonly=True)
     pending_role_list = relationship(
         "Role",
         secondary=PendingNodeRoles.__table__,

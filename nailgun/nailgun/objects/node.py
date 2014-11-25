@@ -506,6 +506,7 @@ class Node(NailgunObject):
         # added to cluster (without any additonal state in database)
         netmanager = Cluster.get_network_manager()
         netmanager.clear_assigned_ips(instance)
+        db().flush()
 
     @classmethod
     def update_by_agent(cls, instance, data):
@@ -728,6 +729,18 @@ class Node(NailgunObject):
     def remove_replaced_params(cls, instance):
         instance.replaced_deployment_info = []
         instance.replaced_provisioning_info = {}
+
+    @classmethod
+    def all_roles(cls, instance):
+        roles = []
+        associations = (instance.role_associations +
+                        instance.pending_role_associations)
+        for assoc in associations:
+            if assoc.primary:
+                roles.append('primary-{0}'.format(assoc.role_obj.name))
+            else:
+                roles.append(assoc.role_obj.name)
+        return sorted(roles)
 
 
 class NodeCollection(NailgunCollection):

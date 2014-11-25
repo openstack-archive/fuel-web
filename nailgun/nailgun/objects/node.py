@@ -499,6 +499,7 @@ class Node(NailgunObject):
         cls.update_volumes(instance)
         cls.update(instance, node_data)
         cls.move_roles_to_pending_roles(instance)
+        instance.primary_role_list = []
         # when node reseted to discover:
         # - cobbler system is deleted
         # - mac to ip mapping from dnsmasq.conf is deleted
@@ -506,6 +507,7 @@ class Node(NailgunObject):
         # added to cluster (without any additonal state in database)
         netmanager = Cluster.get_network_manager()
         netmanager.clear_assigned_ips(instance)
+        db().flush()
 
     @classmethod
     def update_by_agent(cls, instance, data):
@@ -691,6 +693,7 @@ class Node(NailgunObject):
         cls.update_roles(instance, [])
         cls.update_pending_roles(instance, [])
         cls.remove_replaced_params(instance)
+        instance.primary_role_list = []
         instance.cluster_id = None
         instance.group_id = None
         instance.kernel_params = None
@@ -729,6 +732,18 @@ class Node(NailgunObject):
         instance.replaced_deployment_info = []
         instance.replaced_provisioning_info = {}
 
+    @classmethod
+    def all_roles(cls, instance):
+        roles = []
+        associations = (instance.roles_association +
+                        instance.pending_roles_association)
+        for assoc in associations:
+            if assoc.primary:
+                roles.append('primary-{0}'.format(assoc.role_obj.name))
+            else:
+                roles.append(assoc.role_obj.name)
+        return sorted(roles)
+
 
 class NodeCollection(NailgunCollection):
     """Node collection
@@ -746,8 +761,8 @@ class NodeCollection(NailgunCollection):
         """
         options = (
             joinedload('cluster'),
-            joinedload('role_list'),
-            joinedload('pending_role_list'),
+            joinedload('roles_accociation.role_obj'),
+            joinedload('pending_roles_accociation.role_obj'),
             subqueryload_all('nic_interfaces.assigned_networks_list'),
             subqueryload_all('bond_interfaces.assigned_networks_list'),
             subqueryload_all('ip_addrs.network_data')

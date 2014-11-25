@@ -110,6 +110,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 maxAvailablePaneIndex: 0
             });
             this.updatePanesStatuses();
+            this.cluster = new models.Cluster();
             this.settings = new models.Settings();
             this.panesModel.on('change:activePaneIndex', this.handlePaneIndexChange, this);
             this.panesModel.on('change:maxAvailablePaneIndex', function() {
@@ -119,6 +120,13 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             }, this);
             this.model = new models.WizardModel(this.config);
             this.model.processConfig(this.config);
+            this.configModels = {
+                settings: this.settings,
+                cluster: this.cluster,
+                wizard: this.model,
+                default: this.model,
+                version: app.version
+            };
             this.processRestrictions();
             this.attachModelListeners();
         },
@@ -126,7 +134,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             _.each(this.restrictions, function(paneConfig) {
                 _.each(paneConfig, function(paneRestrictions) {
                     _.each(paneRestrictions, function(restriction) {
-                        var evaluatedExpression = utils.evaluateExpression(restriction.condition, {default: this.model}, {strict: false});
+                        var evaluatedExpression = utils.evaluateExpression(restriction.condition, this.configModels, {strict: false});
                         _.invoke(evaluatedExpression.modelPaths, 'change', _.bind(this.handleTrackedAttributeChange, this));
                     }, this);
                 }, this);
@@ -174,12 +182,11 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         processBinds: function(prefix) {
             var result = true;
-            var configModels = {settings: this.settings, cluster: this.cluster};
-            function processBind(path, value) {
+            var processBind = _.bind(function(path, value) {
                 if (path.slice(0, prefix.length) == prefix) {
-                    utils.parseModelPath(path, configModels).set(value);
+                    utils.parseModelPath(path, this.configModels).set(value);
                 }
-            }
+            }, this);
             _.each(this.config, function(paneConfig, paneName) {
                 _.each(paneConfig, function(attributeConfig, attribute) {
                     var bind = attributeConfig.bind;
@@ -391,7 +398,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var attributesToObserve = [];
             _.each(this.wizard.restrictions[this.constructorName], function(paneConfig) {
                 _.each(paneConfig, function(paneRestriction) {
-                    var evaluatedExpression = utils.evaluateExpression(paneRestriction.condition, {default: this.wizard.model}, {strict: false});
+                    var evaluatedExpression = utils.evaluateExpression(paneRestriction.condition, this.wizard.configModels, {strict: false});
                     _.each(evaluatedExpression.modelPaths, function(modelPath) {
                         attributesToObserve.push(modelPath.attribute);
                     }, this);
@@ -426,7 +433,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             _.each(_.groupBy(controlRestrictions, 'action'), function(restrictions, action) {
                 var conditions = _.pluck(restrictions, 'condition');
                 var attributesToObserve = _.uniq(_.flatten(_.map(conditions, function(condition) {
-                    return _.keys(utils.evaluateExpression(condition, {default: this.wizard.model}).modelPaths);
+                    return _.keys(utils.evaluateExpression(condition, this.wizard.configModels).modelPaths);
                 }, this)));
                 var selector = _.map(selectorOptions, function(value, key) {
                     return '[' + key + '=' + value + ']';
@@ -439,7 +446,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                                 observe: attributesToObserve,
                                 onGet: function() {
                                     return _.any(conditions, function(condition) {
-                                        return utils.evaluateExpression(condition, {default: this.wizard.model}).value;
+                                        return utils.evaluateExpression(condition, this.wizard.configModels).value;
                                     }, this);
                                 }
                             }]
@@ -450,7 +457,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                             observe: attributesToObserve,
                             visible: function() {
                                 return !_.any(conditions, function(condition) {
-                                    return utils.evaluateExpression(condition, {default: this.wizard.model}).value;
+                                    return utils.evaluateExpression(condition, this.wizard.configModels).value;
                                 }, this);
                             }
                         });
@@ -499,7 +506,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var messages = [];
             _.each(this.wizard.restrictions[this.constructorName], function (paneConfig) {
                 _.each(paneConfig, function(paneRestriction) {
-                    var result = utils.evaluateExpression(paneRestriction.condition, {default: this.wizard.model}).value;
+                    var result = utils.evaluateExpression(paneRestriction.condition, this.wizard.configModels).value;
                     if (result) {
                         messages.push(paneRestriction.message);
                     }
@@ -564,7 +571,6 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var success = true;
             var name = this.wizard.model.get('NameAndRelease.name');
             var release = this.wizard.model.get('NameAndRelease.release').id;
-            this.wizard.cluster = new models.Cluster();
             this.wizard.cluster.on('invalid', function(model, error) {
                 success = false;
                 _.each(error, function(message, field) {

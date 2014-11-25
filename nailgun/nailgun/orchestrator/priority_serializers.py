@@ -17,6 +17,8 @@
 import abc
 import six
 
+from nailgun import consts
+
 
 class Priority(object):
     """Returns a priority sequence from hightest to lowest.
@@ -109,9 +111,26 @@ class PriorityMultinodeSerializer50(PrioritySerializer):
                 'zabbix-server']))
 
 
-# Yep, for MultiNode we have no changes between 5.0, 5.1 and 6.0
-PriorityMultinodeSerializer51 = PriorityMultinodeSerializer50
-PriorityMultinodeSerializer60 = PriorityMultinodeSerializer50
+class PriorityMultinodeSerializer61(PrioritySerializer):
+
+    def set_deployment_priorities(self, nodes):
+
+        self.priority.one_by_one(self.by_role(nodes, 'zabbix-server'))
+        self.priority.one_by_one(self.by_role(nodes, 'mongo'))
+        self.priority.one_by_one(self.by_role(nodes, 'primary-mongo'))
+        self.priority.one_by_one(self.by_role(nodes, 'controller'))
+
+        self.priority.in_parallel(
+            self.not_roles(nodes, [
+                'controller',
+                'mongo',
+                'primary-mongo',
+                'zabbix-server',
+                consts.ZABBIX_MONITORING
+            ]))
+
+        self.priority.in_parallel(
+            self.by_role(nodes, consts.ZABBIX_MONITORING))
 
 
 class PriorityHASerializer50(PrioritySerializer):
@@ -174,8 +193,39 @@ class PriorityHASerializer51(PrioritySerializer):
                 'zabbix-server']))
 
 
-# Since no difference between 6.0 and 5.1 serializers so far
-PriorityHASerializer60 = PriorityHASerializer51
+class PriorityHASerializer61(PrioritySerializer):
+
+    def set_deployment_priorities(self, nodes):
+
+        self.priority.in_parallel(self.by_role(nodes, 'zabbix-server'))
+        self.priority.in_parallel(self.by_role(nodes, 'primary-swift-proxy'))
+        self.priority.in_parallel(self.by_role(nodes, 'swift-proxy'))
+        self.priority.in_parallel(self.by_role(nodes, 'storage'))
+
+        self.priority.one_by_one(self.by_role(nodes, 'mongo'))
+        self.priority.one_by_one(self.by_role(nodes, 'primary-mongo'))
+        self.priority.one_by_one(self.by_role(nodes, 'primary-controller'))
+
+        # We are deploying in parallel, so do not let us deploy more than
+        # 6 controllers simultaneously or galera master may be exhausted
+        self.priority.in_parallel_by(self.by_role(nodes, 'controller'), 6)
+
+        self.priority.in_parallel(
+            self.not_roles(nodes, [
+                'primary-swift-proxy',
+                'swift-proxy',
+                'storage',
+                'primary-controller',
+                'controller',
+                'quantum',
+                'mongo',
+                'primary-mongo',
+                'zabbix-server',
+                consts.ZABBIX_MONITORING
+            ]))
+
+        self.priority.in_parallel(
+            self.by_role(nodes, consts.ZABBIX_MONITORING))
 
 
 class PriorityMultinodeSerializerPatching(PrioritySerializer):
@@ -224,3 +274,10 @@ class PriorityHASerializerPatching(PrioritySerializer):
                 'mongo',
                 'primary-mongo',
                 'zabbix-server']))
+
+
+# Yep, for MultiNode we have no changes between 5.0, 5.1 and 6.0
+PriorityMultinodeSerializer51 = PriorityMultinodeSerializer50
+PriorityMultinodeSerializer60 = PriorityMultinodeSerializer50
+# Since no difference between 6.0 and 5.1 serializers so far
+PriorityHASerializer60 = PriorityHASerializer61

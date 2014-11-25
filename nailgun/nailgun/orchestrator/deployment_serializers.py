@@ -906,7 +906,7 @@ class DeploymentMultinodeSerializer(object):
         node_list = []
 
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in objects.Node.all_roles(node):
                 node_list.append({
                     'uid': node.uid,
                     'fqdn': node.fqdn,
@@ -940,7 +940,7 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in objects.Node.all_roles(node):
                 serialized_nodes.append(self.serialize_node(node, role))
         self.set_primary_mongo(serialized_nodes)
         return serialized_nodes
@@ -1062,20 +1062,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                       'primary-swift-proxy',
                       'ceph-osd']
 
-    def serialize_nodes(self, nodes):
-        """Serialize nodes and set primary-controller
-        """
-        serialized_nodes = super(
-            DeploymentHASerializer, self).serialize_nodes(nodes)
-        self.set_primary_controller(serialized_nodes)
-        return serialized_nodes
-
-    def set_primary_controller(self, nodes):
-        """Set primary controller for the first controller
-        node if it not set yet
-        """
-        self.set_primary_node(nodes, 'controller', 0)
-
     def get_last_controller(self, nodes):
         sorted_nodes = sorted(
             nodes, key=lambda node: int(node['uid']))
@@ -1125,7 +1111,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         common_attrs.update(last_controller)
 
         # Assign primary controller in nodes list
-        self.set_primary_controller(common_attrs['nodes'])
 
         return common_attrs
 

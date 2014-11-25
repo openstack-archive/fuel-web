@@ -27,6 +27,7 @@ from sqlalchemy import Text
 from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.ext.associationproxy import association_proxy
 
 from nailgun import consts
 from nailgun.db import db
@@ -44,10 +45,30 @@ class NodeRoles(Base):
     id = Column(Integer, primary_key=True)
     role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id'))
+    primary = Column(Boolean, default=False)
+
+    role_obj = relationship("Role", backref=backref(
+        "nodes_association", cascade="all, delete-orphan"))
+    node_obj = relationship("Node",
+        backref=("roles_association"),
+        cascade="all, delete-orphan")
 
 
 class PendingNodeRoles(Base):
     __tablename__ = 'pending_node_roles'
+    id = Column(Integer, primary_key=True)
+    role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
+    node = Column(Integer, ForeignKey('nodes.id'))
+    primary = Column(Boolean, default=False)
+
+    role_obj = relationship("Role", backref=backref(
+        "pending_nodes_association", cascade="all, delete-orphan"))
+    node_obj = relationship("Node", backref=("pending_roles_association"))
+
+
+class PrimaryNodeRoles(Base):
+
+    __tablename__ = 'primary_node_roles'
     id = Column(Integer, primary_key=True)
     role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id'))
@@ -109,15 +130,16 @@ class Node(Base):
     error_msg = Column(String(255))
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)
-    role_list = relationship(
+    role_list = association_proxy(
+        'roles_association', 'role_obj',
+        creator=lambda role: NodeRoles(role=role.id))
+    pending_role_list = association_proxy(
+        'pending_roles_association', 'role_obj',
+        creator=lambda role: PendingNodeRoles(role=role.id))
+    primary_role_list = relationship(
         "Role",
-        secondary=NodeRoles.__table__,
-        backref=backref("nodes", cascade="all,delete")
-    )
-    pending_role_list = relationship(
-        "Role",
-        secondary=PendingNodeRoles.__table__,
-        backref=backref("pending_nodes", cascade="all,delete")
+        secondary=PrimaryNodeRoles.__table__,
+        backref=backref("primary_nodes", cascade="all,delete")
     )
     attributes = relationship("NodeAttributes",
                               backref=backref("node"),
@@ -184,6 +206,10 @@ class Node(Base):
     @property
     def roles(self):
         return [role.name for role in self.role_list]
+
+    @property
+    def primary_roles(self):
+        return [role.name for role in self.primary_role_list]
 
     @roles.setter
     def roles(self, new_roles):

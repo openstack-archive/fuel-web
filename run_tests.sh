@@ -247,7 +247,7 @@ function run_nailgun_tests {
   local result=0
   local artifacts=$ARTIFACTS/nailgun
   local config=$artifacts/test.yaml
-  local options="-vv --junit-xml $NAILGUN_XUNIT"
+  local options="-vv --junit-xml --cleandb $NAILGUN_XUNIT"
   prepare_artifacts $artifacts $config
   if [ $# -ne 0 ]; then
     TESTS="$@"

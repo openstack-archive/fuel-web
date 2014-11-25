@@ -22,6 +22,8 @@ from nailgun.settings import settings
 def pytest_addoption(parser):
     parser.addoption("--dbname", default=settings.DATABASE['name'],
                      help="Overwrite database name")
+    parser.addoption("--cleandb", default=False, action="store_true",
+                     help="Provide this flag to manage database")
 
 
 def pytest_configure(config):
@@ -39,6 +41,19 @@ def pytest_configure(config):
         if not_present(cursor, db_name):
             create_database(connection, cursor, db_name)
     settings.DATABASE['name'] = db_name
+
+    cleandb = config.getoption('cleandb')
+    if cleandb:
+        from nailgun.db import dropdb, syncdb
+        dropdb()
+        syncdb()
+
+
+def pytest_unconfigure(config):
+    cleandb = config.getoption('cleandb')
+    if cleandb:
+        from nailgun.db import dropdb
+        dropdb()
 
 
 def create_database(connection, cursor, name):

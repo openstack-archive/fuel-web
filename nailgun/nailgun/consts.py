@@ -208,3 +208,7 @@ LOG_RECORD_SEND_STATUS = Enum(
     'existed',
     'failed'
 )
+
+#: name of the role that will be used to mark all nodes that require
+# zabbix monitoring
+ZABBIX_MONITORING = 'zabbix-monitoring'

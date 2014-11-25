@@ -39,6 +39,9 @@ def pytest_configure(config):
         if not_present(cursor, db_name):
             create_database(connection, cursor, db_name)
     settings.DATABASE['name'] = db_name
+    #settings.DATABASE['name'] will be used for dropdb
+    from nailgun.db import dropdb
+    dropdb()
 
 
 def create_database(connection, cursor, name):

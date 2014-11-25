@@ -39,6 +39,9 @@ class ListDhcpServers(lister.Lister, BaseCommand):
     """Show list of dhcp servers on ethernet interfaces.
     """
 
+    columns = ('server_id', 'iface', 'yiaddr', 'mac',
+               'server_ip', 'dport', 'message', 'gateway')
+
     def get_parser(self, prog_name):
         parser = super(ListDhcpServers, self).get_parser(prog_name)
         parser.add_argument(
@@ -48,12 +51,18 @@ class ListDhcpServers(lister.Lister, BaseCommand):
 
     def take_action(self, parsed_args):
         LOG.info('Starting dhcp discover for {0}'.format(parsed_args.ifaces))
-        res = api.check_dhcp(parsed_args.ifaces,
+        res = list(api.check_dhcp(parsed_args.ifaces,
                              timeout=parsed_args.timeout,
-                             repeat=parsed_args.repeat)
-        first = res.next()
-        columns = first.keys()
-        return columns, [first.values()] + [item.values() for item in res]
+                             repeat=parsed_args.repeat))
+        #NOTE(dshulyak) unfortunately cliff doesnt allow to configure
+        # PrettyTable output, see link:
+        # https://github.com/dhellmann/cliff/blob/master/
+        # cliff/formatters/table.py#L34
+        # and in case i want always print empty table if nothing found
+        # it is not possible by configuration
+        if not res:
+            return self.columns, [('',)*len(self.columns)]
+        return columns, [item.values() for item in res]
 
 
 class ListDhcpAssignment(lister.Lister, BaseCommand):

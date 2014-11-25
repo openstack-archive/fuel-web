@@ -53,6 +53,14 @@ class PendingNodeRoles(Base):
     node = Column(Integer, ForeignKey('nodes.id'))
 
 
+class PrimaryNodeRoles(Base):
+
+    __tablename__ = 'primary_node_roles'
+    id = Column(Integer, primary_key=True)
+    role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
+    node = Column(Integer, ForeignKey('nodes.id'))
+
+
 class Role(Base):
     __tablename__ = 'roles'
     __table_args__ = (
@@ -119,6 +127,11 @@ class Node(Base):
         secondary=PendingNodeRoles.__table__,
         backref=backref("pending_nodes", cascade="all,delete")
     )
+    primary_role_list = relationship(
+        "Role",
+        secondary=PrimaryNodeRoles.__table__,
+        backref=backref("primary_nodes", cascade="all,delete")
+    )
     attributes = relationship("NodeAttributes",
                               backref=backref("node"),
                               uselist=False,
@@ -184,6 +197,10 @@ class Node(Base):
     @property
     def roles(self):
         return [role.name for role in self.role_list]
+
+    @property
+    def primary_roles(self):
+        return [role.name for role in self.primary_role_list]
 
     @roles.setter
     def roles(self, new_roles):

@@ -532,6 +532,34 @@ class Cluster(NailgunObject):
             return True
         return False
 
+    @classmethod
+    def set_primary_role(cls, intance, nodes, role):
+        all_roles = intance.release.role_list
+        role = next(r for r in all_roles if r.name == role)
+        node = db().query(models.Node).filter(
+            models.Node.primary_role_list.contains(role)).first()
+        if node is None:
+            nodes = sorted((
+                n for n in nodes if role in n.role_list
+                or role in n.pending_role_list),
+                key=lambda node: node.id)
+            if nodes:
+                ready = None
+                for node in nodes:
+                    if node.status is consts.NODE_STATUSES.ready:
+                        ready = node
+                        break
+                primary_node = ready if ready else nodes[0]
+                primary_node.primary_role_list.append(role)
+        db().flush()
+
+    @classmethod
+    def set_primary_roles(cls, instance, nodes):
+        roles_metadata = instance.release.roles_metadata
+        for role, meta in roles_metadata.items():
+            if meta.get('has_primary'):
+                cls.set_primary_role(instance, nodes, role)
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

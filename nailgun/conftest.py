@@ -41,6 +41,13 @@ def pytest_configure(config):
     settings.DATABASE['name'] = db_name
 
 
+def pytest_unconfigure(config):
+    #settings.DATABASE['name'] will be used for dropdb
+    #nailgun database should be cleaned up between several test runs
+    from nailgun.db import dropdb
+    dropdb()
+
+
 def create_database(connection, cursor, name):
     connection.set_isolation_level(0)
     cursor.execute('create database {0}'.format(name))

@@ -19,6 +19,10 @@ import sys
 from scapy import all as scapy
 
 
+DHCP_OFFER_COLUMNS = ('iface', 'mac', 'server_ip', 'server_id', 'gateway',
+                      'dport', 'message', 'yiaddr')
+
+
 def command_util(*command):
     """object with stderr and stdout
     """
@@ -113,8 +117,6 @@ def _dhcp_options(dhcp_options):
 
 
 def format_answer(ans, iface):
-    columns = ('iface', 'mac', 'server_ip', 'server_id', 'gateway',
-               'dport', 'message', 'yiaddr')
     dhcp_options = dict(_dhcp_options(ans[scapy.DHCP].options))
     results = (
         iface, ans[scapy.Ether].src, ans[scapy.IP].src,
@@ -122,7 +124,7 @@ def format_answer(ans, iface):
         ans[scapy.UDP].sport,
         scapy.DHCPTypes[dhcp_options['message-type']],
         ans[scapy.BOOTP].yiaddr)
-    return dict(zip(columns, results))
+    return dict(zip(DHCP_OFFER_COLUMNS, results))
 
 
 def single_format(func):

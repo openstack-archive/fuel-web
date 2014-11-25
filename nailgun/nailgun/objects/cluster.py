@@ -42,6 +42,8 @@ from nailgun.utils import dict_merge
 from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
+from sqlalchemy import or_
+
 
 class Attributes(NailgunObject):
     """Cluster attributes object
@@ -531,6 +533,71 @@ class Cluster(NailgunObject):
         if not assignment or assignment['assign_to_all_nodes']['value']:
             return True
         return False
+
+    @classmethod
+    def set_primary_role(cls, intance, nodes, role):
+        """Method for assigning primary attribute for specific role.
+        - verify that there is no primary attribute of specific role
+        assigned to cluster nodes with this role in role list
+        or pending role list, and this node is not marked for deletion
+        - if there is no primary role assigned, filter nodes which have current
+        role in roles_list or pending_role_list
+        - if there is nodes with ready state - they should have higher priority
+        - if role was in primary_role_list - change primary attribute
+        for that association, same for role_list, this is required
+        because deployment_serializer used by cli to generate deployment info
+
+        :param instance: Cluster db objects
+        :param nodes: list of Node db objects
+        :param role: string with known role name
+        """
+        all_roles = intance.release.role_list
+        role = next(r for r in all_roles if r.name == role)
+        node = db().query(models.Node).filter_by(
+            pending_deletion=False).filter(or_(
+                models.Node.role_associations.any(role=role.id, primary=True),
+                models.Node.pending_role_associations.any(
+                    role=role.id, primary=True))).filter(
+                        models.Node.cluster == intance).first()
+        if node is None:
+            filtered_nodes = []
+            for node in nodes:
+                if (role in node.role_list
+                        or role in node.pending_role_list):
+                        filtered_nodes.append(node)
+            filtered_nodes = sorted(filtered_nodes, key=lambda node: node.id)
+            if filtered_nodes:
+                ready = None
+                for node in filtered_nodes:
+                    if node.status == consts.NODE_STATUSES.ready:
+                        ready = node
+                        break
+                primary_node = ready if ready else filtered_nodes[0]
+                if role in primary_node.role_list:
+                    for assoc in primary_node.role_associations:
+                        if assoc.role == role.id:
+                            assoc.primary = True
+                elif role in primary_node.pending_role_list:
+                    for assoc in primary_node.pending_role_associations:
+                        if assoc.role == role.id:
+                            assoc.primary = True
+        db().flush()
+
+    @classmethod
+    def set_primary_roles(cls, instance, nodes):
+        """Idempotent method for assignment of all primary attribute
+        for all roles that requires it.
+        To mark role as primary add has_primary: true attribute to release
+
+        :param instance: Cluster db object
+        :param nodes: list of Node db objects
+        """
+        if not instance.is_ha_mode:
+            return
+        roles_metadata = instance.release.roles_metadata
+        for role, meta in roles_metadata.items():
+            if meta.get('has_primary'):
+                cls.set_primary_role(instance, nodes, role)
 
 
 class ClusterCollection(NailgunCollection):

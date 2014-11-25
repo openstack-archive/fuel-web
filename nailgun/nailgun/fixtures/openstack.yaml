@@ -546,6 +546,12 @@
             description: "If selected, Ceilometer component will be installed"
             weight: 40
             type: "checkbox"
+          zabbix:
+            value: false
+            label: "Install Zabbix"
+            description: "If selected, Zabbix component will be installed"
+            weight: 50
+            type: "checkbox"
         common:
           metadata:
             label: "Common"
@@ -700,9 +706,6 @@
           metadata:
             label: "Zabbix Access"
             weight: 70
-            restrictions:
-              - condition: "not ('experimental' in version:feature_groups)"
-                action: "hide"
           username:
             value: "admin"
             label: "username"
@@ -1182,6 +1185,12 @@
           description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
+        zabbix:
+          type: "checkbox"
+          label: "dialog.create_cluster_wizard.additional.install_zabbix"
+          description: "dialog.create_cluster_wizard.additional.install_zabbix_description"
+          bind: "settings:additional_components.zabbix.value"
+          weight: 40
       Ready: {}
 - pk: 1
   extend: *base_release

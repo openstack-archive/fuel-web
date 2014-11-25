@@ -212,3 +212,7 @@ LOG_RECORD_SEND_STATUS = Enum(
 NOVA_SERVICE_TYPE = Enum(
     'compute',
 )
+
+#: name of the role that will be used to mark all nodes that require
+# zabbix monitoring
+ZABBIX_MONITORING = 'zabbix-monitoring'

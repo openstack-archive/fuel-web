@@ -199,13 +199,16 @@ def grub2_install(install_devices, chroot=''):
 
 def grub2_cfg(kernel_params='', chroot=''):
     grub_defaults = chroot + guess_grub2_default(chroot=chroot)
-    regex = re.compile(r'^.*GRUB_CMDLINE_LINUX.*')
+    rekerparams = re.compile(r'^.*GRUB_CMDLINE_LINUX=.*')
+    retimeout = re.compile(r'^.*GRUB_HIDDEN_TIMEOUT=.*')
     new_content = ''
     with open(grub_defaults) as f:
         for line in f:
-            new_content += regex.sub(
+            line = rekerparams.sub(
                 'GRUB_CMDLINE_LINUX="{kernel_params}"'.
                 format(kernel_params=kernel_params), line)
+            line = retimeout.sub('GRUB_HIDDEN_TIMEOUT=5', line)
+            new_content += line
     with open(grub_defaults, 'wb') as f:
         f.write(new_content)
     cmd = [guess_grub2_mkconfig(chroot), '-o', guess_grub2_conf(chroot)]

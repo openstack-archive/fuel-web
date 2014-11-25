@@ -96,6 +96,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
     def setUp(self):
         super(TestNovaOrchestratorSerializer, self).setUp()
         self.cluster = self.create_env('ha_compact')
+        objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode, network_manager='FlatDHCPManager'):
         node_args = [
@@ -349,6 +350,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def setUp(self):
         super(TestNovaOrchestratorHASerializer, self).setUp()
         self.cluster = self.create_env('ha_compact')
+        objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode):
         cluster = self.env.create(
@@ -692,6 +694,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         super(TestNeutronOrchestratorSerializer, self).setUp()
         self.new_env_release_version = None
         self.cluster = self.create_env('ha_compact')
+        objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode, segment_type='vlan'):
         release_kwargs = {}
@@ -1210,6 +1213,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def setUp(self):
         super(TestNeutronOrchestratorHASerializer, self).setUp()
         self.cluster = self.create_env('ha_compact')
+        objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode):
         cluster = self.env.create(

@@ -499,6 +499,7 @@ class Node(NailgunObject):
         cls.update_volumes(instance)
         cls.update(instance, node_data)
         cls.move_roles_to_pending_roles(instance)
+        instance.primary_role_list = []
         # when node reseted to discover:
         # - cobbler system is deleted
         # - mac to ip mapping from dnsmasq.conf is deleted
@@ -506,6 +507,7 @@ class Node(NailgunObject):
         # added to cluster (without any additonal state in database)
         netmanager = Cluster.get_network_manager()
         netmanager.clear_assigned_ips(instance)
+        db().flush()
 
     @classmethod
     def update_by_agent(cls, instance, data):
@@ -691,6 +693,7 @@ class Node(NailgunObject):
         cls.update_roles(instance, [])
         cls.update_pending_roles(instance, [])
         cls.remove_replaced_params(instance)
+        instance.primary_role_list = []
         instance.cluster_id = None
         instance.group_id = None
         instance.kernel_params = None
@@ -728,6 +731,16 @@ class Node(NailgunObject):
     def remove_replaced_params(cls, instance):
         instance.replaced_deployment_info = []
         instance.replaced_provisioning_info = {}
+
+    @classmethod
+    def all_roles(cls, instance):
+        roles = []
+        for role in set(instance.role_list + instance.pending_role_list):
+            if role in instance.primary_role_list:
+                roles.append('primary-{0}'.format(role.name))
+            else:
+                roles.append(role.name)
+        return sorted(roles)
 
 
 class NodeCollection(NailgunCollection):

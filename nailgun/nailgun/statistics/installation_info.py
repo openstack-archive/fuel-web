@@ -184,11 +184,16 @@ class InstallationInfo(object):
         try:
             stat_settings = MasterNodeSettings.get_one(). \
                 settings.get("statistics", {})
-
-            return {
+            result = {
                 "contact_info_provided":
                 stat_settings.get("user_choice_saved", {}).get("value", False)
                 and stat_settings.get("send_user_info", {}).get("value", False)
             }
+            if result["contact_info_provided"]:
+                result["name"] = stat_settings.get("name", {}).get("value")
+                result["email"] = stat_settings.get("email", {}).get("value")
+                result["company"] = stat_settings.get("company", {}).\
+                    get("value")
+            return result
         except AttributeError:
             return {"contact_info_provided": False}

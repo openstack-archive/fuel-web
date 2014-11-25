@@ -426,7 +426,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         self.assertEqual(StatsSender().must_send_stats(), False)
 
     def test_user_contacts_info_disabled_while_not_confirmed_by_user(self):
-        self.assertEqual(
+        self.assertDictEqual(
             InstallationInfo().get_installation_info()['user_information'],
             {'contact_info_provided': False})
 
@@ -445,7 +445,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
             params=jsonutils.dumps(data)
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(
+        self.assertDictEqual(
             InstallationInfo().get_installation_info()['user_information'],
             {'contact_info_provided': False})
 
@@ -460,15 +460,27 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         data["settings"]["statistics"]["user_choice_saved"]["value"] = True
         data["settings"]["statistics"]["send_user_info"]["value"] = \
             True
+        name = "user"
+        email = "u@e.mail"
+        company = "user company"
+        data["settings"]["statistics"]["name"]["value"] = name
+        data["settings"]["statistics"]["email"]["value"] = email
+        data["settings"]["statistics"]["company"]["value"] = company
         resp = self.app.put(
             reverse("MasterNodeSettingsHandler"),
             headers=self.default_headers,
             params=jsonutils.dumps(data)
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(
+        self.assertDictEqual(
             InstallationInfo().get_installation_info()['user_information'],
-            {'contact_info_provided': True})
+            {
+                'contact_info_provided': True,
+                'name': name,
+                'email': email,
+                'company': company
+            }
+        )
 
     def test_user_contacts_info_broken(self):
         settings_from_db = objects.MasterNodeSettings.get_one()
@@ -477,7 +489,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         settings_from_db.settings = settings
         self.db.commit()
 
-        self.assertEqual(
+        self.assertDictEqual(
             InstallationInfo().get_installation_info()['user_information'],
             {'contact_info_provided': False})
 
@@ -486,7 +498,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         self.db.delete(settings_from_db)
         self.db.commit()
 
-        self.assertEqual(
+        self.assertDictEqual(
             InstallationInfo().get_installation_info()['user_information'],
             {'contact_info_provided': False})
         self.assertEqual(

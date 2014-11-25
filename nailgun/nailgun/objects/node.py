@@ -729,6 +729,16 @@ class Node(NailgunObject):
         instance.replaced_deployment_info = []
         instance.replaced_provisioning_info = {}
 
+    @classmethod
+    def all_roles(cls, instance):
+        roles = []
+        for role in instance.role_list + instance.pending_role_list:
+            if role in instance.primary_role_list:
+                roles.append('primary-{0}'.format(role.name))
+            else:
+                roles.append(role.name)
+        return sorted(roles)
+
 
 class NodeCollection(NailgunCollection):
     """Node collection

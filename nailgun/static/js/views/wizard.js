@@ -126,7 +126,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             _.each(this.restrictions, function(paneConfig) {
                 _.each(paneConfig, function(paneRestrictions) {
                     _.each(paneRestrictions, function(restriction) {
-                        var evaluatedExpression = utils.evaluateExpression(restriction.condition, {default: this.model}, {strict: false});
+                        var evaluatedExpression = utils.evaluateExpression(restriction.condition,
+                            {default: this.model, version: app.version}, {strict: false});
                         _.invoke(evaluatedExpression.modelPaths, 'change', _.bind(this.handleTrackedAttributeChange, this));
                     }, this);
                 }, this);
@@ -391,7 +392,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var attributesToObserve = [];
             _.each(this.wizard.restrictions[this.constructorName], function(paneConfig) {
                 _.each(paneConfig, function(paneRestriction) {
-                    var evaluatedExpression = utils.evaluateExpression(paneRestriction.condition, {default: this.wizard.model}, {strict: false});
+                    var evaluatedExpression = utils.evaluateExpression(paneRestriction.condition,
+                        {default: this.wizard.model, version: app.version}, {strict: false});
                     _.each(evaluatedExpression.modelPaths, function(modelPath) {
                         attributesToObserve.push(modelPath.attribute);
                     }, this);
@@ -426,7 +428,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             _.each(_.groupBy(controlRestrictions, 'action'), function(restrictions, action) {
                 var conditions = _.pluck(restrictions, 'condition');
                 var attributesToObserve = _.uniq(_.flatten(_.map(conditions, function(condition) {
-                    return _.keys(utils.evaluateExpression(condition, {default: this.wizard.model}).modelPaths);
+                    return _.keys(utils.evaluateExpression(condition,
+                        {default: this.wizard.model, version: app.version}).modelPaths);
                 }, this)));
                 var selector = _.map(selectorOptions, function(value, key) {
                     return '[' + key + '=' + value + ']';
@@ -439,7 +442,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                                 observe: attributesToObserve,
                                 onGet: function() {
                                     return _.any(conditions, function(condition) {
-                                        return utils.evaluateExpression(condition, {default: this.wizard.model}).value;
+                                        return utils.evaluateExpression(condition,
+                                            {default: this.wizard.model, version: app.version}).value;
                                     }, this);
                                 }
                             }]
@@ -450,7 +454,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                             observe: attributesToObserve,
                             visible: function() {
                                 return !_.any(conditions, function(condition) {
-                                    return utils.evaluateExpression(condition, {default: this.wizard.model}).value;
+                                    return utils.evaluateExpression(condition,
+                                        {default: this.wizard.model, version: app.version}).value;
                                 }, this);
                             }
                         });
@@ -499,7 +504,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var messages = [];
             _.each(this.wizard.restrictions[this.constructorName], function (paneConfig) {
                 _.each(paneConfig, function(paneRestriction) {
-                    var result = utils.evaluateExpression(paneRestriction.condition, {default: this.wizard.model}).value;
+                    var result = utils.evaluateExpression(paneRestriction.condition,
+                        {default: this.wizard.model, version: app.version}).value;
                     if (result) {
                         messages.push(paneRestriction.message);
                     }

@@ -996,6 +996,12 @@
               label: "dialog.create_cluster_wizard.network.neutr_nsx"
               restrictions:
                 - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+                - condition: "not ('experimental' in version:feature_groups)"
+                  action: "disable"
+                  message: "Neutron with NSX can be used with Experimental mode only. Please, look at the documentation to enable it"
+                - condition: "('experimental' in version:feature_groups) and (NameAndRelease.release_operating_system == 'Ubuntu')"
+                  action: "none"
+                  message: "NSX with Ubuntu was not tested properly and can be inoperable"
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_l23_provider": "nsx"

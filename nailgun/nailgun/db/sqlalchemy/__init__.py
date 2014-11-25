@@ -19,6 +19,7 @@ import contextlib
 from sqlalchemy import create_engine
 from sqlalchemy import schema
 
+from sqlalchemy import MetaData
 from sqlalchemy.engine import reflection
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import Session
@@ -96,11 +97,10 @@ def syncdb():
 
 def dropdb():
     from nailgun.db import migration
-    from nailgun.db.sqlalchemy.models.base import Base
-
     conn = engine.connect()
     trans = conn.begin()
-
+    meta = MetaData()
+    meta.reflect(bind=engine)
     inspector = reflection.Inspector.from_engine(engine)
 
     tbs = []
@@ -116,7 +116,7 @@ def dropdb():
             )
         t = schema.Table(
             table_name,
-            Base.metadata,
+            meta,
             *fks,
             extend_existing=True
         )
@@ -142,10 +142,10 @@ def dropdb():
 
     for tp in custom_types:
         conn.execute("DROP TYPE {0}".format(tp[1]))
-
     trans.commit()
     migration.drop_migration_meta(engine)
-
+    conn.close()
+    engine.dispose()
 
 def flush():
     """Delete all data from all tables within nailgun metadata

@@ -24,6 +24,7 @@
         update_required:
           - compute
           - cinder
+        has_primary: true
       compute:
         name: "Compute"
         description: "A compute node creates, manages and terminates virtual machine instances."

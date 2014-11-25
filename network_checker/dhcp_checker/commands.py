@@ -18,6 +18,7 @@ import logging
 from cliff import command
 from cliff import lister
 from dhcp_checker import api
+from dhcp_checker.utils import DHCP_OFFER_COLUMNS
 
 
 LOG = logging.getLogger(__name__)
@@ -48,12 +49,19 @@ class ListDhcpServers(lister.Lister, BaseCommand):
 
     def take_action(self, parsed_args):
         LOG.info('Starting dhcp discover for {0}'.format(parsed_args.ifaces))
-        res = api.check_dhcp(parsed_args.ifaces,
-                             timeout=parsed_args.timeout,
-                             repeat=parsed_args.repeat)
-        first = res.next()
-        columns = first.keys()
-        return columns, [first.values()] + [item.values() for item in res]
+        res = list(api.check_dhcp(
+            parsed_args.ifaces,
+            timeout=parsed_args.timeout,
+            repeat=parsed_args.repeat))
+        #NOTE(dshulyak) unfortunately cliff doesnt allow to configure
+        # PrettyTable output, see link:
+        # https://github.com/dhellmann/cliff/blob/master/
+        # cliff/formatters/table.py#L34
+        # and in case i want always print empty table if nothing found
+        # it is not possible by configuration
+        if not res:
+            return DHCP_OFFER_COLUMNS, [('',) * len(DHCP_OFFER_COLUMNS)]
+        return DHCP_OFFER_COLUMNS, [item.values() for item in res]
 
 
 class ListDhcpAssignment(lister.Lister, BaseCommand):

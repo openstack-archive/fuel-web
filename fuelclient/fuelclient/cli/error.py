@@ -39,6 +39,10 @@ class BadDataException(FuelClientException):
     """Should be raised when user provides corrupted data."""
 
 
+class SubprocessError(FuelClientException):
+    """Raised when a subprocess exception is raised."""
+
+
 class WrongEnvironmentError(FuelClientException):
     """Raised when particular action is not supported on environment."""
 

@@ -13,6 +13,7 @@
 #    under the License.
 
 import os
+import subprocess
 import tarfile
 
 import yaml
@@ -45,6 +46,13 @@ class Plugins(base.BaseObject):
             plugin_tar.name, cls.metadata_config))
 
     @classmethod
+    def run_script(cls, cmd, cwd=None):
+        try:
+            return subprocess.check_call(cmd, cwd=cwd)
+        except subprocess.CalledProcessError as err:
+            raise error.SubprocessError(err.message)
+
+    @classmethod
     def add_plugin(cls, plugin_meta, plugin_tar):
         return plugin_tar.extractall(EXTRACT_PATH)
 
@@ -65,6 +73,15 @@ class Plugins(base.BaseObject):
             else:
                 resp.raise_for_status()
             cls.add_plugin(metadata, plugin_tar)
+            install_script = metadata.get('install_script')
+            if install_script:
+                path = ''.join((
+                    EXTRACT_PATH,
+                    metadata.get('name', ''),
+                    '-',
+                    metadata.get('version', ''),
+                    '/',))
+                cls.run_script(cmd=path + install_script, cwd=path)
         finally:
             plugin_tar.close()
         return resp

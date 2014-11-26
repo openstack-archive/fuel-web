@@ -49,6 +49,12 @@ class ServerDataException(FuelClientException):
     """
 
 
+class GenericProcessingError(FuelClientException):
+    """GenericProcessingError - must be raised when
+    there is a generic error processing the users request.
+    """
+
+
 class DeployProgressError(FuelClientException):
     """DeployProgressError - must be raised when
     deployment process interrupted on server.

@@ -16,6 +16,7 @@
 
 from mock import Mock
 from mock import patch
+from subprocess import CalledProcessError
 
 from fuelclient.tests import base
 
@@ -23,6 +24,13 @@ DATA = """
 name: sample
 version: 0.1.0
 """
+
+CMD_INSTALL = """
+install_script: echo
+"""
+#fuelclient.objects.plugins.EXTRACT_PATH
+PATH = "/var/www/nailgun/plugins/sample-0.1.0/"
+CMD = PATH + "echo"
 
 
 @patch('fuelclient.client.requests')
@@ -60,3 +68,31 @@ class TestPluginsActions(base.UnitTestCase):
             ['fuel', 'plugins', '--install', '/tmp/sample.fp', '--force'])
         self.assertEqual(mrequests.post.call_count, 1)
         self.assertEqual(mrequests.put.call_count, 1)
+
+    @patch('fuelclient.objects.plugins.tarfile')
+    @patch('fuelclient.objects.plugins.os')
+    @patch('fuelclient.objects.plugins.subprocess.check_call')
+    def test_install_plugin_with_install_pass(
+            self, msub, mos, mtar, mrequests):
+        mos.path.exists.return_value = True
+        mtar.open().getnames.return_value = ['metadata.yaml']
+        mtar.open().extractfile().read.return_value = DATA + CMD_INSTALL
+        response_mock = Mock(status_code=201)
+        mrequests.post.return_value = response_mock
+        self.execute(
+            ['fuel', 'plugins', '--install', '/tmp/sample.fp'])
+        msub.assert_called_once_with(CMD, cwd=PATH)
+
+    @patch('fuelclient.objects.plugins.tarfile')
+    @patch('fuelclient.objects.plugins.os')
+    @patch('fuelclient.objects.plugins.subprocess.check_call')
+    def test_install_plugin_with_install_fail(
+            self, msub, mos, mtar, mrequests):
+        mos.path.exists.return_value = True
+        mtar.open().getnames.return_value = ['metadata.yaml']
+        mtar.open().extractfile().read.return_value = DATA + CMD_INSTALL
+        response_mock = Mock(status_code=201)
+        mrequests.post.return_value = response_mock
+        msub.check_call.side_effect = CalledProcessError(255, 'echo')
+        self.assertRaises(SystemExit, self.execute(
+            ['fuel', 'plugins', '--install', '/tmp/sample.fp']))

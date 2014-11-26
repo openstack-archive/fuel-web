@@ -687,7 +687,8 @@ class TestReleaseOrchestratorData(BaseIntegrationTest):
         self.data = {
             'release_id': self.release.id,
             'repo_metadata': {
-                '5': 'http://10.20.0.2:8080/{OPENSTACK_VERSION}/centos/x86_64',
+                '{OPENSTACK_VERSION}':
+                'http://10.20.0.2:8080/{OPENSTACK_VERSION}/centos/x86_64',
             },
             'puppet_manifests_source': 'rsync://10.20.0.2:/puppet/modules/',
             'puppet_modules_source': 'rsync://10.20.0.2:/puppet/manifests/',
@@ -695,7 +696,8 @@ class TestReleaseOrchestratorData(BaseIntegrationTest):
         instance = objects.ReleaseOrchestratorData.create(self.data)
 
         self.assertEqual(instance.repo_metadata, {
-            '5': 'http://10.20.0.2:8080/{0}/centos/x86_64'.format(
+            self.release.version:
+            'http://10.20.0.2:8080/{0}/centos/x86_64'.format(
                 self.release.version)})
         self.assertEqual(
             instance.puppet_manifests_source,

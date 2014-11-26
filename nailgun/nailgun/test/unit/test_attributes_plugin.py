@@ -33,8 +33,10 @@ class TestPlugin(base.BaseTestCase):
         self.plugin = Plugin.create(self.plugin_metadata)
         self.env.create(
             cluster_kwargs={'mode': 'multinode'},
-            release_kwargs={'version': '2014.2-6.0',
-                            'operating_system': 'Ubuntu'})
+            release_kwargs={
+                'version': '2014.2-6.0',
+                'operating_system': 'Ubuntu',
+                'orchestrator_data': self.env.get_default_orchestrator_data()})
         self.cluster = self.env.clusters[0]
         self.attr_plugin = attr_plugin.ClusterAttributesPlugin(self.plugin)
         self.env_config = self.env.get_default_plugin_env_config()

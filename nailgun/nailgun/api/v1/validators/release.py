@@ -35,6 +35,7 @@ class ReleaseValidator(BasicValidator):
                         "Invalid network data: {0}".format(network),
                         log_message=True
                     )
+
         if "orchestrator_data" in d:
             if not isinstance(d["orchestrator_data"], dict):
                 raise errors.InvalidData(
@@ -68,6 +69,11 @@ class ReleaseValidator(BasicValidator):
                 "No release operating system specified",
                 log_message=True
             )
+        if "orchestrator_data" not in d:
+            raise errors.InvalidData(
+                'No orchestrator_data specified', log_message=True
+            )
+
         if db().query(Release).filter_by(
             name=d["name"],
             version=d["version"]

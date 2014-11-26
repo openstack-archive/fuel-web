@@ -1529,16 +1529,16 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
         self.assertEqual(
             fact['repo_metadata'],
             {
-                'nailgun': 'http://127.0.0.1:8080/centos/x86_64'
+                '2014.2-6.0': 'http://127.0.0.1:8080/2014.2-6.0/centos/x86_64'
             }
         )
         self.assertEqual(
             fact['puppet_modules_source'],
-            'rsync://127.0.0.1:/puppet/modules/'
+            'rsync://127.0.0.1:/puppet/2014.2-6.0/modules/'
         )
         self.assertEqual(
             fact['puppet_manifests_source'],
-            'rsync://127.0.0.1:/puppet/manifests/'
+            'rsync://127.0.0.1:/puppet/2014.2-6.0/manifests/'
         )
 
     def test_orch_data_w_replaced_deployment_info(self):

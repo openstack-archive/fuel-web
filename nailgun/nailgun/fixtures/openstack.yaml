@@ -913,6 +913,8 @@
         mysql:
           root_password:
             generator: "password"
+          wsrep_password:
+            generator: "password"
         keystone:
           db_password:
             generator: "password"

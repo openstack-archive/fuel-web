@@ -13,6 +13,7 @@
 #    under the License.
 
 import os
+import subprocess
 import tarfile
 
 import yaml
@@ -45,6 +46,29 @@ class Plugins(base.BaseObject):
             plugin_tar.name, cls.metadata_config))
 
     @classmethod
+    def run_script(cls, cmd, cwd=None):
+        child = subprocess.popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True,
+            cwd=cwd)
+
+        if self.connection.debug:
+            for each in child.stdout:
+                self.connection.print_debug(each.rstrip())
+
+        child.wait()
+
+        if exit_code != 0:
+            raise error.GenericProcessingError(
+                u'Shell command executed with "{0}" '
+                'exit code: {1} '.format(exit_code, cmd))
+
+        self.connection.print_debug(
+            u'Command "{0}" successfully executed'.format(cmd))
+
+    @classmethod
     def add_plugin(cls, plugin_meta, plugin_tar):
         return plugin_tar.extractall(EXTRACT_PATH)
 
@@ -65,6 +89,15 @@ class Plugins(base.BaseObject):
             else:
                 resp.raise_for_status()
             cls.add_plugin(metadata, plugin_tar)
+            install_script = metadata.get('install_script')
+            if install_script:
+                path = ''.join((
+                    EXTRACT_PATH,
+                    metadata.get('name',''),
+                    '-',
+                    metadata.get('version', ''),
+                    '/',))
+                cls.run_script(cmd=path + install_script, cwd=path)
         finally:
             plugin_tar.close()
         return resp

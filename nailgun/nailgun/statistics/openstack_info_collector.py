@@ -97,5 +97,22 @@ class OpenStackInfoCollector(object):
             openstack_info["nova_servers_count"] = len(
                 self.nova_client.servers.list()
             )
+            openstack_info["images"] = self.get_images_info()
 
         return openstack_info
+
+    def get_images_info(self):
+        images = self.nova_client.images.list()
+
+        size_attr_name = consts.OPENSTACK_IMAGES_SETTINGS.size_attr_name
+
+        images_info = []
+        for img in images:
+            images_info.append(
+                {
+                    "size": getattr(img, size_attr_name),
+                    "unit": consts.OPENSTACK_IMAGES_SETTINGS.size_unit
+                }
+            )
+
+        return images_info

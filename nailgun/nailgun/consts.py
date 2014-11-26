@@ -212,3 +212,12 @@ LOG_RECORD_SEND_STATUS = Enum(
 NOVA_SERVICE_TYPE = Enum(
     'compute',
 )
+
+OPENSTACK_IMAGES_SETTINGS = Enum(
+    "OS-EXT-IMG-SIZE:size",
+    "byte",
+    names=(
+        "size_attr_name",
+        "size_unit"
+    )
+)

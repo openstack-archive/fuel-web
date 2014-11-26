@@ -17,6 +17,7 @@
 from random import randint
 
 import requests
+import urllib3
 
 import six
 
@@ -49,7 +50,8 @@ class StatsSender(object):
                                 timeout=settings.COLLECTOR_RESP_TIMEOUT)
             resp.raise_for_status()
             return True
-        except (requests.exceptions.ConnectionError,
+        except (urllib3.exceptions.HTTPError,
+                requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
                 requests.exceptions.TooManyRedirects,
                 requests.exceptions.HTTPError) as e:
@@ -67,7 +69,8 @@ class StatsSender(object):
                 headers=headers,
                 data=jsonutils.dumps(data),
                 timeout=settings.COLLECTOR_RESP_TIMEOUT)
-        except (requests.exceptions.ConnectionError,
+        except (urllib3.exceptions.HTTPError,
+                requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
                 requests.exceptions.TooManyRedirects) as e:
             logger.error("Sending data to collector failed: %s",

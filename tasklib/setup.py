@@ -24,11 +24,8 @@ def requirements():
     return requirements
 
 
-major_version = '0.1'
-minor_version = '0'
 name = 'tasklib'
-
-version = "%s.%s" % (major_version, minor_version)
+version = '6.0.0'
 
 
 setuptools.setup(

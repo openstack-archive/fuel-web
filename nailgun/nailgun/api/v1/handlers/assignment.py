@@ -34,9 +34,10 @@ class NodeAssignmentHandler(BaseHandler):
 
     @content_json
     def POST(self, cluster_id):
-        """:returns: Http response.
-        :http: * 201 (nodes are successfully assigned)
+        """:returns: Empty string
+        :http: * 200 (nodes are successfully assigned)
                * 400 (invalid nodes data specified)
+               * 404 (cluster/node not found in db)
         """
         self.get_object_or_404(
             objects.Cluster,
@@ -66,7 +67,7 @@ class NodeUnassignmentHandler(BaseHandler):
     def POST(self, cluster_id):
         """:returns: Empty string
         :http: * 200 (node successfully unassigned)
-               * 404 (node not found in db)
+               * 404 (cluster/node not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         nodes = self.checked_data(

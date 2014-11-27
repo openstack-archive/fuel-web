@@ -162,6 +162,14 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 }
             };
         },
+        componentWillMount: function() {
+            var settings = this.props.cluster.get('settings');
+            this.areSettingsValid = settings.isValid({models: {
+                cluster: this.props.cluster,
+                version: app.version,
+                settings: settings
+            }});
+        },
         getRequiredNodeAmount: function() {
             return this.props.cluster.get('mode') == 'ha_compact' ? 3 : 1;
         },
@@ -202,14 +210,21 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             var ns = 'dialog.display_changes.',
                 cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                requiredNodeAmount = this.getRequiredNodeAmount();
+                requiredNodeAmount = this.getRequiredNodeAmount(),
+                isNewOrNeedsRedeployment = cluster.get('status') == 'new' || cluster.needsRedeployment(),
+                warningMessageClasses = cx({
+                    'deploy-task-notice': true,
+                    'text-error': !this.areSettingsValid,
+                    'text-warning': isNewOrNeedsRedeployment
+                });
             return (
                 <div className='display-changes-dialog'>
-                    {(cluster.get('status') == 'new' || cluster.needsRedeployment()) &&
+                    {(isNewOrNeedsRedeployment || !this.areSettingsValid) &&
                         <div>
-                            <div className='deploy-task-notice text-warning'>
+                            <div className={warningMessageClasses}>
                                 <i className='icon-attention' />
-                                <span>{$.t(ns + (cluster.get('status') == 'new' ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
+                                <span>{$.t(ns + (!this.areSettingsValid ? 'warnings.settings_invalid' :
+                                    cluster.get('status') == 'new' ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
                         </div>
@@ -241,7 +256,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
                 <button key='deploy'
                     className={'btn start-deployment-btn btn-' + (_.compact(_.values(this.state.amountRestrictions)).length ? 'danger' : 'success')}
-                    disabled={this.state.actionInProgress}
+                    disabled={this.state.actionInProgress || !this.areSettingsValid}
                     onClick={this.deployCluster}
                 >{$.t('dialog.display_changes.deploy')}</button>
             ]);

@@ -35,7 +35,7 @@ class NodeGroupValidator(BasicValidator):
         return data
 
     @classmethod
-    def validate_delete(cls, instance, force=False):
+    def validate_delete(cls, data, instance, force=False):
         if (instance.nodes or instance.networks) and not force:
             raise errors.CannotDelete(
                 "You cannot delete a node group that contains "

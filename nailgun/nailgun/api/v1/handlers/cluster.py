@@ -304,9 +304,6 @@ class VmwareAttributesHandler(BaseHandler):
         )
 
         attributes = objects.Cluster.get_vmware_attributes(cluster)
-        # TODO(apopovych): we should add support for 204 statuse code in
-        # @content decorator. Now it return response with "Content-Type"
-        # header for 204
         if not attributes:
             raise self.http(404, "No vmware attributes found")
 

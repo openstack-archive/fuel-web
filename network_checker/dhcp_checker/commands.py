@@ -61,7 +61,10 @@ class ListDhcpServers(lister.Lister, BaseCommand):
         # it is not possible by configuration
         if not res:
             return DHCP_OFFER_COLUMNS, [('',) * len(DHCP_OFFER_COLUMNS)]
-        return DHCP_OFFER_COLUMNS, [item.values() for item in res]
+        def formatter(item):
+            for key in DHCP_OFFER_COLUMNS:
+                yield item.get(key, '')
+        return DHCP_OFFER_COLUMNS, [formatter(item) for item in res]
 
 
 class ListDhcpAssignment(lister.Lister, BaseCommand):

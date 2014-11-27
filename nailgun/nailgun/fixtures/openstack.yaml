@@ -396,6 +396,15 @@
             regex:
               source: &valid_cluster_name '^([^,\ ]+([\ ]*[^,\ ])*)(,[^,\ ]+([\ ]*[^,\ ])*)*$'
               error: "Invalid cluster list"
+          datastore_regex:
+            value: ""
+            label: "Datastore regexp"
+            description: "The Datastore regexp setting specifies the data stores to use with Compute. For example, \"nas.*\". If you want to use it all, leave it blank"
+            weight: 50
+            type: "text"
+            regex:
+              source:  '^(\S.*\S|\S|)$'
+              error: "Invalid datastore regexp"
         nsx_plugin:
           metadata:
             enabled: false

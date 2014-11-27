@@ -17,6 +17,7 @@ from mock import Mock
 from mock import patch
 
 import requests
+import urllib3
 
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import fake_tasks
@@ -269,6 +270,8 @@ class TestStatisticsSender(BaseTestCase):
     @patch('nailgun.statistics.statsenderd.logger.error')
     def test_ping_failed_on_connection_errors(self, log_error, requests_get):
         except_types = (
+            urllib3.exceptions.DecodeError,
+            urllib3.exceptions.ProxyError,
             requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
             requests.exceptions.TooManyRedirects,
@@ -310,6 +313,8 @@ class TestStatisticsSender(BaseTestCase):
     @patch('nailgun.statistics.statsenderd.logger.error')
     def test_send_failed_on_connection_error(self, log_error, requests_post):
         except_types = (
+            urllib3.exceptions.DecodeError,
+            urllib3.exceptions.ProxyError,
             requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
             requests.exceptions.TooManyRedirects)

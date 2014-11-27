@@ -18,7 +18,7 @@ import logging
 from cliff import command
 from cliff import lister
 from dhcp_checker import api
-from dhcp_checker.utils import DHCP_OFFER_COLUMNS
+from dhcp_checker import utils
 
 
 LOG = logging.getLogger(__name__)
@@ -60,8 +60,10 @@ class ListDhcpServers(lister.Lister, BaseCommand):
         # and in case i want always print empty table if nothing found
         # it is not possible by configuration
         if not res:
-            return DHCP_OFFER_COLUMNS, [('',) * len(DHCP_OFFER_COLUMNS)]
-        return DHCP_OFFER_COLUMNS, [item.values() for item in res]
+            res = [{}]
+        return (utils.DHCP_OFFER_COLUMNS,
+                [utils.get_item_properties(item, utils.DHCP_OFFER_COLUMNS)
+                 for item in res])
 
 
 class ListDhcpAssignment(lister.Lister, BaseCommand):

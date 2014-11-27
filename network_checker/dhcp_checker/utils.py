@@ -93,6 +93,19 @@ def pick_ip(range_start, range_end):
             i += 1
 
 
+def get_item_properties(item, columns):
+    """Get specified in columns properties, with preserved order.
+    Required for correct cli table generation
+
+    :param item: dict
+    :param columns: list with arbitrary keys
+    """
+    properties = []
+    for key in columns:
+        properties.append(item.get(key, ''))
+    return properties
+
+
 def format_options(options):
     """Util for serializing dhcp options
     @options = [1,2,3]

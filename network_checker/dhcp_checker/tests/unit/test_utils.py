@@ -105,6 +105,12 @@ class TestDhcpFormat(unittest.TestCase):
 
         self.assertEqual(tobe_decorated('eth1'), [expected_response])
 
+    def test_order_preserver(self):
+        example = {'first': 'first', 'second': 'second'}
+        columns = ['second', 'first']
+        items = utils.get_item_properties(example, columns)
+        self.assertEqual(columns, items)
+
 
 class TestMultiprocMap(unittest.TestCase):
     """Test verifies that working with function decorated by multiproc_map

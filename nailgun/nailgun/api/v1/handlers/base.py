@@ -92,21 +92,22 @@ class BaseHandler(object):
         )
 
     @classmethod
-    def http(cls, status_code, message='', headers=None):
+    def http(cls, status_code, msg="", err_list=None, headers=None):
         """Raise an HTTP status code, as specified. Useful for returning status
         codes like 401 Unauthorized or 403 Forbidden.
 
         :param status_code: the HTTP status code as an integer
-        :param message: the message to send along, as a string
+        :param msg: the message to send along, as a string
+        :param err_list: list of fields with errors
         :param headers: the headers to send along, as a dictionary
         """
         class _nocontent(web.HTTPError):
             message = 'No Content'
 
-            def __init__(self, message=''):
+            def __init__(self):
                 super(_nocontent, self).__init__(
                     status='204 No Content',
-                    data=message or self.message
+                    data=self.message
                 )
 
         exc_status_map = {
@@ -132,7 +133,10 @@ class BaseHandler(object):
         }
 
         exc = exc_status_map[status_code]()
-        exc.data = message
+
+        exc.data = msg
+        exc.err_list = err_list or []
+        exc.status_code = status_code
 
         headers = headers or {}
         for key, value in headers.items():
@@ -252,7 +256,13 @@ def content_json(func, cls, *args, **kwargs):
     except web.notmodified:
         raise
     except web.HTTPError as http_error:
-        http_error.data = json_resp(http_error.data)
+        if http_error.status_code >= 400:
+            http_error.data = json_resp({
+                "message": http_error.data,
+                "errors": http_error.err_list
+            })
+        else:
+            http_error.data = json_resp(http_error.data)
         raise
 
     if all([

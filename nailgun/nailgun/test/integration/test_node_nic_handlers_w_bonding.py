@@ -75,7 +75,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         for put_func in (self.put_single, self.put_collection):
             resp = put_func()
             self.assertEqual(resp.status_code, 400)
-            self.assertEqual(resp.body, message)
+            self.assertEqual(resp.json_body["message"], message)
 
     def nics_bond_create(self, put_func):
         self.data.append({
@@ -184,7 +184,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': each interface must have a "
-            "type".format(self.env.nodes[0]["id"]))
+            "type".format(self.env.nodes[0]["id"])
+        )
 
     def test_nics_bond_create_failed_not_have_enough_data(self):
         self.data.append({
@@ -194,7 +195,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': each bond interface must have "
-            "name".format(self.env.nodes[0]["id"]))
+            "name".format(self.env.nodes[0]["id"])
+        )
 
     def test_nics_bond_create_failed_unknown_mode(self):
         self.data.append({
@@ -210,7 +212,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': bond interface 'ovs-bond0' has unknown mode "
-            "'unknown'".format(self.env.nodes[0]["id"]))
+            "'unknown'".format(self.env.nodes[0]["id"])
+        )
 
     def test_nics_bond_create_failed_no_mode(self):
         self.data.append({
@@ -225,7 +228,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': each bond interface must have "
-            "mode".format(self.env.nodes[0]["id"]))
+            "mode".format(self.env.nodes[0]["id"])
+        )
 
     def test_nics_bond_create_failed_no_slaves(self):
         self.data.append({
@@ -238,7 +242,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': each bond interface must have "
-            "two or more slaves".format(self.env.nodes[0]["id"]))
+            "two or more slaves".format(self.env.nodes[0]["id"])
+        )
 
     def test_nics_bond_create_failed_one_slave(self):
         self.data.append({
@@ -253,7 +258,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': each bond interface must have "
-            "two or more slaves".format(self.env.nodes[0]["id"]))
+            "two or more slaves".format(self.env.nodes[0]["id"])
+        )
 
     def test_nics_bond_create_failed_no_assigned_networks(self):
         self.data.append({
@@ -268,7 +274,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}', interface 'ovs-bond0': there is no "
-            "'assigned_networks' list".format(self.env.nodes[0]["id"]))
+            "'assigned_networks' list".format(self.env.nodes[0]["id"])
+        )
 
     def test_nics_bond_create_failed_nic_is_used_twice(self):
         self.data.append({
@@ -284,7 +291,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': interface '{1}' is used in bonds more "
-            "than once".format(self.env.nodes[0]["id"], self.other_nic["id"]))
+            "than once".format(self.env.nodes[0]["id"], self.other_nic["id"])
+        )
 
     def test_nics_bond_create_failed_duplicated_assigned_networks(self):
         self.data.append({
@@ -302,7 +310,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "assigned networks (second occurrence is in interface "
             "'ovs-bond0')".format(
                 self.env.nodes[0]["id"],
-                self.other_nic["assigned_networks"][0]["id"]))
+                self.other_nic["assigned_networks"][0]["id"])
+        )
 
     def test_nics_bond_create_failed_unknown_interface(self):
         self.data.append({
@@ -318,7 +327,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': there is no interface 'some_nic' found for bond "
-            "'ovs-bond0' in DB".format(self.env.nodes[0]["id"]))
+            "'ovs-bond0' in DB".format(self.env.nodes[0]["id"])
+        )
 
     def test_nics_bond_create_failed_slave_has_assigned_networks(self):
         self.data.append({
@@ -334,7 +344,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.node_nics_put_check_error(
             "Node '{0}': interface '{1}' cannot have assigned networks as it "
             "is used in bond".format(self.env.nodes[0]["id"],
-                                     self.other_nic["id"]))
+                                     self.other_nic["id"])
+        )
 
     def test_nics_bond_create_failed_slave_has_no_name(self):
         self.data.append({
@@ -350,4 +361,5 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}', interface 'ovs-bond0': each bond slave "
-            "must have name".format(self.env.nodes[0]["id"]))
+            "must have name".format(self.env.nodes[0]["id"])
+        )

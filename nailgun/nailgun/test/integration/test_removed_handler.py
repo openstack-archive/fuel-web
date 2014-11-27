@@ -22,12 +22,12 @@ from nailgun.test.base import reverse
 class BaseTestRemovedResources(BaseIntegrationTest):
     def assert_resp_correct(self, resp):
         self.assertEqual(resp.status_code, 410)
-        self.assertEqual(resp.body, self.body)
+        self.assertEqual(resp.json_body["message"], self.message)
 
     def setUp(self):
         super(BaseTestRemovedResources, self).setUp()
 
-        self.body = u"Removed in Fuel version 5.1"
+        self.errors = u"Removed in Fuel version 5.1"
         self.kwargs = {
             'headers': self.default_headers,
             'params': {'fa': 'ke', 'pa': 'ra', 'm': 5},

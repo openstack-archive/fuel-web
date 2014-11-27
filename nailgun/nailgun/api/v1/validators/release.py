@@ -127,7 +127,7 @@ class ReleaseValidator(BasicValidator):
         return d
 
     @classmethod
-    def validate_delete(cls, instance):
+    def validate_delete(cls, data, instance):
         if instance.clusters:
             raise errors.CannotDelete(
                 "Can't delete release with "

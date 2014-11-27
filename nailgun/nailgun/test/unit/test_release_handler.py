@@ -61,7 +61,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
-            resp.body,
+            resp.json_body["message"],
             "Can't delete release with "
             "clusters assigned"
         )

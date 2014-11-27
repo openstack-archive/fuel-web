@@ -181,9 +181,6 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                 objects.Task.update(task, data)
                 logger.error(traceback.format_exc())
 
-        if task.status == consts.TASK_STATUSES.error:
-            raise self.http(400, objects.Task.to_json(task))
-
         raise self.http(200, objects.Task.to_json(task))
 
 

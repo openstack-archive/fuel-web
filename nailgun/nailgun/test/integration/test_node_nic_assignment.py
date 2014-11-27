@@ -542,15 +542,16 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
         for put_func in (self.put_single, self.put_collection):
             resp = put_func()
             self.assertEqual(resp.status_code, 400)
-            self.assertEqual(resp.body, message)
+            self.assertEqual(resp.json_body["message"], message)
 
     def test_assignment_change_failed_assigned_network_wo_id(self):
         self.nics_w_nets[0]["assigned_networks"] = [{}]
 
         self.node_nics_put_check_error(
             "Node '{0}', interface '{1}': each assigned network should "
-            "have ID".format(
-                self.env.nodes[0]["id"], self.nics_w_nets[0]['id']))
+            "have ID".format(self.env.nodes[0]["id"],
+                             self.nics_w_nets[0]['id'])
+        )
 
     def test_assignment_change_failed_node_has_unassigned_network(self):
         unassigned_id = self.nics_w_nets[0]["assigned_networks"][0]["id"]
@@ -559,18 +560,21 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
 
         self.node_nics_put_check_error(
             "Node '{0}': '{1}' network(s) are left unassigned".format(
-                self.env.nodes[0]["id"], unassigned_id))
+            self.env.nodes[0]["id"], unassigned_id)
+        )
 
     def test_assignment_change_failed_node_has_unknown_network(self):
         self.nics_w_nets[0]["assigned_networks"].append({"id": 1234567})
 
         self.node_nics_put_check_error(
             "Network '1234567' doesn't exist for node {0}".format(
-                self.env.nodes[0]["id"]))
+            self.env.nodes[0]["id"])
+        )
 
     def test_nic_change_failed_node_has_unknown_interface(self):
         self.nics_w_nets[0]["id"] = 1234567
 
         self.node_nics_put_check_error(
             "Node '{0}': there is no interface with ID '1234567'"
-            " in DB".format(self.env.nodes[0]["id"]))
+            " in DB".format(self.env.nodes[0]["id"])
+        )

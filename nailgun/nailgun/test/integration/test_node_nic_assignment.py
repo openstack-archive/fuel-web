@@ -538,19 +538,20 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
         return self.env.node_collection_nics_put(nodes_list,
                                                  expect_errors=True)
 
-    def node_nics_put_check_error(self, message):
+    def node_nics_put_check_error(self, errors):
         for put_func in (self.put_single, self.put_collection):
             resp = put_func()
             self.assertEqual(resp.status_code, 400)
-            self.assertEqual(resp.body, message)
+            self.assertEqual(resp.json_body["errors"], errors)
 
     def test_assignment_change_failed_assigned_network_wo_id(self):
         self.nics_w_nets[0]["assigned_networks"] = [{}]
 
         self.node_nics_put_check_error(
-            "Node '{0}', interface '{1}': each assigned network should "
-            "have ID".format(
-                self.env.nodes[0]["id"], self.nics_w_nets[0]['id']))
+            ["Node '{0}', interface '{1}': each assigned network should "
+             "have ID".format(self.env.nodes[0]["id"],
+                              self.nics_w_nets[0]['id'])]
+        )
 
     def test_assignment_change_failed_node_has_unassigned_network(self):
         unassigned_id = self.nics_w_nets[0]["assigned_networks"][0]["id"]
@@ -558,19 +559,22 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
             self.nics_w_nets[0]["assigned_networks"][1:]
 
         self.node_nics_put_check_error(
-            "Node '{0}': '{1}' network(s) are left unassigned".format(
-                self.env.nodes[0]["id"], unassigned_id))
+            ["Node '{0}': '{1}' network(s) are left unassigned".format(
+             self.env.nodes[0]["id"], unassigned_id)]
+        )
 
     def test_assignment_change_failed_node_has_unknown_network(self):
         self.nics_w_nets[0]["assigned_networks"].append({"id": 1234567})
 
         self.node_nics_put_check_error(
-            "Network '1234567' doesn't exist for node {0}".format(
-                self.env.nodes[0]["id"]))
+            ["Network '1234567' doesn't exist for node {0}".format(
+             self.env.nodes[0]["id"])]
+        )
 
     def test_nic_change_failed_node_has_unknown_interface(self):
         self.nics_w_nets[0]["id"] = 1234567
 
         self.node_nics_put_check_error(
-            "Node '{0}': there is no interface with ID '1234567'"
-            " in DB".format(self.env.nodes[0]["id"]))
+            ["Node '{0}': there is no interface with ID '1234567'"
+             " in DB".format(self.env.nodes[0]["id"])]
+        )

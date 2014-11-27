@@ -61,9 +61,9 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
-            resp.body,
-            "Can't delete release with "
-            "clusters assigned"
+            resp.json_body["errors"],
+            ["Can't delete release with "
+             "clusters assigned"]
         )
 
     @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})

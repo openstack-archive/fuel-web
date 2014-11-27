@@ -155,7 +155,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
+        self.assertEqual(
+            resp.json_body["errors"],
+            ["Neither MAC nor ID is specified"]
+        )
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -164,7 +167,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
+        self.assertEqual(
+            resp.json_body["errors"],
+            ["Neither MAC nor ID is specified"]
+        )
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -173,7 +179,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
+        self.assertEqual(
+            resp.json_body["errors"],
+            ["Neither MAC nor ID is specified"]
+        )
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -183,7 +192,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
+        self.assertEqual(
+            resp.json_body["errors"],
+            ["Neither MAC nor ID is specified"]
+        )
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -193,7 +205,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Null MAC is specified")
+        self.assertEqual(
+            resp.json_body["errors"],
+            ["Null MAC is specified"]
+        )
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -237,7 +252,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Invalid ID specified")
+        self.assertEqual(
+            resp.json_body["errors"],
+            ["Invalid ID specified"]
+        )
 
     def test_node_update_agent_discover(self):
         self.env.create_node(
@@ -369,7 +387,7 @@ class TestHandlers(BaseIntegrationTest):
             api=True,
             exclude=["mac"],
             expect_http=400,
-            expect_message="No mac address specified"
+            expected_errors=["No mac address specified"]
         )
         self.assertEqual(node, None)
 

@@ -15,9 +15,12 @@
 #    under the License.
 
 from datetime import datetime
+
 from decorator import decorator
 from sqlalchemy import exc as sa_exc
 import web
+
+import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.db import db
@@ -121,7 +124,7 @@ class BaseHandler(object):
         )
 
     @classmethod
-    def http(cls, status_code, message='', headers=None):
+    def http(cls, status_code, err_list=None, headers=None):
         """Raise an HTTP status code, as specified. Useful for returning status
         codes like 401 Unauthorized or 403 Forbidden.
 
@@ -132,10 +135,10 @@ class BaseHandler(object):
         class _nocontent(web.HTTPError):
             message = 'No Content'
 
-            def __init__(self, message=''):
+            def __init__(self):
                 super(_nocontent, self).__init__(
                     status='204 No Content',
-                    data=message or self.message
+                    data=self.message
                 )
 
         exc_status_map = {
@@ -161,7 +164,16 @@ class BaseHandler(object):
         }
 
         exc = exc_status_map[status_code]()
-        exc.data = message
+
+        if status_code >= 400:  # dealing with error
+            if err_list and isinstance(err_list, six.string_types):
+                err_list = [err_list]
+            exc.data = jsonutils.dumps({
+                "status": status_code,
+                "errors": err_list if err_list else []
+            })
+        else:
+            exc.data = err_list
 
         headers = headers or {}
         for key, value in headers.items():

@@ -238,8 +238,8 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                     vol["size"] = 100 if vol["name"] == "os" else 0
         resp = self.put(node_db.id, disks, expect_errors=True)
         self.assertEqual(
-            resp.body,
-            "Base system should be allocated on one disk only"
+            resp.json_body["errors"],
+            ["Base system should be allocated on one disk only"]
         )
 
     def test_recalculates_vg_sizes_when_disks_volumes_size_update(self):
@@ -297,7 +297,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         node = self.create_node()
         response = self.put(node.id, [], True)
         self.assertEqual(response.status_code, 400)
-        self.assertRegexpMatches(response.body,
+        self.assertRegexpMatches(response.json_body["errors"][0],
                                  '^Node seems not to have disks')
 
     def test_validator_not_enough_size_for_volumes(self):
@@ -311,8 +311,8 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         response = self.put(node.id, disks, True)
         self.assertEqual(response.status_code, 400)
-        self.assertRegexpMatches(
-            response.body, '^Not enough free space on disk: .+')
+        self.assertRegexpMatches(response.json_body["errors"][0],
+                                 '^Not enough free space on disk: .+')
 
     def test_validator_invalid_data(self):
         node = self.create_node()
@@ -324,8 +324,8 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         response = self.put(node.id, disks, True)
         self.assertEqual(response.status_code, 400)
-        self.assertRegexpMatches(
-            response.body, "'size' is a required property")
+        self.assertRegexpMatches(response.json_body["errors"][0],
+                                 "'size' is a required property")
 
 
 class TestNodeDefaultsDisksHandler(BaseIntegrationTest):

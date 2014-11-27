@@ -197,7 +197,7 @@ class EnvironmentManager(object):
     def create_node(
             self, api=False,
             exclude=None, expect_http=201,
-            expect_message=None,
+            expected_error=None,
             **kwargs):
         #TODO(alekseyk) Simplify 'interfaces' and 'mac' manipulation logic
         metadata = kwargs.get('meta')
@@ -240,8 +240,11 @@ class EnvironmentManager(object):
                 expect_errors=True
             )
             self.tester.assertEqual(resp.status_code, expect_http, resp.body)
-            if expect_message:
-                self.tester.assertEqual(resp.body, expect_message)
+            if expected_error:
+                self.tester.assertEqual(
+                    resp.json_body["message"],
+                    expected_error
+                )
             if str(expect_http)[0] != "2":
                 return None
             self.tester.assertEqual(resp.status_code, expect_http)

@@ -298,13 +298,15 @@ function run_webui_tests {
   # run js testcases
   local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
   local result=0
+  local pid
 
   for testcase in $TESTS; do
 
     dropdb $config
     syncdb $config true
 
-    local pid=`run_server $SERVER_PORT $server_log $config`
+    pid=`run_server $SERVER_PORT $server_log $config` || \
+      { echo 'Failed to start Nailgun'; return 1; }
 
     if [ $pid -ne 0 ]; then
       SERVER_PORT=$SERVER_PORT \
@@ -344,6 +346,8 @@ function run_cli_tests {
   local TESTS=$ROOT/fuelclient/fuelclient/tests
   local artifacts=$ARTIFACTS/cli
   local config=$artifacts/test.yaml
+  local pid
+
   prepare_artifacts $artifacts $config
 
   if [ $# -ne 0 ]; then
@@ -356,7 +360,8 @@ function run_cli_tests {
   dropdb $config
   syncdb $config true
 
-  local pid=`run_server $SERVER_PORT $server_log $config`
+  pid=`run_server $SERVER_PORT $server_log $config` || \
+      { echo 'Failed to start Nailgun'; return 1; }
 
   if [ $pid -ne 0 ]; then
 
@@ -554,7 +559,7 @@ function run_server {
   tox -evenv -- $RUN_SERVER >> $SERVER_LOG 2>&1 &
 
   # wait for server availability
-  which nc > /dev/null
+  which curl > /dev/null
   if [ $? -eq 0 ]; then
     for i in {1..50}; do
       local http_code=`curl -s -w %{http_code} -o /dev/null -I http://0.0.0.0:$SERVER_PORT/`
@@ -565,7 +570,12 @@ function run_server {
     sleep 5
   fi
   popd >> /dev/null
-  echo `lsof -ti tcp:$SERVER_PORT`
+
+  pid=`lsof -ti tcp:$SERVER_PORT`
+  local nailgun_launched=$?
+  echo $pid
+
+  return $nailgun_launched
 }
 
 function prepare_artifacts {

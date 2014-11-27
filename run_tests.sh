@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-set -eu
+set -euxx
 
 function usage {
   echo "Usage: $0 [OPTION]..."
@@ -96,6 +96,8 @@ SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
 UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
 FUELCLIENT_SERVER_PORT=${FUELCLIENT_SERVER_PORT:-8003}
 TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
+NAILGUN_CHECK_URL=${NAILGUN_CHECK_URL:-"http://0.0.0.0:$FUELCLIENT_SERVER_PORT/api/version"}
+NAILGUN_START_MAX_WAIT_TIME=${NAILGUN_START_MAX_WAIT_TIME:-5}
 ARTIFACTS=${ARTIFACTS:-`pwd`/test_run}
 TEST_WORKERS=${TEST_WORKERS:-0}
 mkdir -p $ARTIFACTS
@@ -298,15 +300,17 @@ function run_webui_tests {
   # run js testcases
   local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
   local result=0
+  local pid
 
   for testcase in $TESTS; do
 
     dropdb $config
     syncdb $config true
 
-    local pid=`run_server $SERVER_PORT $server_log $config`
+    pid=`run_server $SERVER_PORT $server_log $config` || \
+      { echo 'Failed to start Nailgun'; return 1; }
 
-    if [ $pid -ne 0 ]; then
+    if [ "$pid" -ne "0" ]; then
       SERVER_PORT=$SERVER_PORT \
       ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
       if [ $? -ne 0 ]; then
@@ -344,6 +348,8 @@ function run_cli_tests {
   local TESTS=$ROOT/fuelclient/fuelclient/tests
   local artifacts=$ARTIFACTS/cli
   local config=$artifacts/test.yaml
+  local pid
+
   prepare_artifacts $artifacts $config
 
   if [ $# -ne 0 ]; then
@@ -356,9 +362,10 @@ function run_cli_tests {
   dropdb $config
   syncdb $config true
 
-  local pid=`run_server $SERVER_PORT $server_log $config`
+  pid=`run_server $SERVER_PORT $server_log $config` || \
+      { echo 'Failed to start Nailgun'; return 1; }
 
-  if [ $pid -ne 0 ]; then
+  if [ "$pid" -ne "0" ]; then
 
     pushd $ROOT/fuelclient >> /dev/null
     # run tests
@@ -554,18 +561,27 @@ function run_server {
   tox -evenv -- $RUN_SERVER >> $SERVER_LOG 2>&1 &
 
   # wait for server availability
-  which nc > /dev/null
-  if [ $? -eq 0 ]; then
-    for i in {1..50}; do
-      local http_code=`curl -s -w %{http_code} -o /dev/null -I http://0.0.0.0:$SERVER_PORT/`
-      if [ http_code = 200 ]; then break; fi
+  which curl > /dev/null
+  ret=$?
+  if [ $ret -eq 0 ]; then
+
+    local num_retries=$[$NAILGUN_START_MAX_WAIT_TIME * 10]
+
+    for i in $(seq 1 $num_retries); do
+      local http_code=`curl -s -w %{http_code} -o /dev/null $NAILGUN_CHECK_URL`
+      if [ "$http_code" == "200" ]; then break; fi
       sleep 0.1
     done
   else
     sleep 5
   fi
   popd >> /dev/null
-  echo `lsof -ti tcp:$SERVER_PORT`
+
+  pid=`lsof -ti tcp:$SERVER_PORT`
+  local nailgun_launched=$?
+  echo $pid
+
+  return $nailgun_launched
 }
 
 function prepare_artifacts {

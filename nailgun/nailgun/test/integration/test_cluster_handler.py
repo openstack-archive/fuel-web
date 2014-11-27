@@ -96,7 +96,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
-            resp.body,
+            resp.json_body["message"],
             "Changing 'net_provider' for environment is prohibited"
         )
 

@@ -119,7 +119,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
-            resp.body,
+            resp.json_body["message"],
             u"Wrong net provider - environment uses 'nova_network'"
         )
 
@@ -314,7 +314,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -347,7 +347,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -362,7 +362,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(

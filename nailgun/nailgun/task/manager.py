@@ -200,7 +200,7 @@ class ApplyChangesTaskManager(TaskManager):
         if nodes_to_delete:
             objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
             # For more accurate progress calculation
-            task_weight = 0.4
+            task_weight = 0.25
             task_deletion = supertask.create_subtask(TASK_NAMES.node_deletion,
                                                      weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)

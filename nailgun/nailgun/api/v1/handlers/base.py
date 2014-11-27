@@ -15,6 +15,7 @@
 #    under the License.
 
 from datetime import datetime
+
 from decorator import decorator
 from sqlalchemy import exc as sa_exc
 import web
@@ -121,7 +122,7 @@ class BaseHandler(object):
         )
 
     @classmethod
-    def http(cls, status_code, message='', headers=None):
+    def http(cls, status_code, err_msg="", err_list=None, headers=None):
         """Raise an HTTP status code, as specified. Useful for returning status
         codes like 401 Unauthorized or 403 Forbidden.
 
@@ -132,10 +133,10 @@ class BaseHandler(object):
         class _nocontent(web.HTTPError):
             message = 'No Content'
 
-            def __init__(self, message=''):
+            def __init__(self):
                 super(_nocontent, self).__init__(
                     status='204 No Content',
-                    data=message or self.message
+                    data=self.message
                 )
 
         exc_status_map = {
@@ -161,7 +162,14 @@ class BaseHandler(object):
         }
 
         exc = exc_status_map[status_code]()
-        exc.data = message
+
+        if status_code >= 400:  # dealing with error
+            exc.data = jsonutils.dumps({
+                "message": err_msg,
+                "errors": err_list
+            })
+        else:
+            exc.data = err_msg
 
         headers = headers or {}
         for key, value in headers.items():

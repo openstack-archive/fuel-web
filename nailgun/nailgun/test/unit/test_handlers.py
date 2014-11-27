@@ -69,7 +69,11 @@ class TestHandlers(BaseIntegrationTest):
         # test response status code and message
         for code, message in http_codes:
             with self.assertRaises(web.HTTPError) as cm:
-                raise BaseHandler.http(code, message, headers)
+                raise BaseHandler.http(
+                    status_code=code,
+                    err_msg=message,
+                    headers=headers
+                )
 
             self.assertTrue(web.ctx.status.startswith(str(code)))
             self.assertTrue(cm.exception.data, message)

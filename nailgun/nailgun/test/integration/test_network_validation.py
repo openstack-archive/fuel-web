@@ -83,7 +83,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_neutron_networks_w_error(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets,
                                              expect_errors=True)
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(task['progress'], 100)

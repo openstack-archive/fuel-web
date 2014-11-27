@@ -367,7 +367,7 @@ class TestVmwareAttributes(BaseIntegrationTest):
 
         self.assertEqual(400, resp.status_code)
         self.assertEqual(
-            "'editable' is a required property", resp.testbody)
+            "'editable' is a required property", resp.json_body["message"])
 
         self._set_use_vcenter(self.cluster_db)
 
@@ -387,7 +387,7 @@ class TestVmwareAttributes(BaseIntegrationTest):
 
         self.assertEqual(400, resp.status_code)
         self.assertEqual(
-            "Metadata shouldn't change", resp.testbody)
+            "Metadata shouldn't change", resp.json_body["message"])
 
     def test_404_if_no_attributes(self):
         cluster = self.env.create_cluster(api=False)
@@ -419,7 +419,9 @@ class TestVmwareAttributes(BaseIntegrationTest):
         )
         self.assertEqual(400, resp.status_code)
         self.assertEqual(
-            "Cluster doesn't support vmware configuration", resp.testbody)
+            "Cluster doesn't support vmware configuration",
+            resp.json_body["message"]
+        )
 
         resp = self.app.put(
             reverse(
@@ -435,7 +437,9 @@ class TestVmwareAttributes(BaseIntegrationTest):
         )
         self.assertEqual(400, resp.status_code)
         self.assertEqual(
-            "Cluster doesn't support vmware configuration", resp.testbody)
+            "Cluster doesn't support vmware configuration",
+            resp.json_body["message"]
+        )
 
     def _set_use_vcenter(self, cluster):
         cluster_attrs = objects.Cluster.get_attributes(cluster).editable

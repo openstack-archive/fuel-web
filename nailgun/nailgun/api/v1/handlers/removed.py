@@ -17,6 +17,7 @@
 Handlers for removed resources
 """
 from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.base import content
 
 
 class BaseRemovedInHandler(BaseHandler):
@@ -27,6 +28,7 @@ class BaseRemovedInHandler(BaseHandler):
     def fuel_version(self):
         raise NotImplementedError
 
+    @content
     def GET(self):
         """A stub for the request. Always returns 410 with removed message.
 

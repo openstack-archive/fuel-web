@@ -602,7 +602,8 @@
                         "controller_plural": "At least __count__ controllers are required to provide High Availability of the environment",
                         "mongo": "When Ceilometer is enabled, the environment should have Telemetry - MongoDB node",
                         "mongo_plural": "At least __count__ MongoDB nodes are required to provide High Availability of the environment",
-                        "compute": "Compute nodes are recommended for deployment"
+                        "compute": "Compute nodes are recommended for deployment",
+                        "settings_invalid": "Environment settings are invalid. Deployment cannot be started."
                     },
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",

@@ -32,6 +32,8 @@ define(
 function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, controls) {
     'use strict';
 
+    var cx = React.addons.classSet;
+
     var views = {};
 
     views.Dialog = Backbone.View.extend({
@@ -150,14 +152,23 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         },
         getInitialState: function() {
             // FIXME: the following amount restrictions shoud be described declaratively in configuration file
-            var nodes = this.props.cluster.get('nodes'),
-                requiredNodeAmount = this.getRequiredNodeAmount();
+            var cluster = this.props.cluster,
+                nodes = cluster.get('nodes'),
+                requiredNodeAmount = this.getRequiredNodeAmount(),
+                settings = cluster.get('settings');
             return {
                 amountRestrictions: {
                     controller: nodes.nodesAfterDeploymentWithRole('controller') < requiredNodeAmount,
-                    compute: !nodes.nodesAfterDeploymentWithRole('compute') && this.props.cluster.get('settings').get('common.libvirt_type.value') != 'vcenter',
-                    mongo: this.props.cluster.get('settings').get('additional_components.ceilometer.value') && nodes.nodesAfterDeploymentWithRole('mongo') < requiredNodeAmount
-                }
+                    compute: !nodes.nodesAfterDeploymentWithRole('compute') && cluster.get('settings').get('common.libvirt_type.value') != 'vcenter',
+                    mongo: cluster.get('settings').get('additional_components.ceilometer.value') && nodes.nodesAfterDeploymentWithRole('mongo') < requiredNodeAmount
+                },
+                areSettingsValid: settings.isValid({models: {
+                    cluster: cluster,
+                    version: app.version,
+                    settings: settings,
+                    networking_parameters: cluster.get('networkConfiguration').get('networking_parameters'),
+                    default: settings
+                }})
             };
         },
         getRequiredNodeAmount: function() {
@@ -200,14 +211,22 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             var ns = 'dialog.display_changes.',
                 cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                requiredNodeAmount = this.getRequiredNodeAmount();
+                requiredNodeAmount = this.getRequiredNodeAmount(),
+                isNew = cluster.get('status') == 'new',
+                isNewOrNeedsRedeployment = isNew || cluster.needsRedeployment(),
+                warningMessageClasses = cx({
+                    'deploy-task-notice': true,
+                    'text-error': !this.state.areSettingsValid,
+                    'text-warning': isNewOrNeedsRedeployment
+                });
             return (
                 <div className='display-changes-dialog'>
-                    {(cluster.get('status') == 'new' || cluster.needsRedeployment()) &&
+                    {(isNewOrNeedsRedeployment || !this.state.areSettingsValid) &&
                         <div>
-                            <div className='deploy-task-notice text-warning'>
+                            <div className={warningMessageClasses}>
                                 <i className='icon-attention' />
-                                <span>{$.t(ns + (cluster.get('status') == 'new' ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
+                                <span>{$.t(ns + (!this.state.areSettingsValid ? 'warnings.settings_invalid' :
+                                    isNew ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
                         </div>
@@ -239,7 +258,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
                 <button key='deploy'
                     className={'btn start-deployment-btn btn-' + (_.compact(_.values(this.state.amountRestrictions)).length ? 'danger' : 'success')}
-                    disabled={this.state.actionInProgress}
+                    disabled={this.state.actionInProgress || !this.state.areSettingsValid}
                     onClick={this.deployCluster}
                 >{$.t('dialog.display_changes.deploy')}</button>
             ]);

@@ -22,8 +22,11 @@ requires = [
     'Fabric==1.7.0'
 ]
 
-name = 'shotgun'
-version = '6.0.0'
+major_version = '0.1'
+minor_version = '0'
+name = 'Shotgun'
+
+version = "%s.%s" % (major_version, minor_version)
 
 
 def recursive_data_files(spec_data_files):

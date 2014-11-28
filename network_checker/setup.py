@@ -17,7 +17,7 @@ import setuptools
 
 setuptools.setup(
     name="nailgun-net-check",
-    version='6.0.0',
+    version='0.2',
     author="Mirantis Inc",
     classifiers=[
         "License :: OSI Approved :: Apache 2.0",

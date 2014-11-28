@@ -21,7 +21,7 @@ cloud-init-per instance disable_selinux sed -i 's/^SELINUX=.*/SELINUX=disabled/g
 # udev persistent net
 cloud-init-per instance udev_persistent_net1 service network stop
 
-DEFAULT_GW={{ common.master_ip }}
+DEFAULT_GW={{ common.gw }}
 ADMIN_MAC={{ common.admin_mac }}
 ADMIN_IF=$(echo {{ common.udevrules }} | sed 's/[,=]/\n/g' | grep "$ADMIN_MAC" | cut -d_ -f2 | head -1)
 INSTALL_IF=$(ifconfig | grep "$ADMIN_MAC" | head -1 | cut -d' ' -f1)

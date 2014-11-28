@@ -264,7 +264,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 .fail(_.bind(function(response) {
                     this.displayError({
                         title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
-                        message: utils.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
+                        message: utils.getResponseErrors(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
                     });
                     this.setState({actionInProgress: false});
                 }, this));

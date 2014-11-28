@@ -83,7 +83,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 data: JSON.stringify(this.networkConfiguration)
             };
             task.save({}, options)
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
+                    this.otherErrors = utils.getResponseErrors(response);
+                    this.renderVerificationControl();
                     utils.showErrorDialog({
                         title: $.t('cluster_page.network_tab.verify_networks.verification_error.title'),
                         message: $.t('cluster_page.network_tab.verify_networks.verification_error.start_verification_warning')
@@ -166,6 +168,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.model.get('tasks').bindToView(this, [{group: ['deployment', 'network']}], function(task) {
                 task.on('change:status', this.render, this);
             }, this.render, this.renderVerificationControl);
+            this.otherErrors = '';
             this.initialConfiguration = new models.NetworkConfiguration();
             this.networkConfiguration = this.model.get('networkConfiguration');
             this.networkConfiguration.on('invalid', function(model, errors) {
@@ -212,7 +215,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         renderVerificationControl: function() {
             var verificationView = new NetworkTabVerificationControl({
                 cluster: this.model,
-                networks: this.networkConfiguration.get('networks')
+                networks: this.networkConfiguration.get('networks'),
+                otherErrors: this.otherErrors
             });
             this.registerSubView(verificationView);
             this.$('.verification-control').html(verificationView.render().el);
@@ -484,7 +488,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             _.defaults(this, options);
         },
         render: function() {
-            this.$el.html(this.template({cluster: this.cluster, networks: this.networks})).i18n();
+            this.$el.html(this.template({
+                cluster: this.cluster,
+                networks: this.networks,
+                otherErrors: this.otherErrors
+            })).i18n();
             return this;
         }
     });

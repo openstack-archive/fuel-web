@@ -323,7 +323,8 @@ class Nailgun(object):
             timezone=data['ks_meta'].get('timezone', 'America/Los_Angeles'),
             ks_repos=dict(map(lambda x: x.strip('"').strip("'"),
                               item.split('=')) for item in
-                          data['ks_meta']['repo_metadata'].split(','))
+                          data['ks_meta']['repo_metadata'].split(',')),
+            gw=data['ks_meta']['gw']
         )
 
         LOG.debug('Adding puppet parameters')

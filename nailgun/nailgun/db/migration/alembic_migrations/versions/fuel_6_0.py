@@ -42,6 +42,9 @@ ENUMS = (
 )
 
 
+ADDED_ROLES_META = {'controller': {'has_primary': True}}
+
+
 def upgrade():
     """Upgrade schema and then upgrade data."""
     upgrade_schema()
@@ -176,6 +179,14 @@ def upgrade_schema():
     upgrade_node_groups(connection)
 
     op.drop_column('network_groups', 'cluster_id')
+    op.add_column(
+        'node_roles',
+        sa.Column('primary', sa.Boolean(),
+                  nullable=False, server_default='false'))
+    op.add_column(
+        'pending_node_roles',
+        sa.Column('primary', sa.Boolean(),
+                  nullable=False, server_default='false'))
 
 
 def upgrade_releases():
@@ -194,7 +205,7 @@ def upgrade_releases():
         attrs_meta = upgrade_release_attributes_51_to_60(
             jsonutils.loads(release[1]))
         roles_meta = upgrade_release_roles_51_to_60(
-            jsonutils.loads(release[2]))
+            jsonutils.loads(release[2]), add_meta=ADDED_ROLES_META)
         connection.execute(
             update,
             id=release[0],
@@ -239,6 +250,8 @@ def downgrade_schema():
     )
     op.drop_column(u'releases', 'wizard_metadata')
     op.drop_table('nodegroups')
+    op.drop_column('pending_node_roles', 'primary')
+    op.drop_column('node_roles', 'primary')
 
 
 def upgrade_node_groups(connection):

@@ -323,7 +323,11 @@ class Nailgun(object):
             timezone=data['ks_meta'].get('timezone', 'America/Los_Angeles'),
             ks_repos=dict(map(lambda x: x.strip('"').strip("'"),
                               item.split('=')) for item in
-                          data['ks_meta']['repo_metadata'].split(','))
+                          data['ks_meta']['repo_metadata'].split(',')),
+            mlnx_plugin_mode=data['ks_meta'].get('mlnx_plugin_mode',
+                                                 'disabled'),
+            mlnx_iser_enabled=data['ks_meta'].get('mlnx_iser_enabled', False),
+            mlnx_vf_num=data['ks_meta'].get('mlnx_vf_num', '1')
         )
 
         LOG.debug('Adding puppet parameters')

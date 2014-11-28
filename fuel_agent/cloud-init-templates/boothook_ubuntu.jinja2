@@ -19,15 +19,13 @@ cloud-init-per instance udev_persistent_net1 /etc/init.d/networking stop
 
 ADMIN_MAC={{ common.admin_mac }}
 ADMIN_IF=$(echo {{ common.udevrules }} | sed 's/[,=]/\n/g' | grep "$ADMIN_MAC" | cut -d_ -f2 | head -1)
-#NOTE: it will be broken, once ifconfig (net-tools) 2.0 or higher version of package be used
-INSTALL_IF=$(ifconfig -a | grep "$ADMIN_MAC" | head -1 | cut -d' ' -f1)
 # Check if we do not already have static config (or interface seems unconfigured)
 if [ ! -d "/etc/network/interfaces.d" ]; then
     mkdir -p /etc/network/interfaces.d
     echo 'source /etc/network/interfaces.d/*' > /etc/network/interfaces
 fi
 if [ ! -e "/etc/network/interfaces.d/ifcfg-$ADMIN_IF" ]; then
-    echo -e "auto $ADMIN_IF\niface $ADMIN_IF inet static\n\taddress {{ common.admin_ip }}\n\tnetmask {{ common.admin_mask }}" > /etc/network/interfaces.d/ifcfg-"$ADMIN_IF"
+    echo -e "auto $ADMIN_IF\niface $ADMIN_IF inet static\n\taddress {{ common.admin_ip }}\n\tnetmask {{ common.admin_mask }}\n\tgateway {{ common.gw }}" > /etc/network/interfaces.d/ifcfg-"$ADMIN_IF"
 fi
 
 cloud-init-per instance udev_persistent_net5 /etc/init.d/networking start

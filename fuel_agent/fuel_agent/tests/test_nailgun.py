@@ -84,6 +84,7 @@ PROVISION_SAMPLE_DATA = {
     "power_address": "10.20.0.253",
     "name_servers": "\"10.20.0.2\"",
     "ks_meta": {
+        "gw": "10.20.0.1",
         "image_data": {
             "/": {
                 "uri": "http://fake_image_url",

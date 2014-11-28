@@ -305,7 +305,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                         } else {
                             var options = {
                                 title: $.t('dialog.create_cluster_wizard.create_cluster_error.title'),
-                                message: response.status == 400 ? response.responseText : undefined
+                                message: utils.getResponseText(response.responseText)
                             };
                             this.displayError(options);
                         }

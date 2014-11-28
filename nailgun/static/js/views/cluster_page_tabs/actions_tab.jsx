@@ -84,7 +84,7 @@ function(React, utils, models, dialogs) {
                     deferred
                         .fail(_.bind(function(response) {
                             if (response.status == 409) {
-                                this.setState({error: response.responseText});
+                                this.setState({error: utils.getResponseText(response.responseText)});
                             } else {
                                 utils.showErrorDialog({title: $.t('cluster_page.actions_tab.rename_error.title')});
                             }

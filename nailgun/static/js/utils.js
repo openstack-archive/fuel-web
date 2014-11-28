@@ -251,7 +251,8 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             });
         },
         getResponseText: function(response) {
-            return _.contains([400, 409], response.status) ? response.responseText : '';
+            response = JSON.parse(response);
+            return (response.status >= 400) ? response.errors.join(';') : '';
         }
     };
 

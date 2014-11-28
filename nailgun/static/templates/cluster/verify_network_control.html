@@ -36,6 +36,13 @@
           <li data-i18n="cluster_page.network_tab.verify_networks.step_4"></li>
       </div>
 
+      <% if (otherErrors) { %>
+        <div class="alert alert-error enable-selection">
+          <span data-i18n="cluster_page.network_tab.verify_networks.fail_alert"></span><br/>
+          <%= otherErrors %>
+        </div>
+      <% } %>
+
       <% if (task && task.match({name: 'verify_networks', status: 'ready'})) { %>
         <div class="alert alert-success enable-selection" data-i18n="cluster_page.network_tab.verify_networks.success_alert"></div>
       <% } else if (task && task.match({status: 'error'})) { %>

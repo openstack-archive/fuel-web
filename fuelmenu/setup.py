@@ -18,7 +18,7 @@ import setuptools
 
 setuptools.setup(
     name="fuelmenu",
-    version='6.0.0',
+    version='0.1',
     description="Console util for pre-configuration of Fuel server",
     author="Matthew Mosesohn",
     author_email="mmosesohn@mirantis.com",

@@ -18,11 +18,8 @@ import os.path
 from setuptools import find_packages
 from setuptools import setup
 
-major_version = '0.1'
-minor_version = '0'
 name = 'nailgun'
-
-version = "%s.%s" % (major_version, minor_version)
+version = '6.0.0'
 
 
 def find_requires():

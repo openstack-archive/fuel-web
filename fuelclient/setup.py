@@ -17,7 +17,7 @@ from setuptools import setup
 
 setup(
     name='fuelclient',
-    version='0.2',
+    version='6.0.0',
     description='Command line interface for Nailgun',
     long_description="""Command line interface for Nailgun""",
     author='Mirantis Inc.',

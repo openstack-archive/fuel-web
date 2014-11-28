@@ -84,6 +84,9 @@ PROVISION_SAMPLE_DATA = {
     "power_address": "10.20.0.253",
     "name_servers": "\"10.20.0.2\"",
     "ks_meta": {
+        "mlnx_plugin_mode": 'disabled',
+        "mlnx_iser_enabled": False,
+        "mlnx_vf_num": "1",
         "gw": "10.20.0.1",
         "image_data": {
             "/": {

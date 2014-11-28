@@ -18,7 +18,8 @@ from fuel_agent import errors
 class ConfigDriveCommon(object):
     def __init__(self, ssh_auth_keys, hostname, fqdn, name_servers,
                  search_domain, master_ip, master_url, udevrules, admin_mac,
-                 admin_ip, admin_mask, admin_iface_name, timezone, ks_repos):
+                 admin_ip, admin_mask, admin_iface_name, timezone, ks_repos,
+                 mlnx_plugin_mode, mlnx_iser_enabled, mlnx_vf_num):
         self.ssh_auth_keys = ssh_auth_keys
         self.hostname = hostname
         self.fqdn = fqdn
@@ -33,6 +34,9 @@ class ConfigDriveCommon(object):
         self.admin_iface_name = admin_iface_name
         self.timezone = timezone
         self.ks_repos = ks_repos
+        self.mlnx_plugin_mode = mlnx_plugin_mode
+        self.mlnx_iser_enabled = mlnx_iser_enabled
+        self.mlnx_vf_num = mlnx_vf_num
 
 
 class ConfigDrivePuppet(object):

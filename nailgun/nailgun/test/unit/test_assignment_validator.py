@@ -17,7 +17,10 @@ from nailgun.errors import errors
 from nailgun.test.base import BaseUnitTest
 
 
-class TestAssignmentValidator(BaseUnitTest):
+class TestNodeAssignmentValidator(BaseUnitTest):
+
+    validator = NodeAssignmentValidator
+
     def setUp(self):
         self.models = {
             'settings': {
@@ -29,7 +32,7 @@ class TestAssignmentValidator(BaseUnitTest):
             }
         }
 
-    def test_check_roles_requirement(self):
+    def test_check_roles_requirement_equal(self):
         roles = ['test']
         roles_metadata = {
             'test': {
@@ -42,10 +45,10 @@ class TestAssignmentValidator(BaseUnitTest):
             }
         }
 
-        NodeAssignmentValidator.check_roles_requirement(roles,
-                                                        roles_metadata,
-                                                        self.models)
+        self.validator.check_roles_requirement(
+            roles, roles_metadata, self.models)
 
+    def test_check_roles_requirement_not_equal(self):
         roles = ['test']
         roles_metadata = {
             'test': {
@@ -58,9 +61,8 @@ class TestAssignmentValidator(BaseUnitTest):
             }
         }
 
-        NodeAssignmentValidator.check_roles_requirement(roles,
-                                                        roles_metadata,
-                                                        self.models)
+        self.validator.check_roles_requirement(
+            roles, roles_metadata, self.models)
 
     def test_check_roles_requirement_failed(self):
         roles = ['test']
@@ -78,6 +80,21 @@ class TestAssignmentValidator(BaseUnitTest):
                 }
             }
 
-            NodeAssignmentValidator.check_roles_requirement(roles,
-                                                            roles_metadata,
-                                                            self.models)
+            self.validator.check_roles_requirement(
+                roles, roles_metadata, self.models)
+
+    def test_validate_collection_update_schema_requirements(self):
+        self.assertRaises(
+            errors.InvalidData,
+            self.validator.validate_collection_update,
+            '[{}]')
+
+        self.assertRaises(
+            errors.InvalidData,
+            self.validator.validate_collection_update,
+            '[{"id": 1}]')
+
+        self.assertRaises(
+            errors.InvalidData,
+            self.validator.validate_collection_update,
+            '[{"roles": []}]')

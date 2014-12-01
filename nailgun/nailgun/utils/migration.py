@@ -173,7 +173,7 @@ def upgrade_release_roles_51_to_60(roles_meta, add_meta=None):
             del role['depends']
 
         if role_name in add_meta:
-            role.update(add_meta[role])
+            role.update(add_meta[role_name])
     return roles_meta
 
 

@@ -28,78 +28,60 @@ The installation procedure can be implemented in two different ways
 
 Each of the above approaches is described in detail below.
 
+Before use one of them please install dependencies that are required in all cases:
+
+.. code-block:: bash
+
+    sudo apt-get install git \
+    postgresql \
+    postgresql-server-dev-all \
+    libyaml-dev \
+    libffi-dev \
+    python-dev \
+    python-libvirt \
+    python-pip \
+    qemu-kvm \
+    qemu-utils \
+    libvirt-bin \
+    ubuntu-vm-builder \
+    bridge-utils
+
+    sudo apt-get update && sudo apt-get upgrade -y
+
 .. _DevOpsApt:
 
 Devops installation from packages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Checking and applying latest updates
+1. Adding the repository, checking and applying latest updates
 
 .. code-block:: bash
 
+    wget -qO - http://mirror.fuel-infra.org/devops/ubuntu/Release.key | sudo apt-key add -
+    sudo add-apt-repository  "deb http://mirror.fuel-infra.org/devops/ubuntu /"
     sudo apt-get update && sudo apt-get upgrade -y
 
-2. Installing dependencies
+2. Installing required packages
 
 .. code-block:: bash
 
-    sudo apt-get install postgresql \
-    git \
-    python-pip \
-    python-psycopg2 \
+    sudo apt-get install python-psycopg2 \
     python-ipaddr \
     python-libvirt \
     python-paramiko \
     python-django \
+    python-django-openstack \
+    python-libvirt \
     python-django-south \
-    python-ipaddr \
-    python-yaml \
-    python-mock
+    python-xmlbuilder \
+    python-mock \
+    python-devops
+
 
 .. note:: Depending on your Linux distribution some of the above packages may
     not exists in your upstream repositories. In this case, please exclude
     them from the installation list and repeat *step 2*. Missing packages will
     be installed by python (from PyPI) during the next step
-
-3. Clone `fuel-devops <https://github.com/stackforge/fuel-devops>`_ repo and run setup.py
-
-.. code-block:: bash
-
-    git clone git://github.com/stackforge/fuel-devops.git
-    cd fuel-devops
-    sudo python ./setup.py install
-
-4. Now we can check that *devops* has been installed successfully
-
-.. code-block:: bash
-
-    user@host:~$ pip list
-
-    apt-xapian-index (0.45)
-    argparse (1.2.1)
-    chardet (2.0.1)
-    colorama (0.2.5)
-    devops (2.5.2)
-    Django (1.6.1)
-    html5lib (0.999)
-    ipaddr (2.1.10)
-    libvirt-python (1.2.2)
-    mock (1.0.1)
-    paramiko (1.10.1)
-    pip (1.5.4)
-    psycopg2 (2.4.5)
-    pycrypto (2.6.1)
-    python-apt (0.9.3.5)
-    python-debian (0.1.21-nmu2ubuntu2)
-    PyYAML (3.10)
-    requests (2.2.1)
-    setuptools (3.3)
-    six (1.5.2)
-    South (0.7.5)
-    ssh-import-id (3.21)
-    urllib3 (1.7.1)
-    wsgiref (0.1.2)
-    xmlbuilder (1.0)
 
 .. note:: In case of *Ubuntu 12.04 LTS* we need to update pip and Django<1.7:
 
@@ -109,7 +91,7 @@ Devops installation from packages
         hash -r
         sudo pip install Django\<1.7 --upgrade
 
-5. Next, follow :ref:`DevOpsConf` section
+3. Next, follow :ref:`DevOpsConf` section
 
 .. _DevOpsPyPI:
 
@@ -118,33 +100,21 @@ Devops installation using `PyPI <https://pypi.python.org/pypi>`_
 
 The installation procedure should be implemented by following the next steps:
 
-1. Checking and applying latest updates
+1. Install packages needed for building python eggs
 
 .. code-block:: bash
 
-    sudo apt-get update && sudo apt-get upgrade -y
-
-2. Install packages needed for building python eggs and working with *devops* (postgresql, git)
-
-.. code-block:: bash
-
-    sudo apt-get install git \
-    postgresql \
-    python-dev \
-    python-pip \
-    python-libvirt \
-    libyaml-dev \
-    libpq-dev \
+    sudo apt-get install libpq-dev \
     libgmp-dev
 
-3. In case you are using *Ubuntu 12.04* let's update pip, otherwise you can skip this step
+2. In case you are using *Ubuntu 12.04* let's update pip, otherwise you can skip this step
 
 .. code-block:: bash
 
     sudo pip install pip --upgrade
     hash -r
 
-4. Install *devops* package using python setup tools. Clone `fuel-devops <https://github.com/stackforge/fuel-devops>`_ and run setup.py
+3. Install *devops* package using python setup tools. Clone `fuel-devops <https://github.com/stackforge/fuel-devops>`_ and run setup.py
 
 .. code-block:: bash
 
@@ -152,7 +122,7 @@ The installation procedure should be implemented by following the next steps:
     cd fuel-devops
     sudo python ./setup.py install
 
-5. Next, follow :ref:`DevOpsConf` section
+4. Next, follow :ref:`DevOpsConf` section
 
 .. _DevOpsPyPIvenv:
 
@@ -162,27 +132,13 @@ Devops installation in `virtualenv <http://virtualenv.readthedocs.org/en/latest/
 Installation procedure is the same as in the case of :ref:`DevOpsPyPI`,
 but we should also configure virtualenv
 
-1. Checking and applying latest updates
+1. Install packages needed for building python eggs
 
 .. code-block:: bash
 
-    sudo apt-get update && sudo apt-get upgrade -y
+    sudo apt-get install python-virtualenv
 
-2. Install packages needed for building python eggs and working with *devops* (postgresql, git, virtualenv)
-
-.. code-block:: bash
-
-    sudo apt-get install git \
-    postgresql \
-    python-dev \
-    python-pip \
-    python-libvirt \
-    python-virtualenv \
-    libyaml-dev \
-    libpq-dev \
-    libgmp-dev
-
-3. In case you are using *Ubuntu 12.04* let's update pip and virtualenv, otherwise you can skip this step
+2. In case you are using *Ubuntu 12.04* let's update pip and virtualenv, otherwise you can skip this step
 
 .. code-block:: bash
 
@@ -193,13 +149,15 @@ but we should also configure virtualenv
 
 .. code-block:: bash
 
-    virtualenv --system-site-packages devops-venv
+    virtualenv --system-site-packages <path>/fuel-devops-venv
+
+<path> represents the path where your Python virtualenv will be located. (e.g. ~/venv). If it is not specified, it will use the current working directory.
 
 5. Activate virtualenv and install *devops* package using python setup tools
 
 .. code-block:: bash
 
-    . devops-venv/bin/activate
+    .  <path>/fuel-devops-venv/bin/activate
     pip install git+https://github.com/stackforge/fuel-devops.git --upgrade
 
 setup.py in fuel-devops repository does everything required.
@@ -237,7 +195,7 @@ Create libvirt's pool
 Permissions to run KVM VMs with libvirt with current user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Give current user permissions to use libvirt
+Give current user permissions to use libvirt (Do not forget relogin after!)
 
 .. code-block:: bash
 
@@ -254,6 +212,12 @@ Set local peers to be trusted by default and load fixtures
     sudo service postgresql restart
     django-admin syncdb --settings=devops.settings
     django-admin migrate devops --settings=devops.settings
+
+If you use *virtualenv* ( :ref:`virtualenv <DevOpsPyPIvenv>`)
+
+.. code-block:: bash
+   django-admin.py syncdb --settings=devops.settings
+   django-admin.py migrate devops --settings=devops.settings
 
 .. note:: Depending on your Linux distribution,
     `django-admin <http://django-admin-tools.readthedocs.org>`_ may refer
@@ -294,44 +258,32 @@ The result should be:
 Environment creation via Devops + Fuel_main
 -------------------------------------------
 
-1. Install basic packages
-
-.. code-block:: bash
-
-    sudo apt-get install -y \
-    git \
-    libxslt1-dev \
-    libffi-dev \
-    libyaml-dev \
-    python-virtualenv \
-    python-dev \
-    postgresql \
-    postgresql-server-dev-all
-
-2. Create virtualenv for the *devops* project
-
-.. code-block:: bash
-
-    virtualenv --system-site-packages devops-venv
-    . devops-venv/bin/activate
-
-3. Clone fuel-main
+1. Clone fuel main GIT repository
 
 .. code-block:: bash
 
     git clone https://github.com/stackforge/fuel-main
     cd fuel-main/
 
-4. Install requirements
+2. Install requirements
+
+If you use *virtualenv* ( :ref:`virtualenv <DevOpsPyPIvenv>`)
 
 .. code-block:: bash
 
-    pip install -r ./fuelweb_test/requirements.txt --upgrade
+   . <path>/fuel-devops-venv/bin/activate
+   pip install -r ./fuelweb_test/requirements.txt --upgrade
 
-5. Check :ref:`DevOpsConf` section
+If you **do not use** virtualenv just
+
+.. code-block:: bash
+
+   sudo pip install -r ./fuelweb_test/requirements.txt --upgrade
+
+3. Check :ref:`DevOpsConf` section
 
 
-6. Prepare environment
+4. Prepare environment
 
 Download Fuel ISO from
 `Nightly builds <https://fuel-jenkins.mirantis.com/view/ISO/>`_
@@ -344,7 +296,12 @@ Next, you need to define several variables for the future environment
     export ISO_PATH=<path_to_iso>
     export NODES_COUNT=<number_nodes>
     export ENV_NAME=<name_of_env>
-    export VENV_PATH=<path_to_virtualenv>
+
+If you use *virtualenv* ( :ref:`virtualenv <DevOpsPyPIvenv>`)
+
+.. code-block:: bash
+
+    export VENV_PATH=<path>/fuel-devops-venv
 
 Alternatively, you can edit this file to set them as a default values
 
@@ -356,7 +313,6 @@ Start tests by running this command
 
 .. code-block:: bash
 
-    export PYTHONPATH=$(pwd)
     ./utils/jenkins/system_tests.sh -t test -w $(pwd) -j fuelweb_test -i $ISO_PATH -o --group=setup
 
 For more information about how tests work, read the usage information

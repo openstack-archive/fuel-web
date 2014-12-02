@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 
 from nailgun.api.v1.validators.master_node_settings \
@@ -38,7 +38,7 @@ class MasterNodeSettingsHandler(SingleHandler):
 
         return instance
 
-    @content_json
+    @content
     def GET(self):
         """Get master node settings
         :http: * 200 (OK)
@@ -48,7 +48,7 @@ class MasterNodeSettingsHandler(SingleHandler):
 
         return self.single.to_json(instance)
 
-    @content_json
+    @content
     def PUT(self):
         """Change settings for master node
         :http: * 200 (OK)
@@ -63,7 +63,7 @@ class MasterNodeSettingsHandler(SingleHandler):
 
         return self.single.to_json(instance)
 
-    @content_json
+    @content
     def PATCH(self):
         """Update settings for master node
         :http: * 200 (OK)

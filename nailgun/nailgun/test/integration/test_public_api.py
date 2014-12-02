@@ -38,11 +38,9 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
         )
         self.assertEqual(resp.status_code, 200)
 
-        node_id = '080000000003'
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            jsonutils.dumps({'id': node_id,
-                            'mac': self.env.generate_random_mac(),
+            jsonutils.dumps({'mac': self.env.generate_random_mac(),
                             'status': 'discover'}),
             headers=self.default_headers)
 

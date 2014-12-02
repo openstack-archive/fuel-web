@@ -252,8 +252,11 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 return index == -1 ? properties.length : index;
             });
         },
-        getResponseText: function(response) {
-            return _.contains([400, 409], response.status) ? response.responseText : '';
+        getResponseErrors: function(response) {
+            if (_.isUndefined(response)) return null;
+            response = response.responseText || response;
+            response = JSON.parse(response);
+            return (response.status >= 400) ? response.errors : null;
         },
         // Natural sorting, code taken from
         // https://github.com/javve/natural-sort

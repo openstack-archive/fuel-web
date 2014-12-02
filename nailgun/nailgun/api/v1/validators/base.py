@@ -14,12 +14,16 @@
 #    under the License.
 
 import jsonschema
+from jsonschema.exceptions import ValidationError
 
 from nailgun.errors import errors
 from nailgun.openstack.common import jsonutils
 
 
 class BasicValidator(object):
+
+    single_schema = None
+    collection_schema = None
 
     @classmethod
     def validate_json(cls, data):
@@ -37,6 +41,32 @@ class BasicValidator(object):
                 log_message=True
             )
         return res
+
+    @classmethod
+    def validate_request(cls, req, resource_type,
+                         single_schema=None,
+                         collection_schema=None):
+        json_req = cls.validate_json(req)
+
+        use_schema = {
+            "single": single_schema or cls.single_schema,
+            "collection": collection_schema or cls.collection_schema
+        }.get(resource_type)
+
+        try:
+            jsonschema.validate(json_req, use_schema)
+        except ValidationError as exc:
+            if len(exc.path) > 0:
+                raise errors.InvalidData(
+                    ": ".join([exc.path.pop(), exc.message])
+                )
+            raise errors.InvalidData(exc.message)
+
+    @classmethod
+    def validate_response(cls, resp, resource_type,
+                          single_schema=None,
+                          collection_schema=None):
+        pass
 
     @classmethod
     def validate(cls, data):

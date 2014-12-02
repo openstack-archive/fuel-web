@@ -22,6 +22,7 @@ from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.statistics.params_white_lists import task_output_white_list
 from nailgun.task.helpers import TaskHelper
 
@@ -50,7 +51,7 @@ class TestTasksLogging(BaseIntegrationTest):
             self.assertIn(keys, ("", {}))
 
     def check_task_name_and_sanitized_data(self, pos, logger, task_name,
-                                           is_supertask=False):
+                                           one_parameter=False):
         """Test task name against known value and check sanitized data doesn't
         contain keys which are absent in white_list.
 
@@ -58,7 +59,7 @@ class TestTasksLogging(BaseIntegrationTest):
                     (negative value: -1 - last call, -2 - pre-last call, etc.)
         :param logger: mock object for logger method
         :param task_name: expected task name
-        :param is_supertask: whether given task must be a supertask or not
+        :param one_parameter: whether given call must go with one parameter
         """
         log_args = logger.call_args_list
         task = log_args[pos][0][0]
@@ -73,9 +74,7 @@ class TestTasksLogging(BaseIntegrationTest):
                 self.assertIsNone(
                     TaskHelper.sanitize_task_output(task.cache, log_record))
         else:
-            # supertask
-            self.assertTrue(is_supertask)
-            self.assertEqual(task.cache, {})
+            self.assertTrue(one_parameter)
 
     @fake_tasks(god_mode=True)
     @patch.object(TaskHelper, 'update_action_log')
@@ -93,11 +92,16 @@ class TestTasksLogging(BaseIntegrationTest):
         )
         supertask = self.env.launch_deployment()
 
-        self.assertEqual(len(logger.call_args_list), 4)
+        self.assertEqual(len(logger.call_args_list), 6)
         self.check_task_name_and_sanitized_data(
-            -4, logger, consts.TASK_NAMES.check_networks)
+            -6, logger, consts.TASK_NAMES.check_networks)
         self.check_task_name_and_sanitized_data(
-            -3, logger, consts.TASK_NAMES.check_before_deployment)
+            -5, logger, consts.TASK_NAMES.check_networks, one_parameter=True)
+        self.check_task_name_and_sanitized_data(
+            -4, logger, consts.TASK_NAMES.check_before_deployment)
+        self.check_task_name_and_sanitized_data(
+            -3, logger, consts.TASK_NAMES.check_before_deployment,
+            one_parameter=True)
         self.check_task_name_and_sanitized_data(
             -2, logger, consts.TASK_NAMES.provision)
         self.check_task_name_and_sanitized_data(
@@ -106,9 +110,9 @@ class TestTasksLogging(BaseIntegrationTest):
         self.env.wait_ready(supertask, 15)
 
         # call for 'deploy' is added
-        self.assertEqual(len(logger.call_args_list), 5)
+        self.assertEqual(len(logger.call_args_list), 7)
         self.check_task_name_and_sanitized_data(
-            -1, logger, consts.TASK_NAMES.deploy, is_supertask=True)
+            -1, logger, consts.TASK_NAMES.deploy, one_parameter=True)
 
     @fake_tasks(god_mode=True)
     @patch.object(TaskHelper, 'update_action_log')
@@ -202,3 +206,38 @@ class TestTasksLogging(BaseIntegrationTest):
         self.assertGreaterEqual(len(logger.call_args_list), 1)
         self.check_task_name_and_sanitized_data(
             -1, logger, consts.TASK_NAMES.verify_networks)
+
+    @fake_tasks(god_mode=True)
+    def test_deployment_tasks_records(self):
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ["controller"]},
+                {"pending_addition": True, "pending_roles": ["cinder"]},
+                {"pending_addition": True, "pending_roles": ["compute"]},
+            ]
+        )
+        supertask = self.env.launch_deployment()
+        self.env.wait_ready(supertask, 15)
+
+        logs = objects.ActionLogCollection.all()
+        self.assertEqual(5, logs.count())
+        for log in logs:
+            self.assertIsNotNone(log.end_timestamp)
+            self.assertIsNotNone(log.additional_info)
+            add_info = log.additional_info
+            self.assertIn(add_info["ended_with_status"],
+                          consts.TASK_STATUSES.ready)
+            if add_info["output"]:
+                TestTasksLogging().check_keys_included(
+                    task_output_white_list[log.action_name],
+                    add_info["output"]
+                )
+            else:
+                self.assertIn(log.action_name,
+                              (consts.TASK_NAMES.deploy,
+                               consts.TASK_NAMES.check_networks,
+                               consts.TASK_NAMES.check_before_deployment))

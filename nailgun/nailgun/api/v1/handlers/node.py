@@ -24,7 +24,7 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.network import NetAssignmentValidator
 from nailgun.api.v1.validators.node import NodeValidator
@@ -61,7 +61,7 @@ class NodeCollectionHandler(CollectionHandler):
     validator = NodeValidator
     collection = objects.NodeCollection
 
-    @content_json
+    @content
     def GET(self):
         """May receive cluster_id parameter to filter list
         of nodes
@@ -79,7 +79,7 @@ class NodeCollectionHandler(CollectionHandler):
 
         return self.collection.to_json(nodes)
 
-    @content_json
+    @content
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
         :http: * 200 (nodes are successfully updated)
@@ -112,7 +112,7 @@ class NodeAgentHandler(BaseHandler):
     collection = objects.NodeCollection
     validator = NodeValidator
 
-    @content_json
+    @content
     def PUT(self):
         """:returns: node id.
         :http: * 200 (node are successfully updated)
@@ -155,7 +155,7 @@ class NodeNICsHandler(BaseHandler):
     validator = NetAssignmentValidator
     serializer = NodeInterfacesSerializer
 
-    @content_json
+    @content
     def GET(self, node_id):
         """:returns: Collection of JSONized Node interfaces.
         :http: * 200 (OK)
@@ -164,7 +164,7 @@ class NodeNICsHandler(BaseHandler):
         node = self.get_object_or_404(objects.Node, node_id)
         return map(self.render, node.interfaces)
 
-    @content_json
+    @content
     def PUT(self, node_id):
         """:returns: Collection of JSONized Node objects.
         :http: * 200 (nodes are successfully updated)
@@ -191,7 +191,7 @@ class NodeCollectionNICsHandler(BaseHandler):
     validator = NetAssignmentValidator
     serializer = NodeInterfacesSerializer
 
-    @content_json
+    @content
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
         :http: * 200 (nodes are successfully updated)
@@ -219,7 +219,7 @@ class NodeNICsDefaultHandler(BaseHandler):
     """Node default network interfaces handler
     """
 
-    @content_json
+    @content
     def GET(self, node_id):
         """:returns: Collection of default JSONized interfaces for node.
         :http: * 200 (OK)
@@ -241,7 +241,7 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
 
     validator = NetAssignmentValidator
 
-    @content_json
+    @content
     def GET(self):
         """May receive cluster_id parameter to filter list
         of nodes
@@ -264,7 +264,7 @@ class NodesAllocationStatsHandler(BaseHandler):
     """Node allocation stats handler
     """
 
-    @content_json
+    @content
     def GET(self):
         """:returns: Total and unallocated nodes count.
         :http: * 200 (OK)

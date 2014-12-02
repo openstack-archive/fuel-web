@@ -154,10 +154,11 @@ function(React, utils, models, Expression, controls) {
                         this.setState({actionInProgress: false});
                         this.props.model.fetch();
                     }, this))
-                    .fail(function() {
+                    .fail(function(response) {
                         utils.showErrorDialog({
                             title: $.t('cluster_page.settings_tab.settings_error.title'),
-                            message: $.t('cluster_page.settings_tab.settings_error.saving_warning')
+                            message: $.t('cluster_page.settings_tab.settings_error.saving_warning'),
+                            response: response
                         });
                     });
             }
@@ -171,10 +172,11 @@ function(React, utils, models, Expression, controls) {
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this))
-                    .fail(function() {
+                    .fail(function(response) {
                         utils.showErrorDialog({
                             title: $.t('cluster_page.settings_tab.settings_error.title'),
-                            message: $.t('cluster_page.settings_tab.settings_error.load_defaults_warning')
+                            message: $.t('cluster_page.settings_tab.settings_error.load_defaults_warning'),
+                            response: response
                         });
                     });
             }

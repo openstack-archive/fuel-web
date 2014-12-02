@@ -14,6 +14,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators.json_schema import cluster_schema
 from nailgun.errors import errors
 
 from nailgun.objects import ClusterCollection
@@ -21,6 +22,9 @@ from nailgun.objects import Release
 
 
 class ClusterValidator(BasicValidator):
+
+    single_schema = cluster_schema.single_schema
+    collection_schema = cluster_schema.collection_schema
 
     @classmethod
     def _can_update_release(cls, curr_release, pend_release):

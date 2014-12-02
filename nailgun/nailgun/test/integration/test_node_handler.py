@@ -48,7 +48,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(node.meta['disks'], resp.json_body['meta']['disks'])
         self.assertEqual(node.meta['memory'], resp.json_body['meta']['memory'])
 
-    def test_node_creation_with_id(self):
+    def test_node_creation_fails_with_wrong_id(self):
         node_id = '080000000003'
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
@@ -57,8 +57,7 @@ class TestHandlers(BaseIntegrationTest):
                             'status': 'discover'}),
             headers=self.default_headers,
             expect_errors=True)
-        # we now just ignore 'id' if present
-        self.assertEqual(201, resp.status_code)
+        self.assertEqual(400, resp.status_code)
 
     def test_node_deletion(self):
         node = self.env.create_node(api=False)
@@ -165,7 +164,7 @@ class TestHandlers(BaseIntegrationTest):
             response = self.app.put(
                 reverse('NodeAgentHandler'),
                 jsonutils.dumps(node),
-                headers=self.default_headers,
+                headers=self.default_headers
             )
             self.assertEqual(response.status_code, 200)
 

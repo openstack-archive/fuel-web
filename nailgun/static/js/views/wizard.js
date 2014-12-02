@@ -297,19 +297,21 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                                 this.$el.modal('hide');
                                 app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
                             }, this))
-                            .fail(_.bind(function() {
-                                this.displayError({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});
+                            .fail(_.bind(function(response) {
+                                this.displayError({
+                                    message: utils.getResponseText(response) || $.t('dialog.create_cluster_wizard.configuration_failed_warning')
+                                });
                             }, this));
                     }, this))
                     .fail(_.bind(function(response) {
                         if (response.status == 409) {
                             this.$('.wizard-footer button').prop('disabled', false);
                             this.panesModel.set('activePaneIndex', 0);
-                            cluster.trigger('invalid', cluster, {name: response.responseText});
+                            cluster.trigger('invalid', cluster, {name: utils.getResponseText(response)});
                         } else {
                             var options = {
                                 title: $.t('dialog.create_cluster_wizard.create_cluster_error.title'),
-                                message: response.status == 400 ? response.responseText : undefined
+                                message: utils.getResponseText(response)
                             };
                             this.displayError(options);
                         }

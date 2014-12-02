@@ -83,10 +83,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 data: JSON.stringify(this.networkConfiguration)
             };
             task.save({}, options)
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
                     utils.showErrorDialog({
                         title: $.t('cluster_page.network_tab.verify_networks.verification_error.title'),
-                        message: $.t('cluster_page.network_tab.verify_networks.verification_error.start_verification_warning')
+                        message: utils.getResponseText(response) || $.t('cluster_page.network_tab.verify_networks.verification_error.start_verification_warning')
                     });
                     this.calculateButtonsState();
                 }, this))
@@ -128,8 +128,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                             this.model.fetchRelated('tasks');
                         }
                     }, this))
-                    .fail(_.bind(function() {
-                        utils.showErrorDialog({title: $.t('cluster_page.network_tab.verify_networks.verification_error.title')});
+                    .fail(_.bind(function(response) {
+                        utils.showErrorDialog({
+                            title: $.t('cluster_page.network_tab.verify_networks.verification_error.title'),
+                            response: response
+                        });
                         this.calculateButtonsState();
                         this.model.fetch();
                         this.model.fetchRelated('tasks');

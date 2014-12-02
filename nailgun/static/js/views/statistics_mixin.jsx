@@ -44,9 +44,9 @@ define([
             this.setState({actionInProgress: true});
             return this.props.settings.save(null, {patch: true, wait: true, validate: false})
                 .done(this.updateInitialSettings)
-                .fail(function() {
+                .fail(function(response) {
                     this.setState({actionInProgress: false});
-                    utils.showErrorDialog();
+                    utils.showErrorDialog({message: utils.getResponseText(response)});
                 });
         },
         onSettingChange: function(name, value) {

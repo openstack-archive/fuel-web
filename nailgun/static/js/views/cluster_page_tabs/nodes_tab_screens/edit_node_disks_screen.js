@@ -61,10 +61,10 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
         loadDefaults: function() {
             this.disableControls(true);
             this.disks.fetch({url: _.result(this.nodes.at(0), 'url') + '/disks/defaults/'})
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
                     utils.showErrorDialog({
                         title: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
-                        message: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.load_defaults_warning')
+                        message: utils.getResponseText(response) || $.t('cluster_page.nodes_tab.configure_disks.configuration_error.load_defaults_warning')
                     });
                 }, this));
         },

@@ -253,7 +253,14 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             });
         },
         getResponseText: function(response) {
-            return _.contains([400, 409], response.status) ? response.responseText : '';
+            if (response && response.status >= 400) {
+                if (response.status == 500) return $.t('dialog.error_dialog.warning');
+                // parsing new backend response format in responseText
+                response = response.responseText || response;
+                response = JSON.parse(response);
+                return response.message || '';
+            }
+            return '';
         },
         // Natural sorting, code taken from
         // https://github.com/javve/natural-sort

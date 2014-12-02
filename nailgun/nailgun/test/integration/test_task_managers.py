@@ -153,7 +153,7 @@ class TestTaskManagers(BaseIntegrationTest):
                     # check_networks task is not updated to "ready" status in
                     # case of success but left with "running" value
                     self.assertEqual(al.additional_info["ended_with_status"],
-                                     TASK_STATUSES.running)
+                                     TASK_STATUSES.ready)
                     self.assertEqual(al.additional_info["parent_task_id"],
                                      supertask.id)
                 elif (

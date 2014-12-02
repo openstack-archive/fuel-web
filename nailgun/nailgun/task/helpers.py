@@ -436,3 +436,9 @@ class TaskHelper(object):
                 ActionLog.update(al_instance, update_data)
         except Exception as e:
             logger.error("update_action_log failed: %s", six.text_type(e))
+
+    @classmethod
+    def set_ready_if_not_finished(cls, task):
+        if task.status == consts.TASK_STATUSES.running:
+            task.status = consts.TASK_STATUSES.ready
+        cls.update_action_log(task)

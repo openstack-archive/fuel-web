@@ -12,57 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-# Non-complete JSON Schema for validating IP addresses.
-# Use it for better readability in the main schema.
-_IP_ADDRESS_SCHEMA = {
-    'type': 'string',
-    'format': 'ipv4',
-}
-
-_IP_ADDRESS_OR_NULL_SCHEMA = {
-    'type': ['string', 'null'],
-    'format': 'ipv4',
-}
-
-
-# Non-complete JSON schema for validating NET addresses.
-# Use it for better readability in the main schema.
-_NET_ADDRESS_SCHEMA = {
-    'type': 'string',
-
-    # check for valid ip address and route prefix
-    # e.g: 192.168.0.0/24
-    'pattern': '^(({octet}\.){{3}}{octet})({prefix})?$'.format(
-        octet='(2(5[0-5]|[0-4][0-9])|[01]?[0-9][0-9]?)',
-        prefix='/(3[012]|[12]?[0-9])'
-    ),
-}
-
-
-_NET_ADDRESS_OR_NULL_SCHEMA = {
-    'type': ['string', 'null'],
-
-    # check for valid ip address and route prefix
-    # e.g: 192.168.0.0/24
-    'pattern': _NET_ADDRESS_SCHEMA['pattern'],
-}
-
-
-# Non-complete JSON Schema for validating MAC addresses.
-# Use it for better readability in the main schema.
-_MAC_ADDRESS_SCHEMA = {
-    'type': 'string',
-    'pattern': '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$',
-}
+from nailgun.api.v1.validators.json_schema import base_types
 
 
 NETWORK = {
     'type': 'object',
     'properties': {
         'name': {'type': 'string'},
-        'cidr': _NET_ADDRESS_SCHEMA,
-        'gateway': _IP_ADDRESS_SCHEMA,
+        'cidr': base_types.NET_ADDRESS,
+        'gateway': base_types.IP_ADDRESS,
         'ip_range': {'type': 'array'},
         'vlan_start': {'type': ['null', 'number']},
         'use_gateway': {'type': 'boolean'},

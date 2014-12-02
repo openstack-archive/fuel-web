@@ -57,6 +57,8 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 message: $.t('dialog.error_dialog.warning'),
                 logsLink: logsLink
             });
+            // prioritizing server response messages
+            dialogOptions.message = utils.getResponseErrors(options.response).join('') || dialogOptions.message;
             this.$el.removeClass().addClass('modal').html(views.Dialog.prototype.template(dialogOptions)).i18n();
         },
         initialize: function(options) {
@@ -281,7 +283,8 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 .fail(_.bind(function(response) {
                     this.displayError({
                         title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
-                        message: utils.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
+                        message: $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'),
+                        response: response
                     });
                     this.setState({actionInProgress: false});
                 }, this));
@@ -533,10 +536,11 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                         app.navbar.refresh();
                         app.page.removeFinishedNetworkTasks();
                     }, this))
-                    .fail(_.bind(function() {
+                    .fail(_.bind(function(response) {
                         utils.showErrorDialog({
                             title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
-                            message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
+                            message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'),
+                            response: response
                         });
                     }, this));
             }

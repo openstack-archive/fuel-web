@@ -259,11 +259,12 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
                         app.page.removeFinishedNetworkTasks();
                     }, this));
                 }, this))
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
                     this.$('.btn-apply').prop('disabled', false);
                     utils.showErrorDialog({
                         title: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.title'),
-                        message: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.saving_warning')
+                        message: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.saving_warning'),
+                        response: response
                     });
                 }, this));
         },
@@ -725,7 +726,12 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
                     app.navbar.refresh();
                     app.page.removeFinishedNetworkTasks();
                 }, this))
-                .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard')});});
+                .fail(function(response) {
+                    utils.showErrorDialog({
+                        title: $.t('dialog.discard_changes.cant_discard'),
+                        response: response
+                    });
+                });
         },
         discardRoleChanges: function(e) {
             e.preventDefault();

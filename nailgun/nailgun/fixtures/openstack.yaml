@@ -406,6 +406,15 @@
             regex:
               source:  '^(\S.*\S|\S|)$'
               error: "Invalid datastore regexp"
+          vlan_interface:
+            value: ""
+            label: "ESXi VLAN interface"
+            description: "Physical ESXi host ethernet adapter for VLAN networking (e.g. vmnic1). If empty \"vmnic0\" is used by default"
+            weight: 60
+            type: "text"
+            restrictions:
+              - condition: "cluster:net_provider != 'nova_network' or networking_parameters:net_manager != 'VlanManager'"
+                action: "hide"
         nsx_plugin:
           metadata:
             enabled: false

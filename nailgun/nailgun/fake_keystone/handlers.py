@@ -15,7 +15,7 @@
 #    under the License.
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.fake_keystone import generate_token
 from nailgun.fake_keystone import validate_password_credentials
 from nailgun.fake_keystone import validate_token
@@ -24,7 +24,7 @@ from nailgun.settings import settings
 
 class TokensHandler(BaseHandler):
 
-    @content_json
+    @content
     def POST(self):
         data = self.checked_data()
         try:
@@ -73,7 +73,7 @@ class TokensHandler(BaseHandler):
 
 class VersionHandler(BaseHandler):
 
-    @content_json
+    @content
     def GET(self):
         keystone_href = 'http://{ip_addr}:{port}/keystone/v2.0/'.format(
             ip_addr=settings.LISTEN_ADDRESS, port=settings.LISTEN_PORT)

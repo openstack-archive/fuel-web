@@ -18,7 +18,7 @@ import web
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.task import TaskValidator
 
 from nailgun.errors import errors
@@ -66,7 +66,7 @@ class TaskCollectionHandler(CollectionHandler):
     collection = objects.TaskCollection
     validator = TaskValidator
 
-    @content_json
+    @content
     def GET(self):
         """May receive cluster_id parameter to filter list
         of tasks

@@ -182,7 +182,7 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEqual(resp.status_code, 201)
+            self.tester.assertEqual(resp.status_code, 201, resp.body)
             cluster = resp.json_body
             self.clusters.append(
                 Cluster.get_by_uid(cluster['id'])
@@ -239,7 +239,7 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEqual(resp.status_code, expect_http)
+            self.tester.assertEqual(resp.status_code, expect_http, resp.body)
             if expect_message:
                 self.tester.assertEqual(resp.body, expect_message)
             if str(expect_http)[0] != "2":

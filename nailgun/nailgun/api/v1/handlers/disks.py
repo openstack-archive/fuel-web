@@ -19,7 +19,7 @@ Handlers dealing with disks
 """
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.node import NodeDisksValidator
 
 from nailgun import objects
@@ -33,7 +33,7 @@ class NodeDisksHandler(BaseHandler):
 
     validator = NodeDisksValidator
 
-    @content_json
+    @content
     def GET(self, node_id):
         """:returns: JSONized node disks.
         :http: * 200 (OK)
@@ -43,7 +43,7 @@ class NodeDisksHandler(BaseHandler):
         node_volumes = node.attributes.volumes
         return DisksFormatConvertor.format_disks_to_simple(node_volumes)
 
-    @content_json
+    @content
     def PUT(self, node_id):
         """:returns: JSONized node disks.
         :http: * 200 (OK)
@@ -74,7 +74,7 @@ class NodeDefaultsDisksHandler(BaseHandler):
     """Node default disks handler
     """
 
-    @content_json
+    @content
     def GET(self, node_id):
         """:returns: JSONized node disks.
         :http: * 200 (OK)
@@ -94,7 +94,7 @@ class NodeVolumesInformationHandler(BaseHandler):
     """Node volumes information handler
     """
 
-    @content_json
+    @content
     def GET(self, node_id):
         """:returns: JSONized volumes info for node.
         :http: * 200 (OK)

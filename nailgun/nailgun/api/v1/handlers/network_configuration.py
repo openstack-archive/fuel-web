@@ -23,7 +23,7 @@ import traceback
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
@@ -71,7 +71,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
     serializer = NovaNetworkConfigurationSerializer
     provider = "nova_network"
 
-    @content_json
+    @content("json")
     def GET(self, cluster_id):
         """:returns: JSONized network configuration for cluster.
         :http: * 200 (OK)
@@ -81,7 +81,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
-    @content_json
+    @content("json")
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 202 (network checking task created)
@@ -136,7 +136,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
     serializer = NeutronNetworkConfigurationSerializer
     provider = "neutron"
 
-    @content_json
+    @content("json")
     def GET(self, cluster_id):
         """:returns: JSONized network configuration for cluster.
         :http: * 200 (OK)
@@ -146,7 +146,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
-    @content_json
+    @content("json")
     def PUT(self, cluster_id):
         data = jsonutils.loads(web.data())
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
@@ -190,7 +190,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
     """Network configuration verify handler base
     """
 
-    @content_json
+    @content("json")
     def PUT(self, cluster_id):
         """:IMPORTANT: this method should be rewritten to be more RESTful
 

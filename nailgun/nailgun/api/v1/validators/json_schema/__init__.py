@@ -11,3 +11,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+from nailgun.api.v1.validators.json_schema \
+    import cluster as cluster_schema
+from nailgun.api.v1.validators.json_schema \
+    import node as node_schema

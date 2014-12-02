@@ -19,7 +19,7 @@ Handlers dealing with releases
 """
 
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
@@ -42,7 +42,7 @@ class ReleaseCollectionHandler(CollectionHandler):
     validator = ReleaseValidator
     collection = ReleaseCollection
 
-    @content_json
+    @content("json")
     def GET(self):
         """:returns: Sorted releases' collection in JSON format
         :http: * 200 (OK)
@@ -58,7 +58,7 @@ class ReleaseNetworksHandler(SingleHandler):
     single = Release
     validator = ReleaseNetworksValidator
 
-    @content_json
+    @content("json")
     def GET(self, obj_id):
         """Read release networks metadata
 
@@ -70,7 +70,7 @@ class ReleaseNetworksHandler(SingleHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         return obj['networks_metadata']
 
-    @content_json
+    @content("json")
     def PUT(self, obj_id):
         """Updates release networks metadata
 

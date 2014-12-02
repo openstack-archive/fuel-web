@@ -15,6 +15,8 @@
 #    under the License.
 
 from datetime import datetime
+import traceback
+
 from decorator import decorator
 from sqlalchemy import exc as sa_exc
 import web
@@ -83,30 +85,6 @@ def load_db_driver(handler):
         db.remove()
 
 
-@decorator
-def content_json(func, *args, **kwargs):
-
-    try:
-        data = func(*args, **kwargs)
-    except web.notmodified:
-        raise
-    except web.HTTPError as http_error:
-        web.header('Content-Type', 'application/json')
-        if isinstance(http_error.data, (dict, list)):
-            http_error.data = build_json_response(http_error.data)
-        raise
-    web.header('Content-Type', 'application/json')
-
-    return build_json_response(data)
-
-
-def build_json_response(data):
-    web.header('Content-Type', 'application/json')
-    if type(data) in (dict, list):
-        return jsonutils.dumps(data)
-    return data
-
-
 class BaseHandler(object):
     validator = BasicValidator
     serializer = BasicSerializer
@@ -169,10 +147,11 @@ class BaseHandler(object):
 
         return exc
 
-    def checked_data(self, validate_method=None, **kwargs):
+    @classmethod
+    def checked_data(cls, validate_method=None, **kwargs):
         try:
             data = kwargs.pop('data', web.data())
-            method = validate_method or self.validator.validate
+            method = validate_method or cls.validator.validate
 
             valid_data = method(data, **kwargs)
         except (
@@ -183,26 +162,26 @@ class BaseHandler(object):
                 "topic": "error",
                 "message": exc.message
             })
-            raise self.http(400, exc.message)
+            raise cls.http(400, exc.message)
         except (
             errors.NotAllowed,
         ) as exc:
-            raise self.http(403, exc.message)
+            raise cls.http(403, exc.message)
         except (
             errors.AlreadyExists
         ) as exc:
-            raise self.http(409, exc.message)
+            raise cls.http(409, exc.message)
         except (
             errors.InvalidData,
             errors.NodeOffline,
         ) as exc:
-            raise self.http(400, exc.message)
+            raise cls.http(400, exc.message)
         except (
             errors.ObjectNotFound,
         ) as exc:
-            raise self.http(404, exc.message)
+            raise cls.http(404, exc.message)
         except Exception as exc:
-            raise
+            raise cls.http(500, traceback.format_exc())
         return valid_data
 
     def get_object_or_404(self, obj, *args, **kwargs):
@@ -244,12 +223,67 @@ class BaseHandler(object):
         return list(node_query)
 
 
+def content_json(func, *args, **kwargs):
+    web.header('Content-Type', 'application/json')
+    json_resp = lambda data: (
+        jsonutils.dumps(data)
+        if isinstance(data, (dict, list)) else data
+    )
+
+    validate_needed = True
+
+    cls = args[0].__class__
+    resource_type = "single"
+    if issubclass(cls, CollectionHandler) and not func.func_name == "POST":
+        resource_type = "collection"
+
+    if (
+        func.func_name in ("GET", "DELETE") or
+        not hasattr(cls, "validator") or
+        cls.validator is None or
+        resource_type == "single" and not cls.validator.single_schema or
+        resource_type == "collection" and not cls.validator.collection_schema
+    ):
+        validate_needed = False
+
+    if validate_needed:
+        BaseHandler.checked_data(
+            cls.validator.validate_request,
+            resource_type=resource_type
+        )
+
+    try:
+        resp = func(*args, **kwargs)
+    except web.notmodified:
+        raise
+    except web.HTTPError as http_error:
+        http_error.data = json_resp(http_error.data)
+        raise
+
+    if validate_needed:
+        BaseHandler.checked_data(
+            cls.validator.validate_response,
+            resource_type=resource_type
+        )
+
+    return json_resp(resp)
+
+
+def content(mimetype):
+    @decorator
+    def wrapper(func, *args, **kwargs):
+        return {
+            "json": content_json
+        }.get(mimetype)(func, *args, **kwargs)
+    return wrapper
+
+
 class SingleHandler(BaseHandler):
 
     validator = BasicValidator
     single = None
 
-    @content_json
+    @content("json")
     def GET(self, obj_id):
         """:returns: JSONized REST object.
         :http: * 200 (OK)
@@ -258,7 +292,7 @@ class SingleHandler(BaseHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         return self.single.to_json(obj)
 
-    @content_json
+    @content("json")
     def PUT(self, obj_id):
         """:returns: JSONized REST object.
         :http: * 200 (OK)
@@ -298,7 +332,7 @@ class CollectionHandler(BaseHandler):
     collection = None
     eager = ()
 
-    @content_json
+    @content("json")
     def GET(self):
         """:returns: Collection of JSONized REST objects.
         :http: * 200 (OK)
@@ -306,7 +340,7 @@ class CollectionHandler(BaseHandler):
         q = self.collection.eager(None, self.eager)
         return self.collection.to_json(q)
 
-    @content_json
+    @content("json")
     def POST(self):
         """:returns: JSONized REST object.
         :http: * 201 (object successfully created)
@@ -337,7 +371,7 @@ class DeferredTaskHandler(BaseHandler):
                 u"on environment '{env_id}': {error}"
     task_manager = None
 
-    @content_json
+    @content("json")
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 202 (task successfully executed)

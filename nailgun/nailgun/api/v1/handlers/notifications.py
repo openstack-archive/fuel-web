@@ -24,7 +24,7 @@ from nailgun.api.v1.handlers.base import SingleHandler
 
 from nailgun import objects
 
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.notification import NotificationValidator
 
 
@@ -41,7 +41,7 @@ class NotificationCollectionHandler(CollectionHandler):
     collection = objects.NotificationCollection
     validator = NotificationValidator
 
-    @content_json
+    @content("json")
     def PUT(self):
         """:returns: Collection of JSONized Notification objects.
         :http: * 200 (OK)

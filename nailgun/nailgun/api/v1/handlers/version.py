@@ -19,7 +19,7 @@ Product info handlers
 """
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -30,7 +30,7 @@ class VersionHandler(BaseHandler):
 
     release_versions = "/etc/fuel/release_versions/*.yaml"
 
-    @content_json
+    @content("json")
     def GET(self):
         """:returns: FUEL/FUELWeb commit SHA, release version.
         :http: * 200 (OK)

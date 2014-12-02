@@ -39,24 +39,21 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
             var options = _.extend({model: this.model, tab: this, screenOptions: screenOptions || []});
             if (this.screen) {
                 if (this.screen.keepScrollPosition) {
-                    this.scrollPositions[this.screen.constructorName] = $(window).scrollTop();
+                    this.scrollPositions[this.screen.constructorName || this.screen.displayName] = $(window).scrollTop();
                 }
-                this.screen.$el.fadeOut('fast', _.bind(function() {
-                    this.screen.tearDown();
-                    this.screen = new NewScreenView(options);
-                    this.screen.render();
-                    this.screen.$el.hide().fadeIn('fast');
-                    this.$el.html(this.screen.el);
-                    if (this.screen.keepScrollPosition && this.scrollPositions[this.screen.constructorName]) {
-                        $(window).scrollTop(this.scrollPositions[this.screen.constructorName]);
-                    }
-                    this.registerSubView(this.screen);
+                this.$el.fadeOut('fast', _.bind(function() {
+                    utils.universalUnmount(this.screen);
+                    this.screen = utils.universalMount(NewScreenView, options, this.$el, this);
+                    this.$el.hide().fadeIn('fast');
+                    var newScrollPosition = this.screen.keepScrollPosition && this.scrollPositions[this.screen.constructorName || this.screen.displayName];
+                    if (newScrollPosition) $(window).scrollTop(newScrollPosition);
                 }, this));
             } else {
-                this.screen = new NewScreenView(options);
-                this.$el.html(this.screen.render().el);
-                this.registerSubView(this.screen);
+                this.screen = utils.universalMount(NewScreenView, options, this.$el, this);
             }
+        },
+        beforeTearDown: function() {
+            if (this.screen) utils.universalUnmount(this.screen);
         },
         initialize: function(options) {
             _.defaults(this, options);

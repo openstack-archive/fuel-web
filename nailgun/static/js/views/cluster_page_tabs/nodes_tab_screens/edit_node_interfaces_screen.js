@@ -138,10 +138,11 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
         loadDefaults: function() {
             this.disableControls(true);
             this.interfaces.fetch({url: _.result(this.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true})
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
                     utils.showErrorDialog({
                         title: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.title'),
-                        message: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.load_defaults_warning')
+                        message: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.load_defaults_warning'),
+                        response: response
                     });
                 }, this));
         },
@@ -184,10 +185,11 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
                 app.page.removeFinishedNetworkTasks();
             })
             .always(_.bind(this.checkForChanges, this))
-            .fail(function() {
+            .fail(function(response) {
                 utils.showErrorDialog({
                     title: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.title'),
-                    message: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.saving_warning')
+                    message: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.saving_warning'),
+                    response: response
                 });
             });
         },

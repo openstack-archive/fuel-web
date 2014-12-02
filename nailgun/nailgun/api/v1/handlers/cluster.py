@@ -28,7 +28,7 @@ from nailgun.api.v1.handlers.base import SingleHandler
 
 from nailgun import objects
 
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 
 from nailgun.api.v1.validators.cluster import AttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
@@ -47,7 +47,7 @@ class ClusterHandler(SingleHandler):
     single = objects.Cluster
     validator = ClusterValidator
 
-    @content_json
+    @content
     def DELETE(self, obj_id):
         """:returns: {}
         :http: * 202 (cluster deletion process launched)
@@ -118,7 +118,7 @@ class ClusterAttributesHandler(BaseHandler):
 
     validator = AttributesValidator
 
-    @content_json
+    @content
     def GET(self, cluster_id):
         """:returns: JSONized Cluster attributes.
         :http: * 200 (OK)
@@ -131,7 +131,7 @@ class ClusterAttributesHandler(BaseHandler):
 
         return objects.Cluster.get_editable_attributes(cluster)
 
-    @content_json
+    @content
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster attributes.
         :http: * 200 (OK)
@@ -151,7 +151,7 @@ class ClusterAttributesHandler(BaseHandler):
         objects.Cluster.update_attributes(cluster, data)
         return objects.Cluster.get_editable_attributes(cluster)
 
-    @content_json
+    @content
     def PATCH(self, cluster_id):
         """:returns: JSONized Cluster attributes.
         :http: * 200 (OK)
@@ -181,7 +181,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
         "editable",
     )
 
-    @content_json
+    @content
     def GET(self, cluster_id):
         """:returns: JSONized default Cluster attributes.
         :http: * 200 (OK)
@@ -194,7 +194,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
             raise self.http(500, "No attributes found!")
         return {"editable": attrs}
 
-    @content_json
+    @content
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster attributes.
         :http: * 200 (OK)
@@ -231,7 +231,7 @@ class ClusterGeneratedData(BaseHandler):
     """Cluster generated data
     """
 
-    @content_json
+    @content
     def GET(self, cluster_id):
         """:returns: JSONized cluster generated data
         :http: * 200 (OK)

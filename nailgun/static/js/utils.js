@@ -250,8 +250,10 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
                 return index == -1 ? properties.length : index;
             });
         },
-        getResponseText: function(response) {
-            return _.contains([400, 409], response.status) ? response.responseText : '';
+        getResponseErrors: function(response) {
+            response = response.responseText || response;
+            response = JSON.parse(response);
+            return (response.status >= 400) ? response.errors : null;
         }
     };
 

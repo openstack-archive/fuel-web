@@ -90,7 +90,7 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
                     this.checkForChanges();
                     utils.showErrorDialog({
                         title: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
-                        message: utils.getResponseText(response) || $.t('cluster_page.nodes_tab.configure_disks.configuration_error.saving_warning')
+                        message: utils.getResponseErrors(response).join(" ") || $.t('cluster_page.nodes_tab.configure_disks.configuration_error.saving_warning')
                     });
                 }, this));
         },

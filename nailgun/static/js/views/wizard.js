@@ -294,11 +294,11 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                         if (response.status == 409) {
                             this.$('.wizard-footer button').prop('disabled', false);
                             this.panesModel.set('activePaneIndex', 0);
-                            cluster.trigger('invalid', cluster, {name: response.responseText});
+                            cluster.trigger('invalid', cluster, {name: utils.getResponseErrors(response)[0]});
                         } else {
                             var options = {
                                 title: $.t('dialog.create_cluster_wizard.create_cluster_error.title'),
-                                message: response.status == 400 ? response.responseText : undefined
+                                message: response.status == 400 ? utils.getResponseErrors(response).join(" ") : undefined
                             };
                             this.displayError(options);
                         }

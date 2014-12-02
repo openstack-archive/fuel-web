@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
@@ -35,9 +37,17 @@ class TestHandlers(BaseIntegrationTest):
             self.assertTrue(resp.status_code in [404, 405])
             resp = self.app.delete(test_url, expect_errors=True)
             self.assertTrue(resp.status_code in [404, 405])
-            resp = self.app.put(test_url, expect_errors=True)
+            resp = self.app.put(
+                test_url,
+                json.dumps({}),
+                expect_errors=True
+            )
             self.assertTrue(resp.status_code in [404, 405])
-            resp = self.app.post(test_url, expect_errors=True)
+            resp = self.app.post(
+                test_url,
+                json.dumps({}),
+                expect_errors=True
+            )
             self.assertTrue(resp.status_code in [404, 405])
 
     def test_http_response(self):

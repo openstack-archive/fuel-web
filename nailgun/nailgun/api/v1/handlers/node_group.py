@@ -20,7 +20,7 @@ from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.node_group import NodeGroupValidator
 
 from nailgun.db import db
@@ -55,7 +55,7 @@ class NodeGroupCollectionHandler(CollectionHandler):
     collection = objects.NodeGroupCollection
     validator = NodeGroupValidator
 
-    @content_json
+    @content("json")
     def GET(self):
         """May receive cluster_id parameter to filter list
         of groups
@@ -80,7 +80,7 @@ class NodeGroupAssignmentHandler(BaseHandler):
     """Node group assignment handler
     """
 
-    @content_json
+    @content("json")
     def POST(self, group_id):
         """:returns: Http response.
         :http: * 201 (nodes are successfully assigned)

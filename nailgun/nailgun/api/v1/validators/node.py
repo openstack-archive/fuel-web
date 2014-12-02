@@ -16,8 +16,7 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.disks \
     import disks_simple_format_schema
-from nailgun.api.v1.validators.json_schema.node \
-    import node_format_schema
+from nailgun.api.v1.validators.json_schema import node_schema
 
 from nailgun import consts
 
@@ -103,11 +102,12 @@ class MetaValidator(BasicValidator):
 
 class NodeValidator(BasicValidator):
 
+    single_schema = node_schema.single_schema
+
     @classmethod
     def validate(cls, data):
         # TODO(enchantner): rewrite validators to use Node object
         data = cls.validate_json(data)
-        cls.validate_schema(data, node_format_schema)
 
         if data.get("status", "") != "discover":
             raise errors.NotAllowed(

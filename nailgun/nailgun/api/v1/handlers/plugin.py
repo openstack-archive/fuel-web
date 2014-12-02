@@ -15,7 +15,7 @@
 #    under the License.
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators import plugin
 from nailgun import objects
 
@@ -31,7 +31,7 @@ class PluginCollectionHandler(base.CollectionHandler):
     collection = objects.PluginCollection
     validator = plugin.PluginValidator
 
-    @content_json
+    @content("json")
     def POST(self):
         """:returns: JSONized REST object.
         :http: * 201 (object successfully created)

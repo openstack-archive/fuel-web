@@ -44,9 +44,10 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
             jsonutils.dumps({'id': node_id,
                             'mac': self.env.generate_random_mac(),
                             'status': 'discover'}),
-            headers=self.default_headers)
+            headers=self.default_headers,
+            expect_errors=True)
 
-        self.assertEqual(201, resp.status_code)
+        self.assertEqual(400, resp.status_code)
 
     def test_version_api(self):
         resp = self.app.get(

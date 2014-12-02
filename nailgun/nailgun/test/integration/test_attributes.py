@@ -179,7 +179,7 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(200, resp.status_code, resp.body)
         attrs = objects.Cluster.get_attributes(cluster_db)
         self.assertEqual("bar", attrs.editable["foo"])
         # Set attributes to defaults.

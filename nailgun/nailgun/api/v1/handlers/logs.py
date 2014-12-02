@@ -30,7 +30,7 @@ from nailgun import consts
 from nailgun import objects
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
@@ -194,7 +194,7 @@ class LogEntryCollectionHandler(BaseHandler):
     """Log entry collection handler
     """
 
-    @content_json
+    @content("json")
     def GET(self):
         """Receives following parameters:
 
@@ -377,7 +377,7 @@ class LogEntryCollectionHandler(BaseHandler):
 class LogPackageHandler(BaseHandler):
     """Log package handler
     """
-    @content_json
+    @content("json")
     def PUT(self):
         """:returns: JSONized Task object.
         :http: * 200 (task successfully executed)
@@ -397,7 +397,7 @@ class LogSourceCollectionHandler(BaseHandler):
     """Log source collection handler
     """
 
-    @content_json
+    @content("json")
     def GET(self):
         """:returns: Collection of log sources (from settings)
         :http: * 200 (OK)
@@ -409,7 +409,7 @@ class LogSourceByNodeCollectionHandler(BaseHandler):
     """Log source by node collection handler
     """
 
-    @content_json
+    @content("json")
     def GET(self, node_id):
         """:returns: Collection of log sources by node (from settings)
         :http: * 200 (OK)

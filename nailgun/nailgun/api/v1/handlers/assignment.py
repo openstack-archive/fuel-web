@@ -19,7 +19,7 @@ Handlers dealing with nodes assignment
 """
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.assignment import NodeAssignmentValidator
 from nailgun.api.v1.validators.assignment import NodeUnassignmentValidator
 
@@ -32,7 +32,7 @@ class NodeAssignmentHandler(BaseHandler):
     """
     validator = NodeAssignmentValidator
 
-    @content_json
+    @content("json")
     def POST(self, cluster_id):
         """:returns: Http response.
         :http: * 201 (nodes are successfully assigned)
@@ -62,7 +62,7 @@ class NodeUnassignmentHandler(BaseHandler):
     """
     validator = NodeUnassignmentValidator
 
-    @content_json
+    @content("json")
     def POST(self, cluster_id):
         """:returns: Empty string
         :http: * 200 (node successfully unassigned)

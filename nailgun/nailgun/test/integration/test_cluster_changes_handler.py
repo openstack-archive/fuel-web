@@ -150,7 +150,7 @@ class TestHandlers(BaseIntegrationTest):
 
         common_attrs['last_controller'] = controller_nodes[-1]['name']
         common_attrs['storage']['pg_num'] = 128
-
+        common_attrs['tasks'] = []
         common_attrs['test_vm_image'] = {
             'container_format': 'bare',
             'public': 'true',
@@ -164,13 +164,12 @@ class TestHandlers(BaseIntegrationTest):
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
             ),
         }
-
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [600, 600, 500],
-            'cinder': 700,
-            'compute': 700
+            'controller': [200, 200, 100],
+            'cinder': 300,
+            'compute': 300
         }
 
         critical_mapping = {
@@ -545,7 +544,7 @@ class TestHandlers(BaseIntegrationTest):
 
         common_attrs['last_controller'] = controller_nodes[-1]['name']
         common_attrs['storage']['pg_num'] = 128
-
+        common_attrs['tasks'] = []
         common_attrs['test_vm_image'] = {
             'container_format': 'bare',
             'public': 'true',
@@ -563,9 +562,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [600, 600, 500],
-            'cinder': 700,
-            'compute': 700
+            'controller': [200, 200, 100],
+            'cinder': 300,
+            'compute': 300
         }
 
         critical_mapping = {
@@ -827,7 +826,8 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -835,7 +835,8 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

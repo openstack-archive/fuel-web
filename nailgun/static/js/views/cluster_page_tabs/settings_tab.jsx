@@ -132,9 +132,11 @@ function(React, utils, models, Expression, controls) {
             var cluster = this.props.model;
             $.when(this.settings.fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
                 this.updateInitialSettings();
-                this.settings.isValid({models: this.configModels});
                 this.setState({loading: false});
             }, this));
+        },
+        componentWillUpdate: function() {
+            this.settings.isValid({models: this.configModels});
         },
         componentWillUnmount: function() {
             this.loadInitialSettings();
@@ -188,7 +190,6 @@ function(React, utils, models, Expression, controls) {
         },
         onChange: function(groupName, settingName, value) {
             this.settings.set(this.settings.makePath(groupName, settingName, settingName == 'metadata' ? 'enabled' : 'value'), value);
-            this.settings.isValid({models: this.configModels});
         },
         render: function() {
             var cluster = this.props.model,

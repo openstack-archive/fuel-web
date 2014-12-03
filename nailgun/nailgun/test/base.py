@@ -84,7 +84,7 @@ def test_db_driver(handler):
         # we do not remove session in tests
 
 
-class Environment(object):
+class EnvironmentManager(object):
 
     def __init__(self, app, session=None):
         self.db = session or db()
@@ -877,7 +877,7 @@ class BaseTestCase(TestCase):
     def setUp(self):
         self.db = db
         flush()
-        self.env = Environment(app=self.app, session=self.db)
+        self.env = EnvironmentManager(app=self.app, session=self.db)
         self.env.upload_fixtures(self.fixtures)
 
     def tearDown(self):

@@ -225,3 +225,15 @@ OPENSTACK_IMAGES_SETTINGS = Enum(
         "size_unit"
     )
 )
+
+DEPLOY_STRATEGY = Enum(
+    'parallel',
+    'one_by_one'
+)
+
+ORCHESTRATOR_TASK_TYPES = Enum(
+    'puppet',
+    'shell',
+    'sync',
+    'upload_file'
+)

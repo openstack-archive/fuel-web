@@ -67,7 +67,7 @@ class ClusterAttributesPlugin(object):
         if os.path.exists(self.config_file):
             config = self._load_config(self.config_file)
         if self.validate_cluster_compatibility(cluster):
-            attrs = config.get("attributes", {})
+            attrs = config.get("attributes", {}) or {}
             self.update_metadata(attrs)
             return {self.plugin.name: attrs}
         return {}

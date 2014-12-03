@@ -84,6 +84,7 @@ class TestHandlers(BaseIntegrationTest):
             'storage_interface': 'eth0.102',
             'public_interface': 'eth0',
             'floating_interface': 'eth0',
+            'tasks': [],
 
             'master_ip': '127.0.0.1',
             'use_cinder': True,
@@ -165,14 +166,6 @@ class TestHandlers(BaseIntegrationTest):
             ),
         }
 
-        # Individual attrs calculation and
-        # merging with common attrs
-        priority_mapping = {
-            'controller': [600, 600, 500],
-            'cinder': 700,
-            'compute': 700
-        }
-
         critical_mapping = {
             'primary-controller': True,
             'controller': False,
@@ -184,10 +177,7 @@ class TestHandlers(BaseIntegrationTest):
         for node in nodes_db:
             ips = assigned_ips[node.id]
             for role in sorted(node.roles):
-                priority = priority_mapping[role]
                 is_critical = critical_mapping[role]
-                if isinstance(priority, list):
-                    priority = priority.pop()
 
                 individual_atts = {
                     'uid': str(node.id),
@@ -196,7 +186,7 @@ class TestHandlers(BaseIntegrationTest):
                     'online': node.online,
                     'fail_if_error': is_critical,
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
-                    'priority': priority,
+                    'priority': 100,
 
                     'network_data': {
                         'eth0': {
@@ -239,7 +229,7 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg = {
             'api_version': '1',
-            'method': 'deploy',
+            'method': 'granular_deploy',
             'respond_to': 'deploy_resp',
             'args': {}
         }
@@ -371,7 +361,8 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -379,7 +370,9 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks',
+                         'priority'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -539,7 +532,7 @@ class TestHandlers(BaseIntegrationTest):
         controller_nodes = filter(
             lambda node: node['role'] == 'controller',
             deepcopy(nodes_list))
-
+        common_attrs['tasks'] = []
         common_attrs['nodes'] = nodes_list
         common_attrs['nodes'][0]['role'] = 'primary-controller'
 
@@ -560,14 +553,6 @@ class TestHandlers(BaseIntegrationTest):
             ),
         }
 
-        # Individual attrs calculation and
-        # merging with common attrs
-        priority_mapping = {
-            'controller': [600, 600, 500],
-            'cinder': 700,
-            'compute': 700
-        }
-
         critical_mapping = {
             'primary-controller': True,
             'controller': False,
@@ -579,10 +564,7 @@ class TestHandlers(BaseIntegrationTest):
         for node in nodes_db:
             ips = assigned_ips[node.id]
             for role in sorted(node.roles):
-                priority = priority_mapping[role]
                 is_critical = critical_mapping[role]
-                if isinstance(priority, list):
-                    priority = priority.pop()
 
                 individual_atts = {
                     'uid': str(node.id),
@@ -591,7 +573,7 @@ class TestHandlers(BaseIntegrationTest):
                     'online': node.online,
                     'fail_if_error': is_critical,
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
-                    'priority': priority,
+                    'priority': 100,
 
                     'network_scheme': {
                         "version": "1.0",
@@ -694,7 +676,7 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg = {
             'api_version': '1',
-            'method': 'deploy',
+            'method': 'granular_deploy',
             'respond_to': 'deploy_resp',
             'args': {}
         }
@@ -827,7 +809,8 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -835,7 +818,9 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks',
+                         'priority'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

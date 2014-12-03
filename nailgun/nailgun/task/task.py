@@ -150,9 +150,11 @@ class DeploymentTask(object):
         for node in nodes:
             node.pending_addition = False
 
+        #NOTE(dshulyak) discussed with warpc, separation is required
+        #to leave legacy deployment model as it is
         rpc_message = make_astute_message(
             task,
-            'deploy',
+            'granular_deploy',
             'deploy_resp',
             {
                 'deployment_info': serialized_cluster,

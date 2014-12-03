@@ -124,8 +124,8 @@ class NodeAgentHandler(BaseHandler):
                * 404 (node not found)
         """
         nd = self.checked_data(
-            self.validator.validate_collection_update,
-            data=u'[{0}]'.format(web.data()))[0]
+            self.validator.validate_update,
+            data=web.data())
 
         node = self.collection.single.get_by_meta(nd)
 
@@ -134,7 +134,7 @@ class NodeAgentHandler(BaseHandler):
 
         node.timestamp = datetime.now()
 
-        if node.group_id is None:
+        if node.cluster is not None and node.group_id is None:
             admin_ngs = db().query(NetworkGroup).filter_by(
                 name="fuelweb_admin")
             ip = IPAddress(node.ip)

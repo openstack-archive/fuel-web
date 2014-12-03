@@ -20,6 +20,11 @@ _IP_ADDRESS_SCHEMA = {
     'format': 'ipv4',
 }
 
+_IP_ADDRESS_OR_NULL_SCHEMA = {
+    'type': ['string', 'null'],
+    'format': 'ipv4',
+}
+
 
 # Non-complete JSON schema for validating NET addresses.
 # Use it for better readability in the main schema.

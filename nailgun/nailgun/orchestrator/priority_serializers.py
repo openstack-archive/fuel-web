@@ -57,11 +57,16 @@ class PriorityStrategy(object):
         for t in tasks:
             t['priority'] = self._priority.next()
 
+    def add_in_parallel(self, tasks):
+        """Add tasks in paralel without increasing priority
+        """
+        for t in tasks:
+            t['priority'] = self._priority.current
+
     def in_parallel(self, tasks):
         """Deploy given tasks in parallel mode."""
         self._priority.next()
-        for t in tasks:
-            t['priority'] = self._priority.current
+        self.add_in_parallel(tasks)
 
     def in_parallel_by(self, tasks, amount):
         """Deploy given nodes in parallel by chunks."""

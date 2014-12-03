@@ -159,6 +159,10 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
             }
         },
         render: function() {
+            // FIXME(vkramskikh): do not rerender RolesPanel which is
+            // already a React component. This hack will be removed after
+            // all related views will be rewritten
+            var existingRolesPanel = this.$('.roles-panel').detach();
             this.tearDownRegisteredSubViews();
             this.$el.html('');
             if (this instanceof this.EditNodesScreen) {
@@ -169,11 +173,12 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
             this.registerSubView(managementPanel);
             this.$el.append(managementPanel.render().el);
             if (this instanceof this.AddNodesScreen || this instanceof this.EditNodesScreen) {
-                this.$el.append($('<div/>').addClass('roles-panel'));
-                if (this.roles) {
-                    utils.universalUnmount(this.roles);
+                if (existingRolesPanel.length) {
+                    this.$el.append(existingRolesPanel);
+                } else {
+                    this.$el.append($('<div/>').addClass('roles-panel'));
+                    this.roles = utils.universalMount(panels.RolesPanel, {cluster: this.model, nodes: this.nodes}, this.$('.roles-panel'), this);
                 }
-                this.roles = utils.universalMount(panels.RolesPanel, {cluster: this.model, nodes: this.nodes}, this.$('.roles-panel'), this);
             }
             this.nodeList = new NodeList(options);
             this.registerSubView(this.nodeList);

@@ -44,6 +44,9 @@ function(React, Expression, utils, controls) {
             };
         },
         componentDidMount: function() {
+            // FIXME(vkramskikh): this should be passed from parent. The correct place to load
+            // this data is route handler of subroute, though our router doesn't support
+            // subrouting yet
             this.props.cluster.get('settings').fetch({cache: true}).always(_.bind(function() {
                 this.setState({loading: false});
             }, this));

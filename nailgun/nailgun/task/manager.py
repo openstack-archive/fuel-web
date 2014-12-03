@@ -305,6 +305,7 @@ class ApplyChangesTaskManager(TaskManager):
                 "Checking networks failed: %s", check_networks.message
             )
             raise errors.CheckBeforeDeploymentError(check_networks.message)
+        TaskHelper.set_ready_if_not_finished(check_networks)
         db().delete(check_networks)
         db().refresh(supertask)
         db().flush()
@@ -330,6 +331,7 @@ class ApplyChangesTaskManager(TaskManager):
         logger.debug(
             "Checking prerequisites is successful, starting deployment..."
         )
+        TaskHelper.set_ready_if_not_finished(check_before)
         db().delete(check_before)
         db().refresh(supertask)
         db().flush()
@@ -611,6 +613,7 @@ class CheckNetworksTaskManager(TaskManager):
             locked_tasks
         ).first()
         if check_networks:
+            TaskHelper.set_ready_if_not_finished(check_networks)
             db().delete(check_networks)
             db().flush()
 

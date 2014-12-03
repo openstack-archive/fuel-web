@@ -57,9 +57,10 @@ class PriorityStrategy(object):
         for t in tasks:
             t['priority'] = self._priority.next()
 
-    def in_parallel(self, tasks):
+    def in_parallel(self, tasks, keep=False):
         """Deploy given tasks in parallel mode."""
-        self._priority.next()
+        if not keep:
+            self._priority.next()
         for t in tasks:
             t['priority'] = self._priority.current
 

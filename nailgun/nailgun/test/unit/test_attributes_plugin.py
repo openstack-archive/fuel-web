@@ -40,10 +40,13 @@ class TestPlugin(base.BaseTestCase):
         self.cluster = self.env.clusters[0]
         self.attr_plugin = attr_plugin.ClusterAttributesPlugin(self.plugin)
         self.env_config = self.env.get_default_plugin_env_config()
-        self.get_config = lambda *args: mock.mock_open(
-            read_data=yaml.dump(self.env_config))()
+        self.get_config = self.make_config_mock(self.env_config)
 
         db().flush()
+
+    def make_config_mock(self, config):
+        return lambda *args: mock.mock_open(
+            read_data=yaml.dump(config))()
 
     @mock.patch('nailgun.plugins.attr_plugin.open', create=True)
     @mock.patch('nailgun.plugins.attr_plugin.os.access')
@@ -60,6 +63,19 @@ class TestPlugin(base.BaseTestCase):
         self.assertEqual(
             attributes['testing_plugin']['plugin_name_text'],
             self.env_config['attributes']['plugin_name_text'])
+        self.assertEqual(
+            attributes['testing_plugin']['metadata'],
+            self.attr_plugin.default_metadata)
+
+    @mock.patch('nailgun.plugins.attr_plugin.open', create=True)
+    @mock.patch('nailgun.plugins.attr_plugin.os.access', return_value=True)
+    @mock.patch('nailgun.plugins.attr_plugin.os.path.exists', return_value=True)
+    def test_get_plugin_attributes_parameter_is_none(
+            self, mexists, maccess, mopen):
+        """Should not fail if "attributes" is None
+        """
+        mopen.side_effect = self.make_config_mock({'attributes': None})
+        attributes = self.attr_plugin.get_plugin_attributes(self.cluster)
         self.assertEqual(
             attributes['testing_plugin']['metadata'],
             self.attr_plugin.default_metadata)

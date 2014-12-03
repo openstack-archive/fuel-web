@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators.json_schema import networks
+from nailgun import consts
 
 
 # TODO(@ikalnitsky): add `required` properties to all needed objects
@@ -36,8 +37,8 @@ node_format_schema = {
                     'items': {
                         'type': 'object',
                         'properties': {
-                            'ip': networks._IP_ADDRESS_SCHEMA,
-                            'netmask': networks._NET_ADDRESS_SCHEMA,
+                            'ip': networks._IP_ADDRESS_OR_NULL_SCHEMA,
+                            'netmask': networks._NET_ADDRESS_OR_NULL_SCHEMA,
                             'mac': networks._MAC_ADDRESS_SCHEMA,
                             'state': {'type': 'string'},
                             'name': {'type': 'string'},
@@ -93,9 +94,10 @@ node_format_schema = {
                 },
             }
         },
-        'id': {'type': 'string'},
-        'manufacturer': {'type': 'string'},
-        'os_platform': {'type': 'string'},
+        'status': {'enum': list(consts.NODE_STATUSES)},
+        'id': {'type': ['string', 'integer']},
+        'manufacturer': {'type': ['string', 'null']},
+        'os_platform': {'type': ['string', 'null']},
         'is_agent': {'type': 'boolean'},
         'platform_name': {'type': ['string', 'null']},
     },

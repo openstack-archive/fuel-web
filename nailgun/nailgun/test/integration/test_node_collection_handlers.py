@@ -164,7 +164,6 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -173,7 +172,6 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -183,7 +181,6 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -193,12 +190,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body, "Null MAC is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            jsonutils.dumps([{'id': None,
-                              'mac': node.mac,
+            jsonutils.dumps([{'mac': node.mac,
                               'manufacturer': 'man5'}]),
             headers=self.default_headers
         )
@@ -321,7 +316,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('NodeAgentHandler'),
             jsonutils.dumps({
-                'mac': 'invalid_mac',
+                'mac': '00:00:00:00:00:00',
                 'meta': {
                     'interfaces': [interface]},
             }),

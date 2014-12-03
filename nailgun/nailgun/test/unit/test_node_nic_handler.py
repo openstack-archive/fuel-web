@@ -59,9 +59,8 @@ class TestHandlers(BaseIntegrationTest):
         meta["interfaces"] = []
         node = self.env.create_node(api=True, meta=meta)
         meta_clean_list = [
-            {'interfaces': [{'name': '', 'mac': '00:00:00'}]},
-            {'interfaces': [{'name': 'eth0', 'mac': ''}]},
-            {'interfaces': [{'mac': '00:00:00'}]},
+            {'interfaces': [{'name': '', 'mac': '00:00:00:00:00:00'}]},
+            {'interfaces': [{'mac': '00:00:00:00:00:00'}]},
             {'interfaces': [{'name': 'eth0'}]}
         ]
 
@@ -88,17 +87,17 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta)
 
         meta_clean_list = [
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'max_speed': -100}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'current_speed': -100}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'current_speed': '100'}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'max_speed': 10.0}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'max_speed': '100'}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'current_speed': 10.0}]}
         ]
         for nic_meta in meta_clean_list:
@@ -120,7 +119,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(
                 ifaces,
                 [
-                    {'name': 'eth0', 'mac': '00:00:00',
+                    {'name': 'eth0', 'mac': '00:00:00:00:00:00',
                      'max_speed': None, 'current_speed': None}
                 ]
             )
@@ -231,13 +230,13 @@ class TestHandlers(BaseIntegrationTest):
     def test_NIC_updates_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
-            {'name': 'eth0', 'mac': '12345', 'current_speed': 1,
+            {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
              'state': 'up'}])
         node = self.env.create_node(api=True, meta=meta)
         new_meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(new_meta, [
-            {'name': 'new_nic', 'mac': '12345', 'current_speed': 10,
-             'max_speed': 10, 'state': 'down'}])
+            {'name': 'new_nic', 'mac': '00:00:00:00:00:00',
+             'current_speed': 10, 'max_speed': 10, 'state': 'down'}])
         node_data = {'mac': node['mac'], 'meta': new_meta}
         resp = self.app.put(
             reverse('NodeAgentHandler'),
@@ -262,11 +261,12 @@ class TestHandlers(BaseIntegrationTest):
     def test_NIC_adds_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
-            {'name': 'eth0', 'mac': '12345', 'current_speed': 1,
+            {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
              'state': 'up'}])
         node = self.env.create_node(api=True, meta=meta)
 
-        meta['interfaces'].append({'name': 'new_nic', 'mac': '643'})
+        meta['interfaces'].append({
+            'name': 'new_nic', 'mac': '00:00:00:00:00:00'})
         node_data = {'mac': node['mac'], 'meta': meta}
         resp = self.app.put(
             reverse('NodeAgentHandler'),

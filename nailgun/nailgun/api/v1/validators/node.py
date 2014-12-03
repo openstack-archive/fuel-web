@@ -191,6 +191,7 @@ class NodeValidator(BasicValidator):
             d = cls.validate_json(data)
         else:
             d = data
+        cls.validate_schema(d, node_format_schema)
 
         if "status" in d and d["status"] not in consts.NODE_STATUSES:
             raise errors.InvalidData(

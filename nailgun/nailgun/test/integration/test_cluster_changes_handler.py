@@ -84,6 +84,7 @@ class TestHandlers(BaseIntegrationTest):
             'storage_interface': 'eth0.102',
             'public_interface': 'eth0',
             'floating_interface': 'eth0',
+            'tasks': [],
 
             'master_ip': '127.0.0.1',
             'use_cinder': True,
@@ -168,9 +169,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [600, 600, 500],
-            'cinder': 700,
-            'compute': 700
+            'controller': [200, 200, 100],
+            'cinder': 300,
+            'compute': 300
         }
 
         critical_mapping = {
@@ -239,7 +240,7 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg = {
             'api_version': '1',
-            'method': 'deploy',
+            'method': 'granular_deploy',
             'respond_to': 'deploy_resp',
             'args': {}
         }
@@ -371,7 +372,8 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -379,7 +381,8 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -539,7 +542,7 @@ class TestHandlers(BaseIntegrationTest):
         controller_nodes = filter(
             lambda node: node['role'] == 'controller',
             deepcopy(nodes_list))
-
+        common_attrs['tasks'] = []
         common_attrs['nodes'] = nodes_list
         common_attrs['nodes'][0]['role'] = 'primary-controller'
 
@@ -563,9 +566,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [600, 600, 500],
-            'cinder': 700,
-            'compute': 700
+            'controller': [200, 200, 100],
+            'cinder': 300,
+            'compute': 300
         }
 
         critical_mapping = {
@@ -694,7 +697,7 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg = {
             'api_version': '1',
-            'method': 'deploy',
+            'method': 'granular_deploy',
             'respond_to': 'deploy_resp',
             'args': {}
         }
@@ -827,7 +830,8 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -835,7 +839,8 @@ class TestHandlers(BaseIntegrationTest):
                          'public_address',
                          'storage_address',
                          'ipaddr',
-                         'IP'])
+                         'IP',
+                         'tasks'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

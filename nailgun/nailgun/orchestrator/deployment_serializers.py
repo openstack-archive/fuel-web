@@ -36,6 +36,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Cluster
+from nailgun.orchestrator.graph_serializer import GraphBasedPrioritySerializer
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
@@ -1169,11 +1170,11 @@ def create_serializer(cluster):
         '6.0': {
             'multinode': (
                 DeploymentMultinodeSerializer60,
-                ps.PriorityMultinodeSerializer60,
+                GraphBasedPrioritySerializer,
             ),
             'ha': (
                 DeploymentHASerializer60,
-                ps.PriorityHASerializer60,
+                GraphBasedPrioritySerializer,
             ),
         },
     }

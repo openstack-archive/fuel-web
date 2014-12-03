@@ -57,11 +57,16 @@ class PriorityStrategy(object):
         for t in tasks:
             t['priority'] = self._priority.next()
 
+    def add_in_parallel(self, tasks):
+        """Add tasks in paralel without increasing priority
+        """
+        for t in tasks:
+            t['priority'] = self._priority.current
+
     def in_parallel(self, tasks):
         """Deploy given tasks in parallel mode."""
         self._priority.next()
-        for t in tasks:
-            t['priority'] = self._priority.current
+        self.add_in_parallel(tasks)
 
     def in_parallel_by(self, tasks, amount):
         """Deploy given nodes in parallel by chunks."""
@@ -90,137 +95,3 @@ class PrioritySerializer(object):
 
         :param nodes: a list of nodes to be prioritized
         """
-
-
-class PriorityMultinodeSerializer50(PrioritySerializer):
-
-    def set_deployment_priorities(self, nodes):
-
-        self.priority.one_by_one(self.by_role(nodes, 'zabbix-server'))
-        self.priority.one_by_one(self.by_role(nodes, 'mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'controller'))
-
-        self.priority.in_parallel(
-            self.not_roles(nodes, [
-                'controller',
-                'mongo',
-                'primary-mongo',
-                'zabbix-server']))
-
-
-# Yep, for MultiNode we have no changes between 5.0, 5.1 and 6.0
-PriorityMultinodeSerializer51 = PriorityMultinodeSerializer50
-PriorityMultinodeSerializer60 = PriorityMultinodeSerializer50
-
-
-class PriorityHASerializer50(PrioritySerializer):
-
-    def set_deployment_priorities(self, nodes):
-
-        self.priority.in_parallel(self.by_role(nodes, 'zabbix-server'))
-        self.priority.in_parallel(self.by_role(nodes, 'primary-swift-proxy'))
-        self.priority.in_parallel(self.by_role(nodes, 'swift-proxy'))
-        self.priority.in_parallel(self.by_role(nodes, 'storage'))
-
-        self.priority.one_by_one(self.by_role(nodes, 'mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-controller'))
-
-        # We are deploying in parallel, so do not let us deploy more than
-        # 6 controllers simultaneously or galera master may be exhausted
-        self.priority.one_by_one(self.by_role(nodes, 'controller'))
-
-        self.priority.in_parallel(
-            self.not_roles(nodes, [
-                'primary-swift-proxy',
-                'swift-proxy',
-                'storage',
-                'primary-controller',
-                'controller',
-                'quantum',
-                'mongo',
-                'primary-mongo',
-                'zabbix-server']))
-
-
-class PriorityHASerializer51(PrioritySerializer):
-
-    def set_deployment_priorities(self, nodes):
-
-        self.priority.in_parallel(self.by_role(nodes, 'zabbix-server'))
-        self.priority.in_parallel(self.by_role(nodes, 'primary-swift-proxy'))
-        self.priority.in_parallel(self.by_role(nodes, 'swift-proxy'))
-        self.priority.in_parallel(self.by_role(nodes, 'storage'))
-
-        self.priority.one_by_one(self.by_role(nodes, 'mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-controller'))
-
-        # We are deploying in parallel, so do not let us deploy more than
-        # 6 controllers simultaneously or galera master may be exhausted
-        self.priority.in_parallel_by(self.by_role(nodes, 'controller'), 6)
-
-        self.priority.in_parallel(
-            self.not_roles(nodes, [
-                'primary-swift-proxy',
-                'swift-proxy',
-                'storage',
-                'primary-controller',
-                'controller',
-                'quantum',
-                'mongo',
-                'primary-mongo',
-                'zabbix-server']))
-
-
-# Since no difference between 6.0 and 5.1 serializers so far
-PriorityHASerializer60 = PriorityHASerializer51
-
-
-class PriorityMultinodeSerializerPatching(PrioritySerializer):
-
-    def set_deployment_priorities(self, nodes):
-
-        self.priority.one_by_one(self.by_role(nodes, 'zabbix-server'))
-        self.priority.one_by_one(self.by_role(nodes, 'mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'controller'))
-
-        # this is a difference between a regular multinode mode
-        self.priority.one_by_one(
-            self.not_roles(nodes, [
-                'controller',
-                'mongo',
-                'primary-mongo',
-                'zabbix-server']))
-
-
-class PriorityHASerializerPatching(PrioritySerializer):
-
-    def set_deployment_priorities(self, nodes):
-
-        self.priority.one_by_one(self.by_role(nodes, 'zabbix-server'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-swift-proxy'))
-        self.priority.one_by_one(self.by_role(nodes, 'swift-proxy'))
-        self.priority.one_by_one(self.by_role(nodes, 'storage'))
-
-        self.priority.one_by_one(self.by_role(nodes, 'mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-mongo'))
-        self.priority.one_by_one(self.by_role(nodes, 'primary-controller'))
-
-        # We are deploying in parallel, so do not let us deploy more than
-        # 6 controllers simultaneously or galera master may be exhausted
-        self.priority.one_by_one(self.by_role(nodes, 'controller'))
-
-        self.priority.one_by_one(
-            self.not_roles(nodes, [
-                'primary-swift-proxy',
-                'swift-proxy',
-                'storage',
-                'primary-controller',
-                'controller',
-                'quantum',
-                'mongo',
-                'primary-mongo',
-                'zabbix-server']))

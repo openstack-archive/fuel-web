@@ -168,9 +168,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [600, 600, 500],
-            'cinder': 700,
-            'compute': 700
+            'controller': [200, 200, 100],
+            'cinder': 300,
+            'compute': 300
         }
 
         critical_mapping = {
@@ -563,9 +563,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [600, 600, 500],
-            'cinder': 700,
-            'compute': 700
+            'controller': [200, 200, 100],
+            'cinder': 300,
+            'compute': 300
         }
 
         critical_mapping = {

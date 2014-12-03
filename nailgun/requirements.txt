@@ -30,3 +30,4 @@ keystonemiddleware>=1.2.0
 # we might still need keystone command
 python-keystoneclient>=0.11
 python-novaclient>=2.17.0
+networkx>=1.8

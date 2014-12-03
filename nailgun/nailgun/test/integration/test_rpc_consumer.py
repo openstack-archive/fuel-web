@@ -1136,26 +1136,21 @@ class TestConsumer(BaseIntegrationTest):
         self.assertEqual(error_node.status, "error")
 
     def test_remove_cluster_resp(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_id = self.env.clusters[0].id
+        cluster_db = self.db.query(Cluster).get(cluster["id"])
+        cluster_id = cluster_db.id
         node1, node2 = self.env.nodes
         node1_id, node2_id = [n.id for n in self.env.nodes]
         self.env.create_notification(
             cluster_id=cluster_id
         )
-        networks = self.db.query(NetworkGroup).\
-            filter(NetworkGroup.group_id ==
-                   self.env.clusters[0].default_group).all()
-
-        vlans = []
-        for net in networks:
-            vlans.append(net.vlan_start)
+        group_id = objects.Cluster.get_default_group(cluster_db).id
 
         task = Task(
             uuid=str(uuid.uuid4()),
@@ -1194,7 +1189,7 @@ class TestConsumer(BaseIntegrationTest):
 
         nets_db = self.db.query(NetworkGroup).\
             filter(NetworkGroup.group_id ==
-                   self.env.clusters[0].default_group).all()
+                   group_id).all()
         self.assertEquals(len(nets_db), 0)
 
         task_db = self.db.query(Task)\
@@ -1252,5 +1247,7 @@ class TestConsumer(BaseIntegrationTest):
 
         nets_db = self.db.query(NetworkGroup).\
             filter(NetworkGroup.group_id ==
-                   self.env.clusters[0].default_group).all()
+                   objects.Cluster.get_default_group(
+                       self.env.clusters[0]).id).\
+            all()
         self.assertNotEqual(len(nets_db), 0)

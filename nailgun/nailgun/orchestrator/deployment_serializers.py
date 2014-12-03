@@ -16,6 +16,7 @@
 
 """Deployment serializers for orchestrator"""
 
+from collections import defaultdict
 from copy import deepcopy
 from itertools import groupby
 
@@ -36,7 +37,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Cluster
-from nailgun.orchestrator import priority_serializers as ps
+from nailgun.orchestrator.graph_serializer import initialize_graph
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
@@ -785,15 +786,28 @@ class NeutronNetworkDeploymentSerializer60(
         return attrs
 
 
-class DeploymentMultinodeSerializer(object):
+class GraphBasedSerializer(object):
+
+    def __init__(self, graph):
+        self.graph = graph
+
+    def set_deployment_priorities(self, nodes):
+        group_by_roles = defaultdict(list)
+        for role, group in groupby(nodes, lambda node: node['role']):
+            group_by_roles[role].extend(list(group))
+        self.graph.add_priorities(group_by_roles)
+
+    def set_tasks(self, nodes):
+        for node in nodes:
+            node['tasks'] = self.graph.serialize_tasks(node)
+
+
+class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer
 
     critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
-
-    def __init__(self, priority_serializer):
-        self.priority = priority_serializer
 
     def serialize(self, cluster, nodes, ignore_customized=False):
         """Method generates facts which
@@ -816,7 +830,7 @@ class DeploymentMultinodeSerializer(object):
 
         self.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
-
+        self.set_tasks(nodes)
         return [dict_merge(node, common_attrs) for node in nodes]
 
     def serialize_customized(self, cluster, nodes):
@@ -921,10 +935,6 @@ class DeploymentMultinodeSerializer(object):
 
     def not_roles(self, nodes, roles):
         return filter(lambda node: node['role'] not in roles, nodes)
-
-    def set_deployment_priorities(self, nodes):
-        """Set priorities of deployment."""
-        self.priority.set_deployment_priorities(nodes)
 
     def set_critical_nodes(self, nodes):
         """Set behavior on nodes deployment error
@@ -1144,53 +1154,26 @@ def create_serializer(cluster):
     :param cluster: a cluster to process
     :returns: a serializer for a given cluster
     """
-    # env-version serializer map
     serializers_map = {
         '5.0': {
-            'multinode': (
-                DeploymentMultinodeSerializer,
-                ps.PriorityMultinodeSerializer50,
-            ),
-            'ha': (
-                DeploymentHASerializer,
-                ps.PriorityHASerializer50,
-            ),
+            'multinode': DeploymentMultinodeSerializer,
+            'ha': DeploymentHASerializer,
         },
         '5.1': {
-            'multinode': (
-                DeploymentMultinodeSerializer51,
-                ps.PriorityMultinodeSerializer51,
-            ),
-            'ha': (
-                DeploymentHASerializer51,
-                ps.PriorityHASerializer51,
-            ),
+            'multinode': DeploymentMultinodeSerializer51,
+            'ha': DeploymentHASerializer51,
         },
         '6.0': {
-            'multinode': (
-                DeploymentMultinodeSerializer60,
-                ps.PriorityMultinodeSerializer60,
-            ),
-            'ha': (
-                DeploymentHASerializer60,
-                ps.PriorityHASerializer60,
-            ),
+            'multinode': DeploymentMultinodeSerializer60,
+            'ha': DeploymentHASerializer60,
         },
     }
 
     env_version = extract_env_version(cluster.release.version)
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
-
-    # choose serializer
     for version, serializers in six.iteritems(serializers_map):
         if env_version.startswith(version):
-            serializer, priority = serializers[env_mode]
-            if cluster.pending_release_id:
-                priority = {
-                    'ha': ps.PriorityHASerializerPatching,
-                    'multinode': ps.PriorityMultinodeSerializerPatching,
-                }.get(env_mode)
-            return serializer(priority())
+            return serializers[env_mode](initialize_graph(cluster))
 
     raise errors.UnsupportedSerializer()
 

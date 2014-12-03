@@ -21,72 +21,8 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
+import nailgun.orchestrator.tasks_templates as templates
 from nailgun.plugins.manager import PluginManager
-
-
-def make_repo_task(uids, repo_data, repo_path):
-    return {
-        'type': 'upload_file',
-        'uids': uids,
-        'parameters': {
-            'path': repo_path,
-            'data': repo_data}}
-
-
-def make_ubuntu_repo_task(plugin_name, repo_url, uids):
-    repo_data = 'deb {0} /'.format(repo_url)
-    repo_path = '/etc/apt/sources.list.d/{0}.list'.format(plugin_name)
-
-    return make_repo_task(uids, repo_data, repo_path)
-
-
-def make_centos_repo_task(plugin_name, repo_url, uids):
-    repo_data = '\n'.join([
-        '[{0}]',
-        'name=Plugin {0} repository',
-        'baseurl={1}',
-        'gpgcheck=0']).format(plugin_name, repo_url)
-    repo_path = '/etc/yum.repos.d/{0}.repo'.format(plugin_name)
-
-    return make_repo_task(uids, repo_data, repo_path)
-
-
-def make_sync_scripts_task(uids, src, dst):
-    return {
-        'type': 'sync',
-        'uids': uids,
-        'parameters': {
-            'src': src,
-            'dst': dst}}
-
-
-def make_shell_task(uids, task, cwd):
-    return {
-        'type': 'shell',
-        'uids': uids,
-        'parameters': {
-            'cmd': task['parameters']['cmd'],
-            'timeout': task['parameters']['timeout'],
-            'cwd': cwd}}
-
-
-def make_apt_update_task(uids):
-    task = {
-        'parameters': {
-            'cmd': 'apt-get update',
-            'timeout': 180}}
-    return make_shell_task(uids, task, '/')
-
-
-def make_puppet_task(uids, task, cwd):
-    return {
-        'type': 'puppet',
-        'uids': uids,
-        'parameters': {
-            'puppet_manifest': task['parameters']['puppet_manifest'],
-            'puppet_modules': task['parameters']['puppet_modules'],
-            'timeout': task['parameters']['timeout'],
-            'cwd': cwd}}
 
 
 class BasePluginDeploymentHooksSerializer(object):
@@ -115,7 +51,8 @@ class BasePluginDeploymentHooksSerializer(object):
                     continue
                 tasks.append(self.serialize_task(
                     plugin, task,
-                    make_shell_task(uids, task, plugin.slaves_scripts_path)))
+                    templates.make_shell_task(
+                        uids, task, plugin.slaves_scripts_path)))
 
             for task in puppet_tasks:
                 uids = self.get_uids_for_task(task)
@@ -123,7 +60,8 @@ class BasePluginDeploymentHooksSerializer(object):
                     continue
                 tasks.append(self.serialize_task(
                     plugin, task,
-                    make_puppet_task(uids, task, plugin.slaves_scripts_path)))
+                    templates.make_puppet_task(
+                        uids, task, plugin.slaves_scripts_path)))
 
         return tasks
 
@@ -184,14 +122,14 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
                 repo_tasks.append(
                     self.serialize_task(
                         plugin, {},
-                        make_centos_repo_task(
+                        templates.make_centos_repo_task(
                             plugin.full_name,
                             plugin.repo_url(self.cluster), uids)))
             elif operating_system == consts.RELEASE_OS.ubuntu:
                 repo_tasks.append(
                     self.serialize_task(
                         plugin, {},
-                        make_ubuntu_repo_task(
+                        templates.make_ubuntu_repo_task(
                             plugin.full_name,
                             plugin.repo_url(self.cluster), uids)))
                 #apt-get upgrade executed after every additional source.list
@@ -199,7 +137,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
                 repo_tasks.append(
                     self.serialize_task(
                         plugin, {},
-                        make_apt_update_task(uids)))
+                        templates.make_apt_update_task(uids)))
             else:
                 raise errors.InvalidOperatingSystem(
                     'Operating system {0} is invalid'.format(operating_system))
@@ -215,7 +153,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
             tasks.append(
                 self.serialize_task(
                     plugin, {},
-                    make_sync_scripts_task(
+                    templates.make_sync_scripts_task(
                         uids,
                         plugin.master_scripts_path(self.cluster),
                         plugin.slaves_scripts_path)))

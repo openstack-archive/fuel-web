@@ -15,7 +15,11 @@
 #    under the License.
 
 import abc
+import copy
 import six
+
+from fuel_upgrade.config import read_yaml_config
+from fuel_upgrade import utils
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -70,3 +74,24 @@ class PreUpgradeHookBase(object):
                     return True
 
         return False
+
+    def update_astute_config(self, defaults=None, overwrites=None):
+        """Read astute.yaml config file, update it with new config,
+        copy old file to backup location and save new astute.yaml.
+        """
+        # NOTE(ikalnitsky): we need to re-read astute.yaml in order protect
+        # us from loosing some useful injection of another hook
+        astute_config = copy.deepcopy(defaults or {})
+        astute_config.update(
+            read_yaml_config(self.config.current_fuel_astute_path))
+        astute_config.update(overwrites or {})
+
+        # NOTE(eli): Just save file for backup in case
+        # if user wants to restore it manually
+        utils.copy_file(
+            self.config.current_fuel_astute_path,
+            '{0}_{1}'.format(self.config.current_fuel_astute_path,
+                             self.config.from_version),
+            overwrite=False)
+
+        utils.save_as_yaml(self.config.current_fuel_astute_path, astute_config)

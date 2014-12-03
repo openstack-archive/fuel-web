@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -18,37 +18,24 @@ import logging
 
 from fuel_upgrade import utils
 
-from fuel_upgrade.engines.docker_engine import DockerUpgrader
 from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.pre_upgrade_hooks.base import PreUpgradeHookBase
 
 logger = logging.getLogger(__name__)
 
 
-class AddKeystoneCredentialsHook(PreUpgradeHookBase):
-    """Feature `Fuel master access control improvements`
-    was introduced in 6.0 release [1].
-
-    In this feature fuelmenu generates keystone credenitals
-    and saves them in /etc/astute.yaml file.
-
-    Before upgrade for this featuer we need to
-    add new keystone credentials to the file.
-
-    [1] https://blueprints.launchpad.net/fuel/+spec/
-        access-control-master-node-improvments
+class AddMonitordKeystoneCredentialsHook(PreUpgradeHookBase):
+    """Monitoring service Keystone credentials.
     """
 
     # : This hook required only for docker and host system engines
-    enable_for_engines = [DockerUpgrader, HostSystemUpgrader]
+    enable_for_engines = [HostSystemUpgrader]
 
     # : New credentials
-    keystone_config = {
-        'keystone': {
-            "nailgun_user": "nailgun",
-            "nailgun_password": utils.generate_uuid_string(),
-            "ostf_user": "ostf",
-            "ostf_password": utils.generate_uuid_string(),
+    monitord_config = {
+        'monitord': {
+            'user': 'monitord',
+            'password': utils.generate_uuid_string(),
         }
     }
 
@@ -59,8 +46,8 @@ class AddKeystoneCredentialsHook(PreUpgradeHookBase):
                   False - if it is not required to run this hook
         """
         is_required = not all(
-            key in self.config.astute.get('keystone', {})
-            for key in self.keystone_config['keystone'].keys())
+            key in self.config.astute.get('monitord', {})
+            for key in self.monitord_config['monitord'].keys())
 
         return is_required
 
@@ -69,4 +56,6 @@ class AddKeystoneCredentialsHook(PreUpgradeHookBase):
         """
         # NOTE(ikalnitsky): we need to re-read astute.yaml in order protect
         # us from loosing some useful injection of another hook
-        self.update_astute_config(defaults=self.keystone_config)
+        self.update_astute_config(defaults={
+            'monitord': self.monitord_config
+        })

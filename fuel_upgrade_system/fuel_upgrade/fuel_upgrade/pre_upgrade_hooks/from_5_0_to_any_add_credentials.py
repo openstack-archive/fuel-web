@@ -16,9 +16,6 @@
 
 import logging
 
-from copy import deepcopy
-
-from fuel_upgrade.config import read_yaml_config
 from fuel_upgrade import utils
 
 from fuel_upgrade.engines.docker_engine import DockerUpgrader
@@ -41,10 +38,10 @@ class AddCredentialsHook(PreUpgradeHookBase):
     [1] https://blueprints.launchpad.net/fuel/+spec/access-control-master-node
     """
 
-    #: This hook required only for docker and host system engines
+    # : This hook required only for docker and host system engines
     enable_for_engines = [DockerUpgrader, HostSystemUpgrader]
 
-    #: Default credentials
+    # : Default credentials
     credentials = {
         "astute": {
             "user": "naily",
@@ -85,18 +82,4 @@ class AddCredentialsHook(PreUpgradeHookBase):
     def run(self):
         """Adds default credentials to config file
         """
-        # NOTE(ikalnitsky): we need to re-read astute.yaml in order protect
-        # us from loosing some useful injection of another hook
-        astute_config = deepcopy(self.credentials)
-        astute_config.update(
-            read_yaml_config(self.config.current_fuel_astute_path))
-
-        # NOTE(eli): Just save file for backup in case
-        # if user wants to restore it manually
-        utils.copy_file(
-            self.config.current_fuel_astute_path,
-            '{0}_{1}'.format(self.config.current_fuel_astute_path,
-                             self.config.from_version),
-            overwrite=False)
-
-        utils.save_as_yaml(self.config.current_fuel_astute_path, astute_config)
+        self.update_astute_config(defaults=self.credentials)

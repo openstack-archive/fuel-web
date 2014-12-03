@@ -15,9 +15,9 @@
 #    under the License.
 
 
-import mock
 import os
 
+import mock
 import six
 
 from fuel_upgrade.tests.base import BaseTestCase
@@ -31,14 +31,18 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_fix_puppet_manifests \
     import FixPuppetManifests
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_sync_dns \
     import SyncDnsHook
-from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
-from fuel_upgrade.pre_upgrade_hooks. \
-    from_5_0_x_to_any_copy_openstack_release_versions \
-    import CopyOpenstackReleaseVersions
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
+from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_monitord_credentials \
+    import AddMonitordKeystoneCredentialsHook
+from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
+
+
+from fuel_upgrade.pre_upgrade_hooks. \
+    from_5_0_x_to_any_copy_openstack_release_versions \
+    import CopyOpenstackReleaseVersions
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
@@ -94,10 +98,8 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_add_credentials.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_add_credentials.utils')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
     def test_run(self, utils_mock, read_yaml_config_mock):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({'astute': {file_key: file_key}})
@@ -187,10 +189,8 @@ class TestAddKeystoneCredentialsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_1_to_any_add_keystone_credentials.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_1_to_any_add_keystone_credentials.utils')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
     def test_run(self, utils_mock, read_yaml_config_mock):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({
@@ -242,10 +242,8 @@ class TestSyncDnsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_sync_dns.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_sync_dns.utils')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
     def test_run(self, utils_mock, read_yaml_config):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({'astute': {file_key: file_key}})
@@ -421,6 +419,34 @@ class TestPreUpgradeHookBase(TestPreUpgradeHooksBase):
                 check_if_required=True,
                 enable_for_engines=[SomeEngine]).is_required)
 
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
+    def test_update_astute_config(self, utils_mock, read_yaml_config_mock):
+        hook = self.get_hook()
+        read_yaml_config_mock.return_value = {
+            'a': 1,
+        }
+
+        defaults = {'b': 2}
+        hook.update_astute_config(defaults=defaults)
+        args = utils_mock.save_as_yaml.call_args
+        self.assertDictEqual(args[0][1], {'a': 1, 'b': 2})
+
+        defaults = {'a': 2}
+        hook.update_astute_config(defaults=defaults)
+        args = utils_mock.save_as_yaml.call_args
+        self.assertDictEqual(args[0][1], {'a': 1})
+
+        overwrites = {'a': 2}
+        hook.update_astute_config(overwrites=overwrites)
+        args = utils_mock.save_as_yaml.call_args
+        self.assertDictEqual(args[0][1], {'a': 2})
+
+        overwrites = {'b': 2}
+        hook.update_astute_config(overwrites=overwrites)
+        args = utils_mock.save_as_yaml.call_args
+        self.assertDictEqual(args[0][1], {'a': 1, 'b': 2})
+
 
 class TestPreUpgradeHookManager(TestPreUpgradeHooksBase):
 
@@ -505,3 +531,57 @@ class TestCopyOpenstackReleaseVersions(TestPreUpgradeHooksBase):
             mock_utils.copy_if_exists.call_args_list,
             [mock.call(self.hook.version_path_5_0,
                        self.hook.dst_version_path_5_0)])
+
+
+class TestAddMonitordKeystoneCredentialsHook(TestPreUpgradeHooksBase):
+
+    HookClass = AddMonitordKeystoneCredentialsHook
+
+    def setUp(self):
+        super(TestAddMonitordKeystoneCredentialsHook, self).setUp()
+        self.monitord_keys = [
+            'user',
+            'password',
+        ]
+
+    def test_is_required_returns_true(self):
+        hook = self.get_hook({})
+        self.assertTrue(hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        hook = self.get_hook({
+            'astute': {
+                'monitord': {
+                    'user': '',
+                    'password': '',
+                }
+            }
+        })
+
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
+    def test_run(self, utils_mock, read_yaml_config_mock):
+        file_key = 'this_key_was_here_before_upgrade'
+        hook = self.get_hook({
+            'astute': {
+                'monitord': {file_key: file_key}}
+        })
+        read_yaml_config_mock.return_value = hook.config.astute
+        hook.run()
+
+        utils_mock.copy_file.assert_called_once_with(
+            '/etc/fuel/astute.yaml',
+            '/etc/fuel/astute.yaml_0',
+            overwrite=False)
+
+        agrs = utils_mock.save_as_yaml.call_args
+        self.assertEqual(agrs[0][0], '/etc/fuel/astute.yaml')
+
+        # Check that the key which was in
+        self.monitord_keys.append(file_key)
+        # Check that all required keys are in method call
+        self.assertTrue(all(
+            key in self.monitord_keys
+            for key in agrs[0][1]['monitord'].keys()))

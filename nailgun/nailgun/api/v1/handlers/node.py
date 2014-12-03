@@ -20,9 +20,6 @@ Handlers dealing with nodes
 
 from datetime import datetime
 
-from netaddr import IPAddress
-from netaddr import IPNetwork
-
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
@@ -124,8 +121,8 @@ class NodeAgentHandler(BaseHandler):
                * 404 (node not found)
         """
         nd = self.checked_data(
-            self.validator.validate_collection_update,
-            data=u'[{0}]'.format(web.data()))[0]
+            self.validator.validate_update,
+            data=web.data())
 
         node = self.collection.single.get_by_meta(nd)
 
@@ -133,15 +130,6 @@ class NodeAgentHandler(BaseHandler):
             raise self.http(404, "Can't find node: {0}".format(nd))
 
         node.timestamp = datetime.now()
-
-        if node.group_id is None:
-            admin_ngs = db().query(NetworkGroup).filter_by(
-                name="fuelweb_admin")
-            ip = IPAddress(node.ip)
-            for ng in admin_ngs:
-                if ip in IPNetwork(ng.cidr):
-                    node.group_id = ng.group_id
-                    break
 
         if not node.online:
             node.online = True

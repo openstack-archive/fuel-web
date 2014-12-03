@@ -140,7 +140,7 @@ function(React, utils, models, Expression, controls) {
             this.loadInitialSettings();
         },
         hasChanges: function() {
-            return !_.isEqual(this.settings.attributes, this.initialAttributes);
+            return this.state.loading ? false : !_.isEqual(this.settings.attributes, this.initialAttributes);
         },
         applyChanges: function() {
             var deferred = this.settings.save(null, {patch: true, wait: true, validate: false});

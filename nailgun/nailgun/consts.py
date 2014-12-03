@@ -225,3 +225,8 @@ OPENSTACK_IMAGES_SETTINGS = Enum(
         "size_unit"
     )
 )
+
+DEPLOY_STRATEGY = Enum(
+    'parallel',
+    'one_by_one'
+)

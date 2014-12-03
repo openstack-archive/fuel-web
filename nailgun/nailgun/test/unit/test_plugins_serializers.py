@@ -16,13 +16,13 @@
 
 from nailgun.test import base
 
-from nailgun.orchestrator import plugins_serializers
+from nailgun.orchestrator import tasks_templates
 
 
 class TestMakeTask(base.BaseTestCase):
 
     def test_make_ubuntu_repo_task(self):
-        result = plugins_serializers.make_ubuntu_repo_task(
+        result = tasks_templates.make_ubuntu_repo_task(
             'plugin_name',
             'http://url',
             [1, 2, 3])

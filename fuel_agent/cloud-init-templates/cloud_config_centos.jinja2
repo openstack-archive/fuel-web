@@ -51,6 +51,13 @@ runcmd:
 {% endif %}
  - iptables -t filter -F INPUT
  - iptables -t filter -F FORWARD
+# rebuild datasource to wipe out meta-data for preventing of
+# network interfaces configuration to be modified on every single boot
+ - yum install -t -y genisoimage
+ - cp /var/lib/cloud/instance/user-data.txt user-data
+ - touch meta-data
+ - genisoimage -output new_nocloud.img -volid cidata -joliet -rock user-data meta-data
+ - dd if=new_nocloud.img of=$(blkid -L cidata)
 
 # that module's missing in 0.6.3, but existent for >= 0.7.3
 write_files:

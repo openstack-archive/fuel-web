@@ -102,6 +102,9 @@ puppet:
       report: false
       configtimeout: 600
 
+packages:
+ - genisoimage
+
 runcmd:
 {% if puppet.enable != 1 %}
  - /usr/sbin/invoke-rc.d puppet stop
@@ -113,5 +116,11 @@ runcmd:
 {% endif %}
  - iptables -t filter -F INPUT
  - iptables -t filter -F FORWARD
+# rebuild datasource to wipe out meta-data for preventing of
+# network interfaces configuration to be modified on every single boot
+ - cp /var/lib/cloud/instance/user-data.txt user-data
+ - touch meta-data
+ - genisoimage -output new_nocloud.img -volid cidata -joliet -rock user-data meta-data
+ - dd if=new_nocloud.img of=$(blkid -L cidata)
 
 final_message: "YAY! The system is finally up, after $UPTIME seconds"

@@ -1,0 +1,12 @@
+<form class="form-horizontal wizard-network-pane" onsubmit="return false">
+  <fieldset>
+    <% if (_.contains(app.version.get('feature_groups'), 'mirantis')) { %>
+      <div class="network-pane-description">
+        <%- $.t('dialog.create_cluster_wizard.network.description') %>
+        <a href="http://docs.mirantis.com/openstack/fuel/master/planning-guide.html#choose-network-topology" target="_blank"><%- $.t('dialog.create_cluster_wizard.network.description_link') %></a>
+      </div>
+    <% } %>
+    <div class="control-group">
+    </div>
+  </fieldset>
+</form>

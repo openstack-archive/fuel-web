@@ -1101,12 +1101,9 @@
         manager:
           type: "radio"
           values:
-            - data: "nova-network"
-              label: "dialog.create_cluster_wizard.network.nova_network"
-              bind:
-                - "cluster:net_provider": "nova_network"
             - data: "neutron-gre"
               label: "dialog.create_cluster_wizard.network.neutr_gre"
+              description: "dialog.create_cluster_wizard.network.neutr_gre_description"
               restrictions:
                 - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
               bind:
@@ -1114,6 +1111,7 @@
                 - "cluster:net_segment_type": "gre"
             - data: "neutron-vlan"
               label: "dialog.create_cluster_wizard.network.neutr_vlan"
+              description: "dialog.create_cluster_wizard.network.neutr_vlan_description"
               restrictions:
                 - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
               bind:
@@ -1121,6 +1119,7 @@
                 - "cluster:net_segment_type": "vlan"
             - data: "neutron-nsx"
               label: "dialog.create_cluster_wizard.network.neutr_nsx"
+              description: "dialog.create_cluster_wizard.network.neutr_nsx_description"
               restrictions:
                 - condition: "not ('experimental' in version:feature_groups)"
                   action: "disable"
@@ -1133,6 +1132,11 @@
                 - "cluster:net_l23_provider": "nsx"
                 - "cluster:net_segment_type": "gre"
                 - "settings:nsx_plugin.metadata.enabled": true
+            - data: "nova-network"
+              label: "dialog.create_cluster_wizard.network.nova_network"
+              description: "dialog.create_cluster_wizard.network.nova_network_description"
+              bind:
+                - "cluster:net_provider": "nova_network"
       Storage:
         cinder:
           type: "radio"

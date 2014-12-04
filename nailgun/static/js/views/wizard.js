@@ -689,7 +689,10 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
     clusterWizardPanes.Network = views.WizardPane.extend({
         constructorName: 'Network',
         template: _.template(commonWizardTemplate),
-        title: 'dialog.create_cluster_wizard.network.title'
+        title: 'dialog.create_cluster_wizard.network.title',
+        renderCustomElements: function() {
+            this.$('.control-group').addClass('control-group-network').append(this.renderControls({hasDescription: true}));
+        }
     });
 
     clusterWizardPanes.Storage = views.WizardPane.extend({

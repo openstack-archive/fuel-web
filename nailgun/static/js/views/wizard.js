@@ -24,13 +24,14 @@ define(
     'text!templates/dialogs/create_cluster_wizard/name_and_release.html',
     'text!templates/dialogs/create_cluster_wizard/common_wizard_panel.html',
     'text!templates/dialogs/create_cluster_wizard/mode.html',
+    'text!templates/dialogs/create_cluster_wizard/network.html',
     'text!templates/dialogs/create_cluster_wizard/storage.html',
     'text!templates/dialogs/create_cluster_wizard/ready.html',
     'text!templates/dialogs/create_cluster_wizard/control_template.html',
     'text!templates/dialogs/create_cluster_wizard/warning.html',
     'text!templates/dialogs/create_cluster_wizard/text_input.html'
 ],
-function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {};
@@ -688,8 +689,11 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
 
     clusterWizardPanes.Network = views.WizardPane.extend({
         constructorName: 'Network',
-        template: _.template(commonWizardTemplate),
-        title: 'dialog.create_cluster_wizard.network.title'
+        template: _.template(networkPaneTemplate),
+        title: 'dialog.create_cluster_wizard.network.title',
+        renderCustomElements: function() {
+            this.$('.control-group').append(this.renderControls({hasDescription: true}));
+        }
     });
 
     clusterWizardPanes.Storage = views.WizardPane.extend({

@@ -19,11 +19,15 @@ cloud-init-per instance udev_persistent_net1 /etc/init.d/networking stop
 
 ADMIN_MAC={{ common.admin_mac }}
 ADMIN_IF=$(echo {{ common.udevrules }} | sed 's/[,=]/\n/g' | grep "$ADMIN_MAC" | cut -d_ -f2 | head -1)
-INSTALL_IF=$(ifconfig | grep "$ADMIN_MAC" | head -1 | cut -d' ' -f1)
+#NOTE: it will be broken, once ifconfig (net-tools) 2.0 or higher version of package be used
+INSTALL_IF=$(ifconfig -a | grep "$ADMIN_MAC" | head -1 | cut -d' ' -f1)
 # Check if we do not already have static config (or interface seems unconfigured)
-NETADDR=( $(ifconfig $INSTALL_IF | grep -oP "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}") )
-if [ ! -z "$(grep $ADMIN_IF /etc/network/interfaces.d/ifcfg-$ADMIN_IF | grep dhcp)" ] ; then
-    echo -e "auto $ADMIN_IF\niface $ADMIN_IF inet static\n\taddress ${NETADDR[0]}\n\tnetmask ${NETADDR[2]}\n\tbroadcast ${NETADDR[1]}" > /etc/network/interfaces.d/ifcfg-"$ADMIN_IF"
+if [ ! -d "/etc/network/interfaces.d" ]; then
+    mkdir -p /etc/network/interfaces.d
+    echo 'source /etc/network/interfaces.d/*' > /etc/network/interfaces
+fi
+if [ ! -e "/etc/network/interfaces.d/ifcfg-$ADMIN_IF" ]; then
+    echo -e "auto $ADMIN_IF\niface $ADMIN_IF inet static\n\taddress {{ common.admin_ip }}\n\tnetmask {{ common.admin_mask }}" > /etc/network/interfaces.d/ifcfg-"$ADMIN_IF"
 fi
 #Add static udev rules
 cloud-init-per instance udev_persistent_net2 echo {{ common.udevrules }} | tr ' ' '\n' | grep udevrules | tr '[:upper:]' '[:lower:]' | sed -e 's/udevrules=//g' -e 's/,/\n/g' | sed -e "s/^/SUBSYSTEM==\"net\",\ ACTION==\"add\",\ DRIVERS==\"?*\",\ ATTR{address}==\"/g" -e "s/_/\",\ ATTR{type}==\"1\",\ KERNEL==\"eth*\",\ NAME=\"/g" -e "s/$/\"/g" | tee /etc/udev/rules.d/70-persistent-net.rules

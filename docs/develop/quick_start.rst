@@ -8,7 +8,7 @@ to all the information you need to get started.
 If you are new to contributing to OpenStack, read
 through the “How To Contribute” page on the OpenStack wiki.
 See: `How to contribute
-<https://wiki.openstack.org/wiki/How_To_Contribute>`_.
+<http://docs.openstack.org/infra/manual/developers.html>`_.
 
 For this walk-through, let’s use the example of modifying an
 option to the “new environment wizard” in Fuel (example here:
@@ -36,7 +36,7 @@ implement this feature, these steps were followed:
    your environment confirms to a known good baseline.
 
 #. Branch your fuel-web checkout (see `Gerrit Workflow
-   <https://wiki.openstack.org/wiki/GerritWorkflow>`_ for
+   <http://docs.openstack.org/infra/manual/developers.html#development-workflow>`_ for
    more information on the gerrit workflow)::
 
     cd fuel-web

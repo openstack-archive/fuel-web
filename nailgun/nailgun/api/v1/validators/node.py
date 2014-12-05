@@ -19,8 +19,6 @@ from nailgun.api.v1.validators.json_schema.disks \
 from nailgun.api.v1.validators.json_schema.node \
     import node_format_schema
 
-from nailgun import consts
-
 from nailgun import objects
 
 from nailgun.db import db
@@ -191,12 +189,7 @@ class NodeValidator(BasicValidator):
             d = cls.validate_json(data)
         else:
             d = data
-
-        if "status" in d and d["status"] not in consts.NODE_STATUSES:
-            raise errors.InvalidData(
-                "Invalid status for node",
-                log_message=True
-            )
+        cls.validate_schema(d, node_format_schema)
 
         if not d.get("mac") and not d.get("id") and not instance:
             raise errors.InvalidData(
@@ -206,19 +199,13 @@ class NodeValidator(BasicValidator):
 
         q = db().query(Node)
         if "mac" in d:
-            if not d["mac"]:
+            existent_node = q.filter_by(mac=d["mac"].lower()).first() \
+                or cls.validate_existent_node_mac_update(d)
+            if not existent_node:
                 raise errors.InvalidData(
-                    "Null MAC is specified",
+                    "Invalid MAC is specified",
                     log_message=True
                 )
-            else:
-                existent_node = q.filter_by(mac=d["mac"].lower()).first() \
-                    or cls.validate_existent_node_mac_update(d)
-                if not existent_node:
-                    raise errors.InvalidData(
-                        "Invalid MAC is specified",
-                        log_message=True
-                    )
 
         if "id" in d and d["id"]:
             existent_node = q.get(d["id"])

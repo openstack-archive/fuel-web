@@ -228,3 +228,23 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(node.ip, ipaddress)
+
+    def test_update_node_with_none_ip(self):
+        node = self.env.create_node(api=False, ip='10.20.0.2')
+
+        ipaddress = None
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({'id': node.id,
+                             'ip': ipaddress}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+
+        ipaddress = '10.20.0.4'
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({'id': node.id,
+                             'ip': ipaddress}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)

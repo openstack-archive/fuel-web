@@ -156,6 +156,10 @@ class TestHandlers(BaseIntegrationTest):
         for node in self.db.query(Node):
             self.assertEqual(node.status, 'discover')
             self.assertEqual(node.cluster_id, None)
+            self.assertEqual(node.group_id, None)
+            self.assertEqual(node.roles, [])
+            self.assertFalse(node.pending_deletion)
+            self.assertFalse(node.pending_addition)
 
     @fake_tasks(recover_offline_nodes=False)
     def test_cluster_deletion_with_offline_nodes(self):

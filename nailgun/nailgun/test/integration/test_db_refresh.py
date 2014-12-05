@@ -17,14 +17,14 @@
 from datetime import datetime
 from unittest import TestCase
 
-from paste.fixture import TestApp
+from webtest.app import TestApp
 from sqlalchemy import orm
 
 from nailgun.db import engine
 from nailgun.db import flush
 from nailgun.db import NoCacheQuery
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.wsgi import build_app
+from nailgun.app import build_app
 
 
 class TestDBRefresh(TestCase):

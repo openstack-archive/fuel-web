@@ -51,6 +51,7 @@ define(function() {
             i18n: 'js/i18n',
             app: 'js/app',
             models: 'js/models',
+            backbone_view_wrapper: 'js/backbone_view_wrapper',
             views: 'js/views',
             view_mixins: 'js/view_mixins',
             component_mixins: 'js/component_mixins',

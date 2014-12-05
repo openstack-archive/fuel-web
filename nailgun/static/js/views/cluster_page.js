@@ -18,6 +18,7 @@ define(
     'react',
     'utils',
     'models',
+    'jsx!js/backbone_view_wrapper',
     'views/common',
     'jsx!views/cluster_page_subviews',
     'jsx!views/dialogs',
@@ -29,7 +30,7 @@ define(
     'jsx!views/cluster_page_tabs/healthcheck_tab',
     'text!templates/cluster/page.html'
 ],
-function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
+function(React, utils, models, BackboneViewWrapper, commonViews, clusterPageSubviews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
     'use strict';
 
     var ClusterPage = commonViews.Page.extend({
@@ -149,8 +150,8 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
             this.deploymentControl = utils.universalMount(clusterPageSubviews.DeploymentControl, options, this.$('.deployment-control'), this);
 
             var tabs = {
-                nodes: NodesTab,
-                network: NetworkTab,
+                nodes: BackboneViewWrapper(NodesTab),
+                network: BackboneViewWrapper(NetworkTab),
                 settings: SettingsTab,
                 actions: ActionsTab,
                 logs: LogsTab,

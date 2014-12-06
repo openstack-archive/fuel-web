@@ -237,7 +237,7 @@ class OpenStackUpgrader(UpgradeEngine):
                 .format(OS=release['operating_system'].lower())
 
             if release['operating_system'].lower() == 'ubuntu':
-                repo_path += ' precise main'
+                repo_path += ' trusty main'
 
             release['orchestrator_data'] = {
                 'puppet_manifests_source':

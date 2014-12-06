@@ -1,7 +1,7 @@
 FROM phusion/baseimage
 ENV ARCH amd64
-ENV DIST precise
-RUN echo 'deb http://fuel-repository.mirantis.com/fwm/5.0/ubuntu precise main' >> /etc/apt/sources.list
+ENV DIST trusty
+RUN echo 'deb http://fuel-repository.mirantis.com/fwm/5.0/ubuntu trusty main' >> /etc/apt/sources.list
 RUN apt-get -q update
 RUN apt-get -y --force-yes install cliff-tablib python-pyparsing python-pypcap scapy python-pip wget openssh-server
 RUN pip install pytest mock

@@ -1,5 +1,5 @@
 {
-    "profile": "ubuntu_1204_x86_64",
+    "profile": "ubuntu_1404_x86_64",
     "name_servers_search": "\"domain.tld\"",
     "uid": "1",
     "interfaces": {

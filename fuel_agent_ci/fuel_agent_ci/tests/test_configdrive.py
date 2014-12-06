@@ -151,7 +151,7 @@ class TestConfigDrive(base.BaseFuelAgentCITest):
         self._test_configdrive('centos_65_x86_64')
 
     def test_configdrive_ubuntu(self):
-        self._test_configdrive('ubuntu_1204_x86_64')
+        self._test_configdrive('ubuntu_1404_x86_64')
 
     def tearDown(self):
         utils.execute('sudo umount -f /tmp/cfgdrv')

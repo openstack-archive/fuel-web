@@ -281,9 +281,9 @@ def upgrade_release_fill_orchestrator_data(connection, versions):
             repo_path = 'http://{MASTER_IP}:8080/{OS}/fuelweb/x86_64'.format(
                 MASTER_IP=settings.MASTER_IP, OS=release[1].lower())
 
-            # for ubuntu we need to add 'precise main'
+            # for ubuntu we need to add 'trusty main'
             if release[1].lower() == 'ubuntu':
-                repo_path += ' precise main'
+                repo_path += ' trusty main'
 
             connection.execute(
                 insert_query,

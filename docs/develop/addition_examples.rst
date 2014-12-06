@@ -152,7 +152,7 @@ CentOS) files in the fuel-library repository::
 
     deployment/puppet/cobbler/manifests/snippets.pp
     deployment/puppet/cobbler/templates/kickstart/centos.ks.erb
-    deployment/puppet/cobbler/templates/preseed/ubuntu-1204.preseed.erb
+    deployment/puppet/cobbler/templates/preseed/ubuntu-1404.preseed.erb
     deployment/puppet/cobbler/templates/snippets/centos_ofed_prereq_pkgs_if_enabled.erb
     deployment/puppet/cobbler/templates/snippets/ofed_install_with_sriov.erb
     deployment/puppet/cobbler/templates/snippets/ubuntu_packages.erb

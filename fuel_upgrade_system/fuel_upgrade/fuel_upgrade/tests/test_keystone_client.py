@@ -45,6 +45,7 @@ class TestKeystoneClient(base.BaseTestCase):
     @mock.patch('fuel_upgrade.clients.keystone_client.requests.Session')
     @mock.patch('fuel_upgrade.clients.keystone_client.requests.post',
                 side_effect=requests.exceptions.HTTPError(''))
-    def test_does_not_fail_without_keystone(self, _, __):
+    @mock.patch('fuel_upgrade.utils.time.time', side_effect=[0, 10])
+    def test_does_not_fail_without_keystone(self, _, __, ___):
         self.keystone.request
         self.assertEqual(self.keystone.get_token(), None)

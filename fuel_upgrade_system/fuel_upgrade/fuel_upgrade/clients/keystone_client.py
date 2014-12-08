@@ -16,7 +16,13 @@
 
 import json
 import logging
+import socket
+
 import requests
+
+from fuel_upgrade import errors
+from fuel_upgrade import utils
+
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +50,20 @@ class KeystoneClient(object):
         :returns: :class:`requests.Session` object
         """
         session = requests.Session()
-        token = self.get_token()
-        if token:
+
+        # NOTE(ikalnitsky):
+        #   After starting a new Keystone container, the first attempt to
+        #   get a token fails. Unfortunately, the logs keep silent and say
+        #   nothing. As a workaround, we can just increase retries number.
+        #
+        # See https://bugs.launchpad.net/fuel/+bug/1399144 for details.
+        try:
+            token = utils.wait_for_true(self.get_token, timeout=10)
             session.headers.update({'X-Auth-Token': token})
+        except errors.TimeoutError:
+            logger.exception(
+                'Cannot retrieve an auth token - an unauthenticated '
+                'request will be performed.')
 
         return session
 
@@ -75,7 +92,9 @@ class KeystoneClient(object):
 
             return (isinstance(resp, dict) and
                     resp.get('access', {}).get('token', {}).get('id'))
-        except (ValueError, requests.exceptions.RequestException) as exc:
+        except (ValueError,
+                socket.timeout,
+                requests.exceptions.RequestException) as exc:
             logger.debug('Cannot authenticate in keystone: %s', exc)
 
         return None

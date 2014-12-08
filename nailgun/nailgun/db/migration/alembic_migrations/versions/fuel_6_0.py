@@ -217,9 +217,16 @@ def upgrade_releases():
 def upgrade_data():
     connection = op.get_bind()
 
-    # do not deploy 5.0.x series
+    # do not deploy 5.0.x and 5.1.x series
     upgrade_release_set_deployable_false(
-        connection, ['2014.1', '2014.1.1-5.0.1', '2014.1.1-5.0.2'])
+        connection, [
+            # 5.0.x
+            '2014.1',
+            '2014.1.1-5.0.1',
+            '2014.1.1-5.0.2',
+            # 5.1.x
+            '2014.1.1-5.1',
+            '2014.1.3-5.1.1'])
 
     # In Fuel 5.x default releases do not have filled orchestrator_data,
     # and defaults one have been used. In Fuel 6.0 we're going to change

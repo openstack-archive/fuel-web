@@ -363,13 +363,13 @@
             type: "hidden"
           host_ip:
             value: ""
-            label: "vCenter IP"
-            description: "IP Address of vCenter"
+            label: "vCenter hostname"
+            description: "Hostname or IP Address of vCenter"
             weight: 10
             type: "text"
             regex:
-              source: &ipv4_regex '^(([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])\.){3}([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])$'
-              error: 'Specify valid IPv4 address'
+              source: &ipv4_or_hostname_regex '^[a-zA-Z\d]+[-\.\da-zA-Z]*$'
+              error: 'Specify valid Hostname or IPv4 address'
           vc_user:
             value: ""
             label: "Username"
@@ -841,13 +841,13 @@
               - "settings:common.libvirt_type.value != 'vcenter'"
           vc_host:
             value: ""
-            label: "vCenter/ESXi IP"
-            description: "IP Address of vCenter/ESXi"
+            label: "vCenter/ESXi hostname"
+            description: "Hostname or IP Address of vCenter/ESXi"
             weight: 45
             type: "text"
             regex:
-              source: *ipv4_regex
-              error: 'Specify valid IPv4 address'
+              source: *ipv4_or_hostname_regex
+              error: 'Specify valid Hostname or IPv4 address'
             restrictions: &glance_vcenter_restr
               - condition: "settings:storage.images_vcenter.value == false or settings:common.libvirt_type.value != 'vcenter'"
                 action: "hide"
@@ -1059,7 +1059,7 @@
               action: "hide"
               message: null
           regex:
-            source: *ipv4_regex
+            source: *ipv4_or_hostname_regex
             error: "dialog.create_cluster_wizard.compute.vcenter_ip_warning"
         vc_user:
           type: "text"

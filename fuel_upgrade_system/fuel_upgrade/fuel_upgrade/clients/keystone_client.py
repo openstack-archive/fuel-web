@@ -63,6 +63,14 @@ class KeystoneClient(object):
         it fails we don't use authentication
         """
         try:
+            logger.debug(
+                'KEYSTONE_CLIENT: GET_TOKEN: REQ - %s', {
+                    'auth': {
+                        'tenantName': self.tenant_name,
+                        'passwordCredentials': {
+                            'username': self.username,
+                            'password': self.password}}})
+
             resp = requests.post(
                 self.auth_url,
                 headers={'content-type': 'application/json'},
@@ -73,6 +81,8 @@ class KeystoneClient(object):
                             'username': self.username,
                             'password': self.password}}})).json()
 
+            logger.debug(
+                'KEYSTONE_CLIENT: GET_TOKEN: RES - %s', resp)
             return (isinstance(resp, dict) and
                     resp.get('access', {}).get('token', {}).get('id'))
         except (ValueError, requests.exceptions.RequestException) as exc:

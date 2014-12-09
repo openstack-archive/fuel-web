@@ -19,6 +19,8 @@
 DEPLOYMENT_CURRENT = """
 - id: deploy
   type: stage
+- id: pre_deployment
+  type: stage
 - id: primary-controller
   type: group
   role: [primary-controller]
@@ -104,6 +106,8 @@ DEPLOYMENT_CURRENT = """
 DEPLOYMENT_50 = """
 - id: deploy
   type: stage
+- id: pre_deployment
+  type: stage
 - id: primary-controller
   type: group
   role: [primary-controller]
@@ -176,10 +180,30 @@ DEPLOYMENT_50 = """
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules
     timeout: 3600
+
+#PREDEPLOYMENT HOOKS
+
+#after we will introduce condition engine - it will be changed
+- id: upload_mos_repos
+  type: upload_file
+  role: '*'
+  stage: pre_deployment
+
+- id: rsync_mos_puppet
+  type: sync
+  role: '*'
+  stage: pre_deployment
+  requires: [upload_mos_repos]
+  parameters:
+    src: /etc/puppet/{OPENSTACK_VERSION}/
+    dst: /etc/puppet
+    timeout: 180
 """
 
 PATCHING = """
 - id: deploy
+  type: stage
+- id: pre_deployment
   type: stage
 - id: primary-controller
   type: group
@@ -253,4 +277,22 @@ PATCHING = """
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules
     timeout: 3600
+
+#PREDEPLOYMENT HOOKS
+
+#after we will introduce condition engine - it will be changed
+- id: upload_mos_repos
+  type: upload_file
+  role: '*'
+  stage: pre_deployment
+
+- id: rsync_mos_puppet
+  type: sync
+  role: '*'
+  stage: pre_deployment
+  requires: [upload_mos_repos]
+  parameters:
+    src: /etc/puppet/{OPENSTACK_VERSION}/
+    dst: /etc/puppet
+    timeout: 180
 """

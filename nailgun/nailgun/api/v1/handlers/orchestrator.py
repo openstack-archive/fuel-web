@@ -29,9 +29,9 @@ from nailgun import objects
 
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
-from nailgun.orchestrator.plugins_serializers import post_deployment_serialize
-from nailgun.orchestrator.plugins_serializers import pre_deployment_serialize
 from nailgun.orchestrator import provisioning_serializers
+from nailgun.orchestrator.stages import post_deployment_serialize
+from nailgun.orchestrator.stages import pre_deployment_serialize
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import DeploymentTaskManager
 from nailgun.task.manager import ProvisioningTaskManager
@@ -158,7 +158,8 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        return pre_deployment_serialize(cluster, nodes)
+        graph = deployment_graph.AstuteGraph(cluster)
+        return pre_deployment_serialize(graph, cluster, nodes)
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)

@@ -218,17 +218,18 @@ class TestPrePostHooks(BasePluginTest):
 
     def test_generate_pre_hooks(self):
         tasks = self.get_pre_hooks(self.cluster).json
-        upload_file = [t for t in tasks if t['type'] == 'upload_file']
-        rsync = [t for t in tasks if t['type'] == 'sync']
-        cmd_tasks = [t for t in tasks if t['type'] == 'shell']
+        plugins_tasks = [t for t in tasks if t.get('diagnostic_name')]
+        upload_file = [t for t in plugins_tasks if t['type'] == 'upload_file']
+        rsync = [t for t in plugins_tasks if t['type'] == 'sync']
+        cmd_tasks = [t for t in plugins_tasks if t['type'] == 'shell']
         self.assertEqual(len(upload_file), 1)
         self.assertEqual(len(rsync), 1)
         self.assertEqual(len(cmd_tasks), 2)
-        for t in tasks:
+        for t in plugins_tasks:
             #shoud uid be a string
             self.assertEqual(
                 sorted(t['uids']), sorted([n.uid for n in self.cluster.nodes]))
-            self.assertTrue(t['fail_on_error'])
+            #diagnostic name is present only for plugin tasks
             self.assertEqual(t['diagnostic_name'], self.plugin.full_name)
         apt_update = [t for t in cmd_tasks
                       if u'apt-get update' in t['parameters']['cmd']]
@@ -241,7 +242,6 @@ class TestPrePostHooks(BasePluginTest):
         controller_id = [n.uid for n in self.cluster.nodes
                          if 'controller' in n.roles]
         self.assertEqual(controller_id, task['uids'])
-        self.assertTrue(task['fail_on_error'])
         self.assertEqual(task['diagnostic_name'], self.plugin.full_name)
 
 

@@ -798,7 +798,7 @@
             weight: 10
             type: "checkbox"
             restrictions:
-              - "settings:storage.volumes_ceph.value == true"
+              - "settings:storage.volumes_ceph.value == true or settings:common.libvirt_type.value == 'vcenter'"
           volumes_vmdk:
             value: false
             label: "VMware vCenter for volumes (Cinder)"

@@ -78,3 +78,12 @@ def make_puppet_task(uids, task, cwd='/'):
             'puppet_modules': task['parameters']['puppet_modules'],
             'timeout': task['parameters']['timeout'],
             'cwd': cwd}}
+
+
+def make_generic_task(uids, task):
+    return {
+        'type': task['type'],
+        'uids': uids,
+        'fail_on_error': task.get('fail_on_error', True),
+        'parameters': task['parameters']
+    }

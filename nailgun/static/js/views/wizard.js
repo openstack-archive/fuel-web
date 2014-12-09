@@ -178,7 +178,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var success = this.processBinds('cluster');
             return $.Deferred()[success ? 'resolve' : 'reject']();
         },
-        beforeSettingsSaving: function(settings) {
+        beforeSettingsSaving: function() {
             var success = this.processBinds('settings');
             return $.Deferred()[success ? 'resolve' : 'reject']();
         },
@@ -530,7 +530,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         renderCustomElements: function() {
             this.$('.control-group').append(this.renderControls({}));
         },
-        onWizardChange: function(model, changes) {
+        onWizardChange: function() {
             this.$('input.error').removeClass('error');
             this.$('.parameter-description').removeClass('hide');
             this.$('.validation-error').addClass('hide');
@@ -607,7 +607,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             };
             this.stickit(this.wizard.model);
         },
-        initialize: function(options) {
+        initialize: function() {
             this.constructor.__super__.initialize.apply(this, arguments);
             this.releases = this.wizard.releases || new models.Releases();
             if (!this.releases.length) {

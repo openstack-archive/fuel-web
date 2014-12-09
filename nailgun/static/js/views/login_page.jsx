@@ -16,14 +16,12 @@
 define(
 [
     'jquery',
-    'react',
-    'jsx!views/controls'
+    'react'
 ],
-function($, React, controls) {
+function($, React) {
     'use strict';
 
-    var LoginPage, LoginForm,
-        cx = React.addons.classSet;
+    var LoginPage, LoginForm;
 
     LoginPage = React.createClass({
         breadcrumbsPath: [],
@@ -86,7 +84,7 @@ function($, React, controls) {
                 hasError: false
             };
         },
-        onChange: function(e) {
+        onChange: function() {
             this.setState({hasError: false});
         },
         onSubmit: function(e) {

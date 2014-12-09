@@ -25,7 +25,7 @@ function(utils, models, NodeListScreen) {
 
     AddNodesScreen = NodeListScreen.extend({
         constructorName: 'AddNodesScreen',
-        removeRoles: function(node, checked, options) {
+        removeRoles: function(node, checked) {
             if (!checked) {
                 node.set({pending_roles: []}, {assign: true});
             }

@@ -308,7 +308,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 _.each(range, function(ip, index) {
                     this.bindings['.' + config.domSelector + '-ranges-rows input[name=range' + index + '][data-range=' + rangeIndex + ']'] = {
                         observe: config.attribute,
-                        onGet: function(value, options) {
+                        onGet: function(value) {
                             return value[rangeIndex] ? value[rangeIndex][index] : null;
                         },
                         getVal: function($el) {

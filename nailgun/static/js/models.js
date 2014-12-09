@@ -26,7 +26,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             //FIXME: ignoring inheritance here and calling fetch method of Backbone.Model/Backbone.Collection
             return Backbone[this instanceof Backbone.Model ? 'Model' : 'Collection'].prototype.fetch.apply(this, arguments);
         },
-        sync: function(options) {
+        sync: function() {
             //FIXME: ignoring inheritance here and calling sync method of Backbone.Model/Backbone.Collection
             var deferred = Backbone[this instanceof Backbone.Model ? 'Model' : 'Collection'].prototype.sync.apply(this, arguments);
             if (this.cacheFor) {
@@ -295,7 +295,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         constructorName: 'Tasks',
         model: models.Task,
         url: '/api/tasks',
-        toJSON: function(options) {
+        toJSON: function() {
             return this.pluck('id');
         },
         comparator: 'id',
@@ -663,7 +663,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
                 networkingParametersErrors.floating_ranges = floatingRangesErrors;
             }
             var nameserverErrors = [];
-            _.each(attrs.networking_parameters.get('dns_nameservers'), function(nameserver, i) {
+            _.each(attrs.networking_parameters.get('dns_nameservers'), function(nameserver) {
                 nameserverErrors.push(utils.validateIP(nameserver) ? $.t('cluster_page.network_tab.validation.invalid_nameserver') : null);
             });
             if (_.compact(nameserverErrors).length) {

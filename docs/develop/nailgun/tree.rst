@@ -11,6 +11,7 @@ Nailgun Development Instructions
     development/api_doc
     development/objects
     development/ui_dependencies
+    development/code_testing
 
 
 Nailgun Customization Instructions

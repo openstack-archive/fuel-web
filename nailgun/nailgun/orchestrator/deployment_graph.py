@@ -23,7 +23,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
-from nailgun.orchestrator import tasks_templates as templates
+from nailgun.orchestrator.tasks_serializer import TaskSerializers
 
 
 class DeploymentGraph(nx.DiGraph):
@@ -173,6 +173,7 @@ class AstuteGraph(object):
         self.tasks = objects.Cluster.get_deployment_tasks(cluster)
         self.graph = DeploymentGraph()
         self.graph.add_tasks(self.tasks)
+        self.serializers = TaskSerializers.init_default()
 
     def skip_tasks(self, task_ids):
         self.graph.skip_tasks(task_ids)
@@ -290,7 +291,23 @@ class AstuteGraph(object):
             processed_groups.update(current_groups)
             current_groups = groups_subgraph.get_next_groups(processed_groups)
 
-    def serialize_tasks(self, node):
+    def pre_tasks_serialize(self, nodes):
+        """Serialize tasks for pre_deployment hook
+
+        :param nodes: list of node db objects
+        """
+        tasks = self.graph.get_tasks(consts.STAGES.pre_deployment).topology
+        serialized = []
+        for task in tasks:
+            serializer = self.serializers.get_stage_serializer(task)(
+                task, self.cluster, nodes)
+            if not serializer.should_execute():
+                continue
+            for task in serializer.serialize():
+                serialized.append(task)
+        return serialized
+
+    def deploy_task_serialize(self, node):
         """Serialize tasks with necessary for orchestrator attributes
 
         :param node: dict with serialized node
@@ -299,14 +316,12 @@ class AstuteGraph(object):
         serialized = []
         priority = ps.Priority()
         for task in tasks:
-            if task['type'] == consts.ORCHESTRATOR_TASK_TYPES.puppet:
-                item = templates.make_puppet_task(
-                    [node['uid']],
-                    task)
-            elif task['type'] == consts.ORCHESTRATOR_TASK_TYPES.shell:
-                item = templates.make_shell_task(
-                    [node['uid']],
-                    task)
-            item['priority'] = priority.next()
-            serialized.append(item)
+            serializer = self.serializers.get_deploy_serializer(task)(
+                task, node)
+
+            if not serializer.should_execute():
+                continue
+            for item in serializer.serialize():
+                item['priority'] = priority.next()
+                serialized.append(item)
         return serialized

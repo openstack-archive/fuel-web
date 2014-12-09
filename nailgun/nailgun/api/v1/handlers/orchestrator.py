@@ -27,9 +27,9 @@ from nailgun.logger import logger
 from nailgun import objects
 
 from nailgun.orchestrator import deployment_serializers
-from nailgun.orchestrator.plugins_serializers import post_deployment_serialize
-from nailgun.orchestrator.plugins_serializers import pre_deployment_serialize
 from nailgun.orchestrator import provisioning_serializers
+from nailgun.orchestrator.stages import post_deployment_serialize
+from nailgun.orchestrator.stages import pre_deployment_serialize
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import DeploymentTaskManager
 from nailgun.task.manager import ProvisioningTaskManager

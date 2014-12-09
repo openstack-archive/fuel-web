@@ -19,8 +19,8 @@
 
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun.logger import logger
-from nailgun.orchestrator.priority_serializers import PriorityStrategy
+from nailgun.orchestrator.tasks_serializer import get_uids_for_task
+from nailgun.orchestrator.tasks_serializer import get_uids_for_tasks
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.plugins.manager import PluginManager
 
@@ -30,7 +30,6 @@ class BasePluginDeploymentHooksSerializer(object):
     def __init__(self, cluster, nodes):
         self.cluster = cluster
         self.nodes = nodes
-        self.priority = PriorityStrategy()
 
     def deployment_tasks(self, plugins, stage):
         tasks = []
@@ -46,7 +45,7 @@ class BasePluginDeploymentHooksSerializer(object):
                 plugin.tasks)
 
             for task in shell_tasks:
-                uids = self.get_uids_for_task(task)
+                uids = get_uids_for_task(self.nodes, task)
                 if not uids:
                     continue
                 tasks.append(self.serialize_task(
@@ -55,7 +54,7 @@ class BasePluginDeploymentHooksSerializer(object):
                         uids, task, plugin.slaves_scripts_path)))
 
             for task in puppet_tasks:
-                uids = self.get_uids_for_task(task)
+                uids = get_uids_for_task(self.nodes, task)
                 if not uids:
                     continue
                 tasks.append(self.serialize_task(
@@ -64,26 +63,6 @@ class BasePluginDeploymentHooksSerializer(object):
                         uids, task, plugin.slaves_scripts_path)))
 
         return tasks
-
-    def get_uids_for_tasks(self, tasks):
-        uids = []
-        for task in tasks:
-            if isinstance(task['role'], list):
-                for node in self.nodes:
-                    required_for_node = set(task['role']) & set(node.all_roles)
-                    if required_for_node:
-                        uids.append(node.uid)
-            elif task['role'] == '*':
-                uids.extend([n.uid for n in self.nodes])
-            else:
-                logger.warn(
-                    'Wrong task format, `role` should be a list or "*": %s',
-                    task)
-
-        return list(set(uids))
-
-    def get_uids_for_task(self, task):
-        return self.get_uids_for_tasks([task])
 
     def serialize_task(self, plugin, task_defaults, task):
         task.update(self.get_default_parameters(plugin, task_defaults))
@@ -102,8 +81,6 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         tasks.extend(self.create_repositories(plugins))
         tasks.extend(self.sync_scripts(plugins))
         tasks.extend(self.deployment_tasks(plugins))
-        self.priority.one_by_one(tasks)
-
         return tasks
 
     def create_repositories(self, plugins):
@@ -111,7 +88,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
         repo_tasks = []
         for plugin in plugins:
-            uids = self.get_uids_for_tasks(plugin.tasks)
+            uids = get_uids_for_tasks(self.nodes, plugin.tasks)
 
             # If there are not nodes for tasks execution
             # or if there are no files in repository
@@ -147,7 +124,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
     def sync_scripts(self, plugins):
         tasks = []
         for plugin in plugins:
-            uids = self.get_uids_for_tasks(plugin.tasks)
+            uids = get_uids_for_tasks(self.nodes, plugin.tasks)
             if not uids:
                 continue
             tasks.append(
@@ -173,20 +150,9 @@ class PluginsPostDeploymentHooksSerializer(
         tasks = []
         plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
         tasks.extend(self.deployment_tasks(plugins))
-        self.priority.one_by_one(tasks)
         return tasks
 
     def deployment_tasks(self, plugins):
         return super(
             PluginsPostDeploymentHooksSerializer, self).\
             deployment_tasks(plugins, consts.STAGES.post_deployment)
-
-
-def pre_deployment_serialize(cluster, nodes):
-    serializer = PluginsPreDeploymentHooksSerializer(cluster, nodes)
-    return serializer.serialize()
-
-
-def post_deployment_serialize(cluster, nodes):
-    serializer = PluginsPostDeploymentHooksSerializer(cluster, nodes)
-    return serializer.serialize()

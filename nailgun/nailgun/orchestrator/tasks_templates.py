@@ -61,6 +61,14 @@ def make_shell_task(uids, task, cwd='/'):
             'cwd': cwd}}
 
 
+def make_yum_clean(uids):
+    task = {
+        'parameters': {
+            'cmd': 'yum clean all',
+            'timeout': 180}}
+    return make_shell_task(uids, task, '/')
+
+
 def make_apt_update_task(uids):
     task = {
         'parameters': {
@@ -78,3 +86,12 @@ def make_puppet_task(uids, task, cwd='/'):
             'puppet_modules': task['parameters']['puppet_modules'],
             'timeout': task['parameters']['timeout'],
             'cwd': cwd}}
+
+
+def make_generic_task(uids, task):
+    return {
+        'type': task['type'],
+        'uids': uids,
+        'fail_on_error': task.get('fail_on_error', True),
+        'parameters': task['parameters']
+    }

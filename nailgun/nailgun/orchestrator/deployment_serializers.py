@@ -806,7 +806,7 @@ class GraphBasedSerializer(object):
 
     def set_tasks(self, nodes):
         for node in nodes:
-            node['tasks'] = self.graph.serialize_tasks(node)
+            node['tasks'] = self.graph.deploy_task_serialize(node)
 
 
 class DeploymentMultinodeSerializer(GraphBasedSerializer):

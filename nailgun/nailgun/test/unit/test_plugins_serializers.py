@@ -22,7 +22,7 @@ from nailgun.orchestrator import tasks_templates
 class TestMakeTask(base.BaseTestCase):
 
     def test_make_ubuntu_repo_task(self):
-        result = tasks_templates.make_ubuntu_repo_task(
+        result = tasks_templates.make_versioned_ubuntu(
             'plugin_name',
             'http://url',
             [1, 2, 3])

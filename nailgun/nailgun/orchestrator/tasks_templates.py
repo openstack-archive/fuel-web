@@ -24,11 +24,19 @@ def make_repo_task(uids, repo_data, repo_path):
             'data': repo_data}}
 
 
-def make_ubuntu_repo_task(plugin_name, repo_url, uids):
-    repo_data = 'deb {0} /'.format(repo_url)
-    repo_path = '/etc/apt/sources.list.d/{0}.list'.format(plugin_name)
-
+def make_ubuntu_repo_task(name, repo_url, uids, repo_data):
+    repo_path = '/etc/apt/sources.list.d/{0}.list'.format(name)
     return make_repo_task(uids, repo_data, repo_path)
+
+
+def make_versioned_ubuntu(name, repo_url, uids):
+    repo_data = 'deb {0}'.format(repo_url)
+    return make_ubuntu_repo_task(name, repo_url, uids, repo_data)
+
+
+def make_multiversion_ubuntu(name, repo_url, uids):
+    repo_data = 'deb {0} /'.format(repo_url)
+    return make_ubuntu_repo_task(name, repo_url, uids, repo_data)
 
 
 def make_centos_repo_task(plugin_name, repo_url, uids):
@@ -51,7 +59,7 @@ def make_sync_scripts_task(uids, src, dst):
             'dst': dst}}
 
 
-def make_shell_task(uids, task, cwd='/'):
+def make_shell_task(uids, task, cwd='/root'):
     return {
         'type': 'shell',
         'uids': uids,
@@ -61,15 +69,23 @@ def make_shell_task(uids, task, cwd='/'):
             'cwd': cwd}}
 
 
+def make_yum_clean(uids):
+    task = {
+        'parameters': {
+            'cmd': 'yum clean all',
+            'timeout': 180}}
+    return make_shell_task(uids, task)
+
+
 def make_apt_update_task(uids):
     task = {
         'parameters': {
             'cmd': 'apt-get update',
             'timeout': 180}}
-    return make_shell_task(uids, task, '/')
+    return make_shell_task(uids, task)
 
 
-def make_puppet_task(uids, task, cwd='/'):
+def make_puppet_task(uids, task, cwd='/root'):
     return {
         'type': 'puppet',
         'uids': uids,
@@ -78,3 +94,12 @@ def make_puppet_task(uids, task, cwd='/'):
             'puppet_modules': task['parameters']['puppet_modules'],
             'timeout': task['parameters']['timeout'],
             'cwd': cwd}}
+
+
+def make_generic_task(uids, task):
+    return {
+        'type': task['type'],
+        'uids': uids,
+        'fail_on_error': task.get('fail_on_error', True),
+        'parameters': task['parameters']
+    }

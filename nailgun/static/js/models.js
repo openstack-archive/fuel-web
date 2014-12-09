@@ -402,6 +402,15 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
         },
         makePath: function() {
             return _.toArray(arguments).join('.');
+        },
+        hasChanges: function(initialAttributes, models) {
+            return _.any(this.attributes, function(group, groupName) {
+                if (group.metadata && this.checkRestrictions(models, null, this.makePath(groupName, 'metadata')).result) return false;
+                return _.any(group, function(setting, settingName) {
+                    if (this.checkRestrictions(models, null, this.makePath(groupName, settingName)).result) return false;
+                    return setting.value != initialAttributes[groupName][settingName].value;
+                }, this);
+            }, this);
         }
     });
     _.extend(models.Settings.prototype, cacheMixin, restrictionMixin);

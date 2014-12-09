@@ -22,7 +22,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
-from nailgun.orchestrator import tasks_templates as templates
+from nailgun.orchestrator.tasks_serializer import TaskSerializers
 
 
 class DeploymentGraph(nx.DiGraph):
@@ -54,7 +54,8 @@ class DeploymentGraph(nx.DiGraph):
         for req in task.get('requires', ()):
             self.add_edge(req, task['id'])
         for req in task.get('role', ()):
-            self.add_edge(task['id'], req)
+            if not req == consts.ALL_ROLES:
+                self.add_edge(task['id'], req)
         if 'stage' in task:
             self.add_edge(task['id'], task['stage'])
 
@@ -90,7 +91,7 @@ class DeploymentGraph(nx.DiGraph):
         roles = [t['id'] for t in self.node.values() if t['type'] == 'role']
         return self.subgraph(roles)
 
-    def get_tasks_for_role(self, role_name):
+    def get_tasks(self, role_name):
         tasks = []
         for task in self.predecessors(role_name):
             if self.node[task]['type'] not in ('role', 'stage'):
@@ -112,6 +113,7 @@ class AstuteGraph(object):
         self.tasks = objects.Cluster.get_deployment_tasks(cluster)
         self.graph = DeploymentGraph()
         self.graph.add_tasks(self.tasks)
+        self.serializers = TaskSerializers.init_default()
 
     def group_nodes_by_roles(self, nodes):
         """Group nodes by roles
@@ -205,23 +207,38 @@ class AstuteGraph(object):
             processed_roles.update(current_roles)
             current_roles = roles_subgraph.get_next_roles(processed_roles)
 
-    def serialize_tasks(self, node):
+    def pre_tasks_serialize(self, nodes):
+        """Serialize tasks for pre_deployment hook
+
+        :param nodes: list of node db objects
+        """
+        tasks = self.graph.get_tasks(consts.STAGES.pre_deployment).topology
+        serialized = []
+        for task in tasks:
+            serializer = self.serializers.get_stage_serializer(task)(
+                task, self.cluster, nodes)
+            if not serializer.should_execute():
+                continue
+            for task in serializer.serialize():
+                serialized.append(task)
+        return serialized
+
+    def deploy_task_serialize(self, node):
         """Serialize tasks with necessary for orchestrator attributes
 
+        :param graph: DeploymentGraph instance with loaded tasks
         :param node: dict with serialized node
         """
-        tasks = self.graph.get_tasks_for_role(node['role']).topology
+        tasks = self.graph.get_tasks(node['role']).topology
         serialized = []
         priority = ps.Priority()
         for task in tasks:
-            if task['type'] == consts.ORCHESTRATOR_TASK_TYPES.puppet:
-                item = templates.make_puppet_task(
-                    [node['uid']],
-                    task)
-            elif task['type'] == consts.ORCHESTRATOR_TASK_TYPES.shell:
-                item = templates.make_shell_task(
-                    [node['uid']],
-                    task)
-            item['priority'] = priority.next()
-            serialized.append(item)
+            serializer = self.serializers.get_deploy_serializer(task)(
+                task, node)
+
+            if not serializer.should_execute():
+                continue
+            for item in serializer.serialize():
+                item['priority'] = priority.next()
+                serialized.append(item)
         return serialized

@@ -135,6 +135,12 @@ your Fuel ISO build environment on Ubuntu 14.04:
     both ``are OUT`` of the Virtualbox
     `shared folder path <https://www.virtualbox.org/manual/ch04.html#sharedfolders>`_
 
+.. SeeAlso::
+
+   You can also use `CGenie fuel-utils <https://github.com/CGenie/fuel-utils>`_
+   and `Vagrant SaltStack-based <https://github.com/CGenie/vagrant-fuel-dev>`_ tools to make your work and development process
+   with Fuel easier.
+
 Nailgun (Fuel-Web)
 ------------------
 

@@ -75,11 +75,12 @@ SUBTASKS = """
     puppet_modules: /etc/puppet/modules
     timeout: 360
 - id: setup_network
-  type: shell
+  type: puppet
   role: [controller, primary-controller]
   required_for: [deploy]
   parameters:
-    cmd: run_setup_network.sh
+    puppet_manifest: run_setup_network.pp
+    puppet_modules: /etc/puppet
     timeout: 120
 """
 
@@ -103,7 +104,7 @@ class TestGraphDependencies(base.BaseTestCase):
 
     def test_subtasks_in_correct_order(self):
         self.graph.add_tasks(self.tasks + self.subtasks)
-        subtask_graph = self.graph.get_tasks_for_role('controller')
+        subtask_graph = self.graph.get_tasks('controller')
         topology_by_id = [item['id'] for item in subtask_graph.topology]
         self.assertEqual(
             topology_by_id,

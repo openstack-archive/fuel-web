@@ -37,6 +37,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.orchestrator.deployment_graph import create_graph
+from nailgun.orchestrator import tasks_serializer
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
@@ -807,7 +808,8 @@ class GraphBasedSerializer(object):
 
     def set_tasks(self, nodes):
         for node in nodes:
-            node['tasks'] = self.graph.serialize_tasks(node)
+            node['tasks'] = tasks_serializer.deploy_task_serialize(
+                self.graph, node)
 
 
 class DeploymentMultinodeSerializer(GraphBasedSerializer):

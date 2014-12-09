@@ -63,7 +63,7 @@ define([
             this.setState({showItems: !this.state.showItems});
         },
         hasChanges: function() {
-            return !_.isEqual(this.props.settings.toJSON().settings, this.initialSettings);
+            return this.state.loading ? false : this.props.settings.hasChanges(this.initialAttributes, this.configModels);
         },
         updateInitialSettings: function() {
             this.initialSettings = _.cloneDeep(this.props.settings.attributes);

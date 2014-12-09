@@ -302,7 +302,7 @@ function(React, utils, models, componentMixins, controls) {
                 value={this.state.chosenType}
                 wrapperClassName='filter-bar-item log-type-filter'
                 name='type'
-                className='filter-bar-dropdown input-medium'
+                inputClassName='filter-bar-dropdown input-medium'
                 onChange={this.onTypeChange}
                 children={typeOptions}
             />;
@@ -318,7 +318,7 @@ function(React, utils, models, componentMixins, controls) {
                 value={this.state.chosenNodeId}
                 wrapperClassName='filter-bar-item log-node-filter'
                 name='node'
-                className='filter-bar-dropdown input-large'
+                inputClassName='filter-bar-dropdown input-large'
                 onChange={this.onNodeChange}
                 children={nodeOptions}
             />);
@@ -332,7 +332,7 @@ function(React, utils, models, componentMixins, controls) {
                 value={this.state.chosenSourceId}
                 wrapperClassName='filter-bar-item log-source-filter'
                 name='source'
-                className='filter-bar-dropdown input-medium'
+                inputClassName='filter-bar-dropdown input-medium'
                 onChange={this.onSourceChange}
                 disabled={!this.state.chosenSourceId}
                 children={sourceOptions}
@@ -352,7 +352,7 @@ function(React, utils, models, componentMixins, controls) {
                 value={this.state.chosenLevelId}
                 wrapperClassName='filter-bar-item log-level-filter'
                 name='level'
-                className='filter-bar-dropdown input-medium'
+                inputClassName='filter-bar-dropdown input-medium'
                 onChange={this.onLevelChange}
                 disabled={!this.state.chosenLevelId}
                 children={levelOptions}

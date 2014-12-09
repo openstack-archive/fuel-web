@@ -173,7 +173,7 @@ function(utils, models, dialogs, panels, Screen, nodesManagementPanelTemplate, n
                 if (this.roles) {
                     utils.universalUnmount(this.roles);
                 }
-                this.roles = utils.universalMount(new panels.RolesPanel({cluster: this.model, nodes: this.nodes}), this.$('.roles-panel'), this);
+                this.roles = utils.universalMount(panels.RolesPanel, {cluster: this.model, nodes: this.nodes}, this.$('.roles-panel'), this);
             }
             this.nodeList = new NodeList(options);
             this.registerSubView(this.nodeList);

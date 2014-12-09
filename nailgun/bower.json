@@ -3,7 +3,7 @@
     "dependencies": {
         "jquery": "1.9.1",
         "jquery-cookie": "1.4.1",
-        "react": "0.11.2",
+        "react": "0.12.1",
         "react.backbone": "0.4.0",
         "requirejs": "2.1.15",
         "requirejs-plugins": "1.0.2",

@@ -542,7 +542,6 @@
                         "title": "Storage Backends",
                         "alert": "Ceph is not supported in __NameAndRelease.release_name__",
                         "cinder_vcenter_alert": "Ceph backend for Cinder cannot be used with vCenter.",
-                        "glance_vcenter_alert": "Ceph backend for Glance cannot be used with vCenter.",
                         "vmdk_alert": "VMDK driver is a default option for vCenter. Also please change a Cinder LVM option to a Cinder VMDK option in the environment settings.",
                         "default": "Default",
                         "ceph": "Ceph",

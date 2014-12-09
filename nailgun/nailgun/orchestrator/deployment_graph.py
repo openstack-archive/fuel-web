@@ -22,7 +22,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
-from nailgun.orchestrator import tasks_templates as templates
+from nailgun.orchestrator import tasks_serializer as ts
 
 
 class DeploymentGraph(nx.DiGraph):
@@ -54,7 +54,8 @@ class DeploymentGraph(nx.DiGraph):
         for req in task.get('requires', ()):
             self.add_edge(req, task['id'])
         for req in task.get('role', ()):
-            self.add_edge(task['id'], req)
+            if not req == consts.ALL_ROLES:
+                self.add_edge(task['id'], req)
         if 'stage' in task:
             self.add_edge(task['id'], task['stage'])
 
@@ -90,7 +91,7 @@ class DeploymentGraph(nx.DiGraph):
         roles = [t['id'] for t in self.node.values() if t['type'] == 'role']
         return self.subgraph(roles)
 
-    def get_tasks_for_role(self, role_name):
+    def get_tasks(self, role_name):
         tasks = []
         for task in self.predecessors(role_name):
             if self.node[task]['type'] not in ('role', 'stage'):
@@ -106,6 +107,12 @@ class AstuteGraph(object):
     """This object stores logic that required for working with astute
     orchestrator.
     """
+
+    IDENTITY_BASED = dict((task.identity, task)
+                          for task in [ts.UploadMOSRepo, ts.RsyncPuppet])
+
+    TYPE_BASED = dict((task.hook_type, task)
+                      for task in [ts.PuppetHook])
 
     def __init__(self, cluster):
         self.cluster = cluster
@@ -205,23 +212,48 @@ class AstuteGraph(object):
             processed_roles.update(current_roles)
             current_roles = roles_subgraph.get_next_roles(processed_roles)
 
-    def serialize_tasks(self, node):
+    def pre_tasks_serialize(self, nodes):
+        """Serialize tasks for pre_deployment hook
+
+        :param nodes: list of node db objects
+        """
+        tasks = self.graph.get_tasks(consts.STAGES.pre_deployment).topology
+        serialized = []
+        for task in tasks:
+            if task['id'] in self.IDENTITY_BASED:
+                serializer = self.IDENTITY_BASED[task['id']](
+                    task, self.cluster, nodes)
+            else:
+                serializer = ts.GenericRolesHook(task, self.cluster, nodes)
+            if not serializer.should_execute():
+                continue
+            for task in serializer.serialize():
+                serialized.append(task)
+        return serialized
+
+    def deploy_task_serialize(self, node):
         """Serialize tasks with necessary for orchestrator attributes
 
+        :param graph: DeploymentGraph instance with loaded tasks
         :param node: dict with serialized node
         """
-        tasks = self.graph.get_tasks_for_role(node['role']).topology
+        tasks = self.graph.get_tasks(node['role']).topology
         serialized = []
         priority = ps.Priority()
         for task in tasks:
-            if task['type'] == consts.ORCHESTRATOR_TASK_TYPES.puppet:
-                item = templates.make_puppet_task(
-                    [node['uid']],
-                    task)
-            elif task['type'] == consts.ORCHESTRATOR_TASK_TYPES.shell:
-                item = templates.make_shell_task(
-                    [node['uid']],
-                    task)
-            item['priority'] = priority.next()
-            serialized.append(item)
+            if task['type'] in self.TYPE_BASED:
+                serializer = self.TYPE_BASED[task['type']](task, node)
+
+                if not serializer.should_execute():
+                    continue
+                for item in serializer.serialize():
+                    item['priority'] = priority.next()
+                    serialized.append(item)
+            else:
+                #Currently we are not supporting anything except puppet as main
+                #deployment engine, therefore exception should be raised,
+                #but it should be verified by validation as well
+                raise errors.SerializerNotSupported(
+                    'Serialization of type {0} not supported. Task {1}'.format(
+                        task['type'], task))
         return serialized

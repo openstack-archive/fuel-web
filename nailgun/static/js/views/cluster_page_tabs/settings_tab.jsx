@@ -139,9 +139,6 @@ function(React, utils, models, Expression, controls) {
         componentWillUnmount: function() {
             this.loadInitialSettings();
         },
-        hasChanges: function() {
-            return !_.isEqual(this.settings.attributes, this.initialAttributes);
-        },
         applyChanges: function() {
             var deferred = this.settings.save(null, {patch: true, wait: true, validate: false});
             if (deferred) {
@@ -195,7 +192,8 @@ function(React, utils, models, Expression, controls) {
                 sortedSettingGroups = _.sortBy(_.keys(this.settings.attributes), function(groupName) {
                     return this.settings.get(groupName + '.metadata.weight');
                 }, this),
-                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}) || !cluster.isAvailableForSettingsChanges();
+                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}) || !cluster.isAvailableForSettingsChanges(),
+                hasChanges = this.settings.hasChanges(this.initialAttributes, this.configModels);
             return (
                 <div className={React.addons.classSet({'openstack-settings wrapper': true, 'changes-locked': locked})}>
                     <h3>{$.t('cluster_page.settings_tab.title')}</h3>
@@ -222,10 +220,10 @@ function(React, utils, models, Expression, controls) {
                                         <button key='loadDefaults' className='btn btn-load-defaults' onClick={this.loadDefaults} disabled={locked}>
                                             {$.t('common.load_defaults_button')}
                                         </button>
-                                        <button key='cancelChanges' className='btn btn-revert-changes' onClick={this.revertChanges} disabled={locked || !this.hasChanges()}>
+                                        <button key='cancelChanges' className='btn btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
                                             {$.t('common.cancel_changes_button')}
                                         </button>
-                                        <button key='applyChanges' className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !this.hasChanges() || this.settings.validationError}>
+                                        <button key='applyChanges' className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || this.settings.validationError}>
                                             {$.t('common.save_settings_button')}
                                         </button>
                                     </div>

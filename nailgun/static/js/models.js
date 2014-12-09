@@ -396,6 +396,16 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         },
         makePath: function() {
             return _.toArray(arguments).join('.');
+        },
+        hasChanges: function(initialAttributes, models) {
+            if (!initialAttributes) return false;
+            return _.any(this.attributes, function(group, groupName) {
+                if (this.checkRestrictions(models, null, this.makePath(groupName, 'metadata'))) return false;
+                return _.any(group, function(setting, settingName) {
+                    if (this.checkRestrictions(models, null, this.makePath(groupName, settingName))) return false;
+                    return setting.value != initialAttributes[groupName][settingName].value;
+                }, this);
+            }, this);
         }
     });
     _.extend(models.Settings.prototype, cacheMixin, restrictionMixin);

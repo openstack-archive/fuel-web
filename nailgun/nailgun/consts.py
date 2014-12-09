@@ -237,3 +237,6 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'sync',
     'upload_file'
 )
+
+
+ALL_ROLES = '*'

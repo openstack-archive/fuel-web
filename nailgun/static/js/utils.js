@@ -135,14 +135,15 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             var base = 1024;
             treshold = treshold || 256;
             var units = ['byte', 'kb', 'mb', 'gb', 'tb'];
-            var i, result;
+            var i, result, unit = 'tb';
             for (i = 0; i < units.length; i += 1) {
                 result = bytes / Math.pow(base, i);
                 if (result < treshold) {
-                    return (result ? result.toFixed(1) : result) + ' ' + $.t('common.size.' + units[i], {count: result});
+                    unit = units[i];
+                    break;
                 }
             }
-            return result;
+            return (result ? result.toFixed(1) : result) + ' ' + $.t('common.size.' + unit, {count: result});
         },
         showMemorySize: function(bytes) {
             return utils.showSize(bytes, 1024);

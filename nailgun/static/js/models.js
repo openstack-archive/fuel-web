@@ -514,8 +514,15 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
                 }
             }
         },
-        comparator: function(ifc) {
-            return [!ifc.isBond(), ifc.get('name')];
+        comparator: function(ifc1, ifc2) {
+            // Sorting in order of: [!ifc.isBond(), ifc.get('name')]
+            // but 'name' is in natural order, not lexicographic
+
+            if (ifc1.isBond() == ifc2.isBond()) {
+                return utils.natsort(ifc1.get('name'), ifc2.get('name'));
+            }
+
+            return !ifc1.isBond() ? -1 : 1;
         }
     });
 

@@ -169,7 +169,7 @@ class DeploymentGraph(nx.DiGraph):
         roles = [t['id'] for t in self.node.values() if t['type'] == 'role']
         return self.subgraph(roles)
 
-    def get_tasks_for_role(self, role_name):
+    def get_tasks(self, role_name):
         tasks = []
         for task in self.predecessors(role_name):
             if self.node[task]['type'] not in ('role', 'stage'):
@@ -181,7 +181,7 @@ class DeploymentGraph(nx.DiGraph):
 
         :param node: dict with serialized node
         """
-        tasks = self.get_tasks_for_role(node['role']).topology
+        tasks = self.get_tasks(node['role']).topology
         serialized = []
         priority = ps.Priority()
         for task in tasks:

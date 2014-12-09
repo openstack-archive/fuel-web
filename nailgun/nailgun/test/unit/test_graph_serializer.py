@@ -103,7 +103,7 @@ class TestGraphDependencies(base.BaseTestCase):
 
     def test_subtasks_in_correct_order(self):
         self.graph.add_tasks(self.tasks + self.subtasks)
-        subtask_graph = self.graph.get_tasks_for_role('controller')
+        subtask_graph = self.graph.get_tasks('controller')
         topology_by_id = [item['id'] for item in subtask_graph.topology]
         self.assertEqual(
             topology_by_id,

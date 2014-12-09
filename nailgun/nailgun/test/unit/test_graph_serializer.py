@@ -81,11 +81,12 @@ SUBTASKS = """
     puppet_modules: /etc/puppet/modules
     timeout: 360
 - id: setup_network
-  type: shell
+  type: puppet
   groups: [controller, primary-controller]
   required_for: [deploy]
   parameters:
-    cmd: run_setup_network.sh
+    puppet_manifest: run_setup_network.pp
+    puppet_modules: /etc/puppet
     timeout: 120
 """
 

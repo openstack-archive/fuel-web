@@ -239,3 +239,6 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'group',
     'stage'
 )
+
+
+ALL_ROLES = '*'

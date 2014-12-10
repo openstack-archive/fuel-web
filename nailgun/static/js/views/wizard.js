@@ -202,6 +202,9 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                     } else if (_.isPlainObject(bind)) {
                         // binding declaration for models
                         processBind(_.values(bind)[0], value.get(_.keys(bind)[0]));
+                    } else if (_.isArray(bind)) {
+                        // for the case of multiple bindings
+                        _.each(bind, function(bindItem) {processBind(bindItem, value)});
                     }
                     if (attributeConfig.type == 'radio') {
                         // radiobuttons can have values with their own bindings

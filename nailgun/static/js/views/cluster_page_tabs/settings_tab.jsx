@@ -302,7 +302,7 @@ function(React, utils, models, Expression, controls) {
                                     key={settingName}
                                     type={setting.type}
                                     name={settingName}
-                                    children={setting.type == 'select' && this.composeOptions(setting.values)}
+                                    children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
                                     value={setting.value}
                                     checked={_.isBoolean(setting.value) ? setting.value : false}
                                     label={setting.label}

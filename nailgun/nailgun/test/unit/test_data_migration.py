@@ -14,14 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 
 from nailgun.test.base import BaseTestCase
 from nailgun.utils.migration import negate_condition
 from nailgun.utils.migration import remove_question_operator
+from nailgun.utils.migration import upgrade_attributes_metadata_6_0_to_6_1
 from nailgun.utils.migration import upgrade_release_attributes_50_to_51
 from nailgun.utils.migration import upgrade_release_attributes_51_to_60
 from nailgun.utils.migration import upgrade_release_roles_50_to_51
 from nailgun.utils.migration import upgrade_release_roles_51_to_60
+from nailgun.utils.migration import upgrade_role_limits_6_0_to_6_1
+from nailgun.utils.migration import upgrade_role_restrictions_6_0_to_6_1
 
 
 class TestDataMigration(BaseTestCase):
@@ -255,3 +259,96 @@ class TestDataMigration(BaseTestCase):
                              new_operational_restriction,
                              new_ceilometer_restriction
                          ])
+
+    def test_upgrade_attributes_metadata_from_6_0_to_6_1(self):
+        attributes_original = {
+            'editable': {
+                'storage': {
+                    'volumes_lvm': {
+                        'description': 'xx',
+                    }
+                },
+            }
+        }
+        attributes_after = {
+            'editable': {
+                'storage': {
+                    'volumes_lvm': {
+                        'description': ('It is recommended to have at least '
+                                        'one Storage - Cinder LVM node.')
+                        }
+                },
+            }
+        }
+
+        self.assertEqual(
+            upgrade_attributes_metadata_6_0_to_6_1(attributes_original),
+            attributes_after
+        )
+
+    def test_role_limits_metadata_upgrade_from_6_0_to_6_1(self):
+        roles_meta_original = {
+            'controller': {
+                'name': 'Controller',
+            },
+            'no-add': {
+                'name': 'No limits will be added here',
+            }
+        }
+        limits_definitions = {
+            'controller': {
+                'max': 1,
+                'overrides': [
+                    {
+                        'max': 5,
+                        'condition': '1 == 2',
+                        'message': 'Test',
+                    }
+                ]
+            }
+        }
+        roles_meta_after = copy.deepcopy(roles_meta_original)
+        roles_meta_after['controller']['limits'] = copy.deepcopy(
+            limits_definitions['controller'])
+
+        roles_meta_test = upgrade_role_limits_6_0_to_6_1(
+            roles_meta_original,
+            limits_definitions
+        )
+
+        self.assertEqual(roles_meta_test, roles_meta_after)
+
+    def test_role_restrictions_upgrade_from_6_0_to_6_1(self):
+        roles_meta_original = {
+            'controller': {
+                'name': 'Controller',
+                'restrictions': [
+                    {
+                        'condition': '1 == 2',
+                        'message': 'Always false'
+                    }
+                ]
+            },
+            'no-edit': {
+                'name': 'No restrictions will be changed here',
+            }
+        }
+        restriction_definitions = {
+            'controller': [
+                {
+                    'condition': '1 == 1',
+                    'message': 'Always true'
+                }
+            ]
+        }
+        roles_meta_after = copy.deepcopy(roles_meta_original)
+        roles_meta_after['controller']['restrictions'] = \
+            restriction_definitions['controller']
+
+        self.assertEqual(
+            upgrade_role_restrictions_6_0_to_6_1(
+                roles_meta_original,
+                restriction_definitions
+            ),
+            roles_meta_after
+        )

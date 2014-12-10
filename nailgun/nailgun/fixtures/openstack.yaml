@@ -41,8 +41,8 @@
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
         restrictions:
-          - condition: "settings:common.libvirt_type.value == 'vcenter'"
-            message: "Ceph cannot be used with vCenter"
+          - condition: "settings:common.libvirt_type.value == 'vcenter' and settings:storage.images_ceph.value == false"
+            message: "Ceph RBD for images should be enabled in settings."
         update_once:
           - controller
       mongo:

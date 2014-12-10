@@ -61,12 +61,27 @@ define([
             return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
-            var compiledExpression = new Expression(expression, models, options);
-            var value = compiledExpression.evaluate();
+            var compiledExpression, value;
+
+            if (_.isUndefined(expression)) {
+                return {value: undefined, modelPaths: {}};
+            } else if (_.isNumber(expression)) {
+                return {value: expression, modelPaths: {}};
+            }
+
+            compiledExpression = new Expression(expression, models, options);
+            value = compiledExpression.evaluate();
             return {
                 value: value,
                 modelPaths: compiledExpression.modelPaths
             };
+        },
+        evaluateExpressionNow: function(expression, models, options) {
+            var ret = utils.evaluateExpression(expression, models, options);
+            if (ret.value instanceof expressionObjects.ModelPath) {
+                ret.value = ret.value.model.get(ret.value.attribute);
+            }
+            return ret;
         },
         expandRestriction: function(restriction) {
             var result = {
@@ -276,7 +291,7 @@ define([
                 // hex regexp
                 hre = /^0x[0-9a-f]+$/i,
                 ore = /^0/,
-                caseInsensitive = function(s) { return options.insensitive && s.toLowerCase() || s; },
+                caseInsensitive = function(s) {return options.insensitive && s.toLowerCase() || s;},
                 // convert all to strings strip whitespace
                 caseInsensitive1 = caseInsensitive(str1).replace(sre, '') || '',
                 caseInsensitive2 = caseInsensitive(str2).replace(sre, '') || '',

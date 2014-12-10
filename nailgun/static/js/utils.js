@@ -52,6 +52,16 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
+            if(_.isUndefined(expression)) {
+                return {value: undefined, modelPaths: {}};
+            }
+
+            if (_.isNumber(expression)) {
+                return {
+                    value: expression,
+                    modelPaths: {}
+                };
+            }
             var compiledExpression = new Expression(expression, models, options);
             var value = compiledExpression.evaluate();
             return {
@@ -60,6 +70,7 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             };
         },
         expandRestriction: function(restriction) {
+            //console.log('expandRestriction', restriction);
             var result = {
                 action: 'disable',
                 message: null
@@ -165,6 +176,15 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
         },
         isNaturalNumber: function(n) {
             return _.isNumber(n) && n > 0 && n % 1 === 0;
+        },
+        lessThan: function(a, b) {
+            return a < b;
+        },
+        greaterThan: function(a, b) {
+            return a > b;
+        },
+        not: function(x) {
+            return !x;
         },
         validateVlan: function(vlan, forbiddenVlans, field, disallowNullValue) {
             var error = {};

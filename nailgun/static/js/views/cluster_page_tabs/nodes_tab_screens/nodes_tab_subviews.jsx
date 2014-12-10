@@ -131,7 +131,10 @@ function(React, Expression, utils, controls) {
                     {this.props.cluster.get('release').get('role_models').map(function(role) {
                         if (!role.checkRestrictions(configModels, 'hide').result) {
                             var name = role.get('name'),
-                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, configModels) : {};
+                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, configModels) : {},
+                                recommendations = role.checkLimits(configModels, ['recommended']).join(' '),
+                                errors = role.checkLimits(configModels).join(' ');
+
                             return (
                                 <controls.Input
                                     key={name}
@@ -142,7 +145,8 @@ function(React, Expression, utils, controls) {
                                     description={role.get('description')}
                                     defaultChecked={this.isRoleSelected(name)}
                                     disabled={!this.props.nodes.length || processedRestrictions.result}
-                                    tooltipText={!!this.props.nodes.length && processedRestrictions.message}
+                                    tooltipText={!!this.props.nodes.length && (recommendations || processedRestrictions.message)}
+                                    /*error={errors}*/
                                     wrapperClassName='role-container'
                                     labelClassName='role-label'
                                     descriptionClassName='role-description'

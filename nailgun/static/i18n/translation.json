@@ -37,7 +37,12 @@
                 "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved.",
                 "version": "Version",
                 "change_password": "Change password",
-                "logout": "Logout"
+                "logout": "Logout",
+                "role_limits": {
+                    "min": "At least __limitValue__ is required.",
+                    "max": "At most __limitValue__ is allowed.",
+                    "recommended": "It is recommended to have at least __limitValue__ of __roleName__ nodes (you have __count__)."
+                }
             },
             "node_details": {
                 "cpu": "CPU",

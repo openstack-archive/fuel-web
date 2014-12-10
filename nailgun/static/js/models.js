@@ -50,7 +50,107 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             if (action) restrictions = _.where(restrictions, {action: action});
             return _.any(restrictions, function(restriction) {
                 return new Expression(restriction.condition, models).evaluate();
-            });
+            });// || this.checkLimits(models);
+        },
+        expandLimits: function(limits) {
+            //console.log('expandLimits', this.get('name'), limits);
+            this.expandedLimits = this.expandedLimits || {};
+            this.expandedLimits[this.get('name')] = limits;
+        },
+        // TODO: recommended validation should be done in separate step?
+        checkLimits: function(models, limitTypes) {
+            /*
+                Check the 'limits' section of configuration.
+                models -- current model to check the limits
+                limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
+             */
+            limitTypes = limitTypes || ['min', 'max'];
+            var checkedLimitTypes = {},
+                name = this.get('name'),
+                nodes = models.cluster.get('nodes'),
+                limits = this.expandedLimits[name] || {},
+                overrides = limits.overrides || [],
+                limitValues = {
+                    max: utils.evaluateExpression(limits.max, models).value,
+                    min: utils.evaluateExpression(limits.min, models).value,
+                    recommended: utils.evaluateExpression(limits.recommended, models).value
+                },
+                // TODO: roles or pending_roles ?
+                count = nodes.where({pending_roles: name}).length,
+                messages = [];
+
+            //console.log(name, 'limits', limits, 'overrides', overrides);
+
+            var checkOneLimit = function(limitType, obj) {
+                var limitValue,
+                    comparator,
+                    messageParams = {
+                        start: '',
+                        end: ''
+                    };
+
+                switch (limitType) {
+                    case 'min':
+                        comparator = utils.lessThan;
+                        messageParams.start = 'At least ';
+                        messageParams.end = ' is required';
+                        break;
+                    case 'max':
+                        comparator = utils.greaterThan;
+                        messageParams.start = 'At most ';
+                        messageParams.end = ' is required';
+                        break;
+                    default:
+                        comparator = _.compose(utils.not, _.isEqual);
+                        messageParams.start = 'It is recommended to have ';
+                        messageParams.end = ' ' + name + ' nodes';
+                }
+
+                if (!_.isUndefined(obj[limitType])) {
+                    limitValue = utils.evaluateExpression(obj[limitType], models).value;
+                    if (comparator(count, limitValue)) {
+                        checkedLimitTypes[limitType] = true;
+                        return obj.message || (messageParams.start + limitValue + messageParams.end + ' (you have ' + count + ').');
+                        //return obj.message || 'General ' + limitType + ' message (' + limitType + ' = ' + limitValue +
+                            //' does not compare to ' + count + ')';
+                    }
+                }
+            };
+
+            if (!_.isEmpty(overrides)) {
+                //console.log(name, 'overrides not empty', overrides);
+                messages = _.chain(overrides)
+                    .map(function(override) {
+                        var exp = utils.evaluateExpression(override.condition, models).value;
+
+                        if (exp) {
+                            return _.map(limitTypes, _.partialRight(checkOneLimit, override));
+                        }
+                    })
+                    .flatten()
+                    .compact()
+                    .value();
+
+            }
+
+            messages = messages.concat(_.chain(limitTypes)
+                .map(function(limitType) {
+                    if (checkedLimitTypes[limitType]) {
+                        return;
+                    }
+
+                    return checkOneLimit(limitType, limitValues);
+                })
+                .compact()
+                .value()
+            );
+
+            if(!_.isEmpty(messages)) {
+                console.log(name, messages);
+                return messages;
+            }
+
+            return false;
         }
     };
 
@@ -89,6 +189,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             }));
             response.role_models.each(function(role) {
                 role.expandRestrictions(role.get('restrictions'));
+                role.expandLimits(role.get('limits'));
             });
             response.role_models.processConflicts();
             delete response.roles_metadata;
@@ -369,7 +470,9 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         },
         processRestrictions: function() {
             _.each(this.attributes, function(group, groupName) {
-                if (group.metadata) this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+                if (group.metadata) {
+                    this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+                }
                 _.each(group, function(setting, settingName) {
                     this.expandRestrictions(setting.restrictions, this.makePath(groupName, settingName));
                     _.each(setting.values, function(value) {

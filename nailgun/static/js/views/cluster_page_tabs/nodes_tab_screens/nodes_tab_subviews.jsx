@@ -117,19 +117,26 @@ function(React, Expression, utils, controls) {
                 <div>
                     <h4>{$.t(ns + 'assign_roles')}</h4>
                     {roles.map(function(role) {
-                        var name = role.get('name');
+                        var name = role.get('name'),
+                            recommendations = role.checkLimits(configModels, ['recommended']),
+                            errors = role.checkLimits(configModels);
+
+                        recommendations = recommendations ? ' - ' + recommendations.join(' ') : '';
+                        errors = errors ? ' - ' + errors.join(' ') : '';
+
                         if (!role.checkRestrictions(configModels, 'hide')) {
                             var checked = this.isRoleSelected(name),
                                 isAvailable = this.isRoleAvailable(name),
                                 disabled = !this.props.nodes.length || _.contains(conflicts, name) || (!isAvailable && !checked) || role.checkRestrictions(configModels, 'disable'),
                                 warning = _.contains(conflicts, name) ? $.t(ns + 'role_conflict') : !isAvailable ? $.t('cluster_page.nodes_tab.' + name + '_restriction') : '';
+
                             return (
                                 <controls.Input
                                     key={name}
                                     ref={name}
                                     type='checkbox'
                                     name={name}
-                                    label={role.get('label')}
+                                    label={role.get('label') + (errors ? errors : recommendations)}
                                     description={role.get('description')}
                                     defaultChecked={checked}
                                     disabled={disabled}

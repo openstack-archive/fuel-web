@@ -15,13 +15,14 @@
 **/
 define(
 [
+    'underscore',
     'react',
     'utils',
     'models',
     'expression',
     'jsx!views/controls'
 ],
-function(React, utils, models, Expression, controls) {
+function(_, React, utils, models, Expression, controls) {
     'use strict';
 
     var dependenciesMixin = {

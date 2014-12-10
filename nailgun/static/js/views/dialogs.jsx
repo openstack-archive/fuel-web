@@ -149,29 +149,35 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
     dialogs.DeployChangesDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.display_changes.title')};},
+        getConfigModels: function() {
+            var cluster = this.props.cluster,
+                settings = cluster.get('settings');
+            return {
+                cluster: cluster,
+                settings: settings,
+                version: app.version,
+                default: settings,
+                networking_parameters: cluster.get('networkConfiguration').get('networking_parameters')
+            };
+        },
         getInitialState: function() {
             // FIXME: the following amount restrictions shoud be described declaratively in configuration file
             var cluster = this.props.cluster,
-                nodes = cluster.get('nodes'),
-                requiredNodeAmount = this.getRequiredNodeAmount(),
-                settings = cluster.get('settings');
+                settings = cluster.get('settings'),
+                configModels = this.getConfigModels(),
+                role_models = cluster.get('release').get('role_models'),
+                limitValidations = _.zipObject(role_models.map(function(role) {
+                    return [role.get('name'), role.checkLimits(configModels)];
+                })),
+                limitRecommendations = _.zipObject(role_models.map(function(role) {
+                    return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
+                }));
             return {
-                amountRestrictions: {
-                    controller: nodes.nodesAfterDeploymentWithRole('controller') < requiredNodeAmount,
-                    compute: !nodes.nodesAfterDeploymentWithRole('compute') && cluster.get('settings').get('common.libvirt_type.value') != 'vcenter',
-                    mongo: !this.props.cluster.get('settings').get('additional_components.mongo.value') && this.props.cluster.get('settings').get('additional_components.ceilometer.value') && nodes.nodesAfterDeploymentWithRole('mongo') < requiredNodeAmount
-                },
-                areSettingsValid: settings.isValid({models: {
-                    cluster: cluster,
-                    version: app.version,
-                    settings: settings,
-                    networking_parameters: cluster.get('networkConfiguration').get('networking_parameters'),
-                    default: settings
-                }})
+                amountRestrictions: limitValidations,
+                amountRestrictionsRecommendations: limitRecommendations,
+                areSettingsValid: settings.isValid({models: configModels}),
+                areLimitsValid: _.all(limitValidations, function(limitValidation) { return limitValidation.valid; })
             };
-        },
-        getRequiredNodeAmount: function() {
-            return this.props.cluster.get('mode') == 'ha_compact' ? 3 : 1;
         },
         deployCluster: function() {
             this.setState({actionInProgress: true});
@@ -181,11 +187,6 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 .always(this.close)
                 .done(_.bind(app.page.deploymentTaskStarted, app.page))
                 .fail(this.showError);
-        },
-        renderChangedNodeAmount: function(nodes, dictKey) {
-            return nodes.length ? <div key={dictKey} className='deploy-task-name'>
-                {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
-            </div> : null;
         },
         renderChange: function(change, nodeIds) {
             var nodes = this.props.cluster.get('nodes');
@@ -204,55 +205,60 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         renderBody: function() {
             var ns = 'dialog.display_changes.',
                 cluster = this.props.cluster,
+                role_models = cluster.get('release').get('role_models'),
                 nodes = cluster.get('nodes'),
-                requiredNodeAmount = this.getRequiredNodeAmount(),
                 isNew = cluster.get('status') == 'new',
                 isNewOrNeedsRedeployment = isNew || cluster.needsRedeployment(),
+                isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid,
                 warningMessageClasses = cx({
                     'deploy-task-notice': true,
-                    'text-error': !this.state.areSettingsValid,
+                    'text-error': isInvalid,
                     'text-warning': isNewOrNeedsRedeployment
                 });
             return (
                 <div className='display-changes-dialog'>
-                    {(isNewOrNeedsRedeployment || !this.state.areSettingsValid) &&
+                    {(isNewOrNeedsRedeployment || !isInvalid) &&
                         <div>
                             <div className={warningMessageClasses}>
                                 <i className='icon-attention' />
-                                <span>{i18n(ns + (!this.state.areSettingsValid ? 'warnings.settings_invalid' :
+                                <span>{i18n(ns + (isInvalid ? 'warnings.settings_invalid' :
                                     isNew ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
                         </div>
                     }
-                    {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
-                    {this.renderChangedNodeAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                    {this.renderChangedNodeAmount(nodes.filter(function(node) {
-                        return !node.get('pending_addition') && !node.get('pending_deletion') && node.get('pending_roles').length;
-                    }), 'reconfigured_node')}
                     {_.map(_.groupBy(cluster.get('changes'), function(change) {return change.name;}), function(nodes, change) {
                         return this.renderChange(change, _.compact(_.pluck(nodes, 'node_id')));
                     }, this)}
                     <div className='amount-restrictions'>
-                        {this.state.amountRestrictions.controller &&
-                            <div className='alert alert-error'>{i18n(ns + 'warnings.controller', {count: requiredNodeAmount})}</div>
-                        }
-                        {this.state.amountRestrictions.compute &&
-                            <div className='alert alert-error'>{i18n(ns + 'warnings.compute')}</div>
-                        }
-                        {this.state.amountRestrictions.mongo &&
-                            <div className='alert alert-error'>{i18n(ns + 'warnings.mongo', {count: requiredNodeAmount})}</div>
-                        }
+                        {role_models.map(_.bind(function(role) {
+                            var name = role.get('name'),
+                                limits = this.state.amountRestrictions[name];
+
+                            if (!limits.valid) {
+                                return (<div className='alert alert-error'>{limits.message}</div>);
+                            }
+                        }, this))}
+                        {role_models.map(_.bind(function(role) {
+                            var name = role.get('name'),
+                                recommendation = this.state.amountRestrictionsRecommendations[name];
+
+                            if (!recommendation.valid) {
+                                return (<div className='alert alert-warning'>{recommendation.message}</div>);
+                            }
+                        }, this))}
                     </div>
                 </div>
             );
         },
         renderFooter: function() {
+            var isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid;
+
             return ([
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
                     className={'btn start-deployment-btn btn-' + (_.compact(_.values(this.state.amountRestrictions)).length ? 'danger' : 'success')}
-                    disabled={this.state.actionInProgress || !this.state.areSettingsValid}
+                    disabled={this.state.actionInProgress || isInvalid}
                     onClick={this.deployCluster}
                 >{i18n('dialog.display_changes.deploy')}</button>
             ]);

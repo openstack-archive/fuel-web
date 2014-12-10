@@ -37,7 +37,12 @@
                 "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved.",
                 "version": "Version",
                 "change_password": "Change password",
-                "logout": "Logout"
+                "logout": "Logout",
+                "role_limits": {
+                    "min": "At least __limitValue__ __roleName__ nodes are required (__count__ selected currently).",
+                    "max": "At most __limitValue__ __roleName__ nodes are allowed (__count__ selected currently).",
+                    "recommended": "It is recommended to have at least __limitValue__ of __roleName__ nodes (__count__ selected currently)."
+                }
             },
             "node_details": {
                 "cpu": "CPU",
@@ -606,11 +611,6 @@
                         "interfaces": "Changed interface configuration of the following nodes:"
                     },
                     "warnings": {
-                        "controller": "The environment should have Controller node",
-                        "controller_plural": "At least __count__ controllers are required to provide High Availability of the environment",
-                        "mongo": "When Ceilometer is enabled, the environment should have Telemetry - MongoDB node or external MongoDB should be chosen",
-                        "mongo_plural": "At least __count__ MongoDB nodes are required to provide High Availability of the environment",
-                        "compute": "Compute nodes are recommended for deployment",
                         "settings_invalid": "Environment settings are invalid. Deployment cannot be started."
                     },
                     "deploy": "Deploy",

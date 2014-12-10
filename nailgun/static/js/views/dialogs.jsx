@@ -150,29 +150,41 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         getDefaultProps: function() {
             return {title: $.t('dialog.display_changes.title')};
         },
-        getInitialState: function() {
-            // FIXME: the following amount restrictions shoud be described declaratively in configuration file
+        getConfigModels: function() {
             var cluster = this.props.cluster,
-                nodes = cluster.get('nodes'),
-                requiredNodeAmount = this.getRequiredNodeAmount(),
                 settings = cluster.get('settings');
             return {
-                amountRestrictions: {
-                    controller: nodes.nodesAfterDeploymentWithRole('controller') < requiredNodeAmount,
-                    compute: !nodes.nodesAfterDeploymentWithRole('compute') && cluster.get('settings').get('common.libvirt_type.value') != 'vcenter',
-                    mongo: !this.props.cluster.get('settings').get('additional_components.mongo.value') && this.props.cluster.get('settings').get('additional_components.ceilometer.value') && nodes.nodesAfterDeploymentWithRole('mongo') < requiredNodeAmount
-                },
-                areSettingsValid: settings.isValid({models: {
-                    cluster: cluster,
-                    version: app.version,
-                    settings: settings,
-                    networking_parameters: cluster.get('networkConfiguration').get('networking_parameters'),
-                    default: settings
-                }})
+                cluster: cluster,
+                settings: settings,
+                version: app.version,
+                default: settings,
+                networking_parameters: cluster.get('networkConfiguration').get('networking_parameters')
             };
         },
-        getRequiredNodeAmount: function() {
-            return this.props.cluster.get('mode') == 'ha_compact' ? 3 : 1;
+        getInitialState: function() {
+            var cluster = this.props.cluster,
+                nodes = cluster.get('nodes'),
+                settings = cluster.get('settings'),
+                configModels = this.getConfigModels(),
+                role_models = cluster.get('release').get('role_models'),
+                limitValidations = _.zipObject(role_models.map(function(role) {
+                    return [role.get('name'), role.checkLimits(configModels)];
+                })),
+                limitRecommendations = _.zipObject(role_models.map(function(role) {
+                    return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
+                }));
+            return {
+                amountRestrictions: {
+                    controller: limitValidations.controller,
+                    controllerRecommended: limitRecommendations.controller,
+                    compute: limitValidations.compute,
+                    computeRecommended: limitRecommendations.compute,
+                    mongo: limitValidations.mongo,
+                    mongoRecommended: limitRecommendations.mongo
+                },
+                areSettingsValid: settings.isValid({models: configModels}),
+                areLimitsValid: _.all(limitValidations, function(limitValidation) { return limitValidation.valid; })
+            };
         },
         deployCluster: function() {
             this.setState({actionInProgress: true});
@@ -211,21 +223,21 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             var ns = 'dialog.display_changes.',
                 cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                requiredNodeAmount = this.getRequiredNodeAmount(),
                 isNew = cluster.get('status') == 'new',
                 isNewOrNeedsRedeployment = isNew || cluster.needsRedeployment(),
+                isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid,
                 warningMessageClasses = cx({
                     'deploy-task-notice': true,
-                    'text-error': !this.state.areSettingsValid,
+                    'text-error': isInvalid,
                     'text-warning': isNewOrNeedsRedeployment
                 });
             return (
                 <div className='display-changes-dialog'>
-                    {(isNewOrNeedsRedeployment || !this.state.areSettingsValid) &&
+                    {(isNewOrNeedsRedeployment || !isInvalid) &&
                         <div>
                             <div className={warningMessageClasses}>
                                 <i className='icon-attention' />
-                                <span>{$.t(ns + (!this.state.areSettingsValid ? 'warnings.settings_invalid' :
+                                <span>{$.t(ns + (isInvalid ? 'warnings.settings_invalid' :
                                     isNew ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
@@ -240,25 +252,36 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                         return this.renderChange(change, _.compact(_.pluck(nodes, 'node_id')));
                     }, this)}
                     <div className='amount-restrictions'>
-                        {this.state.amountRestrictions.controller &&
-                            <div className='alert alert-error'>{$.t(ns + 'warnings.controller', {count: requiredNodeAmount})}</div>
+                        {!this.state.amountRestrictions.controller.valid &&
+                            <div className='alert alert-error'>{this.state.amountRestrictions.controller.message}</div>
                         }
-                        {this.state.amountRestrictions.compute &&
-                            <div className='alert alert-error'>{$.t(ns + 'warnings.compute')}</div>
+                        {!this.state.amountRestrictions.controllerRecommended.valid &&
+                        <div className='alert alert-warning'>{$.t(ns + 'warnings.controller', {count: this.state.amountRestrictions.controllerRecommended.limits.recommended})}</div>
+                            }
+                        {!this.state.amountRestrictions.compute.valid &&
+                            <div className='alert alert-error'>{this.state.amountRestrictions.compute.message}</div>
                         }
-                        {this.state.amountRestrictions.mongo &&
-                            <div className='alert alert-error'>{$.t(ns + 'warnings.mongo', {count: requiredNodeAmount})}</div>
+                        {!this.state.amountRestrictions.computeRecommended.valid &&
+                            <div className='alert alert-warning'>{this.state.amountRestrictions.computeRecommended.message}</div>
+                        }
+                        {!this.state.amountRestrictions.mongo.valid &&
+                            <div className='alert alert-error'>{this.state.amountRestrictions.mongo.message}</div>
+                        }
+                        {!this.state.amountRestrictions.mongoRecommended.valid &&
+                            <div className='alert alert-warning'>{this.state.amountRestrictions.mongoRecommended.message}</div>
                         }
                     </div>
                 </div>
             );
         },
         renderFooter: function() {
+            var isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid;
+
             return ([
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
                 <button key='deploy'
                     className={'btn start-deployment-btn btn-' + (_.compact(_.values(this.state.amountRestrictions)).length ? 'danger' : 'success')}
-                    disabled={this.state.actionInProgress || !this.state.areSettingsValid}
+                    disabled={this.state.actionInProgress || isInvalid}
                     onClick={this.deployCluster}
                 >{$.t('dialog.display_changes.deploy')}</button>
             ]);

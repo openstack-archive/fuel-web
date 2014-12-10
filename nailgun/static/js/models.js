@@ -20,9 +20,10 @@ define([
     'backbone',
     'utils',
     'expression',
+    'expression/objects',
     'deepModel',
     'backbone-lodash-monkeypatch'
-], function($, _, i18n, Backbone, utils, Expression) {
+], function($, _, i18n, Backbone, utils, Expression, expressionObjects) {
     'use strict';
 
     var models = {};
@@ -61,6 +62,141 @@ define([
                 return new Expression(restriction.condition, models).evaluate();
             });
             return {result: !!satisfiedRestrictions.length, message: _.compact(_.pluck(satisfiedRestrictions, 'message')).join(' ')};
+        },
+        expandLimits: function(limits) {
+            this.expandedLimits = this.expandedLimits || {};
+            this.expandedLimits[this.get('name')] = limits;
+        },
+        checkLimits: function(models, checkLimitIsReached, limitTypes) {
+            /*
+             *  Check the 'limits' section of configuration.
+             *  models -- current model to check the limits
+             *  checkLimitIsReached -- boolean (default: true), if true then for min = 1, 1 node is allowed
+             *      if false, then for min = 1, 1 node is not allowed anymore
+             *      This is because validation runs in 2 modes: validate current model as is
+             *      and validate current model checking the possibility of adding/removing node
+             *      So if max = 1 and we have 1 node then:
+             *        - the model is valid as is (return true) -- case for checkLimitIsReached = true
+             *        - there can be no more nodes added (return false) -- case for checkLimitIsReached = false
+             *  limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
+            **/
+
+            // Default values
+            if (_.isUndefined(checkLimitIsReached)) checkLimitIsReached = true;
+            if (_.isUndefined(limitTypes)) limitTypes = ['min', 'max'];
+
+            var evaluateExpressionHelper = function(expression, models, options) {
+                var ret;
+
+                if (_.isUndefined(expression)) {
+                    return {value: undefined, modelPaths: {}};
+                } else if (_.isNumber(expression)) {
+                    return {value: expression, modelPaths: {}};
+                }
+
+                ret = utils.evaluateExpression(expression, models, options);
+
+                if (ret.value instanceof expressionObjects.ModelPath) {
+                    ret.value = ret.value.model.get(ret.value.attribute);
+                }
+
+                return ret;
+            };
+
+            var checkedLimitTypes = {},
+                name = this.get('name'),
+                nodes = models.cluster.get('nodes'),
+                limits = this.expandedLimits[name] || {},
+                overrides = limits.overrides || [],
+                limitValues = {
+                    max: evaluateExpressionHelper(limits.max, models).value,
+                    min: evaluateExpressionHelper(limits.min, models).value,
+                    recommended: evaluateExpressionHelper(limits.recommended, models).value
+                },
+                count = nodes.nodesAfterDeploymentWithRole(name).length,
+                messages;
+
+            var checkOneLimit = function(obj, limitType) {
+                var limitValue,
+                    comparator;
+
+                if (_.isUndefined(obj[limitType])) {
+                    return;
+                }
+                switch (limitType) {
+                    case 'min':
+                        comparator = checkLimitIsReached ? function(a, b) {return a < b;} : function(a, b) {return a <= b;};
+                        break;
+                    case 'max':
+                        comparator = checkLimitIsReached ? function(a, b) {return a > b;} : function(a, b) {return a >= b;};
+                        break;
+                    default:
+                        comparator = function(a, b) {return a < b;};
+                }
+                limitValue = parseInt(evaluateExpressionHelper(obj[limitType], models).value);
+                // Update limitValue with overrides, this way at the end we have a flattened limitValues with overrides having priority
+                limitValues[limitType] = limitValue;
+                checkedLimitTypes[limitType] = true;
+                if (comparator(count, limitValue)) {
+                    return {
+                        type: limitType,
+                        value: limitValue,
+                        message: obj.message || i18n('common.role_limits.' + limitType, {limitValue: limitValue, count: count, roleName: name})
+                    };
+                }
+            };
+
+            // Check the overridden limit types
+            messages = _.chain(overrides)
+                .map(function(override) {
+                    var exp = evaluateExpressionHelper(override.condition, models).value;
+
+                    if (exp) {
+                        return _.map(limitTypes, _.partial(checkOneLimit, override));
+                    }
+                })
+                .flatten()
+                .compact()
+                .value();
+            // Now check the global, not-overridden limit types
+            messages = messages.concat(_.chain(limitTypes)
+                .map(function(limitType) {
+                    if (checkedLimitTypes[limitType]) {
+                        return;
+                    }
+
+                    return checkOneLimit(limitValues, limitType);
+                })
+                .flatten()
+                .compact()
+                .value()
+            );
+            // There can be multiple messages for same limit type
+            // (for example, multiple 'min' messages) coming from
+            // multiple override methods. We pick a single, worst
+            // message, i.e. for 'min' and 'recommended' types we
+            // pick one with maximal value, for 'max' type we pick
+            // the minimal one.
+            messages = _.map(limitTypes, function(limitType) {
+                    var message = _.chain(messages)
+                        .filter({type: limitType})
+                        .sortBy('value')
+                        .value();
+                    if (limitType != 'max') {
+                        message = message.reverse();
+                    }
+                    if (message[0]) {
+                        return message[0].message;
+                    }
+            });
+            messages = _.compact(messages).join(' ');
+
+            return {
+                count: count,
+                limits: limitValues,
+                message: messages,
+                valid: !messages
+            };
         }
     };
 
@@ -99,6 +235,7 @@ define([
             }));
             response.role_models.each(function(role) {
                 role.expandRestrictions(role.get('restrictions'));
+                role.expandLimits(role.get('limits'));
             });
             response.role_models.processConflicts();
             delete response.roles_metadata;
@@ -234,10 +371,10 @@ define([
             return this.filter(function(node) {return !node.get('pending_addition');});
         },
         nodesAfterDeployment: function() {
-            return this.filter(function(node) {return node.get('pending_addition') || !node.get('pending_deletion');});
+            return this.filter(function(node) {return !node.get('pending_deletion');});
         },
         nodesAfterDeploymentWithRole: function(role) {
-            return _.filter(this.nodesAfterDeployment(), function(node) {return node.hasRole(role);}).length;
+            return _.filter(this.nodesAfterDeployment(), function(node) {return node.hasRole(role);});
         },
         resources: function(resourceName) {
             var resources = this.map(function(node) {return node.resource(resourceName);});
@@ -369,7 +506,9 @@ define([
         },
         processRestrictions: function() {
             _.each(this.attributes, function(group, groupName) {
-                if (group.metadata) this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+                if (group.metadata) {
+                    this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+                }
                 _.each(group, function(setting, settingName) {
                     this.expandRestrictions(setting.restrictions, this.makePath(groupName, settingName));
                     _.each(setting.values, function(value) {
@@ -506,7 +645,7 @@ define([
         validate: function() {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork'));
-            var untaggedNetworks = networks.filter(function(network) { return _.isNull(network.getVlanRange()); });
+            var untaggedNetworks = networks.filter(function(network) {return _.isNull(network.getVlanRange());});
             // public and floating networks are allowed to be assigned to the same interface
             var maxUntaggedNetworksCount = networks.where({name: 'public'}).length && networks.where({name: 'floating'}).length ? 2 : 1;
             if (untaggedNetworks.length > maxUntaggedNetworksCount) {
@@ -671,7 +810,7 @@ define([
                     networkingParametersErrors.internal_gateway = i18n('cluster_page.network_tab.validation.gateway_is_out_of_internal_ip_range');
                 }
             }
-            var networkWithFloatingRange = attrs.networks.filter(function(network) { return network.get('meta').floating_range_var; })[0];
+            var networkWithFloatingRange = attrs.networks.filter(function(network) {return network.get('meta').floating_range_var;})[0];
             var floatingRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('floating_ranges'), networkWithFloatingRange ? networkWithFloatingRange.get('cidr') : null);
             if (floatingRangesErrors.length) {
                 networkingParametersErrors.floating_ranges = floatingRangesErrors;
@@ -853,7 +992,7 @@ define([
         validate: function(attrs, options) {
             var errors = [];
             _.each(options.config, function(attributeConfig, attribute) {
-                if (!(attributeConfig.regex && attributeConfig.regex.source)) { return; }
+                if (!(attributeConfig.regex && attributeConfig.regex.source)) {return;}
                 var hasNoSatisfiedRestrictions =  _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), function(restriction) {
                     // this probably will be changed when other controls need validation
                     return !utils.evaluateExpression(restriction.condition, {default: this}).value;

@@ -37,7 +37,12 @@
                 "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved.",
                 "version": "Version",
                 "change_password": "Change password",
-                "logout": "Logout"
+                "logout": "Logout",
+                "role_limits": {
+                    "min": "At least __limitValue__ __roleName__ nodes are required (__count__ selected currently).",
+                    "max": "At most __limitValue__ __roleName__ nodes are allowed (__count__ selected currently).",
+                    "recommended": "It is recommended to have at least __limitValue__ of __roleName__ nodes (__count__ selected currently)."
+                }
             },
             "node_details": {
                 "cpu": "CPU",
@@ -606,12 +611,7 @@
                         "interfaces": "Changed interface configuration of the following nodes:"
                     },
                     "warnings": {
-                        "controller": "The environment should have Controller node",
-                        "controller_plural": "At least __count__ controllers are required to provide High Availability of the environment",
-                        "mongo": "When Ceilometer is enabled, the environment should have Telemetry - MongoDB node or external MongoDB should be chosen",
-                        "mongo_plural": "At least __count__ MongoDB nodes are required to provide High Availability of the environment",
-                        "compute": "Compute nodes are recommended for deployment",
-                        "settings_invalid": "Environment settings are invalid. Deployment cannot be started."
+                        "no_deployment": "Environment configuration is invalid. Deployment cannot be started. Please check warnings below."
                     },
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",
@@ -1175,9 +1175,6 @@
                         "disks": "以下节点的磁盘配置变更："
                     },
                     "warnings": {
-                        "controller": "环境应该有__count__个控制节点。",
-                        "controller_plural": "环境应该有__count__个控制节点",
-                        "compute": "建议部署计算节点。"
                     },
                     "deploy": "部署",
                     "redeployment_needed": "某些节点配置后状态错误，需要重新部署。"
@@ -1663,9 +1660,6 @@
                         "disks": "以下のノードのディスク設定："
                     },
                     "warnings": {
-                        "controller": "環境は、__count__コントローラノードを持っている必要があります。",
-                        "controller_plural": "環境は、__count__複数コントローラノードを持っている必要があります。",
-                        "compute": "Computeノードは、デプロイのために進まれています。"
                     },
                     "deploy": "デプロイしました。",
                     "redeployment_needed": "一部のノードは、デプロイ後のエラーになりました。再デプロイが必要です。"
@@ -2164,9 +2158,6 @@
                         "disks": "다음 노드들의 디스크 설정:"
                     },
                     "warnings": {
-                        "controller": "환경은 __count__ 컨트롤러 노드가 있어야합니다",
-                        "controller_plural": "환경은 __count__ 컨트롤러 노드들이 있어야합니다",
-                        "compute": "Compute 노드가 배치를 위해 권장됩니다"
                     },
                     "deploy": "배치되었읍니다",
                     "redeployment_needed": "일부 노드는 배치후 오류상태가 있습니다. 재배치가 필요합니다."

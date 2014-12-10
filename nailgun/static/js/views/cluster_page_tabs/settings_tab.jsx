@@ -239,8 +239,9 @@ function(React, utils, models, Expression, controls) {
 
     var SettingGroup = React.createClass({
         mixins: [dependenciesMixin],
-        composeOptions: function(values) {
-            return _.map(values, function(value, index) {
+        composeOptions: function(setting) {
+            if (setting.type != 'select') return;
+            return _.map(setting.values, function(value, index) {
                 return (
                     <option key={index} value={value.data} disabled={value.disabled}>
                         {value.label}
@@ -302,7 +303,7 @@ function(React, utils, models, Expression, controls) {
                                     key={settingName}
                                     type={setting.type}
                                     name={settingName}
-                                    children={setting.type == 'select' && this.composeOptions(setting.values)}
+                                    children={this.composeOptions(setting)}
                                     value={setting.value}
                                     checked={_.isBoolean(setting.value) ? setting.value : false}
                                     label={setting.label}

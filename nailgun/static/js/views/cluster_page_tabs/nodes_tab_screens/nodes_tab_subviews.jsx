@@ -69,13 +69,16 @@ function(React, Expression, utils, controls) {
             }, this.assignRoles);
         },
         assignRoles: function() {
-            var selectedNodes = this.props.nodes.where({checked: true});
-            _.each(this.props.cluster.get('release').get('roles'), function(name) {
+            var selectedNodes = this.props.nodes.where({checked: true}),
+                release = this.props.cluster.get('release'),
+                models = this.getConfigModels();
+            _.each(release.get('roles'), function(name) {
                 _.each(selectedNodes, function(node) {
                     if (!node.hasRole(name, true)) {
-                        var roles = node.get('pending_roles');
+                        var roles = node.get('pending_roles'),
+                            role = release.get('role_models').findWhere({name: name});
                         if (this.isRoleSelected(name)) {
-                            if (this.isRoleAvailable(name)) roles = _.uniq(_.union(roles, name));
+                            if (!role.checkLimits(models, false, ['max'])) roles = _.uniq(_.union(roles, name));
                         } else if (!_.contains(this.state.indeterminateRoles, name)) {
                             roles = _.without(roles, name);
                         }
@@ -87,16 +90,6 @@ function(React, Expression, utils, controls) {
         isRoleSelected: function(role) {
             return _.contains(this.state.selectedRoles, role);
         },
-        isRoleAvailable: function(role) {
-            // FIXME: the following hacks should be described declaratively in yaml
-            var selectedNodesIds = _.pluck(this.props.nodes.where({checked: true}), 'id');
-            if ((role == 'controller' && this.props.cluster.get('mode') == 'multinode') || role == 'zabbix-server') {
-                return selectedNodesIds.length <= 1 && !this.props.cluster.get('nodes').filter(function(node) {
-                    return !_.contains(selectedNodesIds, node.id) && node.hasRole(role) && !node.get('pending_deletion');
-                }).length;
-            }
-            return true;
-        },
         processRestrictions: function(role, models) {
             var name = role.get('name'),
                 restrictionsCheck = role.checkRestrictions(models, 'disable'),
@@ -107,31 +100,39 @@ function(React, Expression, utils, controls) {
                     .flatten()
                     .uniq()
                     .value(),
-                isAvailable = this.isRoleAvailable(name),
-                messages = [];
+                limits = role.checkLimits(models, false, ['max']),
+                isAvailable = !limits,
+                messages = limits ? [limits] : [];
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
             if (_.contains(conflicts, name)) messages.push($.t('cluster_page.nodes_tab.role_conflict'));
-            if (!isAvailable) messages.push($.t('cluster_page.nodes_tab.' + name + '_restriction'));
             return {
                 result: restrictionsCheck.result || _.contains(conflicts, name) || (!isAvailable && !this.isRoleSelected(name)),
                 message: messages.join(' ')
             };
         },
+        getConfigModels: function() {
+            var settings = this.props.cluster.get('settings');
+            return {
+                cluster: this.props.cluster,
+                settings: settings,
+                version: app.version,
+                default: settings
+            };
+        },
         render: function() {
-            var settings = this.props.cluster.get('settings'),
-                configModels = {
-                    cluster: this.props.cluster,
-                    settings: settings,
-                    version: app.version,
-                    default: settings
-                };
+            var configModels = this.getConfigModels();
+
             return this.state.loading ? null : (
                 <div>
                     <h4>{$.t('cluster_page.nodes_tab.assign_roles')}</h4>
                     {this.props.cluster.get('release').get('role_models').map(function(role) {
                         if (!role.checkRestrictions(configModels, 'hide').result) {
                             var name = role.get('name'),
-                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, configModels) : {};
+                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, configModels) : {},
+                                // FIXME(pkaminski): 'min' errors should go to recommendations
+                                recommendations = role.checkLimits(configModels, true, ['recommended']),
+                                errors = role.checkLimits(configModels, ['max']);
+
                             return (
                                 <controls.Input
                                     key={name}
@@ -142,7 +143,8 @@ function(React, Expression, utils, controls) {
                                     description={role.get('description')}
                                     defaultChecked={this.isRoleSelected(name)}
                                     disabled={!this.props.nodes.length || processedRestrictions.result}
-                                    tooltipText={!!this.props.nodes.length && processedRestrictions.message}
+                                    tooltipText={!!this.props.nodes.length && (recommendations || processedRestrictions.message)}
+                                    /*error={errors}*/
                                     wrapperClassName='role-container'
                                     labelClassName='role-label'
                                     descriptionClassName='role-description'

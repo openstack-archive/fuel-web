@@ -273,3 +273,26 @@ def upgrade_release_fill_orchestrator_data(connection, versions):
                     'rsync://{MASTER_IP}:/puppet/modules/'.format(
                         MASTER_IP=settings.MASTER_IP)),
             )
+
+
+def upgrade_attributes_metadata_6_0_to_6_1(attributes_meta):
+    attributes_meta['editable']['storage']['volumes_lvm']['description'] = \
+        'It is recommended to have at least one Storage - Cinder LVM node.'
+
+    return attributes_meta
+
+
+def upgrade_role_limits_6_0_to_6_1(roles_meta, _limits_to_update):
+    for role_name, role_definition in six.iteritems(roles_meta):
+        if role_name in _limits_to_update:
+            role_definition['limits'] = _limits_to_update[role_name]
+
+    return roles_meta
+
+
+def upgrade_role_restrictions_6_0_to_6_1(roles_meta, _new_role_restrictions):
+    for role_name, role_definition in six.iteritems(roles_meta):
+        if role_name in _new_role_restrictions:
+            role_definition['restrictions'] = _new_role_restrictions[role_name]
+
+    return roles_meta

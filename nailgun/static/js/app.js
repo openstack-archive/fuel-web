@@ -160,6 +160,11 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             }, this));
         },
         processPlugins: function() {
+            // FIXME: mock
+            this.plugins.reset([{
+                id: 'test',
+                ui: true
+            }]);
             return $.when.apply($, this.plugins.invoke('load'));
         },
         renderLayout: function() {

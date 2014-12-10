@@ -83,6 +83,33 @@ SUBTASKS = """
     timeout: 120
 """
 
+ADDITIONAL_TASKS = """
+- id: setup_network
+  type: puppet
+  role: [controller, primary-controller, cinder, compute, network]
+- id: setup_cinder
+  type: puppet
+  requires: [setup_network]
+  role: [cinder]
+- id: setup_compute
+  type: puppet
+  requires: [setup_network]
+  role: [compute]
+- id: setup_controller
+  type: puppet
+  role: [primary-controller, controller]
+  requires: [setup_network]
+- id: setup_neutron
+  type: puppet
+  requires: [setup_network]
+  role: [network]
+- id: setup_bash
+  type: shell
+  required_for: [setup_cinder]
+  requires: [setup_network]
+  role: [cinder]
+"""
+
 
 class TestGraphDependencies(base.BaseTestCase):
 
@@ -90,6 +117,7 @@ class TestGraphDependencies(base.BaseTestCase):
         super(TestGraphDependencies, self).setUp()
         self.tasks = yaml.load(TASKS)
         self.subtasks = yaml.load(SUBTASKS)
+        self.additional = yaml.load(ADDITIONAL_TASKS)
         self.graph = deployment_graph.DeploymentGraph()
 
     def test_build_deployment_graph(self):
@@ -103,11 +131,15 @@ class TestGraphDependencies(base.BaseTestCase):
 
     def test_subtasks_in_correct_order(self):
         self.graph.add_tasks(self.tasks + self.subtasks)
-        subtask_graph = self.graph.get_tasks_for_role('controller')
+        subtask_graph = self.graph.get_tasks('controller')
         topology_by_id = [item['id'] for item in subtask_graph.topology]
         self.assertEqual(
             topology_by_id,
             ['setup_network', 'install_controller'])
+
+    def test_subtasks_correct_priority(self):
+        self.graph.add_tasks(self.tasks + self.additional)
+        self.graph.prioritize_tasks(self.graph.roles_subgraph)
 
 
 class TestAddDependenciesToNodes(base.BaseTestCase):

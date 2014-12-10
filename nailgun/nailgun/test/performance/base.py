@@ -30,7 +30,7 @@ from nailgun.db import syncdb
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.test.base import BaseTestCase
-from nailgun.test.base import Environment
+from nailgun.test.base import EnvironmentManager
 from nailgun.test.base import reverse
 from nailgun.test.base import test_db_driver
 from nailgun.test.performance.profiler import ProfilerMiddleware
@@ -212,7 +212,7 @@ class BaseUnitLoadTestCase(BaseLoadTestCase):
         syncdb()
         cls.db = db
         flush()
-        cls.env = Environment(app=cls.app, session=cls.db)
+        cls.env = EnvironmentManager(app=cls.app, session=cls.db)
         cls.env.upload_fixtures(cls.fixtures)
         cls.cluster = cls.env.create_cluster(api=False)
 

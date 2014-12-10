@@ -798,6 +798,7 @@ class GraphBasedSerializer(object):
         self.graph.add_priorities(group_by_roles)
 
     def set_tasks(self, nodes):
+        self.graph.prioritize_tasks(self.graph.roles_subgraph)
         for node in nodes:
             node['tasks'] = self.graph.serialize_tasks(node)
 

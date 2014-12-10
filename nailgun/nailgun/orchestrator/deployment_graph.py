@@ -14,6 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from itertools import groupby
+from itertools import izip_longest
+
+
 import networkx as nx
 import yaml
 
@@ -30,6 +34,7 @@ class DeploymentGraph(nx.DiGraph):
             self.add_task(task)
 
     def add_task(self, task):
+        """Create necessery node in graph object. With all required edges."""
         self.add_node(task['id'], **task)
         if 'required_for' in task:
             for req in task['required_for']:
@@ -51,7 +56,7 @@ class DeploymentGraph(nx.DiGraph):
         priority = ps.PriorityStrategy()
         roles_subgraph = self.roles_subgraph
         success_roles = set()
-        current_roles = self.roles_subgraph.root_roles
+        current_roles = self.roles_subgraph.root_tasks
         while current_roles:
             increase = True
             existing_roles = [self.node[role] for role in current_roles
@@ -75,10 +80,10 @@ class DeploymentGraph(nx.DiGraph):
                     priority.add_in_parallel(nodes[role['id']])
                     increase = False
             success_roles.update(current_roles)
-            current_roles = roles_subgraph.get_next_roles(success_roles)
+            current_roles = roles_subgraph.get_next_tasks(success_roles)
 
     @property
-    def root_roles(self):
+    def root_tasks(self):
         """Return roles that doesnt have predecessors
 
         :returns: list of roles names
@@ -89,7 +94,7 @@ class DeploymentGraph(nx.DiGraph):
                 result.append(node)
         return result
 
-    def get_next_roles(self, success_roles):
+    def get_next_tasks(self, success_roles):
         """Get roles that have predecessors in success_roles list
 
         :param success_roles: list of roles names
@@ -107,7 +112,7 @@ class DeploymentGraph(nx.DiGraph):
         roles = [t['id'] for t in self.node.values() if t['type'] == 'role']
         return self.subgraph(roles)
 
-    def get_tasks_for_role(self, role_name):
+    def get_tasks(self, role_name):
         tasks = []
         for task in self.predecessors(role_name):
             if self.node[task]['type'] not in ('role', 'stage'):
@@ -120,9 +125,8 @@ class DeploymentGraph(nx.DiGraph):
 
         :param node: dict with serialized node
         """
-        tasks = self.get_tasks_for_role(node['role']).topology
+        tasks = self.get_tasks(node['role']).topology
         serialized = []
-        priority = ps.Priority()
         for task in tasks:
             if task['type'] == 'puppet':
                 item = templates.make_puppet_task(
@@ -132,9 +136,37 @@ class DeploymentGraph(nx.DiGraph):
                 item = templates.make_shell_task(
                     [node['uid']],
                     task)
-            item['priority'] = priority.next()
+            item['priority'] = task['priority']
             serialized.append(item)
         return serialized
+
+    def prioritize_tasks(self, roles):
+        """We need to maintain global scope for all tasks."""
+        priority = ps.PriorityStrategy()
+        tasks = [self.get_tasks(r).topology for r in roles.nodes()]
+        #Get tasks for all roles, if some role have less than a maximum
+        #number of tasks - fill it with None
+        for group in izip_longest(*tasks, fillvalue=None):
+            puppet_tasks = []
+            other_tasks = []
+            #group is like step of orchestrator
+            #pick 1st group, find tasks with lowest priorities
+            #and run them, pick next, and so on
+            for task in group:
+                if task:
+                    if task['type'] == 'puppet':
+                        puppet_tasks.append(task)
+                    else:
+                        other_tasks.append(task)
+            if other_tasks:
+                #if it is same task, we are able to execute it on nodes
+                #in parallel
+                by_id = groupby(other_tasks, lambda task: task['id'])
+                for uid, group in by_id:
+                    priority.in_parallel(group)
+            if puppet_tasks:
+                #execute puppet tasks always in parallel
+                priority.in_parallel(puppet_tasks)
 
     @property
     def topology(self):

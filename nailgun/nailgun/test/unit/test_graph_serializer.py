@@ -24,7 +24,7 @@ from nailgun.orchestrator import graph_configuration
 from nailgun.test import base
 
 
-TASKS = """
+ROLES = """
 - id: deploy
   type: stage
 - id: primary-controller
@@ -83,17 +83,47 @@ SUBTASKS = """
     timeout: 120
 """
 
+PUPPET_TASKS = """
+- id: setup_network
+  type: puppet
+  role: [controller, primary-controller, cinder, compute, network]
+- id: setup_cinder
+  type: puppet
+  requires: [setup_network]
+  role: [cinder]
+- id: setup_compute
+  type: puppet
+  requires: [setup_network]
+  role: [compute]
+- id: setup_controller
+  type: puppet
+  role: [primary-controller, controller]
+  requires: [setup_network]
+- id: setup_neutron
+  type: puppet
+  requires: [setup_network]
+  role: [network]
+"""
+
+NON_PUPPET = """
+- id: setup_bash
+  type: shell
+  required_for: [setup_cinder]
+  requires: [setup_network]
+  role: [cinder]
+"""
+
 
 class TestGraphDependencies(base.BaseTestCase):
 
     def setUp(self):
         super(TestGraphDependencies, self).setUp()
-        self.tasks = yaml.load(TASKS)
+        self.roles = yaml.load(ROLES)
         self.subtasks = yaml.load(SUBTASKS)
         self.graph = deployment_graph.DeploymentGraph()
 
     def test_build_deployment_graph(self):
-        self.graph.add_tasks(self.tasks)
+        self.graph.add_tasks(self.roles)
         topology_by_id = [item['id'] for item
                           in self.graph.roles_subgraph.topology]
         self.assertEqual(
@@ -102,19 +132,69 @@ class TestGraphDependencies(base.BaseTestCase):
              'network', 'compute', 'cinder'])
 
     def test_subtasks_in_correct_order(self):
-        self.graph.add_tasks(self.tasks + self.subtasks)
-        subtask_graph = self.graph.get_tasks_for_role('controller')
+        self.graph.add_tasks(self.roles + self.subtasks)
+        subtask_graph = self.graph.get_tasks('controller')
         topology_by_id = [item['id'] for item in subtask_graph.topology]
         self.assertEqual(
             topology_by_id,
             ['setup_network', 'install_controller'])
 
 
+class TestTasksPrioritization(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestTasksPrioritization, self).setUp()
+        self.graph = deployment_graph.DeploymentGraph()
+        self.roles = yaml.load(ROLES)
+        self.puppet = yaml.load(PUPPET_TASKS)
+        self.other = yaml.load(NON_PUPPET)
+
+    def test_subtasks_correct_priority_with_puppet(self):
+        self.graph.add_tasks(self.roles)
+        self.graph.add_tasks(self.puppet)
+        self.graph.prioritize_tasks(self.graph.roles_subgraph)
+
+        for role in self.graph.roles_subgraph.nodes():
+            tasks = self.graph.get_tasks(role).topology
+            #for all roles - 1st task is setup network
+            self.assertEqual(tasks[0]['id'], 'setup_network')
+            self.assertEqual(tasks[0]['priority'], 100)
+            #second task is specific for each role
+            self.assertEqual(tasks[1]['priority'], 200)
+
+    def test_subtasks_bash_executed_seruentially(self):
+        self.graph.add_tasks(self.roles)
+        self.graph.add_tasks(self.puppet)
+        self.graph.add_tasks(self.other)
+        self.graph.prioritize_tasks(self.graph.roles_subgraph)
+
+        for role in ['primary-controller', 'controller', 'network', 'compute']:
+            tasks = self.graph.get_tasks(role).topology
+            #for all roles - 1st task is setup network
+            self.assertEqual(tasks[0]['id'], 'setup_network')
+            self.assertEqual(tasks[0]['priority'], 100)
+            #second task is specific for each role, but priority is shifted
+            #to take into account cinder specific tasks
+            self.assertEqual(tasks[1]['priority'], 300)
+        cinder_tasks = self.graph.get_tasks('cinder').topology
+        #1st step is similar for each role, setup_network will be performed
+        #in parallel for every role that can be deployed in parallel
+        self.assertEqual(cinder_tasks[0]['id'], 'setup_network')
+        self.assertEqual(cinder_tasks[0]['priority'], 100)
+        #shell type cannot be executed in parallel with other puppet tasks on
+        #second step, so it will be executed before
+        self.assertEqual(cinder_tasks[1]['id'], 'setup_bash')
+        self.assertEqual(cinder_tasks[1]['priority'], 200)
+        #setup_cinder performed after at 3rd step
+        self.assertEqual(cinder_tasks[2]['id'], 'setup_cinder')
+        self.assertEqual(cinder_tasks[2]['priority'], 400)
+
+
 class TestAddDependenciesToNodes(base.BaseTestCase):
 
     def setUp(self):
         super(TestAddDependenciesToNodes, self).setUp()
-        tasks = yaml.load(TASKS + SUBTASKS)
+        tasks = yaml.load(ROLES + SUBTASKS)
         self.graph = deployment_graph.DeploymentGraph()
         self.graph.add_tasks(tasks)
 

@@ -61,6 +61,16 @@ define([
             return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
+            if(_.isUndefined(expression)) {
+                return {value: undefined, modelPaths: {}};
+            }
+
+            if (_.isNumber(expression)) {
+                return {
+                    value: expression,
+                    modelPaths: {}
+                };
+            }
             var compiledExpression = new Expression(expression, models, options);
             var value = compiledExpression.evaluate();
             return {
@@ -69,6 +79,7 @@ define([
             };
         },
         expandRestriction: function(restriction) {
+            //console.log('expandRestriction', restriction);
             var result = {
                 action: 'disable',
                 message: null

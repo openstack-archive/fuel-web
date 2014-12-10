@@ -52,6 +52,109 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
                 return new Expression(restriction.condition, models).evaluate();
             });
             return {result: !!satisfiedRestrictions.length, message: _.compact(_.pluck(satisfiedRestrictions, 'message')).join(' ')};
+        },
+        expandLimits: function(limits) {
+            this.expandedLimits = this.expandedLimits || {};
+            this.expandedLimits[this.get('name')] = limits;
+        },
+        checkLimits: function(models, validateAsIs, limitTypes) {
+            /*
+                Check the 'limits' section of configuration.
+                models -- current model to check the limits
+                validateAsIs -- boolean (default: true), if true then for min = 1, 1 node is allowed
+                                if false, then for min = 1, 1 node is not allowed anymore
+                                This is because validation runs in 2 modes: validate current model as is
+                                and validate current model checking the possibility of adding/removing node
+                                So if max = 1 and we have 1 node then:
+                                  - the model is valid as is (return true) -- case for validateAsIs = true
+                                  - there can be no more nodes added (return false) -- case for validateAsIs = false
+                limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
+             */
+
+            // Default values
+            if (_.isUndefined(validateAsIs)) validateAsIs = true;
+            if (_.isUndefined(limitTypes)) limitTypes = ['min', 'max'];
+
+            var checkedLimitTypes = {},
+                name = this.get('name'),
+                nodes = models.cluster.get('nodes'),
+                limits = this.expandedLimits[name] || {},
+                overrides = limits.overrides || [],
+                limitValues = {
+                    max: utils.evaluateExpression(limits.max, models).value,
+                    min: utils.evaluateExpression(limits.min, models).value,
+                    recommended: utils.evaluateExpression(limits.recommended, models).value
+                },
+                count = nodes.nodesAfterDeploymentWithRole(name),
+                messages = [];
+
+            var checkOneLimit = function(obj, limitType) {
+                var limitValue,
+                    comparator;
+
+                if (_.isUndefined(obj[limitType])) {
+                    return;
+                }
+
+                switch (limitType) {
+                    case 'min':
+                        comparator = validateAsIs ? function(a, b) { return a < b; } : function(a, b) { return a <= b; };
+                        break;
+                    case 'max':
+                        comparator = validateAsIs ? function(a, b) { return a > b; } : function(a, b) { return a >= b; };
+                        break;
+                    default:
+                        comparator = function(a, b) { return a < b; };
+                }
+
+                limitValue = utils.evaluateExpression(obj[limitType], models).value;
+                // Update limitValue with overrides, this way at the end we have a flattened limitValues with overrides having priority
+                limitValues[limitType] = limitValue;
+                if (comparator(count, limitValue)) {
+                    checkedLimitTypes[limitType] = true;
+                    return obj.message || $.t('common.role_limits.' + limitType, {limitValue: limitValue, count: count, roleName: name});
+                }
+            };
+
+            // Check the overriden limit types
+            messages = _.chain(overrides)
+                .map(function(override) {
+                    var exp = utils.evaluateExpression(override.condition, models).value;
+
+                    if (exp) {
+                        return _.map(limitTypes, _.partial(checkOneLimit, override));
+                    }
+                })
+                .flatten()
+                .compact()
+                .value();
+
+            // Now check the global, not-overriden limit types
+            messages = messages.concat(_.chain(limitTypes)
+                .map(function(limitType) {
+                    if(checkedLimitTypes[limitType]) {
+                        return;
+                    }
+
+                    return checkOneLimit(limitValues, limitType);
+                })
+                .flatten()
+                .compact()
+                .value()
+            );
+
+            if(!_.isEmpty(messages)) {
+                console.log(name, messages);
+            }
+
+            messages = messages.join(' ');
+
+            return {
+                count: count,
+                limits: limitValues,
+                message: messages,
+                valid: !messages
+            };
         }
     };
 
@@ -90,6 +193,7 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
             }));
             response.role_models.each(function(role) {
                 role.expandRestrictions(role.get('restrictions'));
+                role.expandLimits(role.get('limits'));
             });
             response.role_models.processConflicts();
             delete response.roles_metadata;
@@ -226,10 +330,10 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
             return this.filter(function(node) {return !node.get('pending_addition');});
         },
         nodesAfterDeployment: function() {
-            return this.filter(function(node) {return node.get('pending_addition') || !node.get('pending_deletion');});
+            return this.filter(function(node) {return !node.get('pending_deletion');});
         },
         nodesAfterDeploymentWithRole: function(role) {
-            return _.filter(this.nodesAfterDeployment(), function(node) {return node.hasRole(role);}).length;
+            return _.filter(this.nodesAfterDeployment(), function(node) {return node.hasRole(role);});
         },
         resources: function(resourceName) {
             var resources = this.map(function(node) {return node.resource(resourceName);});
@@ -370,7 +474,9 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
         },
         processRestrictions: function() {
             _.each(this.attributes, function(group, groupName) {
-                if (group.metadata) this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+                if (group.metadata) {
+                    this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
+                }
                 _.each(group, function(setting, settingName) {
                     this.expandRestrictions(setting.restrictions, this.makePath(groupName, settingName));
                     _.each(setting.values, function(value) {

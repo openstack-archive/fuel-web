@@ -31,7 +31,8 @@ assignment_format_schema = {
                 'type': 'array',
                 'items': {'type': 'string'}
             }
-        }
+        },
+        'required': ['id', 'roles'],
     }
 }
 

@@ -25,24 +25,49 @@
           - compute
           - cinder
         has_primary: true
+        limits:
+          min: 1
+          overrides:
+            - condition: "cluster:mode == 'multinode'"
+              max: 1
+              message: "Multi-node environment can not have more than one controller node."
+            - condition: "cluster:mode == 'ha_compact'"
+              recommended: 3
+              message: "At least 3 controller nodes are recommended for HA deployment."
       compute:
         name: "Compute"
         description: "A compute node creates, manages and terminates virtual machine instances."
+        limits:
+          recommended: 1
         restrictions:
           - condition: "settings:common.libvirt_type.value == 'vcenter'"
-            message: "Computes cannot be used with vCenter"
+            message: "Computes cannot be added to environment with vCenter hypervisor"
       cinder:
+        # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
         name: "Storage - Cinder"
         description: "Cinder provides scheduling of block storage resources, typically delivered over iSCSI, VMWare vCenter, and other compatible backend storage systems. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
         restrictions:
           - condition: "settings:storage.volumes_lvm.value == false and settings:storage.volumes_vmdk.value == false"
             message: "Cinder LVM or VMDK should be enabled in settings"
+          # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914 - Prohibit possibility of adding cinder nodes to an environment with Ceph RBD
+          - condition: "settings:storage.volumes_ceph.value == true"
+            message: "Ceph RBD cannot be used with Cinder"
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+        limits:
+          overrides:
+            - condition: "settings:storage.volumes_ceph.value == true"
+              min: "settings:storage.osd_pool_size.value"
+            - condition: "settings:storage.images_ceph.value == true"
+              min: 1
         restrictions:
           - condition: "settings:common.libvirt_type.value == 'vcenter' and settings:storage.images_ceph.value == false"
             message: "Ceph RBD for images should be enabled in settings."
+          # NOTE: we want a disjoint condition from the one with vCenter so user will not get 2 messages at once
+          #       in case when vCenter is selected and images_ceph.value is false
+          - condition: "settings:common.libvirt_type.value != 'vcenter' and settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false"
+            message: "Ceph must be enabled in settings"
         update_once:
           - controller
       mongo:
@@ -51,13 +76,24 @@
         conflicts:
           - compute
           - ceph-osd
+        limits:
+          overrides:
+            - condition: "cluster:mode != 'ha_compact' and settings:additional_components.mongo.value == false"
+              max: 1
+              message: "At most 1 MongoDB node can be added for non-HA deployment"
+            - condition: "cluster:mode == 'ha_compact' and settings:additional_components.mongo.value == false"
+              recommended: 3
+              message: "At least 3 MongoDB nodes are recommended for HA deployment."
+            - condition: "settings:additional_components.ceilometer.value == true and settings:additional_components.mongo.value == false"
+              min: 1
+              message: "When Ceilometer is enabled, the environment should have Telemetry - MongoDB node or external MongoDB should be chosen"
         restrictions:
           - condition: "cluster:status == 'operational'"
             message: "MongoDB node can not be added to an operational environment."
-          - condition: "settings:additional_components.ceilometer.value != true"
+          - condition: "settings:additional_components.ceilometer.value == false"
             message: "Ceilometer should be enabled."
           - condition: "settings:additional_components.mongo.value == true"
-            message: "You are using external Mongo DB."
+            message: "You are already using external MongoDB."
       zabbix-server:
         name: "Zabbix Server"
         description: "Zabbix monitoring system server."
@@ -67,6 +103,8 @@
           - cinder
           - ceph-osd
           - mongo
+        limits:
+          max: 1
         restrictions:
           - condition: "not ('experimental' in version:feature_groups)"
             action: "hide"

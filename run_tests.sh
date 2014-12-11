@@ -137,6 +137,10 @@ function run_tests {
   if [ $certain_tests -eq 1 ]; then
     for testfile in $testrargs; do
       local testfile=`readlink -f $testfile`
+      if [ ! -f $testfile ]; then
+          echo "ERROR: File $testfile not found"
+          exit 1
+      fi
       guess_test_run $testfile
     done
     exit

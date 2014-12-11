@@ -43,7 +43,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
             'NodeCollectionHandler',
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
-        self.check_time_exec(func, 2)
+        self.check_time_exec(func, 5)
 
     def test_get_defaults_disk(self):
         for node in self.env.nodes:

@@ -24,6 +24,8 @@ from datetime import datetime
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from netaddr import EUI
+import six
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
@@ -90,6 +92,16 @@ class Node(NailgunObject):
             "agent_checksum": {"type": "string"}
         }
     }
+
+    @classmethod
+    def _convert_hw_address(cls, data):
+        hw = data['mac']
+        if isinstance(hw, six.text_type) or isinstance(hw, six.string_types):
+            data['mac'] = EUI(hw)
+
+        if 'meta' in data and 'interfaces' in data['meta']:
+            for i in data['meta']['interfaces']:
+                i['mac'] = EUI(i['mac'])
 
     @classmethod
     def get_by_mac_or_uid(cls, mac=None, node_uid=None):
@@ -185,6 +197,8 @@ class Node(NailgunObject):
         data["timestamp"] = datetime.now()
         data.pop("id", None)
 
+        cls._convert_hw_address(data)
+
         #TODO(enchantner): fix this temporary hack in clients
         if "cluster_id" not in data and "cluster" in data:
             cluster_id = data.pop("cluster", None)
@@ -201,6 +215,7 @@ class Node(NailgunObject):
 
         # Add interfaces for node from 'meta'.
         if new_node.meta and new_node.meta.get('interfaces'):
+            import pdb; pdb.set_trace()
             cls.update_interfaces(new_node)
 
         # adding node into cluster

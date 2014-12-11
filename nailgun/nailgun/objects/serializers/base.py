@@ -38,7 +38,7 @@ class BasicSerializer(object):
                     elif rel == 'CollectionAttributeImpl':
                         data_dict[field] = [v.id for v in value]
                     else:
-                        data_dict[field] = value
+                        data_dict[field] = str(value)
                 else:
-                    data_dict[field] = value
+                    data_dict[field] = str(value)
         return data_dict

@@ -14,6 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+from sqlalchemy import types as sa_types
+
 
 def make_dsn(engine, host, port, user, passwd, name):
     """Constructs DSN string that can be used to connect to database.
@@ -43,3 +46,27 @@ def make_dsn(engine, host, port, user, passwd, name):
         passwd=passwd,
         name=name,
     )
+
+
+class EUIEncodedString(sa_types.TypeDecorator):
+    """Type serialized as EUI-encoded string in db."""
+
+    impl = sa_types.TEXT
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            # Save default value according to current type to keep the
+            # interface consistent.
+            raise ValueError('HW address cannot be None.')
+
+        value.dialect=netaddr.mac_unix
+        return str(value)
+
+
+    def process_result_value(self, value, dialect):
+        try:
+            value = netaddr.EUI(value, dialect=netaddr.mac_unix)
+        except netaddr.AddrFormatError as e:
+            raise ValueError('%s is not a valid HW address.')
+
+        return value

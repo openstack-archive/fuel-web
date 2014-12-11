@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.disks \
     import disks_simple_format_schema
@@ -49,13 +51,20 @@ class MetaInterfacesValidator(BasicValidator):
                     return False
             return True
 
-        return filter(filter_valid_nic, interfaces)
+        valid_nics = filter(filter_valid_nic, interfaces)
+
+        for n in valid_nics:
+            n['mac'] = netaddr.EUI(n['mac'])
+
+        return valid_nics
 
     @classmethod
     def validate_update(cls, interfaces):
         interfaces = cls._validate_data(interfaces)
 
         for nic in interfaces:
+            nic['mac'] = netaddr.EUI(nic['mac'])
+
             if not isinstance(nic, dict):
                 raise errors.InvalidInterfacesInfo(
                     "Interface in meta.interfaces must be dict",
@@ -78,6 +87,7 @@ class MetaValidator(BasicValidator):
     def validate_create(cls, meta):
         cls._validate_data(meta)
         if 'interfaces' in meta:
+            import pdb; pdb.set_trace()
             meta['interfaces'] = MetaInterfacesValidator.validate_create(
                 meta['interfaces']
             )
@@ -116,6 +126,15 @@ class NodeValidator(BasicValidator):
             raise errors.InvalidData(
                 "No mac address specified",
                 log_message=True
+            )
+
+        try:
+            parsed_mac_addr = netaddr.EUI(data['mac'])
+            data['mac'] = parsed_mac_addr
+        except netaddr.AddrFormatError:
+            raise errors.InvalidData(
+                    "%s is not a valid HW address." % data['mac'],
+                    log_message=True
             )
 
         if cls.does_node_exist_in_db(data):

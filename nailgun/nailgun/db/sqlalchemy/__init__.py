@@ -28,13 +28,11 @@ from sqlalchemy.orm.query import Query
 
 from nailgun.db.deadlock_detector import clean_locks
 from nailgun.db.deadlock_detector import handle_lock
+from nailgun.db.sqlalchemy import utils
 from nailgun.settings import settings
 
 
-db_str = "{engine}://{user}:{passwd}@{host}:{port}/{name}".format(
-    **settings.DATABASE)
-
-
+db_str = utils.make_dsn(**settings.DATABASE)
 engine = create_engine(db_str, client_encoding='utf8')
 
 class NoCacheQuery(Query):

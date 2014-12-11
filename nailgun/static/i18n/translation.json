@@ -600,7 +600,7 @@
                     "warnings": {
                         "controller": "The environment should have Controller node",
                         "controller_plural": "At least __count__ controllers are required to provide High Availability of the environment",
-                        "mongo": "When Ceilometer is enabled, the environment should have Telemetry - MongoDB node",
+                        "mongo": "When Ceilometer is enabled, the environment should have Telemetry - MongoDB node or external MongoDB should be chosen",
                         "mongo_plural": "At least __count__ MongoDB nodes are required to provide High Availability of the environment",
                         "compute": "Compute nodes are recommended for deployment",
                         "settings_invalid": "Environment settings are invalid. Deployment cannot be started."

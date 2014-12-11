@@ -428,7 +428,7 @@ class TaskHelper(object):
                     "end_timestamp": datetime.datetime.utcnow(),
                     "additional_info": {
                         "ended_with_status": task.status,
-                        "message": task.message,
+                        "message": "",
                         "output": cls.sanitize_task_output(task.cache,
                                                            al_instance)
                     }

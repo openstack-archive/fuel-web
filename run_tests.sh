@@ -22,23 +22,24 @@ function usage {
   echo ""
   echo "  -a, --agent                 Run FUEL_AGENT unit tests"
   echo "  -A, --no-agent              Don't run FUEL_AGENT unit tests"
-  echo "  -n, --nailgun               Run NAILGUN both unit and integration tests"
-  echo "  -l, --tasklib               Run tasklib unit and functional tests"
-  echo "  -N, --no-nailgun            Don't run NAILGUN tests"
-  echo "  -w, --webui                 Run WEB-UI tests"
-  echo "  -W, --no-webui              Don't run WEB-UI tests"
   echo "  -c, --cli                   Run FUELCLIENT tests"
   echo "  -C, --no-cli                Don't run FUELCLIENT tests"
-  echo "  -u, --upgrade               Run tests for UPGRADE system"
-  echo "  -U, --no-upgrade            Don't run tests for UPGRADE system"
-  echo "  -s, --shotgun               Run SHOTGUN tests"
-  echo "  -S, --no-shotgun            Don't run SHOTGUN tests"
-  echo "  -p, --flake8                Run FLAKE8 and HACKING compliance check"
-  echo "  -P, --no-flake8             Don't run static code checks"
+  echo "  -h, --help                  Print this usage message"
+  echo "  -k, --tasklib               Run tasklib unit and functional tests"
+  echo "  -K, --no-tasklib            Don't run tasklib unit and functional tests"
   echo "  -l, --lint-ui               Run UI linting tasks"
   echo "  -L, --no-lint-ui            Don't run UI linting tasks"
+  echo "  -n, --nailgun               Run NAILGUN both unit and integration tests"
+  echo "  -N, --no-nailgun            Don't run NAILGUN tests"
+  echo "  -p, --flake8                Run FLAKE8 and HACKING compliance check"
+  echo "  -P, --no-flake8             Don't run static code checks"
+  echo "  -s, --shotgun               Run SHOTGUN tests"
+  echo "  -S, --no-shotgun            Don't run SHOTGUN tests"
   echo "  -t, --tests                 Run a given test files"
-  echo "  -h, --help                  Print this usage message"
+  echo "  -u, --upgrade               Run tests for UPGRADE system"
+  echo "  -U, --no-upgrade            Don't run tests for UPGRADE system"
+  echo "  -w, --webui                 Run WEB-UI tests"
+  echo "  -W, --no-webui              Don't run WEB-UI tests"
   echo ""
   echo "Note: with no options specified, the script will try to run all available"
   echo "      tests with all available checks."
@@ -54,8 +55,8 @@ function process_options {
       -A|--no-agent) no_agent_tests=1;;
       -n|--nailgun) nailgun_tests=1;;
       -N|--no-nailgun) no_nailgun_tests=1;;
-      -l|--tasklib) tasklib_tests=1;;
-      -L|--no-tasklib) no_tasklib_tests=1;;
+      -k|--tasklib) tasklib_tests=1;;
+      -K|--no-tasklib) no_tasklib_tests=1;;
       -w|--webui) webui_tests=1;;
       -W|--no-webui) no_webui_tests=1;;
       -c|--cli) cli_tests=1;;

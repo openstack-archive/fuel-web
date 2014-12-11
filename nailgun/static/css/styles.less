@@ -3315,12 +3315,14 @@ form.create-cluster-form {
   .custom-tumbler input[type=checkbox] + span {
     cursor: pointer;
   }
-  .custom-tumbler input[type=checkbox][disabled] + span {
-    cursor: not-allowed;
+  .custom-tumbler {
+    margin: 4px 0 0 0;
+      input[type=checkbox][disabled] + span {
+      cursor: not-allowed;
+    }
   }
   .parameter-name .label-wrapper {
-    float: none;
-    margin: 5px;
+    margin: 5px 0 0 0;
   }
 }
 // Cluster toolbar

@@ -156,6 +156,10 @@ def read_log(
                 entry_text += '\n' + '\n'.join(multilinebuf)
                 multilinebuf = []
             entry_level = m.group('level').upper() or 'INFO'
+
+            if m.group('level2'):
+                entry_level = m.group('level').upper()
+
             if level and not (entry_level in allowed_levels):
                 continue
             try:

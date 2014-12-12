@@ -21,12 +21,13 @@ define(
     'i18next',
     'backbone',
     'react',
+    'react-router',
     'utils',
     'models',
     'jsx!component_mixins',
     'jsx!views/dialogs'
 ],
-function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, dialogs) {
+function($, _, i18n, i18next, Backbone, React, Router, utils, models, componentMixins, dialogs) {
     'use strict';
 
     var components = {};
@@ -35,6 +36,8 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     components.Navbar = React.createClass({
         mixins: [
+            Router.State,
+            Router.Navigation,
             componentMixins.backboneMixin('user'),
             componentMixins.backboneMixin('version'),
             componentMixins.pollingMixin(20)
@@ -45,9 +48,6 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         },
         togglePopover: function(visible) {
             this.setState({popoverVisible: _.isBoolean(visible) ? visible : !this.state.popoverVisible});
-        },
-        setActive: function(url) {
-            this.setState({activeElement: url});
         },
         shouldDataBeFetched: function() {
             return this.props.user.get('authenticated');
@@ -76,9 +76,9 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
             return {
                 notificationsDisplayCount: 5,
                 elements: [
-                    {label: 'environments', url: '#clusters'},
-                    {label: 'releases', url: '#releases'},
-                    {label: 'support', url: '#support'}
+                    {label: 'environments', route: 'clusters'},
+                    {label: 'releases', route: 'releases'},
+                    {label: 'support', route: 'support'}
                 ]
             };
         },
@@ -104,11 +104,11 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                         <div className='navigation-bar-box'>
                             <ul className='navigation-bar-ul'>
                                 <li className='product-logo'>
-                                    <a href='#'><div className='logo'></div></a>
+                                    <a href={this.makeHref('home')}><div className='logo'></div></a>
                                 </li>
                                 {_.map(this.props.elements, function(element) {
                                     return <li key={element.label}>
-                                        <a className={cx({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
+                                        <a className={cx({active: this.isActive(element.route)})} href={this.makeHref(element.route)}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
                                     </li>;
                                 }, this)}
                                 <li className='space'></li>
@@ -233,7 +233,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                             }, this)
                         ) : <li key='no_notifications'>{i18n('notifications_popover.no_notifications_text')}</li>}
                     </ul>
-                    {showMore && <div className='show-more-notifications'><a href='#notifications'>{i18n('notifications_popover.view_all_button')}</a></div>}
+                    {showMore && <div className='show-more-notifications'><a href={this.makeHref('notifications')}>{i18n('notifications_popover.view_all_button')}</a></div>}
                 </div>
             );
         }

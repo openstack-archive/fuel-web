@@ -167,8 +167,9 @@ class StatsSender(object):
 
     def must_send_stats(self):
         try:
-            stat_settings = objects.MasterNodeSettings.get_one(). \
-                settings.get("statistics", {})
+            stat_settings = getattr(
+                objects.MasterNodeSettings.get_one(), "settings", {}
+            ).get("statistics", {})
             return stat_settings.get("user_choice_saved", {}).\
                 get("value", False) and \
                 stat_settings.get("send_anonymous_statistic", {}). \

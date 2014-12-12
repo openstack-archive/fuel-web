@@ -13,6 +13,10 @@
 #    under the License.
 
 
+import six
+
+from sqlalchemy.exc import DatabaseError
+
 from nailgun.objects.base import NailgunObject
 from nailgun.objects.serializers.master_node_settings \
     import MasterNodeSettingsSerializer
@@ -21,6 +25,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import MasterNodeSettings
 
 from nailgun.errors import errors
+from nailgun.logger import logger
 
 
 class MasterNodeSettings(NailgunObject):
@@ -47,11 +52,17 @@ class MasterNodeSettings(NailgunObject):
         :param lock_for_update: lock returned object for update (DB mutex)
         :return: instance of an object (model)
         """
-        q = db().query(cls.model)
-        if lock_for_update:
-            q = q.with_lockmode('update')
+        res = None
+        try:
+            q = db.query(cls.model)
+            if lock_for_update:
+                q = q.with_lockmode('update')
 
-        res = q.first()
+            res = q.first()
+        except DatabaseError as e:
+            logger.exception(
+                "MasterNodeSettings.get_one DB error: %s", six.text_type(e))
+            db.remove()
 
         if not res and fail_if_not_found:
             raise errors.ObjectNotFound(

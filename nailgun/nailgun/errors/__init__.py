@@ -51,6 +51,9 @@ default_messages = {
     "InvalidOperatingSystem": "Invalid operating system",
     "CannotFindPluginForRelease": "Cannot find plugin for the release",
 
+    # mongo errors
+    "ExtMongoCheckerError": "Mongo nodes shouldn`t be used with external mongo",
+
     # disk errors
     "NotEnoughFreeSpace": "Not enough free space",
     "NotEnoughOsdNodes": "Not enough OSD nodes",

@@ -21,19 +21,20 @@ define(
     'i18next',
     'backbone',
     'react',
+    'react-router',
     'utils',
     'models',
     'jsx!component_mixins',
     'jsx!views/dialogs'
 ],
-function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, dialogs) {
+function($, _, i18n, i18next, Backbone, React, Router, utils, models, componentMixins, dialogs) {
     'use strict';
 
     var components = {};
 
     var cx = React.addons.classSet;
 
-    components.Navbar = React.createClass({
+    var Navbar = React.createClass({
         mixins: [
             componentMixins.backboneMixin('user'),
             componentMixins.backboneMixin('version'),
@@ -237,7 +238,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         }
     });
 
-    components.Footer = React.createClass({
+    var Footer = React.createClass({
         mixins: [componentMixins.backboneMixin('version')],
         getInitialState: function() {
             return {
@@ -300,7 +301,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         }
     });
 
-    components.Breadcrumbs = React.createClass({
+    var Breadcrumbs = React.createClass({
         getInitialState: function() {
             return {
                 hidden: false
@@ -329,5 +330,26 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         }
     });
 
-    return components;
+    var Layout = React.createClass({
+        render: function() {
+            return (
+                <div>
+                    <div id="wrap">
+                        <div className="container">
+                            <div id="navbar" className="container"></div>
+                            <div id="breadcrumbs" className="container"></div>
+                            <div id="content">
+                                <Router.RouteHandler />
+                            </div>
+                            <div id="push"></div>
+                        </div>
+                    </div>
+                    <div id="footer"></div>
+                    <div id="modal-container"></div>
+                </div>
+            );
+        }
+    });
+
+    return Layout;
 });

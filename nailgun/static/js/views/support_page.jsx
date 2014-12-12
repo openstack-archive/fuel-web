@@ -33,6 +33,9 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
             return i18n('support_page.title');
         },
         statics: {
+            willTransitionTo: function(transition, params, query) {
+                console.log('willTransitionTo', transition, params, query);
+            },
             fetchData: function() {
                 var tasks = new models.Tasks();
                 return tasks.fetch().then(function() {

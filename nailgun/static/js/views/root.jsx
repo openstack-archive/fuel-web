@@ -17,21 +17,12 @@ define([
     'underscore',
     'i18n',
     'react',
+    'react-router',
     'jsx!views/layout'
-], function(_, i18n, React, layoutComponents) {
+], function(_, i18n, React, Router, layoutComponents) {
     'use strict';
 
     var RootComponent = React.createClass({
-        getInitialState: function() {
-            return {};
-        },
-        setPage: function(Page, pageOptions) {
-            this.setState({
-                Page: Page,
-                pageOptions: pageOptions
-            });
-            return this.refs.page;
-        },
         refreshNavbar: function() {
             this.refs.navbar.refresh();
         },
@@ -42,15 +33,15 @@ define([
             }
         },
         updateTitle: function() {
-            var Page = this.state.Page,
-                title = _.isFunction(Page.title) ? Page.title(this.state.pageOptions) : Page.title;
+            var Page = this.props.Page,
+                title = _.isFunction(Page.title) ? Page.title(this.props.pageOptions) : Page.title;
             document.title = i18n('common.title') + (title ? ' - ' + title : '');
         },
         componentDidUpdate: function() {
             this.updateLayout();
         },
         render: function() {
-            var Page = this.state.Page;
+            var Page = this.props.Page;
             if (!Page) return <div className='loading' />;
             return (
                 <div id='content-wrapper'>
@@ -58,12 +49,12 @@ define([
                         <div className='container'>
                             {!Page.hiddenLayout &&
                                 <div>
-                                    <layoutComponents.Navbar ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />
-                                    <layoutComponents.Breadcrumbs ref='breadcrumbs' {...this.state} />
+                                    <layoutComponents.Navbar ref='navbar' {...this.props} />
+                                    <layoutComponents.Breadcrumbs ref='breadcrumbs' {...this.props} />
                                 </div>
                             }
                             <div id='content'>
-                                <Page ref='page' {...this.state.pageOptions} />
+                                <Router.RouteHandler ref='page' {...this.props.pageOptions} />
                             </div>
                             <div id='push' />
                         </div>

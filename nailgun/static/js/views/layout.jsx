@@ -21,12 +21,13 @@ define(
     'i18next',
     'backbone',
     'react',
+    'react-router',
     'utils',
     'models',
     'jsx!component_mixins',
     'jsx!views/dialogs'
 ],
-function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, dialogs) {
+function($, _, i18n, i18next, Backbone, React, Router, utils, models, componentMixins, dialogs) {
     'use strict';
 
     var components = {};
@@ -35,6 +36,8 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     components.Navbar = React.createClass({
         mixins: [
+            Router.State,
+            Router.Navigation,
             componentMixins.backboneMixin('user'),
             componentMixins.backboneMixin('version'),
             componentMixins.pollingMixin(20)
@@ -45,9 +48,6 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         },
         togglePopover: function(visible) {
             this.setState({popoverVisible: _.isBoolean(visible) ? visible : !this.state.popoverVisible});
-        },
-        setActive: function(url) {
-            this.setState({activeElement: url});
         },
         shouldDataBeFetched: function() {
             return this.props.user.get('authenticated');
@@ -76,9 +76,9 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
             return {
                 notificationsDisplayCount: 5,
                 elements: [
-                    {label: 'environments', url: '#clusters'},
-                    {label: 'releases', url: '#releases'},
-                    {label: 'support', url: '#support'}
+                    {label: 'environments', route: 'clusters'},
+                    {label: 'releases', route: 'releases'},
+                    {label: 'support', route: 'support'}
                 ]
             };
         },
@@ -108,7 +108,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                                 </li>
                                 {_.map(this.props.elements, function(element) {
                                     return <li key={element.label}>
-                                        <a className={cx({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
+                                        <a className={cx({active: this.isActive(element.route)})} href={this.makeHref(element.route)}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
                                     </li>;
                                 }, this)}
                                 <li className='space'></li>

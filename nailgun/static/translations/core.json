@@ -10,6 +10,7 @@
                 "apply_button": "Apply",
                 "rename_button": "Rename",
                 "delete_button": "Delete",
+                "remove_button": "Remove",
                 "stop_button": "Stop",
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",

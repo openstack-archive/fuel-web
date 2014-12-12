@@ -16,19 +16,20 @@
 define(
 [
     'react',
+    'react-router',
     'utils',
     'models',
     'jsx!component_mixins',
     'jsx!views/dialogs'
 ],
-function(React, utils, models, componentMixins, dialogs) {
+function(React, Router, utils, models, componentMixins, dialogs) {
     'use strict';
 
     var components = {};
 
     var cx = React.addons.classSet;
 
-    components.Navbar = React.createClass({
+    var Navbar = React.createClass({
         mixins: [
             React.BackboneMixin('user'),
             React.BackboneMixin('version'),
@@ -232,7 +233,7 @@ function(React, utils, models, componentMixins, dialogs) {
         }
     });
 
-    components.Footer = React.createClass({
+    var Footer = React.createClass({
         mixins: [React.BackboneMixin('version')],
         getInitialState: function() {
             return {
@@ -295,7 +296,7 @@ function(React, utils, models, componentMixins, dialogs) {
         }
     });
 
-    components.Breadcrumbs = React.createClass({
+    var Breadcrumbs = React.createClass({
         getInitialState: function() {
             return {
                 hidden: false
@@ -324,5 +325,26 @@ function(React, utils, models, componentMixins, dialogs) {
         }
     });
 
-    return components;
+    var Layout = React.createClass({
+        render: function() {
+            return (
+                <div>
+                    <div id="wrap">
+                        <div className="container">
+                            <div id="navbar" className="container"></div>
+                            <div id="breadcrumbs" className="container"></div>
+                            <div id="content">
+                                <Router.RouteHandler />
+                            </div>
+                            <div id="push"></div>
+                        </div>
+                    </div>
+                    <div id="footer"></div>
+                    <div id="modal-container"></div>
+                </div>
+            );
+        }
+    });
+
+    return Layout;
 });

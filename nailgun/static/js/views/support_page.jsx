@@ -24,12 +24,26 @@ function(React, componentMixins, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
-        mixins: [React.BackboneMixin('tasks')],
         navbarActiveElement: 'support',
         breadcrumbsPath: [['home', '#'], 'support'],
+        statics: {
+            willTransitionTo: function(transition, params, query) {
+                console.log('willTransitionTo', transition, params, query);
+            },
+            fetchData: function() {
+                var tasks = new models.Tasks();
+                return tasks.fetch();
+            }
+        },
         title: function() {
             return $.t('support_page.title');
         },
+        render: function() {
+            return <SupportPageContent />;
+        }
+    });
+
+    var SupportPageContent = React.createClass({
         render: function() {
             var elements = [
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,

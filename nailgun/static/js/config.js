@@ -36,6 +36,7 @@ define(function() {
             react: 'js/libs/bower/react/js/react-with-addons',
             JSXTransformer: 'js/libs/bower/react/js/JSXTransformer',
             jsx: 'js/libs/custom/jsx',
+            'react-router': 'js/libs/bower/react-router/react-router',
             'react.backbone': 'js/libs/bower/react.backbone/react.backbone',
             stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
             coccyx: 'js/libs/custom/coccyx',
@@ -49,7 +50,7 @@ define(function() {
             lessLibrary: 'js/libs/bower/less/js/less-1.5.1',
             'require-css': 'js/libs/bower/require-css',
             'require-less': 'js/require-less',
-            app: 'js/app',
+            app: 'js/app_rr',
             models: 'js/models',
             backbone_view_wrapper: 'js/backbone_view_wrapper',
             views: 'js/views',
@@ -67,6 +68,9 @@ define(function() {
                 init: function(_, $, Cocktail) {
                     Cocktail.patch(Backbone);
                 }
+            },
+            'react-router': {
+                deps: ['js/react_router_shim']
             },
             'expression/parser': {
                 exports: 'parser'

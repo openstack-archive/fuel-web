@@ -602,7 +602,6 @@ function(React, utils, models, controls) {
         deleteNodes: function() {
             var nodes = this.props.nodes;
             this.setState({actionInProgress: true});
-            this.$('.btn-delete').prop('disabled', true);
             nodes.each(function(node) {
                 if (!node.get('pending_deletion')) {
                     if (node.get('pending_addition')) {
@@ -622,24 +621,18 @@ function(React, utils, models, controls) {
                 });
             };
             nodes.sync('update', nodes)
+                .then(_.bind(function() {
+                    return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
+                }, this))
+                .always(this.close)
                 .done(_.bind(function() {
-                    this.$el.modal('hide');
                     app.page.tab.screen.resetNodeSelection();
-                    app.page.tab.model.fetch();
-                    app.page.tab.model.fetchRelated('nodes');
                     app.navbar.refresh();
                     app.page.removeFinishedNetworkTasks();
                 }, this))
                 .fail(_.bind(function() {
-                    utils.showErrorDialog({
-                        title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
-                        message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
-                    });
+                    utils.showError($.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
                 }, this));
-        },
-        render: function() {
-            this.constructor.__super__.render.call(this, {nodes: this.nodes});
-            return this;
         }
     });
 

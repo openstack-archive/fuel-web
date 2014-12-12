@@ -107,7 +107,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
             }, this);
         },
         showDeleteNodesDialog: function(nodes) {
-            app.page.tab.registerSubView(new dialogs.DeleteNodesDialog({nodes: new models.Nodes(_.invoke(nodes, 'clone'))})).render();
+            utils.showDialog(dialogs.DeleteNodesDialog, {nodes: new models.Nodes(_.invoke(nodes, 'clone')), cluster: this.props.model});
         },
         applyChanges: function(nodes) {
             this.setState({actionInProgress: true});
@@ -556,7 +556,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
         },
         showNodeDetails: function(e) {
             e.preventDefault();
-            app.page.tab.registerSubView(new dialogs.ShowNodeInfoDialog({node: this.props.node})).render();
+            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: this.props.node});
         },
         calculateNodeViewStatus: function() {
             var node = this.props.node;

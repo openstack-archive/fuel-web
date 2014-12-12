@@ -587,6 +587,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_ceph(task)
         cls._check_volumes(task)
         cls._check_public_network(task)
+        cls._check_mongo_nodes(task)
 
     @classmethod
     def _check_nodes_are_online(cls, task):
@@ -727,6 +728,16 @@ class CheckBeforeDeploymentTask(object):
             'at least {1} IP addresses '.format(public.cidr, nodes_count) + \
             'for the current environment.'
 
+    @classmethod
+    def __check_mongo_nodes(cls, task):
+        if objects.Attributes.merged_attrs(
+               task.cluster.attributes)['ceilometer']['value']:
+            mongo_nodes = objects.Cluster.get_all_mongo_nodes(task.cluster)
+            if objects.Attributes.merged_attrs(
+                    task.cluster.attributes)['mongo']['value'] and \
+                len(mongo_nodes) > 0:
+                raise errors.ExtMongoCheckerError('Mongo nodes ' \
+                    'shouldn`t be used with external mongo')
 
 class DumpTask(object):
     @classmethod

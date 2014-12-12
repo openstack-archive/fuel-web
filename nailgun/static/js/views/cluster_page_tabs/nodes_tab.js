@@ -15,14 +15,15 @@
 **/
 define(
 [
+    'underscore',
     'utils',
     'models',
     'views/common',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function(utils, models, commonViews, NodeListScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function(_, utils, models, commonViews, NodeListScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
     var NodesTab;
 

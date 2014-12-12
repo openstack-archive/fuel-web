@@ -10,6 +10,7 @@
                 "apply_button": "Apply",
                 "rename_button": "Rename",
                 "delete_button": "Delete",
+                "remove_button": "Remove",
                 "stop_button": "Stop",
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
@@ -251,6 +252,10 @@
                             "title": "Interfaces Configuration Error",
                             "saving_warning": "Unable to apply changes",
                             "load_defaults_warning": "Unable to load default configuration"
+                        },
+                        "node_loading_error": {
+                            "title": "Error loading nodes",
+                            "load_error": "Some nodes failed to load"
                         },
                         "validation": {
                             "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface"

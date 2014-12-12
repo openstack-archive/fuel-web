@@ -620,6 +620,30 @@ class Cluster(NailgunObject):
         return deployed_controllers + pending_controllers
 
     @classmethod
+    def get_mongo_nodes(cls, instance):
+        mongo = db().query(models.Role).\
+            filter_by(release_id=instance.release_id).\
+            filter_by(name='mongo').first()
+        primary_mongo = db().query(models.Role).\
+            filter_by(release_id=instance.release_id).\
+            filter_by(name='primary-mongo').first()
+        if primary_mongo:
+             primary_mongos = db().query(models.Node).filter_by(
+                 cluster_id=instance.id).\
+                 join(models.Node.pending_role_list, aliased=True).\
+                 filter(models.Role.id == primary_mongo.id).all()
+        else:
+            primary_mongos = []
+        if mongo:
+             mongos = db().query(models.Node).filter_by(
+                 cluster_id=instance.id).\
+                 join(models.Node.pending_role_list, aliased=True).\
+                 filter(models.Role.id == mongo.id).all()
+        else:
+             mongos = []
+        return mongos + primary_mongos
+
+    @classmethod
     def get_controllers_group_id(cls, instance):
         roles_id = db().query(models.Role).filter_by(
             release_id=instance.release_id).\

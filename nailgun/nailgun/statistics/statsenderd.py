@@ -179,31 +179,31 @@ class StatsSender(object):
                 "Get statistics settings failed: %s", six.text_type(e))
             return False
 
-    def run(self, *args, **kwargs):
+    def send_stats_once(self):
 
         def dithered(medium):
             return randint(int(medium * 0.9), int(medium * 1.1))
 
-        while True:
-            try:
-                if self.must_send_stats():
-                    if self.ping_collector():
-                        self.send_action_log()
-                        self.send_installation_info()
-                        time.sleep(dithered(settings.STATS_SEND_INTERVAL))
-                    else:
-                        time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))
+        try:
+            if self.must_send_stats():
+                if self.ping_collector():
+                    self.send_action_log()
+                    self.send_installation_info()
+                    time.sleep(dithered(settings.STATS_SEND_INTERVAL))
                 else:
-                    time.sleep(dithered(settings.STATS_ENABLE_CHECK_INTERVAL))
-            except Exception as e:
-                logger.error("Stats sender exception: %s", six.text_type(e))
-            finally:
-                db.remove()
+                    time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))
+            else:
+                time.sleep(dithered(settings.STATS_ENABLE_CHECK_INTERVAL))
+        except Exception as e:
+            logger.error("Stats sender exception: %s", six.text_type(e))
+        finally:
+            db.remove()
 
 
 def run():
     logger.info("Starting standalone stats sender...")
     try:
-        StatsSender().run()
+        while True:
+            StatsSender().send_stats_once()
     except (KeyboardInterrupt, SystemExit):
         logger.info("Stopping standalone stats sender...")

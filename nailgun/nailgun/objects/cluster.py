@@ -623,6 +623,23 @@ class Cluster(NailgunObject):
         return deployed_controllers + pending_controllers
 
     @classmethod
+    def get_mongo_nodes(cls, instance):
+        role_name = 'mongo'
+        role = db().query(models.Role).filter_by(
+            release_id=instance.release.id, name=role_name).first()
+        if role is None:
+            logger.warning(
+                "%s role doesn't exist", role_name)
+            return []
+        else:
+            env_nodes = db().query(models.Node).filter_by(
+                cluster_id=instance.id)
+            return env_nodes.join(models.Node.role_list, aliased=True).filter(
+                models.Role.id == role.id).all() + env_nodes.join(
+                    models.Node.pending_role_list, aliased=True).filter(
+                        models.Role.id == role.id).all()
+
+    @classmethod
     def get_controllers_group_id(cls, instance):
         roles_id = db().query(models.Role).filter_by(
             release_id=instance.release_id).\

@@ -19,14 +19,15 @@ define(
     'underscore',
     'utils',
     'models',
+    'react',
     'views/common',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function($, _, utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function($, _, utils, models, React, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
     var NodesTab;
 
@@ -38,21 +39,28 @@ function($, _, utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, E
             return this.screen && _.result(this.screen, 'hasChanges');
         },
         changeScreen: function(NewScreenView, screenOptions) {
-            var options = _.extend({model: this.model, tab: this, screenOptions: screenOptions || []});
+            var options = {model: this.model, tab: this, screenOptions: screenOptions || []};
             if (this.screen) {
                 if (this.screen.keepScrollPosition) {
                     this.scrollPositions[this.screen.constructorName || this.screen.displayName] = $(window).scrollTop();
                 }
                 this.$el.fadeOut('fast', _.bind(function() {
                     utils.universalUnmount(this.screen);
-                    this.screen = utils.universalMount(NewScreenView, options, this.$el, this);
-                    this.$el.hide().fadeIn('fast');
-                    var newScrollPosition = this.screen.keepScrollPosition && this.scrollPositions[this.screen.constructorName || this.screen.displayName];
-                    if (newScrollPosition) $(window).scrollTop(newScrollPosition);
+                    this.mountScreen(NewScreenView, options).then(_.bind(function() {
+                        this.$el.hide().fadeIn('fast');
+                        var newScrollPosition = this.screen.keepScrollPosition && this.scrollPositions[this.screen.constructorName || this.screen.displayName];
+                        if (newScrollPosition) $(window).scrollTop(newScrollPosition);
+                    }, this));
                 }, this));
             } else {
-                this.screen = utils.universalMount(NewScreenView, options, this.$el, this);
+                this.mountScreen(NewScreenView, options);
             }
+        },
+        mountScreen: function(NewScreenView, options) {
+            return (NewScreenView.fetchData ? NewScreenView.fetchData(options) : $.Deferred().resolve()).done(_.bind(function(fetched) {
+                _.assign(options, fetched);
+                this.screen = utils.universalMount(NewScreenView.screen || NewScreenView, options, this.$el, this);
+            }, this));
         },
         beforeTearDown: function() {
             if (this.screen) utils.universalUnmount(this.screen);

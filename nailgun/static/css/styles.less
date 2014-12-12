@@ -2647,6 +2647,9 @@ hr.slim {
   padding: 8px 15px;
   label {
     margin: 0;
+    .label-wrapper {
+      margin-top: 5px;
+    }
   }
 }
 
@@ -2733,6 +2736,11 @@ hr.slim {
   margin: 2px 0px 0px 20px;
   > b {
     color: @font-color-base;
+  }
+  .parameter-name .label-wrapper {
+    min-width: 60px;
+    float: left;
+    margin-top: 0px;
   }
   select {
     width: 160px;
@@ -3747,4 +3755,8 @@ i.btn-cluster-details {
   .box-sizing-mixin;
   p { margin-bottom: 10px; }
   ul { margin-bottom: 20px; }
+}
+
+.ui-sortable-placeholder {
+  display: none;
 }

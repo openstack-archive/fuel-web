@@ -109,7 +109,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         renderLabel: function(children) {
             var labelClasses = {
                     'parameter-name': true,
-                    'input-append': this.props.toggleable
+                    'input-append': this.props.toggleable,
+                    disabled: this.props.disabled
                 },
                 labelWrapperClasses = {
                     'label-wrapper': true

@@ -167,13 +167,14 @@ class StatsSender(object):
 
     def must_send_stats(self):
         try:
-            stat_settings = objects.MasterNodeSettings.get_one(). \
-                settings.get("statistics", {})
+            stat_settings = getattr(
+                objects.MasterNodeSettings.get_one(), "settings", {}
+            ).get("statistics", {})
             return stat_settings.get("user_choice_saved", {}).\
                 get("value", False) and \
                 stat_settings.get("send_anonymous_statistic", {}). \
                 get("value", False)
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             logger.exception(
                 "Get statistics settings failed: %s", six.text_type(e))
             return False
@@ -184,21 +185,25 @@ class StatsSender(object):
             return randint(int(medium * 0.9), int(medium * 1.1))
 
         while True:
-            if self.must_send_stats():
-                if self.ping_collector():
-                    self.send_action_log()
-                    self.send_installation_info()
-                    time.sleep(dithered(settings.STATS_SEND_INTERVAL))
+            try:
+                if self.must_send_stats():
+                    if self.ping_collector():
+                        self.send_action_log()
+                        self.send_installation_info()
+                        time.sleep(dithered(settings.STATS_SEND_INTERVAL))
+                    else:
+                        time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))
                 else:
-                    time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))
-            else:
-                time.sleep(dithered(settings.STATS_ENABLE_CHECK_INTERVAL))
+                    time.sleep(dithered(settings.STATS_ENABLE_CHECK_INTERVAL))
+            except Exception as e:
+                logger.error("Stats sender exception: %s", six.text_type(e))
+            finally:
+                db.remove()
 
 
 def run():
     logger.info("Starting standalone stats sender...")
     try:
         StatsSender().run()
-    except (KeyboardInterrupt, SystemExit) as e:
-        logger.error("Stats sender exception: %s", six.text_type(e))
-    logger.info("Stopping standalone stats sender...")
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Stopping standalone stats sender...")

@@ -46,7 +46,6 @@
 @fuel-smoke: #7789a0;
 @fuel-blue-smoke: #afbdd2;
 
-
 /* body colors */
 @color-body-background: #39444f;
 @color-body-background-gradient1: rgba(128, 134, 143, 0.3);
@@ -944,6 +943,12 @@ label {cursor: default;}
     margin-bottom: 10px;
   }
   .role-container {
+    &.disabled {
+      color: greyscale(@fuel-smoke);
+      .role-description {
+        color: greyscale(@fuel-smoke);
+      }
+    }
     .indent-mixin;
     margin-bottom: 5px;
     clear: both;

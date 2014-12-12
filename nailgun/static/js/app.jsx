@@ -21,6 +21,7 @@ define(
     'i18n',
     'backbone',
     'react',
+    'react-router',
     'utils',
     'jsx!views/layout',
     'coccyx',
@@ -45,7 +46,7 @@ define(
     'less!/static/css/styles'
 
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, Router, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -61,9 +62,72 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             capacity: 'showCapacityPage',
             '*default': 'default'
         },
-        initialize: function() {
-            window.app = this;
+        renderLayout: function() {
+            this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
+        },
+        loadPage: function(Page, options) {
+            return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
+                this.setPage(Page, pageOptions);
+            }, this));
+        },
+        setPage: function(Page, options) {
+            this.page = this.rootComponent.setPage(Page, options);
+        },
+        // pre-route hook
+        before: function(currentUrl) {
+            var preventRouting = false;
+            var specialRoutes = [
+                {url: 'login', condition: function() {
+                    return app.version.get('auth_required') && !app.user.get('authenticated');
+                }},
+                {url: 'welcome', condition: function() {
+                    return !app.settings.get('statistics.user_choice_saved.value');
+                }}
+            ];
+            _.each(specialRoutes, function(route) {
+                if (route.condition()) {
+                    if (currentUrl != route.url) {
+                        preventRouting = true;
+                        this.navigate(route.url, {trigger: true, replace: true});
+                    }
+                    return false;
+                } else if (currentUrl == route.url) {
+                    preventRouting = true;
+                    this.navigate('', {trigger: true});
+                    return false;
+                }
+            }, this);
+            return !preventRouting;
+        },
+        logout: function() {
+            if (this.user.get('authenticated') && this.version.get('auth_required')) {
+                this.user.set('authenticated', false);
+                this.user.unset('username');
+                this.user.unset('token');
 
+                this.keystoneClient.deauthenticate();
+            }
+
+            _.defer(function() {
+                app.navigate('login', {trigger: true, replace: true});
+            });
+        }
+    });
+
+    function App() {
+        //var Route = Router.Route, DefaultRoute = Router.DefaultRoute;
+        //var routes = (
+        //    <Route name="index" path="/" handler={Layout}>
+        //        <Route name="support" path="/support" handler={SupportPage} />
+        //        <DefaultRoute handler={SupportPage} />
+        //    </Route>
+        //);
+        //Router.run(routes, function(Handler, state) {
+        //    React.render(<Handler />, document.body);
+        //});
+    }
+    _.extend(App.prototype, {
+        initialize: function() {
             if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
                 $('body').addClass('safari');
             }
@@ -164,90 +228,10 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
                 this.renderLayout();
                 Backbone.history.start();
             }, this));
-        },
-        renderLayout: function() {
-            this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
-        },
-        loadPage: function(Page, options) {
-            return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
-                this.setPage(Page, pageOptions);
-            }, this));
-        },
-        setPage: function(Page, options) {
-            this.page = this.rootComponent.setPage(Page, options);
-        },
-        // pre-route hook
-        before: function(currentUrl) {
-            var preventRouting = false;
-            var specialRoutes = [
-                {url: 'login', condition: function() {
-                    return app.version.get('auth_required') && !app.user.get('authenticated');
-                }},
-                {url: 'welcome', condition: function() {
-                    return !app.settings.get('statistics.user_choice_saved.value');
-                }}
-            ];
-            _.each(specialRoutes, function(route) {
-                if (route.condition()) {
-                    if (currentUrl != route.url) {
-                        preventRouting = true;
-                        this.navigate(route.url, {trigger: true, replace: true});
-                    }
-                    return false;
-                } else if (currentUrl == route.url) {
-                    preventRouting = true;
-                    this.navigate('', {trigger: true});
-                    return false;
-                }
-            }, this);
-            return !preventRouting;
-        },
-        // routes
-        default: function() {
-            this.navigate('clusters', {trigger: true, replace: true});
-        },
-        login: function() {
-            this.loadPage(LoginPage);
-        },
-        logout: function() {
-            if (this.user.get('authenticated') && this.version.get('auth_required')) {
-                this.user.set('authenticated', false);
-                this.user.unset('username');
-                this.user.unset('token');
-
-                this.keystoneClient.deauthenticate();
-            }
-
-            _.defer(function() {
-                app.navigate('login', {trigger: true, replace: true});
-            });
-        },
-        welcome: function() {
-            this.loadPage(WelcomePage);
-        },
-        showCluster: function() {
-            this.loadPage(ClusterPage, arguments).fail(_.bind(this.default, this));
-        },
-        listClusters: function() {
-            this.loadPage(ClustersPage);
-        },
-        listReleases: function() {
-            this.loadPage(ReleasesPage);
-        },
-        showNotifications: function() {
-            this.loadPage(NotificationsPage);
-        },
-        showSupportPage: function() {
-            this.loadPage(SupportPage);
-        },
-        showCapacityPage: function() {
-            this.loadPage(CapacityPage);
         }
     });
 
-    return {
-        initialize: function() {
-            return new AppRouter();
-        }
-    };
+    var app = window.app = new App();
+
+    return app;
 });

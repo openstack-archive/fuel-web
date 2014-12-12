@@ -35,6 +35,7 @@ define(function() {
             react: 'js/libs/bower/react/js/react-with-addons',
             JSXTransformer: 'js/libs/bower/react/js/JSXTransformer',
             jsx: 'js/libs/bower/jsx-requirejs-plugin/jsx',
+            'react-router': 'js/libs/bower/react-router/react-router',
             'react.backbone': 'js/libs/custom/react.backbone',
             stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
             coccyx: 'js/libs/custom/coccyx',
@@ -59,6 +60,9 @@ define(function() {
             controls: 'js/views/controls'
         },
         shim: {
+            'react-router': {
+                deps: ['js/react_router_shim']
+            },
             'expression/parser': {
                 exports: 'parser'
             },

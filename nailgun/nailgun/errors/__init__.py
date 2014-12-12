@@ -52,6 +52,10 @@ default_messages = {
     "CannotFindPluginForRelease": "Cannot find plugin for the release",
     "UnavailableRelease": "Release is unavailable",
 
+    # mongo errors
+    "ExtMongoCheckerError": "Mongo nodes shouldn`t be used with external mongo",
+    "MongoNodesCheckError": "Mongo nodes have to be present if ceilometer is chosen",
+
     # disk errors
     "NotEnoughFreeSpace": "Not enough free space",
     "NotEnoughOsdNodes": "Not enough OSD nodes",

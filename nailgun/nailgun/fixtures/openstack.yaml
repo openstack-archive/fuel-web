@@ -1112,7 +1112,9 @@
           label: "dialog.create_cluster_wizard.compute.vcenter_ip"
           description: "dialog.create_cluster_wizard.compute.vcenter_ip_description"
           weight: 10
-          bind: "settings:vcenter.host_ip.value"
+          bind:
+            - "settings:vcenter.host_ip.value"
+            - "settings:storage.vc_host.value"
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"
@@ -1125,7 +1127,9 @@
           label: "dialog.create_cluster_wizard.compute.vcenter_username"
           description: "dialog.create_cluster_wizard.compute.vcenter_username_description"
           weight: 20
-          bind: "settings:vcenter.vc_user.value"
+          bind:
+            - "settings:vcenter.vc_user.value"
+            - "settings:storage.vc_user.value"
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"
@@ -1138,7 +1142,9 @@
           label: "dialog.create_cluster_wizard.compute.vcenter_password"
           description: "dialog.create_cluster_wizard.compute.vcenter_password_description"
           weight: 30
-          bind: "settings:vcenter.vc_password.value"
+          bind:
+            - "settings:vcenter.vc_password.value"
+            - "settings:storage.vc_password.value"
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"

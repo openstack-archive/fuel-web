@@ -642,10 +642,10 @@ define([
                 return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
             });
         },
-        validate: function() {
+        validate: function(attrs) {
             var errors = [];
-            var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork'));
-            var untaggedNetworks = networks.filter(function(network) {return _.isNull(network.getVlanRange());});
+            var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork', attrs.networks));
+            var untaggedNetworks = networks.filter(function(network) { return _.isNull(network.getVlanRange(attrs.networkingParameters)); });
             // public and floating networks are allowed to be assigned to the same interface
             var maxUntaggedNetworksCount = networks.where({name: 'public'}).length && networks.where({name: 'floating'}).length ? 2 : 1;
             if (untaggedNetworks.length > maxUntaggedNetworksCount) {
@@ -673,7 +673,10 @@ define([
     });
 
     models.InterfaceNetwork = BaseModel.extend({
-        constructorName: 'InterfaceNetwork'
+        constructorName: 'InterfaceNetwork',
+        getFullNetwork: function(networks) {
+            return networks.findWhere({name: this.get('name')});
+        }
     });
 
     models.InterfaceNetworks = BaseCollection.extend({
@@ -686,7 +689,15 @@ define([
     });
 
     models.Network = BaseModel.extend({
-        constructorName: 'Network'
+        constructorName: 'Network',
+        getVlanRange: function(networkingParameters) {
+            if (!this.get('meta').neutron_vlan_range) {
+                var externalNetworkData = this.get('meta').ext_net_data;
+                var vlanStart = externalNetworkData ? networkingParameters.get(externalNetworkData[0]) : this.get('vlan_start');
+                return _.isNull(vlanStart) ? vlanStart : [vlanStart, externalNetworkData ? vlanStart + networkingParameters.get(externalNetworkData[1]) - 1 : vlanStart];
+            }
+            return networkingParameters.get('vlan_range');
+        }
     });
 
     models.Networks = BaseCollection.extend({

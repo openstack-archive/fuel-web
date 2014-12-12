@@ -28,7 +28,7 @@ define(['react', 'backbone', 'utils'], function(React, Backbone, utils) {
             this.setState({view: view});
         },
         componentWillUnmount: function() {
-            this.state.view.tearDown();
+            this.state && this.state.view && this.state.view.tearDown();
         },
         render: function() {
             return React.createElement(this.props.wrapperElement, {ref: 'wrapper'});
@@ -36,11 +36,15 @@ define(['react', 'backbone', 'utils'], function(React, Backbone, utils) {
     });
 
     function BackboneViewWrapper(View) {
-        return React.createClass({
+        var ret = React.createClass({
             render: function() {
                 return <BackboneViewWrapperClass ref='wrapper' {...this.props} View={View} />;
             }
         });
+
+        ret.fetchData = View.fetchData;
+
+        return ret;
     }
 
     return BackboneViewWrapper;

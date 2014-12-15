@@ -150,7 +150,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     'parameter-box': true,
                     'checkbox-or-radio': isCheckboxOrRadio,
                     clearfix: !isCheckboxOrRadio,
-                    'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error)
+                    'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
+                    disabled: this.props.disabled
                 };
             classes[this.props.wrapperClassName] = this.props.wrapperClassName;
             return (<div className={cx(classes)}>{children}</div>);

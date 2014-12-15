@@ -87,6 +87,10 @@ define([
         getError: function(name) {
             return this.props.settings.validationError && this.props.settings.validationError[this.props.settings.makePath('statistics', name)];
         },
+        getText: function(key) {
+            if (_.contains(app.version.get('feature_groups'), 'mirantis')) return $.t(key);
+            return $.t(key + '_community');
+        },
         renderInput: function(settingName, labelClassName, wrapperClassName, hideErrors) {
             if (this.checkRestrictions('metadata', 'hide') || this.checkRestrictions(settingName, 'hide')) return null;
             var setting = this.props.settings.get(this.props.settings.makePath('statistics', settingName)),
@@ -96,7 +100,7 @@ define([
                 key={settingName}
                 type={setting.type}
                 name={settingName}
-                label={setting.label && $.t(setting.label)}
+                label={setting.label && this.getText(setting.label)}
                 checked={!disabled && setting.value}
                 value={setting.value}
                 disabled={disabled}
@@ -121,6 +125,8 @@ define([
         },
         renderIntro: function() {
             var ns = 'statistics.',
+                isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
+                statsCollectorLink = 'https://stats.fuel-infra.org/',
                 lists = {
                     actions: [
                         'operation_type',
@@ -158,15 +164,22 @@ define([
             return (
                 <div>
                     <div className='statistics-text-box'>
-                        <p>{$.t(ns + 'help_to_improve')}</p>
+                        <p>{this.getText(ns + 'help_to_improve')}</p>
                         <p>
                             {$.t(ns + 'statistics_includes')}
                             <a onClick={this.toggleItemsList}>{$.t(ns + 'click_here')}</a>.
                         </p>
-                        <p>
-                            {$.t(ns + 'privacy_policy')}
-                            <a href='https://www.mirantis.com/company/privacy-policy/' target='_blank'>{$.t(ns + 'privacy_policy_link')}</a>.
-                        </p>
+                        {isMirantisIso ?
+                            <p>
+                                {$.t(ns + 'privacy_policy')}
+                                <a href='https://www.mirantis.com/company/privacy-policy/' target='_blank'>{$.t(ns + 'privacy_policy_link')}</a>.
+                            </p>
+                        :
+                            <p>
+                                {$.t(ns + 'statistics_collector')}
+                                <a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a>.
+                            </p>
+                        }
                     </div>
                     {this.state.showItems &&
                         <div className='statistics-disclaimer-box'>

@@ -81,10 +81,12 @@
             },
             "statistics": {
                 "help_to_improve": "Help us to improve your experience by sending Mirantis information about the settings, features, and deployment actions when you use Mirantis OpenStack.",
+                "help_to_improve_community": "Help us to improve your experience by sending information about the settings, features, and deployment actions when you use Fuel and OpenStack.",
                 "statistics_includes": "Usage statistics include information such as settings, button/menu clicks, hardware configuration, and version information.  The usage statistics do not include information such as passwords, ip addresses, or node names. For a complete list of statistics that we gather, ",
                 "click_here": "click here",
                 "privacy_policy": "Mirantis’ privacy policy (\"Privacy Policy\") describes our practices regarding the information we collect on the Mirantis web sites and through the use of our products and services, and how it is used and shared with third parties. You can read the policy ",
                 "privacy_policy_link": "here",
+                "statistics_collector": "Web UI for collected statistics is under development and will be available at ",
                 "statistics_includes_full": "Usage statistics include the following. Information such as passwords, ip addresses, and node names are not included.",
                 "actions_title": "Actions:",
                 "actions": {
@@ -124,6 +126,7 @@
                 },
                 "setting_labels": {
                     "send_anonymous_statistic": "Send usage statistics to Mirantis",
+                    "send_anonymous_statistic_community": "Send usage statistics",
                     "send_user_info": "Identify my error reports so that Mirantis Support can assist me",
                     "name": "Name",
                     "email": "Email",
@@ -137,11 +140,13 @@
             },
             "welcome_page": {
                 "title": "Welcome to Mirantis OpenStack",
+                "title_community": "Welcome to Fuel and OpenStack",
                 "support": "Our support team can optionally use your error reports to assist you.",
                 "provide_contacts": "Please provide your contact information below.",
                 "start_fuel": "Start Using Fuel",
                 "change_settings": "You can change your settings at any time by updating your user profile information.",
                 "thanks": "Thanks for helping to improve Mirantis OpenStack!",
+                "thanks_community": "Thanks for helping to improve Fuel and OpenStack!",
                 "register_trial": {
                     "register_installation": "Register your installation and get free support!",
                     "register_now": "Ensure that you receive important notifications about issues and updates. Register now and you will receive complimentary access to our basic support services for the next 30 days.",

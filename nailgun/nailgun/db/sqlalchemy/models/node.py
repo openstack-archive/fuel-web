@@ -329,6 +329,8 @@ class NodeNICInterface(Base):
     netmask = Column(String(25))
     state = Column(String(25))
     parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
+    driver = Column(String(25))
+    bus_info = Column(String(25))
 
     @property
     def type(self):

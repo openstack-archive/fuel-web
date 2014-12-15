@@ -871,6 +871,62 @@ class NeutronNetworkDeploymentSerializer60(
         return attrs
 
 
+class NeutronNetworkDeploymentSerializer61(
+    NeutronNetworkDeploymentSerializer60
+):
+
+    @classmethod
+    def generate_network_scheme(cls, node):
+        network_scheme = super(NeutronNetworkDeploymentSerializer61, cls). \
+            generate_network_scheme(node)
+
+        network_mapping = network_scheme.get('roles', {})
+        endpoints = network_scheme.get('endpoints', {})
+        bonds_map = dict((b.name, b) for b in node.bond_interfaces)
+        net_name_mapping = {'ex': 'public', 'fw-admin': 'fuelweb_admin'}
+        managed_networks = ['public', 'fuelweb_admin', 'storage', 'management']
+        iface_types = consts.NETWORK_INTERFACE_TYPES
+        nm = objects.Node.get_network_manager(node)
+
+        # Add drivers data
+        for iface in node.interfaces:
+            if iface.type == iface_types.ether:
+                network_scheme['interfaces'][iface.name]['vendor_specific'] = \
+                    {'driver': iface.driver,
+                     'bus_info': iface.bus_info}
+
+        for ngname, brname in network_mapping.items():
+            if ngname in net_name_mapping:
+                ngname = net_name_mapping[ngname]
+            if ngname not in managed_networks:
+                continue
+            endpoints[brname]['vendor_specific'] = {}
+            nm = objects.Node.get_network_manager(node)
+            netgroup = nm.get_node_network_by_netname(node, ngname)
+            ep_dict = endpoints[brname]['vendor_specific']
+            if netgroup['dev'] in bonds_map.keys():
+                ep_dict['phy_interfaces'] = \
+                    [s['name'] for s in bonds_map[netgroup['dev']].slaves]
+            else:
+                ep_dict['phy_interfaces'] = [netgroup['dev']]
+            if netgroup['vlan'] > 1:
+                ep_dict['vlans'] = netgroup['vlan']
+
+        if node.cluster.network_config.segmentation_type == 'vlan':
+            endpoints[network_mapping['private']] = {}
+            join_range = lambda r: (":".join(map(str, r)) if r else None)
+            netgroup = nm.get_node_network_by_netname(node, 'private')
+            if netgroup['dev'] in bonds_map.keys():
+                phys = [s['name'] for s in bonds_map[netgroup['dev']].slaves]
+            else:
+                phys = [netgroup['dev']]
+            endpoints[network_mapping['private']]['vendor_specific'] = \
+                {'phy_interfaces': phys,
+                 'vlans': join_range(node.cluster.network_config.vlan_range)}
+
+        return network_scheme
+
+
 class GraphBasedSerializer(object):
 
     def __init__(self, graph):
@@ -1239,7 +1295,7 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
                                       VmwareDeploymentSerializerMixin):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer61
 
     def serialize_node(self, node, role):
         serialized_node = super(
@@ -1262,7 +1318,7 @@ class DeploymentHASerializer61(DeploymentHASerializer,
                                VmwareDeploymentSerializerMixin):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer61
 
     def serialize_node(self, node, role):
         serialized_node = super(

@@ -17,33 +17,13 @@
 //>>excludeStart("compressed", pragmas.compressed);
 require(['./config'], function(config) {
     'use strict';
+//>>excludeEnd("compressed");
+    requirejs.config({baseUrl: 'static'});
+//>>excludeStart("compressed", pragmas.compressed);
     requirejs.config(config);
 //>>excludeEnd("compressed");
-    require([
-        'jquery',
-        'underscore',
-        'backbone',
-        'stickit',
-        'coccyx',
-        'react',
-        'react.backbone',
-        'cocktail',
-        'routefilter',
-        'i18next',
-        'bootstrap',
-        'jquery-cookie',
-        'jquery-checkbox',
-        'jquery-timeout',
-        'jquery-ui',
-        'jquery-autoNumeric',
-        'text',
-//>>excludeStart("compressed", pragmas.compressed);
-        'jsx',
-//>>excludeEnd("compressed");
-        'less!/static/css/styles',
-        'app'
-    ], function() {
-        require('app').initialize();
+    require(['app'], function(app) {
+        app.initialize();
     });
 //>>excludeStart("compressed", pragmas.compressed);
 });

@@ -16,6 +16,9 @@
 
 define(
 [
+    'jquery',
+    'underscore',
+    'backbone',
     'react',
     'utils',
     'jsx!views/layout',
@@ -32,9 +35,27 @@ define(
     'jsx!views/releases_page',
     'jsx!views/notifications_page',
     'jsx!views/support_page',
-    'jsx!views/capacity_page'
+    'jsx!views/capacity_page',
+    //
+    'stickit',
+    'coccyx',
+    'react.backbone',
+    'cocktail',
+    'routefilter',
+    'i18next',
+    'bootstrap',
+    'jquery-cookie',
+    'jquery-checkbox',
+    'jquery-timeout',
+    'jquery-ui',
+    'jquery-autoNumeric',
+//>>excludeStart("compressed", pragmas.compressed);
+    'jsx',
+//>>excludeEnd("compressed");
+    'less!/static/css/styles'
+
 ],
-function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({

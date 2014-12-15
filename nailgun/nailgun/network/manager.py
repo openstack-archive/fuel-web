@@ -431,6 +431,8 @@ class NetworkManager(object):
                 "max_speed": nic.max_speed,
                 "current_speed": nic.current_speed,
                 "type": nic.type,
+                "driver": nic.driver,
+                "bus_info": nic.bus_info,
             }
 
             if to_assign_ids:
@@ -765,6 +767,8 @@ class NetworkManager(object):
         interface.ip_addr = interface_attrs.get('ip')
         interface.netmask = interface_attrs.get('netmask')
         interface.state = interface_attrs.get('state')
+        interface.driver = interface_attrs.get('driver')
+        interface.bus_info = interface_attrs.get('bus_info')
         if interface_attrs.get('interface_properties'):
             interface.interface_properties = \
                 interface_attrs['interface_properties']

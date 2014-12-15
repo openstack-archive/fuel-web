@@ -330,6 +330,8 @@ class NodeNICInterface(Base):
     state = Column(String(25))
     interface_properties = Column(JSON, default={}, nullable=False)
     parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
+    driver = Column(String(25))
+    bus_info = Column(String(25))
 
     @property
     def type(self):

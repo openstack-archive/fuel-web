@@ -31,7 +31,7 @@ function($, React, models, statisticsMixin) {
         breadcrumbsPath: [],
         hiddenLayout: true,
         title: function() {
-            return $.t('welcome_page.title');
+            return this.getText('welcome_page.title');
         },
         getInitialState: function() {
             return {fuelKey: new models.FuelKey()};
@@ -50,21 +50,20 @@ function($, React, models, statisticsMixin) {
             if (this.state.loading) return null;
             var ns = 'welcome_page.',
                 contacts = ['name', 'email', 'company'],
-                error = _.compact(_.map(contacts, this.getError, this))[0];
+                error = _.compact(_.map(contacts, this.getError, this))[0],
+                isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
             return (
                 <div className='welcome-page'>
                     <div>
-                        <h2 className='center'>{$.t(ns + 'title')}</h2>
+                        <h2 className='center'>{this.getText(ns + 'title')}</h2>
                         <RegisterTrial fuelKey={this.state.fuelKey} />
                         {this.renderIntro()}
                         {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
-                        {_.contains(app.version.get('feature_groups'), 'mirantis') &&
-                            <div className='welcome-text-box center'>{$.t(ns + 'support')}</div>
-                        }
+                        {isMirantisIso && <div className='welcome-text-box'>{$.t(ns + 'support')}</div>}
                         {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
                         <form className='form-horizontal'>
                             {this.props.settings.get('statistics').send_user_info.value &&
-                                <div className='welcome-text-box center'>{$.t(ns + 'provide_contacts')}</div>
+                                <div className='welcome-text-box'>{$.t(ns + 'provide_contacts')}</div>
                             }
                             { _.map(contacts, function(settingName) {
                                 return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box', true);
@@ -78,12 +77,8 @@ function($, React, models, statisticsMixin) {
                                 </button>
                             </div>
                         </form>
-                        <div className='welcome-text-box'>
-                            <p className='center'>
-                                {$.t(ns + 'change_settings')}<br/>
-                                {$.t(ns + 'thanks')}
-                            </p>
-                        </div>
+                        {isMirantisIso && <div className='welcome-text-box'>{$.t(ns + 'change_settings')}</div>}
+                        <div className='welcome-text-box'>{this.getText(ns + 'thanks')}</div>
                     </div>
                 </div>
             );

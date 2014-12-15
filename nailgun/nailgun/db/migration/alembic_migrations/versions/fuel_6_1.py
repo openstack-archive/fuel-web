@@ -135,6 +135,12 @@ def upgrade_schema():
         'clusters',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
     op.add_column(
+        'node_nic_interfaces',
+        sa.Column('driver', sa.Text(), nullable=True))
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('bus_info', sa.Text(), nullable=True))
+    op.add_column(
         'releases',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
     op.add_column(
@@ -338,6 +344,8 @@ def downgrade_schema():
     op.drop_table('vmware_attributes')
     op.drop_column('releases', 'vmware_attributes_metadata')
     op.drop_column('clusters', 'deployment_tasks')
+    op.drop_column('node_nic_interfaces', 'driver')
+    op.drop_column('node_nic_interfaces', 'bus_info')
     op.drop_column('releases', 'deployment_tasks')
     op.drop_constraint('node_roles_node_fkey', 'node_roles')
     op.create_foreign_key(

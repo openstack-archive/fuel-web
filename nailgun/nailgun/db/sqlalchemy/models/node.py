@@ -331,6 +331,8 @@ class NodeNICInterface(Base):
     interface_properties = Column(JSON, default={}, nullable=False,
                                   server_default='{}')
     parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
+    driver = Column(Text)
+    bus_info = Column(Text)
 
     @property
     def type(self):

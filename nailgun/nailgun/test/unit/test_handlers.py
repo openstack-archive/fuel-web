@@ -14,9 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+
 import web
 
+from mock import patch
+
 from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.base import content
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -35,9 +40,17 @@ class TestHandlers(BaseIntegrationTest):
             self.assertTrue(resp.status_code in [404, 405])
             resp = self.app.delete(test_url, expect_errors=True)
             self.assertTrue(resp.status_code in [404, 405])
-            resp = self.app.put(test_url, expect_errors=True)
+            resp = self.app.put(
+                test_url,
+                json.dumps({}),
+                expect_errors=True
+            )
             self.assertTrue(resp.status_code in [404, 405])
-            resp = self.app.post(test_url, expect_errors=True)
+            resp = self.app.post(
+                test_url,
+                json.dumps({}),
+                expect_errors=True
+            )
             self.assertTrue(resp.status_code in [404, 405])
 
     def test_http_response(self):
@@ -76,3 +89,52 @@ class TestHandlers(BaseIntegrationTest):
 
             for header, value in headers.items():
                 self.assertIn((header, value), web.ctx.headers)
+
+    def test_content_decorator(self):
+
+        class FakeHandler(object):
+
+            @content
+            def GET(self):
+                return {}
+
+            @content(["text/plain"])
+            def POST(self):
+                return "Plain Text"
+
+        web.ctx.headers = []
+        web.ctx.env = {"HTTP_ACCEPT": "text/html"}
+
+        fake_handler = FakeHandler()
+        self.assertRaises(
+            web.webapi.UnsupportedMediaType,
+            fake_handler.GET
+        )
+
+        web.ctx.env = {"HTTP_ACCEPT": "application/json"}
+
+        with patch("nailgun.api.v1.handlers.base.content_json") as cj:
+            fake_handler.GET()
+            self.assertEqual(cj.call_count, 1)
+
+        web.ctx.env = {"HTTP_ACCEPT": "*/*"}
+
+        with patch("nailgun.api.v1.handlers.base.content_json") as cj:
+            fake_handler.GET()
+            self.assertEqual(cj.call_count, 1)
+
+        web.ctx.headers = []
+        fake_handler.GET()
+        self.assertIn(
+            ('Content-Type', 'application/json'),
+            web.ctx.headers
+        )
+
+        web.ctx.headers = []
+        web.ctx.env = {"HTTP_ACCEPT": "text/plain"}
+        fake_handler.POST()
+        self.assertIn(
+            # we don't have plain/text serializer right now
+            ('Content-Type', 'application/json'),
+            web.ctx.headers
+        )

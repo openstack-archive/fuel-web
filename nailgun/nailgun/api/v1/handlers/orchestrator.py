@@ -19,7 +19,7 @@ import traceback
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
 from nailgun.logger import logger
@@ -66,7 +66,7 @@ class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
     Need to redefine serializer variable
     """
 
-    @content_json
+    @content
     def GET(self, cluster_id):
         """:returns: JSONized default data which will be passed to orchestrator
         :http: * 200 (OK)
@@ -96,7 +96,7 @@ class OrchestratorInfo(BaseHandler):
         """
         raise NotImplementedError('Please Implement this method')
 
-    @content_json
+    @content
     def GET(self, cluster_id):
         """:returns: JSONized data which will be passed to orchestrator
         :http: * 200 (OK)
@@ -105,7 +105,7 @@ class OrchestratorInfo(BaseHandler):
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return self.get_orchestrator_info(cluster)
 
-    @content_json
+    @content
     def PUT(self, cluster_id):
         """:returns: JSONized data which will be passed to orchestrator
         :http: * 200 (OK)
@@ -120,7 +120,7 @@ class OrchestratorInfo(BaseHandler):
                      .format(cluster_id))
         return data
 
-    @content_json
+    @content
     def DELETE(self, cluster_id):
         """:returns: {}
         :http: * 202 (orchestrator data deletion process launched)
@@ -192,7 +192,7 @@ class DeploymentInfo(OrchestratorInfo):
 class SelectedNodesBase(NodesFilterMixin, BaseHandler):
     """Base class for running task manager on selected nodes."""
 
-    @content_json
+    @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 200 (task successfully executed)

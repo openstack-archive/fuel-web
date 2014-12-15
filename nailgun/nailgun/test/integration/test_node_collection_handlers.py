@@ -404,7 +404,6 @@ class TestHandlers(BaseIntegrationTest):
                 headers=self.default_headers,
                 expect_errors=(http_code != 201)
             )
-
             self.assertEqual(response.status_code, http_code)
 
     def test_node_update_ext_mac(self):

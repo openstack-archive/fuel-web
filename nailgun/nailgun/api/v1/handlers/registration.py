@@ -22,7 +22,7 @@ import base64
 
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content_json
+from nailgun.api.v1.handlers.base import content
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 
@@ -30,7 +30,7 @@ from nailgun.settings import settings
 class FuelKeyHandler(BaseHandler):
     """ Fuel key handler"""
 
-    @content_json
+    @content
     def GET(self):
         """Returns Fuel Key data
         :returns: base64 of FUEL commit SHA, release version and Fuel UUID.

@@ -56,7 +56,9 @@ class NodeInterfacesSerializer(BasicSerializer):
         'state',
         'current_speed',
         'max_speed',
-        'assigned_networks'
+        'assigned_networks',
+        'driver',
+        'bus_info',
     )
     bond_fields = (
         'mac',

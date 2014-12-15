@@ -17,6 +17,8 @@
 import copy
 from operator import attrgetter
 from operator import itemgetter
+from random import choice
+from random import randint
 import re
 
 import mock
@@ -1696,6 +1698,94 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
             self.serializer.generate_test_vm_image_data(
                 self.env.nodes[0])['test_vm_image'][0]['img_path'],
             img_path)
+
+    def _create_cluster_for_interfaces(self, driver_mapping={},
+                                       bus_mapping={},
+                                       segment_type='gre'):
+        #self.env.refresh_nodes()
+        meta = {
+            'interfaces': [
+                {'name': 'eth0', 'mac': self.env.generate_random_mac(),
+                 'driver': driver_mapping.get('eth0', 'igb'),
+                 'bus_info': bus_mapping.get('eth0', '0000:05:00.0')},
+                {'name': 'eth1', 'mac': self.env.generate_random_mac(),
+                 'driver': driver_mapping.get('eth1', 'mlx4_en'),
+                 'bus_info': bus_mapping.get('eth1', '0000:06:00.0')}
+            ]
+        }
+        cluster = self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': segment_type
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True,
+                 'meta': meta}
+            ]
+        )
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        return cluster_db
+
+    def test_interface_driver_bus_info(self):
+        interface_drivers = ['igb', 'mlx4_en', 'eth_ipoib', 'e100']
+        driver_mapping = {'eth0': choice(interface_drivers),
+                          'eth1': choice(interface_drivers)}
+        bus_mapping = {'eth0': choice(['0000:%02d:00.0' %
+                                      randint(0, 99), 'ib0']),
+                       'eth1': choice(['0000:%02d:00.0' %
+                                      randint(0, 99), 'ib0'])}
+        cluster = \
+            self._create_cluster_for_interfaces(driver_mapping, bus_mapping)
+        self.db.commit()
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        node = self.serializer.serialize_node(cluster_db.nodes[0],
+                                              'controller')
+        interfaces = node['network_scheme']['interfaces']
+        for iface, iface_attrs in interfaces.items():
+            self.assertIn('vendor_specific', iface_attrs)
+            self.assertIn('driver', iface_attrs['vendor_specific'])
+            self.assertEqual(iface_attrs['vendor_specific']['driver'],
+                             driver_mapping[iface])
+            self.assertIn('bus_info', iface_attrs['vendor_specific'])
+            self.assertEqual(iface_attrs['vendor_specific']['bus_info'],
+                             bus_mapping[iface])
+
+    def test_interface_mapping(self):
+        cluster = self._create_cluster_for_interfaces(segment_type='vlan')
+        network_group = self.db().query(NetworkGroup)
+        storage_vlan = randint(0, 4095)
+        management_vlan = randint(0, 4095)
+        private_vlan_range = [randint(0, 4095), randint(0, 4095)]
+        vlan_mapping = {'storage': storage_vlan,
+                        'management': management_vlan,
+                        'private': "%s:%s" % (private_vlan_range[0],
+                                              private_vlan_range[1])}
+        cluster.network_config["vlan_range"] = private_vlan_range
+        storage = network_group.filter_by(name="storage")
+        storage.update(
+            {"vlan_start": storage_vlan}, synchronize_session="fetch")
+        management = network_group.filter_by(name="management")
+        management.update(
+            {"vlan_start": management_vlan}, synchronize_session="fetch")
+        self.db.commit()
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        node = self.serializer.serialize_node(cluster_db.nodes[0],
+                                              'controller')
+        endpoints = node['network_scheme']['endpoints']
+        net_roles = node['network_scheme']['roles']
+        for net_role, bridge in net_roles.items():
+            ep_dict = endpoints[bridge]
+            self.assertIn('vendor_specific', ep_dict.keys())
+            self.assertIn('phy_interfaces', ep_dict['vendor_specific'].keys())
+            if net_role in vlan_mapping.keys():
+                self.assertIn('vlans', ep_dict['vendor_specific'].keys())
+                self.assertEqual(ep_dict['vendor_specific']['vlans'],
+                                 vlan_mapping[net_role])
+            else:
+                self.assertNotIn('vlans', ep_dict['vendor_specific'].keys())
 
     def check_generate_vmware_attributes_data(self):
         cluster_db = self.db.query(Cluster).get(self.cluster['id'])

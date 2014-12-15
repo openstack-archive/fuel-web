@@ -17,6 +17,8 @@
 import copy
 from operator import attrgetter
 from operator import itemgetter
+from random import choice
+from random import randint
 import re
 
 import mock
@@ -1053,6 +1055,55 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         cluster_db = self.db.query(Cluster).get(cluster['id'])
         objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
+
+    def test_interface_driver_bus_info(self):
+        cluster = self._create_cluster_for_vlan_splinters()
+        cluster_id = cluster.id
+        interface_drivers = ['igb', 'mlx4_en', 'eth_ipoib', 'e100']
+        for node in cluster.nodes:
+            for nic in node.nic_interfaces:
+                nic.driver = choice(interface_drivers)
+                nic.bus_info = choice(['0000:%02d:00.0' %
+                                      randint(0, 99), 'ib0'])
+        self.db.commit()
+
+        cluster = self.db.query(Cluster).get(cluster_id)
+        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        interfaces = node['network_scheme']['interfaces']
+        for iface_attrs in interfaces.itervalues():
+            self.assertIn('driver', iface_attrs)
+            self.assertIn(iface_attrs['driver'], interface_drivers)
+            self.assertIn('bus_info', iface_attrs)
+            self.assertRegexpMatches(iface_attrs['bus_info'],
+                                     '0000:\d\d:00.0|ib0')
+
+    def test_roles_meta(self):
+        cluster = self._create_cluster_for_vlan_splinters('vlan')
+        cluster_id = cluster.id
+        network_group = self.db().query(NetworkGroup)
+        storage_vlan = randint(0, 200)
+        management_vlan = randint(0, 200)
+        vlan_mapping = {'storage': storage_vlan,
+                        'management': management_vlan}
+        storage = network_group.filter_by(name="storage")
+        storage.update(
+            {"vlan_start": storage_vlan}, synchronize_session="fetch")
+        management = network_group.filter_by(name="management")
+        management.update(
+            {"vlan_start": management_vlan}, synchronize_session="fetch")
+        self.db.commit()
+
+        cluster = self.db.query(Cluster).get(cluster_id)
+        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        roles_meta = node['network_scheme']['roles_meta']
+        for role, role_dict in roles_meta.items():
+            self.assertIn('phy_interface', role_dict.keys())
+            if role in vlan_mapping.keys():
+                self.assertIn('vlan', role_dict.keys())
+                self.assertEqual(role_dict['vlan'],
+                                 vlan_mapping[role])
+            else:
+                self.assertNotIn('vlan', role_dict.keys())
 
     def test_vlan_splinters_disabled(self):
         cluster = self._create_cluster_for_vlan_splinters()

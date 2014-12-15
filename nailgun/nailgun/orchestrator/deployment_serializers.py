@@ -527,7 +527,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 'storage': 'br-storage',
                 'fw-admin': 'br-fw-admin',
             },
-            'transformations': []
+            'transformations': [],
+            'roles_meta': {}
         }
 
         if objects.Node.should_have_public(node):
@@ -562,7 +563,9 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 attrs['interfaces'][iface.name] = {
                     'L2': cls._get_vlan_splinters_desc(
                         use_vlan_splinters, iface, node.cluster
-                    )
+                    ),
+                    'driver': iface.driver,
+                    'bus_info': iface.bus_info,
                 }
 
             if iface in bonded_ifaces:
@@ -627,6 +630,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:
             netgroup = nm.get_node_network_by_netname(node, ngname)
+            attrs['roles_meta'][ngname] = {}
+            attrs['roles_meta'][ngname]['phy_interface'] = netgroup['dev']
             if not netgroup['vlan']:
                 # Untagged network.
                 attrs['transformations'].append({
@@ -636,6 +641,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 })
             elif netgroup['vlan'] > 1:
                 # Tagged network.
+                attrs['roles_meta'][ngname]['vlan'] = netgroup['vlan']
                 attrs['transformations'].append({
                     'action': 'add-patch',
                     'bridges': ['br-%s' % netgroup['dev'], brname],
@@ -647,6 +653,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         # Dance around Neutron segmentation type.
         if node.cluster.network_config.segmentation_type == 'vlan':
+            netgroup = nm.get_node_network_by_netname(node, 'private')
+            attrs['roles_meta']['private'] = {'phy_interface': netgroup['dev']}
             attrs['endpoints']['br-prv'] = {'IP': 'none'}
             attrs['roles']['private'] = 'br-prv'
 

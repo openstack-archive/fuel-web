@@ -378,6 +378,11 @@ define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Ex
                 }, this);
             }, this);
         },
+        initialize: function() {
+            // FIXME(vkramskikh): this will work only if there won't be
+            // any restrictions added later in the same model
+            this.once('change', this.processRestrictions, this);
+        },
         validate: function(attrs, options) {
             var errors = {},
                 models = options ? options.models : {},

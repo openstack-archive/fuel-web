@@ -284,7 +284,6 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 };
                 $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), tasks.fetch())
                     .then(_.bind(function() {
-                        cluster.get('settings').processRestrictions();
                         var networkConfiguration = new models.NetworkConfiguration();
                         networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
                         cluster.set({

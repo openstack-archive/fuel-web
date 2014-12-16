@@ -21,6 +21,7 @@ Handlers dealing with releases
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content_json
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.validators.release import ReleaseDeploymentGraphValidator
 from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
 from nailgun.objects import Release
@@ -97,3 +98,38 @@ class ReleaseNetworksHandler(SingleHandler):
         :http: * 405 (method not supported)
         """
         raise self.http(405, 'Delete not supported for this entity')
+
+
+class ReleaseDeploymentGraphHandler(SingleHandler):
+    """Release Handler for deployment graph configuration
+    """
+
+    single = Release
+    validator = ReleaseDeploymentGraphValidator
+
+    @content_json
+    def GET(self, obj_id):
+        """Read release deployment graph configuration
+
+        :returns: Release networks metadata
+        :http: * 200 OK
+               * 404 (release object not found)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+        return self.single.get_deployment_graph(obj)
+
+    @content_json
+    def PUT(self, obj_id):
+        """:returns: JSONized REST object.
+        :http: * 200 (OK)
+               * 400 (invalid data specified)
+               * 404 (object not found in db)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=obj
+        )
+        self.single.update(obj, {'deployment_graph': data})
+        return self.single.get_deployment_graph(obj)

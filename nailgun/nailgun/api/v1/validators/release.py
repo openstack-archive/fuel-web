@@ -147,3 +147,14 @@ class ReleaseNetworksValidator(BasicValidator):
     def validate_schema(cls, data):
         return super(ReleaseNetworksValidator, cls).validate_schema(
             data, release.NETWORKS_SCHEMA)
+
+
+class ReleaseDeploymentGraphValidator(BasicValidator):
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        #todo(dshulyak)
+        # - add validation for release versions
+        # - add validation that graph is acyclic
+        # - add validation for tasks format in graph
+        return True

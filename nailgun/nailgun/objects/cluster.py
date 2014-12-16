@@ -18,7 +18,11 @@
 Cluster-related objects and collections
 """
 
+from sqlalchemy import or_
+import yaml
+
 from nailgun.objects.serializers.cluster import ClusterSerializer
+from nailgun.orchestrator import graph_configuration
 
 from nailgun import consts
 
@@ -32,6 +36,7 @@ from nailgun.logger import logger
 
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects import Release
 
 from nailgun.plugins.manager import PluginManager
 
@@ -41,8 +46,6 @@ from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import generate_editables
 from nailgun.utils import traverse
-
-from sqlalchemy import or_
 
 
 class Attributes(NailgunObject):
@@ -671,6 +674,21 @@ class Cluster(NailgunObject):
         db.add(node_group)
         db().flush()
         return node_group
+
+    @classmethod
+    def get_deployment_tasks(cls, instance):
+        """Return deployment graph for cluster based on cluster attributes
+        - if instance assigned for patching - return custom patching graph
+        - if there is deployment_graph defined by user - use it instead of
+          defined
+        - else return default for release deployment graph
+        """
+        if instance.pending_release_id:
+            return yaml.load(graph_configuration.PATCHING)
+        elif instance.deployment_tasks:
+            return instance.deployment_tasks
+        else:
+            return Release.get_deployment_tasks(instance.release)
 
 
 class ClusterCollection(NailgunCollection):

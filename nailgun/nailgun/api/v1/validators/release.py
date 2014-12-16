@@ -17,9 +17,11 @@ from sqlalchemy import not_
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import release
+from nailgun.api.v1.validators.json_schema import tasks
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
+from nailgun.orchestrator import deployment_graph
 
 
 class ReleaseValidator(BasicValidator):
@@ -147,3 +149,15 @@ class ReleaseNetworksValidator(BasicValidator):
     def validate_schema(cls, data):
         return super(ReleaseNetworksValidator, cls).validate_schema(
             data, release.NETWORKS_SCHEMA)
+
+
+class ReleaseDeploymentTasksValidator(BasicValidator):
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        parsed = cls.validate(data)
+        cls.validate_schema(data, tasks.TASKS_SCHEMA)
+        graph = deployment_graph.DeploymentGraph()
+        graph.add_tasks(parsed)
+        graph.is_acyclic()
+        return parsed

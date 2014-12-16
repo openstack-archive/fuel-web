@@ -15,10 +15,12 @@
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import cluster_schema
+from nailgun.api.v1.validators.json_schema import tasks
 from nailgun.errors import errors
 
 from nailgun.objects import ClusterCollection
 from nailgun.objects import Release
+from nailgun.orchestrator import deployment_graph
 
 
 class ClusterValidator(BasicValidator):
@@ -129,3 +131,15 @@ class AttributesValidator(BasicValidator):
                 log_message=True
             )
         return d
+
+
+class ClusterDeploymentTasksValidator(BasicValidator):
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        parsed = cls.validate(data)
+        cls.validate_schema(data, tasks.TASKS_SCHEMA)
+        graph = deployment_graph.DeploymentGraph()
+        graph.add_tasks(parsed)
+        graph.is_acyclic()
+        return parsed

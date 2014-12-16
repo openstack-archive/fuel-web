@@ -525,7 +525,7 @@ class NetworkManager(object):
         net_cidr = IPNetwork(net.cidr)
         ip_addr = cls.get_admin_ip_for_node(node)
         if ip_addr:
-            ip_addr =  "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
+            ip_addr = "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
 
         return {
             'name': net.name,
@@ -535,7 +535,8 @@ class NetworkManager(object):
             'netmask': str(net_cidr.netmask),
             'brd': str(net_cidr.broadcast),
             'gateway': net.gateway,
-            'dev': node_db.admin_interface.name
+            'dev': node_db.admin_interface.name,
+            'meta': net.meta
         }
 
     @classmethod
@@ -565,14 +566,16 @@ class NetworkManager(object):
             'netmask': str(IPNetwork(net.cidr).netmask),
             'brd': str(IPNetwork(net.cidr).broadcast),
             'gateway': net.gateway,
-            'dev': interface.name}
+            'dev': interface.name,
+            'meta': net.meta}
 
     @classmethod
     def _get_network_data_wo_ip(cls, node_db, interface, net):
         return {'name': net.name,
                 'cidr': net.cidr,
                 'vlan': cls.get_network_vlan(net, node_db.cluster),
-                'dev': interface.name}
+                'dev': interface.name,
+                'meta': net.meta}
 
     @classmethod
     def _get_networks_except_admin(cls, networks):

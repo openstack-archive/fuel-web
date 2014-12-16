@@ -547,7 +547,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             netgroup = nm.get_node_network_by_netname(node, ngname)
             if netgroup.get('ip'):
                 attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
-            if netgroup.get('gateway'):
+            if netgroup['meta']['use_gateway'] and netgroup.get('gateway'):
                 attrs['endpoints'][brname]['gateway'] = netgroup['gateway']
 
             attrs['endpoints'][brname]['other_nets'] = \

@@ -729,6 +729,11 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assert_nodes_with_role(nodes, 'compute', 2)
         self.assert_nodes_with_role(nodes, 'cinder', 3)
 
+    def find_net_by_name(self, nets, name):
+        for net in nets['networks']:
+            if net['name'] == name:
+                return net
+
     def set_assign_public_to_all_nodes(self, cluster_db, value):
         attrs = cluster_db.attributes.editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
@@ -1014,6 +1019,61 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'br-prv' in fact['network_scheme']['endpoints'], False)
             self.assertEqual(
                 'private' in (fact['network_scheme']['roles']), False)
+
+    def check_storage_gw_added_but_not_serialized(self, change_net_params):
+        cluster = self.create_env('ha_compact', 'gre')
+
+        resp = self.env.neutron_networks_get(cluster.id)
+        nets = resp.json_body
+        storage = self.find_net_by_name(nets, 'storage')
+        change_net_params(storage)
+        storage_gw = storage['gateway']
+        resp = self.env.neutron_networks_put(cluster.id, nets)
+        self.assertEqual(resp.status_code, 202)
+
+        resp = self.env.neutron_networks_get(cluster.id)
+        nets = resp.json_body
+        self.assertEqual(
+            self.find_net_by_name(nets, 'storage')['gateway'],
+            storage_gw
+        )
+        # 'meta' is not changed actually. all changes to 'meta' are skipped
+        self.assertEqual(
+            self.find_net_by_name(nets, 'storage')['meta']['use_gateway'],
+            False
+        )
+
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+
+        for fact in facts:
+            ep = fact['network_scheme']['endpoints']
+            if 'br-ex' in ep:
+                self.assertFalse('gateway' in ep['br-fw-admin'])
+                self.assertTrue('gateway' in ep['br-ex'])
+                # storage GW is not serialized
+                self.assertFalse('gateway' in ep['br-storage'])
+                self.assertFalse('gateway' in ep['br-mgmt'])
+            else:
+                self.assertTrue('gateway' in ep['br-fw-admin'])
+                # storage GW is not serialized
+                self.assertFalse('gateway' in ep['br-storage'])
+                self.assertFalse('gateway' in ep['br-mgmt'])
+
+    def test_gw_added_wo_use_gateway_flag_set(self):
+
+        def set_gateway(network):
+            network['gateway'] = '192.168.1.1'
+
+        self.check_storage_gw_added_but_not_serialized(set_gateway)
+
+    def test_gw_added_w_use_gateway_flag_set(self):
+
+        def set_gateway_and_flag(network):
+            network['gateway'] = '192.168.1.1'
+            network['meta']['use_gateway'] = True
+
+        self.check_storage_gw_added_but_not_serialized(set_gateway_and_flag)
 
     def _create_cluster_for_vlan_splinters(self, segment_type='gre'):
         meta = {

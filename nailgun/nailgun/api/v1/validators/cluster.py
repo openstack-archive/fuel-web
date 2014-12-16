@@ -125,3 +125,10 @@ class AttributesValidator(BasicValidator):
                 log_message=True
             )
         return d
+
+
+class ClusterDeploymentGraphValidator(BasicValidator):
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        return True

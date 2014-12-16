@@ -558,14 +558,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if objects.Node.should_have_public(node):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
+            attrs['endpoints']['br-ex']['default_gateway'] = True
         else:
             gw = nm.get_default_gateway(node.id)
             attrs['endpoints']['br-fw-admin']['gateway'] = gw
-
-        for brname in brnames:
-            if attrs['endpoints'][brname].get('gateway'):
-                attrs['endpoints'][brname]['default_gateway'] = True
-                break
+            attrs['endpoints']['br-fw-admin']['default_gateway'] = True
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:

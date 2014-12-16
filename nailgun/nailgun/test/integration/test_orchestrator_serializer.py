@@ -19,6 +19,7 @@ from operator import attrgetter
 from operator import itemgetter
 import re
 
+from netaddr import IPNetwork
 from netaddr import IPRange
 
 from nailgun.consts import OVS_BOND_MODES
@@ -1014,6 +1015,30 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'br-prv' in fact['network_scheme']['endpoints'], False)
             self.assertEqual(
                 'private' in (fact['network_scheme']['roles']), False)
+
+    def test_gw_added_but_default_gw_is_ex_or_admin(self):
+        cluster = self.create_env('ha_compact', 'gre')
+
+        networks = objects.Cluster.get_default_group(cluster).networks
+        for net in networks:
+            if net.name in ('storage', 'management'):
+                net.gateway = str(IPNetwork(net["cidr"]).cidr[1])
+        self.db.flush()
+
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+
+        for fact in facts:
+            ep = fact['network_scheme']['endpoints']
+            if 'br-ex' in ep:
+                self.assertNotIn('gateway', ep['br-fw-admin'])
+                self.assertIn('gateway', ep['br-ex'])
+                self.assertIn('default_gateway', ep['br-ex'])
+            else:
+                self.assertIn('gateway', ep['br-fw-admin'])
+                self.assertIn('default_gateway', ep['br-fw-admin'])
+            self.assertIn('gateway', ep['br-storage'])
+            self.assertIn('gateway', ep['br-mgmt'])
 
     def _create_cluster_for_vlan_splinters(self, segment_type='gre'):
         meta = {

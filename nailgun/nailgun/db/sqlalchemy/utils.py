@@ -14,6 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+import six
+from sqlalchemy import types as sa_types
+
 
 def make_dsn(engine, host, port, user, passwd, name):
     """Constructs DSN string that can be used to connect to database.
@@ -43,3 +47,37 @@ def make_dsn(engine, host, port, user, passwd, name):
         passwd=passwd,
         name=name,
     )
+
+
+class EUIEncodedString(sa_types.TypeDecorator):
+    """Type serialized as EUI-encoded string in db."""
+
+    impl = sa_types.TEXT
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            raise ValueError('HW address cannot be None.')
+
+        # Validate and save value if it is already a string.
+        if isinstance(value, six.string_types) or isinstance(value, six.text_type):
+            # TODO(romcheg): This validation should also support
+            # other kinds of hardware addresses. This should be done
+            # in one of the following patches.
+            if not netaddr.valid_mac(value):
+                raise ValueError('The value is not a valid mac address')
+
+            return value
+        elif isinstance(value, netaddr.EUI):
+            value.dialect=netaddr.mac_unix
+            return str(value)
+        else:
+            raise ValueError('The value shoud be either a string or '
+                             'a netaddr.EUI object.')
+
+    def process_result_value(self, value, dialect):
+        try:
+            value = netaddr.EUI(value, dialect=netaddr.mac_unix)
+        except netaddr.AddrFormatError as e:
+            raise ValueError('%s is not a valid HW address.')
+
+        return value

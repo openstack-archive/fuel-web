@@ -388,6 +388,8 @@ class CollectionHandler(BaseHandler):
             new_obj = self.collection.create(data)
         except errors.CannotCreate as exc:
             raise self.http(400, exc.message)
+        except Exception as e:
+            pass
 
         raise self.http(201, self.collection.single.to_json(new_obj))
 

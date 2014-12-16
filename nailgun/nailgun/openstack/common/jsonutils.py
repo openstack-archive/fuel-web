@@ -146,7 +146,10 @@ def to_primitive(value, convert_instances=False, convert_datetime=True,
             # Likely an instance of something. Watch for cycles.
             # Ignore class member vars.
             return recursive(value.__dict__, level=level + 1)
-        elif netaddr and isinstance(value, netaddr.IPAddress):
+        # TODO(romcheg): Checking whether the value is EUI should be merged
+        #                to the upstream repo.
+        elif netaddr and (isinstance(value, netaddr.IPAddress) or \
+                          isinstance(value, netaddr.EUI)):
             return six.text_type(value)
         else:
             if any(test(value) for test in _nasty_type_tests):

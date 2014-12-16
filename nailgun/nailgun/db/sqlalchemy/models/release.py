@@ -70,6 +70,7 @@ class Release(Base):
     roles_metadata = Column(JSON, default={})
     wizard_metadata = Column(JSON, default={})
     is_deployable = Column(Boolean, default=True, nullable=False)
+    deployment_tasks = Column(JSON, default=[])
 
     role_list = relationship(
         "Role",

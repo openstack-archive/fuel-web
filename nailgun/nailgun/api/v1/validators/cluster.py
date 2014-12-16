@@ -15,6 +15,7 @@
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import cluster_schema
+
 from nailgun.errors import errors
 
 from nailgun.objects import ClusterCollection

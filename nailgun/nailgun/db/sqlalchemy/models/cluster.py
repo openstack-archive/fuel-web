@@ -97,6 +97,7 @@ class Cluster(Base):
     replaced_provisioning_info = Column(JSON, default={})
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
+    deployment_tasks = Column(JSON, default=[])
 
     @property
     def changes(self):

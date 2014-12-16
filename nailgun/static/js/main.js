@@ -23,6 +23,7 @@ require(['./config'], function(config) {
         'jquery',
         'underscore',
         'backbone',
+        'backbone-lodash-monkeypatch',
         'stickit',
         'coccyx',
         'react',

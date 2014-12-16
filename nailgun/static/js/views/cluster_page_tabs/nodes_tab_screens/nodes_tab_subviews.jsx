@@ -75,7 +75,7 @@ function(React, Expression, utils, controls) {
                     if (!node.hasRole(name, true)) {
                         var roles = node.get('pending_roles');
                         if (this.isRoleSelected(name)) {
-                            if (this.isRoleAvailable(name)) roles = _.uniq(_.union(roles, name));
+                            if (this.isRoleAvailable(name)) roles = _.uniq(_.union(roles, [name]));
                         } else if (!_.contains(this.state.indeterminateRoles, name)) {
                             roles = _.without(roles, name);
                         }

@@ -21,6 +21,7 @@ from itertools import ifilter
 from itertools import imap
 from itertools import islice
 
+from netaddr import EUI
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
@@ -483,7 +484,6 @@ class NetworkManager(object):
     @classmethod
     def assign_networks_by_default(cls, node):
         cls.clear_assigned_networks(node)
-
         nics = dict((nic.id, nic) for nic in node.interfaces)
         def_set = cls.get_default_networks_assignment(node)
         for nic in def_set:
@@ -673,7 +673,7 @@ class NetworkManager(object):
         for interface in node.meta["interfaces"]:
             # try to get interface by mac address
             interface_db = next((
-                n for n in node.nic_interfaces if utils.is_same_mac(n.mac, interface['mac'])),
+                n for n in node.nic_interfaces if n.mac == interface['mac']),
                 None)
 
             # try to get interface instance by interface name. this protects
@@ -714,7 +714,7 @@ class NetworkManager(object):
                 # Interface was founded
                 admin_interface = interface
                 break
-            elif utils.is_same_mac(interface['mac'], node.mac):
+            elif interface['mac'] == node.mac:
                 admin_interface = interface
                 break
 
@@ -769,7 +769,7 @@ class NetworkManager(object):
     @classmethod
     def __delete_not_found_interfaces(cls, node, interfaces):
         interfaces_mac_addresses = map(
-            lambda interface: interface['mac'].lower(), interfaces)
+            lambda interface: six.text_type(interface['mac']), interfaces)
 
         interfaces_to_delete = db().query(NodeNICInterface).filter(
             NodeNICInterface.node_id == node.id
@@ -779,7 +779,7 @@ class NetworkManager(object):
 
         if interfaces_to_delete:
             mac_addresses = ' '.join(
-                map(lambda i: i.mac, interfaces_to_delete))
+                map(lambda i: six.text_type(i.mac), interfaces_to_delete))
 
             node_name = node.name or node.mac
             logger.info("Interfaces %s removed from node %s" % (

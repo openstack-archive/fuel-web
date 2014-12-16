@@ -18,6 +18,7 @@ import copy
 import datetime
 import hashlib
 import jsonschema
+import netaddr
 import six
 import uuid
 
@@ -837,6 +838,7 @@ class TestClusterObject(BaseTestCase):
         node = self.env.nodes[0]
         node.bond_interfaces.append(
             NodeBondInterface(name='ovs-bond0',
+                              mac=netaddr.EUI('aa:bb:cc:dd:ee:ff'),
                               slaves=node.nic_interfaces))
         self.db.flush()
         bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(

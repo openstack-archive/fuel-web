@@ -20,6 +20,7 @@ Handlers dealing with nodes
 
 from datetime import datetime
 
+import netaddr
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
@@ -47,6 +48,26 @@ class NodeHandler(SingleHandler):
     single = objects.Node
     validator = NodeValidator
 
+    def checked_data(self, validate_method=None, **kwargs):
+        """Returns validated request data
+
+        Replaces string representation of hardware address by
+        netaddr.EUI objects. Currently it's assumed that hardware
+        address === mac address.
+
+        """
+        data = super(NodeHandler, self).checked_data(
+                validate_method=validate_method,
+                **kwargs)
+
+        if 'mac' in data:
+            data['mac'] = netaddr.EUI(data['mac'], dialect=netaddr.mac_unix)
+
+        if 'meta' in data and 'interfaces' in data['meta']:
+            for i in data['meta']['interfaces']:
+                i['mac'] = netaddr.EUI(i['mac'], dialect=netaddr.mac_unix)
+
+        return data
 
 class NodeCollectionHandler(CollectionHandler):
     """Node collection handler
@@ -60,6 +81,27 @@ class NodeCollectionHandler(CollectionHandler):
 
     validator = NodeValidator
     collection = objects.NodeCollection
+
+    def checked_data(self, validate_method=None, **kwargs):
+        """Returns validated request data
+
+        Replaces string representation of hardware address by
+        netaddr.EUI objects. Currently it's assumed that hardware
+        address === mac address.
+
+        """
+        data = super(NodeCollectionHandler, self).checked_data(
+                validate_method=validate_method,
+                **kwargs)
+
+        if 'mac' in data:
+            data['mac'] = netaddr.EUI(data['mac'], dialect=netaddr.mac_unix)
+
+        if 'meta' in data and 'interfaces' in data['meta']:
+            for i in data['meta']['interfaces']:
+                i['mac'] = netaddr.EUI(i['mac'], dialect=netaddr.mac_unix)
+
+        return data
 
     @content
     def GET(self):
@@ -162,7 +204,9 @@ class NodeNICsHandler(BaseHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(objects.Node, node_id)
-        return map(self.render, node.interfaces)
+        result = map(self.render, node.interfaces)
+
+        return result
 
     @content
     def PUT(self, node_id):
@@ -181,6 +225,21 @@ class NodeNICsHandler(BaseHandler):
             consts.CLUSTER_CHANGES.interfaces
         )
         return map(self.render, node.interfaces)
+
+    def checked_data(self, validate_method=None, **kwargs):
+        """Returns validated request data
+
+        Replaces string representation of hardware address by
+        netaddr.EUI objects. Currently it's assumed that hardware
+        address === mac address.
+
+        """
+        data = super(NodeNICsHandler, self).checked_data(
+                validate_method=validate_method,
+                **kwargs)
+
+        return data
+
 
 
 class NodeCollectionNICsHandler(BaseHandler):
@@ -214,10 +273,39 @@ class NodeCollectionNICsHandler(BaseHandler):
             } for n in updated_nodes
         ]
 
+    def checked_data(self, validate_method=None, **kwargs):
+        """Returns validated request data
+
+        Replaces string representation of hardware address by
+        netaddr.EUI objects. Currently it's assumed that hardware
+        address === mac address.
+
+        """
+        data = super(NodeCollectionNICsHandler, self).checked_data(
+                validate_method=validate_method,
+                **kwargs)
+
+        return data
+
+
 
 class NodeNICsDefaultHandler(BaseHandler):
     """Node default network interfaces handler
     """
+
+    def checked_data(self, validate_method=None, **kwargs):
+        """Returns validated request data
+
+        Replaces string representation of hardware address by
+        netaddr.EUI objects. Currently it's assumed that hardware
+        address === mac address.
+
+        """
+        data = super(NodeNICsDefaultHandler, self).checked_data(
+                validate_method=validate_method,
+                **kwargs)
+
+        return data
 
     @content
     def GET(self, node_id):
@@ -258,6 +346,22 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
             nodes = objects.NodeCollection.all()
 
         return filter(lambda x: x is not None, map(self.get_default, nodes))
+
+    def checked_data(self, validate_method=None, **kwargs):
+        """Returns validated request data
+
+        Replaces string representation of hardware address by
+        netaddr.EUI objects. Currently it's assumed that hardware
+        address === mac address.
+
+        """
+        data = super(NodeCollectionNICsDefaultHandler, self).checked_data(
+                validate_method=validate_method,
+                **kwargs)
+
+        return data
+
+
 
 
 class NodesAllocationStatsHandler(BaseHandler):

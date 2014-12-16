@@ -65,7 +65,9 @@ def load_db_driver(handler):
             db.rollback()
         raise
 
-    except (sa_exc.IntegrityError, sa_exc.DataError) as exc:
+    except (sa_exc.IntegrityError,
+            sa_exc.DataError,
+            sa_exc.StatementError) as exc:
         # respond a "400 Bad Request" if database constraints were broken
         db.rollback()
         raise BaseHandler.http(400, exc.message)

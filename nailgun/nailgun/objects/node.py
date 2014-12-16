@@ -180,7 +180,7 @@ class Node(NailgunObject):
         """
         if "name" not in data:
             data["name"] = "Untitled ({0})".format(
-                data['mac'][-5:].lower()
+                str(data['mac'])[-5:]
             )
         data["timestamp"] = datetime.now()
         data.pop("id", None)

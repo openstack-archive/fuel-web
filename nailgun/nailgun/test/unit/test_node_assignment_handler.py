@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 
 from nailgun.openstack.common import jsonutils
@@ -177,6 +179,7 @@ class TestClusterStateUnassigment(BaseIntegrationTest):
         node = self.env.nodes[0]
         node.bond_interfaces.append(
             NodeBondInterface(name='ovs-bond0',
+                mac=netaddr.EUI('aa:bb:cc:dd:ee:ff'),
                               slaves=node.nic_interfaces))
         self.db.flush()
         resp = self.app.post(

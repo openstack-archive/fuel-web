@@ -31,10 +31,13 @@ from sqlalchemy.orm import relationship, backref
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.fields import EUIEncodedString
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
+from nailgun.db.sqlalchemy.models.fields import NodeMetaData
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
+from nailgun.db.sqlalchemy import utils as db_utils
 from nailgun.logger import logger
 from nailgun.volumes.manager import VolumeManager
 
@@ -99,8 +102,8 @@ class Node(Base):
         nullable=False,
         default=consts.NODE_STATUSES.discover
     )
-    meta = Column(JSON, default={})
-    mac = Column(LowercaseString(17), nullable=False, unique=True)
+    meta = Column(NodeMetaData, default={})
+    mac = Column(EUIEncodedString, nullable=False, unique=True)
     ip = Column(String(15))
     fqdn = Column(String(255))
     manufacturer = Column(Unicode(50))
@@ -318,7 +321,7 @@ class NodeNICInterface(Base):
         ForeignKey('nodes.id', ondelete="CASCADE"),
         nullable=False)
     name = Column(String(128), nullable=False)
-    mac = Column(LowercaseString(17), nullable=False)
+    mac = Column(EUIEncodedString, nullable=False)
     max_speed = Column(Integer)
     current_speed = Column(Integer)
     assigned_networks_list = relationship(
@@ -354,7 +357,7 @@ class NodeBondInterface(Base):
         ForeignKey('nodes.id', ondelete="CASCADE"),
         nullable=False)
     name = Column(String(32), nullable=False)
-    mac = Column(LowercaseString(17))
+    mac = Column(EUIEncodedString)
     assigned_networks_list = relationship(
         "NetworkGroup",
         secondary=NetworkBondAssignment.__table__,

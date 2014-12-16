@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun.openstack.common import jsonutils
+from nailgun.network import utils as net_utils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -119,7 +120,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(
                 ifaces,
                 [
-                    {'name': 'eth0', 'mac': '00:00:00:00:00:00',
+                    {'name': 'eth0', 'mac': '0:0:0:0:0:0',
                      'max_speed': None, 'current_speed': None}
                 ]
             )
@@ -154,11 +155,11 @@ class TestHandlers(BaseIntegrationTest):
         )
         for nic in meta['interfaces']:
             filtered_nics = filter(
-                lambda i: i['mac'] == nic['mac'],
+                lambda i: net_utils.is_same_mac(i['mac'], nic['mac']),
                 resp.json_body
             )
             resp_nic = filtered_nics[0]
-            self.assertEqual(resp_nic['mac'], nic['mac'])
+            self.assertTrue(net_utils.is_same_mac(resp_nic['mac'], nic['mac']))
             self.assertEqual(resp_nic['current_speed'], nic['current_speed'])
             self.assertEqual(resp_nic['max_speed'], nic['max_speed'])
             for conn in ('assigned_networks', ):
@@ -251,7 +252,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(resp.json_body), 1)
         resp_nic = resp.json_body[0]
         nic = new_meta['interfaces'][0]
-        self.assertEqual(resp_nic['mac'], nic['mac'])
+        self.assertTrue(net_utils.is_same_mac(resp_nic['mac'], nic['mac']))
         self.assertEqual(resp_nic['current_speed'], nic['current_speed'])
         self.assertEqual(resp_nic['max_speed'], nic['max_speed'])
         self.assertEqual(resp_nic['state'], nic['state'])
@@ -281,11 +282,11 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(resp.json_body), len(meta['interfaces']))
         for nic in meta['interfaces']:
             filtered_nics = filter(
-                lambda i: i['mac'] == nic['mac'],
+                lambda i: net_utils.is_same_mac(i['mac'], nic['mac']),
                 resp.json_body
             )
             resp_nic = filtered_nics[0]
-            self.assertEqual(resp_nic['mac'], nic['mac'])
+            self.assertTrue(net_utils.is_same_mac(resp_nic['mac'], nic['mac']))
             self.assertEqual(resp_nic['current_speed'],
                              nic.get('current_speed'))
             self.assertEqual(resp_nic['max_speed'], nic.get('max_speed'))

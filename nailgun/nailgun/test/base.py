@@ -28,6 +28,7 @@ import time
 from datetime import datetime
 from functools import partial
 from itertools import izip
+from netaddr import EUI
 from netaddr import IPNetwork
 from random import randint
 
@@ -206,13 +207,13 @@ class EnvironmentManager(object):
             default_metadata.update(metadata)
             meta_ifaces = 'interfaces' in metadata
 
-        mac = kwargs.get('mac', self.generate_random_mac())
+        mac = kwargs.get('mac', EUI(self.generate_random_mac()))
         if default_metadata['interfaces']:
             default_metadata['interfaces'][0]['mac'] = mac
             if not metadata or not meta_ifaces:
                 for iface in default_metadata['interfaces'][1:]:
                     if 'mac' in iface:
-                        iface['mac'] = self.generate_random_mac()
+                        iface['mac'] = EUI(self.generate_random_mac())
 
         node_data = {
             'mac': mac,
@@ -275,7 +276,7 @@ class EnvironmentManager(object):
             if_list = [
                 {
                     "name": "eth{0}".format(i),
-                    "mac": self.generate_random_mac()
+                    "mac": EUI(self.generate_random_mac())
                 }
                 for i in range(if_count)]
             self.set_interfaces_in_meta(meta, if_list)
@@ -346,7 +347,7 @@ class EnvironmentManager(object):
             nics.append(
                 {
                     'name': 'eth{0}'.format(i),
-                    'mac': self.generate_random_mac(),
+                    'mac': EUI(self.generate_random_mac()),
                     'current_speed': 100,
                     'max_speed': 1000
                 }
@@ -392,7 +393,7 @@ class EnvironmentManager(object):
             interface = NodeNICInterface({
                 'node_id': node_id,
                 'name': 'eth{0}'.format(i),
-                'mac': self.generate_random_mac(),
+                'mac': EUI(self.generate_random_mac()),
                 'current_speed': 100,
                 'max_speed': 1000,
                 'assigned_networks': networks_to_assign
@@ -722,7 +723,8 @@ class EnvironmentManager(object):
             "type": NETWORK_INTERFACE_TYPES.bond,
             "mode": bond_mode,
             "slaves": slaves,
-            "assigned_networks": assigned_nets
+            "assigned_networks": assigned_nets,
+            "mac": EUI(self.generate_random_mac())
         })
         resp = self.node_nics_put(node_id, data)
         self.tester.assertEqual(resp.status_code, 200)

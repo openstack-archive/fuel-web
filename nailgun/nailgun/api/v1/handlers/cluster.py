@@ -32,6 +32,7 @@ from nailgun.api.v1.handlers.base import content
 
 from nailgun.api.v1.validators.cluster import AttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
+from nailgun.api.v1.validators.graph import GraphTasksValidator
 from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
@@ -239,3 +240,35 @@ class ClusterGeneratedData(BaseHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return cluster.attributes.generated
+
+
+class ClusterDeploymentTasksHandler(SingleHandler):
+    """Cluster Handler for deployment graph serialization."""
+
+    single = objects.Cluster
+    validator = GraphTasksValidator
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: Release networks metadata
+        :http: * 200 OK
+               * 404 (release object not found)
+        """
+        obj = self.get_object_or_404(self.single, cluster_id)
+        return self.single.get_deployment_tasks(obj)
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized REST object.
+        :http: * 200 (OK)
+               * 400 (invalid data specified)
+               * 404 (object not found in db)
+        """
+        obj = self.get_object_or_404(self.single, cluster_id)
+
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=obj
+        )
+        self.single.update(obj, {'deployment_graph': data})
+        return self.single.get_deployment_tasks(obj)

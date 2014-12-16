@@ -14,7 +14,7 @@
  * under the License.
 **/
 
-define(['require', 'underscore', 'expression', 'expression/objects', 'react'], function(require, _, Expression, expressionObjects, React) {
+define(['require', 'expression', 'expression/objects', 'react'], function(require, Expression, expressionObjects, React) {
     'use strict';
 
     var utils = {

@@ -10,7 +10,7 @@
         "requirejs-text": "2.0.10",
         "require-css": "0.1.0",
         "routefilter": "0.2.1",
-        "lodash": "2.4.1",
+        "lodash": "1.3.1",
         "autoNumeric": "1.9.12",
         "backbone.stickit": "0.7.0",
         "cocktail": "0.5.7",
@@ -32,7 +32,7 @@
             "js": "text.js"
         },
         "lodash": {
-            "js": "**/lodash.compat.js"
+            "js": "lodash.js"
         },
         "autoNumeric": {
             "js": "autoNumeric.js"

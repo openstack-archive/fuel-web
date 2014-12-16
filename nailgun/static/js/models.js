@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['underscore', 'utils', 'expression', 'deepModel'], function(_, utils, Expression) {
+define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
     'use strict';
 
     var models = {};

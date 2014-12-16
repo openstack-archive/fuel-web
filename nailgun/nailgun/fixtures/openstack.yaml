@@ -1094,13 +1094,13 @@
               description: "dialog.create_cluster_wizard.compute.kvm_description"
               bind:
                 - "wizard:Storage.cinder": "default"
-                - "wizard:Network.manager": "neutron-gre"
+                - "wizard:Network.manager": "neutron-vlan"
             - data: "qemu"
               label: "dialog.create_cluster_wizard.compute.qemu"
               description: "dialog.create_cluster_wizard.compute.qemu_description"
               bind:
                 - "wizard:Storage.cinder": "default"
-                - "wizard:Network.manager": "neutron-gre"
+                - "wizard:Network.manager": "neutron-vlan"
             - data: "vcenter"
               label: "dialog.create_cluster_wizard.compute.vcenter"
               description: "dialog.create_cluster_wizard.compute.vcenter_description"
@@ -1169,14 +1169,6 @@
         manager:
           type: "radio"
           values:
-            - data: "neutron-gre"
-              label: "dialog.create_cluster_wizard.network.neutr_gre"
-              description: "dialog.create_cluster_wizard.network.neutr_gre_description"
-              restrictions:
-                - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
-              bind:
-                - "cluster:net_provider": "neutron"
-                - "cluster:net_segment_type": "gre"
             - data: "neutron-vlan"
               label: "dialog.create_cluster_wizard.network.neutr_vlan"
               description: "dialog.create_cluster_wizard.network.neutr_vlan_description"
@@ -1185,6 +1177,14 @@
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_segment_type": "vlan"
+            - data: "neutron-gre"
+              label: "dialog.create_cluster_wizard.network.neutr_gre"
+              description: "dialog.create_cluster_wizard.network.neutr_gre_description"
+              restrictions:
+                - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+              bind:
+                - "cluster:net_provider": "neutron"
+                - "cluster:net_segment_type": "gre"
             - data: "neutron-nsx"
               label: "dialog.create_cluster_wizard.network.neutr_nsx"
               description: "dialog.create_cluster_wizard.network.neutr_nsx_description"

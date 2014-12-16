@@ -600,10 +600,13 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             this.constructor.__super__.composePaneBindings.apply(this, arguments);
             this.bindings['[name=release]'].selectOptions = {
                 collection: function() {
-                    return this.releases.map(function(release) {
+                    return this.releases.map(function(release, index) {
+                        var label = release.get('name') + ' (' + release.get('version') + ')';
+                        // FIXME (morale): dirty hack for #1403108
+                        if (index == 0) label += ' (default)';
                         return {
                             value: release,
-                            label: release.get('name') + ' (' + release.get('version') + ')'
+                            label: label
                         };
                     });
                 }

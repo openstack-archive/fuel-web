@@ -1333,7 +1333,7 @@
   extend: *base_release
   fields:
     name: "Juno on Ubuntu 12.04.4"
-    version: "2014.2-6.0"
+    version: "2014.1.3-5.1.1"
     can_update_from_versions: []
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Juno packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."

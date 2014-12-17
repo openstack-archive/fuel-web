@@ -226,6 +226,11 @@ def get_delete_from_db_arg(help_msg):
     return get_boolean_arg("delete-from-db", help=help_msg)
 
 
+def get_deployment_tasks_arg(help_msg):
+    return get_boolean_arg(
+        "deployment-tasks", flags=("--deployment-tasks",), help=help_msg)
+
+
 def get_network_arg(help_msg):
     return get_boolean_arg("network", flags=("--net",), help=help_msg)
 

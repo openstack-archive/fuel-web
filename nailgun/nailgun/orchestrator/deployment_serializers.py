@@ -535,11 +535,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if objects.Node.should_have_public(node):
             netgroup_mapping.append(('public', 'br-ex'))
 
-        # Include information about all subnets that don't belong to this node.
-        # This is used during deployment to configure routes to all other
-        # networks in the environment.
-        other_nets = nm.get_networks_not_on_node(node)
-
         netgroups = {}
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
@@ -547,25 +542,13 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             netgroup = nm.get_node_network_by_netname(node, ngname)
             if netgroup.get('ip'):
                 attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
-            if netgroup.get('gateway'):
-                attrs['endpoints'][brname]['gateway'] = netgroup['gateway']
-
-            attrs['endpoints'][brname]['other_nets'] = \
-                other_nets.get(ngname, [])
-
             netgroups[ngname] = netgroup
 
         if objects.Node.should_have_public(node):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:
-            gw = nm.get_default_gateway(node.id)
-            attrs['endpoints']['br-fw-admin']['gateway'] = gw
-
-        for brname in brnames:
-            if attrs['endpoints'][brname].get('gateway'):
-                attrs['endpoints'][brname]['default_gateway'] = True
-                break
+            attrs['endpoints']['br-fw-admin']['gateway'] = settings.MASTER_IP
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:
@@ -773,6 +756,7 @@ class NeutronNetworkDeploymentSerializer51(NeutronNetworkDeploymentSerializer):
 class NeutronNetworkDeploymentSerializer60(
     NeutronNetworkDeploymentSerializer51
 ):
+
     @classmethod
     def generate_network_scheme(cls, node):
         attrs = super(NeutronNetworkDeploymentSerializer60, cls). \
@@ -781,6 +765,36 @@ class NeutronNetworkDeploymentSerializer60(
         for item in attrs.get('transformations', ()):
             if 'tags' in item:
                 item['vlan_ids'] = item['tags']
+
+        # Include information about all subnets that don't belong to this node.
+        # This is used during deployment to configure routes to all other
+        # networks in the environment.
+        nm = objects.Node.get_network_manager(node)
+        other_nets = nm.get_networks_not_on_node(node)
+
+        netgroup_mapping = [
+            ('storage', 'br-storage'),
+            ('management', 'br-mgmt'),
+            ('fuelweb_admin', 'br-fw-admin'),
+        ]
+        if objects.Node.should_have_public(node):
+            netgroup_mapping.append(('public', 'br-ex'))
+
+        for ngname, brname in netgroup_mapping:
+            netgroup = nm.get_node_network_by_netname(node, ngname)
+            if netgroup.get('gateway'):
+                attrs['endpoints'][brname]['gateway'] = netgroup['gateway']
+            attrs['endpoints'][brname]['other_nets'] = \
+                other_nets.get(ngname, [])
+
+        if not objects.Node.should_have_public(node):
+            gw = nm.get_default_gateway(node.id)
+            attrs['endpoints']['br-fw-admin']['gateway'] = gw
+
+        for brname in attrs['endpoints'].keys():
+            if attrs['endpoints'][brname].get('gateway'):
+                attrs['endpoints'][brname]['default_gateway'] = True
+                break
 
         return attrs
 

@@ -20,6 +20,7 @@ class Release(BaseObject):
     class_api_path = "releases/"
     instance_api_path = "releases/{0}/"
     networks_path = 'releases/{0}/networks'
+    deployment_tasks_path = 'releases/{0}/deployment_tasks'
 
     @classmethod
     def get_all(cls):
@@ -31,4 +32,12 @@ class Release(BaseObject):
 
     def update_networks(self, data):
         url = self.networks_path.format(self.id)
+        return self.connection.put_request(url, data)
+
+    def get_deployment_tasks(self):
+        url = self.deployment_tasks_path.format(self.id)
+        return self.connection.get_request(url)
+
+    def update_deployment_tasks(self, data):
+        url = self.deployment_tasks_path.format(self.id)
         return self.connection.put_request(url, data)

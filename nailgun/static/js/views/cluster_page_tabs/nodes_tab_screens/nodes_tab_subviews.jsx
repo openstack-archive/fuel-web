@@ -97,32 +97,41 @@ function(React, Expression, utils, controls) {
             }
             return true;
         },
-        render: function() {
-            var ns = 'cluster_page.nodes_tab.',
-                settings = this.props.cluster.get('settings'),
-                configModels = {
-                    cluster: this.props.cluster,
-                    settings: settings,
-                    version: app.version,
-                    default: settings
-                },
+        processRestrictions: function(role, models) {
+            var name = role.get('name'),
+                restrictionsCheck = role.checkRestrictions(models, 'disable'),
                 roles = this.props.cluster.get('release').get('role_models'),
                 conflicts = _.chain(this.state.selectedRoles)
                     .union(this.state.indeterminateRoles)
                     .map(function(role) {return roles.findWhere({name: role}).conflicts;})
                     .flatten()
                     .uniq()
-                    .value();
+                    .value(),
+                isAvailable = this.isRoleAvailable(name),
+                messages = [];
+            if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
+            if (_.contains(conflicts, name)) messages.push($.t('cluster_page.nodes_tab.role_conflict'));
+            if (!isAvailable) messages.push($.t('cluster_page.nodes_tab.' + name + '_restriction'));
+            return {
+                result: restrictionsCheck.result || _.contains(conflicts, name) || (!isAvailable && !this.isRoleSelected(name)),
+                message: messages.join(' ')
+            };
+        },
+        render: function() {
+            var settings = this.props.cluster.get('settings'),
+                configModels = {
+                    cluster: this.props.cluster,
+                    settings: settings,
+                    version: app.version,
+                    default: settings
+                };
             return this.state.loading ? null : (
                 <div>
-                    <h4>{$.t(ns + 'assign_roles')}</h4>
-                    {roles.map(function(role) {
-                        var name = role.get('name');
-                        if (!role.checkRestrictions(configModels, 'hide')) {
-                            var checked = this.isRoleSelected(name),
-                                isAvailable = this.isRoleAvailable(name),
-                                disabled = !this.props.nodes.length || _.contains(conflicts, name) || (!isAvailable && !checked) || role.checkRestrictions(configModels, 'disable'),
-                                warning = _.contains(conflicts, name) ? $.t(ns + 'role_conflict') : !isAvailable ? $.t('cluster_page.nodes_tab.' + name + '_restriction') : '';
+                    <h4>{$.t('cluster_page.nodes_tab.assign_roles')}</h4>
+                    {this.props.cluster.get('release').get('role_models').map(function(role) {
+                        if (!role.checkRestrictions(configModels, 'hide').result) {
+                            var name = role.get('name'),
+                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, configModels) : {};
                             return (
                                 <controls.Input
                                     key={name}
@@ -131,9 +140,9 @@ function(React, Expression, utils, controls) {
                                     name={name}
                                     label={role.get('label')}
                                     description={role.get('description')}
-                                    defaultChecked={checked}
-                                    disabled={disabled}
-                                    tooltipText={warning}
+                                    defaultChecked={this.isRoleSelected(name)}
+                                    disabled={!this.props.nodes.length || processedRestrictions.result}
+                                    tooltipText={!!this.props.nodes.length && processedRestrictions.message}
                                     wrapperClassName='role-container'
                                     labelClassName='role-label'
                                     descriptionClassName='role-description'

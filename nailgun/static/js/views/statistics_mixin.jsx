@@ -91,10 +91,10 @@ define([
             return $.t(key + '_community');
         },
         renderInput: function(settingName, labelClassName, wrapperClassName, hideErrors) {
-            if (this.checkRestrictions('metadata', 'hide') || this.checkRestrictions(settingName, 'hide')) return null;
+            if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result) return null;
             var setting = this.props.settings.get(this.props.settings.makePath('statistics', settingName)),
                 error = this.getError(settingName),
-                disabled = this.checkRestrictions('metadata') || this.checkRestrictions(settingName);
+                disabled = this.checkRestrictions('metadata').result || this.checkRestrictions(settingName).result;
             return <controls.Input
                 key={settingName}
                 type={setting.type}

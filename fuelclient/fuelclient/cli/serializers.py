@@ -13,6 +13,7 @@
 #    under the License.
 from __future__ import print_function
 
+import glob
 from itertools import ifilter
 from itertools import imap
 import json
@@ -82,6 +83,19 @@ class Serializer(object):
         full_path = self.prepare_path(path)
         with open(full_path, "r") as file_to_read:
             return self.serializer["r"](file_to_read.read())
+
+    def read_from_dir(self, path, formats=('yaml', 'json')):
+        """Read all files from directory that satisfies formats
+
+        :param path: directory full path
+        :param formats: iterable with formats (yaml, json)
+        :returns: generator where each item is loaded file content
+        """
+        glob_path = os.path.join(path, '/*')
+        for file_name in glob.glob(glob_path):
+            file_type = file_name.split('.')[-1]
+            if file_type in formats:
+                yield self.read_from_file(file_name)
 
 
 def listdir_without_extensions(dir_path):

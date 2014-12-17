@@ -18,6 +18,8 @@ except ImportError:
     # Runing unit-tests in production environment
     from unittest2.case import TestCase
 
+from mock import patch
+
 import logging
 import os
 import shutil
@@ -53,6 +55,11 @@ class UnitTestCase(TestCase):
 
     def execute(self, command):
         return main(command)
+
+    def execute_wo_auth(self, command):
+        with patch('fuelclient.client.Client.auth_required') as auth:
+            auth.return_value = False
+            return self.execute(command)
 
 
 class BaseTestCase(UnitTestCase):

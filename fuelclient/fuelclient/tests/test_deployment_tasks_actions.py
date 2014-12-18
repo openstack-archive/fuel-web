@@ -16,6 +16,7 @@
 
 import json
 
+import mock
 from mock import patch
 
 from fuelclient.tests import base
@@ -23,6 +24,7 @@ from fuelclient.tests import base
 
 API_INPUT = [{'id': 'primary-controller'}]
 API_OUTPUT = '- id: primary-controller\n'
+RELEASE_OUTPUT = [{'id': 1, 'version': '2014.2-6.0'}]
 
 
 @patch('fuelclient.client.requests')
@@ -69,5 +71,27 @@ class TestClusterDeploymentTasksActions(base.UnitTestCase):
         url = call_args[0][0]
         kwargs = call_args[1]
         self.assertIn('clusters/1/deployment_tasks', url)
+        self.assertEqual(
+            json.loads(kwargs['data']), API_INPUT)
+
+
+@patch('fuelclient.client.requests')
+@patch('fuelclient.cli.serializers.open', create=True)
+@patch('fuelclient.cli.utils.os')
+class TestSyncDeploymentTasks(base.UnitTestCase):
+
+    def test_sync_deployment_scripts(self, mos, mopen, mrequests):
+        mrequests.get().json.return_value = RELEASE_OUTPUT
+        mos.walk.return_value = [
+            ('/etc/puppet/2014.2-6.0', [], ['tasks.yaml'])]
+        mos.path.join.return_value = '/etc/puppet/2014.2-6.0/tasks.yaml'
+        mopen().__enter__().read.return_value = API_OUTPUT
+        self.execute_wo_auth(
+            ['fuel', 'rel', '--sync-deployment-tasks'])
+        mos.walk.assert_called_once_with(mock.ANY)
+        call_args = mrequests.put.call_args_list[0]
+        url = call_args[0][0]
+        kwargs = call_args[1]
+        self.assertIn('releases/1/deployment_tasks', url)
         self.assertEqual(
             json.loads(kwargs['data']), API_INPUT)

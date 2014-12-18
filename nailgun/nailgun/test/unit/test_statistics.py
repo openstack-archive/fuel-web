@@ -342,3 +342,32 @@ class TestStatisticsSender(BaseTestCase):
         )
         log_error.assert_called_once_with(
             "Sending data to collector failed: %s", "custom")
+
+    @patch('nailgun.statistics.statsenderd.time.sleep')
+    def test_send_stats_once_after_dberror(self, sleep):
+        def fn():
+            # try to commit wrong data
+            Cluster.create(
+                {
+                    "id": "500",
+                    "release_id": "500"
+                }
+            )
+            self.db.commit()
+
+        ss = StatsSender()
+
+        ss.send_stats_once()
+        # one call was made (all went ok)
+        self.assertEqual(sleep.call_count, 1)
+
+        with patch.object(ss,
+                          'must_send_stats',
+                          fn):
+            ss.send_stats_once()
+        # no more calls was made because of exception
+        self.assertEqual(sleep.call_count, 1)
+
+        ss.send_stats_once()
+        # one more call was made (all went ok)
+        self.assertEqual(sleep.call_count, 2)

@@ -53,6 +53,10 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var bindings = {};
             _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
                 bindings['.wizard-step[data-pane=' + paneIndex + ']'] = {
+                    observe: PaneConstructor.prototype.constructorName,
+                    visible: function(value) {
+                        return value != 'hidden';
+                    },
                     attributes: [{
                         name: 'class',
                         observe: PaneConstructor.prototype.constructorName
@@ -130,6 +134,17 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             };
             this.processRestrictions();
             this.attachModelListeners();
+        },
+        processPaneRestrictions: function() {
+            _.each(this.config, function(pane, paneName) {
+                //if ((pane.metadata || {}).restrictions) {
+                    _.each((pane.metadata || {}).restrictions, function(restriction) {
+                        if (utils.evaluateExpression(restriction.condition, this.configModels).value) {
+                            this.panesModel.set(paneName, 'hidden');
+                        }
+                    }, this);
+                //}
+            }, this);
         },
         attachModelListeners: function() {
             _.each(this.restrictions, function(paneConfig) {
@@ -229,12 +244,19 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 maxAvailablePaneIndex: _.max([this.panesModel.get('maxAvailablePaneIndex'), this.panesModel.get('activePaneIndex'), index])
             });
         },
+        checkPaneAvailability: function(paneIndex, isIncreasing) {
+            if (this.panesModel.get(this.panesConstructors[paneIndex].name) == 'hidden') {
+                paneIndex = isIncreasing ? ++paneIndex : --paneIndex;
+                this.checkPaneAvailability(paneIndex);
+            }
+            return paneIndex;
+        },
         prevPane: function() {
-            this.goToPane(this.panesModel.get('activePaneIndex') - 1);
+            this.goToPane(this.checkPaneAvailability(this.panesModel.get('activePaneIndex') - 1));
         },
         nextPane: function() {
             this.activePane.processPaneData().done(_.bind(function() {
-                this.goToPane(this.panesModel.get('activePaneIndex') + 1);
+                this.goToPane(this.checkPaneAvailability(this.panesModel.get('activePaneIndex') + 1, true));
             }, this));
         },
         onStepClick: function(e) {
@@ -259,12 +281,14 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         updatePanesStatuses: function() {
             _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
                 var paneName = PaneConstructor.prototype.constructorName;
-                if (paneIndex == this.panesModel.get('activePaneIndex')) {
-                    this.panesModel.set(paneName, 'current');
-                } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
-                    this.panesModel.set(paneName, 'available');
-                } else {
-                    this.panesModel.set(paneName, 'unavailable');
+                if (this.panesModel.get(paneName) != 'hidden') {
+                    if (paneIndex == this.panesModel.get('activePaneIndex')) {
+                        this.panesModel.set(paneName, 'current');
+                    } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
+                        this.panesModel.set(paneName, 'available');
+                    } else {
+                        this.panesModel.set(paneName, 'unavailable');
+                    }
                 }
             }, this);
         },
@@ -628,6 +652,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var release = this.wizard.model.get('NameAndRelease.release');
             _.extend(this.wizard.config, _.cloneDeep(config));
             this.wizard.model.off(null, null, this);
+            this.wizard.processPaneRestrictions();
             this.wizard.model.initialize(this.wizard.config);
             this.wizard.model.processConfig(this.wizard.config);
             this.wizard.model.set({

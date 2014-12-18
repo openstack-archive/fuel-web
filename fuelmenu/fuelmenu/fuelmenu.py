@@ -334,7 +334,7 @@ def setup():
     FuelSetup()
 
 
-def save_only(iface):
+def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
     import common.network as network
     from common import pwgen
     import netifaces
@@ -362,6 +362,8 @@ def save_only(iface):
     except Exception:
         print("Unable to calculate hostname and domain")
         sys.exit(1)
+
+    newsettings = Settings().read(settingsfile)
     settings = \
         {
             "ADMIN_NETWORK/interface": iface,
@@ -396,18 +398,25 @@ def save_only(iface):
             "FUEL_ACCESS/user": "admin",
             "FUEL_ACCESS/password": "admin",
         }
-    newsettings = dict()
     for setting in settings.keys():
         if "/" in setting:
             part1, part2 = setting.split("/")
             if part1 not in newsettings.keys():
                 newsettings[part1] = {}
-            newsettings[part1][part2] = settings[setting]
+            #Keep old values for passwords if already set
+            if "password" in setting:
+                newsettings[part1].setdefault(part2, settings[setting])
+            else:
+                newsettings[part1][part2] = settings[setting]
         else:
-            newsettings[setting] = settings[setting]
+            if "password" in setting:
+                newsettings.setdefault(setting, settings[setting])
+            else:
+                newsettings[setting] = settings[setting]
+
     #Write astute.yaml
     Settings().write(newsettings, defaultsfile=None,
-                     outfn="/etc/fuel/astute.yaml")
+                     outfn=settingsfile)
 
 
 def main(*args, **kwargs):

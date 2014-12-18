@@ -12,12 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import defaultdict
+import os
+
 from fuelclient.cli.actions.base import Action
 from fuelclient.cli.actions.base import check_all
 from fuelclient.cli.actions.base import check_any
 import fuelclient.cli.arguments as Args
 from fuelclient.cli.arguments import group
 from fuelclient.cli.formatting import format_table
+from fuelclient.cli import utils
 from fuelclient.objects.release import Release
 
 
@@ -33,6 +37,7 @@ class ReleaseAction(Action):
             Args.get_list_arg("List all available releases."),
             Args.get_network_arg("Release network configuration."),
             Args.get_deployment_tasks_arg("Release tasks configuration."),
+            Args.get_sync_deployment_tasks_arg(),
             Args.get_dir_arg(
                 "Select directory to which download release attributes"),
             group(
@@ -43,6 +48,7 @@ class ReleaseAction(Action):
             )
         ]
         self.flag_func_map = (
+            ('sync-deployment-tasks', self.sync_deployment_tasks),
             ('deployment-tasks', self.deployment_tasks),
             ('network', self.network),
             (None, self.list),
@@ -118,3 +124,42 @@ class ReleaseAction(Action):
             release.update_deployment_tasks(tasks)
             print("Deployment tasks for release {0}"
                   " uploaded from {1}.yaml".format(release.id, dir_path))
+
+    @check_all("dir")
+    def sync_deployment_tasks(self, params):
+        """Upload tasks for different releases based on directories.
+        Unique identifier of the release should in the path, like:
+
+            /etc/puppet/2014.2-6.0/
+
+        fuel rel --sync-deployment-tasks --dir /etc/puppet/2014.2-6.0/
+
+        In case no directory will be provided:
+
+        fuel rel --sync-deployment-tasks
+
+        Current directory will be used
+        """
+        all_rels = Release.get_all_data()
+        real_path = os.path.realpath(params.dir)
+        files = list(utils.iterfiles(real_path, ('tasks.yaml',)))
+        serialized_tasks = defaultdict(list)
+        versions = set([r['version'] for r in all_rels])
+
+        for file_name in files:
+            for version in versions:
+                if version in file_name:
+                    serialized_tasks[version].extend(
+                        self.serializer.read_from_full_path(file_name))
+
+        for rel in all_rels:
+            release = Release(rel['id'])
+            data = serialized_tasks.get(rel['version'])
+            if data:
+                release.update_deployment_tasks(data)
+                print("Deployment tasks syncronized for release"
+                      " {0} of version {1}".format(rel['name'],
+                                                   rel['version']))
+            else:
+                print("No tasks found for release {0} "
+                      "of version {1}".format(rel['name'], rel['version']))

@@ -1074,6 +1074,10 @@
               generator: "password"
     wizard_metadata:
       Mode:
+        metadata:
+          restrictions:
+            - condition: "not ('experimental' in version:feature_groups)"
+              action: "hide"
         mode:
           type: "radio"
           bind: "cluster:mode"
@@ -1118,7 +1122,6 @@
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"
-              message: null
           regex:
             source: *ipv4_or_hostname_regex
             error: "dialog.create_cluster_wizard.compute.vcenter_ip_warning"
@@ -1133,7 +1136,6 @@
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"
-              message: null
           regex:
             source: *non_empty_string
             error: "dialog.create_cluster_wizard.compute.vcenter_user_warning"
@@ -1148,7 +1150,6 @@
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"
-              message: null
           regex:
             source: *non_empty_string
             error: "dialog.create_cluster_wizard.compute.vcenter_password_warning"
@@ -1161,7 +1162,6 @@
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"
-              message: null
           regex:
             source: *valid_cluster_name
             error: "dialog.create_cluster_wizard.compute.vcenter_cluster_warning"

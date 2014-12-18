@@ -55,6 +55,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             var bindings = {};
             _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
                 bindings['.wizard-step[data-pane=' + paneIndex + ']'] = {
+                    observe: PaneConstructor.prototype.constructorName,
+                    visible: function(value) {
+                        return value != 'hidden';
+                    },
                     attributes: [{
                         name: 'class',
                         observe: PaneConstructor.prototype.constructorName
@@ -132,6 +136,17 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             };
             this.processRestrictions();
             this.attachModelListeners();
+        },
+        processPaneRestrictions: function() {
+            _.each(this.config, function(pane, paneName) {
+                _.each((pane.metadata || {}).restrictions, function(restriction) {
+                    if (restriction.action == 'hide') {
+                        if (utils.evaluateExpression(restriction.condition, this.configModels).value) {
+                            this.panesModel.set(paneName, 'hidden');
+                        }
+                    }
+                }, this);
+            }, this);
         },
         attachModelListeners: function() {
             _.each(this.restrictions, function(paneConfig) {
@@ -231,19 +246,31 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 maxAvailablePaneIndex: _.max([this.panesModel.get('maxAvailablePaneIndex'), this.panesModel.get('activePaneIndex'), index])
             });
         },
+        getRelativePaneIndex: function(paneIndex, direction) {
+            paneIndex += direction;
+            if (this.panesModel.get(this.panesConstructors[paneIndex].name) == 'hidden') return this.getRelativePaneIndex(paneIndex, direction);
+            return paneIndex;
+        },
         prevPane: function() {
-            this.goToPane(this.panesModel.get('activePaneIndex') - 1);
+            this.goToPane(this.getRelativePaneIndex(this.panesModel.get('activePaneIndex'), -1));
         },
         nextPane: function() {
             this.activePane.processPaneData().done(_.bind(function() {
-                this.goToPane(this.panesModel.get('activePaneIndex') + 1);
+                this.goToPane(this.getRelativePaneIndex(this.panesModel.get('activePaneIndex'), 1));
             }, this));
         },
         onStepClick: function(e) {
-            var paneIndex = parseInt($(e.currentTarget).data('pane'), 10);
-            this.activePane.processPaneData().done(_.bind(function() {
+            var paneIndex = parseInt($(e.currentTarget).data('pane'), 10),
+                activePaneIndex = this.panesModel.get('activePaneIndex');
+
+            // if last or one of the previous panes - not processing data
+            if (activePaneIndex > paneIndex) {
                 this.goToPane(paneIndex);
-            }, this));
+            } else {
+                this.activePane.processPaneData().done(_.bind(function() {
+                    this.goToPane(paneIndex);
+                }, this));
+            }
         },
         getListOfPanesToRestore: function(currentIndex, maxIndex) {
             var panesNames = [];
@@ -257,12 +284,14 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         updatePanesStatuses: function() {
             _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
                 var paneName = PaneConstructor.prototype.constructorName;
-                if (paneIndex == this.panesModel.get('activePaneIndex')) {
-                    this.panesModel.set(paneName, 'current');
-                } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
-                    this.panesModel.set(paneName, 'available');
-                } else {
-                    this.panesModel.set(paneName, 'unavailable');
+                if (this.panesModel.get(paneName) != 'hidden') {
+                    if (paneIndex == this.panesModel.get('activePaneIndex')) {
+                        this.panesModel.set(paneName, 'current');
+                    } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
+                        this.panesModel.set(paneName, 'available');
+                    } else {
+                        this.panesModel.set(paneName, 'unavailable');
+                    }
                 }
             }, this);
         },
@@ -633,6 +662,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             var release = this.wizard.model.get('NameAndRelease.release');
             _.extend(this.wizard.config, _.cloneDeep(config));
             this.wizard.model.off(null, null, this);
+            this.wizard.processPaneRestrictions();
             this.wizard.model.initialize(this.wizard.config);
             this.wizard.model.processConfig(this.wizard.config);
             this.wizard.model.set({

@@ -1074,6 +1074,8 @@
               generator: "password"
     wizard_metadata:
       Mode:
+        restrictions:
+          - condition: "not ('experimental' in version:feature_groups)"
         mode:
           type: "radio"
           bind: "cluster:mode"

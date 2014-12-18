@@ -79,7 +79,9 @@ class Serializer(object):
         return full_path
 
     def read_from_file(self, path):
-        full_path = self.prepare_path(path)
+        return self.read_from_full_path(self.prepare_path(path))
+
+    def read_from_full_path(self, full_path):
         with open(full_path, "r") as file_to_read:
             return self.serializer["r"](file_to_read.read())
 

@@ -53,6 +53,10 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var bindings = {};
             _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
                 bindings['.wizard-step[data-pane=' + paneIndex + ']'] = {
+                    observe: 'restrictedIndex',
+                    visible: function(value) {
+                        return paneIndex != value;
+                    },
                     attributes: [{
                         name: 'class',
                         observe: PaneConstructor.prototype.constructorName
@@ -107,6 +111,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 }
             };
             this.panesModel = new Backbone.Model({
+                restrictedIndex: null,
                 activePaneIndex: 0,
                 maxAvailablePaneIndex: 0
             });
@@ -130,6 +135,19 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             };
             this.processRestrictions();
             this.attachModelListeners();
+        },
+        processPaneRestrictions: function() {
+            var paneToOmit;
+            _.each(this.config, function(pane, paneName) {
+                if (pane.restrictions) {
+                    paneToOmit = paneName;
+                }
+            }, this);
+            _.each(this.panesConstructors, function(constructor, index) {
+                if (constructor.name == paneToOmit) {
+                    this.panesModel.set({restrictedIndex: index});
+                }
+            }, this);
         },
         attachModelListeners: function() {
             _.each(this.restrictions, function(paneConfig) {
@@ -229,12 +247,19 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 maxAvailablePaneIndex: _.max([this.panesModel.get('maxAvailablePaneIndex'), this.panesModel.get('activePaneIndex'), index])
             });
         },
+        checkPaneAvailability: function(paneIndex, isIncreasing) {
+            if (paneIndex ==  this.panesModel.get('restrictedIndex')) {
+                paneIndex = isIncreasing ? ++paneIndex : --paneIndex;
+                this.checkPaneAvailability();
+            }
+            return paneIndex;
+        },
         prevPane: function() {
-            this.goToPane(this.panesModel.get('activePaneIndex') - 1);
+            this.goToPane(this.checkPaneAvailability(this.panesModel.get('activePaneIndex') - 1, false));
         },
         nextPane: function() {
             this.activePane.processPaneData().done(_.bind(function() {
-                this.goToPane(this.panesModel.get('activePaneIndex') + 1);
+                this.goToPane(this.checkPaneAvailability(this.panesModel.get('activePaneIndex') + 1, true));
             }, this));
         },
         onStepClick: function(e) {
@@ -628,6 +653,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var release = this.wizard.model.get('NameAndRelease.release');
             _.extend(this.wizard.config, _.cloneDeep(config));
             this.wizard.model.off(null, null, this);
+            this.wizard.processPaneRestrictions();
             this.wizard.model.initialize(this.wizard.config);
             this.wizard.model.processConfig(this.wizard.config);
             this.wizard.model.set({

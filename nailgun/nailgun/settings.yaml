@@ -30,8 +30,8 @@ FUEL_KEY: "Unknown"
 
 FIXTURES_TO_UPLOAD:
   - "openstack.yaml"
-  - "start_notification.json"
-  - "admin_network.json"
+  - "start_notification.yaml"
+  - "admin_network.yaml"
   - "repodata.yaml"
 
 DATABASE:

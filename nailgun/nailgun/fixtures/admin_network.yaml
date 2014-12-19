@@ -1,0 +1,29 @@
+---
+network_group:
+  model: nailgun.db.sqlalchemy.models.network:NetworkGroup
+  fields: 
+    name: "fuelweb_admin"
+    cidr: "{{settings.ADMIN_NETWORK['cidr']}}"
+    vlan_start: null
+    meta: 
+      use_gateway: true
+      notation: "ip_ranges"
+      render_type: null
+      render_addr_mask: null
+      map_priority: 0
+      unmovable: true
+      configurable: false
+      assign_vip: false
+
+ip_addr_range:
+  model: nailgun.db.sqlalchemy.models.network:IPAddrRange
+  fields: 
+    network_group: !rel network_group
+    first: "{{settings.ADMIN_NETWORK['first']}}"
+    last: "{{settings.ADMIN_NETWORK['last']}}"
+
+ip_addr:
+  model: nailgun.db.sqlalchemy.models.network:IPAddr
+  fields: 
+    network_data: !rel network_group
+    ip_addr: "{{settings.MASTER_IP}}"

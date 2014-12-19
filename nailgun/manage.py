@@ -168,8 +168,8 @@ def action_loaddata(params):
     from nailgun.logger import logger
 
     logger.info("Uploading fixture...")
-    with open(params.fixture, "r") as fileobj:
-        fixman.upload_fixture(fileobj)
+    fixman.fixture_manager.load(params.fixture)
+    fixman.fixture_manager.install_all_fixtures()
     logger.info("Done")
 
 

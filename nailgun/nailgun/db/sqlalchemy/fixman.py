@@ -17,12 +17,14 @@
 from datetime import datetime
 import itertools
 import jinja2
-import os.path
+import os
 import Queue
 import StringIO
 import sys
+from tempfile import NamedTemporaryFile
 import yaml
 
+import charlatan
 from sqlalchemy import orm
 import sqlalchemy.types
 
@@ -35,17 +37,107 @@ from nailgun.settings import settings
 from nailgun.utils import dict_merge
 
 
+FIXTURE_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'fixtures')
+
+
+def configure_yaml():
+
+    class NowLink(str): pass
+
+    class RelationshipLink(str): pass
+
+    def now_representer(dumper, data):
+        return dumper.represent_scalar(u'!now', data)
+
+    def relationship_representer(dumper, data):
+        return dumper.represent_scalar(u'!rel', data)
+
+    def now_constructor(loader, node):
+        """Create NowLink for '!now' tags."""
+        return NowLink()
+
+    def relationship_constructor(loader, node):
+        """Create RelationshipLink for `!rel` tags."""
+        name = loader.construct_scalar(node)
+        return RelationshipLink(name)
+
+    yaml.add_constructor(u'!now', now_constructor)
+    yaml.add_constructor(u'!rel', relationship_constructor)
+    yaml.add_representer(NowLink, now_representer)
+    yaml.add_representer(RelationshipLink, relationship_representer)
+
+
+class FixturesManager(charlatan.FixturesManager):
+
+    def load(self, filenames, models_package=""):
+        # TODO: contribute logic to charlatan library
+        #   - load fixtures direct from file_object
+        #   - "recursive" inheritance for yaml
+        tmp_filenames = self._pre_load(filenames)
+
+        if len(tmp_filenames) == 1:
+            super(FixturesManager, self).load(tmp_filenames[0], models_package)
+        else:
+            super(FixturesManager, self).load(tmp_filenames, models_package)
+        
+        self._clean_tmp_files(tmp_filenames)
+
+    def _pre_load(self, filenames):
+        pre_process_filenames = []
+        tmp_filenames = []
+        configure_yaml()
+        # TODO: checking string type for different python versions
+        if isinstance(filenames, str):
+            pre_process_filenames = [filenames]
+        else:
+            pre_process_filenames = filenames
+
+        for filename in pre_process_filenames:
+            with open(filename) as fileobj:
+                fixture = yaml.load(template_fixture(fileobj))
+                tmp_file = NamedTemporaryFile(
+                    suffix=".yaml", dir=FIXTURE_PATH, delete=False)
+
+                parent_fixtures = []
+                for key in fixture.keys():
+                    if 'inherit_from' in fixture[key]:
+                        inherit_from = fixture[key].get('inherit_from')
+                        fixture[key] = dict_merge(
+                            fixture.get(inherit_from, {}), 
+                            fixture.get(key))
+
+                        fixture[key].pop('inherit_from', None)
+                        if inherit_from not in parent_fixtures:
+                            parent_fixtures.append(inherit_from)
+                for parent_fixture in parent_fixtures:
+                    fixture.pop(parent_fixture, None)
+
+                tmp_file.write(yaml.dump(fixture, default_flow_style=False))
+                tmp_file.close()
+
+                tmp_filenames.append(tmp_file.name)
+
+        return tmp_filenames
+
+    def _clean_tmp_files(self, filenames):
+        for tmp_filename in filenames:
+            os.remove(tmp_filename)
+
+
+fixture_manager = FixturesManager(db_session=db())
+
+
 def capitalize_model_name(model_name):
     return ''.join(map(lambda s: s.capitalize(), model_name.split('_')))
 
-
+# TODO: will be moved to FixtureManager class
 def template_fixture(fileobj, **kwargs):
     if not kwargs.get('settings'):
         kwargs["settings"] = settings
     t = jinja2.Template(fileobj.read())
     return StringIO.StringIO(t.render(**kwargs))
 
-
+#TODO: will be removed after fixture manager integration in unittests
 def load_fixture(fileobj, loader=None):
     if not loader:
         loaders = {'.json': jsonutils, '.yaml': yaml, '.yml': yaml}
@@ -56,6 +148,7 @@ def load_fixture(fileobj, loader=None):
     fixture = loader.load(
         template_fixture(fileobj)
     )
+
     fixture = filter(lambda obj: obj.get('pk') is not None, fixture)
     for i in range(0, len(fixture)):
         def extend(obj):
@@ -67,7 +160,7 @@ def load_fixture(fileobj, loader=None):
 
     return fixture
 
-
+#TODO: will be removed after fixture manager integration in unittests
 def upload_fixture(fileobj, loader=None):
     fixture = load_fixture(fileobj, loader)
 
@@ -215,8 +308,8 @@ def upload_fixtures():
                 if os.access(path, os.R_OK):
                     break
         if os.access(path, os.R_OK):
-            with open(path, "r") as fileobj:
-                upload_fixture(fileobj)
+            fixture_manager.load(path)
+            fixture_manager.install_all_fixtures()
             logger.info("Fixture has been uploaded from file: %s", path)
 
 

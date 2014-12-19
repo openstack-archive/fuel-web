@@ -1,6 +1,6 @@
 ---
-- pk: 1
-  model: "nailgun.master_node_settings"
+master_node_settings:
+  model: nailgun.db.sqlalchemy.models.master_node_settings:MasterNodeSettings
   fields:
     master_node_uid: "62410d05-ecbd-4912-83fe-5db51ebb273e"
     settings:

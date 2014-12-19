@@ -1,6 +1,6 @@
 ---
-- &base_release
-  model: "nailgun.release"
+base_release:
+  model: nailgun.db.sqlalchemy.models.release:Release
   fields:
     state: "available"
     modes_metadata:
@@ -1273,8 +1273,9 @@
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
       Ready: {}
-- pk: 1
-  extend: *base_release
+
+juno_on_centos:
+  inherit_from: base_release
   fields:
     name: "Juno on CentOS 6.5"
     version: "2014.2-6.0"
@@ -1324,13 +1325,9 @@
               uri: "http://{{settings.MASTER_IP}}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-    orchestrator_data:
-      puppet_manifests_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/"
-      puppet_modules_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/"
-      repo_metadata:
-        "{OPENSTACK_VERSION}": "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/centos/x86_64"
-- pk: 2
-  extend: *base_release
+
+juno_on_ubuntu:
+  inherit_from: base_release
   fields:
     name: "Juno on Ubuntu 12.04.4"
     version: "2014.2-6.0"
@@ -1352,8 +1349,21 @@
               uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-    orchestrator_data:
-      puppet_manifests_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/"
-      puppet_modules_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/"
+
+orchestrator_data_for_juno_on_centos:
+  model: nailgun.db.sqlalchemy.models.release:ReleaseOrchestratorData
+  fields:
+    release: !rel juno_on_centos
+    puppet_manifests_source: "rsync://{{settings.MASTER_IP}}:/puppet/2014.2-6.0/manifests/"
+    puppet_modules_source: "rsync://{{settings.MASTER_IP}}:/puppet/2014.2-6.0/modules/"
+    repo_metadata:
+        "2014.2-6.0": "http://{{settings.MASTER_IP}}:8080/2014.2-6.0/centos/x86_64"
+
+orchestrator_data_for_juno_on_ubuntu:
+  model: nailgun.db.sqlalchemy.models.release:ReleaseOrchestratorData
+  fields:
+      release: !rel juno_on_ubuntu
+      puppet_manifests_source: "rsync://{{settings.MASTER_IP}}:/puppet/2014.2-6.0/manifests/"
+      puppet_modules_source: "rsync://{{settings.MASTER_IP}}:/puppet/2014.2-6.0/modules/"
       repo_metadata:
-        "{OPENSTACK_VERSION}": "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/ubuntu/x86_64 precise main"
+        "2014.2-6.0": "http://{{settings.MASTER_IP}}:8080/2014.2-6.0/ubuntu/x86_64 precise main"

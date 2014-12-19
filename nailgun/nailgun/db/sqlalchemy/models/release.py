@@ -84,6 +84,7 @@ class Release(Base):
         cascade="all,delete"
     )
     orchestrator_data = relationship("ReleaseOrchestratorData",
+                                     backref="release",
                                      uselist=False,
                                      cascade="delete")
 

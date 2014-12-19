@@ -910,9 +910,18 @@ class BaseTestCase(TestCase):
                 raise Exception(err)
         else:
             newpath = path[:]
+
+            node1_keys = node1.keys()
+            node2_keys = node2.keys()
+
+            if len(node1_keys) != len(node2_keys):
+                raise Exception(
+                    'Nodes have different keys number: {0} != {1}'.format(
+                        len(node1_keys), len(node2_keys)))
+
             for key1, key2 in zip(
-                sorted(node1.keys()),
-                sorted(node2.keys())
+                sorted(node1_keys),
+                sorted(node2_keys)
             ):
                 if key1 != key2:
                     err = "Keys differ: {0} != {1}".format(

@@ -370,6 +370,9 @@ class TestLogs(BaseIntegrationTest):
                             'objects': [],
                         }
                     },
+                    'target': '/path/to/save',
+                    'lastdump': '/path/to/latest',
+                    'timestamp': True,
                 })
     def test_snapshot_conf(self):
         self.env.create_node(
@@ -399,6 +402,9 @@ class TestLogs(BaseIntegrationTest):
                     'objects': [],
                 },
             },
+            'target': '/path/to/save',
+            'lastdump': '/path/to/latest',
+            'timestamp': True,
         }
         self.datadiff(DumpTask.conf(), conf)
 

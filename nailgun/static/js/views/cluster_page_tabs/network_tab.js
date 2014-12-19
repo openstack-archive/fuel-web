@@ -341,7 +341,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             observe = observe || 'vlan_start';
             var vlanInput = this.$('input[name=' + observe + ']');
             var bindings = {};
-            bindings['.vlan-tagging input[type=checkbox]'] = {
+            var bindingSelector = (this.network ? ('.' + this.network.get('name') + ' ') : '') +
+                '.vlan-tagging input[type=checkbox]';
+            bindings[bindingSelector] = {
                 observe: observe,
                 onGet: function(value) {
                     vlanInput.toggle(!_.isNull(value));

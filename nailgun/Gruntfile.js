@@ -106,12 +106,14 @@ module.exports = function(grunt) {
         },
         jscs: {
             options: {
+                requireSpaceBeforeKeywords: ['else', 'catch', 'finally'],
                 requireParenthesesAroundIIFE: true,
                 requireSpaceAfterKeywords: ['do', 'for', 'if', 'else', 'switch', 'case', 'try', 'while', 'return', 'typeof'],
                 requireSpaceBeforeBlockStatements: true,
                 requireSpacesInConditionalExpression: true,
                 requireSpacesInFunction: {beforeOpeningCurlyBrace: true},
                 disallowSpacesInFunction: {beforeOpeningRoundBrace: true},
+                disallowSpacesInCallExpression: true,
                 requireBlocksOnNewline: 1,
                 disallowPaddingNewlinesInBlocks: true,
                 disallowEmptyBlocks: true,

@@ -46,5 +46,19 @@ class TestKeystoneClient(base.BaseTestCase):
     @mock.patch('fuel_upgrade.clients.keystone_client.requests.post',
                 side_effect=requests.exceptions.HTTPError(''))
     def test_does_not_fail_without_keystone(self, _, __):
-        self.keystone.request
-        self.assertEqual(self.keystone.get_token(), None)
+        with mock.patch('fuel_upgrade.utils.time.time') as time:
+            # Unfortunately, in Python 2.6 the itertools.count() doesn't
+            # support the step argument, so we need to implement our own
+            # bicycle.
+            def timestamp(start, step):
+                x = start
+                while True:
+                    yield x
+                    x += step
+
+            # We need such infinity generator, because time.time() is used
+            # by our loggers, so we can't predict how often it will be called.
+            time.side_effect = timestamp(0, 15)
+
+            self.keystone.request
+            self.assertEqual(self.keystone.get_token(), None)

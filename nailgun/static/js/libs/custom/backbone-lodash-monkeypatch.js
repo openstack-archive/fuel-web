@@ -27,11 +27,12 @@ define(['underscore', 'backbone'], function(_, Backbone) {
 
     // Mix in each Underscore method as a proxy to `Collection#models`.
     _.each(methods, function(method) {
-        Backbone.Collection.prototype[method] = function(predicate) {
-            var pred = predicate;
+        Backbone.Collection.prototype[method] = function() {
+            var args = [].slice.call(arguments),
+                predicate = args[0];
 
             if (_.isPlainObject(predicate)) {
-                pred = function(model) {
+                args[0] = function(model) {
                     return _.chain(predicate)
                         .pairs()
                         .every(function(pair) {
@@ -41,7 +42,9 @@ define(['underscore', 'backbone'], function(_, Backbone) {
                 };
             }
 
-            return _[method].apply(_, [this.models, pred]);
+            args.unshift(this.models);
+
+            return _[method].apply(_, args);
         };
     });
 

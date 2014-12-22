@@ -239,13 +239,9 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         onStepClick: function(e) {
             var paneIndex = parseInt($(e.currentTarget).data('pane'), 10);
-            if (this.panesModel.get('activePaneIndex') > this.panesConstructors.length - 1) {
                 this.activePane.processPaneData().done(_.bind(function() {
                     this.goToPane(paneIndex);
                 }, this));
-            } else {
-                this.goToPane(paneIndex);
-            }
         },
         getListOfPanesToRestore: function(currentIndex, maxIndex) {
             var panesNames = [];

@@ -787,14 +787,12 @@ class NeutronNetworkDeploymentSerializer60(
             attrs['endpoints'][brname]['other_nets'] = \
                 other_nets.get(ngname, [])
 
-        if not objects.Node.should_have_public(node):
+        if objects.Node.should_have_public(node):
+            attrs['endpoints']['br-ex']['default_gateway'] = True
+        else:
             gw = nm.get_default_gateway(node.id)
             attrs['endpoints']['br-fw-admin']['gateway'] = gw
-
-        for brname in attrs['endpoints'].keys():
-            if attrs['endpoints'][brname].get('gateway'):
-                attrs['endpoints'][brname]['default_gateway'] = True
-                break
+            attrs['endpoints']['br-fw-admin']['default_gateway'] = True
 
         return attrs
 

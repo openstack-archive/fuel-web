@@ -241,13 +241,9 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         },
         onStepClick: function(e) {
             var paneIndex = parseInt($(e.currentTarget).data('pane'), 10);
-            if (this.panesModel.get('activePaneIndex') > this.panesConstructors.length - 1) {
-                this.activePane.processPaneData().done(_.bind(function() {
-                    this.goToPane(paneIndex);
-                }, this));
-            } else {
+            this.activePane.processPaneData().done(_.bind(function() {
                 this.goToPane(paneIndex);
-            }
+            }, this));
         },
         getListOfPanesToRestore: function(currentIndex, maxIndex) {
             var panesNames = [];

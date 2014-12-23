@@ -113,7 +113,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesT
             $(window).off('beforeunload.' + this.eventNamespace);
             $('body').off('click.' + this.eventNamespace);
             _.each(['clusterInfo', 'clusterCustomizationMessage', 'deploymentResult', 'deploymentControl', 'tab'], function(subView) {
-                utils.universalUnmount(this[subView]);
+                if (this[subView]) utils.universalUnmount(this[subView]);
             }, this);
         },
         onBeforeunloadEvent: function() {
@@ -163,11 +163,59 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesT
                     this.$('#tab-' + this.activeTab),
                     this
                 );
+            } else {
+                _.defer(_.bind(function() {
+                    app.navigate('cluster/' + this.model.id, {trigger: true, replace: true});
+                }, this));
             }
 
             return this;
         }
     });
+
+    ClusterPage.fetchData = function(id, activeTab) {
+        var cluster, tasks, promise, currentClusterId;
+        var tabOptions = _.toArray(arguments).slice(2);
+
+        try {
+            currentClusterId = app.page.model.id;
+        } catch (ignore) {}
+
+        if (currentClusterId == id) {
+            // just another tab has been chosen, do not load cluster again
+            cluster = app.page.model;
+            tasks = app.page.tasks;
+            promise = $.Deferred().resolve();
+        } else {
+            cluster = new models.Cluster({id: id});
+            var settings = new models.Settings();
+            settings.url = _.result(cluster, 'url') + '/attributes';
+            cluster.set({settings: settings});
+            tasks = new models.Tasks();
+            tasks.fetch = function(options) {
+                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
+            };
+            promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), tasks.fetch())
+                .then(_.bind(function() {
+                    var networkConfiguration = new models.NetworkConfiguration();
+                    networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
+                    cluster.set({
+                        networkConfiguration: networkConfiguration,
+                        release: new models.Release({id: cluster.get('release_id')})
+                    });
+                    return $.when(cluster.get('networkConfiguration').fetch(), cluster.get('release').fetch());
+                }, this));
+        }
+
+        return promise.then(function() {
+            return {
+                model: cluster,
+                activeTab: activeTab,
+                tabOptions: tabOptions,
+                tasks: tasks
+            };
+        });
+    };
 
     return ClusterPage;
 });

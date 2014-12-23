@@ -32,6 +32,14 @@ function(React, utils, models, dialogs) {
         title: function() {
             return $.t('notifications_page.title');
         },
+        statics: {
+            fetchData: function() {
+                var notifications = app.navbar.props.notifications;
+                return notifications.fetch().then(function() {
+                    return {notifications: notifications};
+                });
+            }
+        },
         render: function() {
             return (
                 <div>

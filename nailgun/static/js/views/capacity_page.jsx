@@ -33,6 +33,14 @@ function(React, models, componentMixins, controls) {
         title: function() {
             return $.t('capacity_page.title');
         },
+        statics: {
+            fetchData: function() {
+                var task = new models.Task();
+                return task.save({}, {url: '/api/capacity/', method: 'PUT'}).then(function() {
+                    return {capacityLog: new models.CapacityLog()};
+                });
+            }
+        },
         shouldDataBeFetched: function() {
             return this.props.capacityLog.isNew();
         },

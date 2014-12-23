@@ -157,7 +157,7 @@ class TestPutSameJson(base.BaseIntegrationTest):
             ]
         )
 
-        nova_config = self.http_get(
+        neutron_config = self.http_get(
             'NeutronNetworkConfigurationHandler', {
                 'cluster_id': self.cluster['id']
             }
@@ -167,7 +167,7 @@ class TestPutSameJson(base.BaseIntegrationTest):
             'NeutronNetworkConfigurationHandler', {
                 'cluster_id': self.cluster['id']
             },
-            nova_config, 202
+            neutron_config, 200
         )
 
     def test_deployment_info(self):

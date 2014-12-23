@@ -24,6 +24,7 @@ Create Date: 2014-09-18 12:44:28.327312
 revision = '1b1d4016375d'
 down_revision = '52924111f7d8'
 
+import uuid
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import text
@@ -31,7 +32,6 @@ from sqlalchemy.sql import text
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
-from nailgun.utils.migration import dump_master_node_settings
 from nailgun.utils.migration import upgrade_release_attributes_51_to_60
 from nailgun.utils.migration import upgrade_release_fill_orchestrator_data
 from nailgun.utils.migration import upgrade_release_roles_51_to_60
@@ -292,5 +292,118 @@ def upgrade_node_groups(connection):
             connection.execute(net_update, cluster_id=cluster[0], id=net[0])
 
 
+def dump_master_node_settings(connection):
+    """Generate uuid for master node installation and update
+    master_node_settings table by generated value
+
+    Arguments:
+    connection - a database connection
+    """
+
+    generated_uuid = str(uuid.uuid4())
+    settings = master_node_settings()
+
+    update = text(
+        "INSERT INTO master_node_settings (master_node_uid, settings) "
+        "   VALUES (:master_node_uid, :settings)"
+    )
+
+    connection.execute(update, master_node_uid=generated_uuid,
+                       settings=settings)
+
+
 def downgrade_data():
     pass
+
+
+def master_node_settings():
+    return jsonutils.dumps({
+      "statistics": {
+        "send_anonymous_statistic": {
+          "type": "checkbox",
+          "value": True,
+          "label": "statistics.setting_labels.send_anonymous_statistic",
+          "weight": 10
+        },
+        "send_user_info": {
+          "type": "checkbox",
+          "value": False,
+          "label": "statistics.setting_labels.send_user_info",
+          "weight": 20,
+          "restrictions": [
+            "fuel_settings:statistics.send_anonymous_statistic.value == false",
+            {
+              "condition": "not ('mirantis' in version:feature_groups)",
+              "action": "hide"
+            }
+          ]
+        },
+        "name": {
+          "type": "text",
+          "value": "",
+          "label": "statistics.setting_labels.name",
+          "weight": 30,
+          "regex": {
+            "source": "\\S",
+            "error": "statistics.errors.name"
+          },
+          "restrictions": [
+            "fuel_settings:statistics.send_anonymous_statistic.value == false",
+            {
+              "condition": "fuel_settings:statistics.send_user_info.value == false",
+              "action": "hide"
+            },
+            {
+              "condition": "not ('mirantis' in version:feature_groups)",
+              "action": "hide"
+            }
+          ]
+        },
+        "email": {
+          "type": "text",
+          "value": "",
+          "label": "statistics.setting_labels.email",
+          "weight": 40,
+          "regex": {
+            "source": "\\S",
+            "error": "statistics.errors.email"
+          },
+          "restrictions": [
+            "fuel_settings:statistics.send_anonymous_statistic.value == false",
+            {
+              "condition": "fuel_settings:statistics.send_user_info.value == false",
+              "action": "hide"
+            },
+            {
+              "condition": "not ('mirantis' in version:feature_groups)",
+              "action": "hide"
+            }
+          ]
+        },
+        "company": {
+          "type": "text",
+          "value": "",
+          "label": "statistics.setting_labels.company",
+          "weight": 50,
+          "regex": {
+            "source": "\\S",
+            "error": "statistics.errors.company"
+          },
+          "restrictions": [
+            "fuel_settings:statistics.send_anonymous_statistic.value == false",
+            {
+              "condition": "fuel_settings:statistics.send_user_info.value == false",
+              "action": "hide"
+            },
+            {
+              "condition": "not ('mirantis' in version:feature_groups)",
+              "action": "hide"
+            }
+          ]
+        },
+        "user_choice_saved": {
+          "type": "hidden",
+          "value": False
+        }
+      }
+    })

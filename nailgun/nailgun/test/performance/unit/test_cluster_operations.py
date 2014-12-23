@@ -20,6 +20,7 @@ from random import randint
 
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import fake_tasks
+from nailgun.test.performance.base import evaluate_unit_performance
 from nailgun.test.performance.base import BaseUnitLoadTestCase
 
 
@@ -30,6 +31,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         super(ClusterOperationsLoadTest, cls).setUpClass()
         cls.env.create_nodes(cls.NODES_NUM, cluster_id=cls.cluster['id'])
 
+    @evaluate_unit_performance
     def test_get_cluster(self):
         func = functools.partial(
             self.get_handler,
@@ -38,6 +40,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_put_cluster(self):
         func = functools.partial(
             self.put_handler,
@@ -47,6 +50,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_default_deployment_info(self):
         func = functools.partial(
             self.get_handler,
@@ -55,6 +59,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func, 70)
 
+    @evaluate_unit_performance
     def test_get_generated_data(self):
         func = functools.partial(
             self.get_handler,
@@ -63,6 +68,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_default_provisioning_info(self):
         func = functools.partial(
             self.get_handler,
@@ -71,6 +77,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_deployment_info(self):
         func = functools.partial(
             self.get_handler,
@@ -79,6 +86,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_put_deployment_info(self):
         func = functools.partial(
             self.put_handler,
@@ -88,6 +96,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_delete_deployment_info(self):
         func = functools.partial(
             self.delete_handler,
@@ -96,6 +105,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_provisioning_info(self):
         func = functools.partial(
             self.get_handler,
@@ -104,6 +114,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_put_provisioning_info(self):
         func = functools.partial(
             self.put_handler,
@@ -113,6 +124,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_delete_provisioning_info(self):
         func = functools.partial(
             self.delete_handler,
@@ -121,6 +133,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_clusters(self):
         func = functools.partial(
             self.get_handler,
@@ -138,11 +151,13 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
             cluster_data
         )
 
+    @evaluate_unit_performance
     def test_post_cluster(self):
         release = self.env.create_release()
         func = functools.partial(self.post_cluster, release.id)
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_attributes(self):
         func = functools.partial(
             self.get_handler,
@@ -151,6 +166,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_put_attributes(self):
         func = functools.partial(
             self.put_handler,
@@ -160,6 +176,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_patch_attributes(self):
         func = functools.partial(
             self.patch_handler,
@@ -169,6 +186,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_default_attributes(self):
         func = functools.partial(
             self.get_handler,
@@ -177,6 +195,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_put_default_attributes(self):
         func = functools.partial(
             self.put_handler,
@@ -187,6 +206,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         self.check_time_exec(func)
 
     @fake_tasks()
+    @evaluate_unit_performance
     def test_put_provision_selected_nodes(self):
         func = functools.partial(
             self.put_handler,
@@ -197,6 +217,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         self.check_time_exec(func)
 
     @fake_tasks()
+    @evaluate_unit_performance
     def test_put_deploy_selected_nodes(self):
         func = functools.partial(
             self.put_handler,
@@ -207,6 +228,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         self.check_time_exec(func, 10)
 
     @fake_tasks()
+    @evaluate_unit_performance
     def test_put_stop_deployment(self):
         self.put_handler(
             'DeploySelectedNodes',
@@ -233,6 +255,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_nova_network_configuration(self):
         func = functools.partial(
             self.get_handler,
@@ -241,6 +264,7 @@ class ClusterOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_put_nova_network_configuration(self):
         resp = self.get_handler(
             'NovaNetworkConfigurationHandler',
@@ -269,6 +293,7 @@ class ClusterNeutronOperationsLoadTest(BaseUnitLoadTestCase):
             mode='ha_compact')
         cls.env.create_nodes(cls.NODES_NUM, cluster_id=cls.cluster['id'])
 
+    @evaluate_unit_performance
     def test_get_neutron_network_configuration(self):
         func = functools.partial(
             self.get_handler,
@@ -277,6 +302,7 @@ class ClusterNeutronOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_put_neutron_network_configuration(self):
         resp = self.get_handler(
             'NeutronNetworkConfigurationHandler',
@@ -303,6 +329,7 @@ class ClusterNodeOperationsLoadTest(BaseUnitLoadTestCase):
             handler_kwargs={'cluster_id': cluster_id}
         )
 
+    @evaluate_unit_performance
     def test_post_node_assingment(self):
         cluster_id = self.env.create_cluster()['id']
         func = functools.partial(self.assign_node, cluster_id)
@@ -316,6 +343,7 @@ class ClusterNodeOperationsLoadTest(BaseUnitLoadTestCase):
             handler_kwargs={'cluster_id': cluster_id}
         )
 
+    @evaluate_unit_performance
     def test_post_node_unassingment(self):
         cluster_id = self.env.create_cluster()['id']
         func = functools.partial(self.unassign_node, cluster_id)

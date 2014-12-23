@@ -18,6 +18,7 @@ import functools
 from nose import SkipTest
 import os.path
 import shutil
+import six
 import tarfile
 import time
 from timeit import Timer
@@ -60,6 +61,9 @@ class BaseLoadTestCase(BaseTestCase):
         cls.app = app.TestApp(build_app(db_driver=test_db_driver).
                               wsgifunc(ProfilerMiddleware))
         syncdb()
+        cls.tests_results = defaultdict(
+            lambda: defaultdict(lambda: defaultdict(list)))
+        cls.tests_stats = defaultdict(lambda: defaultdict(dict))
 
     @classmethod
     def tearDownClass(cls):
@@ -87,10 +91,12 @@ class BaseLoadTestCase(BaseTestCase):
             tar.add(settings.LOAD_TESTS_PATHS['load_tests_base'])
             tar.close()
             shutil.rmtree(settings.LOAD_TESTS_PATHS['load_tests_base'])
+        write_results(str(cls.__name__), cls.tests_stats)
 
     def setUp(self):
         super(BaseLoadTestCase, self).setUp()
         self.start_time = time.time()
+        self.call_number = 1
 
     def tearDown(self):
         """Copy all files from profiling from last test to separate folder.
@@ -103,7 +109,7 @@ class BaseLoadTestCase(BaseTestCase):
             settings.LOAD_TESTS_PATHS['load_tests_base'],
             '{exec_time}_{test_name}'.format(
                 exec_time=exec_time,
-                test_name=self.__str__().split()[0]))
+                test_name=str(self).split()[0]))
         shutil.copytree(settings.LOAD_TESTS_PATHS['last_performance_test'],
                         test_path)
         shutil.rmtree(settings.LOAD_TESTS_PATHS['last_performance_test'])
@@ -116,22 +122,23 @@ class BaseLoadTestCase(BaseTestCase):
         to_add = len(self.slowest_calls) < self.TOP_SLOWEST
         fastest = (sorted(self.slowest_calls.keys())[0]
                    if len(self.slowest_calls) else None)
+        test_name = str(self)
+        request_name = str(func.args[0])
+        name = ':'.join([test_name, request_name])
         if not to_add:
             if fastest < exec_time:
                 del self.slowest_calls[fastest]
                 to_add = True
 
         if to_add:
-            name = ':'.join([self.__str__(), str(func.args[0])])
             self.slowest_calls[exec_time].append(name)
 
-        self.assertGreater(
-            max_exec_time,
-            exec_time,
-            "Execution time: {0} is greater, than expected: {1}".format(
-                exec_time, max_exec_time
-            )
-        )
+        test_results_d = self.tests_results[test_name][str(self.call_number)]
+        test_results_d['results'].append(exec_time)
+        if self.call_number == 1:
+            test_results_d['request_name'] = request_name
+            test_results_d['expect_time'] = max_exec_time
+        self.call_number += 1
 
     def get_handler(self, handler_name, handler_kwargs={}):
         resp = self.app.get(
@@ -223,6 +230,7 @@ class BaseUnitLoadTestCase(BaseLoadTestCase):
 
     def setUp(self):
         self.start_time = time.time()
+        self.call_number = 1
 
 
 class BaseIntegrationLoadTestCase(BaseLoadTestCase):
@@ -242,3 +250,114 @@ class BaseIntegrationLoadTestCase(BaseLoadTestCase):
                             exec_time=exec_time,
                             max_exec_time=self.total_time))
         self.db.remove()
+
+
+def copy_test_results(run_number):
+    """Copy test result from separate run to new directory.
+
+    :parameter run_number: run number, used in creating new directory
+    """
+    path_to_write = os.path.join(
+        settings.LOAD_TESTS_PATHS['last_performance_test'],
+        'run{0}'.format(run_number))
+    shutil.copytree(settings.LOAD_TESTS_PATHS['last_performance_test_run'],
+                    path_to_write)
+    shutil.rmtree(settings.LOAD_TESTS_PATHS['last_performance_test_run'])
+
+
+def normalize(N, percentile):
+    """Normalize N and remove first and last percentile
+
+    :parameter N:          is a list of values.
+    :parameter percentile: a float value from 0.0 to 1.0.
+
+    :return:               the percentile of the values
+    """
+    if not N:
+        return None
+    k = (len(N) - 1) * percentile
+    floor = int(k)
+    return sorted(N)[floor:len(N) - floor - 1]
+
+
+def read_previous_results():
+    """Read results of previous run.
+
+    :return: dictionary of results if exist
+    """
+    if os.path.exists(
+       settings.LOAD_TESTS_PATHS['load_previous_tests_results']):
+        with open(settings.LOAD_TESTS_PATHS['load_previous_tests_results'],
+                  'r') as results_file:
+            results = jsonutils.load(results_file)
+        return results
+    return {}
+
+
+def write_results(test_class_name, results):
+    """Write tests results to file defined in settings.
+    """
+    prev_results = read_previous_results()
+    if test_class_name in prev_results:
+        prev_results[test_class_name].update(results)
+    else:
+        prev_results[test_class_name] = results
+    with open(settings.LOAD_TESTS_PATHS['load_previous_tests_results'],
+              'w') as results_file:
+            results_file.write(jsonutils.dumps(prev_results))
+
+
+def evaluate_unit_performance(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        # read results of previous correct run
+        test = args[0]
+        number_of_runs = settings.PERFORMANCE_TESTS_RUN_NUMBER
+
+        # run tests multiple time to get more exact results
+        for run in six.moves.range(number_of_runs):
+            f(*args, **kwargs)
+            copy_test_results(run)
+            # reset call number for unittests
+            test.call_number = 1
+
+        compare_with_previous = False
+        class_name = test.__class__.__name__
+        previous_test_results = read_previous_results().get(class_name, {}).\
+            get(str(test), {})
+        current_rest_results = test.tests_results[str(test)]
+        if len(previous_test_results) == len(current_rest_results):
+            compare_with_previous = True
+
+        for call_number, results in six.iteritems(
+                test.tests_results[str(test)]):
+            request_name = results['request_name']
+
+            # normalize results and compute avg
+            normalized = normalize(results['results'], 0.025)
+            avg_time = sum(normalized) / len(normalized)
+
+            # check if previous results exists
+            prev_time = None
+            if compare_with_previous:
+                if request_name in \
+                   previous_test_results[call_number]['request_name']:
+                    # we give some % (default 10%) of tolerance for previous
+                    # expected time
+                    prev_time = (
+                        previous_test_results[call_number]['expect_time'] *
+                        (1.0 + settings.PERFORMANCE_TESTS_TOLERANCE))
+            expect_time = prev_time or results['expect_time']
+            test.tests_results[str(test)]
+            test.assertTrue(
+                avg_time <= expect_time,
+                "Average execution time: {exec_time} is greater, "
+                "than expected: {max_exec_time}".format(
+                exec_time=avg_time,
+                max_exec_time=expect_time))
+            test.tests_stats[str(test)][call_number]['request_name'] =\
+                request_name
+            test.tests_stats[str(test)][call_number]['expect_time'] =\
+                avg_time
+
+    return wrapper

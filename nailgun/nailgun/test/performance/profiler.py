@@ -58,8 +58,8 @@ class Profiler(object):
         self.method = method
         self.handler_name = handler_name
         if not os.path.exists(settings.
-                              LOAD_TESTS_PATHS['last_performance_test']):
-            os.makedirs(settings.LOAD_TESTS_PATHS['last_performance_test'])
+                              LOAD_TESTS_PATHS['last_performance_test_run']):
+            os.makedirs(settings.LOAD_TESTS_PATHS['last_performance_test_run'])
         self.profiler = cProfile.Profile()
         self.profiler.enable()
         self.start = time.time()
@@ -67,7 +67,7 @@ class Profiler(object):
     def save_data(self):
         elapsed = time.time() - self.start
         pref_filename = os.path.join(
-            settings.LOAD_TESTS_PATHS['last_performance_test'],
+            settings.LOAD_TESTS_PATHS['last_performance_test_run'],
             '{method:s}.{handler_name:s}.{elapsed_time:.0f}ms.{t_time}.'.
             format(
                 method=self.method,

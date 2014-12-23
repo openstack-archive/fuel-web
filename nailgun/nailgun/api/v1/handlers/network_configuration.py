@@ -158,7 +158,6 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         task = task_manager.execute(data)
 
         if task.status != consts.TASK_STATUSES.error:
-
             try:
                 if 'networks' in data:
                     self.validator.validate_networks_update(
@@ -180,10 +179,12 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                         'progress': 100,
                         'message': six.text_type(exc)}
                 objects.Task.update(task, data)
-
                 logger.error(traceback.format_exc())
 
-        raise self.http(202, objects.Task.to_json(task))
+        if task.status == consts.TASK_STATUSES.error:
+            raise self.http(400, objects.Task.to_json(task))
+
+        raise self.http(200, objects.Task.to_json(task))
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):

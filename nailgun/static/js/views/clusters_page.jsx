@@ -16,11 +16,12 @@
 define(
 [
     'react',
+    'models',
     'utils',
     'jsx!component_mixins',
     'views/wizard'
 ],
-function(React, utils, componentMixins, wizard) {
+function(React, models, utils, componentMixins, wizard) {
     'use strict';
     var ClustersPage, ClusterList, Cluster;
 
@@ -30,10 +31,21 @@ function(React, utils, componentMixins, wizard) {
         title: function() {
             return $.t('clusters_page.title');
         },
-        componentDidMount: function() {
-            $(app.footer.getDOMNode()).toggle(app.user.get('authenticated'));
-            $(app.breadcrumbs.getDOMNode()).toggle(app.user.get('authenticated'));
-            $(app.navbar.getDOMNode()).toggle(app.user.get('authenticated'));
+        statics: {
+            fetchData: function() {
+                var clusters = new models.Clusters();
+                var nodes = new models.Nodes();
+                var tasks = new models.Tasks();
+                return $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch()).done(_.bind(function() {
+                    clusters.each(function(cluster) {
+                        cluster.set('nodes', new models.Nodes(nodes.where({cluster: cluster.id})));
+                        cluster.get('nodes').deferred = nodes.deferred;
+                        cluster.set('tasks', new models.Tasks(tasks.where({cluster: cluster.id})));
+                    }, this);
+                }, this)).then(function() {
+                    return {clusters: clusters};
+                });
+            }
         },
         render: function() {
             return (

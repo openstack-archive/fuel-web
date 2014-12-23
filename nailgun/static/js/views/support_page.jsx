@@ -30,6 +30,14 @@ function(React, componentMixins, models, statisticsMixin) {
         title: function() {
             return $.t('support_page.title');
         },
+        statics: {
+            fetchData: function() {
+                var tasks = new models.Tasks();
+                return tasks.fetch().then(function() {
+                    return {tasks: tasks, settings: app.settings};
+                });
+            }
+        },
         render: function() {
             var elements = [
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,

@@ -40,7 +40,6 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesT
         title: function() {
             return this.model.get('name');
         },
-        tabs: ['nodes', 'network', 'settings', 'logs', 'healthcheck', 'actions'],
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
         removeFinishedNetworkTasks: function(removeSilently) {
@@ -113,7 +112,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesT
             $(window).off('beforeunload.' + this.eventNamespace);
             $('body').off('click.' + this.eventNamespace);
             _.each(['clusterInfo', 'clusterCustomizationMessage', 'deploymentResult', 'deploymentControl', 'tab'], function(subView) {
-                utils.universalUnmount(this[subView]);
+                if (this[subView]) utils.universalUnmount(this[subView]);
             }, this);
         },
         onBeforeunloadEvent: function() {
@@ -121,8 +120,24 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesT
                 return $.t('dialog.dismiss_settings.default_message');
             }
         },
+        getAvailableTabs: function() {
+            return [
+                {url: 'nodes', tab: NodesTab},
+                {url: 'network', tab: NetworkTab},
+                {url: 'settings', tab: SettingsTab},
+                {url: 'logs', tab: LogsTab},
+                {url: 'healthcheck', tab: HealthCheckTab},
+                {url: 'actions', tab: ActionsTab}
+            ];
+        },
         initialize: function(options) {
             _.defaults(this, options);
+            var availableTabs = this.getAvailableTabs();
+            if (!_.find(availableTabs, {url: this.activeTab})) {
+                this.activeTab = availableTabs[0].url;
+                app.navigate('cluster/' + this.model.id + '/' + this.activeTab, {replace: true});
+                return;
+            }
             this.model.on('change:name', app.updateTitle, app);
             this.model.on('change:release_id', function() {
                 var release = new models.Release({id: this.model.get('release_id')});
@@ -137,37 +152,70 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesT
         },
         render: function() {
             this.tearDownRegisteredSubViews();
+
+            var availableTabs = this.getAvailableTabs();
+            var Tab = _.find(availableTabs, {url: this.activeTab}).tab;
+
             this.$el.html(this.template({
                 cluster: this.model,
-                tabs: this.tabs,
+                tabs: _.pluck(availableTabs, 'url'),
                 activeTab: this.activeTab
             })).i18n();
+
             var options = {model: this.model, page: this};
             this.clusterInfo = utils.universalMount(clusterPageSubviews.ClusterInfo, options, this.$('.cluster-info'), this);
             this.clusterCustomizationMessage = utils.universalMount(clusterPageSubviews.ClusterCustomizationMessage, options, this.$('.customization-message'), this);
             this.deploymentResult = utils.universalMount(clusterPageSubviews.DeploymentResult, options, this.$('.deployment-result'), this);
             this.deploymentControl = utils.universalMount(clusterPageSubviews.DeploymentControl, options, this.$('.deployment-control'), this);
-
-            var tabs = {
-                nodes: NodesTab,
-                network: NetworkTab,
-                settings: SettingsTab,
-                actions: ActionsTab,
-                logs: LogsTab,
-                healthcheck: HealthCheckTab
-            };
-            if (_.has(tabs, this.activeTab)) {
-                this.tab = utils.universalMount(
-                    tabs[this.activeTab],
-                    {model: this.model, tabOptions: this.tabOptions, page: this},
-                    this.$('#tab-' + this.activeTab),
-                    this
-                );
-            }
+            this.tab = utils.universalMount(Tab, _.extend({tabOptions: this.tabOptions}, options), this.$('#tab-' + this.activeTab), this);
 
             return this;
         }
     });
+
+    ClusterPage.fetchData = function(id, activeTab) {
+        var cluster, tasks, promise, currentClusterId;
+        var tabOptions = _.toArray(arguments).slice(2);
+
+        try {
+            currentClusterId = app.page.model.id;
+        } catch (ignore) {}
+
+        if (currentClusterId == id) {
+            // just another tab has been chosen, do not load cluster again
+            cluster = app.page.model;
+            tasks = app.page.tasks;
+            promise = $.Deferred().resolve();
+        } else {
+            cluster = new models.Cluster({id: id});
+            var settings = new models.Settings();
+            settings.url = _.result(cluster, 'url') + '/attributes';
+            cluster.set({settings: settings});
+            tasks = new models.Tasks();
+            tasks.fetch = function(options) {
+                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
+            };
+            promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), tasks.fetch())
+                .then(_.bind(function() {
+                    var networkConfiguration = new models.NetworkConfiguration();
+                    networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
+                    cluster.set({
+                        networkConfiguration: networkConfiguration,
+                        release: new models.Release({id: cluster.get('release_id')})
+                    });
+                    return $.when(cluster.get('networkConfiguration').fetch(), cluster.get('release').fetch());
+                }, this));
+        }
+
+        return promise.then(function() {
+            return {
+                model: cluster,
+                activeTab: activeTab,
+                tabOptions: tabOptions,
+                tasks: tasks
+            };
+        });
+    };
 
     return ClusterPage;
 });

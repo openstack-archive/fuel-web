@@ -33,6 +33,13 @@ function($, React, models, statisticsMixin) {
         title: function() {
             return this.getText('welcome_page.title');
         },
+        statics: {
+            fetchData: function() {
+                return app.settings.fetch({cache: true}).then(function() {
+                    return {settings: app.settings};
+                });
+            }
+        },
         getInitialState: function() {
             return {fuelKey: new models.FuelKey()};
         },

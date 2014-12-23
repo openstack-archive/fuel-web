@@ -16,25 +16,32 @@
 define(
 [
     'react',
+    'models',
     'jsx!views/controls'
 ],
-function(React, controls) {
+function(React, models, controls) {
     'use strict';
 
     var ReleasesPage = React.createClass({
-        getInitialState: function() {
-            return {columns: ['name', 'version', 'state']};
-        },
-        mixins: [
-            React.BackboneMixin('releases')
-        ],
+        mixins: [React.BackboneMixin('releases')],
         navbarActiveElement: 'releases',
         breadcrumbsPath: [['home', '#'], 'releases'],
         title: function() {
             return $.t('release_page.title');
         },
+        getDefaultProps: function() {
+            return {columns: ['name', 'version', 'state']};
+        },
+        statics: {
+            fetchData: function() {
+                var releases = new models.Releases();
+                return releases.fetch().then(function() {
+                    return {releases: releases};
+                });
+            }
+        },
         getReleaseData: function(release) {
-            return _.map(this.state.columns, function(attr) {
+            return _.map(this.props.columns, function(attr) {
                 if (attr == 'state') return $.t('release_page.release.' + release.get(attr));
                 return release.get(attr) || $.t('common.not_available');
             });
@@ -46,7 +53,7 @@ function(React, controls) {
                     <div className='table-releases-box'>
                         {this.props.releases.length ?
                             <controls.Table
-                                head={_.map(this.state.columns, function(column) {
+                                head={_.map(this.props.columns, function(column) {
                                     return {label: $.t('release_page.' + column), className: column};
                                 })}
                                 body={this.props.releases.map(this.getReleaseData)}

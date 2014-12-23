@@ -43,13 +43,12 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             logout: 'logout',
             welcome: 'welcome',
             clusters: 'listClusters',
-            'cluster/:id': 'showCluster',
-            'cluster/:id/:tab(/:opt1)(/:opt2)': 'showClusterTab',
+            'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
             releases: 'listReleases',
             notifications: 'showNotifications',
             support: 'showSupportPage',
             capacity: 'showCapacityPage',
-            '*default': 'listClusters'
+            '*default': 'default'
         },
         initialize: function() {
             window.app = this;
@@ -180,11 +179,16 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             app.breadcrumbs.setState({hidden: !state});
             app.navbar.setState({hidden: !state});
         },
-        setPage: function(NewPage, options) {
+        loadPage: function(Page, options) {
+            return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
+                this.setPage(Page, pageOptions);
+            }, this));
+        },
+        setPage: function(Page, options) {
             if (this.page) {
                 utils.universalUnmount(this.page);
             }
-            this.page = utils.universalMount(NewPage, options, this.content);
+            this.page = utils.universalMount(Page, options, this.content);
             this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
             this.updateTitle();
             this.toggleElements(!this.page.hiddenLayout);
@@ -216,8 +220,11 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             return !preventRouting;
         },
         // routes
+        default: function() {
+            this.navigate('clusters', {trigger: true, replace: true});
+        },
         login: function() {
-            this.setPage(LoginPage, {app: app});
+            this.loadPage(LoginPage);
         },
         logout: function() {
             if (this.user.get('authenticated') && this.version.get('auth_required')) {
@@ -229,110 +236,37 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             }
 
             _.defer(function() {
-                app.navigate('#login', {trigger: true, replace: true});
+                app.navigate('login', {trigger: true, replace: true});
             });
         },
         welcome: function() {
-            this.settings.fetch({cache: true}).done(_.bind(function() {
-                this.setPage(WelcomePage, {settings: this.settings});
-            }, this));
+            this.loadPage(WelcomePage);
         },
-        showCluster: function(id) {
-            this.navigate('#cluster/' + id + '/nodes', {trigger: true, replace: true});
-        },
-        showClusterTab: function(id, activeTab) {
-            if (!_.contains(ClusterPage.prototype.tabs, activeTab)) {
-                this.showCluster(id);
-                return;
-            }
-
-            var tabOptions = _.toArray(arguments).slice(2);
-
-            if (activeTab == 'nodes') {
+        showCluster: function(id, activeTab) {
+            try {
                 // special case for nodes tab screen change
-                try {
-                    if (app.page.constructor == ClusterPage && app.page.model.id == id && app.page.tab.constructor == NodesTab) {
-                        app.page.tab.routeScreen(tabOptions);
-                        return;
-                    }
-                } catch (ignore) {}
-            }
+                if (activeTab == 'nodes' && app.page.constructor == ClusterPage && app.page.model.id == id && app.page.tab.constructor == NodesTab) {
+                    app.page.tab.routeScreen(_.toArray(arguments).slice(2));
+                    return;
+                }
+            } catch (ignore) {}
 
-            var cluster, tasks;
-            var render = function() {
-                this.setPage(ClusterPage, {
-                    model: cluster,
-                    activeTab: activeTab,
-                    tabOptions: tabOptions,
-                    tasks: tasks
-                });
-            };
-
-            if (app.page && app.page.constructor == ClusterPage && app.page.model.id == id) {
-                // just another tab has been chosen, do not load cluster again
-                cluster = app.page.model;
-                tasks = app.page.tasks;
-                render.call(this);
-            } else {
-                cluster = new models.Cluster({id: id});
-                var settings = new models.Settings();
-                settings.url = _.result(cluster, 'url') + '/attributes';
-                cluster.set({settings: settings});
-                tasks = new models.Tasks();
-                tasks.fetch = function(options) {
-                    return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
-                };
-                $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), tasks.fetch())
-                    .then(_.bind(function() {
-                        var networkConfiguration = new models.NetworkConfiguration();
-                        networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
-                        cluster.set({
-                            networkConfiguration: networkConfiguration,
-                            release: new models.Release({id: cluster.get('release_id')})
-                        });
-                        return $.when(cluster.get('networkConfiguration').fetch(), cluster.get('release').fetch());
-                    }, this))
-                    .done(_.bind(render, this))
-                    .fail(_.bind(this.listClusters, this));
-            }
+            this.loadPage(ClusterPage, arguments).fail(_.bind(this.default, this));
         },
         listClusters: function() {
-            this.navigate('#clusters', {replace: true});
-            var clusters = new models.Clusters();
-            var nodes = new models.Nodes();
-            var tasks = new models.Tasks();
-            $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch()).done(_.bind(function() {
-                clusters.each(function(cluster) {
-                    cluster.set('nodes', new models.Nodes(nodes.where({cluster: cluster.id})));
-                    cluster.get('nodes').deferred = nodes.deferred;
-                    cluster.set('tasks', new models.Tasks(tasks.where({cluster: cluster.id})));
-                }, this);
-                this.setPage(ClustersPage, {clusters: clusters});
-            }, this));
+            this.loadPage(ClustersPage);
         },
         listReleases: function() {
-            var releases = new models.Releases();
-            releases.fetch().done(_.bind(function() {
-                this.setPage(ReleasesPage, {releases: releases});
-            }, this));
+            this.loadPage(ReleasesPage);
         },
         showNotifications: function() {
-            var notifications = app.navbar.props.notifications;
-            notifications.fetch().done(_.bind(function() {
-                this.setPage(NotificationsPage, {notifications: notifications});
-            }, this));
+            this.loadPage(NotificationsPage);
         },
         showSupportPage: function() {
-            var tasks = new models.Tasks();
-            tasks.fetch().done(_.bind(function() {
-                this.setPage(SupportPage, {tasks: tasks, settings: this.settings});
-            }, this));
+            this.loadPage(SupportPage);
         },
         showCapacityPage: function() {
-            var task = new models.Task();
-            task.save({}, {url: '/api/capacity/', method: 'PUT'}).done(_.bind(function() {
-                this.setPage(CapacityPage, {capacityLog: new models.CapacityLog()});
-            }, this));
+            this.loadPage(CapacityPage);
         }
     });
 

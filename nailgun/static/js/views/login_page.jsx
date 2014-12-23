@@ -26,9 +26,6 @@ function($, React) {
     LoginPage = React.createClass({
         breadcrumbsPath: [],
         hiddenLayout: true,
-        propTypes: {
-            app: React.PropTypes.object
-        },
         title: function() {
             return $.t('login_page.title');
         },
@@ -52,9 +49,6 @@ function($, React) {
     });
 
     LoginForm = React.createClass({
-        propTypes: {
-            app: React.PropTypes.object
-        },
         login: function(username, password) {
             var keystoneClient = app.keystoneClient;
 

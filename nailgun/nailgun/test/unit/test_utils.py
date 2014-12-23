@@ -47,18 +47,6 @@ class TestUtils(BaseIntegrationTest):
                                            "dict": {"stuff": "hz",
                                                     "another_stuff": "hz"}}})
 
-    def test_upgrade_wizard_data(self):
-        fixture_path = os.path.join(os.path.dirname(__file__), '..', '..',
-                                    'fixtures', 'openstack.yaml')
-
-        wizard_meta = migration.upgrade_release_wizard_metadata_50_to_51(
-            fixture_path=fixture_path
-        )
-        network_settings = [
-            n['data'] for n in wizard_meta['Network']['manager']['values']
-        ]
-        self.assertNotIn('neutron-nsx', network_settings)
-
     def test_extract_env_version(self):
         # format: input, output pairs
         test_cases = [

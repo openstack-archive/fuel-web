@@ -6,8 +6,6 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
-PLANTUML	  = plantuml.jar
-
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -44,11 +42,7 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
-$(PLANTUML):
-	wget http://downloads.sourceforge.net/project/plantuml/plantuml.jar -O $(PLANTUML)
-	$(ACTION.TOUCH)
-
-html: $(PLANTUML)
+html:
 	$(SPHINXBUILD) -b html -W $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

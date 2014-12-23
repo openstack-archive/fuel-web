@@ -1,9 +1,6 @@
 # Add any Sphinx extension module names here, as strings.
 # They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions += ['sphinx.ext.inheritance_diagram', 'sphinxcontrib.blockdiag',
-               'sphinxcontrib.actdiag', 'sphinxcontrib.seqdiag',
-               'sphinxcontrib.nwdiag']
 
 # The encoding of source files.
 source_encoding = 'utf-8-sig'

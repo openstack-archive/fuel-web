@@ -7,11 +7,6 @@ nose2==0.4.1
 nose-timer==0.2.0
 sphinx==1.2
 rst2pdf==0.93
-sphinxcontrib-plantuml==0.3
-sphinxcontrib-blockdiag==1.3.0
-sphinxcontrib-actdiag==0.6.0
-sphinxcontrib-seqdiag==0.6.0
-sphinxcontrib-nwdiag==0.7.0
 tox==1.7.1
 webtest==2.0.14
 pyprof2calltree==1.3.2

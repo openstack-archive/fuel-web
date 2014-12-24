@@ -383,3 +383,11 @@ def get_plugin_install_arg(help_msg):
         flags=("--install",),
         help=help_msg
     )
+
+
+def get_plugin_remove_arg(help_msg):
+    return get_str_arg(
+        "remove",
+        flags=("--remove",),
+        help=help_msg
+    )

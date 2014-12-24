@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from fuelclient.cli import error
+
 from fuelclient.cli.actions.base import Action
 import fuelclient.cli.arguments as Args
 from fuelclient.cli.formatting import format_table
@@ -35,10 +37,12 @@ class PluginAction(Action):
         self.args = [
             Args.get_list_arg("List all available plugins."),
             Args.get_plugin_install_arg("Install action"),
+            Args.get_plugin_remove_arg("Remove action"),
             Args.get_force_arg("Update action"),
         ]
         self.flag_func_map = (
             ("install", self.install),
+            ("remove", self.remove),
             (None, self.list),
         )
 
@@ -65,3 +69,23 @@ class PluginAction(Action):
             results,
             "Plugin {0} was successfully installed.".format(
                 params.install))
+
+    def remove(self, params):
+        """Remove plugin from environment
+            fuel plugins --remove plugin_sample
+            fuel plugins --remove plugin_sample==1.0.1
+        """
+        s = params.remove.split('==')
+        plugin_name = s[0]
+        plugin_version = None
+        if len(s) >= 2:
+            plugin_version = s[1]
+        elif len(s) > 2:
+            raise error.ArgumentException(
+                'Syntax: fuel plugins --remove fuel_plugin==1.0')
+        results = Plugins.remove_plugin(
+            plugin_name, plugin_version=plugin_version, force=params.force)
+        self.serializer.print_to_output(
+            results,
+            "Plugin {0} was successfully removed.".format(
+                params.remove))

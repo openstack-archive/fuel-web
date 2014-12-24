@@ -35,7 +35,8 @@ CONF = cfg.CONF
 class TestManager(test_base.BaseTestCase):
     def setUp(self):
         super(TestManager, self).setUp()
-        self.mgr = manager.Manager(test_nailgun.PROVISION_SAMPLE_DATA)
+        self.mgr = manager.Manager('unsupported_data_uri')
+        self.mgr.provision_data = test_nailgun.PROVISION_SAMPLE_DATA
 
     @mock.patch.object(hu, 'list_block_devices')
     def test_do_parsing(self, mock_lbd):
@@ -235,3 +236,92 @@ class TestManager(test_base.BaseTestCase):
         ]
         self.assertEqual(expected_processors_list,
                          mock_au_c.return_value.processors)
+
+    def test_do_provision_data_unsupportedURI(self):
+        self.assertRaises(errors.ProvisionDataUnsupportedURI,
+                          self.mgr.do_provision_data)
+
+    @mock.patch('requests.get')
+    def test_do_provision_data_http_success(self, mock_rg):
+        req_mock = mock.MagicMock()
+        req_mock.status_code = 200
+        req_mock.json.return_value = {'fake': 'data'}
+        mock_rg.return_value = req_mock
+        self.mgr = manager.Manager('http://fake_valid_uri')
+        self.mgr.do_provision_data()
+        self.assertEqual({'fake': 'data'}, self.mgr.provision_data)
+
+    @mock.patch('requests.get')
+    def test_do_provision_data_http_responce_failed(self, mock_rg):
+        # getting not 200 HTTP OK responce over http
+        req_mock = mock.MagicMock()
+        req_mock.status_code = 404
+        mock_rg.return_value = req_mock
+        self.mgr = manager.Manager('http://fake_valid_uri')
+        self.assertRaises(errors.ProvisionDataHttpError,
+                          self.mgr.do_provision_data)
+
+    @mock.patch('requests.get')
+    def test_do_provision_data_http_json_decoding_failed(self, mock_rg):
+        # successful http request, but json decode failed
+        req_mock = mock.MagicMock()
+        req_mock.status_code = 200
+        req_mock.json.side_effect = ValueError()
+        mock_rg.return_value = req_mock
+        self.mgr = manager.Manager('http://fake_valid_uri')
+        self.assertRaises(errors.ProvisionDataMalformed,
+                          self.mgr.do_provision_data)
+
+    @mock.patch('requests.get')
+    def test_do_provision_data_http_request_failed(self, mock_rg):
+        # http request failed
+        req_mock = mock.MagicMock()
+        req_mock.side_effect = Exception('http connection error')
+        mock_rg.return_value = req_mock
+        self.mgr = manager.Manager('http://fake_valid_uri')
+        self.assertRaises(errors.ProvisionDataHttpError,
+                          self.mgr.do_provision_data)
+
+    def test_do_provision_data_file_success(self):
+        m = mock.mock_open(read_data='{"a": "b"}')
+        self.mgr = manager.Manager('file://fake_valid_uri')
+        with mock.patch('six.moves.builtins.open', m):
+            self.mgr.do_provision_data()
+        self.assertEqual({'a': 'b'}, self.mgr.provision_data)
+
+    @mock.patch('os.path.exists')
+    def test_do_provision_data_file_success_fallback(self, mock_exists):
+        # 'file://' was missed
+        #  trying to recognise if URI equals file path
+        mock_exists.return_value = True
+        m = mock.mock_open(read_data='{"a": "b"}')
+        self.mgr = manager.Manager('fake_valid_uri')
+        with mock.patch('six.moves.builtins.open', m):
+            self.mgr.do_provision_data()
+        self.assertEqual({'a': 'b'}, self.mgr.provision_data)
+
+    @mock.patch('os.path.exists')
+    def test_do_provision_data_file_fallback_file_not_exist(self, mock_exists):
+        # 'file://' was missed
+        #  trying to recognise if URI equals file path
+        #  file path doesn't not exist
+        mock_exists.return_value = False
+        self.mgr = manager.Manager('fake_valid_uri')
+        self.assertRaises(errors.ProvisionDataUnsupportedURI,
+                          self.mgr.do_provision_data)
+
+    @mock.patch('six.moves.builtins.open')
+    def test_do_provision_data_file_io_error(self, mock_open):
+        #  IO Error occures on file opening
+        mock_open.side_effect = IOError()
+        self.mgr = manager.Manager('file://fake_valid_uri')
+        self.assertRaises(errors.ProvisionDataFileIOError,
+                          self.mgr.do_provision_data)
+
+    def test_do_provision_data_file_json_decode_fail(self):
+        # file's content contains invalid json data
+        m = mock.mock_open(read_data='wrong data')
+        self.mgr = manager.Manager('file://fake_valid_uri')
+        with mock.patch('six.moves.builtins.open', m):
+            self.assertRaises(errors.ProvisionDataMalformed,
+                              self.mgr.do_provision_data)

@@ -35,10 +35,12 @@ class PluginAction(Action):
         self.args = [
             Args.get_list_arg("List all available plugins."),
             Args.get_plugin_install_arg("Install action"),
+            Args.get_plugin_remove_arg("Remove action"),
             Args.get_force_arg("Update action"),
         ]
         self.flag_func_map = (
             ("install", self.install),
+            ("remove", self.remove),
             (None, self.list),
         )
 
@@ -65,3 +67,18 @@ class PluginAction(Action):
             results,
             "Plugin {0} was successfully installed.".format(
                 params.install))
+
+    def remove(self, params):
+        """Remove plugin from environment
+            fuel plugins --remove /tmp/plugin_sample.fb
+        """
+        s = params.remove.split('==')
+        plugin_name = s[0]
+        plugin_version = None
+        if len(s) == 2:
+            plugin_version = s[1]
+        results = Plugins.remove_plugin(plugin_name, plugin_version, params.force)
+        self.serializer.print_to_output(
+            results,
+            "Plugin {0} was successfully removed.".format(
+                params.remove))

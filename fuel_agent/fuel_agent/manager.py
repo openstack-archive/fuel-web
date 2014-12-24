@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 import time
 
 from oslo.config import cfg
+import requests
 
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
@@ -57,14 +59,52 @@ LOG = logging.getLogger(__name__)
 
 
 class Manager(object):
-    def __init__(self, data):
-        self.driver = utils.get_driver(CONF.data_driver)(data)
+    def __init__(self, data_uri):
+        self.data_uri = data_uri
+        self.provision_data = None
         self.partition_scheme = None
         self.configdrive_scheme = None
         self.image_scheme = None
 
+    def do_provision_data(self):
+        LOG.debug('--- Getting provision data (do_provision_data) ---')
+        if self.data_uri.startswith('http://'):
+            LOG.debug('Getting provision data via HTTP: %s' % self.data_uri)
+            try:
+                self.provision_data = requests.get(self.data_uri).json()
+            except ValueError:
+                raise errors.ProvisionDataMalformed(
+                    'Error while decoding json datafrom %s' % self.data_uri)
+            except Exception:
+                raise errors.ProvisionDataHttpError(
+                    'Error while requesting json data over http from %s' %
+                    self.data_uri)
+        else:
+            if self.data_uri.startswith('file://'):
+                data_path = self.data_uri[7:]
+                LOG.debug('Getting provision data via local file %s' %
+                          data_path)
+            # assuming that 'file://' was accidentally forgotten
+            elif os.path.exists(self.data_uri):
+                LOG.debug('WARNING: Getting provision data via local file %s' %
+                          self.data_uri)
+                data_path = self.data_uri
+            else:
+                raise errors.ProvisionDataUnsupportedURI(
+                    'Error: unsupported data source URI %s' % self.data_uri)
+            try:
+                with open(data_path) as f:
+                    self.provision_data = json.load(f)
+            except IOError:
+                raise errors.ProvisionDataFileIOError(
+                    'Error while reading local file %s with json' % data_path)
+            except ValueError:
+                raise errors.ProvisionDataMalformed(
+                    'Error while decoding json data from %s' % data_path)
+
     def do_parsing(self):
         LOG.debug('--- Parsing data (do_parsing) ---')
+        self.driver = utils.get_driver(CONF.data_driver)(self.provision_data)
         self.partition_scheme = self.driver.partition_scheme()
         self.configdrive_scheme = self.driver.configdrive_scheme()
         self.image_scheme = self.driver.image_scheme(self.partition_scheme)
@@ -292,6 +332,7 @@ class Manager(object):
 
     def do_provisioning(self):
         LOG.debug('--- Provisioning (do_provisioning) ---')
+        self.do_provision_data()
         self.do_parsing()
         self.do_partitioning()
         self.do_configdrive()

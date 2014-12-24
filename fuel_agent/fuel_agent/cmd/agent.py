@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import sys
 
 from oslo.config import cfg
@@ -23,9 +22,9 @@ from fuel_agent import version
 
 opts = [
     cfg.StrOpt(
-        'provision_data_file',
-        default='/tmp/provision.json',
-        help='Provision data file'
+        'provision_data_uri',
+        default='file:///tmp/provision.json',
+        help='Provision data URI. file:// or http://'
     ),
 ]
 
@@ -38,19 +37,19 @@ def provision():
 
 
 def partition():
-    main(['do_parsing', 'do_partitioning'])
+    main(['do_provision_data', 'do_parsing', 'do_partitioning'])
 
 
 def copyimage():
-    main(['do_parsing', 'do_copyimage'])
+    main(['do_provision_data', 'do_parsing', 'do_copyimage'])
 
 
 def configdrive():
-    main(['do_parsing', 'do_configdrive'])
+    main(['do_provision_data', 'do_parsing', 'do_configdrive'])
 
 
 def bootloader():
-    main(['do_parsing', 'do_bootloader'])
+    main(['do_provision_data', 'do_parsing', 'do_bootloader'])
 
 
 def main(actions=None):
@@ -58,10 +57,7 @@ def main(actions=None):
          version=version.version_info.release_string())
     log.setup('fuel-agent')
 
-    with open(CONF.provision_data_file) as f:
-        data = json.load(f)
-
-    mgr = manager.Manager(data)
+    mgr = manager.Manager(CONF.provision_data_uri)
     if actions:
         for action in actions:
             getattr(mgr, action)()

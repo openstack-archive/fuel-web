@@ -134,3 +134,19 @@ class GrubUtilsError(BaseError):
 
 class FsUtilsError(BaseError):
     pass
+
+
+class ProvisionDataMalformed(BaseError):
+    pass
+
+
+class ProvisionDataUnsupportedURI(BaseError):
+    pass
+
+
+class ProvisionDataHttpError(BaseError):
+    pass
+
+
+class ProvisionDataFileIOError(BaseError):
+    pass

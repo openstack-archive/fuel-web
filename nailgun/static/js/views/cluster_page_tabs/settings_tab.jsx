@@ -141,7 +141,7 @@ function(React, utils, models, Expression, controls) {
         componentDidMount: function() {
             var cluster = this.props.model;
             $.when(this.settings.fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
-                this.updateInitialSettings();
+                this.updateInitialAttributes();
                 this.setState({loading: false});
             }, this));
         },
@@ -159,7 +159,7 @@ function(React, utils, models, Expression, controls) {
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
-                    .done(this.updateInitialSettings)
+                    .done(this.updateInitialAttributes)
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                         this.props.model.fetch();
@@ -195,7 +195,7 @@ function(React, utils, models, Expression, controls) {
         loadInitialSettings: function() {
             this.settings.set(_.cloneDeep(this.initialAttributes));
         },
-        updateInitialSettings: function() {
+        updateInitialAttributes: function() {
             this.initialAttributes = _.cloneDeep(this.settings.attributes);
         },
         onChange: function(groupName, settingName, value) {

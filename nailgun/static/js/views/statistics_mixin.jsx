@@ -43,7 +43,7 @@ define([
             }
             this.setState({actionInProgress: true});
             return this.props.settings.save(null, {patch: true, wait: true, validate: false})
-                .done(this.updateInitialSettings)
+                .done(this.updateInitialAttributes)
                 .fail(function() {
                     this.setState({actionInProgress: false});
                     utils.showErrorDialog();
@@ -65,11 +65,11 @@ define([
         hasChanges: function() {
             return this.state.loading ? false : this.props.settings.hasChanges(this.initialAttributes, this.configModels);
         },
-        updateInitialSettings: function() {
-            this.initialSettings = _.cloneDeep(this.props.settings.attributes);
+        updateInitialAttributes: function() {
+            this.initialAttributes = _.cloneDeep(this.props.settings.attributes);
         },
         componentWillUnmount: function() {
-            this.props.settings.set(_.cloneDeep(this.initialSettings), {silent: true});
+            this.props.settings.set(_.cloneDeep(this.initialAttributes), {silent: true});
         },
         componentDidMount: function() {
             this.props.settings.fetch({cache: true})
@@ -79,7 +79,7 @@ define([
                         version: app.version,
                         default: this.props.settings
                     };
-                    this.updateInitialSettings();
+                    this.updateInitialAttributes();
                     this.setState({loading: false});
                 }, this));
         },

@@ -11,6 +11,7 @@
     roles:
       - controller
       - compute
+      - compute-vcenter
       - cinder
       - ceph-osd
       - mongo
@@ -31,6 +32,16 @@
         restrictions:
           - condition: "settings:common.libvirt_type.value == 'vcenter'"
             message: "Computes cannot be used with vCenter"
+      compute-vcenter:
+        name: "vCenter compute"
+        description: "A compute node that utilizes VMware vCenter clusters as computing resources."
+        conflicts:
+          - compute
+          - mongo
+          - zabbix-server
+        restrictions:
+          - condition: "cluster:net_provider != 'nova_network'"
+            action: "hide"
       cinder:
         name: "Storage - Cinder"
         description: "Cinder provides scheduling of block storage resources, typically delivered over iSCSI, VMWare vCenter, and other compatible backend storage systems. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
@@ -199,6 +210,8 @@
         compute:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
+        compute-vcenter:
+          - {allocate_size: "all", id: "os"}
         cinder:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "cinder"}

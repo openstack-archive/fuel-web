@@ -66,10 +66,10 @@ define([
             return this.state.loading ? false : this.props.settings.hasChanges(this.initialAttributes, this.configModels);
         },
         updateInitialSettings: function() {
-            this.initialSettings = _.cloneDeep(this.props.settings.attributes);
+            this.initialAttributes = _.cloneDeep(this.props.settings.attributes);
         },
         componentWillUnmount: function() {
-            this.props.settings.set(_.cloneDeep(this.initialSettings), {silent: true});
+            this.props.settings.set(_.cloneDeep(this.initialAttributes), {silent: true});
         },
         componentDidMount: function() {
             this.props.settings.fetch({cache: true})

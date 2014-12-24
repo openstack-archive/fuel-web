@@ -770,7 +770,8 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
             var fullname = this.get('name') + '-' + this.get('version');
             return 'plugins/' + fullname + '/plugin';
         },
-        processMixins: function() {
+        processMixins: function(mixins) {
+            this.set('mixins', mixins);
         },
         processTranslations: function(translations) {
             _.merge($.i18n.options.resStore, translations);
@@ -778,7 +779,7 @@ define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
         load: function() {
             if (!this.deferred) {
                 this.deferred = $.Deferred();
-                if (this.get('ui')) {
+                if (this.get('ui') || true) {
                     require([this.getMetaDataUrl()], _.bind(function(metadata) {
                         this.processTranslations(metadata.translations);
                         this.processMixins(metadata.mixins);

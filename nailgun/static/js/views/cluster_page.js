@@ -40,7 +40,14 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
         title: function() {
             return this.model.get('name');
         },
-        tabs: ['nodes', 'network', 'settings', 'logs', 'healthcheck', 'actions'],
+        coreTabs: [
+            {name: 'nodes', className: NodesTab, weight: 10},
+            {name: 'network', className: NetworkTab, weight: 20},
+            {name: 'settings', className: SettingsTab, weight: 30},
+            {name: 'logs', className: LogsTab, weight: 40},
+            {name: 'healthcheck', className: HealthCheckTab, weight: 50},
+            {name: 'actions', className: ActionsTab, weight: 60}
+        ],
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
         removeFinishedNetworkTasks: function(removeSilently) {
@@ -121,8 +128,27 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
                 return dialogViews.DiscardSettingsChangesDialog.prototype.defaultMessage;
             }
         },
+        appendTabs: function() {
+            this.tabs = _.clone(this.coreTabs);
+
+            app.plugins.each(function(plugin) {
+                var mixin = _.find(plugin.get('mixins'), function(mixin) {
+                    return mixin.type == 'cluster_tab';
+                });
+                if (!mixin) {
+                    return;
+                }
+                this.tabs.push({name: plugin.get('name'), className: mixin.attributes.constructor, weight: 45});
+                this.tabs = this.tabs.sort(function(tab1, tab2) {
+                    return tab1.weight - tab2.weight;
+                });
+            }, this);
+        },
         initialize: function(options) {
             _.defaults(this, options);
+
+            this.appendTabs();
+
             this.model.on('change:name', app.updateTitle, app);
             this.model.on('change:release_id', function() {
                 var release = new models.Release({id: this.model.get('release_id')});
@@ -136,10 +162,13 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
             $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },
         render: function() {
+            var tabNames = _.map(this.tabs, function(tab) { return tab.name});
+            var tabClasses = _.map(this.tabs, function(tab) { return tab.className});
+
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({
                 cluster: this.model,
-                tabs: this.tabs,
+                tabs: tabNames,
                 activeTab: this.activeTab
             })).i18n();
             var options = {model: this.model, page: this};
@@ -148,14 +177,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
             this.deploymentResult = utils.universalMount(clusterPageSubviews.DeploymentResult, options, this.$('.deployment-result'), this);
             this.deploymentControl = utils.universalMount(clusterPageSubviews.DeploymentControl, options, this.$('.deployment-control'), this);
 
-            var tabs = {
-                nodes: NodesTab,
-                network: NetworkTab,
-                settings: SettingsTab,
-                actions: ActionsTab,
-                logs: LogsTab,
-                healthcheck: HealthCheckTab
-            };
+            var tabs = _.object(tabNames, tabClasses);
             if (_.has(tabs, this.activeTab)) {
                 this.tab = utils.universalMount(
                     tabs[this.activeTab],

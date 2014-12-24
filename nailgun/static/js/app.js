@@ -250,11 +250,6 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.navigate('#cluster/' + id + '/nodes', {trigger: true, replace: true});
         },
         showClusterTab: function(id, activeTab) {
-            if (!_.contains(ClusterPage.prototype.tabs, activeTab)) {
-                this.showCluster(id);
-                return;
-            }
-
             var tabOptions = _.toArray(arguments).slice(2);
 
             if (activeTab == 'nodes') {

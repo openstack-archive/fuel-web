@@ -13,6 +13,7 @@
 #    under the License.
 
 import os
+import shutil
 import tarfile
 
 import yaml
@@ -45,6 +46,40 @@ class Plugins(base.BaseObject):
             plugin_tar.name, cls.metadata_config))
 
     @classmethod
+    def get_plugin(cls, plugin_name, plugin_version=None):
+        """Returns plugin fetched by name and optionally by version.
+        If multiple plugin versions are found and version is not specified
+        error is returned.
+        :return:
+        """
+        checker = lambda p: p['name'] == plugin_name
+        if plugin_version is not None:
+            checker = lambda p: p['name'] == plugin_name and \
+                p['version'] == plugin_version
+        plugins = filter(checker, cls.get_all_data())
+        if len(plugins) == 0:
+            if plugin_version is None:
+                raise error.BadDataException(
+                    'Plugin {0} does not exist'.format(plugin_name)
+                )
+            else:
+                raise error.BadDataException(
+                    'Plugin {0}, version {1} does not exist'.format(
+                        plugin_name, plugin_version)
+                )
+        if len(plugins) > 1:
+            if plugin_version is None:
+                raise error.BadDataException(
+                    'Multiple plugins {0} found. '
+                    'Consider adding ==<version>'.format(plugin_name)
+                )
+            else:
+                raise error.BadDataException(
+                    'Multiple plugins {0} found.'.format(plugin_name)
+                )
+        return plugins[0]
+
+    @classmethod
     def add_plugin(cls, plugin_meta, plugin_tar):
         return plugin_tar.extractall(EXTRACT_PATH)
 
@@ -67,4 +102,23 @@ class Plugins(base.BaseObject):
             cls.add_plugin(metadata, plugin_tar)
         finally:
             plugin_tar.close()
+        return resp
+
+    @classmethod
+    def remove_plugin(cls, plugin_name, plugin_version=None, force=False):
+        if not cls.validate_environment():
+            raise error.WrongEnvironmentError(
+                'Plugin can be removed only from master node.')
+        plugin = cls.get_plugin(plugin_name, plugin_version)
+
+        resp = cls.connection.delete_request(
+            cls.class_instance_path.format(**plugin)
+        )
+
+        plugin_path = os.path.join(
+            EXTRACT_PATH,
+            '{name}-{version}'.format(**plugin)
+        )
+        shutil.rmtree(plugin_path)
+
         return resp

@@ -17,6 +17,7 @@
 from collections import defaultdict
 from itertools import groupby
 
+import mock
 import yaml
 
 from nailgun.orchestrator import deployment_graph
@@ -114,9 +115,9 @@ class TestAddDependenciesToNodes(base.BaseTestCase):
 
     def setUp(self):
         super(TestAddDependenciesToNodes, self).setUp()
-        tasks = yaml.load(TASKS + SUBTASKS)
-        self.graph = deployment_graph.DeploymentGraph()
-        self.graph.add_tasks(tasks)
+        self.cluster = mock.Mock()
+        self.cluster.deployment_tasks = yaml.load(TASKS + SUBTASKS)
+        self.graph = deployment_graph.AstuteGraph(self.cluster)
 
     def test_priority_serilized_correctly_for_all_roles(self):
         nodes = [{'uid': '3', 'role': 'primary-controller'},
@@ -184,9 +185,10 @@ class TestLegacyGraphSerialized(base.BaseTestCase):
 
     def setUp(self):
         super(TestLegacyGraphSerialized, self).setUp()
-        self.graph = deployment_graph.DeploymentGraph()
-        self.tasks = yaml.load(graph_configuration.DEPLOYMENT_CURRENT)
-        self.graph.add_tasks(self.tasks)
+        self.cluster = mock.Mock()
+        self.cluster.deployment_tasks = yaml.load(
+            graph_configuration.DEPLOYMENT_CURRENT)
+        self.graph = deployment_graph.AstuteGraph(self.cluster)
 
     def test_serialized_with_tasks_and_priorities(self):
         """Test verifies that priorities and tasks."""

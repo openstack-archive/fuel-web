@@ -36,7 +36,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Cluster
-from nailgun.orchestrator.deployment_graph import create_graph
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
@@ -1156,10 +1155,11 @@ class DeploymentHASerializer60(DeploymentHASerializer):
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
 
 
-def create_serializer(cluster):
+def create_serializer(orchestrator_graph, cluster):
     """Returns a serializer depends on a given `cluster`.
 
-    :param cluster: a cluster to process
+    :param cluster: cluster to process
+    :param orchestrator_graph: orchestrator_graph to use for serialization
     :returns: a serializer for a given cluster
     """
     serializers_map = {
@@ -1181,17 +1181,17 @@ def create_serializer(cluster):
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
     for version, serializers in six.iteritems(serializers_map):
         if env_version.startswith(version):
-            return serializers[env_mode](create_graph(cluster))
+            return serializers[env_mode](orchestrator_graph)
 
     raise errors.UnsupportedSerializer()
 
 
-def serialize(cluster, nodes, ignore_customized=False):
+def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode
     """
     objects.Cluster.set_primary_roles(cluster, nodes)
     objects.NodeCollection.prepare_for_deployment(cluster.nodes)
-    serializer = create_serializer(cluster)
+    serializer = create_serializer(orchestrator_graph, cluster)
 
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)

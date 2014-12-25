@@ -26,6 +26,7 @@ from nailgun.logger import logger
 
 from nailgun import objects
 
+from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator.plugins_serializers import post_deployment_serialize
 from nailgun.orchestrator.plugins_serializers import pre_deployment_serialize
@@ -146,8 +147,9 @@ class DefaultProvisioningInfo(DefaultOrchestratorInfo):
 class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
+        graph = deployment_graph.AstuteGraph(cluster)
         return deployment_serializers.serialize(
-            cluster, nodes, ignore_customized=True)
+            graph, cluster, nodes, ignore_customized=True)
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)

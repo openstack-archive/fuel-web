@@ -684,10 +684,10 @@ class Cluster(NailgunObject):
               defined
             - else return default for release deployment graph
         """
-        if instance.pending_release_id:
-            return yaml.load(graph_configuration.PATCHING)
-        elif instance.deployment_tasks:
+        if instance.deployment_tasks:
             return instance.deployment_tasks
+        elif instance.pending_release_id:
+            return yaml.load(graph_configuration.PATCHING)
         else:
             return Release.get_deployment_tasks(instance.release)
 

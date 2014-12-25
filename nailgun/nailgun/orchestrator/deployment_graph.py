@@ -62,7 +62,58 @@ class DeploymentGraph(nx.DiGraph):
         """Verify that graph doesnot contain any cycles in it."""
         return nx.is_directed_acyclic_graph(self)
 
-    def group_nodes_by_roles(self, nodes, roles):
+    def get_root_roles(self):
+        """Return roles that doesnt have predecessors
+
+        :returns: list of roles names
+        """
+        result = []
+        for node in self.nodes():
+            if not self.predecessors(node):
+                result.append(node)
+        return result
+
+    def get_next_roles(self, processed_nodes):
+        """Get nodes that have predecessors in processed_nodes list
+
+        :param processed_nodes: set of nodes names
+        :returns: list of nodes names
+        """
+        result = []
+        for role in self.nodes():
+            if (set(self.predecessors(role)) <= processed_nodes
+                    and role not in processed_nodes):
+                result.append(role)
+        return result
+
+    def get_roles_subgraph(self):
+        roles = [t['id'] for t in self.node.values() if t['type'] == 'role']
+        return self.subgraph(roles)
+
+    def get_tasks_for_role(self, role_name):
+        tasks = []
+        for task in self.predecessors(role_name):
+            if self.node[task]['type'] not in ('role', 'stage'):
+                tasks.append(task)
+        return self.subgraph(tasks)
+
+    @property
+    def topology(self):
+        return map(lambda t: self.node[t], nx.topological_sort(self))
+
+
+class AstuteGraph(object):
+    """This object stores logic that required for working with astute
+    orchestrator.
+    """
+
+    def __init__(self, cluster):
+        self.cluster = cluster
+        self.tasks = objects.Cluster.get_deployment_tasks(cluster)
+        self.graph = DeploymentGraph()
+        self.graph.add_tasks(self.tasks)
+
+    def group_nodes_by_roles(self, nodes):
         """Group nodes by roles
 
         :param nodes: list of node db object
@@ -71,8 +122,7 @@ class DeploymentGraph(nx.DiGraph):
         """
         res = defaultdict(list)
         for node in nodes:
-            if node['role'] in roles:
-                res[node['role']].append(node)
+            res[node['role']].append(node)
         return res
 
     def assign_parallel_nodes(self, priority, nodes):
@@ -126,11 +176,11 @@ class DeploymentGraph(nx.DiGraph):
         :param nodes: list of node db object
         """
         priority = ps.PriorityStrategy()
-        roles_subgraph = self.get_roles_subgraph()
+        roles_subgraph = self.graph.get_roles_subgraph()
         current_roles = roles_subgraph.get_root_roles()
         # get list with names ['controller', 'compute', 'cinder']
         all_roles = roles_subgraph.nodes()
-        grouped_nodes = self.group_nodes_by_roles(nodes, all_roles)
+        grouped_nodes = self.group_nodes_by_roles(nodes)
         #if there is no nodes with some roles - mark them as success roles
         processed_roles = set(all_roles) - set(grouped_nodes.keys())
 
@@ -139,7 +189,7 @@ class DeploymentGraph(nx.DiGraph):
             parallel = []
 
             for r in current_roles:
-                role = self.node[r]
+                role = self.graph.node[r]
                 if (role['parameters']['strategy']['type']
                         == consts.DEPLOY_STRATEGY.one_by_one):
                     one_by_one.append(role)
@@ -155,47 +205,12 @@ class DeploymentGraph(nx.DiGraph):
             processed_roles.update(current_roles)
             current_roles = roles_subgraph.get_next_roles(processed_roles)
 
-    def get_root_roles(self):
-        """Return roles that doesnt have predecessors
-
-        :returns: list of roles names
-        """
-        result = []
-        for node in self.nodes():
-            if not self.predecessors(node):
-                result.append(node)
-        return result
-
-    def get_next_roles(self, success_roles):
-        """Get roles that have predecessors in success_roles list
-
-        :param success_roles: list of roles names
-        :returns: list of roles names
-        """
-        result = []
-        for role in self.nodes():
-            if (set(self.predecessors(role)) <= success_roles
-                    and role not in success_roles):
-                result.append(role)
-        return result
-
-    def get_roles_subgraph(self):
-        roles = [t['id'] for t in self.node.values() if t['type'] == 'role']
-        return self.subgraph(roles)
-
-    def get_tasks_for_role(self, role_name):
-        tasks = []
-        for task in self.predecessors(role_name):
-            if self.node[task]['type'] not in ('role', 'stage'):
-                tasks.append(task)
-        return self.subgraph(tasks)
-
     def serialize_tasks(self, node):
         """Serialize tasks with necessary for orchestrator attributes
 
         :param node: dict with serialized node
         """
-        tasks = self.get_tasks_for_role(node['role']).topology
+        tasks = self.graph.get_tasks_for_role(node['role']).topology
         serialized = []
         priority = ps.Priority()
         for task in tasks:
@@ -210,19 +225,3 @@ class DeploymentGraph(nx.DiGraph):
             item['priority'] = priority.next()
             serialized.append(item)
         return serialized
-
-    @property
-    def topology(self):
-        return map(lambda t: self.node[t], nx.topological_sort(self))
-
-
-def create_graph(cluster):
-    """Creates graph with dependences between roles and tasks.
-
-    :param cluster: DB Cluster object
-    :returns: DeploymentGraph instance
-    """
-    tasks = objects.Cluster.get_deployment_tasks(cluster)
-    graph = DeploymentGraph()
-    graph.add_tasks(tasks)
-    return graph

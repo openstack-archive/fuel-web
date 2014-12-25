@@ -38,7 +38,7 @@ from nailgun.orchestrator.deployment_serializers import\
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer
 
-from nailgun.orchestrator.deployment_graph import create_graph
+from nailgun.orchestrator.deployment_graph import AstuteGraph
 
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
@@ -87,7 +87,7 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         with mock.patch(
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.0'):
-            return DeploymentHASerializer(create_graph(self.cluster_mock))
+            return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def serialize(self, cluster):
         objects.NodeCollection.prepare_for_deployment(cluster.nodes)
@@ -325,7 +325,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.0'):
             serializer = DeploymentMultinodeSerializer(
-                create_graph(self.cluster_mock))
+                AstuteGraph(self.cluster_mock))
         serializer.set_deployment_priorities(nodes)
         expected_priorities = [
             {'role': 'mongo', 'priority': 100},
@@ -349,7 +349,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.0'):
             serializer = DeploymentMultinodeSerializer(
-                create_graph(self.cluster_mock))
+                AstuteGraph(self.cluster_mock))
         serializer.set_critical_nodes(nodes)
         expected_ciritial_roles = [
             {'role': 'mongo', 'fail_if_error': False},
@@ -391,7 +391,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         with mock.patch(
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.0'):
-            return DeploymentHASerializer(create_graph(self.cluster_mock))
+            return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def test_set_deployment_priorities(self):
         nodes = [
@@ -531,7 +531,7 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
         with mock.patch(
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.1'):
-            return DeploymentHASerializer51(create_graph(self.cluster_mock))
+            return DeploymentHASerializer51(AstuteGraph(self.cluster_mock))
 
     def test_set_deployment_priorities(self):
         nodes = [
@@ -602,7 +602,7 @@ class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
         with mock.patch(
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.0'):
-            return DeploymentHASerializer(create_graph(self.cluster_mock))
+            return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def test_set_deployment_priorities(self):
         nodes = [
@@ -699,7 +699,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def serialize_env_w_version(self, version):
         self.new_env_release_version = version
         cluster = self.create_env(mode='ha_compact')
-        return create_serializer(cluster).serialize(cluster, cluster.nodes)
+        return create_serializer(AstuteGraph(cluster), cluster).serialize(
+            cluster, cluster.nodes)
 
     def assert_roles_flattened(self, nodes):
         self.assertEqual(len(nodes), 6)
@@ -1004,7 +1005,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.db.flush()
 
         objects.NodeCollection.prepare_for_deployment(cluster.nodes)
-        serializer = create_serializer(cluster)
+        serializer = create_serializer(AstuteGraph(cluster), cluster)
         facts = serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
@@ -1247,7 +1248,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         with mock.patch(
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.0'):
-            return DeploymentHASerializer(create_graph(self.cluster_mock))
+            return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def test_node_list(self):
         serialized_nodes = self.serializer.node_list(self.cluster.nodes)
@@ -1441,7 +1442,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
         with mock.patch(
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.0'):
-            return DeploymentHASerializer(create_graph(
+            return DeploymentHASerializer(AstuteGraph(
                 self.cluster_mock))
 
     @property
@@ -1450,7 +1451,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
                 'nailgun.objects.release.extract_env_version',
                 return_value='5.0'):
             return DeploymentMultinodeSerializer(
-                create_graph(self.cluster_mock))
+                AstuteGraph(self.cluster_mock))
 
     def test_mongo_roles_equals_in_defferent_modes(self):
         cluster = self.create_env()

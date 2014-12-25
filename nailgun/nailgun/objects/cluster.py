@@ -679,15 +679,15 @@ class Cluster(NailgunObject):
     def get_deployment_tasks(cls, instance):
         """Return deployment graph for cluster based on cluster attributes
 
-            - if instance assigned for patching - return custom patching graph
             - if there is deployment_graph defined by user - use it instead of
               defined
+            - if instance assigned for patching - return custom patching graph
             - else return default for release deployment graph
         """
-        if instance.pending_release_id:
-            return yaml.load(graph_configuration.PATCHING)
-        elif instance.deployment_tasks:
+        if instance.deployment_tasks:
             return instance.deployment_tasks
+        elif instance.pending_release_id:
+            return yaml.load(graph_configuration.PATCHING)
         else:
             return Release.get_deployment_tasks(instance.release)
 

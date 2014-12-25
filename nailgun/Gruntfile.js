@@ -27,9 +27,9 @@ module.exports = function(grunt) {
                     baseUrl: '.',
                     appDir: staticBuildPreparationDir + '/static',
                     dir: staticBuildDir,
-                    waitSeconds: 60,
                     optimize: 'uglify2',
                     optimizeCss: 'standard',
+                    wrapShim: true,
                     pragmas: {
                         compressed: true
                     },

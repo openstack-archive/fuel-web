@@ -18,6 +18,7 @@ define(
     'require',
     'utils',
     'models',
+    'cocktail',
     'view_mixins',
     'text!templates/wizard/create_cluster_wizard.html',
     'text!templates/wizard/name_and_release.html',
@@ -30,7 +31,7 @@ define(
     'text!templates/wizard/warning.html',
     'text!templates/wizard/text_input.html'
 ],
-function(require, utils, models, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, utils, models, Cocktail, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {},
@@ -339,7 +340,6 @@ function(require, utils, models, viewMixins, createClusterWizardTemplate, cluste
     views.WizardPane = Backbone.View.extend({
         template: _.template(commonWizardTemplate),
         constructorName: 'WizardPane',
-        mixins: [viewMixins.toggleablePassword],
         initialize: function(options) {
             _.defaults(this, options);
             this.attachWarningListeners();
@@ -562,6 +562,7 @@ function(require, utils, models, viewMixins, createClusterWizardTemplate, cluste
             return this;
         }
     });
+    Cocktail.mixin(views.WizardPane, viewMixins.toggleablePassword);
 
     clusterWizardPanes.NameAndRelease = views.WizardPane.extend({
         constructorName: 'NameAndRelease',

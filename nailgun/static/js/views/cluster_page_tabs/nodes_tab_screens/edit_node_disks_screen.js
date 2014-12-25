@@ -115,7 +115,8 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
                 this.model.on('change:status', this.revertChanges, this);
-                this.volumes = new models.Volumes([], {url: _.result(this.nodes.at(0), 'url') + '/volumes'});
+                this.volumes = new models.Volumes();
+                this.volumes.url = _.result(this.nodes.at(0), 'url') + '/volumes';
                 this.loading = $.when.apply($, this.nodes.map(function(node) {
                         node.disks = new models.Disks();
                         return node.disks.fetch({url: _.result(node, 'url') + '/disks'});

@@ -31,22 +31,16 @@ require(['./config'], function(config) {
         'backbone',
         'backbone-lodash-monkeypatch',
         'stickit',
-        'coccyx',
         'react',
         'react.backbone',
-        'cocktail',
         'routefilter',
         'i18next',
         'bootstrap',
         'jquery-cookie',
-        'jquery-checkbox',
         'jquery-timeout',
         'jquery-ui',
         'jquery-autoNumeric',
         'text',
-//>>excludeStart("compressed", pragmas.compressed);
-        'jsx',
-//>>excludeEnd("compressed");
         'less!/static/css/styles',
         'app'
     ], function() {

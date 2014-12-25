@@ -22,7 +22,6 @@ define(function() {
         paths: {
             jquery: 'js/libs/bower/jquery/js/jquery',
             'jquery-cookie': 'js/libs/bower/jquery-cookie/jquery.cookie',
-            'jquery-checkbox': 'js/libs/custom/jquery.checkbox',
             'jquery-timeout': 'js/libs/custom/jquery.timeout',
             'jquery-ui': 'js/libs/custom/jquery-ui-1.10.2.custom',
             'jquery-autoNumeric': 'js/libs/bower/autoNumeric/js/autoNumeric',
@@ -31,11 +30,11 @@ define(function() {
             keystone_client: 'js/keystone_client',
             lodash: 'js/libs/bower/lodash/js/lodash.compat',
             underscore: 'js/libs/bower/lodash/js/lodash.compat',
-            backbone: 'js/libs/custom/backbone',
+            backbone: 'js/libs/bower/backbone/backbone',
             'backbone-lodash-monkeypatch': 'js/libs/custom/backbone-lodash-monkeypatch',
             react: 'js/libs/bower/react/js/react-with-addons',
             JSXTransformer: 'js/libs/bower/react/js/JSXTransformer',
-            jsx: 'js/libs/custom/jsx',
+            jsx: 'js/libs/bower/jsx-requirejs-plugin/jsx',
             'react.backbone': 'js/libs/bower/react.backbone/react.backbone',
             stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
             coccyx: 'js/libs/custom/coccyx',
@@ -57,16 +56,6 @@ define(function() {
             controls: 'js/views/controls'
         },
         shim: {
-            underscore: {
-                exports: '_'
-            },
-            backbone: {
-                deps: ['underscore', 'jquery', 'cocktail'],
-                exports: 'Backbone',
-                init: function(_, $, Cocktail) {
-                    Cocktail.patch(Backbone);
-                }
-            },
             'expression/parser': {
                 exports: 'parser'
             },
@@ -77,7 +66,7 @@ define(function() {
                 deps: ['backbone']
             },
             coccyx: {
-                deps: ['backbone'],
+                deps: ['backbone', 'underscore'],
                 exports: 'Coccyx'
             },
             bootstrap: {
@@ -90,9 +79,6 @@ define(function() {
                 }
             },
             'jquery-cookie': {
-                deps: ['jquery']
-            },
-            'jquery-checkbox': {
                 deps: ['jquery']
             },
             'jquery-timeout': {

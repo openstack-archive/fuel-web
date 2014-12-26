@@ -41,6 +41,17 @@ PRE_STAGE = """
 """
 
 
+POST_STAGE = """
+- id: restart_radosgw
+  type: shell
+  role: [controller, primary-controller]
+  stage: post_deployment
+  parameters:
+    cmd: /etc/pupppet/modules/osnailyfacter/modular/astute/restart_radosgw.sh
+    timeout: 180
+"""
+
+
 class TestPreHooksSerializers(base.BaseTestCase):
 
     def setUp(self):
@@ -123,3 +134,27 @@ class TestPreTaskSerialization(base.BaseTestCase):
         self.assertEqual(set(tasks[1]['uids']), self.all_uids)
         self.assertEqual(tasks[2]['type'], 'sync')
         self.assertEqual(set(tasks[2]['uids']), self.all_uids)
+
+
+class TestPostTaskSerialization(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestPostTaskSerialization, self).setUp()
+        self.nodes = [
+            mock.Mock(uid='3', all_roles=['controller']),
+            mock.Mock(uid='4', all_roles=['primary-controller'])]
+        self.cluster = mock.Mock()
+        self.cluster.deployment_tasks = yaml.load(POST_STAGE)
+        self.control_uids = ['3', '4']
+        self.graph = deployment_graph.AstuteGraph(self.cluster)
+
+    def test_post_task_serialize_all_tasks(self):
+        self.nodes.append(mock.Mock(uid='5', all_roles=['ceph-osd']))
+        tasks = self.graph.post_tasks_serialize(self.nodes)
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(tasks[0]['uids'], self.control_uids)
+        self.assertEqual(tasks[0]['type'], 'shell')
+
+    def test_post_task_wo_ceph(self):
+        tasks = self.graph.post_tasks_serialize(self.nodes)
+        self.assertEqual(tasks, [])

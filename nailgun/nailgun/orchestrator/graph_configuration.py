@@ -21,6 +21,8 @@ DEPLOYMENT_CURRENT = """
   type: stage
 - id: pre_deployment
   type: stage
+- id: post_deployment
+  type: stage
 - id: primary-controller
   type: group
   role: [primary-controller]
@@ -108,6 +110,8 @@ DEPLOYMENT_50 = """
   type: stage
 - id: pre_deployment
   type: stage
+- id: post_deployment
+  type: stage
 - id: primary-controller
   type: group
   role: [primary-controller]
@@ -186,6 +190,8 @@ PATCHING = """
 - id: deploy
   type: stage
 - id: pre_deployment
+  type: stage
+- id: post_deployment
   type: stage
 - id: primary-controller
   type: group

@@ -12,10 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
 import six
-
-from contextlib import contextmanager
 
 from novaclient import client as nova_client
 
@@ -24,6 +21,53 @@ from nailgun.logger import logger
 from nailgun.network import manager
 from nailgun import objects
 from nailgun.settings import settings
+
+from nailgun.statistics import utils
+
+
+class ClientProvider(object):
+    """Initialize clients for OpenStack components
+    and expose them as attributes
+    """
+
+    def __init__(self, cluster):
+        self.cluster = cluster
+        self._nova = None
+        self._credentials = None
+
+    @property
+    def nova(self):
+        if self._nova is None:
+            self._nova = nova_client.Client(
+                settings.OPENSTACK_API_VERSION["nova"],
+                *self.credentials,
+                service_type=consts.NOVA_SERVICE_TYPE.compute
+            )
+
+        return self._nova
+
+    @property
+    def credentials(self):
+        if self._credentials is None:
+            access_data = objects.Cluster.get_creds(self.cluster)
+
+            os_user = access_data["user"]["value"]
+            os_password = access_data["password"]["value"]
+            os_tenant = access_data["tenant"]["value"]
+
+            auth_host = self._get_host_for_auth()
+            auth_url = "http://{0}:{1}/v2.0/".format(auth_host,
+                                                     settings.AUTH_PORT)
+
+            self._credentials = (os_user, os_password, os_tenant, auth_url)
+
+        return self._credentials
+
+    def _get_host_for_auth(self):
+        return manager.NetworkManager._get_ip_by_network_name(
+            utils.get_online_controller(self.cluster),
+            consts.NETWORKS.management
+        ).ip_addr
 
 
 class OpenStackInfoCollector(object):
@@ -34,85 +78,49 @@ class OpenStackInfoCollector(object):
     for the time of request to OpenStack components
     """
 
-    def __init__(self, cluster, cluster_nodes):
-        self.online_controller = filter(
-            lambda node: "controller" in node.roles and node.online is True,
-            cluster_nodes
-        )[0]
+    def __init__(self, cluster, client_provider):
+        self.cluster = cluster
+        self.client_provider = client_provider
 
-        proxy_host = self.online_controller.ip
+    @property
+    def proxy(self):
+        proxy_host = utils.get_online_controller(self.cluster).ip
         proxy_port = settings.OPENSTACK_INFO_COLLECTOR_PROXY_PORT
-        self.proxy = "http://{0}:{1}".format(proxy_host, proxy_port)
+        proxy = "http://{0}:{1}".format(proxy_host, proxy_port)
 
-        access_data = objects.Cluster.get_creds(cluster)
+        return proxy
 
-        os_user = access_data["user"]["value"]
-        os_password = access_data["password"]["value"]
-        os_tenant = access_data["tenant"]["value"]
+    def get_vm_info(self):
+        vm_info = {}
 
-        self.compute_service_type = consts.NOVA_SERVICE_TYPE.compute
+        with utils.set_proxy(self.proxy):
+            try:
+                servers = self.client_provider.nova.servers.list()
 
-        auth_host = self.get_host_for_auth(cluster)
-        auth_url = "http://{0}:{1}/v2.0/".format(auth_host,
-                                                 settings.AUTH_PORT)
+                vm_info["vms_count"] = len(servers)
 
-        self.initialize_clients(os_user, os_password, os_tenant, auth_url)
+                instances_info = []
+                for serv in servers:
+                    inst_details = {}
 
-    @contextmanager
-    def set_proxy(self):
-        if os.environ.get("http_proxy"):
-            raise Exception(
-                "Cannot set 'http_proxy' environment variable "
-                "as it already has a value"
-            )
+                    inst_details["id"] = getattr(serv, "id", None)
+                    inst_details["status"] = getattr(serv, "status", None)
+                    inst_details["host_id"] = getattr(serv, "hostId", None)
+                    inst_details["tenant_id"] = getattr(serv, "tenant_id",
+                                                        None)
+                    inst_details["created_at"] = getattr(serv, "created", None)
+                    inst_details["power_state"] = \
+                        getattr(serv, "OS-EXT-STS:power_state", None)
+                    inst_details["flavor_id"] = \
+                        getattr(serv, "flavor", {}).get("id")
+                    inst_details["image_id"] = \
+                        getattr(serv, "image", {}).get("id")
 
-        os.environ["http_proxy"] = self.proxy
+                    instances_info.append(inst_details)
 
-        try:
-            yield
-        except Exception as e:
-            logger.exception("Error while interacting with "
-                             "OpenStack api. Details: {0}"
-                             .format(six.text_type(e)))
-        finally:
-            if os.environ.get("http_proxy") == self.proxy:
-                del(os.environ["http_proxy"])
+                vm_info["vms_details"] = instances_info
+            except Exception as e:
+                logger.exception("Error while collecting workloads for VMs. "
+                                 "Details: {0}".format(six.text_type(e)))
 
-    def initialize_clients(self, *auth_creds):
-        self.nova_client = nova_client.Client(
-            settings.NOVACLIENT_VERSION,
-            *auth_creds,
-            service_type=self.compute_service_type
-        )
-
-    def get_host_for_auth(self, nodes):
-        return manager.NetworkManager._get_ip_by_network_name(
-            self.online_controller, consts.NETWORKS.management
-        ).ip_addr
-
-    def get_info(self):
-        openstack_info = {}
-
-        with self.set_proxy():
-            openstack_info["nova_servers_count"] = len(
-                self.nova_client.servers.list()
-            )
-            openstack_info["images"] = self.get_images_info()
-
-        return openstack_info
-
-    def get_images_info(self):
-        images = self.nova_client.images.list()
-
-        size_attr_name = consts.OPENSTACK_IMAGES_SETTINGS.size_attr_name
-
-        images_info = []
-        for img in images:
-            images_info.append(
-                {
-                    "size": getattr(img, size_attr_name, 0),
-                    "unit": consts.OPENSTACK_IMAGES_SETTINGS.size_unit
-                }
-            )
-
-        return images_info
+        return vm_info

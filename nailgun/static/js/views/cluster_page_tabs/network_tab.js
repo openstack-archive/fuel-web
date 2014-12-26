@@ -15,6 +15,10 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18next',
+    'backbone',
     'utils',
     'models',
     'views/common',
@@ -25,7 +29,7 @@ define(
     'text!templates/cluster/networking_parameters.html',
     'text!templates/cluster/verify_network_control.html'
 ],
-function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, networkingParametersTemplate, networkTabVerificationControlTemplate) {
+function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, networkingParametersTemplate, networkTabVerificationControlTemplate) {
     'use strict';
     var NetworkTab, NetworkTabSubview, Network, NetworkingParameters, NetworkTabVerificationControl;
 
@@ -85,8 +89,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             task.save({}, options)
                 .fail(_.bind(function() {
                     utils.showErrorDialog({
-                        title: $.t('cluster_page.network_tab.verify_networks.verification_error.title'),
-                        message: $.t('cluster_page.network_tab.verify_networks.verification_error.start_verification_warning')
+                        title: i18n.t('cluster_page.network_tab.verify_networks.verification_error.title'),
+                        message: i18n.t('cluster_page.network_tab.verify_networks.verification_error.start_verification_warning')
                     });
                     this.calculateButtonsState();
                 }, this))
@@ -129,7 +133,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                         }
                     }, this))
                     .fail(_.bind(function() {
-                        utils.showErrorDialog({title: $.t('cluster_page.network_tab.verify_networks.verification_error.title')});
+                        utils.showErrorDialog({title: i18n.t('cluster_page.network_tab.verify_networks.verification_error.title')});
                         this.calculateButtonsState();
                         this.model.fetch();
                         this.model.fetchRelated('tasks');
@@ -257,7 +261,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 locked: this.isLocked(),
                 segment_type: networkingParameters ? networkingParameters.get('segmentation_type') : null,
                 l23_provider: networkingParameters ? networkingParameters.get('net_l23_provider') : null
-            })).i18n();
+            })).i18n.t();
             if (this.loading.state() != 'pending') {
                 this.stickit(networkingParameters, {'input[name=net-manager]': 'net_manager'});
                 this.renderNetworks();
@@ -398,7 +402,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.network.on('change', this.tab.updateNetworkConfiguration, this.tab);
         },
         render: function() {
-            this.$el.html(this.template({network: this.network, locked: this.tab.isLocked()})).i18n();
+            this.$el.html(this.template({network: this.network, locked: this.tab.isLocked()})).i18n.t();
             if (this.network.get('meta').notation == 'ip_ranges') {
                 this.renderIpRanges();
             }
@@ -471,7 +475,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 netManager: this.parameters.get('net_manager'),
                 segmentation: this.parameters.get('segmentation_type'),
                 locked: this.tab.isLocked()
-            })).i18n();
+            })).i18n.t();
             this.composeBindings();
             this.renderIpRanges();
             this.stickit(this.parameters);
@@ -486,7 +490,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             _.defaults(this, options);
         },
         render: function() {
-            this.$el.html(this.template({cluster: this.cluster, networks: this.networks})).i18n();
+            this.$el.html(this.template({cluster: this.cluster, networks: this.networks})).i18n.t();
             return this;
         }
     });

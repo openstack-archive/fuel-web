@@ -16,6 +16,10 @@
 define(
 [
     'require',
+    'jquery',
+    'underscore',
+    'i18next',
+    'backbone',
     'utils',
     'models',
     'cocktail',
@@ -31,7 +35,7 @@ define(
     'text!templates/wizard/warning.html',
     'text!templates/wizard/text_input.html'
 ],
-function(require, utils, models, Cocktail, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {},
@@ -297,7 +301,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
                             }, this))
                             .fail(_.bind(function() {
                                 this.$el.modal('hide');
-                                utils.showErrorDialog({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});
+                                utils.showErrorDialog({message: i18n.t('dialog.create_cluster_wizard.configuration_failed_warning')});
                             }, this));
                     }, this))
                     .fail(_.bind(function(response) {
@@ -308,7 +312,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
                         } else {
                             this.$el.modal('hide');
                             utils.showErrorDialog({
-                                title: $.t('dialog.create_cluster_wizard.create_cluster_error.title'),
+                                title: i18n.t('dialog.create_cluster_wizard.create_cluster_error.title'),
                                 message: response.status == 400 ? response.responseText : undefined
                             });
                         }
@@ -321,7 +325,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
                 panesTitles: this.panesConstructors.map(function(Constructor) {return Constructor.prototype.title;}),
                 currentStep: this.panesModel.get('activePaneIndex'),
                 maxAvailableStep: this.panesModel.get('maxAvailablePaneIndex')
-            })).i18n();
+            })).i18n.t();
             if (!this.modalBound) {
                 this.$el.on('hidden', _.bind(this.tearDown, this));
                 this.$el.on('shown', _.bind(function() {
@@ -502,9 +506,9 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
                     if (!_.isObject(value)) {
                         var attributeConfig = this.wizard.config[paneName][attribute];
                         if (attributeConfig && attributeConfig.type == 'radio') {
-                            result[paneName + '.' + attribute] = $.t(_.find(attributeConfig.values, {data: value}).label);
+                            result[paneName + '.' + attribute] = i18n.t(_.find(attributeConfig.values, {data: value}).label);
                         } else if (attributeConfig && attributeConfig.label) {
-                            result[paneName + '.' + attribute] = $.t(attributeConfig.label);
+                            result[paneName + '.' + attribute] = i18n.t(attributeConfig.label);
                         } else {
                             result[paneName + '.' + attribute] = value;
                         }
@@ -527,7 +531,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
             if (messages.length) {
                 var translationParams = this.buildTranslationParams();
                 _.each(_.compact(_.uniq(messages)), function(message) {
-                    this.showWarning($.t(message, translationParams));
+                    this.showWarning(i18n.t(message, translationParams));
                 }, this);
             }
         },
@@ -552,7 +556,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
         render: function() {
             this.$el.html(this.template());
             this.renderCustomElements();
-            this.$el.i18n();
+            this.$el.i18n.t();
             this.handleWarnings();
 
             if (!_.isUndefined(this.releases) && this.releases.length) {
@@ -588,7 +592,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
                 this.wizard.panesModel.set('invalid', true);
             }, this);
             if (this.wizard.collection.findWhere({name: name})) {
-                this.wizard.cluster.trigger('invalid', this.wizard.cluster, {name: $.t('dialog.create_cluster_wizard.name_release.existing_environment', {name: name})});
+                this.wizard.cluster.trigger('invalid', this.wizard.cluster, {name: i18n.t('dialog.create_cluster_wizard.name_release.existing_environment', {name: name})});
             }
             success = success && this.wizard.cluster.set({
                 name: name,
@@ -678,7 +682,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
             this.$('.mode-description').text(description);
         },
         renderCustomElements: function() {
-            this.$('.mode-control-group .span5').append(this.renderControls({labelClasses: 'setting'})).i18n();
+            this.$('.mode-control-group .span5').append(this.renderControls({labelClasses: 'setting'})).i18n.t();
             this.updateModeDescription();
         }
     });
@@ -694,7 +698,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
             });
         },
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({hasDescription: true})).i18n();
+            this.$('.control-group').append(this.renderControls({hasDescription: true})).i18n.t();
         }
     });
 
@@ -730,7 +734,7 @@ function(require, utils, models, Cocktail, viewMixins, createClusterWizardTempla
             this.$('.control-group').append(this.renderControls({
                 hasDescription: true,
                 additionalAttribute: 'services'
-            })).i18n();
+            })).i18n.t();
         }
     });
 

@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['expression/parser', 'expression/objects'], function(ExpressionParser, expressionObjects) {
+define(['underscore', 'expression/parser', 'expression/objects'], function(_, ExpressionParser, expressionObjects) {
     'use strict';
 
     function Expression(expressionText, models, options) {

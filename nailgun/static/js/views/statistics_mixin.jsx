@@ -16,11 +16,12 @@
 define([
     'jquery',
     'underscore',
+    'i18next',
     'react',
     'utils',
     'models',
     'jsx!views/controls'
-], function($, _, React, utils, models, controls) {
+], function($, _, i18n, React, utils, models, controls) {
     'use strict';
 
     return {
@@ -87,8 +88,8 @@ define([
             return this.props.settings.validationError && this.props.settings.validationError[this.props.settings.makePath('statistics', name)];
         },
         getText: function(key) {
-            if (_.contains(app.version.get('feature_groups'), 'mirantis')) return $.t(key);
-            return $.t(key + '_community');
+            if (_.contains(app.version.get('feature_groups'), 'mirantis')) return i18n.t(key);
+            return i18n.t(key + '_community');
         },
         renderInput: function(settingName, labelClassName, wrapperClassName, hideErrors) {
             if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result) return null;
@@ -107,16 +108,16 @@ define([
                 labelClassName={labelClassName}
                 wrapperClassName={wrapperClassName}
                 onChange={this.onSettingChange}
-                error={error ? hideErrors ? '' : $.t(error) : null}
+                error={error ? hideErrors ? '' : i18n.t(error) : null}
             />;
         },
         renderList: function(list, key) {
             return (
                 <p key={key}>
-                    {$.t('statistics.' + key + '_title')}
+                    {i18n.t('statistics.' + key + '_title')}
                     <ul>
                         {_.map(list, function(item) {
-                            return <li key={item}>{$.t('statistics.' + key + '.' + item)}</li>;
+                            return <li key={item}>{i18n.t('statistics.' + key + '.' + item)}</li>;
                         })}
                     </ul>
                 </p>
@@ -165,24 +166,24 @@ define([
                     <div className='statistics-text-box'>
                         <p>{this.getText(ns + 'help_to_improve')}</p>
                         <p>
-                            {$.t(ns + 'statistics_includes')}
-                            <a onClick={this.toggleItemsList}>{$.t(ns + 'click_here')}</a>.
+                            {i18n.t(ns + 'statistics_includes')}
+                            <a onClick={this.toggleItemsList}>{i18n.t(ns + 'click_here')}</a>.
                         </p>
                         {isMirantisIso ?
                             <p>
-                                {$.t(ns + 'privacy_policy')}
-                                <a href='https://www.mirantis.com/company/privacy-policy/' target='_blank'>{$.t(ns + 'privacy_policy_link')}</a>.
+                                {i18n.t(ns + 'privacy_policy')}
+                                <a href='https://www.mirantis.com/company/privacy-policy/' target='_blank'>{i18n.t(ns + 'privacy_policy_link')}</a>.
                             </p>
                         :
                             <p>
-                                {$.t(ns + 'statistics_collector')}
+                                {i18n.t(ns + 'statistics_collector')}
                                 <a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a>.
                             </p>
                         }
                     </div>
                     {this.state.showItems &&
                         <div className='statistics-disclaimer-box'>
-                            <p>{$.t(ns + 'statistics_includes_full')}</p>
+                            <p>{i18n.t(ns + 'statistics_includes_full')}</p>
                             {_.map(lists, this.renderList)}
                         </div>
                     }

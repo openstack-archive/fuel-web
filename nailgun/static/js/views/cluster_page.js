@@ -15,6 +15,10 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18next',
+    'backbone',
     'react',
     'utils',
     'models',
@@ -29,7 +33,7 @@ define(
     'jsx!views/cluster_page_tabs/healthcheck_tab',
     'text!templates/cluster/page.html'
 ],
-function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
+function($, _, i18n, Backbone, React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
     'use strict';
 
     var ClusterPage = commonViews.Page.extend({
@@ -117,7 +121,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesT
         },
         onBeforeunloadEvent: function() {
             if (_.result(this.tab, 'hasChanges')) {
-                return $.t('dialog.dismiss_settings.default_message');
+                return i18n.t('dialog.dismiss_settings.default_message');
             }
         },
         getAvailableTabs: function() {
@@ -160,7 +164,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesT
                 cluster: this.model,
                 tabs: _.pluck(availableTabs, 'url'),
                 activeTab: this.activeTab
-            })).i18n();
+            })).i18n.t();
 
             var options = {model: this.model, page: this};
             this.clusterInfo = utils.universalMount(clusterPageSubviews.ClusterInfo, options, this.$('.cluster-info'), this);

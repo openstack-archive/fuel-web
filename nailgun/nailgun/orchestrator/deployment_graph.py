@@ -228,12 +228,8 @@ class AstuteGraph(object):
             processed_groups.update(current_groups)
             current_groups = groups_subgraph.get_next_groups(processed_groups)
 
-    def pre_tasks_serialize(self, nodes):
-        """Serialize tasks for pre_deployment hook
-
-        :param nodes: list of node db objects
-        """
-        tasks = self.graph.get_tasks(consts.STAGES.pre_deployment).topology
+    def stage_tasks_serialize(self, stage, nodes):
+        tasks = self.graph.get_tasks(stage).topology
         serialized = []
         for task in tasks:
             serializer = self.serializers.get_stage_serializer(task)(
@@ -243,6 +239,16 @@ class AstuteGraph(object):
             for task in serializer.serialize():
                 serialized.append(task)
         return serialized
+
+    def post_tasks_serialize(self, nodes):
+        return self.stage_tasks_serialize(consts.STAGES.post_deployment, nodes)
+
+    def pre_tasks_serialize(self, nodes):
+        """Serialize tasks for pre_deployment hook
+
+        :param nodes: list of node db objects
+        """
+        return self.stage_tasks_serialize(consts.STAGES.pre_deployment, nodes)
 
     def deploy_task_serialize(self, node):
         """Serialize tasks with necessary for orchestrator attributes

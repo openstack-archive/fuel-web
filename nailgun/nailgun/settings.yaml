@@ -16,6 +16,7 @@ AUTH:
   admin_password: "nailgun"
   admin_tenant_name: "services"
 
+
 VERSION:
   release: "5.0"
   api: "1"
@@ -91,8 +92,10 @@ COLLECTOR_PING_INTERVAL: 300
 # statistics collector response timeout
 COLLECTOR_RESP_TIMEOUT: 5
 
-# version of api for novaclient (is used for OpenStack info retrival)
-NOVACLIENT_VERSION: "2"
+# API version of OpenStack components that is used
+# by python clients
+OPENSTACK_API_VERSION:
+  nova: "2"
 
 # proxy port for OpenStack info collector
 OPENSTACK_INFO_COLLECTOR_PROXY_PORT: 8888

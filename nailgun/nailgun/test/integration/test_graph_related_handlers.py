@@ -32,13 +32,15 @@ class BaseGraphTasksTests(BaseIntegrationTest):
     def get_correct_tasks(self):
         yaml_tasks = """
         - id: primary-controller
-          type: role
+          type: group
+          role: [primary-controller]
           required_for: [deploy]
           parameters:
             strategy:
               type: one_by_one
         - id: controller
-          type: role
+          type: group
+          role: [primary-controller]
           requires: [primary-controller]
           required_for: [deploy]
           parameters:

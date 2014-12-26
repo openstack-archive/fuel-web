@@ -38,7 +38,10 @@ class DeploymentGraph(nx.DiGraph):
     type: string - one of - role, stage, puppet, shell, upload_file, sync
     required_for: direct dependencies
     requires: reverse dependencies
-    role: direct dependencies
+
+    groups: direct dependencies for different levels
+    tasks: reverse dependencies for different levels
+
     stage: direct dependency
     parameters: specific for each task type parameters
     """
@@ -49,12 +52,22 @@ class DeploymentGraph(nx.DiGraph):
 
     def add_task(self, task):
         self.add_node(task['id'], **task)
+
+        # standart direct and backward dependencies, should be used for
+        # declaring dependencies on one level (group to group, task to task)
         for req in task.get('required_for', ()):
             self.add_edge(task['id'], req)
         for req in task.get('requires', ()):
             self.add_edge(req, task['id'])
-        for req in task.get('role', ()):
+
+        # tasks and groups should be used for declaring dependencies between
+        # tasks and roles (which are simply group of tasks)
+        for req in task.get('groups', ()):
             self.add_edge(task['id'], req)
+        for req in task.get('tasks', ()):
+            self.add_edge(req, task['id'])
+
+        # required for compatability with astute orchestration approach
         if 'stage' in task:
             self.add_edge(task['id'], task['stage'])
 
@@ -62,10 +75,10 @@ class DeploymentGraph(nx.DiGraph):
         """Verify that graph doesnot contain any cycles in it."""
         return nx.is_directed_acyclic_graph(self)
 
-    def get_root_roles(self):
-        """Return roles that doesnt have predecessors
+    def get_root_groups(self):
+        """Return groups that doesnt have predecessors
 
-        :returns: list of roles names
+        :returns: list of group names
         """
         result = []
         for node in self.nodes():
@@ -73,7 +86,7 @@ class DeploymentGraph(nx.DiGraph):
                 result.append(node)
         return result
 
-    def get_next_roles(self, processed_nodes):
+    def get_next_groups(self, processed_nodes):
         """Get nodes that have predecessors in processed_nodes list
 
         :param processed_nodes: set of nodes names
@@ -86,14 +99,17 @@ class DeploymentGraph(nx.DiGraph):
                 result.append(role)
         return result
 
-    def get_roles_subgraph(self):
-        roles = [t['id'] for t in self.node.values() if t['type'] == 'role']
+    def get_groups_subgraph(self):
+        roles = [t['id'] for t in self.node.values()
+                 if t['type'] == consts.ORCHESTRATOR_TASK_TYPES.group]
         return self.subgraph(roles)
 
-    def get_tasks_for_role(self, role_name):
+    def get_tasks(self, group_name):
         tasks = []
-        for task in self.predecessors(role_name):
-            if self.node[task]['type'] not in ('role', 'stage'):
+        filter_by = (consts.ORCHESTRATOR_TASK_TYPES.group,
+                     consts.ORCHESTRATOR_TASK_TYPES.stage)
+        for task in self.predecessors(group_name):
+            if self.node[task]['type'] not in filter_by:
                 tasks.append(task)
         return self.subgraph(tasks)
 
@@ -125,6 +141,19 @@ class AstuteGraph(object):
             res[node['role']].append(node)
         return res
 
+    def get_nodes_with_roles(self, grouped_nodes, roles):
+        """Returns nodes with provided roles.
+
+        :param grouped_nodes: sorted nodes by role keys
+        :param roles: list of roles
+        :returns: list of nodes (dicts)
+        """
+        result = []
+        for role in roles:
+            if role in grouped_nodes:
+                result.extend(grouped_nodes[role])
+        return result
+
     def assign_parallel_nodes(self, priority, nodes):
         """It is possible that same node have 2 or more roles that can be
         deployed in parallel. We can not allow it. That is why priorities
@@ -151,23 +180,24 @@ class AstuteGraph(object):
             priority.in_parallel(group)
             current_nodes = next_nodes
 
-    def process_parallel_nodes(self, priority, parallel_roles, grouped_nodes):
+    def process_parallel_nodes(self, priority, parallel_groups, grouped_nodes):
         """Process both types of parallel deployment nodes
 
         :param priority: PriorityStrategy instance
-        :param parallel_roles: list of dict object
+        :param parallel_groups: list of dict objects
         :param grouped_nodes: dict with {role: nodes} mapping
         """
         parallel_nodes = []
-        for role in parallel_roles:
-            if 'amount' in role['parameters']['strategy']:
+        for group in parallel_groups:
+            nodes = self.get_nodes_with_roles(grouped_nodes, group['role'])
+            if 'amount' in group['parameters']['strategy']:
                 priority.in_parallel_by(
-                    grouped_nodes[role['id']],
-                    role['parameters']['strategy']['amount'])
+                    nodes,
+                    group['parameters']['strategy']['amount'])
             else:
-                parallel_nodes.extend(grouped_nodes[role['id']])
+                parallel_nodes.extend(nodes)
         if parallel_nodes:
-            #check assign_parallel_nodes docstring for explanation
+            # check assign_parallel_nodes docstring for explanation
             self.assign_parallel_nodes(priority, parallel_nodes)
 
     def add_priorities(self, nodes):
@@ -176,41 +206,45 @@ class AstuteGraph(object):
         :param nodes: list of node db object
         """
         priority = ps.PriorityStrategy()
-        roles_subgraph = self.graph.get_roles_subgraph()
-        current_roles = roles_subgraph.get_root_roles()
-        # get list with names ['controller', 'compute', 'cinder']
-        all_roles = roles_subgraph.nodes()
-        grouped_nodes = self.group_nodes_by_roles(nodes)
-        #if there is no nodes with some roles - mark them as success roles
-        processed_roles = set(all_roles) - set(grouped_nodes.keys())
+        groups_subgraph = self.graph.get_groups_subgraph()
+        current_groups = groups_subgraph.get_root_groups()
 
-        while current_roles:
+        # get list with names ['controller', 'compute', 'cinder']
+        all_groups = groups_subgraph.nodes()
+        grouped_nodes = self.group_nodes_by_roles(nodes)
+
+        # if there is no nodes with some roles - mark them as success roles
+        processed_groups = set(all_groups) - set(grouped_nodes.keys())
+
+        while current_groups:
             one_by_one = []
             parallel = []
 
-            for r in current_roles:
-                role = self.graph.node[r]
-                if (role['parameters']['strategy']['type']
+            for r in current_groups:
+                group = self.graph.node[r]
+                if (group['parameters']['strategy']['type']
                         == consts.DEPLOY_STRATEGY.one_by_one):
-                    one_by_one.append(role)
-                elif (role['parameters']['strategy']['type']
+                    one_by_one.append(group)
+                elif (group['parameters']['strategy']['type']
                       == consts.DEPLOY_STRATEGY.parallel):
-                    parallel.append(role)
+                    parallel.append(group)
 
-            for role in one_by_one:
-                priority.one_by_one(grouped_nodes[role['id']])
+            for group in one_by_one:
+                nodes = self.get_nodes_with_roles(grouped_nodes, group['role'])
+                priority.one_by_one(nodes)
 
             self.process_parallel_nodes(priority, parallel, grouped_nodes)
 
-            processed_roles.update(current_roles)
-            current_roles = roles_subgraph.get_next_roles(processed_roles)
+            # fetch next part of groups
+            processed_groups.update(current_groups)
+            current_groups = groups_subgraph.get_next_groups(processed_groups)
 
     def serialize_tasks(self, node):
         """Serialize tasks with necessary for orchestrator attributes
 
         :param node: dict with serialized node
         """
-        tasks = self.graph.get_tasks_for_role(node['role']).topology
+        tasks = self.graph.get_tasks(node['role']).topology
         serialized = []
         priority = ps.Priority()
         for task in tasks:

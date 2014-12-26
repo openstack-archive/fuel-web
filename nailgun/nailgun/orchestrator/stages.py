@@ -31,9 +31,11 @@ def pre_deployment_serialize(orchestrator_graph, cluster, nodes):
     return tasks
 
 
-def post_deployment_serialize(cluster, nodes):
+def post_deployment_serialize(orchestrator_graph, cluster, nodes):
     tasks = []
     priority = PriorityStrategy()
+    base_tasks = orchestrator_graph.post_tasks_serialize(nodes)
+    tasks.extend(base_tasks)
     plugins = plugins_serializers.PluginsPostDeploymentHooksSerializer(
         cluster, nodes)
     tasks.extend(plugins.serialize())

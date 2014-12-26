@@ -15,6 +15,9 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
     'react',
     'utils',
     'models',
@@ -22,7 +25,7 @@ define(
     'jsx!views/dialogs',
     'jsx!component_mixins'
 ],
-function(React, utils, models, controls, dialogs, componentMixins) {
+function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
     'use strict';
     var cx = React.addons.classSet,
         NodeListScreen, ManagementPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup, Node;
@@ -120,7 +123,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
             return (
                 <div>
                     {this.props.mode == 'edit' &&
-                        <div className='alert'>{$.t('cluster_page.nodes_tab.disk_configuration_reset_warning')}</div>
+                        <div className='alert'>{i18n('cluster_page.nodes_tab.disk_configuration_reset_warning')}</div>
                     }
                     <ManagementPanel
                         mode={this.props.mode}
@@ -174,7 +177,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
         goToConfigurationScreen: function(action, conflict) {
             if (conflict) {
                 var ns = 'cluster_page.nodes_tab.node_management_panel.node_management_error.';
-                utils.showErrorDialog({title: $.t(ns + 'title'), message: $.t(ns + action + '_configuration_warning')});
+                utils.showErrorDialog({title: i18n(ns + 'title'), message: i18n(ns + action + '_configuration_warning')});
                 return;
             }
             this.changeScreen(action, true);
@@ -205,7 +208,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                 }, this))
                 .fail(_.bind(function() {
                     this.setState({actionInProgress: false});
-                    utils.showErrorDialog({message: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.saving_warning')});
+                    utils.showErrorDialog({message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.saving_warning')});
                 }, this));
         },
         startFiltering: function(name, value) {
@@ -230,7 +233,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                     <controls.Input
                         type='select'
                         name='grouping'
-                        label={$.t(ns + 'group_by')}
+                        label={i18n(ns + 'group_by')}
                         children={_.map(this.props.cluster.groupings(), function(label, grouping) {
                             return <option key={grouping} value={grouping}>{label}</option>;
                         })}
@@ -244,8 +247,8 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                             name='filter'
                             ref='filter'
                             defaultValue={this.props.filter}
-                            label={$.t(ns + 'filter_by')}
-                            placeholder={$.t(ns + 'filter_placeholder')}
+                            label={i18n(ns + 'filter_by')}
+                            placeholder={i18n(ns + 'filter_placeholder')}
                             disabled={!this.props.totalNodeAmount}
                             onChange={this.startFiltering}
                         />
@@ -261,7 +264,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                 disabled={this.state.actionInProgress}
                                 onClick={_.bind(this.changeScreen, this, '', false)}
                             >
-                                {$.t('common.cancel_button')}
+                                {i18n('common.cancel_button')}
                             </button>,
                             <button
                                 key='apply'
@@ -269,7 +272,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                 disabled={this.state.actionInProgress || !this.props.hasChanges}
                                 onClick={this.applyChanges}
                             >
-                                {$.t('common.apply_changes_button')}
+                                {i18n('common.apply_changes_button')}
                             </button>
                         ] : [
                             <button
@@ -279,7 +282,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                 onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                             >
                                 {disksConflict && <i className='icon-attention text-error' />}
-                                <span>{$.t('dialog.show_node.disk_configuration_button')}</span>
+                                <span>{i18n('dialog.show_node.disk_configuration_button')}</span>
                             </button>,
                             !this.props.nodes.any(function(node) {return node.get('status') == 'error';}) &&
                                 <button
@@ -289,7 +292,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                     onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
                                 >
                                     {interfaceConflict && <i className='icon-attention text-error' />}
-                                    <span>{$.t('dialog.show_node.network_configuration_button')}</span>
+                                    <span>{i18n('dialog.show_node.network_configuration_button')}</span>
                                 </button>,
                             !!this.props.nodes.length && this.props.nodes.any(function(node) {return !node.get('pending_deletion');}) &&
                                 <button
@@ -298,7 +301,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                     onClick={this.showDeleteNodesDialog}
                                 >
                                     <i className='icon-trash' />
-                                    <span>{$.t('common.delete_button')}</span>
+                                    <span>{i18n('common.delete_button')}</span>
                                 </button>,
                             !!this.props.nodes.length && !this.props.nodes.any(function(node) {return !node.get('pending_addition');}) &&
                                 <button
@@ -307,7 +310,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                     onClick={_.bind(this.changeScreen, this, 'edit', true)}
                                 >
                                     <i className='icon-edit' />
-                                    <span>{$.t(ns + 'edit_roles_button')}</span>
+                                    <span>{i18n(ns + 'edit_roles_button')}</span>
                                 </button>,
                             !this.props.nodes.length &&
                                 <button
@@ -317,7 +320,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                     disabled={this.props.locked}
                                 >
                                     <i className='icon-plus' />
-                                    <span>{$.t(ns + 'add_nodes_button')}</span>
+                                    <span>{i18n(ns + 'add_nodes_button')}</span>
                                 </button>
                         ]}
                     </div>
@@ -401,8 +404,8 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                 isAvailable = this.isRoleAvailable(name),
                 messages = [];
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
-            if (_.contains(conflicts, name)) messages.push($.t('cluster_page.nodes_tab.role_conflict'));
-            if (!isAvailable) messages.push($.t('cluster_page.nodes_tab.' + name + '_restriction'));
+            if (_.contains(conflicts, name)) messages.push(i18n('cluster_page.nodes_tab.role_conflict'));
+            if (!isAvailable) messages.push(i18n('cluster_page.nodes_tab.' + name + '_restriction'));
             return {
                 result: restrictionsCheck.result || _.contains(conflicts, name) || (!isAvailable && !_.contains(this.state.selectedRoles, name)),
                 message: messages.join(' ')
@@ -418,7 +421,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                 };
             return (
                 <div className='role-panel'>
-                    <h4>{$.t('cluster_page.nodes_tab.assign_roles')}</h4>
+                    <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
                     {this.props.cluster.get('release').get('role_models').map(function(role) {
                         if (!role.checkRestrictions(configModels, 'hide').result) {
                             var name = role.get('name'),
@@ -455,7 +458,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                     type='checkbox'
                     checked={this.props.mode == 'edit' || (availableNodesIds.length && !_.any(availableNodesIds, function(id) {return !this.props.selectedNodeIds[id];}, this))}
                     disabled={this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length || (this.props.roleLimitation && availableNodesIds.length > 1)}
-                    label={$.t('common.select_all')}
+                    label={i18n('common.select_all')}
                     wrapperClassName='span2 select-all'
                     onChange={_.bind(this.props.selectNodes, this.props, availableNodesIds)}
                 />
@@ -467,9 +470,9 @@ function(React, utils, models, controls, dialogs, componentMixins) {
         mixins: [SelectAllMixin],
         getEmptyListWarning: function() {
             var ns = 'cluster_page.nodes_tab.';
-            if (this.props.mode == 'add') return $.t(ns + 'no_nodes_in_fuel');
-            if (this.props.cluster.get('nodes').length) return $.t(ns + 'no_filtered_nodes_warning');
-            return $.t(ns + 'no_nodes_in_environment');
+            if (this.props.mode == 'add') return i18n(ns + 'no_nodes_in_fuel');
+            if (this.props.cluster.get('nodes').length) return i18n(ns + 'no_filtered_nodes_warning');
+            return i18n(ns + 'no_nodes_in_environment');
         },
         groupNodes: function() {
             var nodes = this.props.nodes.filter(function(node) {
@@ -611,7 +614,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                     app.navbar.refresh();
                     app.page.removeFinishedNetworkTasks();
                 }, this))
-                .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard')});});
+                .fail(function() {utils.showErrorDialog({title: i18n('dialog.discard_changes.cant_discard')});});
         },
         getNodeLogsLink: function() {
             var status = this.props.node.get('status'),
@@ -713,25 +716,25 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                             autoFocus
                                         />
                                     :
-                                        <p title={$.t(ns + 'edit_name')} onClick={!disabled && this.startNodeRenaming}>
+                                        <p title={i18n(ns + 'edit_name')} onClick={!disabled && this.startNodeRenaming}>
                                             {node.get('name') || node.get('mac')}
                                         </p>
                                     }
                                 </div>
                                 <div className='role-list'>
-                                    {_.compact(roles).length ? roles : $.t(ns + 'unallocated')}
+                                    {_.compact(roles).length ? roles : i18n(ns + 'unallocated')}
                                 </div>
                             </div>
                             <div className='node-button'>
                                 {!!node.get('cluster') && (
                                     (this.props.locked || !node.hasChanges()) ?
-                                        <a className='btn btn-link' title={$.t(ns + 'view_logs')} href={this.getNodeLogsLink()}>
+                                        <a className='btn btn-link' title={i18n(ns + 'view_logs')} href={this.getNodeLogsLink()}>
                                             <i className='icon-logs' />
                                         </a>
                                     :
                                         <button
                                             className='btn btn-link'
-                                            title={$.t(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
+                                            title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
                                             onClick={this.discardNodeChanges}
                                         >
                                             <i className='icon-back-in-time' />
@@ -747,20 +750,20 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                                     }
                                     <i className={iconClass} />
                                     <span>
-                                        {$.t(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
+                                        {i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
                                     </span>
                                 </div>
                             </div>
                             <div className='node-details' onClick={this.showNodeDetails} />
                             <div className='node-hardware'>
                                 <span>
-                                    {$.t('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
+                                    {i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
                                 </span>
                                 <span>
-                                    {$.t('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb')}
+                                    {i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}
                                 </span>
                                 <span>
-                                    {$.t('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb')}
+                                    {i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}
                                 </span>
                             </div>
                         </div>

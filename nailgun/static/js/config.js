@@ -48,6 +48,7 @@ define(function() {
             lessLibrary: 'js/libs/bower/less/js/less-1.5.1',
             'require-css': 'js/libs/bower/require-css',
             'require-less': 'js/require-less',
+            i18n: 'js/i18n',
             app: 'js/app',
             models: 'js/models',
             views: 'js/views',
@@ -73,10 +74,8 @@ define(function() {
                 deps: ['jquery']
             },
             i18next: {
-                deps: ['json!i18n/translation.json', 'jquery'],
-                init: function(translation, $) {
-                    $.i18n.init({resStore: translation, fallbackLng: 'en-US'});
-                }
+                deps: ['jquery'],
+                exports: 'i18n'
             },
             'jquery-cookie': {
                 deps: ['jquery']

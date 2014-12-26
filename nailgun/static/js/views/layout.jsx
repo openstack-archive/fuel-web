@@ -15,13 +15,18 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
+    'i18next',
+    'backbone',
     'react',
     'utils',
     'models',
     'jsx!component_mixins',
     'jsx!views/dialogs'
 ],
-function(React, utils, models, componentMixins, dialogs) {
+function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, dialogs) {
     'use strict';
 
     var components = {};
@@ -88,8 +93,8 @@ function(React, utils, models, componentMixins, dialogs) {
                             <div>
                                 <i className='icon-user'></i>
                                 <span className='username'>{this.props.user.get('username')}</span>
-                                <a className='change-password' onClick={this.showChangePasswordDialog}>{$.t('common.change_password')}</a>
-                                <a href='#logout'>{$.t('common.logout')}</a>
+                                <a className='change-password' onClick={this.showChangePasswordDialog}>{i18n('common.change_password')}</a>
+                                <a href='#logout'>{i18n('common.logout')}</a>
                             </div>
                         }
                     </div>
@@ -101,7 +106,7 @@ function(React, utils, models, componentMixins, dialogs) {
                                 </li>
                                 {_.map(this.props.elements, function(element) {
                                     return <li key={element.label}>
-                                        <a className={cx({active: this.state.activeElement == element.url.slice(1)})} href={element.url}>{$.t('navbar.' + element.label, {defaultValue: element.label})}</a>
+                                        <a className={cx({active: this.state.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
                                     </li>;
                                 }, this)}
                                 <li className='space'></li>
@@ -137,7 +142,7 @@ function(React, utils, models, componentMixins, dialogs) {
                             var value = this.props.statistics.get(prop);
                             return _.isUndefined(value) ? '' : [
                                 <div className='stat-count'>{value}</div>,
-                                <div className='stat-title' dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape($.t('navbar.stats.' + prop, {count: value})))}}></div>
+                                <div className='stat-title' dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n('navbar.stats.' + prop, {count: value})))}}></div>
                             ];
                         }, this)}
                     </div>
@@ -224,9 +229,9 @@ function(React, utils, models, componentMixins, dialogs) {
                                     (showMore || index < (collection.length - 1)) && <li key={'divider' + notification.id} className='divider'></li>
                                 ];
                             }, this)
-                        ) : <li key='no_notifications'>{$.t('notifications_popover.no_notifications_text')}</li>}
+                        ) : <li key='no_notifications'>{i18n('notifications_popover.no_notifications_text')}</li>}
                     </ul>
-                    {showMore && <div className='show-more-notifications'><a href='#notifications'>{$.t('notifications_popover.view_all_button')}</a></div>}
+                    {showMore && <div className='show-more-notifications'><a href='#notifications'>{i18n('notifications_popover.view_all_button')}</a></div>}
                 </div>
             );
         }
@@ -249,7 +254,7 @@ function(React, utils, models, componentMixins, dialogs) {
                     {_.contains(this.props.version.get('feature_groups'), 'mirantis') &&
                         <div>
                             <a href='http://www.mirantis.com' target='_blank' className='footer-logo'></a>
-                            <div className='footer-copyright pull-left'>{$.t('common.copyright')}</div>
+                            <div className='footer-copyright pull-left'>{i18n('common.copyright')}</div>
                         </div>
                     }
                     {this.props.version.get('release') &&
@@ -271,20 +276,20 @@ function(React, utils, models, componentMixins, dialogs) {
             );
         },
         setLocale: function(newLocale) {
-            $.i18n.setLng(newLocale.locale, {});
+            i18next.setLng(newLocale.locale, {});
             window.location.reload();
         },
         getAvailableLocales: function() {
-            return _.map(_.keys($.i18n.options.resStore).sort(), function(locale) {
-                return {locale: locale, name: $.t('language', {lng: locale})};
+            return _.map(_.keys(i18next.options.resStore).sort(), function(locale) {
+                return {locale: locale, name: i18n('language', {lng: locale})};
             }, this);
         },
         getCurrentLocale: function() {
-            return _.find(this.props.locales, {locale: $.i18n.lng()});
+            return _.find(this.props.locales, {locale: i18next.lng()});
         },
         setDefaultLocale: function() {
             if (!this.getCurrentLocale()) {
-                $.i18n.setLng(this.props.locales[0].locale, {});
+                i18next.setLng(this.props.locales[0].locale, {});
             }
         },
         getDefaultProps: function() {
@@ -316,9 +321,9 @@ function(React, utils, models, componentMixins, dialogs) {
                         if (breadcrumb[2]) {
                             return <li key={index} className='active'>{breadcrumb[0]}</li>;
                         }
-                        return <li key={index}><a href={breadcrumb[1]}>{$.t('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a><span className='divider'>/</span></li>;
+                        return <li key={index}><a href={breadcrumb[1]}>{i18n('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a><span className='divider'>/</span></li>;
                     }
-                    return <li key={index} className='active'>{$.t('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
+                    return <li key={index} className='active'>{i18n('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
                 })}
             </ul>;
         }

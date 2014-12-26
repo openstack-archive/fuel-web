@@ -15,13 +15,17 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
+    'backbone',
     'utils',
     'models',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_screen',
     'text!templates/cluster/edit_node_interfaces.html',
     'text!templates/cluster/node_interface.html'
 ],
-function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
+function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
     'use strict';
     var EditNodeInterfacesScreen, NodeInterface;
 
@@ -141,8 +145,8 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
             this.interfaces.fetch({url: _.result(this.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true})
                 .fail(_.bind(function() {
                     utils.showErrorDialog({
-                        title: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.title'),
-                        message: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.load_defaults_warning')
+                        title: i18n('cluster_page.nodes_tab.configure_interfaces.configuration_error.title'),
+                        message: i18n('cluster_page.nodes_tab.configure_interfaces.configuration_error.load_defaults_warning')
                     });
                 }, this));
         },
@@ -187,8 +191,8 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
             .always(_.bind(this.checkForChanges, this))
             .fail(function() {
                 utils.showErrorDialog({
-                    title: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.title'),
-                    message: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.saving_warning')
+                    title: i18n('cluster_page.nodes_tab.configure_interfaces.configuration_error.title'),
+                    message: i18n('cluster_page.nodes_tab.configure_interfaces.configuration_error.saving_warning')
                 });
             });
         },
@@ -293,7 +297,7 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
                 selectOptions: {
                     collection: function() {
                         return _.map(models.Interface.prototype.bondingModes, function(mode) {
-                            return {value: mode, label: $.t('cluster_page.nodes_tab.configure_interfaces.bonding_modes.' + mode, {defaultValue: mode})};
+                            return {value: mode, label: i18n('cluster_page.nodes_tab.configure_interfaces.bonding_modes.' + mode, {defaultValue: mode})};
                         });
                     }
                 }

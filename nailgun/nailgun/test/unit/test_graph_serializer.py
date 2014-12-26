@@ -29,13 +29,15 @@ TASKS = """
 - id: deploy
   type: stage
 - id: primary-controller
-  type: role
+  type: group
+  role: [primary-controller]
   required_for: [deploy]
   parameters:
     strategy:
       type: one_by_one
 - id: controller
-  type: role
+  type: group
+  role: [controller]
   requires: [primary-controller]
   required_for: [deploy]
   parameters:
@@ -43,21 +45,24 @@ TASKS = """
       type: parallel
       amount: 2
 - id: cinder
-  type: role
+  type: group
+  role: [cinder]
   requires: [controller]
   required_for: [deploy]
   parameters:
     strategy:
       type: parallel
 - id: compute
-  type: role
+  type: group
+  role: [compute]
   requires: [controller]
   required_for: [deploy]
   parameters:
     strategy:
         type: parallel
 - id: network
-  type: role
+  type: group
+  role: [network]
   requires: [controller]
   required_for: [compute, deploy]
   parameters:
@@ -69,7 +74,7 @@ SUBTASKS = """
 - id: install_controller
   type: puppet
   requires: [setup_network]
-  role: [controller, primary-controller]
+  groups: [controller, primary-controller]
   required_for: [deploy]
   parameters:
     puppet_manifests: /etc/puppet/manifests/controller.pp
@@ -77,7 +82,7 @@ SUBTASKS = """
     timeout: 360
 - id: setup_network
   type: shell
-  role: [controller, primary-controller]
+  groups: [controller, primary-controller]
   required_for: [deploy]
   parameters:
     cmd: run_setup_network.sh
@@ -95,7 +100,7 @@ class TestGraphDependencies(base.BaseTestCase):
 
     def test_build_deployment_graph(self):
         self.graph.add_tasks(self.tasks)
-        roles = self.graph.get_roles_subgraph()
+        roles = self.graph.get_groups_subgraph()
         topology_by_id = [item['id'] for item in roles.topology]
         self.assertEqual(
             topology_by_id,
@@ -104,7 +109,7 @@ class TestGraphDependencies(base.BaseTestCase):
 
     def test_subtasks_in_correct_order(self):
         self.graph.add_tasks(self.tasks + self.subtasks)
-        subtask_graph = self.graph.get_tasks_for_role('controller')
+        subtask_graph = self.graph.get_tasks('controller')
         topology_by_id = [item['id'] for item in subtask_graph.topology]
         self.assertEqual(
             topology_by_id,

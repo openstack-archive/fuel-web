@@ -15,6 +15,7 @@
 
 from mock import Mock
 from mock import patch
+from mock import PropertyMock
 
 import requests
 import urllib3
@@ -26,6 +27,7 @@ from nailgun.objects import Cluster
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
+from nailgun.statistics import openstack_info_collector
 from nailgun.statistics.statsenderd import StatsSender
 
 FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
@@ -371,3 +373,84 @@ class TestStatisticsSender(BaseTestCase):
         ss.send_stats_once()
         # one more call was made (all went ok)
         self.assertEqual(sleep.call_count, 2)
+
+
+class TestOpenStackInfoCollector(BaseTestCase):
+    def test_get_info(self):
+        # prepare return data for nova client mock
+        server_info = {
+            "id": 1,
+            "name": "test_name",
+            "status": "running",
+            "user_id": "test_user_id",
+            "tenant_id": "test_tenant_id",
+            "OS-EXT-STS:power_state": 1,
+            "OS-EXT-AZ:availability_zone": "nova",
+            "created": "date_of_creation",
+            "image": "test_image_id",
+            "flavor": "test_flavor_id",
+            "os-extended-volumes:volumes_attached": [],
+            "networks": {"test_net": ["0.0.0.0"]},
+            "diagnostics": {"some_sophisticated_diagnosic_info": None}
+        }
+
+        # mock nova os client
+        server_mock = Mock()
+        # name is special keyword argument for Mock class so to have
+        # mock obj attached attribute with name 'name' one must call
+        # following method
+        server_mock.configure_mock(**server_info)
+
+        image_mock = Mock()
+        setattr(image_mock, "OS-EXT-IMG-SIZE:size", 1)
+
+        nova_mock = Mock()
+        nova_mock.servers.list.return_value = [server_mock]
+        nova_mock.images.list.return_value = [image_mock]
+
+        nova_client_mock = PropertyMock(return_value=nova_mock)
+
+        # in order to patch property we do it for whole class;
+        # patch.object doesn't work in this case as property not
+        # usual attribute
+        patched = ("nailgun.statistics.openstack_info_collector."
+                   "OpenStackInfoCollector.nova_client")
+
+        with patch(patched, nova_client_mock):
+            collector = openstack_info_collector.OpenStackInfoCollector(None)
+            with patch.object(collector, "set_proxy"):
+                res = collector.get_info()
+
+        expected = {
+            "nova_client": {
+                "servers": {
+                    "resources_data": [
+                        {
+                            "id": 1,
+                            "name": "test_name",
+                            "status": "running",
+                            "user_id": "test_user_id",
+                            "tenant_id": "test_tenant_id",
+                            "power_state": 1,
+                            "availability_zone": "nova",
+                            "created": "date_of_creation",
+                            "image": "test_image_id",
+                            "flavor": "test_flavor_id",
+                            "volumes_attached": [],
+                            "networks": {"test_net": ["0.0.0.0"]},
+                            "diagnostics": {
+                                "some_sophisticated_diagnosic_info": None}
+                        }
+                    ],
+                    "resources_count": 1
+                }
+            },
+            "images": [
+                {
+                    "size": 1,
+                    "unit": consts.OPENSTACK_IMAGES_SETTINGS.size_unit
+                }
+            ]
+        }
+
+        self.assertDictEqual(res, expected)

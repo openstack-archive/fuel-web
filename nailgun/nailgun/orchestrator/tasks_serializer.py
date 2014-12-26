@@ -177,10 +177,21 @@ class RsyncPuppet(GenericRolesHook):
             uids, src_path, self.task['parameters']['dst'])
 
 
+class RestartRadosGW(GenericRolesHook):
+
+    identity = 'restart_radosgw'
+
+    def should_execute(self):
+        for node in self.nodes:
+            if 'ceph-osd' in node.all_roles:
+                return True
+        return False
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet]
+    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW]
     deploy_serializers = [PuppetHook]
 
     @classmethod

@@ -71,7 +71,8 @@ class TestHandlers(BaseIntegrationTest):
                    {'weight': '2', 'point': '2'}],
             'novanetwork_parameters': {
                 'network_manager': 'FlatDHCPManager',
-                'network_size': 65536
+                'network_size': 65536,
+                'num_networks': 1,
             },
             'dns_nameservers': [
                 "8.8.4.4",
@@ -258,6 +259,8 @@ class TestHandlers(BaseIntegrationTest):
             eth1_mac = [i.mac for i in n.interfaces if i.name == 'eth1'][0]
 
             pnd = {
+                'uid': n.uid,
+                'slave_name': objects.Node.make_slave_name(n),
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',
@@ -599,15 +602,9 @@ class TestHandlers(BaseIntegrationTest):
                         "interfaces": {
                             "eth0": {
                                 "L2": {"vlan_splinters": "off"},
-                                "mtu": 1500
                             },
                             "eth1": {
                                 "L2": {"vlan_splinters": "off"},
-                                "mtu": 1500
-                            },
-                            "eth2": {
-                                "L2": {"vlan_splinters": "off"},
-                                "mtu": 1500
                             },
                         },
                         "endpoints": {
@@ -656,13 +653,11 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],
-                                "tags": [102, 0],
-                                "vlan_ids": [102, 0]},
+                                "tags": [102, 0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-mgmt"],
-                                "tags": [101, 0],
-                                "vlan_ids": [101, 0]},
+                                "tags": [101, 0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth1", "br-fw-admin"],
@@ -712,6 +707,8 @@ class TestHandlers(BaseIntegrationTest):
             eth1_mac = [i.mac for i in n.interfaces if i.name == 'eth1'][0]
 
             pnd = {
+                'uid': n.uid,
+                'slave_name': objects.Node.make_slave_name(n),
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',
@@ -1031,8 +1028,12 @@ class TestHandlers(BaseIntegrationTest):
         }
 
         deployment_info = []
+
+        nm = objects.Node.get_network_manager(node)
         for node in nodes_db:
             ips = assigned_ips[node.id]
+            other_nets = nm.get_networks_not_on_node(node)
+
             for role in sorted(node.roles):
                 priority = priority_mapping[role]
                 is_critical = critical_mapping[role]
@@ -1054,26 +1055,31 @@ class TestHandlers(BaseIntegrationTest):
                         "interfaces": {
                             "eth0": {
                                 "L2": {"vlan_splinters": "off"},
-                                "mtu": 1500
                             },
                             "eth1": {
                                 "L2": {"vlan_splinters": "off"},
-                                "mtu": 1500
-                            },
-                            "eth2": {
-                                "L2": {"vlan_splinters": "off"},
-                                "mtu": 1500
                             },
                         },
                         "endpoints": {
-                            "br-mgmt": {"IP": [ips['management'] + "/24"]},
+                            "br-mgmt": {
+                                "IP": [ips['management'] + "/24"],
+                                "other_nets": other_nets.get('management', []),
+                            },
                             "br-ex": {
                                 "IP": [ips['public'] + "/24"],
                                 "default_gateway": True,
                                 "gateway": "172.16.0.1",
+                                "other_nets": other_nets.get('public', []),
                             },
-                            "br-storage": {"IP": [ips['storage'] + "/24"]},
-                            "br-fw-admin": {"IP": [ips['admin']]},
+                            "br-storage": {
+                                "IP": [ips['storage'] + "/24"],
+                                "other_nets": other_nets.get('storage', []),
+                            },
+                            "br-fw-admin": {
+                                "IP": [ips['admin']],
+                                "other_nets":
+                                other_nets.get('fuelweb_admin', []),
+                            },
                         },
                         "roles": {
                             "management": "br-mgmt",
@@ -1168,6 +1174,8 @@ class TestHandlers(BaseIntegrationTest):
             eth1_mac = [i.mac for i in n.interfaces if i.name == 'eth1'][0]
 
             pnd = {
+                'uid': n.uid,
+                'slave_name': objects.Node.make_slave_name(n),
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',

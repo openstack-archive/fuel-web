@@ -18,7 +18,6 @@ define(function() {
 
     return {
         baseUrl: 'static',
-        urlArgs: '_=' + (new Date()).getTime(),
         waitSeconds: 60,
         paths: {
             jquery: 'js/libs/bower/jquery/js/jquery',

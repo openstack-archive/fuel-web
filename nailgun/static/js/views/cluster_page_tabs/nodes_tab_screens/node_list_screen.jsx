@@ -448,12 +448,24 @@ function(React, utils, models, controls, dialogs, componentMixins) {
     });
 
     SelectAllMixin = {
+        isChecked: function(checkIndeterminateState) {
+            if (this.props.mode == 'edit') return !checkIndeterminateState;
+            var availableNodes = this.props.nodes.filter(function(node) {return node.isSelectable();}),
+                checkedNodes = _.filter(availableNodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
+            if (!checkedNodes.length) return false;
+            var allNodesChecked = checkedNodes.length == availableNodes.length;
+            return checkIndeterminateState ? !allNodesChecked : allNodesChecked;
+        },
+        componentDidUpdate: function() {
+            this.refs['select-all'].getInputDOMNode().indeterminate = this.isChecked(true);
+        },
         renderSelectAllCheckbox: function() {
             var availableNodesIds = _.compact(this.props.nodes.map(function(node) {if (node.isSelectable()) return node.id;}));
             return (
                 <controls.Input
+                    ref='select-all'
                     type='checkbox'
-                    checked={this.props.mode == 'edit' || (availableNodesIds.length && !_.any(availableNodesIds, function(id) {return !this.props.selectedNodeIds[id];}, this))}
+                    checked={this.isChecked()}
                     disabled={this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length || (this.props.roleLimitation && availableNodesIds.length > 1)}
                     label={$.t('common.select_all')}
                     wrapperClassName='span2 select-all'

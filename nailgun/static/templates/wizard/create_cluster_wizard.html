@@ -9,7 +9,7 @@
       <ul class="wizard-step-nav-item">
         <% _.each(panesTitles, function(paneTitle, step) { %>
           <li class="wizard-step" data-pane="<%= step %>">
-            <%- $.t(paneTitle) %>
+            <%- i18n(paneTitle) %>
           </li>
         <% }) %>
       </ul>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Mirantis, Inc.
+ * Copyright 2014 Mirantis, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -13,22 +13,21 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['underscore', 'backbone'], function(_, Backbone) {
+define([
+    // dependency on jQuery is still needed because:
+    // 1) we still have some Backbone code which uses $().i18n()
+    // 2) it seems to be impossible to use AMD version with jQuery extensions
+    'jquery',
+    'underscore',
+    'i18next',
+    'json!translations/core.json'
+], function($, _, i18next, translations) {
     'use strict';
 
-    var views = {};
+    i18next.init({resStore: translations, fallbackLng: 'en-US'});
 
-    views.Page = Backbone.View.extend({
-        navbarActiveElement: null,
-        breadcrumbsPath: null,
-        title: null
-    });
+    // export global i18n variable to use in templates
+    var i18n = window.i18n = i18next.t;
 
-    views.Tab = Backbone.View.extend({
-        initialize: function(options) {
-            _.defaults(this, options);
-        }
-    });
-
-    return views;
+    return i18n;
 });

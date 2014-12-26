@@ -15,13 +15,16 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
     'react',
     'models',
     'utils',
     'jsx!component_mixins',
     'views/wizard'
 ],
-function(React, models, utils, componentMixins, wizard) {
+function($, _, i18n, React, models, utils, componentMixins, wizard) {
     'use strict';
     var ClustersPage, ClusterList, Cluster;
 
@@ -29,7 +32,7 @@ function(React, models, utils, componentMixins, wizard) {
         navbarActiveElement: 'clusters',
         breadcrumbsPath: [['home', '#'], 'environments'],
         title: function() {
-            return $.t('clusters_page.title');
+            return i18n('clusters_page.title');
         },
         statics: {
             fetchData: function() {
@@ -50,7 +53,7 @@ function(React, models, utils, componentMixins, wizard) {
         render: function() {
             return (
                 <div>
-                    <h3 className="page-title">{$.t('clusters_page.title')}</h3>
+                    <h3 className="page-title">{i18n('clusters_page.title')}</h3>
                     <ClusterList clusters={this.props.clusters} />
                 </div>
             );
@@ -71,7 +74,7 @@ function(React, models, utils, componentMixins, wizard) {
                         }, this)}
                         <div key="add" className="span3 clusterbox create-cluster" onClick={this.createCluster}>
                             <div className="add-icon"><i className="icon-create"></i></div>
-                            <div className="create-cluster-text">{$.t('clusters_page.create_cluster_text')}</div>
+                            <div className="create-cluster-text">{i18n('clusters_page.create_cluster_text')}</div>
                         </div>
                     </div>
                 </div>
@@ -133,14 +136,14 @@ function(React, models, utils, componentMixins, wizard) {
                     <div className="cluster-hardware">
                         {(!nodes.deferred || nodes.deferred.state() == 'resolved') &&
                             <div className="row-fluid">
-                                <div key="nodes-title" className="span6">{$.t('clusters_page.cluster_hardware_nodes')}</div>
+                                <div key="nodes-title" className="span6">{i18n('clusters_page.cluster_hardware_nodes')}</div>
                                 <div key="nodes-value" className="span4">{nodes.length}</div>
                                 {!!nodes.length && [
-                                    <div key="cpu-title" className="span6">{$.t('clusters_page.cluster_hardware_cpu')}</div>,
+                                    <div key="cpu-title" className="span6">{i18n('clusters_page.cluster_hardware_cpu')}</div>,
                                     <div key="cpu-value" className="span4">{nodes.resources('cores')} ({nodes.resources('ht_cores')})</div>,
-                                    <div key="hdd-title" className="span6">{$.t('clusters_page.cluster_hardware_hdd')}</div>,
+                                    <div key="hdd-title" className="span6">{i18n('clusters_page.cluster_hardware_hdd')}</div>,
                                     <div key="hdd-value" className="span4">{nodes.resources('hdd') ? utils.showDiskSize(nodes.resources('hdd')) : '?GB'}</div>,
-                                    <div key="ram-title" className="span6">{$.t('clusters_page.cluster_hardware_ram')}</div>,
+                                    <div key="ram-title" className="span6">{i18n('clusters_page.cluster_hardware_ram')}</div>,
                                     <div key="ram-value" className="span4">{nodes.resources('ram') ? utils.showMemorySize(nodes.resources('ram')) : '?GB'}</div>
                                 ]}
                             </div>
@@ -154,7 +157,7 @@ function(React, models, utils, componentMixins, wizard) {
                                 </div>
                             </div>
                         :
-                            $.t('cluster.status.' + cluster.get('status'), {defaultValue: cluster.get('status')})
+                            i18n('cluster.status.' + cluster.get('status'), {defaultValue: cluster.get('status')})
                         }
                     </div>
                 </a>

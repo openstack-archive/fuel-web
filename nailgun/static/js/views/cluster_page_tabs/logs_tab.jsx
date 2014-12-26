@@ -15,13 +15,16 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
     'react',
     'utils',
     'models',
     'jsx!component_mixins',
     'jsx!views/controls'
 ],
-function(React, utils, models, componentMixins, controls) {
+function($, _, i18n, React, utils, models, componentMixins, controls) {
     'use strict';
 
     var LogsTab = React.createClass({
@@ -122,13 +125,13 @@ function(React, utils, models, componentMixins, controls) {
         render: function() {
             return (
                 <div className='wrapper'>
-                    <h3>{$.t('cluster_page.logs_tab.title')}</h3>
+                    <h3>{i18n('cluster_page.logs_tab.title')}</h3>
                     <LogFilterBar
                         cluster={this.props.model}
                         tabOptions={this.props.tabOptions}
                         onShowButtonClick={this.onShowButtonClick} />
                     {this.state.loading == 'fail' &&
-                        <div className='logs-fetch-error alert alert-error'>{$.t('cluster_page.logs_tab.log_alert')}</div>
+                        <div className='logs-fetch-error alert alert-error'>{i18n('cluster_page.logs_tab.log_alert')}</div>
                     }
                     {this.state.loading == 'loading' &&
                         <div className='row row-fluid'>
@@ -277,12 +280,12 @@ function(React, utils, models, componentMixins, controls) {
                                 className='show-logs-btn btn'
                                 onClick={this.handleShowButtonClick}
                                 disabled={!this.state.chosenSourceId || this.state.locked}>
-                                {$.t('cluster_page.logs_tab.show')}
+                                {i18n('cluster_page.logs_tab.show')}
                             </button>
                         </div>
                     </div>
                     {this.state.sourcesLoadingState == 'fail' &&
-                        <div className='node-sources-error alert alert-error'>{$.t('cluster_page.logs_tab.source_alert')}</div>
+                        <div className='node-sources-error alert alert-error'>{i18n('cluster_page.logs_tab.source_alert')}</div>
                     }
                 </div>
             );
@@ -298,7 +301,7 @@ function(React, utils, models, componentMixins, controls) {
             return <controls.Input
                 type='select'
                 labelClassName='filter-bar-label'
-                label={$.t('cluster_page.logs_tab.logs')}
+                label={i18n('cluster_page.logs_tab.logs')}
                 value={this.state.chosenType}
                 wrapperClassName='filter-bar-item log-type-filter'
                 name='type'
@@ -314,7 +317,7 @@ function(React, utils, models, componentMixins, controls) {
             return (<controls.Input
                 type='select'
                 labelClassName='filter-bar-label'
-                label={$.t('cluster_page.logs_tab.node')}
+                label={i18n('cluster_page.logs_tab.node')}
                 value={this.state.chosenNodeId}
                 wrapperClassName='filter-bar-item log-node-filter'
                 name='node'
@@ -328,7 +331,7 @@ function(React, utils, models, componentMixins, controls) {
             return (<controls.Input
                 type='select'
                 labelClassName='filter-bar-label'
-                label={$.t('cluster_page.logs_tab.source')}
+                label={i18n('cluster_page.logs_tab.source')}
                 value={this.state.chosenSourceId}
                 wrapperClassName='filter-bar-item log-source-filter'
                 name='source'
@@ -348,7 +351,7 @@ function(React, utils, models, componentMixins, controls) {
             return (<controls.Input
                 type='select'
                 labelClassName='filter-bar-label'
-                label={$.t('cluster_page.logs_tab.min_level')}
+                label={i18n('cluster_page.logs_tab.min_level')}
                 value={this.state.chosenLevelId}
                 wrapperClassName='filter-bar-item log-level-filter'
                 name='level'
@@ -379,9 +382,9 @@ function(React, utils, models, componentMixins, controls) {
                 <table className='table enable-selection table-bordered table-condensed table-logs'>
                     <thead>
                         <tr>
-                            <th>{$.t('cluster_page.logs_tab.date')}</th>
-                            <th>{$.t('cluster_page.logs_tab.level')}</th>
-                            <th>{$.t('cluster_page.logs_tab.message')}</th>
+                            <th>{i18n('cluster_page.logs_tab.date')}</th>
+                            <th>{i18n('cluster_page.logs_tab.level')}</th>
+                            <th>{i18n('cluster_page.logs_tab.message')}</th>
                         </tr>
                     </thead>
                     <tbody className='log-entries'>
@@ -391,7 +394,7 @@ function(React, utils, models, componentMixins, controls) {
                         <tfoot className='entries-skipped-msg'>
                             <tr>
                                 <td colSpan='3'>
-                                    <span>{$.t('cluster_page.logs_tab.bottom_text')}
+                                    <span>{i18n('cluster_page.logs_tab.bottom_text')}
                                     </span>: {[100, 500, 1000, 5000].map(function(count) {
                                         return <span className='show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}> {count} </span>;
                                     }, this)}
@@ -402,7 +405,7 @@ function(React, utils, models, componentMixins, controls) {
                     {!logsEntries.length &&
                         <tfoot className='no-logs-msg'>
                             <tr>
-                                <td colSpan='3'>{$.t('cluster_page.logs_tab.no_log_text')}</td>
+                                <td colSpan='3'>{i18n('cluster_page.logs_tab.no_log_text')}</td>
                             </tr>
                         </tfoot>
                     }

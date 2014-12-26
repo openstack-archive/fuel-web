@@ -15,12 +15,14 @@
 **/
 define(
 [
+    'underscore',
+    'i18n',
     'react',
     'models',
     'jsx!component_mixins',
     'jsx!views/controls'
 ],
-function(React, models, componentMixins, controls) {
+function(_, i18n, React, models, componentMixins, controls) {
     'use strict';
 
     var CapacityPage = React.createClass({
@@ -31,7 +33,7 @@ function(React, models, componentMixins, controls) {
         navbarActiveElement: 'support',
         breadcrumbsPath: [['home', '#'], ['support', '#support'], 'capacity'],
         title: function() {
-            return $.t('capacity_page.title');
+            return i18n('capacity_page.title');
         },
         statics: {
             fetchData: function() {
@@ -51,7 +53,7 @@ function(React, models, componentMixins, controls) {
             var capacityLog = this.props.capacityLog;
             return (
                 <div>
-                    <h3 className='page-title'>{$.t('capacity_page.title')}</h3>
+                    <h3 className='page-title'>{i18n('capacity_page.title')}</h3>
                     <div className='capacity page-wrapper'>
                         {!capacityLog.isNew() ?
                             <LicenseUsage capacityLog = {capacityLog} />
@@ -71,33 +73,33 @@ function(React, models, componentMixins, controls) {
                 headClassName = 'name';
             return (
                 <div>
-                    <h4>{$.t('capacity_page.license_usage')}</h4>
+                    <h4>{i18n('capacity_page.license_usage')}</h4>
                     <controls.Table
-                        head={[{label: $.t('capacity_page.fuel_version'), className: headClassName},
-                                {label: $.t('capacity_page.fuel_uuid')}]}
+                        head={[{label: i18n('capacity_page.fuel_version'), className: headClassName},
+                                {label: i18n('capacity_page.fuel_uuid')}]}
                         body={[[capacityReport.fuel_data.release, capacityReport.fuel_data.uuid]]}
                         tableClassName={tableClassName}
                     />
                     <controls.Table
-                        head={[{label: $.t('capacity_page.env_name'),  className: headClassName},
-                            {label: $.t('capacity_page.node_count')}]}
+                        head={[{label: i18n('capacity_page.env_name'),  className: headClassName},
+                            {label: i18n('capacity_page.node_count')}]}
                         body={_.map(capacityReport.environment_stats, _.values)}
                         tableClassName={tableClassName} />
                     <controls.Table
-                        head={[{label: $.t('capacity_page.total_number_alloc_nodes'), className: headClassName},
-                                {label: $.t('capacity_page.total_number_unalloc_nodes')}]}
+                        head={[{label: i18n('capacity_page.total_number_alloc_nodes'), className: headClassName},
+                                {label: i18n('capacity_page.total_number_unalloc_nodes')}]}
                         body={[[capacityReport.allocation_stats.allocated,
                                 capacityReport.allocation_stats.unallocated]] }
                         tableClassName={tableClassName} />
                     <controls.Table
-                        head={[{label: $.t('capacity_page.node_role'),  className: headClassName},
-                                {label: $.t('capacity_page.nodes_with_config')}]}
+                        head={[{label: i18n('capacity_page.node_role'),  className: headClassName},
+                                {label: i18n('capacity_page.nodes_with_config')}]}
                         body={_.zip(_.keys(capacityReport.roles_stat),
                             _.values(capacityReport.roles_stat))}
                         tableClassName={tableClassName} />
                     <a href='/api/capacity/csv'  target='_blank' className='btn btn-info'>
                         <i className='icon-install'></i>
-                        <span>{$.t('capacity_page.download_report')}</span>
+                        <span>{i18n('capacity_page.download_report')}</span>
                     </a>
                 </div>
             );

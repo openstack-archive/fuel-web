@@ -15,12 +15,14 @@
 **/
 define(
 [
+    'underscore',
+    'i18n',
     'react',
     'utils',
     'models',
     'jsx!views/dialogs'
 ],
-function(React, utils, models, dialogs) {
+function(_, i18n, React, utils, models, dialogs) {
     'use strict';
 
     var releases = new models.Releases();
@@ -40,7 +42,7 @@ function(React, utils, models, dialogs) {
                 isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
             return (
                 <div className='wrapper'>
-                    <h3>{$.t('cluster_page.actions_tab.title')}</h3>
+                    <h3>{i18n('cluster_page.actions_tab.title')}</h3>
                     <div className='row-fluid environment-actions'>
                         <RenameEnvironmentAction cluster={cluster}/>
                         <ResetEnvironmentAction cluster={cluster} task={task} />
@@ -86,7 +88,7 @@ function(React, utils, models, dialogs) {
                             if (response.status == 409) {
                                 this.setState({error: response.responseText});
                             } else {
-                                utils.showErrorDialog({title: $.t('cluster_page.actions_tab.rename_error.title')});
+                                utils.showErrorDialog({title: i18n('cluster_page.actions_tab.rename_error.title')});
                             }
                         }, this))
                         .done(function() {
@@ -121,7 +123,7 @@ function(React, utils, models, dialogs) {
                 requestChange: this.handleChange
             };
             return (
-                <Action title={$.t('cluster_page.actions_tab.rename_environment')}>
+                <Action title={i18n('cluster_page.actions_tab.rename_environment')}>
                     <div className='action-body'>
                         <input type='text'
                             disabled={this.state.disabled}
@@ -138,7 +140,7 @@ function(React, utils, models, dialogs) {
                         className='btn btn-success rename-environment-btn'
                         onClick={this.applyAction}
                         disabled={this.state.disabled}>
-                        {$.t('common.rename_button')}
+                        {i18n('common.rename_button')}
                     </button>
                 </Action>
             );
@@ -169,18 +171,18 @@ function(React, utils, models, dialogs) {
         render: function() {
             var isLocked = this.isLocked();
             return (
-                <Action title={$.t('cluster_page.actions_tab.reset_environment')}>
+                <Action title={i18n('cluster_page.actions_tab.reset_environment')}>
                     <div className='action-body'>
                         <div className='action-item-description'>
-                            {$.t('cluster_page.actions_tab.' + this.getDescriptionKey())}
+                            {i18n('cluster_page.actions_tab.' + this.getDescriptionKey())}
                         </div>
-                        {!isLocked && <div className='important action-item-description'>{$.t('cluster_page.actions_tab.reset_environment_warning')}</div>}
+                        {!isLocked && <div className='important action-item-description'>{i18n('cluster_page.actions_tab.reset_environment_warning')}</div>}
                     </div>
                     <button
                         className='btn btn-danger reset-environment-btn'
                         onClick={this.applyAction}
                         disabled={isLocked}>
-                        {$.t('common.reset_button')}
+                        {i18n('common.reset_button')}
                     </button>
                 </Action>
             );
@@ -194,16 +196,16 @@ function(React, utils, models, dialogs) {
         },
         render: function() {
             return (
-                <Action title={$.t('cluster_page.actions_tab.delete_environment')}>
+                <Action title={i18n('cluster_page.actions_tab.delete_environment')}>
                     <div className='action-body'>
                         <div className='action-item-description important'>
-                            {$.t('cluster_page.actions_tab.alert_delete')}
+                            {i18n('cluster_page.actions_tab.alert_delete')}
                         </div>
                     </div>
                     <button
                         className='btn btn-danger delete-environment-btn'
                         onClick={this.applyAction}>
-                        {$.t('common.delete_button')}
+                        {i18n('common.delete_button')}
                     </button>
                 </Action>
             );
@@ -287,16 +289,16 @@ function(React, utils, models, dialogs) {
                     return <option value={release.id} key={release.id}>{release.get('name') + ' (' + release.get('version') + ')'}</option>;
                 }, this);
             return (
-                <Action className='span12 action-update' title={$.t('cluster_page.actions_tab.update_environment')}>
+                <Action className='span12 action-update' title={i18n('cluster_page.actions_tab.update_environment')}>
                     <div className='action-body'>
                         {(action == 'rollback' || releases) &&
                             <div className='action-item-description'>
-                                {$.t('cluster_page.actions_tab.' + this.getDescriptionKey(), {release: pendingRelease ? pendingRelease.get('name') + ' (' + pendingRelease.get('version') + ')' : ''})}
+                                {i18n('cluster_page.actions_tab.' + this.getDescriptionKey(), {release: pendingRelease ? pendingRelease.get('name') + ' (' + pendingRelease.get('version') + ')' : ''})}
                             </div>
                         }
                         {action == 'rollback' &&
                             <div className='action-item-description'>
-                                {$.t('cluster_page.actions_tab.rollback_message')}
+                                {i18n('cluster_page.actions_tab.rollback_message')}
                             </div>
                         }
                     </div>
@@ -311,7 +313,7 @@ function(React, utils, models, dialogs) {
                                 className='btn btn-success update-environment-btn'
                                 onClick={this.updateEnvironmentAction}
                                 disabled={_.isNull(this.state.pendingReleaseId) || isLocked}>
-                                {$.t('common.update_button')}
+                                {i18n('common.update_button')}
                             </button>
                         </div>
                     }
@@ -320,12 +322,12 @@ function(React, utils, models, dialogs) {
                             <button
                                 className='btn btn-success retry-update-environment-btn'
                                 onClick={this.retryUpdateEnvironmentAction}>
-                                {$.t('common.retry_button')}
+                                {i18n('common.retry_button')}
                             </button>
                             <button
                                 className='btn btn-danger rollback-environment-btn'
                                 onClick={this.rollbackEnvironmentAction}>
-                                {$.t('common.rollback_button')}
+                                {i18n('common.rollback_button')}
                             </button>
                         </div>
                     }

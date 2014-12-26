@@ -15,13 +15,16 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
     'react',
     'utils',
     'models',
     'expression',
     'jsx!views/controls'
 ],
-function(React, utils, models, Expression, controls) {
+function($, _, i18n, React, utils, models, Expression, controls) {
     'use strict';
 
     var dependenciesMixin = {
@@ -46,8 +49,8 @@ function(React, utils, models, Expression, controls) {
                 dependentSettings = this.checkDependentSettings(path),
                 messages = [];
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
-            if (dependentRoles.length) messages.push($.t('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
-            if (dependentSettings.length) messages.push($.t('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
+            if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
+            if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
             return {
                 result: restrictionsCheck.result || !!dependentRoles.length || !!dependentSettings.length,
                 message: messages.join(' ')
@@ -166,8 +169,8 @@ function(React, utils, models, Expression, controls) {
                     }, this))
                     .fail(function() {
                         utils.showErrorDialog({
-                            title: $.t('cluster_page.settings_tab.settings_error.title'),
-                            message: $.t('cluster_page.settings_tab.settings_error.saving_warning')
+                            title: i18n('cluster_page.settings_tab.settings_error.title'),
+                            message: i18n('cluster_page.settings_tab.settings_error.saving_warning')
                         });
                     });
             }
@@ -183,8 +186,8 @@ function(React, utils, models, Expression, controls) {
                     }, this))
                     .fail(function() {
                         utils.showErrorDialog({
-                            title: $.t('cluster_page.settings_tab.settings_error.title'),
-                            message: $.t('cluster_page.settings_tab.settings_error.load_defaults_warning')
+                            title: i18n('cluster_page.settings_tab.settings_error.title'),
+                            message: i18n('cluster_page.settings_tab.settings_error.load_defaults_warning')
                         });
                     });
             }
@@ -210,7 +213,7 @@ function(React, utils, models, Expression, controls) {
                 hasChanges = this.hasChanges();
             return (
                 <div className={React.addons.classSet({'openstack-settings wrapper': true, 'changes-locked': locked})}>
-                    <h3>{$.t('cluster_page.settings_tab.title')}</h3>
+                    <h3>{i18n('cluster_page.settings_tab.title')}</h3>
                     {this.state.loading ?
                         <controls.ProgressBar />
                         :
@@ -232,13 +235,13 @@ function(React, utils, models, Expression, controls) {
                                 <div className='page-control-box'>
                                     <div className='page-control-button-placeholder'>
                                         <button key='loadDefaults' className='btn btn-load-defaults' onClick={this.loadDefaults} disabled={locked}>
-                                            {$.t('common.load_defaults_button')}
+                                            {i18n('common.load_defaults_button')}
                                         </button>
                                         <button key='cancelChanges' className='btn btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
-                                            {$.t('common.cancel_changes_button')}
+                                            {i18n('common.cancel_changes_button')}
                                         </button>
                                         <button key='applyChanges' className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || this.settings.validationError}>
-                                            {$.t('common.save_settings_button')}
+                                            {i18n('common.save_settings_button')}
                                         </button>
                                     </div>
                                 </div>

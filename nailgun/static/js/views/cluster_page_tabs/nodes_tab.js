@@ -15,6 +15,8 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
     'utils',
     'models',
     'views/common',
@@ -24,7 +26,7 @@ define(
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function($, _, utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
     var NodesTab;
 

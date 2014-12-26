@@ -27,6 +27,7 @@ from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
 from nailgun.statistics.statsenderd import StatsSender
+from nailgun.statistics import utils
 
 FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
 FEATURE_EXPERIMENTAL = {'feature_groups': ['experimental']}
@@ -371,3 +372,54 @@ class TestStatisticsSender(BaseTestCase):
         ss.send_stats_once()
         # one more call was made (all went ok)
         self.assertEqual(sleep.call_count, 2)
+
+
+class TestOWSLCollectingUtils(BaseTestCase):
+    def test_get_vm_info(self):
+        # prepare return data for nova client mock
+        server_info = {
+            "id": 1,
+            "status": "running",
+            "OS-EXT-STS:power_state": 1,
+            "created": "date_of_creation",
+            "hostId": "test_host_id",
+            "tenant_id": "test_tenant_id",
+            "image": {"id": "test_image_id"},
+            "flavor": {"id": "test_flavor_id"},
+        }
+
+        # mock nova os client
+        server_mock = Mock()
+        server_mock.to_dict = Mock(return_value=server_info)
+
+        servers_manager = Mock()
+        servers_manager.list.return_value = [server_mock]
+
+        nova_mock = Mock()
+        nova_mock.servers = servers_manager
+
+        client_provider_mock = Mock()
+        client_provider_mock.nova = nova_mock
+
+        get_proxy_path = ("nailgun.statistics.utils.get_proxy_for_cluster")
+        set_proxy_path = ("nailgun.statistics.utils.set_proxy")
+
+        with patch(get_proxy_path):
+            with patch(set_proxy_path):
+                res = utils.get_info_from_os_resource_manager(
+                    client_provider_mock, "vm")
+
+        expected = [
+            {
+                "id": 1,
+                "status": "running",
+                "power_state": 1,
+                "created_at": "date_of_creation",
+                "image_id": "test_image_id",
+                "flavor_id": "test_flavor_id",
+                "host_id": "test_host_id",
+                "tenant_id": "test_tenant_id",
+            },
+        ]
+
+        self.assertItemsEqual(res, expected)

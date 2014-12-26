@@ -15,11 +15,12 @@
 **/
 define(
 [
+    'underscore',
     'utils',
     'models',
     'views/cluster_page_tabs/nodes_tab_screens/screen'
 ],
-function(utils, models, Screen) {
+function(_, utils, models, Screen) {
     'use strict';
     var EditNodeScreen;
 

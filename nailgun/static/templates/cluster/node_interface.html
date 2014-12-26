@@ -19,7 +19,7 @@
           <div class="network-bond-name pull-left disabled"><%- ifc.get('name') %></div>
         <% } %>
         <div class="network-bond-mode pull-right">
-          <b><%- $.t('cluster_page.nodes_tab.configure_interfaces.bonding_mode') %>:</b>
+          <b><%- i18n('cluster_page.nodes_tab.configure_interfaces.bonding_mode') %>:</b>
           <span>
             <select name="mode" <%= bondingAvailable ? '' : 'disabled' %>></select>
           </span>
@@ -57,7 +57,7 @@
           <div class="network-connections-info-position"></div>
           <div class="network-connections-info-description">
             <div>MAC: <%- slaveInterface.get('mac') %></div>
-            <div><%- $.t('cluster_page.nodes_tab.configure_interfaces.speed') %>: <%- showBandwidth(slaveInterface.get('current_speed')) %></div>
+            <div><%- i18n('cluster_page.nodes_tab.configure_interfaces.speed') %>: <%- showBandwidth(slaveInterface.get('current_speed')) %></div>
             <% if (bondingAvailable && slaveInterfaces.length >= 3) { %>
               <button class="btn btn-link btn-remove-interface" type="button" data-interface-id="<%= slaveInterface.id %>">Remove</button>
             <% } %>
@@ -75,11 +75,11 @@
             </div><div class="logical-network-group <%= locked || network.get('meta').unmovable ? 'disabled' : '' %>">
           <% } %>
           <div class="logical-network-item" data-name="<%- networkName %>">
-            <div class="name"><%- $.t('network.' + networkName, {defaultValue: networkName}) %></div>
+            <div class="name"><%- i18n('network.' + networkName, {defaultValue: networkName}) %></div>
             <% var vlanRange = network.getVlanRange() %>
             <% if (!_.isNull(vlanRange)) { %>
               <div class="id">
-                <%- $.t('cluster_page.nodes_tab.configure_interfaces.vlan_id', {count: _.uniq(vlanRange).length}) + ': ' + _.uniq(vlanRange).join('-') %>
+                <%- i18n('cluster_page.nodes_tab.configure_interfaces.vlan_id', {count: _.uniq(vlanRange).length}) + ': ' + _.uniq(vlanRange).join('-') %>
               </div>
             <% } %>
           </div>

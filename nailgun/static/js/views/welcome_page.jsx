@@ -15,12 +15,13 @@
  **/
 define(
 [
-    'jquery',
+    'underscore',
+    'i18n',
     'react',
     'models',
     'jsx!views/statistics_mixin'
 ],
-function($, React, models, statisticsMixin) {
+function(_, i18n, React, models, statisticsMixin) {
     'use strict';
 
     var WelcomePage = React.createClass({
@@ -66,25 +67,25 @@ function($, React, models, statisticsMixin) {
                         <RegisterTrial fuelKey={this.state.fuelKey} />
                         {this.renderIntro()}
                         {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
-                        {isMirantisIso && <div className='welcome-text-box'>{$.t(ns + 'support')}</div>}
+                        {isMirantisIso && <div className='welcome-text-box'>{i18n(ns + 'support')}</div>}
                         {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
                         <form className='form-horizontal'>
                             {this.props.settings.get('statistics').send_user_info.value &&
-                                <div className='welcome-text-box'>{$.t(ns + 'provide_contacts')}</div>
+                                <div className='welcome-text-box'>{i18n(ns + 'provide_contacts')}</div>
                             }
                             { _.map(contacts, function(settingName) {
                                 return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box', true);
                             }, this)}
                             {error &&
-                                <div className='welcome-form-error'>{$.t(error)}</div>
+                                <div className='welcome-form-error'>{i18n(error)}</div>
                             }
                             <div className='welcome-button-box'>
                                 <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress} onClick={this.onStartButtonClick}>
-                                    {$.t(ns + 'start_fuel')}
+                                    {i18n(ns + 'start_fuel')}
                                 </button>
                             </div>
                         </form>
-                        {isMirantisIso && <div className='welcome-text-box'>{$.t(ns + 'change_settings')}</div>}
+                        {isMirantisIso && <div className='welcome-text-box'>{i18n(ns + 'change_settings')}</div>}
                         <div className='welcome-text-box'>{this.getText(ns + 'thanks')}</div>
                     </div>
                 </div>
@@ -108,10 +109,10 @@ function($, React, models, statisticsMixin) {
                     key = this.props.fuelKey.get('key');
                 return (
                     <div className='register-trial'>
-                        <p>{$.t(ns + 'register_installation')}</p>
-                        <p>{$.t(ns + 'register_now')}</p>
+                        <p>{i18n(ns + 'register_installation')}</p>
+                        <p>{i18n(ns + 'register_now')}</p>
                         <p>
-                            <a target="_blank" className="btn btn-info" href={!_.isUndefined(key) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + key : '/'}>{$.t(ns + 'link_text')}</a>
+                            <a target="_blank" className="btn btn-info" href={!_.isUndefined(key) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + key : '/'}>{i18n(ns + 'link_text')}</a>
                         </p>
                     </div>
                 );

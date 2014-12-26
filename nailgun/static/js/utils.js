@@ -14,7 +14,16 @@
  * under the License.
 **/
 
-define(['require', 'underscore', 'expression', 'expression/objects', 'react'], function(require, _, Expression, expressionObjects, React) {
+define([
+    'require',
+    'jquery',
+    'underscore',
+    'i18n',
+    'backbone',
+    'expression',
+    'expression/objects',
+    'react'
+], function(require, $, _, i18n, Backbone, Expression, expressionObjects, React) {
     'use strict';
 
     var utils = {
@@ -116,19 +125,19 @@ define(['require', 'underscore', 'expression', 'expression/objects', 'react'], f
         },
         showBandwidth: function(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);
-            if (!_.isNumber(bandwidth) || _.isNaN(bandwidth)) {return $.t('common.not_available');}
+            if (!_.isNumber(bandwidth) || _.isNaN(bandwidth)) {return i18n('common.not_available');}
             return (bandwidth / 1000).toFixed(1) + ' Gbps';
         },
         showFrequency: function(frequency) {
             frequency = parseInt(frequency, 10);
-            if (!_.isNumber(frequency) || _.isNaN(frequency)) {return $.t('common.not_available');}
+            if (!_.isNumber(frequency) || _.isNaN(frequency)) {return i18n('common.not_available');}
             var base = 1000;
             var treshold = 1000;
             return (frequency >= treshold ? (frequency / base).toFixed(2) + ' GHz' : frequency + ' MHz');
         },
         showSize: function(bytes, treshold) {
             bytes = parseInt(bytes, 10);
-            if (!_.isNumber(bytes) || _.isNaN(bytes)) {return $.t('common.not_available');}
+            if (!_.isNumber(bytes) || _.isNaN(bytes)) {return i18n('common.not_available');}
             var base = 1024;
             treshold = treshold || 256;
             var units = ['byte', 'kb', 'mb', 'gb', 'tb'];
@@ -140,7 +149,7 @@ define(['require', 'underscore', 'expression', 'expression/objects', 'react'], f
                     break;
                 }
             }
-            return (result ? result.toFixed(1) : result) + ' ' + $.t('common.size.' + unit, {count: result});
+            return (result ? result.toFixed(1) : result) + ' ' + i18n('common.size.' + unit, {count: result});
         },
         showMemorySize: function(bytes) {
             return utils.showSize(bytes, 1024);
@@ -166,11 +175,11 @@ define(['require', 'underscore', 'expression', 'expression/objects', 'react'], f
         validateVlan: function(vlan, forbiddenVlans, field, disallowNullValue) {
             var error = {};
             if ((_.isNull(vlan) && disallowNullValue) || (!_.isNull(vlan) && (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094))) {
-                error[field] = $.t('cluster_page.network_tab.validation.invalid_vlan');
+                error[field] = i18n('cluster_page.network_tab.validation.invalid_vlan');
                 return error;
             }
             if (_.contains(_.compact(forbiddenVlans), vlan)) {
-                error[field] = $.t('cluster_page.network_tab.validation.forbidden_vlan');
+                error[field] = i18n('cluster_page.network_tab.validation.forbidden_vlan');
             }
             return error[field] ? error : {};
         },
@@ -182,15 +191,15 @@ define(['require', 'underscore', 'expression', 'expression/objects', 'react'], f
                 if (match) {
                     var prefix = parseInt(match[1], 10);
                     if (prefix < 2) {
-                        error[field] = $.t('cluster_page.network_tab.validation.large_network');
+                        error[field] = i18n('cluster_page.network_tab.validation.large_network');
                     } else if (prefix > 30) {
-                        error[field] = $.t('cluster_page.network_tab.validation.small_network');
+                        error[field] = i18n('cluster_page.network_tab.validation.small_network');
                     }
                 } else {
-                    error[field] = $.t('cluster_page.network_tab.validation.invalid_cidr');
+                    error[field] = i18n('cluster_page.network_tab.validation.invalid_cidr');
                 }
             } else {
-                error[field] = $.t('cluster_page.network_tab.validation.invalid_cidr');
+                error[field] = i18n('cluster_page.network_tab.validation.invalid_cidr');
             }
             return error[field] ? error : {};
         },
@@ -207,11 +216,11 @@ define(['require', 'underscore', 'expression', 'expression/objects', 'react'], f
                     if (range[0] || range[1]) {
                         var error = {index: i};
                         if (utils.validateIP(range[0]) || !utils.validateIpCorrespondsToCIDR(cidr, range[0])) {
-                            error.start = $.t('cluster_page.network_tab.validation.invalid_ip_start');
+                            error.start = i18n('cluster_page.network_tab.validation.invalid_ip_start');
                         } else if (utils.validateIP(range[1]) || !utils.validateIpCorrespondsToCIDR(cidr, range[1])) {
-                            error.end = $.t('cluster_page.network_tab.validation.invalid_ip_end');
+                            error.end = i18n('cluster_page.network_tab.validation.invalid_ip_end');
                         } else if (!utils.validateIPrange(range[0], range[1])) {
-                            error.start = $.t('cluster_page.network_tab.validation.invalid_ip_range');
+                            error.start = i18n('cluster_page.network_tab.validation.invalid_ip_range');
                         }
                         if (error.start || error.end) {
                             ipRangesErrors.push(error);
@@ -219,7 +228,7 @@ define(['require', 'underscore', 'expression', 'expression/objects', 'react'], f
                     }
                 });
             } else {
-                ipRangesErrors.push({index: 0, start: $.t('cluster_page.network_tab.validation.empty_ip_range')});
+                ipRangesErrors.push({index: 0, start: i18n('cluster_page.network_tab.validation.empty_ip_range')});
             }
             return ipRangesErrors;
         },

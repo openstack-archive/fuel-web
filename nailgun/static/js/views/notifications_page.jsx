@@ -15,12 +15,13 @@
 **/
 define(
 [
+    'i18n',
     'react',
     'utils',
     'models',
     'jsx!views/dialogs'
 ],
-function(React, utils, models, dialogs) {
+function(i18n, React, utils, models, dialogs) {
     'use strict';
 
     var NotificationsPage, Notification;
@@ -30,7 +31,7 @@ function(React, utils, models, dialogs) {
         navbarActiveElement: null,
         breadcrumbsPath: [['home', '#'], 'notifications'],
         title: function() {
-            return $.t('notifications_page.title');
+            return i18n('notifications_page.title');
         },
         statics: {
             fetchData: function() {
@@ -43,7 +44,7 @@ function(React, utils, models, dialogs) {
         render: function() {
             return (
                 <div>
-                    <h3 className='page-title'>{$.t('notifications_page.title')}</h3>
+                    <h3 className='page-title'>{i18n('notifications_page.title')}</h3>
                     <ul className='notification-list page-wrapper'>
                         {this.props.notifications.map(function(notification) {
                             return <Notification {...this.props} key={'notification' + notification.id} notification={notification} />;
@@ -64,7 +65,7 @@ function(React, utils, models, dialogs) {
         markAsRead: function() {
             var notification = this.props.notification;
             notification.toJSON = function() {
-                return _.pick(notification.attributes, 'id', 'status');
+                return notification.pick('id', 'status');
             };
             notification.save({status: 'read'});
         },

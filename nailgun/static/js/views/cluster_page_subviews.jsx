@@ -15,11 +15,13 @@
 **/
 define(
 [
+    'underscore',
+    'i18n',
     'react',
     'utils',
     'jsx!views/dialogs'
 ],
-function(React, utils, dialogs) {
+function(_, i18n, React, utils, dialogs) {
     'use strict';
 
     var clusterPageSubviews = {};
@@ -39,22 +41,22 @@ function(React, utils, dialogs) {
                         <div className='cluster-name-placeholder'>
                             <div className='name-box'>
                                 <h3 className='name page-title'>{cluster.get('name')}</h3>
-                                <div className='node-list-name-count'>({$.t('common.node', {count: cluster.get('nodes').length})})</div>
+                                <div className='node-list-name-count'>({i18n('common.node', {count: cluster.get('nodes').length})})</div>
                                 <div className='clearfix'/>
                             </div>
                         </div>
                         <div className='cluster-summary-placeholder'>
                             <div>
-                                <strong>{$.t('cluster_page.openstack_release')}: </strong>
+                                <strong>{i18n('cluster_page.openstack_release')}: </strong>
                                 {cluster.get('release').get('name')} ({cluster.get('release').get('version')})
                             </div>
                             <div>
-                                <strong>{$.t('cluster_page.deployment_mode')}: </strong>
-                                {$.t('cluster.mode.' + cluster.get('mode'))}
+                                <strong>{i18n('cluster_page.deployment_mode')}: </strong>
+                                {i18n('cluster.mode.' + cluster.get('mode'))}
                             </div>
                             <div className={_.contains(['error', 'update_error'], cluster.get('status')) ? 'error' : ''}>
-                                <strong>{$.t('cluster_page.environment_status')}: </strong>
-                                {$.t('cluster.status.' + cluster.get('status'))}
+                                <strong>{i18n('cluster_page.environment_status')}: </strong>
+                                {i18n('cluster.status.' + cluster.get('status'))}
                             </div>
                         </div>
                     </div>
@@ -81,7 +83,7 @@ function(React, utils, dialogs) {
             return !task ? (<div/>) : (
                 <div className={'alert alert-block ' + (task.match({status: 'error'}) ? 'alert-error global-error' : 'alert-success ' + (task.match({name: ['deploy', 'update']}) ? 'global-success' : 'globalalert'))}>
                     <button className='close' onClick={this.dismissTaskResult}>&times;</button>
-                    <h4>{$.t('common.' + (task.match({status: 'error'}) ? 'error' : 'success'))}</h4>
+                    <h4>{i18n('common.' + (task.match({status: 'error'}) ? 'error' : 'success'))}</h4>
                     <p className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(task.escape('message')))}} />
                 </div>
             );
@@ -133,7 +135,7 @@ function(React, utils, dialogs) {
                                     <div className={itemClass}>
                                         <button
                                             className='btn btn-danger stop-deployment-btn'
-                                            title={$.t('cluster_page.stop_deployment_button')}
+                                            title={i18n('cluster_page.stop_deployment_button')}
                                             onClick={_.bind(this.showDialog, this, dialogs.StopDeploymentDialog)}
                                         >
                                             <i className='icon-cancel-circle' />
@@ -150,7 +152,7 @@ function(React, utils, dialogs) {
                                 <div className='bar' style={{width: (taskProgress > 3 ? taskProgress : 3) + '%'}} />
                             </div>
                         </div>
-                        <div className='progress-bar-description'>{$.t('cluster_page.' + taskName, {defaultValue: ''})}</div>
+                        <div className='progress-bar-description'>{i18n('cluster_page.' + taskName, {defaultValue: ''})}</div>
                     </div>
                 ) : (
                     <div className='pull-right deployment-control-box'>
@@ -161,14 +163,14 @@ function(React, utils, dialogs) {
                                 onClick={this.onDeployRequest}
                             >
                                 <i className='icon-upload-cloud' />
-                                {$.t('cluster_page.deploy_changes')}
+                                {i18n('cluster_page.deploy_changes')}
                             </button>
                         </div>
                         {nodes.hasChanges() &&
                             <div className={itemClass}>
                                 <button
                                     className='btn rollback'
-                                    title={$.t('cluster_page.discard_changes')}
+                                    title={i18n('cluster_page.discard_changes')}
                                     onClick={_.bind(this.showDialog, this, dialogs.DiscardNodeChangesDialog)}
                                 >
                                     <i className='icon-back-in-time' />
@@ -185,7 +187,7 @@ function(React, utils, dialogs) {
         render: function() {
             return !this.props.model.get('is_customized') ? (<div/>) : (
                 <div className='alert alert-block globalalert'>
-                    <p className='enable-selection'>{$.t('cluster_page.cluster_was_modified_from_cli')}</p>
+                    <p className='enable-selection'>{i18n('cluster_page.cluster_was_modified_from_cli')}</p>
                 </div>
             );
         }

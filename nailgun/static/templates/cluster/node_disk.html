@@ -1,7 +1,7 @@
 <div class="disk-box disk" data-disk="<%- disk.id %>">
 
   <div class="disk-box-name pull-left"><%- disk.get('name') %> (<%- disk.id %>)</div>
-  <div class="disk-box-size pull-right"><%- $.t('cluster_page.nodes_tab.configure_disks.total_space') %>: <%= showDiskSize(disk.get('size'), 2) %></div>
+  <div class="disk-box-size pull-right"><%- i18n('cluster_page.nodes_tab.configure_disks.total_space') %>: <%= showDiskSize(disk.get('size'), 2) %></div>
 
   <div class="disk-map-short disk-map-full">
     <div class="disk-map-image disk-visual">

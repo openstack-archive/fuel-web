@@ -16,9 +16,11 @@
 define(
 [
     'jquery',
+    'underscore',
+    'i18n',
     'react'
 ],
-function($, React) {
+function($, _, i18n, React) {
     'use strict';
 
     var LoginPage, LoginForm;
@@ -27,7 +29,7 @@ function($, React) {
         breadcrumbsPath: [],
         hiddenLayout: true,
         title: function() {
-            return $.t('login_page.title');
+            return i18n('login_page.title');
         },
         render: function() {
             return (
@@ -40,8 +42,8 @@ function($, React) {
                         </div>
                     </div>
                     <div className='login-copyrights'>
-                        <p className='text-center'>{$.t('common.copyright')}</p>
-                        <p className='text-center'>{$.t('common.version')}: {app.version.get('release')}</p>
+                        <p className='text-center'>{i18n('common.copyright')}</p>
+                        <p className='text-center'>{i18n('common.version')}: {app.version.get('release')}</p>
                     </div>
                 </div>
             );
@@ -107,7 +109,7 @@ function($, React) {
                                 <i className='icon-user'></i>
                             </label>
                             <div className='controls'>
-                                <input className='input-xlarge' type='text' name='username' ref='username' placeholder={$.t('login_page.username')} onChange={this.onChange} />
+                                <input className='input-xlarge' type='text' name='username' ref='username' placeholder={i18n('login_page.username')} onChange={this.onChange} />
                             </div>
                         </div>
                         <div className='control-group'>
@@ -115,18 +117,18 @@ function($, React) {
                                 <i className='icon-key'></i>
                             </label>
                             <div className='controls'>
-                                <input className='input-xlarge' type='password' name='password' ref='password' placeholder={$.t('login_page.password')} onChange={this.onChange} />
+                                <input className='input-xlarge' type='password' name='password' ref='password' placeholder={i18n('login_page.password')} onChange={this.onChange} />
                             </div>
                         </div>
                         {this.state.hasError && (
                                 <div className='login-error-auth login-error-message'>
-                                    <p className='text-center text-error'>{$.t('login_page.login_error')}</p>
+                                    <p className='text-center text-error'>{i18n('login_page.login_error')}</p>
                                 </div>
                             )
                         }
                         <div className='control-group'>
                             <div id='login-button-control' className='controls'>
-                                <button type='submit' className='btn btn-success login-btn' disabled={loginButtonDisabled}>{$.t('login_page.log_in')}</button>
+                                <button type='submit' className='btn btn-success login-btn' disabled={loginButtonDisabled}>{i18n('login_page.log_in')}</button>
                             </div>
                         </div>
                     </fieldset>

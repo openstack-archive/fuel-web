@@ -15,13 +15,17 @@
  **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
+    'backbone',
     'react',
     'models',
     'utils',
     'jsx!component_mixins',
     'jsx!views/controls'
 ],
-function(React, models, utils, componentMixins, controls) {
+function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) {
     'use strict';
 
     var HealthCheckTab = React.createClass({
@@ -70,11 +74,11 @@ function(React, models, utils, componentMixins, controls) {
                 ostf = cluster.get('ostf') || this.state.ostf;
             return (
                 <div className='wrapper'>
-                    <h3 className='span6 healthcheck-title'>{$.t('cluster_page.healthcheck_tab.title')}</h3>
+                    <h3 className='span6 healthcheck-title'>{i18n('cluster_page.healthcheck_tab.title')}</h3>
                     {this.state.loadingFailure ?
                         <div className='cleared'>
                             <div className='alert error-message alert-error'>
-                                {$.t('cluster_page.healthcheck_tab.not_available_alert')}
+                                {i18n('cluster_page.healthcheck_tab.not_available_alert')}
                             </div>
                         </div>
                     : !this.state.loaded ?
@@ -214,7 +218,7 @@ function(React, models, utils, componentMixins, controls) {
                             {!disabledState &&
                                 <div className='toggle-credentials pull-right' onClick={this.toggleCredentials}>
                                     <i className={this.state.credentialsVisible ? 'icon-minus-circle' : 'icon-plus-circle'}></i>
-                                    <div>{$.t('cluster_page.healthcheck_tab.provide_credentials')}</div>
+                                    <div>{i18n('cluster_page.healthcheck_tab.provide_credentials')}</div>
                                 </div>
                             }
                         </div>
@@ -225,7 +229,7 @@ function(React, models, utils, componentMixins, controls) {
                             checked={this.getNumberOfCheckedTests() == this.props.tests.length}
                             disabled={disabledState || hasRunningTests}
                             labelClassName='checkbox pull-right'
-                            label={$.t('common.select_all')}
+                            label={i18n('common.select_all')}
                             wrapperClassName='span2 ostf-controls select-all'
                         />
                         <div className='span2 ostf-controls'>
@@ -234,14 +238,14 @@ function(React, models, utils, componentMixins, controls) {
                                     disabled={disabledState || this.state.actionInProgress}
                                     onClick={this.stopTests}
                                 >
-                                    {$.t('cluster_page.healthcheck_tab.stop_tests_button')}
+                                    {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
                                 </button>)
                             :
                                 (<button className='btn btn-success pull-right action-btn run-tests-btn'
                                     disabled={disabledState || !this.getNumberOfCheckedTests() || this.state.actionInProgress}
                                     onClick={this.runTests}
                                 >
-                                    {$.t('cluster_page.healthcheck_tab.run_tests_button')}
+                                    {i18n('cluster_page.healthcheck_tab.run_tests_button')}
                                 </button>)
                             }
                         </div>
@@ -249,7 +253,7 @@ function(React, models, utils, componentMixins, controls) {
                     {(this.props.cluster.get('status') == 'new') &&
                         <div className='row-fluid'>
                             <div className='span12'>
-                                <div className='alert'>{$.t('cluster_page.healthcheck_tab.deploy_alert')}</div>
+                                <div className='alert'>{i18n('cluster_page.healthcheck_tab.deploy_alert')}</div>
                             </div>
                         </div>
                     }
@@ -291,18 +295,18 @@ function(React, models, utils, componentMixins, controls) {
                     <div className='fieldset-group wrapper'>
                         <div className='healthcheck-group' >
                             <div className='clearfix note'>
-                                {$.t('cluster_page.healthcheck_tab.credentials_description')}
+                                {i18n('cluster_page.healthcheck_tab.credentials_description')}
                             </div>
                             {_.map(inputFields, function(name) {
                                 return (<controls.Input
                                     key={name}
                                     type={(name == 'password') ? 'password' : 'text'}
                                     name={name}
-                                    label={$.t('cluster_page.healthcheck_tab.' + name + '_label')}
+                                    label={i18n('cluster_page.healthcheck_tab.' + name + '_label')}
                                     value={this.props.credentials[name]}
                                     onChange={this.props.onInputChange}
                                     toggleable={name == 'password'}
-                                    description={$.t('cluster_page.healthcheck_tab.' + name + '_description')}
+                                    description={i18n('cluster_page.healthcheck_tab.' + name + '_description')}
                                     labelClassName='openstack-sub-title'
                                     descriptionClassName={React.addons.classSet({'healthcheck-password': name == 'password'})}
                                     disabled={this.props.disabled}
@@ -354,9 +358,9 @@ function(React, models, utils, componentMixins, controls) {
                                         {this.props.testset.get('name')}
                                     </label>
                                 </th>
-                                <th className='healthcheck-col-duration'>{$.t('cluster_page.healthcheck_tab.expected_duration')}</th>
-                                <th className='healthcheck-col-duration'>{$.t('cluster_page.healthcheck_tab.actual_duration')}</th>
-                                <th className='healthcheck-col-status'>{$.t('cluster_page.healthcheck_tab.status')}</th>
+                                <th className='healthcheck-col-duration'>{i18n('cluster_page.healthcheck_tab.expected_duration')}</th>
+                                <th className='healthcheck-col-duration'>{i18n('cluster_page.healthcheck_tab.actual_duration')}</th>
+                                <th className='healthcheck-col-status'>{i18n('cluster_page.healthcheck_tab.status')}</th>
                             </tr>
                         </thead>
                         <tbody>

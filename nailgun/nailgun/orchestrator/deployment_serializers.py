@@ -1010,6 +1010,7 @@ class DeploymentMultinodeSerializer(object):
         if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':
             image_data.update({
                 'disk_format': 'vmdk',
+                'img_name': 'TestVM-vmdk',
                 'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
             })
             glance_properties.append('--property vmware_disktype=sparse')

@@ -235,5 +235,7 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'puppet',
     'shell',
     'sync',
-    'upload_file'
+    'upload_file',
+    'group',
+    'stage'
 )

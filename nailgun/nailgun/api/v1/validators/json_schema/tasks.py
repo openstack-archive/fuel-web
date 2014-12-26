@@ -13,13 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.consts import ORCHESTRATOR_TASK_TYPES
+
 TASK_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'object',
     'required': ['type', 'id'],
     'properties': {
         'id': {'type': 'string'},
-        'type': {'enum': ['puppet', 'shell', 'role', 'stage'],
+        'type': {'enum': list(ORCHESTRATOR_TASK_TYPES),
                  'type': 'string'},
         'parameters': {'type': 'object'},
         'required_for': {'type': 'array'},

@@ -21,6 +21,8 @@ DEPLOYMENT_CURRENT = """
   type: stage
 - id: pre_deployment
   type: stage
+- id: post_deployment
+  type: stage
 - id: primary-controller
   type: group
   role: [primary-controller]
@@ -112,12 +114,24 @@ DEPLOYMENT_CURRENT = """
     src: rsync://{MASTER_IP}:/etc/puppet/{OPENSTACK_VERSION}/
     dst: /etc/puppet
     timeout: 180
+
+#POSTDEPLOYMENT HOOKS
+
+- id: restart_radosgw
+  type: shell
+  role: [controller, primary-controller]
+  stage: post_deployment
+  parameters:
+    cmd: sh /etc/puppet/modules/osnailyfacter/modular/astute/restart_radosgw.sh
+    timeout: 180
 """
 
 DEPLOYMENT_50 = """
 - id: deploy
   type: stage
 - id: pre_deployment
+  type: stage
+- id: post_deployment
   type: stage
 - id: primary-controller
   type: group
@@ -215,6 +229,8 @@ PATCHING = """
 - id: deploy
   type: stage
 - id: pre_deployment
+  type: stage
+- id: post_deployment
   type: stage
 - id: primary-controller
   type: group

@@ -26,6 +26,30 @@ from nailgun import objects
 from nailgun.settings import settings
 
 
+attributes_list = {
+    "nova_client": [
+        {
+            "manager_name": "servers",
+            "resource_attributes": [
+                "id",
+                "name",
+                "status",
+                "user_id",
+                "tenant_id",
+                "OS-EXT-STS:power_state",
+                "OS-EXT-AZ:availability_zone",
+                "created",
+                "image",
+                "flavor",
+                "os-extended-volumes:volumes_attached",
+                "networks",
+                "diagnostics",
+            ],
+        }
+    ],
+},
+
+
 class OpenStackInfoCollector(object):
     """Introduce interface for collecting
     info from OpenStack installation
@@ -80,7 +104,7 @@ class OpenStackInfoCollector(object):
 
     def initialize_clients(self, *auth_creds):
         self.nova_client = nova_client.Client(
-            settings.NOVACLIENT_VERSION,
+            settings.OPENSTACK_CLIENTS_VERSION["nova"],
             *auth_creds,
             service_type=self.compute_service_type
         )
@@ -94,9 +118,45 @@ class OpenStackInfoCollector(object):
         openstack_info = {}
 
         with self.set_proxy():
-            openstack_info["nova_servers_count"] = len(
-                self.nova_client.servers.list()
-            )
+            for client_name in attributes_list:
+                client_inst = getattr(self, client_name, None)
+
+                if client_inst:
+                    client_data = {}
+                    openstack_info[client_name] = client_data
+
+                    for entity in attributes_list[client_name]:
+                        res_manager_name = entity["manager_name"]
+                        res_manager_inst = getattr(client_inst,
+                                                   res_manager_name,
+                                                   None)
+                        if res_manager_inst:
+                            res_data = []
+                            resources = {
+                                "resources_data": res_data,
+                                "resources_count": 0
+                            }
+                            client_data[res_manager_name] = resources
+
+                            list_of_resources = res_manager_inst.list()
+
+                            for res in list_of_resources:
+                                attr_data = {}
+                                for attr_name in entity["resource_attributes"]:
+                                    attr_value = getattr(res, attr_name, None)
+
+                                    # for attributes with composite names
+                                    if ":" in attr_name:
+                                        attr_name = attr_name.split(":")[1]
+
+                                    attr_data[attr_name] = attr_value
+
+                                res_data.append(attr_data)
+
+                            # save resources count
+                            resources["resources_count"] = len(
+                                list_of_resources)
+
             openstack_info["images"] = self.get_images_info()
 
         return openstack_info

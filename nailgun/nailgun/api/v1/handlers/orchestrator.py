@@ -169,7 +169,8 @@ class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        return post_deployment_serialize(cluster, nodes)
+        graph = deployment_graph.AstuteGraph(cluster)
+        return post_deployment_serialize(graph, cluster, nodes)
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)

@@ -23,28 +23,10 @@ from nailgun.orchestrator import tasks_serializer
 from nailgun.test import base
 
 
-PRE_STAGE = """
-- id: upload_core_repos
-  type: upload_file
-  role: '*'
-  stage: pre_deployment
-
-- id: rsync_core_puppet
-  type: sync
-  role: '*'
-  stage: pre_deployment
-  requires: [upload_core_repos]
-  parameters:
-    src: /etc/puppet/{OPENSTACK_VERSION}/
-    dst: /etc/puppet
-    timeout: 180
-"""
-
-
-class TestPreHooksSerializers(base.BaseTestCase):
+class TestHooksSerializers(base.BaseTestCase):
 
     def setUp(self):
-        super(TestPreHooksSerializers, self).setUp()
+        super(TestHooksSerializers, self).setUp()
         self.nodes = [
             mock.Mock(uid='3', all_roles=['controller']),
             mock.Mock(uid='4', all_roles=['primary-controller']),
@@ -99,8 +81,51 @@ class TestPreHooksSerializers(base.BaseTestCase):
         self.assertEqual(serialized[1]['parameters']['cmd'], 'apt-get update')
         self.assertEqual(sorted(serialized[1]['uids']), sorted(self.all_uids))
 
+    def test_serialize_rados_with_ceph(self):
+        task_config = {'id': 'restart_radosgw',
+                       'type': 'shell',
+                       'role': ['controller', 'primary-controller'],
+                       'stage': 'post-deployment',
+                       'parameters': {'cmd': '/cmd.sh', 'timeout': 60}}
+        self.nodes.append(mock.Mock(uid='7', all_roles=['ceph-osd']))
+        task = tasks_serializer.RestartRadosGW(
+            task_config, self.cluster, self.nodes)
+        serialized = list(task.serialize())
+        self.assertEqual(len(serialized), 1)
+        self.assertEqual(serialized[0]['type'], 'shell')
+        self.assertEqual(
+            serialized[0]['parameters']['cmd'],
+            task_config['parameters']['cmd'])
+
+    def test_serialzize_rados_wo_ceph(self):
+        task_config = {'id': 'restart_radosgw',
+                       'type': 'shell',
+                       'role': ['controller', 'primary-controller'],
+                       'stage': 'post-deployment',
+                       'parameters': {'cmd': '/cmd.sh', 'timeout': 60}}
+        task = tasks_serializer.RestartRadosGW(
+            task_config, self.cluster, self.nodes)
+        self.assertFalse(task.should_execute())
+
 
 class TestPreTaskSerialization(base.BaseTestCase):
+
+    TASKS = """
+    - id: upload_core_repos
+      type: upload_file
+      role: '*'
+      stage: pre_deployment
+
+    - id: rsync_core_puppet
+      type: sync
+      role: '*'
+      stage: pre_deployment
+      requires: [upload_core_repos]
+      parameters:
+        src: /etc/puppet/{OPENSTACK_VERSION}/
+        dst: /etc/puppet
+        timeout: 180
+    """
 
     def setUp(self):
         super(TestPreTaskSerialization, self).setUp()
@@ -112,7 +137,7 @@ class TestPreTaskSerialization(base.BaseTestCase):
         self.cluster.release.orchestrator_data.repo_metadata = {
             '6.0': '{MASTER_IP}//{OPENSTACK_VERSION}'
         }
-        self.cluster.deployment_tasks = yaml.load(PRE_STAGE)
+        self.cluster.deployment_tasks = yaml.load(self.TASKS)
         self.all_uids = set([n.uid for n in self.nodes])
         self.graph = deployment_graph.AstuteGraph(self.cluster)
 
@@ -126,3 +151,33 @@ class TestPreTaskSerialization(base.BaseTestCase):
         self.assertEqual(set(tasks[1]['uids']), self.all_uids)
         self.assertEqual(tasks[2]['type'], 'sync')
         self.assertEqual(set(tasks[2]['uids']), self.all_uids)
+
+
+class TestPostTaskSerialization(base.BaseTestCase):
+
+    TASKS = """
+    - id: restart_radosgw
+      type: shell
+      role: [controller, primary-controller]
+      stage: post_deployment
+      parameters:
+        cmd: /etc/pupppet/restart_radosgw.sh
+        timeout: 180
+    """
+
+    def setUp(self):
+        super(TestPostTaskSerialization, self).setUp()
+        self.nodes = [
+            mock.Mock(uid='3', all_roles=['controller']),
+            mock.Mock(uid='4', all_roles=['primary-controller'])]
+        self.cluster = mock.Mock()
+        self.cluster.deployment_tasks = yaml.load(self.TASKS)
+        self.control_uids = ['3', '4']
+        self.graph = deployment_graph.AstuteGraph(self.cluster)
+
+    def test_post_task_serialize_all_tasks(self):
+        self.nodes.append(mock.Mock(uid='5', all_roles=['ceph-osd']))
+        tasks = self.graph.post_tasks_serialize(self.nodes)
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(tasks[0]['uids'], self.control_uids)
+        self.assertEqual(tasks[0]['type'], 'shell')

@@ -15,6 +15,7 @@
 
 from mock import Mock
 from mock import patch
+from mock import PropertyMock
 
 import requests
 import urllib3
@@ -26,6 +27,7 @@ from nailgun.objects import Cluster
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
+from nailgun.statistics import openstack_info_collector
 from nailgun.statistics.statsenderd import StatsSender
 
 FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
@@ -371,3 +373,61 @@ class TestStatisticsSender(BaseTestCase):
         ss.send_stats_once()
         # one more call was made (all went ok)
         self.assertEqual(sleep.call_count, 2)
+
+
+class TestOpenStackInfoCollector(BaseTestCase):
+    def test_get_info(self):
+        # prepare return data for nova client mock
+        server_info = {
+            "id": 1,
+            "status": "running",
+            "OS-EXT-STS:power_state": 1,
+            "created": "date_of_creation",
+            "hostId": "test_host_id",
+            "tenant_id": "test_tenant_id",
+            "image": {"id": "test_image_id"},
+            "flavor": {"id": "test_flavor_id"},
+        }
+
+        # mock nova os client
+        server_mock = Mock()
+        server_mock.configure_mock(**server_info)
+
+        nova_mock = Mock()
+        nova_mock.servers.list.return_value = [server_mock]
+
+        client_provider_mock = Mock()
+        client_provider_mock.nova = nova_mock
+
+        # in order to patch property we do it for whole class;
+        # patch.object doesn't work in this case as property not
+        # usual attribute
+        proxy_prop_path = ("nailgun.statistics.openstack_info_collector."
+                           "OpenStackInfoCollector.proxy")
+
+        set_proxy_path = ("nailgun.statistics.openstack_info_collector."
+                          "utils.set_proxy")
+
+        with patch(proxy_prop_path, PropertyMock()):
+            with patch(set_proxy_path):
+                collector = \
+                    openstack_info_collector.OpenStackInfoCollector(
+                        None, client_provider_mock)
+                res = collector.get_vm_info()
+
+        expected = {
+            "vms_details": [
+                {
+                    "id": 1,
+                    "status": "running",
+                    "power_state": 1,
+                    "created_at": "date_of_creation",
+                    "image_id": "test_image_id",
+                    "flavor_id": "test_flavor_id",
+                    "host_id": "test_host_id",
+                    "tenant_id": "test_tenant_id",
+                }
+            ],
+        }
+
+        self.assertDictEqual(res, expected)

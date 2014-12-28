@@ -19,13 +19,14 @@ define(
     'i18n',
     'react',
     'models',
-    'jsx!views/controls'
+    'jsx!views/controls',
+    'jsx!component_mixins'
 ],
-function(_, i18n, React, models, controls) {
+function(_, i18n, React, models, controls, componentMixins) {
     'use strict';
 
     var ReleasesPage = React.createClass({
-        mixins: [React.BackboneMixin('releases')],
+        mixins: [componentMixins.backboneMixin('releases')],
         navbarActiveElement: 'releases',
         breadcrumbsPath: [['home', '#'], 'releases'],
         title: function() {

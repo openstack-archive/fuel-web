@@ -26,7 +26,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
-        mixins: [React.BackboneMixin('tasks')],
+        mixins: [componentMixins.backboneMixin('tasks')],
         navbarActiveElement: 'support',
         breadcrumbsPath: [['home', '#'], 'support'],
         title: function() {
@@ -78,7 +78,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
     });
 
     var RegistrationLink = React.createClass({
-        mixins: [React.BackboneMixin('fuelKey')],
+        mixins: [componentMixins.backboneMixin('fuelKey')],
         componentDidMount: function() {
             this.props.fuelKey.fetch();
         },
@@ -115,7 +115,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
 
     var DiagnosticSnapshot = React.createClass({
         mixins: [
-            React.BackboneMixin('task'),
+            componentMixins.backboneMixin('task'),
             componentMixins.pollingMixin(2)
         ],
         getInitialState: function() {
@@ -186,7 +186,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
     var StatisticsSettings = React.createClass({
         mixins: [
             statisticsMixin,
-            React.BackboneMixin('settings')
+            componentMixins.backboneMixin('settings')
         ],
         render: function() {
             if (this.state.loading) return null;

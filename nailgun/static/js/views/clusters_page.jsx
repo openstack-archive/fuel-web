@@ -61,7 +61,7 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
     });
 
     ClusterList = React.createClass({
-        mixins: [React.BackboneMixin('clusters')],
+        mixins: [componentMixins.backboneMixin('clusters')],
         createCluster: function() {
             (new wizard.CreateClusterWizard({collection: this.props.clusters})).render();
         },
@@ -84,14 +84,14 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
 
     Cluster = React.createClass({
         mixins: [
-            React.BackboneMixin('cluster'),
-            React.BackboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin('cluster'),
+            componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.get('nodes');
             }}),
-            React.BackboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.get('tasks');
             }}),
-            React.BackboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.task({group: 'deployment', status: 'running'});
             }}),
             componentMixins.pollingMixin(3)

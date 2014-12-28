@@ -23,7 +23,8 @@ define(
     'models',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_screen',
     'text!templates/cluster/edit_node_interfaces.html',
-    'text!templates/cluster/node_interface.html'
+    'text!templates/cluster/node_interface.html',
+    'jquery-ui'
 ],
 function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
     'use strict';

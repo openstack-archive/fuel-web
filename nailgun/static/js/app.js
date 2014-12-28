@@ -35,7 +35,15 @@ define(
     'jsx!views/releases_page',
     'jsx!views/notifications_page',
     'jsx!views/support_page',
-    'jsx!views/capacity_page'
+    'jsx!views/capacity_page',
+
+    'react.backbone',
+    'stickit',
+    'routefilter',
+    'bootstrap',
+    'jquery-timeout',
+    'less!/static/css/styles'
+
 ],
 function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';

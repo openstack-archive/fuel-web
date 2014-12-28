@@ -20,19 +20,20 @@ define(
     'react',
     'utils',
     'models',
-    'jsx!views/dialogs'
+    'jsx!views/dialogs',
+    'jsx!component_mixins'
 ],
-function(_, i18n, React, utils, models, dialogs) {
+function(_, i18n, React, utils, models, dialogs, componentMixins) {
     'use strict';
 
     var releases = new models.Releases();
     var ActionsTab = React.createClass({
         mixins: [
-            React.BackboneMixin('model'),
-            React.BackboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin('model'),
+            componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.model.get('tasks');
             }}),
-            React.BackboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.model.task({group: 'deployment', status: 'running'});
             }})
         ],
@@ -149,8 +150,8 @@ function(_, i18n, React, utils, models, dialogs) {
 
     var ResetEnvironmentAction = React.createClass({
         mixins: [
-            React.BackboneMixin('cluster'),
-            React.BackboneMixin('task')
+            componentMixins.backboneMixin('cluster'),
+            componentMixins.backboneMixin('task')
         ],
         isLocked: function() {
             return this.props.cluster.get('status') == 'new' || !!this.props.task;
@@ -215,9 +216,9 @@ function(_, i18n, React, utils, models, dialogs) {
     var UpdateEnvironmentAction = React.createClass({
         mixins: [
             React.addons.LinkedStateMixin,
-            React.BackboneMixin('cluster'),
-            React.BackboneMixin('releases'),
-            React.BackboneMixin('task')
+            componentMixins.backboneMixin('cluster'),
+            componentMixins.backboneMixin('releases'),
+            componentMixins.backboneMixin('task')
         ],
         getInitialState: function() {
             return {pendingReleaseId: null};

@@ -30,11 +30,11 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
 
     var HealthCheckTab = React.createClass({
         mixins: [
-            React.BackboneMixin({
+            componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.model.get('tasks');},
                 renderOn: 'add remove change:status'
             }),
-            React.BackboneMixin('cluster', 'change:status')
+            componentMixins.backboneMixin('cluster', 'change:status')
         ],
         getInitialState: function() {
             var ostf = {},
@@ -100,9 +100,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
 
     var HealthcheckTabContent = React.createClass({
         mixins: [
-            React.BackboneMixin('tests', 'add remove change'),
-            React.BackboneMixin('testsets', 'add remove change:checked'),
-            React.BackboneMixin('testruns', 'add remove change'),
+            componentMixins.backboneMixin('tests', 'add remove change'),
+            componentMixins.backboneMixin('testsets', 'add remove change:checked'),
+            componentMixins.backboneMixin('testruns', 'add remove change'),
             componentMixins.pollingMixin(3)
         ],
         shouldDataBeFetched: function() {
@@ -321,8 +321,8 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
 
     var TestSet = React.createClass({
         mixins: [
-            React.BackboneMixin('tests'),
-            React.BackboneMixin('testset')
+            componentMixins.backboneMixin('tests'),
+            componentMixins.backboneMixin('testset')
         ],
         handleTestSetCheck: function(name, value) {
             this.props.testset.set('checked', value);
@@ -385,7 +385,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
 
     var Test = React.createClass({
         mixins: [
-            React.BackboneMixin('test')
+            componentMixins.backboneMixin('test')
         ],
         handleTestCheck: function(name, value) {
             this.props.test.set('checked', value);

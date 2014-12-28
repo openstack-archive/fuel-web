@@ -27,7 +27,7 @@ function(_, i18n, React, models, componentMixins, controls) {
 
     var CapacityPage = React.createClass({
         mixins: [
-            React.BackboneMixin('capacityLog'),
+            componentMixins.backboneMixin('capacityLog'),
             componentMixins.pollingMixin(2)
         ],
         navbarActiveElement: 'support',

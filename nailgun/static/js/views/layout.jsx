@@ -35,8 +35,8 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     components.Navbar = React.createClass({
         mixins: [
-            React.BackboneMixin('user'),
-            React.BackboneMixin('version'),
+            componentMixins.backboneMixin('user'),
+            componentMixins.backboneMixin('version'),
             componentMixins.pollingMixin(20)
         ],
         showChangePasswordDialog: function(e) {
@@ -133,7 +133,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
     });
 
     var NodeStats = React.createClass({
-        mixins: [React.BackboneMixin('statistics')],
+        mixins: [componentMixins.backboneMixin('statistics')],
         render: function() {
             return (
                 <li className='navigation-bar-icon nodes-summary-container'>
@@ -152,7 +152,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
     });
 
     var Notifications = React.createClass({
-        mixins: [React.BackboneMixin('notifications', 'add remove change:status')],
+        mixins: [componentMixins.backboneMixin('notifications', 'add remove change:status')],
         render: function() {
             var unreadNotifications = this.props.notifications.where({status: 'unread'});
             return (
@@ -165,7 +165,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
     });
 
     var NotificationsPopover = React.createClass({
-        mixins: [React.BackboneMixin('notifications')],
+        mixins: [componentMixins.backboneMixin('notifications')],
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
             node.deferred = node.fetch();
@@ -238,7 +238,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
     });
 
     components.Footer = React.createClass({
-        mixins: [React.BackboneMixin('version')],
+        mixins: [componentMixins.backboneMixin('version')],
         getInitialState: function() {
             return {
                 hidden: false

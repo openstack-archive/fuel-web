@@ -35,7 +35,7 @@ from nailgun.utils.migration import upgrade_clusters_replaced_info
 from nailgun.utils.migration import upgrade_enum
 from nailgun.utils.migration import upgrade_release_attributes_50_to_51
 from nailgun.utils.migration import upgrade_release_roles_50_to_51
-from nailgun.utils.migration import upgrade_release_wizard_metadata_50_to_51
+
 
 cluster_changes_old = (
     'networks',
@@ -203,7 +203,7 @@ def upgrade_releases(connection):
     # reading fixture files in loop is in general a bad idea and as long as
     # wizard_metadata is the same for all existing releases getting it can
     # be moved outside of the loop
-    wizard_meta = upgrade_release_wizard_metadata_50_to_51()
+
     for release in r:
         attrs_meta = upgrade_release_attributes_50_to_51(
             jsonutils.loads(release[1]))
@@ -214,7 +214,7 @@ def upgrade_releases(connection):
             id=release[0],
             attrs=jsonutils.dumps(attrs_meta),
             roles=jsonutils.dumps(roles_meta),
-            wiz_meta=jsonutils.dumps(wizard_meta)
+            wiz_meta=wizard_meta()
         )
 
 
@@ -297,3 +297,298 @@ def downgrade_data():
     # PLEASE NOTE. It was decided not to downgrade release data (5.1 to 5.0)
     # because it's not possible in most situations.
     pass
+
+
+def wizard_meta():
+    return jsonutils.dumps({
+        "Mode": {
+          "mode": {
+            "type": "radio",
+            "bind": "cluster:mode",
+            "values": [
+              {
+                "data": "ha_compact",
+                "label": "cluster.mode.ha_compact"
+              },
+              {
+                "data": "multinode",
+                "label": "cluster.mode.multinode"
+              }
+            ]
+          }
+        },
+        "Compute": {
+          "hypervisor": {
+            "type": "radio",
+            "value": "qemu",
+            "weight": 5,
+            "bind": "settings:common.libvirt_type.value",
+            "values": [
+              {
+                "data": "kvm",
+                "label": "dialog.create_cluster_wizard.compute.kvm",
+                "description": "dialog.create_cluster_wizard.compute.kvm_description"
+              },
+              {
+                "data": "qemu",
+                "label": "dialog.create_cluster_wizard.compute.qemu",
+                "description": "dialog.create_cluster_wizard.compute.qemu_description"
+              },
+              {
+                "data": "vcenter",
+                "label": "dialog.create_cluster_wizard.compute.vcenter",
+                "description": "dialog.create_cluster_wizard.compute.vcenter_description"
+              }
+            ]
+          },
+          "host_ip": {
+            "type": "text",
+            "label": "dialog.create_cluster_wizard.compute.vcenter_ip",
+            "description": "dialog.create_cluster_wizard.compute.vcenter_ip_description",
+            "weight": 10,
+            "bind": "settings:vcenter.host_ip.value",
+            "restrictions": [
+              {
+                "condition": "Compute.hypervisor != 'vcenter'",
+                "action": "hide",
+                "message": None
+              }
+            ],
+            "regex": {
+              "source": "^(([\\d]|[1-9][\\d]|1[\\d]{2}|2[0-4][\\d]|25[0-5])\\.){3}([\\d]|[1-9][\\d]|1[\\d]{2}|2[0-4][\\d]|25[0-5])$",
+              "error": "dialog.create_cluster_wizard.compute.vcenter_ip_warning"
+            }
+          },
+          "vc_user": {
+            "type": "text",
+            "label": "dialog.create_cluster_wizard.compute.vcenter_username",
+            "description": "dialog.create_cluster_wizard.compute.vcenter_username_description",
+            "weight": 20,
+            "bind": "settings:vcenter.vc_user.value",
+            "restrictions": [
+              {
+                "condition": "Compute.hypervisor != 'vcenter'",
+                "action": "hide",
+                "message": None
+              }
+            ],
+            "regex": {
+              "source": "\\S",
+              "error": "dialog.create_cluster_wizard.compute.vcenter_user_warning"
+            }
+          },
+          "vc_password": {
+            "type": "password",
+            "label": "dialog.create_cluster_wizard.compute.vcenter_password",
+            "description": "dialog.create_cluster_wizard.compute.vcenter_password_description",
+            "weight": 30,
+            "bind": "settings:vcenter.vc_password.value",
+            "restrictions": [
+              {
+                "condition": "Compute.hypervisor != 'vcenter'",
+                "action": "hide",
+                "message": None
+              }
+            ],
+            "regex": {
+              "source": "\\S",
+              "error": "dialog.create_cluster_wizard.compute.vcenter_password_warning"
+            }
+          },
+          "cluster": {
+            "type": "text",
+            "label": "dialog.create_cluster_wizard.compute.vcenter_cluster",
+            "description": "dialog.create_cluster_wizard.compute.vcenter_cluster_description",
+            "weight": 40,
+            "bind": "settings:vcenter.cluster.value",
+            "restrictions": [
+              {
+                "condition": "Compute.hypervisor != 'vcenter'",
+                "action": "hide",
+                "message": None
+              }
+            ],
+            "regex": {
+              "source": "^([^,\\ ]+([\\ ]*[^,\\ ])*)(,[^,\\ ]+([\\ ]*[^,\\ ])*)*$",
+              "error": "dialog.create_cluster_wizard.compute.vcenter_cluster_warning"
+            }
+          }
+        },
+        "Network": {
+          "manager": {
+            "type": "radio",
+            "values": [
+              {
+                "data": "nova-network",
+                "label": "dialog.create_cluster_wizard.network.nova_network",
+                "bind": [
+                  {
+                    "cluster:net_provider": "nova_network"
+                  }
+                ]
+              },
+              {
+                "data": "neutron-gre",
+                "label": "dialog.create_cluster_wizard.network.neutr_gre",
+                "restrictions": [
+                  {
+                    "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+                  }
+                ],
+                "bind": [
+                  {
+                    "cluster:net_provider": "neutron"
+                  },
+                  {
+                    "cluster:net_segment_type": "gre"
+                  }
+                ]
+              },
+              {
+                "data": "neutron-vlan",
+                "label": "dialog.create_cluster_wizard.network.neutr_vlan",
+                "restrictions": [
+                  {
+                    "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+                  }
+                ],
+                "bind": [
+                  {
+                    "cluster:net_provider": "neutron"
+                  },
+                  {
+                    "cluster:net_segment_type": "vlan"
+                  }
+                ]
+              },
+              {
+                "data": "neutron-nsx",
+                "label": "dialog.create_cluster_wizard.network.neutr_nsx",
+                "restrictions": [
+                  {
+                    "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+                  },
+                  {
+                    "condition": "not ('experimental' in version:feature_groups)",
+                    "action": "disable",
+                    "message": "Neutron with NSX can be used with Experimental mode only. Please, look at the documentation to enable it"
+                  },
+                  {
+                    "condition": "('experimental' in version:feature_groups) and (NameAndRelease.release_operating_system == 'Ubuntu')",
+                    "action": "none",
+                    "message": "NSX with Ubuntu was not tested properly and can be inoperable"
+                  }
+                ],
+                "bind": [
+                  {
+                    "cluster:net_provider": "neutron"
+                  },
+                  {
+                    "cluster:net_l23_provider": "nsx"
+                  },
+                  {
+                    "cluster:net_segment_type": "gre"
+                  },
+                  {
+                    "settings:nsx_plugin.metadata.enabled": True
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "Storage": {
+          "cinder": {
+            "type": "radio",
+            "values": [
+              {
+                "data": "default",
+                "label": "dialog.create_cluster_wizard.storage.default",
+                "bind": [
+                  {
+                    "settings:storage.volumes_lvm.value": True
+                  }
+                ]
+              },
+              {
+                "data": "ceph",
+                "label": "dialog.create_cluster_wizard.storage.ceph",
+                "restrictions": [
+                  {
+                    "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"
+                  },
+                  {
+                    "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.cinder_vcenter_alert"
+                  },
+                  {
+                    "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vmdk_alert"
+                  }
+                ],
+                "bind": [
+                  {
+                    "settings:storage.volumes_ceph.value": True
+                  },
+                  {
+                    "settings:storage.volumes_lvm.value": False
+                  }
+                ]
+              }
+            ]
+          },
+          "glance": {
+            "type": "radio",
+            "values": [
+              {
+                "data": "default",
+                "label": "dialog.create_cluster_wizard.storage.default"
+              },
+              {
+                "data": "ceph",
+                "label": "dialog.create_cluster_wizard.storage.ceph",
+                "restrictions": [
+                  {
+                    "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"
+                  },
+                  {
+                    "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.glance_vcenter_alert"
+                  }
+                ],
+                "bind": [
+                  {
+                    "settings:storage.images_ceph.value": True
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "AdditionalServices": {
+          "sahara": {
+            "type": "checkbox",
+            "label": "dialog.create_cluster_wizard.additional.install_sahara",
+            "description": "dialog.create_cluster_wizard.additional.install_sahara_description",
+            "bind": "settings:additional_components.sahara.value",
+            "weight": 10
+          },
+          "murano": {
+            "type": "checkbox",
+            "label": "dialog.create_cluster_wizard.additional.install_murano",
+            "description": "dialog.create_cluster_wizard.additional.install_murano_description",
+            "bind": "settings:additional_components.murano.value",
+            "weight": 20,
+            "restrictions": [
+              {
+                "Network.manager == 'nova-network'": "dialog.create_cluster_wizard.additional.network_mode_alert"
+              }
+            ]
+          },
+          "ceilometer": {
+            "type": "checkbox",
+            "label": "dialog.create_cluster_wizard.additional.install_ceilometer",
+            "description": "dialog.create_cluster_wizard.additional.install_ceilometer_description",
+            "bind": "settings:additional_components.ceilometer.value",
+            "weight": 30
+          }
+        },
+        "Ready": {}
+      })

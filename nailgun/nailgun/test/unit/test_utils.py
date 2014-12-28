@@ -88,4 +88,4 @@ class TestUtils(BaseIntegrationTest):
             file_path = tf.name
         self.assertFalse(os.path.exists(file_path))
         versions = get_fuel_release_versions(file_path)
-        self.assertDictEqual({}, versions)
+        self.assertDictEqual({}, versions)#

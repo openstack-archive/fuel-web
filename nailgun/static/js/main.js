@@ -25,25 +25,8 @@ require(['./config'], function(config) {
 //>>excludeStart("compressed", pragmas.compressed);
     requirejs.config(config);
 //>>excludeEnd("compressed");
-    require([
-        'jquery',
-        'underscore',
-        'backbone',
-        'backbone-lodash-monkeypatch',
-        'stickit',
-        'react',
-        'react.backbone',
-        'routefilter',
-        'bootstrap',
-        'jquery-cookie',
-        'jquery-timeout',
-        'jquery-ui',
-        'jquery-autoNumeric',
-        'text',
-        'less!/static/css/styles',
-        'app'
-    ], function() {
-        require('app').initialize();
+    require(['app'], function(app) {
+        app.initialize();
     });
 //>>excludeStart("compressed", pragmas.compressed);
 });

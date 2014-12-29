@@ -29,8 +29,9 @@ function usage {
   echo "  -K, --no-tasklib            Don't run tasklib unit and functional tests"
   echo "  -l, --lint-ui               Run UI linting tasks"
   echo "  -L, --no-lint-ui            Don't run UI linting tasks"
-  echo "  -n, --nailgun               Run NAILGUN both unit and integration tests"
-  echo "  -N, --no-nailgun            Don't run NAILGUN tests"
+  echo "  -n, --nailgun               Run NAILGUN unit/integration tests"
+  echo "  -N, --no-nailgun            Don't run NAILGUN unit/integration tests"
+  echo "  -x, --performance           Run NAILGUN performance tests"
   echo "  -p, --flake8                Run FLAKE8 and HACKING compliance check"
   echo "  -P, --no-flake8             Don't run static code checks"
   echo "  -s, --shotgun               Run SHOTGUN tests"
@@ -55,6 +56,7 @@ function process_options {
       -A|--no-agent) no_agent_tests=1;;
       -n|--nailgun) nailgun_tests=1;;
       -N|--no-nailgun) no_nailgun_tests=1;;
+      -x|--performance) performance_tests=1;;
       -k|--tasklib) tasklib_tests=1;;
       -K|--no-tasklib) no_tasklib_tests=1;;
       -w|--webui) webui_tests=1;;
@@ -109,6 +111,7 @@ agent_tests=0
 no_agent_tests=0
 nailgun_tests=0
 no_nailgun_tests=0
+performance_tests=0
 webui_tests=0
 no_webui_tests=0
 cli_tests=0
@@ -150,6 +153,7 @@ function run_tests {
   # Enable all tests if none was specified skipping all explicitly disabled tests.
   if [[ $agent_tests -eq 0 && \
       $nailgun_tests -eq 0 && \
+      $performance_tests -eq 0 && \
       $tasklib_tests -eq 0 && \
       $webui_tests -eq 0 && \
       $cli_tests -eq 0 && \
@@ -180,7 +184,7 @@ function run_tests {
     run_agent_tests || errors+=" agent_tests"
   fi
 
-  if [ $nailgun_tests -eq 1 ]; then
+  if [ $nailgun_tests -eq 1 ] || [ $performance_tests -eq 1 ]; then
     echo "Starting Nailgun tests..."
     run_nailgun_tests || errors+=" nailgun_tests"
   fi
@@ -256,6 +260,13 @@ function run_nailgun_tests {
   local artifacts=$ARTIFACTS/nailgun
   local config=$artifacts/test.yaml
   local options="-vv --cleandb --junit-xml $NAILGUN_XUNIT"
+
+  if   [ $nailgun_tests -eq 1 ] && [ $performance_tests -eq 0 ]; then
+    options+=" -m 'not performance' "
+  elif [ $nailgun_tests -eq 0 ] && [ $performance_tests -eq 1 ]; then
+    options+=" -m performance "
+  fi
+
   prepare_artifacts $artifacts $config
   if [ $# -ne 0 ]; then
     TESTS="$@"

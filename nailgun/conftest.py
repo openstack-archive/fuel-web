@@ -17,6 +17,7 @@ import re
 from psycopg2 import connect
 
 from nailgun.settings import settings
+import pytest
 
 
 def pytest_addoption(parser):
@@ -24,6 +25,11 @@ def pytest_addoption(parser):
                      help="Overwrite database name")
     parser.addoption("--cleandb", default=False, action="store_true",
                      help="Provide this flag to dropdb/syncdb for all slaves")
+    parser.addoption("--run-unmarked", default=False, action="store_true",
+                     help="Execute nailgun tests except for performace tests")
+    parser.addoption("--run-performance", default=False,
+                     action="store_true",
+                     help="Execute nailgun performance tests")
 
 
 def pytest_configure(config):
@@ -67,3 +73,17 @@ def not_present(cur, name):
     cur.execute('select datname from pg_database;')
     db_list = cur.fetchall()
     return all([name not in row for row in db_list])
+
+
+def pytest_runtest_setup(item):
+    if (is_unmarked(item)
+            and not item.config.getoption("--run-unmarked")):
+        pytest.skip("Skipping non-perf. tests. Need --run-unmarked option" )
+    if ('performance_marker' in item.keywords
+            and not item.config.getoption("--run-performance")):
+        pytest.skip("Skipping perf. tests. Need --run-performance option")
+    pytest.skip("SKIP ALL")
+
+
+def is_unmarked(item):
+    return (not 'performance_marker' in item.keywords)

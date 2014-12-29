@@ -15,7 +15,6 @@
 
 from collections import defaultdict
 import functools
-from nose import SkipTest
 import os.path
 import shutil
 import six
@@ -36,7 +35,10 @@ from nailgun.test.base import reverse
 from nailgun.test.base import test_db_driver
 from nailgun.test.performance.profiler import ProfilerMiddleware
 
+import pytest
 
+
+@pytest.mark.performance_marker
 class BaseLoadTestCase(BaseTestCase):
     """All load test are long and test suits should be run only in purpose.
     """
@@ -52,9 +54,6 @@ class BaseLoadTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        if not settings.PERFORMANCE_PROFILING_TESTS:
-            raise SkipTest("PERFORMANCE_PROFILING_TESTS in settings.yaml"
-                           "is not set")
         if os.path.exists(settings.LOAD_TESTS_PATHS['load_tests_base']):
             shutil.rmtree(settings.LOAD_TESTS_PATHS['load_tests_base'])
         os.makedirs(settings.LOAD_TESTS_PATHS['load_tests_base'])

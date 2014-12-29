@@ -13,11 +13,21 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'react', 'react.backbone'], function($, _, React) {
+define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], function($, _, dispatcher, React) {
     'use strict';
 
     return {
         backboneMixin: React.BackboneMixin,
+        dispatcherMixin: function(events, callback) {
+            return {
+                componentDidMount: function() {
+                    dispatcher.on(events, _.isString(callback) ? this[callback] : callback, this);
+                },
+                componentWillUnmount: function() {
+                    dispatcher.off(null, null, this);
+                }
+            };
+        },
         pollingMixin: function(updateInterval) {
             updateInterval = updateInterval * 1000;
             return {

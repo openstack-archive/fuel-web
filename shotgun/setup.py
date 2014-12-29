@@ -19,7 +19,7 @@ import os.path
 import setuptools
 
 requires = [
-    'Fabric==1.7.0'
+    'Fabric>=1.7.0'
 ]
 
 name = 'shotgun'

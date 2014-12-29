@@ -143,6 +143,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
                         <div>
                             {this.props.mode != 'list' && <RolePanel {...this.props} selectedNodeIds={this.state.selectedNodeIds} />}
                             <NodeList {...this.props}
+                                nodes={this.props.nodes.models}
                                 grouping={this.state.grouping}
                                 filter={this.state.filter}
                                 locked={locked}
@@ -448,10 +449,15 @@ function(React, utils, models, controls, dialogs, componentMixins) {
     });
 
     SelectAllMixin = {
+        componentDidUpdate: function() {
+            var input = this.refs['select-all'].getInputDOMNode();
+            input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
+        },
         renderSelectAllCheckbox: function() {
             var availableNodesIds = _.compact(this.props.nodes.map(function(node) {if (node.isSelectable()) return node.id;}));
             return (
                 <controls.Input
+                    ref='select-all'
                     type='checkbox'
                     checked={this.props.mode == 'edit' || (availableNodesIds.length && !_.any(availableNodesIds, function(id) {return !this.props.selectedNodeIds[id];}, this))}
                     disabled={this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length || (this.props.roleLimitation && availableNodesIds.length > 1)}
@@ -472,7 +478,7 @@ function(React, utils, models, controls, dialogs, componentMixins) {
             return $.t(ns + 'no_nodes_in_environment');
         },
         groupNodes: function() {
-            var nodes = this.props.nodes.filter(function(node) {
+            var nodes = _.filter(this.props.nodes, function(node) {
                     return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.props.filter);
                 }, this),
                 releaseRoles = this.props.cluster.get('release').get('role_models'),

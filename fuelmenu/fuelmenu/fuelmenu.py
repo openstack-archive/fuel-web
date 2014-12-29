@@ -13,6 +13,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from common import timeout
+import dhcp_checker.api
+import dhcp_checker.utils
 import logging
 import operator
 from optparse import OptionParser
@@ -21,6 +24,7 @@ from settings import Settings
 import signal
 import subprocess
 import sys
+import traceback
 import urwid
 import urwid.raw_display
 import urwid.web_display
@@ -280,7 +284,6 @@ class FuelSetup(object):
         raise urwid.ExitMainLoop()
 
     def handle_sigusr1(self, signum, stack):
-        from common import timeout
         log.info("Received signal: %s" % signum)
         try:
             savetimeout = 60
@@ -362,7 +365,29 @@ def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
     except Exception:
         print("Unable to calculate hostname and domain")
         sys.exit(1)
+    try:
+        dhcptimeout = 5
+        default = []
+        with timeout.run_with_timeout(dhcp_checker.utils.IfaceState, [iface],
+                                      timeout=dhcptimeout) as iface:
+            dhcp_server_data = timeout.run_with_timeout(
+                dhcp_checker.api.check_dhcp_on_eth,
+                [iface, dhcptimeout], timeout=dhcptimeout,
+                default=default)
+    except (KeyboardInterrupt, timeout.TimeoutError):
+        log.debug("DHCP scan timed out")
+        log.warning(traceback.format_exc())
+        dhcp_server_data = default
 
+    num_dhcp = len(dhcp_server_data)
+    if num_dhcp == 0:
+        log.debug("No DHCP servers found")
+    else:
+        #Problem exists, but permit user to continue
+        log.error("%s foreign DHCP server(s) found: %s" %
+                  (num_dhcp, dhcp_server_data))
+        print("ERROR: %s foreign DHCP server(s) found: %s" %
+              (num_dhcp, dhcp_server_data))
     newsettings = Settings().read(settingsfile)
     settings = \
         {

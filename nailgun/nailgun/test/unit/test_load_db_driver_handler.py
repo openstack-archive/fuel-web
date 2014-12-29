@@ -25,6 +25,7 @@ from nailgun.db.sqlalchemy import models
 
 
 class TestLoadDbDriverWithSAExceptions(unittest.TestCase):
+
     def setUp(self):
         web.ctx.headers = []
 

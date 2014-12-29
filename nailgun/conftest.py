@@ -18,12 +18,19 @@ from psycopg2 import connect
 
 from nailgun.settings import settings
 
+import pytest
+
 
 def pytest_addoption(parser):
     parser.addoption("--dbname", default=settings.DATABASE['name'],
                      help="Overwrite database name")
     parser.addoption("--cleandb", default=False, action="store_true",
                      help="Provide this flag to dropdb/syncdb for all slaves")
+    parser.addoption("--nailgun", default=False, action="store_true",
+                     help="Execute nailgun tests except for performace tests")
+    parser.addoption("--nailgun_performance", default=False,
+                     action="store_true",
+                     help="Execute nailgun performance tests")
 
 
 def pytest_configure(config):
@@ -67,3 +74,12 @@ def not_present(cur, name):
     cur.execute('select datname from pg_database;')
     db_list = cur.fetchall()
     return all([name not in row for row in db_list])
+
+
+def pytest_runtest_setup(item):
+    if (not 'nailgun_performance_marker' in item.keywords
+            and not item.config.getoption("--nailgun")):
+        pytest.skip("Skipping non-performance tests. Need --nailgun option")
+    if ('nailgun_performance_marker' in item.keywords
+            and not item.config.getoption("--nailgun_performance")):
+        pytest.skip("Skipping perf. tests. Need --nailgun_performance option")

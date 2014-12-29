@@ -19,7 +19,6 @@ from nailgun.test.base import TestCase
 
 from nailgun.middleware import utils
 
-
 class TestUtils(TestCase):
 
     def test_get_body_from_env(self):

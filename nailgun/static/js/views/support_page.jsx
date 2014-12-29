@@ -15,12 +15,14 @@
 **/
 define(
 [
+    'underscore',
+    'i18n',
     'react',
     'jsx!component_mixins',
     'models',
     'jsx!views/statistics_mixin'
 ],
-function(React, componentMixins, models, statisticsMixin) {
+function(_, i18n, React, componentMixins, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -28,7 +30,7 @@ function(React, componentMixins, models, statisticsMixin) {
         navbarActiveElement: 'support',
         breadcrumbsPath: [['home', '#'], 'support'],
         title: function() {
-            return $.t('support_page.title');
+            return i18n('support_page.title');
         },
         statics: {
             fetchData: function() {
@@ -52,7 +54,7 @@ function(React, componentMixins, models, statisticsMixin) {
             }
             return (
                 <div>
-                    <h3 className='page-title'>{$.t('support_page.title')}</h3>
+                    <h3 className='page-title'>{i18n('support_page.title')}</h3>
                     <div className='support-page page-wrapper'>{elements}</div>
                 </div>
             );
@@ -85,11 +87,11 @@ function(React, componentMixins, models, statisticsMixin) {
             return (
                 <SupportPageElement
                     className='img-register-fuel'
-                    title={$.t('support_page.register_fuel_title')}
-                    text={$.t('support_page.register_fuel_content')}
+                    title={i18n('support_page.register_fuel_title')}
+                    text={i18n('support_page.register_fuel_content')}
                 >
                     <p><a className='btn registration-link' href={_.isUndefined(key) ? '/' : 'http://fuel.mirantis.com/create-subscriber/?key=' + key} target='_blank'>
-                        {$.t('support_page.register_fuel_title')}
+                        {i18n('support_page.register_fuel_title')}
                     </a></p>
                 </SupportPageElement>
             );
@@ -101,11 +103,11 @@ function(React, componentMixins, models, statisticsMixin) {
             return (
                 <SupportPageElement
                     className='img-contact-support'
-                    title={$.t('support_page.contact_support')}
-                    text={$.t('support_page.contact_text')}
+                    title={i18n('support_page.contact_support')}
+                    text={i18n('support_page.contact_text')}
                 >
-                    <p>{$.t('support_page.irc_text')} <strong>#fuel</strong> on <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
-                    <p><a className='btn' href='https://mirantis.zendesk.com/requests/new' target='_blank'>{$.t('support_page.contact_support')}</a></p>
+                    <p>{i18n('support_page.irc_text')} <strong>#fuel</strong> on <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
+                    <p><a className='btn' href='https://mirantis.zendesk.com/requests/new' target='_blank'>{i18n('support_page.contact_support')}</a></p>
                 </SupportPageElement>
             );
         }
@@ -143,19 +145,19 @@ function(React, componentMixins, models, statisticsMixin) {
             return (
                 <SupportPageElement
                     className='img-download-logs'
-                    title={$.t('support_page.download_diagnostic_snapshot_text')}
-                    text={$.t('support_page.log_text')}
+                    title={i18n('support_page.download_diagnostic_snapshot_text')}
+                    text={i18n('support_page.log_text')}
                 >
                     <p className='snapshot'>
                         <button className='btn' disabled={generating} onClick={this.downloadLogs}>
-                            {generating ? $.t('support_page.gen_logs_snapshot_text') : $.t('support_page.gen_diagnostic_snapshot_text')}
+                            {generating ? i18n('support_page.gen_logs_snapshot_text') : i18n('support_page.gen_diagnostic_snapshot_text')}
                         </button>
                         {!generating && task &&
                             <span className={task.get('status')}>
                                 {task.match({status: 'ready'}) &&
                                     <a href={task.get('message')} target='_blank'>
                                         <i className='icon-install'></i>
-                                        <span>{$.t('support_page.diagnostic_snapshot')}</span>
+                                        <span>{i18n('support_page.diagnostic_snapshot')}</span>
                                     </a>
                                 }
                                 {task.match({status: 'error'}) && task.get('message')}
@@ -172,10 +174,10 @@ function(React, componentMixins, models, statisticsMixin) {
             return (
                 <SupportPageElement
                     className='img-audit-logs'
-                    title={$.t('support_page.capacity_audit')}
-                    text={$.t('support_page.capacity_audit_text')}
+                    title={i18n('support_page.capacity_audit')}
+                    text={i18n('support_page.capacity_audit_text')}
                 >
-                    <p><a className='btn' href='#capacity'>{$.t('support_page.view_capacity_audit')}</a></p>
+                    <p><a className='btn' href='#capacity'>{i18n('support_page.view_capacity_audit')}</a></p>
                 </SupportPageElement>
             );
         }
@@ -194,14 +196,14 @@ function(React, componentMixins, models, statisticsMixin) {
                     .sortBy(function(settingName) {return settings[settingName].weight;}, this)
                     .value();
             return (
-                <SupportPageElement title={$.t('support_page.send_statistics_title')}>
+                <SupportPageElement title={i18n('support_page.send_statistics_title')}>
                     {this.renderIntro()}
                     <div className='statistics-settings'>
                         {_.map(sortedSettings, this.renderInput, this)}
                     </div>
                     <p>
                         <a className='btn' disabled={this.state.actionInProgress || !this.hasChanges()} onClick={this.saveSettings}>
-                            {$.t('support_page.save_changes')}
+                            {i18n('support_page.save_changes')}
                         </a>
                     </p>
                 </SupportPageElement>

@@ -15,12 +15,16 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
+    'backbone',
     'react',
     'utils',
     'models',
     'jsx!views/controls'
 ],
-function(React, utils, models, controls) {
+function($, _, i18n, Backbone, React, utils, models, controls) {
     'use strict';
 
     var dialogs = {},
@@ -57,7 +61,7 @@ function(React, utils, models, controls) {
             this.setProps(props);
         },
         renderImportantLabel: function() {
-            return <span className='label label-important'>{$.t('common.important')}</span>;
+            return <span className='label label-important'>{i18n('common.important')}</span>;
         },
         render: function() {
             var classes = {'modal fade': true};
@@ -66,17 +70,17 @@ function(React, utils, models, controls) {
                 <div className={cx(classes)} tabIndex="-1">
                     <div className='modal-header'>
                         <button type='button' className='close' onClick={this.close}>&times;</button>
-                        <h3>{this.props.title || (this.props.error ? $.t('dialog.error_dialog.title') : '')}</h3>
+                        <h3>{this.props.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
                     </div>
                     <div className='modal-body'>
                         {this.props.error ?
                             <div className='text-error'>
-                                {this.props.message || $.t('dialog.error_dialog.warning')}
+                                {this.props.message || i18n('dialog.error_dialog.warning')}
                             </div>
                         : this.renderBody()}
                     </div>
                     <div className='modal-footer'>
-                        {this.renderFooter && !this.props.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{$.t('common.close_button')}</button>}
+                        {this.renderFooter && !this.props.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{i18n('common.close_button')}</button>}
                     </div>
                 </div>
             );
@@ -92,7 +96,7 @@ function(React, utils, models, controls) {
 
     dialogs.DiscardNodeChangesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: $.t('dialog.discard_changes.title')};},
+        getDefaultProps: function() {return {title: i18n('dialog.discard_changes.title')};},
         discardNodeChanges: function() {
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(_.compact(this.props.cluster.get('nodes').map(function(node) {
@@ -114,7 +118,7 @@ function(React, utils, models, controls) {
         },
         renderChangedNodeAmount: function(nodes, dictKey) {
             return nodes.length ? <div key={dictKey} className='deploy-task-name'>
-                {$.t('dialog.display_changes.' + dictKey, {count: nodes.length})}
+                {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
             </div> : null;
         },
         renderBody: function() {
@@ -123,7 +127,7 @@ function(React, utils, models, controls) {
                 <div>
                     <div className='msg-error'>
                         {this.renderImportantLabel()}
-                        {$.t('dialog.discard_changes.alert_text')}
+                        {i18n('dialog.discard_changes.alert_text')}
                     </div>
                     <br/>
                     {this.renderChangedNodeAmount(nodes.where({pending_addition: true}), 'added_node')}
@@ -136,15 +140,15 @@ function(React, utils, models, controls) {
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
-                <button key='discard' className='btn btn-danger' disabled={this.state.actionInProgress} onClick={this.discardNodeChanges}>{$.t('dialog.discard_changes.discard_button')}</button>
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='discard' className='btn btn-danger' disabled={this.state.actionInProgress} onClick={this.discardNodeChanges}>{i18n('dialog.discard_changes.discard_button')}</button>
             ]);
         }
     });
 
     dialogs.DeployChangesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: $.t('dialog.display_changes.title')};},
+        getDefaultProps: function() {return {title: i18n('dialog.display_changes.title')};},
         getInitialState: function() {
             // FIXME: the following amount restrictions shoud be described declaratively in configuration file
             var cluster = this.props.cluster,
@@ -180,14 +184,14 @@ function(React, utils, models, controls) {
         },
         renderChangedNodeAmount: function(nodes, dictKey) {
             return nodes.length ? <div key={dictKey} className='deploy-task-name'>
-                {$.t('dialog.display_changes.' + dictKey, {count: nodes.length})}
+                {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
             </div> : null;
         },
         renderChange: function(change, nodeIds) {
             var nodes = this.props.cluster.get('nodes');
             return (
                 <div key={change}>
-                    <div className='deploy-task-name'>{$.t('dialog.display_changes.settings_changes.' + change)}</div>
+                    <div className='deploy-task-name'>{i18n('dialog.display_changes.settings_changes.' + change)}</div>
                     <ul>
                         {_.map(nodeIds, function(id) {
                             var node = nodes.get(id);
@@ -215,7 +219,7 @@ function(React, utils, models, controls) {
                         <div>
                             <div className={warningMessageClasses}>
                                 <i className='icon-attention' />
-                                <span>{$.t(ns + (!this.state.areSettingsValid ? 'warnings.settings_invalid' :
+                                <span>{i18n(ns + (!this.state.areSettingsValid ? 'warnings.settings_invalid' :
                                     isNew ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
@@ -231,13 +235,13 @@ function(React, utils, models, controls) {
                     }, this)}
                     <div className='amount-restrictions'>
                         {this.state.amountRestrictions.controller &&
-                            <div className='alert alert-error'>{$.t(ns + 'warnings.controller', {count: requiredNodeAmount})}</div>
+                            <div className='alert alert-error'>{i18n(ns + 'warnings.controller', {count: requiredNodeAmount})}</div>
                         }
                         {this.state.amountRestrictions.compute &&
-                            <div className='alert alert-error'>{$.t(ns + 'warnings.compute')}</div>
+                            <div className='alert alert-error'>{i18n(ns + 'warnings.compute')}</div>
                         }
                         {this.state.amountRestrictions.mongo &&
-                            <div className='alert alert-error'>{$.t(ns + 'warnings.mongo', {count: requiredNodeAmount})}</div>
+                            <div className='alert alert-error'>{i18n(ns + 'warnings.mongo', {count: requiredNodeAmount})}</div>
                         }
                     </div>
                 </div>
@@ -245,19 +249,19 @@ function(React, utils, models, controls) {
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
                     className={'btn start-deployment-btn btn-' + (_.compact(_.values(this.state.amountRestrictions)).length ? 'danger' : 'success')}
                     disabled={this.state.actionInProgress || !this.state.areSettingsValid}
                     onClick={this.deployCluster}
-                >{$.t('dialog.display_changes.deploy')}</button>
+                >{i18n('dialog.display_changes.deploy')}</button>
             ]);
         }
     });
 
     dialogs.StopDeploymentDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: $.t('dialog.stop_deployment.title')};},
+        getDefaultProps: function() {return {title: i18n('dialog.stop_deployment.title')};},
         stopDeployment: function() {
             this.setState({actionInProgress: true});
             var task = new models.Task();
@@ -265,28 +269,28 @@ function(React, utils, models, controls) {
                 .always(this.close)
                 .done(_.bind(app.page.deploymentTaskStarted, app.page))
                 .fail(_.bind(function(response) {
-                    this.showError(utils.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
+                    this.showError(utils.getResponseText(response) || i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
                 }, this));
         },
         renderBody: function() {
             return (
                 <div className='msg-error'>
                     {this.renderImportantLabel()}
-                    {$.t('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
+                    {i18n('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
                 </div>
             );
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
-                <button key='deploy' className='btn stop-deployment-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.stopDeployment}>{$.t('common.stop_button')}</button>
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='deploy' className='btn stop-deployment-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.stopDeployment}>{i18n('common.stop_button')}</button>
             ]);
         }
     });
 
     dialogs.RemoveClusterDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: $.t('dialog.remove_cluster.title')};},
+        getDefaultProps: function() {return {title: i18n('dialog.remove_cluster.title')};},
         removeCluster: function() {
             this.setState({actionInProgress: true});
             this.props.cluster.destroy({wait: true})
@@ -301,21 +305,21 @@ function(React, utils, models, controls) {
             return (
                 <div className='msg-error'>
                     {this.renderImportantLabel()}
-                    {$.t('dialog.remove_cluster.' + (this.props.cluster.tasks({status: 'running'}).length ? 'incomplete_actions_text' : 'node_returned_text'))}
+                    {i18n('dialog.remove_cluster.' + (this.props.cluster.tasks({status: 'running'}).length ? 'incomplete_actions_text' : 'node_returned_text'))}
                 </div>
             );
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{$.t('common.cancel_button')}</button>,
-                <button key='deploy' className='btn remove-cluster-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.removeCluster}>{$.t('common.delete_button')}</button>
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='deploy' className='btn remove-cluster-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.removeCluster}>{i18n('common.delete_button')}</button>
             ]);
         }
     });
 
     dialogs.ResetEnvironmentDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: $.t('dialog.reset_environment.title')};},
+        getDefaultProps: function() {return {title: i18n('dialog.reset_environment.title')};},
         resetEnvironment: function() {
             this.setState({actionInProgress: true});
             app.page.removeFinishedDeploymentTasks();
@@ -329,21 +333,21 @@ function(React, utils, models, controls) {
             return (
                 <div className='msg-error'>
                     {this.renderImportantLabel()}
-                    {$.t('dialog.reset_environment.text')}
+                    {i18n('dialog.reset_environment.text')}
                 </div>
             );
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>,
-                <button key='reset' className='btn btn-danger reset-environment-btn' onClick={this.resetEnvironment} disabled={this.state.actionInProgress}>{$.t('common.reset_button')}</button>
+                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='reset' className='btn btn-danger reset-environment-btn' onClick={this.resetEnvironment} disabled={this.state.actionInProgress}>{i18n('common.reset_button')}</button>
             ]);
         }
     });
 
     dialogs.UpdateEnvironmentDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: $.t('dialog.update_environment.title')};},
+        getDefaultProps: function() {return {title: i18n('dialog.update_environment.title')};},
         updateEnvironment: function() {
             this.setState({actionInProgress: true});
             var cluster = this.props.cluster;
@@ -363,10 +367,10 @@ function(React, utils, models, controls) {
                     {action == 'update' && this.props.isDowngrade ?
                         <div className='msg-error'>
                             {this.renderImportantLabel()}
-                            {$.t('dialog.' + action + '_environment.downgrade_warning')}
+                            {i18n('dialog.' + action + '_environment.downgrade_warning')}
                         </div>
                     :
-                        <div>{$.t('dialog.' + action + '_environment.text')}</div>
+                        <div>{i18n('dialog.' + action + '_environment.text')}</div>
                     }
                 </div>
             );
@@ -379,8 +383,8 @@ function(React, utils, models, controls) {
                     'btn-danger': action != 'update'
                 });
             return ([
-                <button key='cancel' className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>,
-                <button key='reset' className={classes} onClick={this.updateEnvironment} disabled={this.state.actionInProgress}>{$.t('common.' + action + '_button')}</button>
+                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='reset' className={classes} onClick={this.updateEnvironment} disabled={this.state.actionInProgress}>{i18n('common.' + action + '_button')}</button>
             ]);
         }
     });
@@ -402,13 +406,13 @@ function(React, utils, models, controls) {
                         if (_.isArray(meta.memory.devices) && meta.memory.devices.length) {
                             var sizes = _.countBy(_.pluck(meta.memory.devices, 'size'), utils.showMemorySize);
                             summary = _.map(_.keys(sizes).sort(), function(size) {return sizes[size] + ' x ' + size;}).join(', ');
-                            summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
-                        } else summary = utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
+                            summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' + i18n('dialog.show_node.total');
+                        } else summary = utils.showMemorySize(meta.memory.total) + ' ' + i18n('dialog.show_node.total');
                         break;
                     case 'disks':
                         summary = meta.disks.length + ' ';
-                        summary += $.t('dialog.show_node.drive', {count: meta.disks.length});
-                        summary += ', ' + utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), function(sum, n) {return sum + n;}, 0)) + ' ' + $.t('dialog.show_node.total');
+                        summary += i18n('dialog.show_node.drive', {count: meta.disks.length});
+                        summary += ', ' + utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), function(sum, n) {return sum + n;}, 0)) + ' ' + i18n('dialog.show_node.total');
                         break;
                     case 'cpu':
                         var frequencies = _.countBy(_.pluck(meta.cpu.spec, 'frequency'), utils.showFrequency);
@@ -468,9 +472,9 @@ function(React, utils, models, controls) {
                             <div className='row-fluid'>
                                 <div className='span5'><div className='node-image-outline'></div></div>
                                 <div className='span7'>
-                                    <div><strong>{$.t('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || $.t('common.not_available')}</div>
-                                    <div><strong>{$.t('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || $.t('common.not_available')}</div>
-                                    <div><strong>{$.t('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || $.t('common.not_available')}</div>
+                                    <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
+                                    <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
+                                    <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
                                 </div>
                             </div>
                             <div className='accordion' id='nodeDetailsAccordion'>
@@ -483,7 +487,7 @@ function(React, utils, models, controls) {
                                         <div className='accordion-group' key={group}>
                                             <div className='accordion-heading' onClick={this.toggle.bind(this, groupIndex)}>
                                                 <div className='accordion-toggle' data-group={group}>
-                                                    <b>{$.t('node_details.' + group, {defaultValue: group})}</b>
+                                                    <b>{i18n('node_details.' + group, {defaultValue: group})}</b>
                                                     <span>{this.showSummary(meta, group)}</span>
                                                     <i className='icon-expand pull-right'></i>
                                                 </div>
@@ -543,18 +547,18 @@ function(React, utils, models, controls) {
                 <div>
                     {node.get('cluster') &&
                         <span>
-                            <button className='btn btn-edit-networks' onClick={this.goToConfigurationScreen.bind(this, 'interfaces')}>{$.t('dialog.show_node.network_configuration_button')}</button>
-                            <button className='btn btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>{$.t('dialog.show_node.disk_configuration_button')}</button>
+                            <button className='btn btn-edit-networks' onClick={this.goToConfigurationScreen.bind(this, 'interfaces')}>{i18n('dialog.show_node.network_configuration_button')}</button>
+                            <button className='btn btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>{i18n('dialog.show_node.disk_configuration_button')}</button>
                         </span>
                     }
-                    <button className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>
+                    <button className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>
                 </div>
             );
         },
         renderNodeInfo: function(name, value) {
             return (
                 <div key={name + value}>
-                    <label>{$.t('dialog.show_node.' + name, {defaultValue: this.showPropertyName(name)})}</label>
+                    <label>{i18n('dialog.show_node.' + name, {defaultValue: this.showPropertyName(name)})}</label>
                     <span>{value}</span>
                 </div>
             );
@@ -563,13 +567,13 @@ function(React, utils, models, controls) {
 
     dialogs.DiscardSettingsChangesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: $.t('dialog.dismiss_settings.title'), defaultMessage: $.t('dialog.dismiss_settings.default_message')};},
+        getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
         proceed: function() {
             this.close();
             app.page.removeFinishedNetworkTasks().always(_.bind(this.props.cb, this.props));
         },
         renderBody: function() {
-            var message = this.props.verification ? $.t('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
+            var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
             return (
                 <div className='msg-error dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
@@ -579,22 +583,22 @@ function(React, utils, models, controls) {
         },
         renderFooter: function() {
             var verification = !!this.props.verification,
-                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{$.t('dialog.dismiss_settings.stay_button')}</button>];
-            if (!verification) buttons.push(<button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>{$.t('dialog.dismiss_settings.leave_button')}</button>);
+                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>];
+            if (!verification) buttons.push(<button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>{i18n('dialog.dismiss_settings.leave_button')}</button>);
             return buttons;
         }
     });
 
     dialogs.DeleteNodesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: $.t('dialog.delete_nodes.title')};},
+        getDefaultProps: function() {return {title: i18n('dialog.delete_nodes.title')};},
         renderBody: function() {
-            return (<div className='deploy-task-notice'>{this.renderImportantLabel()} {$.t('dialog.delete_nodes.message')}</div>);
+            return (<div className='deploy-task-notice'>{this.renderImportantLabel()} {i18n('dialog.delete_nodes.message')}</div>);
         },
         renderFooter: function() {
             return [
-                <button key='cancel' className='btn' onClick={this.close}>{$.t('common.cancel_button')}</button>,
-                <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.actionInProgress}>{$.t('common.delete_button')}</button>
+                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.actionInProgress}>{i18n('common.delete_button')}</button>
             ];
         },
         deleteNodes: function() {
@@ -622,7 +626,7 @@ function(React, utils, models, controls) {
                     app.page.removeFinishedNetworkTasks();
                 })
                 .fail(_.bind(function() {
-                    this.showError($.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
+                    this.showError(i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
                 }, this));
         }
     });
@@ -634,7 +638,7 @@ function(React, utils, models, controls) {
         ],
         getDefaultProps: function() {
             return {
-                title: $.t('dialog.change_password.title'),
+                title: i18n('dialog.change_password.title'),
                 modalClass: 'change-password'
             };
         },
@@ -648,9 +652,9 @@ function(React, utils, models, controls) {
         },
         getError: function(name) {
             var ns = 'dialog.change_password.';
-            if (name == 'currentPassword' && this.state.validationError) return $.t(ns + 'wrong_current_password');
+            if (name == 'currentPassword' && this.state.validationError) return i18n(ns + 'wrong_current_password');
             if (this.state.newPassword != this.state.confirmationPassword) {
-                if (name == 'confirmationPassword') return $.t(ns + 'new_password_mismatch');
+                if (name == 'confirmationPassword') return i18n(ns + 'new_password_mismatch');
                 if (name == 'newPassword') return '';
             }
             return null;
@@ -667,7 +671,7 @@ function(React, utils, models, controls) {
                             name={name}
                             ref={name}
                             type='password'
-                            label={$.t(ns + translationKeys[index])}
+                            label={i18n(ns + translationKeys[index])}
                             maxLength='50'
                             onChange={this.handleChange.bind(this, (name == 'currentPassword'))}
                             onKeyDown={this.handleKeyDown}
@@ -683,11 +687,11 @@ function(React, utils, models, controls) {
         renderFooter: function() {
             return [
                 <button key='cancel' className='btn' onClick={this.close} disabled={this.state.actionInProgress}>
-                    {$.t('common.cancel_button')}
+                    {i18n('common.cancel_button')}
                 </button>,
                 <button key='apply' className='btn btn-success' onClick={this.changePassword}
                     disabled={this.state.actionInProgress || !this.isPasswordChangeAvailable()}>
-                    {$.t('common.apply_button')}
+                    {i18n('common.apply_button')}
                 </button>
             ];
         },

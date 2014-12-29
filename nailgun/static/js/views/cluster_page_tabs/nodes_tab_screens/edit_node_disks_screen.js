@@ -15,6 +15,10 @@
 **/
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
+    'backbone',
     'utils',
     'models',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_screen',
@@ -22,7 +26,7 @@ define(
     'text!templates/cluster/node_disk.html',
     'text!templates/cluster/volume_style.html'
 ],
-function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate) {
+function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate) {
     'use strict';
     var EditNodeDisksScreen, NodeDisk;
 
@@ -63,8 +67,8 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
             this.disks.fetch({url: _.result(this.nodes.at(0), 'url') + '/disks/defaults/'})
                 .fail(_.bind(function() {
                     utils.showErrorDialog({
-                        title: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
-                        message: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.load_defaults_warning')
+                        title: i18n('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
+                        message: i18n('cluster_page.nodes_tab.configure_disks.configuration_error.load_defaults_warning')
                     });
                 }, this));
         },
@@ -89,8 +93,8 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
                 .fail(_.bind(function(response) {
                     this.checkForChanges();
                     utils.showErrorDialog({
-                        title: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
-                        message: utils.getResponseText(response) || $.t('cluster_page.nodes_tab.configure_disks.configuration_error.saving_warning')
+                        title: i18n('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
+                        message: utils.getResponseText(response) || i18n('cluster_page.nodes_tab.configure_disks.configuration_error.saving_warning')
                     });
                 }, this));
         },

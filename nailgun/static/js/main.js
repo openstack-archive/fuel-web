@@ -34,7 +34,6 @@ require(['./config'], function(config) {
         'react',
         'react.backbone',
         'routefilter',
-        'i18next',
         'bootstrap',
         'jquery-cookie',
         'jquery-timeout',

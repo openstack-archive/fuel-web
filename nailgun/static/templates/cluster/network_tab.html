@@ -4,8 +4,8 @@
     <% if (provider == 'nova_network') { %>
       <div class="radio-checkbox-group">
         <% var managers = {
-          FlatDHCPManager: $.t('cluster_page.network_tab.flatdhcp_manager'),
-          VlanManager: $.t('cluster_page.network_tab.vlan_manager')
+          FlatDHCPManager: i18n('cluster_page.network_tab.flatdhcp_manager'),
+          VlanManager: i18n('cluster_page.network_tab.vlan_manager')
         } %>
         <% _.each(managers, function(label, value) { %>
           <div class="item-box">
@@ -25,9 +25,9 @@
     <% } else if (segment_type) { %>
       <span class="network-segment-type">
       <% if (l23_provider == 'nsx' ) { %>
-        <%- $.t('cluster_page.network_tab.neutron_l23_provider', {l23_provider: l23_provider.toUpperCase()}) %>
+        <%- i18n('cluster_page.network_tab.neutron_l23_provider', {l23_provider: l23_provider.toUpperCase()}) %>
       <% } else { %>
-        <%- $.t('cluster_page.network_tab.neutron_segmentation', {segment_type: segment_type.toUpperCase()}) %>
+        <%- i18n('cluster_page.network_tab.neutron_segmentation', {segment_type: segment_type.toUpperCase()}) %>
       <% } %>
       </span>
     <% } %>

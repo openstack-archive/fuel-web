@@ -16,6 +16,10 @@
 
 define(
 [
+    'jquery',
+    'underscore',
+    'i18n',
+    'backbone',
     'react',
     'utils',
     'jsx!views/layout',
@@ -23,7 +27,6 @@ define(
     'js/coccyx_mixins',
     'models',
     'keystone_client',
-    'views/common',
     'jsx!views/login_page',
     'jsx!views/welcome_page',
     'views/cluster_page',
@@ -34,7 +37,7 @@ define(
     'jsx!views/support_page',
     'jsx!views/capacity_page'
 ],
-function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -171,7 +174,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
         },
         updateTitle: function() {
             var newTitle = _.result(this.page, 'title');
-            document.title = $.t('common.title') + (newTitle ? ' - ' + newTitle : '');
+            document.title = i18n('common.title') + (newTitle ? ' - ' + newTitle : '');
             this.breadcrumbs.update();
         },
         toggleElements: function(state) {

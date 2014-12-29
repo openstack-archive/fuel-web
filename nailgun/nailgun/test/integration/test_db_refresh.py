@@ -26,8 +26,15 @@ from nailgun.db import flush
 from nailgun.db import NoCacheQuery
 from nailgun.db.sqlalchemy.models import Node
 
+from nose import SkipTest
+from nailgun.settings import settings
+
 
 class TestDBRefresh(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if not settings.config["run_nailgun_tests"]:
+            raise SkipTest("Skipping Nailgun tests")
 
     def setUp(self):
         self.app = TestApp(build_app().wsgifunc())

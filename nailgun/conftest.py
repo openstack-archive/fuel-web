@@ -24,6 +24,11 @@ def pytest_addoption(parser):
                      help="Overwrite database name")
     parser.addoption("--cleandb", default=False, action="store_true",
                      help="Provide this flag to dropdb/syncdb for all slaves")
+    parser.addoption("--nailgun", default=False, action="store_true",
+                     help="Execute nailgun tests except for performace tests")
+    parser.addoption("--nailgun_performance", default=False, 
+                     action="store_true",
+                     help="Execute nailgun performance tests")
 
 
 def pytest_configure(config):
@@ -46,6 +51,9 @@ def pytest_configure(config):
         from nailgun.db import dropdb, syncdb
         dropdb()
         syncdb()
+    settings.config['run_nailgun_tests'] = config.getoption('nailgun')
+    settings.config['run_nailgun_performance_tests'] = config.getoption('nailgun_performance')
+
 
 
 def pytest_unconfigure(config):
@@ -53,6 +61,8 @@ def pytest_unconfigure(config):
     if cleandb:
         from nailgun.db import dropdb
         dropdb()
+    del settings.config['run_nailgun_tests']
+    del settings.config['run_nailgun_performance_tests']
 
 
 def create_database(connection, cursor, name):

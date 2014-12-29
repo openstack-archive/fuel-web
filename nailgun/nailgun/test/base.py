@@ -64,6 +64,10 @@ from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
 from nailgun.openstack.common import jsonutils
 
+import pytest
+from nose import SkipTest
+from nailgun.settings import settings
+
 
 class TimeoutError(Exception):
     pass
@@ -869,6 +873,8 @@ class BaseTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not settings.config["run_nailgun_tests"]:
+            raise SkipTest("Skipping Nailgun tests")
         cls.app = app.TestApp(
             build_app(db_driver=test_db_driver).wsgifunc()
         )
@@ -936,6 +942,8 @@ class BaseTestCase(TestCase):
 class BaseIntegrationTest(BaseTestCase):
     @classmethod
     def setUpClass(cls):
+        if not settings.config["run_nailgun_tests"]:
+            raise SkipTest("Skipping Nailgan integration tests")
         super(BaseIntegrationTest, cls).setUpClass()
         nailgun.task.task.DeploymentTask._prepare_syslog_dir = mock.Mock()
 
@@ -960,6 +968,8 @@ class BaseIntegrationTest(BaseTestCase):
 class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
     @classmethod
     def setUpClass(cls):
+        if not settings.config["run_nailgun_tests"]:
+            raise SkipTest("Skipping Nailgun AuthenticationIntegration test")
         cls.app = app.TestApp(build_app(db_driver=test_db_driver).wsgifunc(
             NailgunFakeKeystoneAuthMiddleware))
         syncdb()
@@ -967,7 +977,10 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
 
 
 class BaseUnitTest(TestCase):
-    pass
+    @classmethod
+    def setUpClass(cls):
+        if not settings.config["run_nailgun_tests"]:
+            raise SkipTest("Skipping Nailgun unit tests")
 
 
 def fake_tasks(fake_rpc=True,

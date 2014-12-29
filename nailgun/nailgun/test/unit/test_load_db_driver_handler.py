@@ -23,8 +23,16 @@ from nailgun.api.v1.handlers import load_db_driver
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 
+from nose import SkipTest
+from nailgun.settings import settings
+
 
 class TestLoadDbDriverWithSAExceptions(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if not settings.config["run_nailgun_tests"]:
+            raise SkipTest("Skipping Nailgun tests")
+
     def setUp(self):
         web.ctx.headers = []
 

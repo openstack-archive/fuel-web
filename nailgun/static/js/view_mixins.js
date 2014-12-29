@@ -13,10 +13,20 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery'], function($) {
+define(['jquery', 'underscore', 'dispatcher'], function($, _, dispatcher) {
     'use strict';
 
     return {
+        dispatcherMixin: function(events, callback) {
+            return {
+                initialize: function() {
+                    dispatcher.on(events, _.isString(callback) ? this[callback] : callback, this);
+                },
+                beforeTearDown: function() {
+                    dispatcher.off(null, null, this);
+                }
+            };
+        },
         toggleablePassword: {
             events: {
                 'click span.add-on': 'togglePassword'

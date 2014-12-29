@@ -22,6 +22,8 @@ define(
     'react',
     'utils',
     'models',
+    'cocktail',
+    'view_mixins',
     'views/common',
     'jsx!views/cluster_page_subviews',
     'jsx!views/dialogs',
@@ -33,7 +35,7 @@ define(
     'jsx!views/cluster_page_tabs/healthcheck_tab',
     'text!templates/cluster/page.html'
 ],
-function($, _, i18n, Backbone, React, utils, models, commonViews, clusterPageSubviews, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
+function($, _, i18n, Backbone, React, utils, models, Cocktail, viewMixins, commonViews, clusterPageSubviews, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
     'use strict';
 
     var ClusterPage = commonViews.Page.extend({
@@ -176,6 +178,9 @@ function($, _, i18n, Backbone, React, utils, models, commonViews, clusterPageSub
             return this;
         }
     });
+
+    Cocktail.mixin(ClusterPage, viewMixins.dispatcherMixin('deployment:started', 'deploymentTaskStarted'));
+    Cocktail.mixin(ClusterPage, viewMixins.dispatcherMixin('deployment:finished', 'deploymentTaskFinished'));
 
     ClusterPage.fetchData = function(id, activeTab) {
         var cluster, tasks, promise, currentClusterId;

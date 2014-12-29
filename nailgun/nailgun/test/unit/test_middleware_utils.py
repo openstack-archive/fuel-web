@@ -16,11 +16,15 @@ import re
 import six
 
 from nailgun.test.base import TestCase
-
 from nailgun.middleware import utils
-
+from nose import SkipTest
+from nailgun.settings import settings
 
 class TestUtils(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if not settings.config["run_nailgun_tests"]:
+            raise SkipTest("Skipping Nailgun tests")
 
     def test_get_body_from_env(self):
         expected_body = "Hi! I'm test body"

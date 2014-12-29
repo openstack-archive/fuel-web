@@ -21,8 +21,15 @@ from nailgun.test import base
 from nailgun.settings import settings
 from nailgun.task import task
 
+from nose import SkipTest
+from nailgun.settings import settings
 
 class TestSnapshotConf(base.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if not settings.config["run_nailgun_tests"]:
+            raise SkipTest("Skipping Nailgun tests")
+
 
     def test_must_have_roles(self):
         conf = task.DumpTask.conf()

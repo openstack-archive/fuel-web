@@ -27,9 +27,9 @@ module.exports = function(grunt) {
                     baseUrl: '.',
                     appDir: staticBuildPreparationDir + '/static',
                     dir: staticBuildDir,
-                    waitSeconds: 60,
                     optimize: 'uglify2',
                     optimizeCss: 'standard',
+                    wrapShim: true,
                     pragmas: {
                         compressed: true
                     },
@@ -41,6 +41,7 @@ module.exports = function(grunt) {
                     paths: {
                         react: 'js/libs/bower/react/js/react-with-addons.min'
                     },
+                    stubModules: ['jsx'],
                     modules: [
                         {
                             name: 'js/main',

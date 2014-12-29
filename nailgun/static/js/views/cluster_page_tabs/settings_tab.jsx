@@ -22,9 +22,10 @@ define(
     'utils',
     'models',
     'expression',
+    'jsx!component_mixins',
     'jsx!views/controls'
 ],
-function($, _, i18n, React, utils, models, Expression, controls) {
+function($, _, i18n, React, utils, models, Expression, componentMixins, controls) {
     'use strict';
 
     var dependenciesMixin = {
@@ -124,14 +125,14 @@ function($, _, i18n, React, utils, models, Expression, controls) {
     var SettingsTab = React.createClass({
         mixins: [
             dependenciesMixin,
-            React.BackboneMixin('model', 'change:status'),
-            React.BackboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin('model', 'change:status'),
+            componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.model.get('settings');
             }}),
-            React.BackboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.model.get('tasks');
             }}),
-            React.BackboneMixin({modelOrCollection: function(props) {
+            componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.model.task({group: 'deployment', status: 'running'});
             }})
         ],

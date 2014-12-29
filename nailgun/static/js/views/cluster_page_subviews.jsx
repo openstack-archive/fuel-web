@@ -19,17 +19,18 @@ define(
     'i18n',
     'react',
     'utils',
-    'jsx!views/dialogs'
+    'jsx!views/dialogs',
+    'jsx!component_mixins'
 ],
-function(_, i18n, React, utils, dialogs) {
+function(_, i18n, React, utils, dialogs, componentMixins) {
     'use strict';
 
     var clusterPageSubviews = {};
 
     clusterPageSubviews.ClusterInfo = React.createClass({
         mixins: [
-            React.BackboneMixin('model', 'change:name change:status change:release'),
-            React.BackboneMixin({
+            componentMixins.backboneMixin('model', 'change:name change:status change:release'),
+            componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.model.get('nodes');}
             })
         ],
@@ -67,7 +68,7 @@ function(_, i18n, React, utils, dialogs) {
 
     clusterPageSubviews.DeploymentResult = React.createClass({
         mixins: [
-            React.BackboneMixin({
+            componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.model.get('tasks');},
                 renderOn: 'add remove change:status'
             })
@@ -92,15 +93,15 @@ function(_, i18n, React, utils, dialogs) {
 
     clusterPageSubviews.DeploymentControl = React.createClass({
         mixins: [,
-            React.BackboneMixin('model'),
-            React.BackboneMixin({
+            componentMixins.backboneMixin('model'),
+            componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.model.get('release');}
             }),
-            React.BackboneMixin({
+            componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.model.get('nodes');},
                 renderOn: 'add remove change:pending_addition change:pending_deletion'
             }),
-            React.BackboneMixin({
+            componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.model.get('tasks');},
                 renderOn: 'add remove change'
             })
@@ -183,7 +184,7 @@ function(_, i18n, React, utils, dialogs) {
     });
 
     clusterPageSubviews.ClusterCustomizationMessage = React.createClass({
-        mixins: [React.BackboneMixin('model', 'change:is_customized')],
+        mixins: [componentMixins.backboneMixin('model', 'change:is_customized')],
         render: function() {
             return !this.props.model.get('is_customized') ? (<div/>) : (
                 <div className='alert alert-block globalalert'>

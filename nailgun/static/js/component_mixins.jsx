@@ -13,10 +13,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore'], function($, _) {
+define(['jquery', 'underscore', 'react', 'react.backbone'], function($, _, React) {
     'use strict';
 
     return {
+        backboneMixin: React.BackboneMixin,
         pollingMixin: function(updateInterval) {
             updateInterval = updateInterval * 1000;
             return {

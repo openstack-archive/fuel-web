@@ -24,7 +24,8 @@ define(
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_screen',
     'text!templates/cluster/edit_node_disks.html',
     'text!templates/cluster/node_disk.html',
-    'text!templates/cluster/volume_style.html'
+    'text!templates/cluster/volume_style.html',
+    'jquery-autoNumeric'
 ],
 function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate) {
     'use strict';

@@ -20,7 +20,8 @@ define([
     'backbone',
     'utils',
     'expression',
-    'deepModel'
+    'deepModel',
+    'backbone-lodash-monkeypatch'
 ], function($, _, i18n, Backbone, utils, Expression) {
     'use strict';
 

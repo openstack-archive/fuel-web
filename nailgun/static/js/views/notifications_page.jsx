@@ -19,15 +19,16 @@ define(
     'react',
     'utils',
     'models',
-    'jsx!views/dialogs'
+    'jsx!views/dialogs',
+    'jsx!component_mixins'
 ],
-function(i18n, React, utils, models, dialogs) {
+function(i18n, React, utils, models, dialogs, componentMixins) {
     'use strict';
 
     var NotificationsPage, Notification;
 
     NotificationsPage = React.createClass({
-        mixins: [React.BackboneMixin('notifications')],
+        mixins: [componentMixins.backboneMixin('notifications')],
         navbarActiveElement: null,
         breadcrumbsPath: [['home', '#'], 'notifications'],
         title: function() {
@@ -56,7 +57,7 @@ function(i18n, React, utils, models, dialogs) {
     });
 
     Notification = React.createClass({
-        mixins: [React.BackboneMixin('notification')],
+        mixins: [componentMixins.backboneMixin('notification')],
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
             node.deferred = node.fetch();

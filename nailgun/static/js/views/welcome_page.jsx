@@ -19,15 +19,16 @@ define(
     'i18n',
     'react',
     'models',
+    'jsx!component_mixins',
     'jsx!views/statistics_mixin'
 ],
-function(_, i18n, React, models, statisticsMixin) {
+function(_, i18n, React, models, componentMixins, statisticsMixin) {
     'use strict';
 
     var WelcomePage = React.createClass({
         mixins: [
             statisticsMixin,
-            React.BackboneMixin('settings')
+            componentMixins.backboneMixin('settings')
         ],
         breadcrumbsPath: [],
         hiddenLayout: true,
@@ -94,7 +95,7 @@ function(_, i18n, React, models, statisticsMixin) {
     });
 
     var RegisterTrial = React.createClass({
-        mixins: [React.BackboneMixin('fuelKey')],
+        mixins: [componentMixins.backboneMixin('fuelKey')],
         shouldShowMessage: function() {
             return _.contains(app.version.get('feature_groups'), 'mirantis') && !_.contains(app.version.get('feature_groups'), 'techpreview');
         },

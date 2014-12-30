@@ -125,7 +125,10 @@ class Manager(object):
 
         # making file systems
         for fs in self.partition_scheme.fss:
-            fu.make_fs(fs.type, fs.options, fs.label, fs.device)
+            found_images = [img for img in self.image_scheme.images
+                            if img.target_device == fs.device]
+            if not found_images:
+                fu.make_fs(fs.type, fs.options, fs.label, fs.device)
 
     def do_configdrive(self):
         LOG.debug('--- Creating configdrive (do_configdrive) ---')

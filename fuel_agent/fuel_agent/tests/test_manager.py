@@ -124,14 +124,6 @@ class TestManager(test_base.BaseTestCase):
                                     mock.call('image', 'glance', 175347)]
         self.assertEqual(mock_lu_l_expected_calls, mock_lu_l.call_args_list)
 
-        mock_fu_mf_expected_calls = [
-            mock.call('ext2', '', '', '/dev/md0'),
-            mock.call('ext2', '', '', '/dev/sda4'),
-            mock.call('ext4', '', '', '/dev/mapper/os-root'),
-            mock.call('swap', '', '', '/dev/mapper/os-swap'),
-            mock.call('xfs', '', '', '/dev/mapper/image-glance')]
-        self.assertEqual(mock_fu_mf_expected_calls, mock_fu_mf.call_args_list)
-
     @mock.patch.object(utils, 'execute')
     @mock.patch.object(utils, 'render_and_save')
     @mock.patch.object(hu, 'list_block_devices')
@@ -194,6 +186,8 @@ class TestManager(test_base.BaseTestCase):
         self.assertRaises(errors.WrongPartitionSchemeError,
                           self.mgr.do_configdrive)
 
+    @mock.patch.object(fu, 'extend_fs')
+    @mock.patch.object(fu, 'make_fs')
     @mock.patch.object(au, 'GunzipStream')
     @mock.patch.object(au, 'LocalFile')
     @mock.patch.object(au, 'HttpUrl')
@@ -202,7 +196,8 @@ class TestManager(test_base.BaseTestCase):
     @mock.patch.object(utils, 'render_and_save')
     @mock.patch.object(hu, 'list_block_devices')
     def test_do_copyimage(self, mock_lbd, mock_u_ras, mock_u_e, mock_au_c,
-                          mock_au_h, mock_au_l, mock_au_g):
+                          mock_au_h, mock_au_l, mock_au_g, mock_fu_mf,
+                          mock_fu_ef):
 
         class FakeChain(object):
             processors = []
@@ -235,3 +230,12 @@ class TestManager(test_base.BaseTestCase):
         ]
         self.assertEqual(expected_processors_list,
                          mock_au_c.return_value.processors)
+        mock_fu_mf_expected_calls = [
+            mock.call('ext2', '', '', '/dev/md0'),
+            mock.call('ext2', '', '', '/dev/sda4'),
+            mock.call('swap', '', '', '/dev/mapper/os-swap'),
+            mock.call('xfs', '', '', '/dev/mapper/image-glance')]
+        self.assertEqual(mock_fu_mf_expected_calls, mock_fu_mf.call_args_list)
+        mock_fu_ef_expected_calls = [
+            mock.call('ext4', '/dev/mapper/os-root')]
+        self.assertEqual(mock_fu_ef_expected_calls, mock_fu_ef.call_args_list)

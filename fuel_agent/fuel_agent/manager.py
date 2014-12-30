@@ -135,10 +135,6 @@ class Manager(object):
         for lv in self.partition_scheme.lvs:
             lu.lvcreate(lv.vgname, lv.name, lv.size)
 
-        # making file systems
-        for fs in self.partition_scheme.fss:
-            fu.make_fs(fs.type, fs.options, fs.label, fs.device)
-
     def do_configdrive(self):
         LOG.debug('--- Creating configdrive (do_configdrive) ---')
         cc_output_path = os.path.join(CONF.tmp_path, 'cloud_config.txt')
@@ -212,6 +208,14 @@ class Manager(object):
                 LOG.debug('Extending %s %s' %
                           (image.format, image.target_device))
                 fu.extend_fs(image.format, image.target_device)
+        for fs in self.partition_scheme.fss:
+            found_images = [img for img in self.image_scheme.images
+                            if img.target_device == fs.device]
+            if not found_images:
+                LOG.debug('Making fs %s on device %s' % (fs.type, fs.device))
+                fu.make_fs(fs.type, fs.options, fs.label, fs.device)
+            else:
+                continue
 
     def mount_target(self, chroot):
         LOG.debug('Mounting target file systems')

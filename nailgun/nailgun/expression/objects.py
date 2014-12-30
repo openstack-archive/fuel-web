@@ -55,7 +55,7 @@ class ModelPath(object):
 
     def get_value(self):
         def get_attribute_value(model, path):
-            value = model[path.pop(0)]
+            value = getattr(model, path.pop(0))
             return get_attribute_value(value, path) if len(path) else value
         return get_attribute_value(self.model, self.attribute.split('.'))
 

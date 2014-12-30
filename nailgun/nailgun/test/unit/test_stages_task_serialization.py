@@ -52,6 +52,27 @@ POST_STAGE = """
 """
 
 
+CONDITIONAL_TASKS = """
+- id: generic_uid
+  type: upload_file
+  role: '*'
+  stage: pre_deployment
+  condition: cluster:status == 'operational'
+  parameters:
+    cmd: /tmp/bash_script.sh
+    timeout: 180
+- id: generic_second_task
+  type: sync
+  role: '*'
+  stage: pre_deployment
+  requires: [generic_uid]
+  condition: settings:enabled
+  parameters:
+    cmd: /tmp/bash_script.sh
+    timeout: 180
+"""
+
+
 class TestPreHooksSerializers(base.BaseTestCase):
 
     def setUp(self):
@@ -146,3 +167,33 @@ class TestPostTaskSerialization(base.BaseTestCase):
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0]['uids'], self.control_uids)
         self.assertEqual(tasks[0]['type'], 'shell')
+
+
+class TestConditionalTasksSerializers(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestConditionalTasksSerializers, self).setUp()
+        self.nodes = [
+            mock.Mock(uid='3', all_roles=['controller']),
+            mock.Mock(uid='4', all_roles=['primary-controller'])]
+
+        self.cluster = mock.Mock()
+        self.cluster.deployment_tasks = yaml.load(CONDITIONAL_TASKS)
+        self.graph = deployment_graph.AstuteGraph(self.cluster)
+
+    def test_conditions_satisfied(self):
+        self.cluster.status = 'operational'
+        self.cluster.attributes.editable.enabled = True
+
+        tasks = self.graph.pre_tasks_serialize(self.nodes)
+        self.assertEqual(len(tasks), 2)
+
+        self.assertEqual(tasks[0]['type'], 'upload_file')
+        self.assertEqual(tasks[1]['type'], 'sync')
+
+    def test_conditions_not_satisfied(self):
+        self.cluster.status = 'new'
+        self.cluster.attributes.editable.enabled = False
+
+        tasks = self.graph.pre_tasks_serialize(self.nodes)
+        self.assertEqual(len(tasks), 0)

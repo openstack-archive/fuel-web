@@ -19,6 +19,7 @@ import six
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.expression import Expression
 from nailgun.logger import logger
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
@@ -73,6 +74,7 @@ class DeploymentHook(object):
 
     def should_execute(self):
         """Should be used to define conditions when task should be executed."""
+
         return True
 
     @abc.abstractmethod
@@ -84,15 +86,33 @@ class DeploymentHook(object):
         """
 
 
-class GenericNodeHook(DeploymentHook):
+class ExpressionBasedTask(DeploymentHook):
+
+    def __init__(self, task, cluster):
+        self.task = task
+        self.cluster = cluster
+
+    @property
+    def _expression_context(self):
+        return {'cluster': self.cluster,
+                'settings': self.cluster.attributes.editable}
+
+    def should_execute(self):
+        if 'condition' not in self.task:
+            return True
+        return Expression(
+            self.task['condition'], self._expression_context).evaluate()
+
+
+class GenericNodeHook(ExpressionBasedTask):
     """Should be used for node serialization.
     """
 
     hook_type = abc.abstractproperty
 
-    def __init__(self, task, node):
-        self.task = task
+    def __init__(self, task, cluster, node):
         self.node = node
+        super(GenericNodeHook, self).__init__(task, cluster)
 
 
 class PuppetHook(GenericNodeHook):
@@ -107,9 +127,8 @@ class StandartConfigRolesHook(DeploymentHook):
     """Role hooks that serializes task based on config file only."""
 
     def __init__(self, task, cluster, nodes):
-        self.task = task
-        self.cluster = cluster
         self.nodes = nodes
+        super(GenericRolesHook, self).__init__(task, cluster)
 
     def get_uids(self):
         return get_uids_for_roles(self.nodes, self.task['role'])

@@ -226,6 +226,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     return <SettingGroup {...this.props}
                                         key={groupName}
                                         groupName={groupName}
+                                        initialAttributes={this.initialAttributes}
                                         onChange={_.bind(this.onChange, this, groupName)}
                                         disabled={locked || (!!this.settings.get(path).toggleable && processedRestrictions.result)}
                                         message={processedRestrictions.message}
@@ -264,6 +265,51 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     </option>
                 );
             });
+        },
+        processBind: function(path, value) {
+            var $ret = null;
+            path = ($ret = path.split(':').slice(1)).length ? $ret.join('') : path;
+            utils.parseModelPath(path, this.configModels).set(value);
+        },
+        revertAction: function(change) {
+            _.each(change.data, function(path) {
+                var $ret = path.split(':');
+                if ($ret.length > 1 && $ret[0] !== 'settings') return;
+
+                var value = _.reduce(($ret.length === 1 ? $ret[0] : $ret.slice(1)).join('').split('.'), function(memo, value) {
+                    if (_.isUndefined(memo) || !_.isString(value)) return memo;
+                    return memo[value];
+                }, this.props.initialAttributes);
+                if (_.isUndefined(value)) return;
+
+                this.processBind(path, value);
+            }, this);
+        },
+        copyAction: function(change, value) {
+            if (_.isPlainObject(change.data)) {
+                _.each(change.data, function(sourcePath, targetPath) {
+                    value = (new Expression(sourcePath, this.configModels).evaluate().get());
+                    this.processBind(targetPath, value);
+                }, this);
+            } else if (_.isArray(change.data)) {
+                value = new Expression(change.value, this.configModels).evaluate().get();
+                _.each(change.data, function(targetPath) {
+                    this.processBind(targetPath, value);
+                }, this);
+            }
+        },
+        onChange: function(setting, name, value) {
+            if (_.isFunction(this.props.onChange)) this.props.onChange(name, value);
+
+            var changedArray = _.isArray(setting.changed) ? setting.changed : [setting.changed];
+            _.each(changedArray, function(change) {
+                if (!change.condition || !(new Expression(change.condition, this.configModels).evaluate())) return;
+                if (change.action === 'revert') {
+                    this.revertAction(change);
+                } else {
+                    this.copyAction(change, value);
+                }
+            }, this);
         },
         render: function() {
             var group = this.settings.get(this.props.groupName),
@@ -334,6 +380,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     disabled={this.props.disabled || disabled}
                                     wrapperClassName='tablerow-wrapper'
                                     tooltipText={processedRestrictions.message}
+                                    onChange={_.isUndefined(setting.changed) ? this.props.onChange : _.bind(this.onChange, this, setting)}
                                 />;
                             }
                         }, this)}

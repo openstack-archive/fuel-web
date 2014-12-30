@@ -711,6 +711,21 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         }
     });
 
+    clusterWizardPanes.ExtAuthPane = views.WizardPane.extend({
+        constructorName: 'ExtAuth',
+        title: $.t('dialog.create_cluster_wizard.external_auth.title'),
+        composePaneBindings: function() {
+            this.constructor.__super__.composePaneBindings.apply(this, arguments);
+            this.bindings['[name=extauth]'].getVal = function($el) {
+                return $el.filter(':checked').val() === "true";
+            };
+            this.stickit(this.wizard.model);
+        },
+        renderCustomElements: function() {
+            this.$('.control-group').append(this.renderControls({hasDescription: true})).i18n();
+        }
+    });
+
     clusterWizardPanes.Storage = views.WizardPane.extend({
         constructorName: 'Storage',
         template: _.template(storagePaneTemplate),
@@ -755,6 +770,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         clusterWizardPanes.Network,
         clusterWizardPanes.Storage,
         clusterWizardPanes.AdditionalServices,
+        clusterWizardPanes.ExtAuthPane,
         clusterWizardPanes.Ready
     ];
 

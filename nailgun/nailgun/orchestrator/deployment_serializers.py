@@ -1155,6 +1155,18 @@ class DeploymentHASerializer60(DeploymentHASerializer):
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
 
 
+class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
+
+    nova_network_serializer = NovaNetworkDeploymentSerializer
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+
+
+class DeploymentHASerializer61(DeploymentHASerializer):
+
+    nova_network_serializer = NovaNetworkDeploymentSerializer
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+
+
 def create_serializer(orchestrator_graph, cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -1174,6 +1186,10 @@ def create_serializer(orchestrator_graph, cluster):
         '6.0': {
             'multinode': DeploymentMultinodeSerializer60,
             'ha': DeploymentHASerializer60,
+        },
+        '6.1': {
+            'multinode': DeploymentMultinodeSerializer61,
+            'ha': DeploymentHASerializer61,
         },
     }
 

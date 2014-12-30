@@ -265,6 +265,30 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 );
             });
         },
+        processBind: function(path, value) {
+            var $ret = null;
+            path = ($ret = path.split(':').slice(1)).length ? $ret.join('') : path;
+            utils.parseModelPath(path, this.configModels).set(value);
+        },
+        onChange: function(setting, name, value) {
+            if (_.isFunction(this.props.onChange)) this.props.onChange(name, value);
+
+            var changedArray = _.isArray(setting.changed) ? setting.changed : [setting.changed];
+            _.each(changedArray, function(change) {
+                if (!change.condition || !(new Expression(change.condition, this.configModels).evaluate())) return;
+                if (_.isPlainObject(change.data)) {
+                    _.each(change.data, function(sourcePath, targetPath) {
+                        value = (new Expression(sourcePath, this.configModels).evaluate().get());
+                        this.processBind(targetPath, value);
+                    }, this);
+                } else if (_.isArray(change.data)) {
+                    value = new Expression(change.value, this.configModels).evaluate().get();
+                    _.each(change.data, function(targetPath) {
+                        this.processBind(targetPath, value);
+                    }, this);
+                }
+            }, this);
+        },
         render: function() {
             var group = this.settings.get(this.props.groupName),
                 metadata = group.metadata,
@@ -334,6 +358,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     disabled={this.props.disabled || disabled}
                                     wrapperClassName='tablerow-wrapper'
                                     tooltipText={processedRestrictions.message}
+                                    onChange={_.isUndefined(setting.changed) ? this.props.onChange : _.bind(this.onChange, this, setting)}
                                 />;
                             }
                         }, this)}

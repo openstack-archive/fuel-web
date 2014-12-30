@@ -985,6 +985,337 @@
             regex:
               source: '^[1-9]\d*$'
               error: "Invalid number"
+        external_auth:
+          metadata:
+            label: "Keystone External Authentication"
+            weight: 80
+            restrictions:
+              - condition: "not settings:external_auth.is_enabled.value"
+                action: "hide"
+          is_enabled:
+            label: ""
+            description: ""
+            value: false
+            type: "hidden"
+          ldap_url:
+            value: "ldap://"
+            label: "ldap_url"
+            description: "LDAP Server URL"
+            weight: 10
+            type: "text"
+          user_dn:
+            value: "dn"
+            label: "user_dn"
+            description: "Distinguish name of user"
+            weight: 20
+            type: "text"
+          password:
+            value: "pass"
+            label: "password"
+            description: "Login Password"
+            weight: 30
+            type: "password"
+          suffix:
+            value: "dn="
+            label: "suffix"
+            description: "LDAP server suffix"
+            weight: 40
+            type: "text"
+          user_tree_dn:
+            value: ""
+            label: "user_tree_dn"
+            description: "Search base for users"
+            weight: 50
+            type: "text"
+          user_objclass:
+            value: ""
+            label: "User Obj. class"
+            description: "LDAP objectClass for users"
+            weight: 60
+            type: "text"
+          user_filter:
+            value: ""
+            label: "User filter"
+            description: "LDAP search filter for users"
+            weight: 70
+            type: "text"
+          group_tree_dn:
+            value: ""
+            label: "group_tree_dn"
+            description: "Search base for group"
+            weight: 80
+            type: "text"
+          group_objclass:
+            value: ""
+            label: "Group Obj. class"
+            description: "LDAP objectClass for group"
+            weight: 90
+            type: "text"
+          keystone_account:
+            value: "keystone"
+            label: "Keystone account"
+            description: "Account for keystone service"
+            weight: 100
+            type: "text"
+            changed:
+              condition: "settings:external_auth.same_account.value == true"
+              value: "settings:external_auth.keystone_account.value"
+              data:
+                - "settings:external_auth.glance_account.value"
+                - "settings:external_auth.nova_account.value"
+                - "settings:external_auth.swift_account.value"
+                - "settings:external_auth.cinder_account.value"
+                - "settings:external_auth.neutron_account.value"
+                - "settings:external_auth.heat_account.value"
+                - "settings:external_auth.heat_cfn_account.value"
+                - "settings:external_auth.sahara_account.value"
+                - "settings:external_auth.murano_account.value"
+                - "settings:external_auth.ceilometer_account.value"
+          keystone_pass:
+            value: "keystone"
+            label: "Keystone password"
+            description: "Password for Keystone service"
+            weight: 110
+            type: "password"
+            changed:
+              condition: "settings:external_auth.same_account.value == true"
+              value: "settings:external_auth.keystone_pass.value"
+              data:
+                - "settings:external_auth.glance_pass.value"
+                - "settings:external_auth.nova_pass.value"
+                - "settings:external_auth.swift_pass.value"
+                - "settings:external_auth.cinder_pass.value"
+                - "settings:external_auth.neutron_pass.value"
+                - "settings:external_auth.heat_pass.value"
+                - "settings:external_auth.heat_cfn_pass.value"
+                - "settings:external_auth.sahara_pass.value"
+                - "settings:external_auth.murano_pass.value"
+                - "settings:external_auth.ceilometer_pass.value"
+          same_account:
+            value: false
+            label: "Other service use same admin account"
+            description: "Other serivce will use same admin account and password, and those field can't be modified."
+            weight: 120
+            type: "checkbox"
+            changed:
+              - condition: "settings:external_auth.same_account.value == true"
+                data:
+                  "settings:external_auth.glance_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.nova_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.swift_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.cinder_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.neutron_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.heat_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.heat_cfn_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.sahara_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.murano_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.ceilometer_account.value": "settings:external_auth.keystone_account.value"
+                  "settings:external_auth.glance_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.nova_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.swift_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.cinder_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.neutron_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.heat_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.heat_cfn_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.sahara_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.murano_pass.value": "settings:external_auth.keystone_pass.value"
+                  "settings:external_auth.ceilometer_pass.value": "settings:external_auth.keystone_pass.value"
+          glance_account:
+            value: "glance"
+            label: "Glance account"
+            description: "Account for Glance service"
+            weight: 130
+            type: "text"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          glance_pass:
+            value: "glance"
+            label: "Glance password"
+            description: "Password for Glance service"
+            weight: 140
+            type: "password"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          nova_account:
+            value: "nova"
+            label: "Nova account"
+            description: "Account for Nova service"
+            weight: 150
+            type: "text"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          nova_pass:
+            value: "nova"
+            label: "Nova password"
+            description: "Password for Nova service"
+            weight: 160
+            type: "password"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          swift_account:
+            value: "swift"
+            label: "Swift account"
+            description: "Account for Swift service"
+            weight: 170
+            type: "text"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          swift_pass:
+            value: "swift"
+            label: "Swift password"
+            description: "Password for Swift service"
+            weight: 180
+            type: "password"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          cinder_account:
+            value: "cinder"
+            label: "Cinder account"
+            description: "Account for Cinder service"
+            weight: 190
+            type: "text"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          cinder_pass:
+            value: "cinder"
+            label: "Cinder password"
+            description: "Password for Cinder service"
+            weight: 200
+            type: "password"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          neutron_account:
+            value: "neutron"
+            label: "Neutron account"
+            description: "Account for Neutron service"
+            weight: 210
+            type: "text"
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          neutron_pass:
+            value: "neutron"
+            label: "Neutron password"
+            description: "Password for Neutron service"
+            weight: 220
+            type: "password"
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          heat_account:
+            value: "heat"
+            label: "Heat account"
+            description: "Account for Heat service"
+            weight: 230
+            type: "text"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          heat_pass:
+            value: "heat"
+            label: "Heat password"
+            description: "Password for Heat service"
+            weight: 240
+            type: "password"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          heat_cfn_account:
+            value: "heat-cfn"
+            label: "Heat-cfn account"
+            description: "Account for Heat-cfn service"
+            weight: 250
+            type: "text"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          heat_cfn_pass:
+            value: "heat-cfn"
+            label: "Heat-cfn password"
+            description: "Password for Heat-cfn service"
+            weight: 260
+            type: "password"
+            restrictions:
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          sahara_account:
+            value: "sahara"
+            label: "Sahara account"
+            description: "Account for Sahara service"
+            weight: 270
+            type: "text"
+            restrictions:
+              - condition: "not settings:additional_components.sahara.value"
+                action: "hide"
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          sahara_pass:
+            value: "sahara"
+            label: "Sahara password"
+            description: "Password for Sahara service"
+            weight: 280
+            type: "password"
+            restrictions:
+              - condition: "not settings:additional_components.sahara.value"
+                action: "hide" 
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          murano_account:
+            value: "murano"
+            label: "Murano account"
+            description: "Account for Murano service"
+            weight: 290
+            type: "text"
+            restrictions:
+              - condition: "not settings:additional_components.murano.value"
+                action: "hide"
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          murano_pass:
+            value: "murano"
+            label: "Murano password"
+            description: "Password for Murano service"
+            weight: 300
+            type: "password"
+            restrictions:
+              - condition: "not settings:additional_components.murano.value"
+                action: "hide"
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          ceilometer_account:
+            value: "ceilometer"
+            label: "ceilometer account"
+            description: "Account for ceilometer service"
+            weight: 310
+            type: "text"
+            restrictions:
+              - condition: "not settings:additional_components.ceilometer.value"
+                action: "hide"
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
+          ceilometer_pass:
+            value: "ceilometer"
+            label: "Ceilometer password"
+            description: "Password for Ceilometer service"
+            weight: 320
+            type: "password"
+            restrictions:
+              - condition: "not settings:additional_components.ceilometer.value"
+                action: "hide"
+              - condition: "settings:external_auth.same_account.value == true"
+                action: "disable"
       generated:
         mysql:
           root_password:
@@ -1272,6 +1603,19 @@
           description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
+      ExtAuth:
+        extauth:
+          type: "radio"
+          weight: 40
+          value: false
+          bind: "settings:external_auth.is_enabled.value"
+          values:
+            - data: false
+              label: "dialog.create_cluster_wizard.external_auth.default"
+              description: "dialog.create_cluster_wizard.external_auth.default_description"
+            - data: true
+              label: "dialog.create_cluster_wizard.external_auth.ldap"
+              description: "dialog.create_cluster_wizard.external_auth.ldap_description"
       Ready: {}
 - pk: 1
   extend: *base_release

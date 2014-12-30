@@ -19,6 +19,7 @@ import six
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.expression import Expression
 from nailgun.logger import logger
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.settings import settings
@@ -73,6 +74,7 @@ class DeploymentHook(object):
 
     def should_execute(self):
         """Should be used to define conditions when task should be executed."""
+
         return True
 
     @abc.abstractmethod
@@ -84,13 +86,28 @@ class DeploymentHook(object):
         """
 
 
-class GenericNodeHook(DeploymentHook):
+class ExpressionMixin(object):
+
+    @property
+    def _expression_context(self):
+        return {'cluster': self.cluster,
+                'settings': self.cluster.attributes.editable}
+
+    def should_execute(self):
+        if 'condition' not in self.task:
+            return True
+        return Expression(
+            self.task['condition'], self._expression_context).evaluate()
+
+
+class GenericNodeHook(ExpressionMixin, DeploymentHook):
     """Should be used for node serialization.
     """
 
-    def __init__(self, task, node):
+    def __init__(self, task, cluster, node):
         self.task = task
         self.node = node
+        self.cluster = cluster
 
 
 class PuppetHook(GenericNodeHook):
@@ -101,7 +118,7 @@ class PuppetHook(GenericNodeHook):
         yield templates.make_puppet_task([self.node['uid']], self.task)
 
 
-class GenericRolesHook(DeploymentHook):
+class GenericRolesHook(ExpressionMixin, DeploymentHook):
 
     def __init__(self, task, cluster, nodes):
         self.task = task

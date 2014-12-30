@@ -261,7 +261,7 @@ class AstuteGraph(object):
         priority = ps.Priority()
         for task in tasks:
             serializer = self.serializers.get_deploy_serializer(task)(
-                task, node)
+                task, self.cluster, node)
 
             if not serializer.should_execute():
                 continue

@@ -137,6 +137,11 @@ function run_tests {
   if [ $certain_tests -eq 1 ]; then
     for testfile in $testrargs; do
       local testfile=`readlink -f $testfile`
+      local tf=`echo $testfile | cut -d':' -f1`
+      if [ ! -e $tf ]; then
+          echo "ERROR: File or directory $tf not found"
+          exit 1
+      fi
       guess_test_run $testfile
     done
     exit

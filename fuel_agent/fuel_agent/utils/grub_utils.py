@@ -45,8 +45,11 @@ def guess_grub2_mkconfig(chroot=''):
 
 def guess_grub_version(chroot=''):
     grub_install = guess_grub_install(chroot=chroot)
-    LOG.debug('Trying to run %s -v' % grub_install)
-    result = utils.execute(chroot + grub_install, '-v')
+    LOG.debug('Trying to run %s --version' % grub_install)
+    cmd = [grub_install, '--version']
+    if chroot:
+        cmd[:0] = ['chroot', chroot]
+    result = utils.execute(*cmd)
     version = 1 if result[0].find('0.97') > 0 else 2
     LOG.debug('Looks like grub version is %s' % version)
     return version

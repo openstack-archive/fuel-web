@@ -26,6 +26,7 @@ from nailgun.api.v1.handlers.cluster import ClusterAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import ClusterAttributesHandler
 from nailgun.api.v1.handlers.cluster import ClusterChangesHandler
 from nailgun.api.v1.handlers.cluster import ClusterCollectionHandler
+from nailgun.api.v1.handlers.cluster import ClusterDeploymentTasksHandler
 from nailgun.api.v1.handlers.cluster import ClusterGeneratedData
 from nailgun.api.v1.handlers.cluster import ClusterHandler
 from nailgun.api.v1.handlers.cluster import ClusterResetHandler
@@ -79,6 +80,7 @@ from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 
 from nailgun.api.v1.handlers.registration import FuelKeyHandler
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
+from nailgun.api.v1.handlers.release import ReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
 from nailgun.api.v1.handlers.release import ReleaseNetworksHandler
 
@@ -100,6 +102,8 @@ urls = (
     ReleaseHandler,
     r'/releases/(?P<obj_id>\d+)/networks/?$',
     ReleaseNetworksHandler,
+    r'/releases/(?P<obj_id>\d+)/deployment_tasks/?$',
+    ReleaseDeploymentTasksHandler,
 
     r'/clusters/?$',
     ClusterCollectionHandler,
@@ -149,6 +153,8 @@ urls = (
     ClusterResetHandler,
     r'/clusters/(?P<cluster_id>\d+)/update/?$',
     ClusterUpdateHandler,
+    r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
+    ClusterDeploymentTasksHandler,
 
 
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',

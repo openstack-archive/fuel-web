@@ -22,6 +22,7 @@ from sqlalchemy import exc as sa_exc
 import web
 
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators.graph import GraphTasksValidator
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -449,3 +450,48 @@ class DeferredTaskHandler(BaseHandler):
             raise
 
         raise self.http(202, self.single.to_json(task))
+
+
+class DeploymentTasksHandler(SingleHandler):
+    """Handler for deployment graph serialization."""
+
+    validator = GraphTasksValidator
+
+    @content
+    def GET(self, obj_id):
+        """:returns: Deployment tasks
+        :http: * 200 OK
+               * 404 (release object not found)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+        return self.single.get_deployment_tasks(obj)
+
+    @content
+    def PUT(self, obj_id):
+        """:returns:  Deployment tasks
+        :http: * 200 (OK)
+               * 400 (invalid data specified)
+               * 404 (object not found in db)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=obj
+        )
+        self.single.update(obj, {'deployment_tasks': data})
+        return self.single.get_deployment_tasks(obj)
+
+    def POST(self, obj_id):
+        """Creation of metadata disallowed
+
+        :http: * 405 (method not supported)
+        """
+        raise self.http(405, 'Create not supported for this entity')
+
+    def DELETE(self, obj_id):
+        """Deletion of metadata disallowed
+
+        :http: * 405 (method not supported)
+        """
+        raise self.http(405, 'Delete not supported for this entity')

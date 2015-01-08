@@ -17,14 +17,12 @@
 from collections import defaultdict
 
 import networkx as nx
-import yaml
 
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun.orchestrator import graph_configuration
+from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator import tasks_templates as templates
-from nailgun.utils import extract_env_version
 
 
 class DeploymentGraph(nx.DiGraph):
@@ -59,6 +57,10 @@ class DeploymentGraph(nx.DiGraph):
             self.add_edge(task['id'], req)
         if 'stage' in task:
             self.add_edge(task['id'], task['stage'])
+
+    def is_acyclic(self):
+        """Verify that graph doesnot contain any cycles in it."""
+        return nx.is_directed_acyclic_graph(self)
 
     def group_nodes_by_roles(self, nodes, roles):
         """Group nodes by roles
@@ -220,13 +222,7 @@ def create_graph(cluster):
     :param cluster: DB Cluster object
     :returns: DeploymentGraph instance
     """
-    env_version = extract_env_version(cluster.release.version)
-    if env_version.startswith('6.0') or env_version.startswith('5.1'):
-        tasks = graph_configuration.DEPLOYMENT_CURRENT
-    elif env_version.startswith('5.0'):
-        tasks = graph_configuration.DEPLOYMENT_50
-    if cluster.pending_release_id:
-        tasks = graph_configuration.PATCHING
+    tasks = objects.Cluster.get_deployment_tasks(cluster)
     graph = DeploymentGraph()
-    graph.add_tasks(yaml.load(tasks))
+    graph.add_tasks(tasks)
     return graph

@@ -22,6 +22,7 @@ import traceback
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import DeferredTaskHandler
+from nailgun.api.v1.handlers.base import DeploymentTasksHandler
 
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import SingleHandler
@@ -239,3 +240,9 @@ class ClusterGeneratedData(BaseHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return cluster.attributes.generated
+
+
+class ClusterDeploymentTasksHandler(DeploymentTasksHandler):
+    """Cluster Handler for deployment graph serialization."""
+
+    single = objects.Cluster

@@ -21,19 +21,17 @@ import copy
 
 import six
 from sqlalchemy import not_
+import yaml
 
 from nailgun import consts
-
-from nailgun.objects.serializers import release as release_serializer
-
 from nailgun.db import db
-
 from nailgun.db.sqlalchemy import models
-
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-
+from nailgun.objects.serializers import release as release_serializer
+from nailgun.orchestrator import graph_configuration
 from nailgun.settings import settings
+from nailgun.utils import extract_env_version
 
 
 class ReleaseOrchestratorData(NailgunObject):
@@ -246,6 +244,17 @@ class Release(NailgunObject):
         if 'experimental' in settings.VERSION['feature_groups']:
             return True
         return instance.is_deployable
+
+    @classmethod
+    def get_deployment_tasks(cls, instance):
+        """Get deployment graph based on release version."""
+        env_version = extract_env_version(instance.version)
+        if instance.deployment_tasks:
+            return instance.deployment_tasks
+        elif env_version.startswith('5.0'):
+            return yaml.load(graph_configuration.DEPLOYMENT_50)
+        else:
+            return yaml.load(graph_configuration.DEPLOYMENT_CURRENT)
 
 
 class ReleaseCollection(NailgunCollection):

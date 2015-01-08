@@ -19,7 +19,7 @@ import requests
 
 import yaml
 
-from keystoneclient import client as auth_client
+from keystoneclient.v2_0 import client as auth_client
 
 from fuelclient.cli.error import exceptions_decorator
 from fuelclient.logs import NullHandler

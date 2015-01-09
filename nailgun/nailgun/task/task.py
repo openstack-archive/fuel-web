@@ -37,6 +37,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
+from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import plugins_serializers
 from nailgun.orchestrator import provisioning_serializers
@@ -139,8 +140,10 @@ class DeploymentTask(object):
                 db().add(n)
         db().flush()
 
+        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+
         serialized_cluster = deployment_serializers.serialize(
-            task.cluster, nodes)
+            orchestrator_graph, task.cluster, nodes)
         pre_deployment = plugins_serializers.pre_deployment_serialize(
             task.cluster, nodes)
         post_deployment = plugins_serializers.post_deployment_serialize(
@@ -162,7 +165,7 @@ class DeploymentTask(object):
                 'post_deployment': post_deployment
             }
         )
-        db().commit()
+        db().flush()
         return rpc_message
 
 
@@ -179,9 +182,10 @@ class UpdateTask(object):
             n.status = 'provisioned'
             n.progress = 0
 
-        # here we replace deployment data if user redefined them
+        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+
         serialized_cluster = deployment_serializers.serialize(
-            task.cluster, nodes)
+            orchestrator_graph, task.cluster, nodes)
 
         # After serialization set pending_addition to False
         for node in nodes:
@@ -195,7 +199,7 @@ class UpdateTask(object):
                 'deployment_info': serialized_cluster
             }
         )
-        db().commit()
+        db().flush()
         return rpc_message
 
 

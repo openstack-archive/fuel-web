@@ -59,21 +59,23 @@ class BasePluginTest(base.BaseIntegrationTest):
         )
         return resp
 
-    def delete_plugin(self, plugin_id):
+    def delete_plugin(self, plugin_id, expect_errors=False):
         resp = self.app.delete(
             base.reverse('PluginHandler', {'obj_id': plugin_id}),
-            headers=self.default_headers
+            headers=self.default_headers,
+            expect_errors=expect_errors
         )
         return resp
 
     def create_cluster(self, nodes=None):
         nodes = nodes if nodes else []
         with mock.patch('nailgun.plugins.attr_plugin.os') as os:
-            with mock.patch('nailgun.plugins.attr_plugin.open',
-                            create=True) as f_m:
+            with mock.patch(
+                    'nailgun.plugins.attr_plugin.open',
+                    create=True,
+                    side_effect=get_config(self.plugin_env_config)):
                 os.access.return_value = True
                 os.path.exists.return_value = True
-                f_m.side_effect = get_config(self.plugin_env_config)
                 self.env.create(
                     release_kwargs={'version': '2014.2-6.0',
                                     'operating_system': 'Ubuntu'},
@@ -107,11 +109,12 @@ class BasePluginTest(base.BaseIntegrationTest):
         with mock.patch('nailgun.plugins.attr_plugin.glob') as glob:
             glob.glob.return_value = ['/some/path']
             with mock.patch('nailgun.plugins.attr_plugin.os') as os:
-                with mock.patch('nailgun.plugins.attr_plugin.open',
-                                create=True) as f_m:
+                with mock.patch(
+                        'nailgun.plugins.attr_plugin.open',
+                        create=True,
+                        side_effect=get_config(self.TASKS_CONFIG)):
                     os.access.return_value = True
                     os.path.exists.return_value = True
-                    f_m.side_effect = get_config(self.TASKS_CONFIG)
                     resp = self.app.get(
                         base.reverse('DefaultPrePluginsHooksInfo',
                                      {'cluster_id': cluster.id}),
@@ -120,11 +123,12 @@ class BasePluginTest(base.BaseIntegrationTest):
 
     def get_post_hooks(self, cluster):
         with mock.patch('nailgun.plugins.attr_plugin.os') as os:
-            with mock.patch('nailgun.plugins.attr_plugin.open',
-                            create=True) as f_m:
+            with mock.patch(
+                    'nailgun.plugins.attr_plugin.open',
+                    create=True,
+                    side_effect=get_config(self.TASKS_CONFIG)):
                 os.access.return_value = True
                 os.path.exists.return_value = True
-                f_m.side_effect = get_config(self.TASKS_CONFIG)
                 resp = self.app.get(
                     base.reverse('DefaultPostPluginsHooksInfo',
                                  {'cluster_id': cluster.id}),
@@ -160,6 +164,15 @@ class TestPluginsApi(BasePluginTest):
         del_resp = self.delete_plugin(resp.json['id'])
         self.assertEqual(del_resp.status_code, 204)
 
+    def test_no_delete_of_used_plugin(self):
+        resp = self.create_plugin()
+        plugin = objects.Plugin.get_by_uid(resp.json['id'])
+        cluster = self.create_cluster()
+        enable_resp = self.enable_plugin(cluster, plugin.name)
+        self.assertEqual(enable_resp.status_code, 200)
+        del_resp = self.delete_plugin(resp.json['id'], expect_errors=True)
+        self.assertEqual(del_resp.status_code, 400)
+
     def test_update_plugin(self):
         resp = self.create_plugin()
         data = resp.json
@@ -172,7 +185,8 @@ class TestPluginsApi(BasePluginTest):
         )
         self.assertEqual(resp.status_code, 200)
         updated_data = resp.json
-        updated_data.pop('id')
+        updated_plugin_id = updated_data.pop('id')
+        self.assertEqual(plugin_id, updated_plugin_id)
         self.assertEqual(updated_data, data)
 
     def test_default_attributes_after_plugin_is_created(self):
@@ -225,7 +239,7 @@ class TestPrePostHooks(BasePluginTest):
         self.assertEqual(len(rsync), 1)
         self.assertEqual(len(cmd_tasks), 2)
         for t in tasks:
-            #shoud uid be a string
+            # uid should be a string
             self.assertEqual(
                 sorted(t['uids']), sorted([n.uid for n in self.cluster.nodes]))
             self.assertTrue(t['fail_on_error'])
@@ -246,6 +260,26 @@ class TestPrePostHooks(BasePluginTest):
 
 
 class TestPluginValidation(BasePluginTest):
+
+    def test_valid(self):
+        """Positive test is required to make sure that all validation errors
+        indeed come from missing/invalid attributes and not from some new
+        error that is not caught by all negative tests.
+        """
+        sample = {
+            'name': 'test_name',
+            'version': '0.1.1',
+            'fuel_version': ['6.0'],
+            'title': 'Test plugin',
+            'package_version': '1.0.0',
+            'releases': [
+                {'os': 'Ubuntu',
+                 'mode': ['ha', 'multinode'],
+                 'version': '2014.2.1-5.1'}
+            ],
+        }
+        resp = self.create_plugin(sample=sample, expect_errors=True)
+        self.assertEqual(resp.status_code, 201)
 
     def test_releases_not_provided(self):
         sample = {

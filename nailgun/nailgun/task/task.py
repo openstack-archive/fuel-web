@@ -17,6 +17,7 @@
 from copy import deepcopy
 
 import netaddr
+import re
 
 from sqlalchemy import func
 from sqlalchemy import not_
@@ -587,6 +588,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_ceph(task)
         cls._check_volumes(task)
         cls._check_public_network(task)
+        cls._check_vcenter_credentials(task)
 
     @classmethod
     def _check_nodes_are_online(cls, task):
@@ -715,6 +717,43 @@ class CheckBeforeDeploymentTask(object):
             if cls.__network_size(public) < nodes_count + vip_count:
                 error_message = cls.__format_network_error(public, nodes_count)
                 raise errors.NetworkCheckError(error_message)
+
+    @classmethod
+    def _check_vcenter_credentials(cls, task):
+        attr = objects.Cluster.get_editable_attributes(task.cluster)
+        libvirt_type = attr['editable']['common']['libvirt_type']['value']
+        volumes_vmdk = attr['editable']['storage']['volumes_vmdk']['value']
+        images_vcenter = attr['editable']['storage']['images_vcenter']['value']
+        host_ip = attr['editable']['vcenter']['host_ip']
+        vc_user = attr['editable']['vcenter']['vc_user']
+        vc_password = attr['editable']['vcenter']['vc_password']
+        cluster = attr['editable']['vcenter']['cluster']
+        vc_host = attr['editable']['storage']['vc_host']
+        vc_datastore = attr['editable']['storage']['vc_datastore']
+        vc_datacenter = attr['editable']['storage']['vc_datacenter']
+
+        if volumes_vmdk and (libvirt_type == 'vcenter'):
+            cinder_count = len(filter(
+                lambda node: 'cinder' in node.all_roles,
+                task.cluster.nodes))
+            if cinder_count:
+                for attr in [host_ip, vc_user, vc_password]:
+                    cls.__check_attribute_value(attr)
+            else:
+                raise errors.CheckBeforeDeploymentError(
+                    'There is no any node with "cinder" role provided')
+        elif images_vcenter and (libvirt_type == 'vcenter'):
+            for attr in [vc_host, vc_user, vc_password,
+                         vc_datastore, vc_datacenter]:
+                cls.__check_attribute_value(attr)
+        elif libvirt_type == 'vcenter':
+            for attr in [host_ip, vc_user, vc_password, cluster]:
+                cls.__check_attribute_value(attr)
+
+    @classmethod
+    def __check_attribute_value(cls, attr):
+        if not re.match(attr['regex']['source'], attr['value']):
+            raise errors.CheckBeforeDeploymentError(attr['regex']['error'])
 
     @classmethod
     def __network_size(cls, network):

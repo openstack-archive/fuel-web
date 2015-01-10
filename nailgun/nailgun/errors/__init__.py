@@ -76,6 +76,7 @@ default_messages = {
     "LexError": "Illegal character",
     "ParseError": "Synxtax error",
     "UnknownModel": "Unknown model",
+    "InvalidRegexError": "Invalid regex pattern",
 
     # Zabbix errors
     "CannotMakeZabbixRequest": "Can't make a request to Zabbix",

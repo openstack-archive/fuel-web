@@ -17,6 +17,7 @@
 from copy import deepcopy
 
 import netaddr
+import re
 
 from sqlalchemy import func
 from sqlalchemy import not_
@@ -587,6 +588,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_ceph(task)
         cls._check_volumes(task)
         cls._check_public_network(task)
+        cls._check_vcenter_credentials(task)
 
     @classmethod
     def _check_nodes_are_online(cls, task):
@@ -715,6 +717,70 @@ class CheckBeforeDeploymentTask(object):
             if cls.__network_size(public) < nodes_count + vip_count:
                 error_message = cls.__format_network_error(public, nodes_count)
                 raise errors.NetworkCheckError(error_message)
+
+    @classmethod
+    def _check_vcenter_credentials(cls, task):
+        vcenter_errors = []
+
+        attrs = objects.Cluster.get_editable_attributes(task.cluster) \
+            .get('editable', {})
+        libvirt_type = attrs.get('common', {}).get('libvirt_type', {}) \
+            .get('value')
+        volumes_vmdk = attrs.get('storage', {}).get('volumes_vmdk', {}) \
+            .get('value')
+        images_vcenter = attrs.get('storage', {}).get('images_vcenter', {}) \
+            .get('value')
+        host_ip = attrs.get('vcenter', {}).get('host_ip', {})
+        vc_user = attrs.get('vcenter', {}).get('vc_user', {})
+        vc_password = attrs.get('vcenter', {}).get('vc_password', {})
+
+        if libvirt_type == 'vcenter':
+            cluster = attrs.get('vcenter', {}).get('cluster', {})
+            for attr in [host_ip, vc_user, vc_password, cluster]:
+                res = cls.__check_attribute_value(attr)
+                if res and res not in vcenter_errors:
+                    vcenter_errors.append(res)
+
+        if volumes_vmdk:
+            cinder_nodes = filter(
+                lambda node: 'cinder' in node.all_roles,
+                task.cluster.nodes)
+
+            if cinder_nodes:
+                for attr in [host_ip, vc_user, vc_password]:
+                    res = cls.__check_attribute_value(attr)
+                    if res and res not in vcenter_errors:
+                        vcenter_errors.append(res)
+            else:
+                logger.info('There is no any node with "cinder" role provided')
+
+        if images_vcenter:
+            vc_host = attrs.get('storage', {}).get('vc_host', {})
+            vc_user = attrs.get('storage', {}).get('vc_user', {})
+            vc_password = attrs.get('storage', {}).get('vc_password', {})
+            vc_datastore = attrs.get('storage', {}).get('vc_datastore', {})
+            vc_datacenter = attrs.get('storage', {}).get('vc_datacenter', {})
+
+            for attr in [vc_host, vc_user, vc_password,
+                         vc_datastore, vc_datacenter]:
+                res = cls.__check_attribute_value(attr)
+                if res and res not in vcenter_errors:
+                    vcenter_errors.append(res)
+
+        if vcenter_errors:
+            msg = 'The following errors happend for vCenter credentials:\n' + \
+                '\n'.join(vcenter_errors)
+            raise errors.CheckBeforeDeploymentError(msg)
+
+    @classmethod
+    def __check_attribute_value(cls, attr):
+        try:
+            pattern = re.compile(attr.get('regex', {}).get('source', '\S'))
+            value = attr.get('value', '')
+            if not pattern.match(value):
+                return attr.get('regex', {}).get('error', '')
+        except re.error:
+            return 'Invalid format of {0}'.format(attr.get('label'))
 
     @classmethod
     def __network_size(cls, network):

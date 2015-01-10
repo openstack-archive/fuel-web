@@ -357,3 +357,119 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             errors.NetworkCheckError,
             CheckBeforeDeploymentTask._check_public_network,
             self.task)
+
+    def test_check_vcenter_credentials_with_libvirt_type(self):
+        cluster = self.env.clusters[0]
+        attrs = cluster.attributes.editable
+        attrs['common']['libvirt_type']['value'] = 'vcenter'
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertRaises(
+            errors.CheckBeforeDeploymentError,
+            CheckBeforeDeploymentTask._check_vcenter_credentials,
+            self.task
+        )
+
+        attrs = cluster.attributes.editable
+        attrs['vcenter']['host_ip']['value'] = 'vcenter.test.com'
+        attrs['vcenter']['vc_user']['value'] = 'admin'
+        attrs['vcenter']['vc_password']['value'] = 'test'
+        attrs['vcenter']['cluster']['value'] = 'test_cluster'
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(200, resp.status_code)
+        self.assertNotRaises(
+            errors.CheckBeforeDeploymentError,
+            CheckBeforeDeploymentTask._check_vcenter_credentials,
+            self.task
+        )
+
+    def test_check_vcenter_credentials_with_cinder_role(self):
+        cluster = self.env.clusters[0]
+        attrs = cluster.attributes.editable
+        attrs['storage']['volumes_vmdk']['value'] = True
+        self.env.create_nodes(
+            1, api=True, roles=['cinder'], cluster_id=cluster.id)
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(200, resp.status_code)
+        self.assertRaises(
+            errors.CheckBeforeDeploymentError,
+            CheckBeforeDeploymentTask._check_vcenter_credentials,
+            self.task
+        )
+
+        attrs['vcenter']['host_ip']['value'] = 'host.vcenter.test'
+        attrs['vcenter']['vc_user']['value'] = 'admin'
+        attrs['vcenter']['vc_password']['value'] = 'test'
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+
+        self.assertNotRaises(
+            errors.CheckBeforeDeploymentError,
+            CheckBeforeDeploymentTask._check_vcenter_credentials,
+            self.task
+        )
+
+    def test_check_vcenter_credentials_with_images(self):
+        cluster = self.env.clusters[0]
+        attrs = cluster.attributes.editable
+        attrs['storage']['images_vcenter']['value'] = True
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertRaises(
+            errors.CheckBeforeDeploymentError,
+            CheckBeforeDeploymentTask._check_vcenter_credentials,
+            self.task
+        )
+
+        attrs = cluster.attributes.editable
+        attrs['storage']['vc_user']['value'] = 'admin'
+        attrs['storage']['vc_password']['value'] = 'test'
+        attrs['storage']['vc_host']['value'] = 'storage-host.vcenter.test'
+        attrs['storage']['vc_datastore']['value'] = 'test_datastore'
+        attrs['storage']['vc_datacenter']['value'] = 'ha_datacenter'
+
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(200, resp.status_code)
+        self.assertNotRaises(
+            errors.CheckBeforeDeploymentError,
+            CheckBeforeDeploymentTask._check_vcenter_credentials,
+            self.task
+        )

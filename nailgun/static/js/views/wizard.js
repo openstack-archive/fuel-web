@@ -240,10 +240,17 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             }, this));
         },
         onStepClick: function(e) {
-            var paneIndex = parseInt($(e.currentTarget).data('pane'), 10);
-            this.activePane.processPaneData().done(_.bind(function() {
+            var paneIndex = parseInt($(e.currentTarget).data('pane'), 10),
+                activePaneIndex = this.panesModel.get('activePaneIndex');
+
+            // if last pane - not processing data
+            if (activePaneIndex == this.panesConstructors.length - 1 || activePaneIndex > paneIndex) {
                 this.goToPane(paneIndex);
-            }, this));
+            } else {
+                this.activePane.processPaneData().done(_.bind(function() {
+                    this.goToPane(paneIndex);
+                }, this));
+            }
         },
         getListOfPanesToRestore: function(currentIndex, maxIndex) {
             var panesNames = [];

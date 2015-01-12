@@ -21,7 +21,6 @@ define(
     'backbone',
     'utils',
     'models',
-    'views/common',
     'jsx!views/dialogs',
     'text!templates/cluster/network_tab.html',
     'text!templates/cluster/network.html',
@@ -29,11 +28,11 @@ define(
     'text!templates/cluster/networking_parameters.html',
     'text!templates/cluster/verify_network_control.html'
 ],
-function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, networkingParametersTemplate, networkTabVerificationControlTemplate) {
+function($, _, i18n, Backbone, utils, models, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, networkingParametersTemplate, networkTabVerificationControlTemplate) {
     'use strict';
     var NetworkTab, NetworkTabSubview, Network, NetworkingParameters, NetworkTabVerificationControl;
 
-    NetworkTab = commonViews.Tab.extend({
+    NetworkTab = Backbone.View.extend({
         template: _.template(networkTabTemplate),
         updateInterval: 3000,
         events: {

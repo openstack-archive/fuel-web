@@ -29,8 +29,7 @@ define(
     'keystone_client',
     'jsx!views/login_page',
     'jsx!views/welcome_page',
-    'views/cluster_page',
-    'views/cluster_page_tabs/nodes_tab',
+    'jsx!views/cluster_page',
     'jsx!views/clusters_page',
     'jsx!views/releases_page',
     'jsx!views/notifications_page',
@@ -45,7 +44,7 @@ define(
     'less!/static/css/styles'
 
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -256,12 +255,11 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
         showCluster: function(id, activeTab) {
             try {
                 // special case for nodes tab screen change
-                if (activeTab == 'nodes' && app.page.constructor == ClusterPage && app.page.model.id == id && app.page.tab.constructor == NodesTab) {
-                    app.page.tab.routeScreen(_.toArray(arguments).slice(2));
+                if (activeTab == 'nodes' && app.page.constructor == ClusterPage && app.page.props.model.id == id) {
+                    app.page.refs.tab.routeScreen(_.toArray(arguments).slice(2));
                     return;
                 }
             } catch (ignore) {}
-
             this.loadPage(ClusterPage, arguments).fail(_.bind(this.default, this));
         },
         listClusters: function() {

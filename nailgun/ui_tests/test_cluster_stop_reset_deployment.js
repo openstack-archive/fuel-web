@@ -26,7 +26,7 @@ casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster page');
-    this.test.assertExists('.deployment-control .deploy-btn:disabled', 'Deploy changes button is disabled');
+    this.test.assertExists('.deploy-btn:disabled', 'Deploy changes button is disabled');
     this.test.assertExists('.btn-configure-disks:disabled', 'Button Configure Disks is disabled');
     this.test.assertExists('.btn-configure-interfaces:disabled', 'Button Configure Interfaces is disabled');
     this.test.assertExists('.btn-add-nodes:not(:disabled)', 'Add Nodes button is enabled');
@@ -49,7 +49,7 @@ casper.then(function() {
     });
     this.then(function() {
         this.test.assertEvalEquals(function() {return $('.node-box').length}, 1, 'Number of available roles is correct');
-        this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled now');
+        this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled now');
     });
 });
 
@@ -64,28 +64,28 @@ casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
 
 casper.then(function() {
     this.test.comment('Testing stop deployment');
-    this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled');
-    this.click('.deployment-control .deploy-btn'); // "Deploy changes" button click
+    this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled');
+    this.click('.deploy-btn'); // "Deploy changes" button click
     this.test.assertSelectorAppears('.modal', 'Deployment dialog opens');
     this.then(function() {
         this.click('.modal .start-deployment-btn'); // "Start Deployment" button click
     });
     this.test.assertSelectorDisappears('.modal', 'Deployment dialog closes after clicking Start Deployment');
-    this.test.assertSelectorDisappears('.deployment-control .deploy-btn', 'Deploy changes button disappears');
-    this.test.assertSelectorAppears('.deployment-control .progress-success', 'Deployment progress-success bar appears');
-    this.test.assertSelectorAppears('.deployment-control .stop-deployment-btn', 'Stop deployment button appears');
+    this.test.assertSelectorDisappears('.deploy-btn', 'Deploy changes button disappears');
+    this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-success', 'Deployment progress-success bar appears');
+    this.test.assertSelectorAppears('.stop-deployment-btn', 'Stop deployment button appears');
     this.then(function() {
-        this.click('.deployment-control .stop-deployment-btn'); // "Stop Deployment" button click
+        this.click('.stop-deployment-btn'); // "Stop Deployment" button click
     });
     this.test.assertSelectorAppears('.modal', 'Stop Deployment dialog opens');
     this.then(function() {
         this.click('.modal .stop-deployment-btn'); // "Stop Deployment" on modal screen button click
     });
     this.test.assertSelectorDisappears('.modal', 'Stop deployment dialog closes after clicking Stop button');
-    this.test.assertSelectorAppears('.deployment-control .progress-striped', 'Deployment progress-stopping bar appears');
-    this.test.assertSelectorDisappears('.deployment-control .progress-striped', 'Deployment progress-stopping bar disappears', 60000);
+    this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-striped', 'Deployment progress-stopping bar appears');
+    this.test.assertSelectorDisappears('.cluster-deploy-placeholder .progress-striped', 'Deployment progress-stopping bar disappears', 60000);
     this.then(function() {
-        this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
+        this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
         this.test.assertExists('.alert-success', 'Success stopping deployment alert message appears');
     });
     this.loadPage('#cluster/1/actions').waitForSelector('#tab-actions > *');
@@ -114,23 +114,23 @@ casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
 
 casper.then(function() {
     this.test.comment('Testing deployment process');
-    this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled');
-    this.click('.deployment-control .deploy-btn'); // "Deploy changes" button click
+    this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled');
+    this.click('.deploy-btn'); // "Deploy changes" button click
     this.test.assertSelectorAppears('.modal', 'Deployment dialog opens');
     this.then(function() {
         this.click('.modal .start-deployment-btn'); // "Start Deployment" button click
     });
     this.test.assertSelectorDisappears('.modal', 'Deployment dialog closes after clicking Start Deployment');
-    this.test.assertSelectorDisappears('.deployment-control .deploy-btn', 'Deploy changes button disappears');
-    this.test.assertSelectorAppears('.deployment-control .progress-success', 'Deployment progress-success bar appears');
-    this.test.assertSelectorAppears('.deployment-control .stop-deployment-btn', 'Stop deployment button appears');
+    this.test.assertSelectorDisappears('.deploy-btn', 'Deploy changes button disappears');
+    this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-success', 'Deployment progress-success bar appears');
+    this.test.assertSelectorAppears('.stop-deployment-btn', 'Stop deployment button appears');
     this.waitForSelector('.node-box.ready', function() { // We are waiting till node become ready
         this.test.assertEvalEquals(function() {return $('.node-box.ready').length}, 1, 'Number of ready nodes is correct');
     }, function() { this.test.comment("Timeout reached"); }, 60000);
-    this.test.assertSelectorDisappears('.deployment-control .progress-success', 'Deployment progress-stopping bar disappears', 60000);
+    this.test.assertSelectorDisappears('.cluster-deploy-placeholder .progress-success', 'Deployment progress-stopping bar disappears', 60000);
     this.then(function() {
         this.test.assertExists('.alert-success', 'Success deployment process finish message appears');
-        this.test.assertExists('.deployment-control .deploy-btn:disabled', 'Deploy changes button is disabled');
+        this.test.assertExists('.deploy-btn:disabled', 'Deploy changes button is disabled');
         var countIsReadyNodes = this.evaluate(function() { // get count of Nodes with Ready status
             return $('.node-box.ready').length;
         });
@@ -162,12 +162,12 @@ casper.then(function() {
         this.click('.modal .reset-environment-btn'); // "Reset environment" button click
     });
     this.test.assertSelectorDisappears('.modal', 'Reset dialog closes after clicking Reset button');
-    this.test.assertSelectorDisappears('.deployment-control .deploy-btn', 'Deploy changes button disappears');
-    this.test.assertSelectorAppears('.deployment-control .progress-striped', 'Reset progress bar appears');
-    this.test.assertSelectorDisappears('.deployment-control .progress-striped', 'Reset progress bar disappears', 60000);
+    this.test.assertSelectorDisappears('.deploy-btn', 'Deploy changes button disappears');
+    this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-striped', 'Reset progress bar appears');
+    this.test.assertSelectorDisappears('.cluster-deploy-placeholder .progress-striped', 'Reset progress bar disappears', 60000);
     this.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
     this.then(function() {
-        this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
+        this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
         this.test.assertExists('.alert-success', 'Success reset message appears');
         this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, 1, 'Number of count nodes is correct');
         this.test.assertEvalEquals(function() {return $('.node-box.ready').length}, 0, 'Number of ready nodes is correct');

@@ -21,7 +21,6 @@ define(
     'backbone',
     'utils',
     'models',
-    'views/common',
     'jsx!views/dialogs',
     'text!templates/cluster/network_tab.html',
     'text!templates/cluster/network.html',
@@ -29,11 +28,11 @@ define(
     'text!templates/cluster/networking_parameters.html',
     'text!templates/cluster/verify_network_control.html'
 ],
-function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, networkingParametersTemplate, networkTabVerificationControlTemplate) {
+function($, _, i18n, Backbone, utils, models, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, networkingParametersTemplate, networkTabVerificationControlTemplate) {
     'use strict';
     var NetworkTab, NetworkTabSubview, Network, NetworkingParameters, NetworkTabVerificationControl;
 
-    NetworkTab = commonViews.Tab.extend({
+    NetworkTab = Backbone.View.extend({
         template: _.template(networkTabTemplate),
         updateInterval: 3000,
         events: {
@@ -62,7 +61,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             if (!this.networkConfiguration.validationError) {
                 this.disableControls();
                 this.prepareIpRanges();
-                this.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
+                app.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
             }
         },
         prepareIpRanges: function() {
@@ -100,7 +99,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
-            this.page.removeFinishedNetworkTasks().always(_.bind(this.render, this));
+            app.page.removeFinishedNetworkTasks().always(_.bind(this.render, this));
         },
         beforeTearDown: function() {
             this.loadInitialConfiguration();
@@ -119,11 +118,11 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
                 deferred = Backbone.sync('update', this.networkConfiguration)
                     .done(_.bind(function(task) {
                         if (task && task.status == 'error') {
-                            this.page.removeFinishedNetworkTasks().always(_.bind(function() {
+                            app.page.removeFinishedNetworkTasks().always(_.bind(function() {
                                 this.calculateButtonsState();
                                 this.model.fetch();
                                 this.model.fetchRelated('tasks').done(_.bind(function() {
-                                    this.page.removeFinishedNetworkTasks(true);
+                                    app.page.removeFinishedNetworkTasks(true);
                                 }, this));
                             }, this));
                         } else {
@@ -162,7 +161,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             this.$('input[type=text]').removeClass('error').parents('.network-attribute').find('.help-inline').text('');
             this.networkConfiguration.isValid();
             this.calculateButtonsState();
-            this.page.removeFinishedNetworkTasks();
+            app.page.removeFinishedNetworkTasks();
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -222,7 +221,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             this.$('.verification-control').html(verificationView.render().el);
             this.showVerificationErrors();
             if (this.hasChanges()) {
-                this.page.removeFinishedNetworkTasks(true);
+                app.page.removeFinishedNetworkTasks(true);
             }
         },
         showVerificationErrors: function() {

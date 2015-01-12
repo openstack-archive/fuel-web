@@ -115,6 +115,42 @@ Setup for Web UI Tests
     ./run_tests.sh --lint-ui
     ./run_tests.sh --webui
 
+
+.. _running-parallel-tests-py:
+
+Running parallel tests with py.test
+-----------------------------------
+
+Now tests can be run over several processes
+in a distributed manner; each test is executed
+within an isolated database.
+
+Prerequisites
++++++++++++++
+
+* Nailgun user requires createdb permission.
+
+* Postgres database is used for initial connection.
+
+* If createbd cannot be granted for the environment,
+  then several databases should be created. The number of
+  databases should be equal to *TEST_WORKERS* variable.
+  The *createdb* permission
+  should have the following format: *nailgun0*, *nailgun1*.
+
+* If no TEST_WORKERS is provided, then a default
+  database name will be used. Often it is nailgun,
+  but you can overwrite it with TEST_NAILGUN_DB
+  environment variable.
+
+* To execute parallel test on your local environment,
+  run the following command:
+
+  ::
+
+     py.test -n 4 nailgun/tests
+
+
 .. _running-nailgun-in-fake-mode:
 
 Running Nailgun in Fake Mode
@@ -182,3 +218,27 @@ For fuel-devops configuration info please refer to
     dos.py list
     dos.py erase <env_name>
 
+
+
+Flushing database before/after running tests
+--------------------------------------------
+
+You need to clean database after running tests.
+
+Before py.test with parallel tests was introduced,
+dropdb was performed by *./run_tests.sh*.
+
+Now you need to run dropdb for each slave node.
+
+The *py.test --cleandb* is now introduced for this
+purpose.
+
+Prerequisites
++++++++++++++
+
+* Connection should be closed and returned to pool.
+  The pool should be recreated, because the same engine is
+  reused after database cleanup is done.
+
+* Do not reuse metadata for models declaration;
+  otherwise, it gets populated with the stale database information.

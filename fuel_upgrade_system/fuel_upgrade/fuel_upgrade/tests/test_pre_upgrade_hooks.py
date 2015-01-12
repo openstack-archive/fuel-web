@@ -39,6 +39,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_stop_docker \
+    import StopDockerService
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
@@ -505,3 +507,26 @@ class TestCopyOpenstackReleaseVersions(TestPreUpgradeHooksBase):
             mock_utils.copy_if_exists.call_args_list,
             [mock.call(self.hook.version_path_5_0,
                        self.hook.dst_version_path_5_0)])
+
+
+class TestStopDockerHook(TestPreUpgradeHooksBase):
+
+    HookClass = StopDockerService
+
+    def test_is_required_returns_true(self):
+        hook = self.get_hook({'new_version': '6.1'})
+        self.assertTrue(hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        hook = self.get_hook({'new_version': '6.0'})
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.'
+        'from_any_to_6_1_stop_docker.safe_exec_cmd')
+    def test_run(self, mock_safe_exec_cmd):
+        hook = self.get_hook({'new_version': '6.1'})
+        hook.run()
+
+        mock_safe_exec_cmd.assert_has_calls([
+            mock.call(c) for c in self.HookClass.commands])

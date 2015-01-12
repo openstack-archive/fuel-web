@@ -177,10 +177,12 @@ class TestDockerUpgrader(BaseTestCase):
         start_container_calls = [
             mock.call('name2', volumes_from=[],
                       binds=None, port_bindings=None,
-                      privileged=False, links=[]),
+                      privileged=False, links=[],
+                      network_mode=None),
             mock.call('name1', volumes_from=['name2'],
                       binds=None, port_bindings=None,
-                      privileged=False, links=[])]
+                      privileged=False, links=[],
+                      network_mode=None)]
 
         self.upgrader.clean_iptables_rules.assert_called_once_with(
             fake_containers[-1])
@@ -251,9 +253,7 @@ class TestDockerUpgrader(BaseTestCase):
             {'id': 'id1', 'container_name': 'container_name1',
              'supervisor_config': False},
             {'id': 'id2', 'container_name': 'container_name2',
-             'supervisor_config': True},
-            {'id': 'cobbler', 'container_name': 'cobbler_container',
-             'supervisor_config': False}]
+             'supervisor_config': True}]
         self.upgrader.new_release_containers = fake_containers
         self.upgrader.generate_configs()
         self.supervisor_mock.generate_configs.assert_called_once_with(
@@ -261,11 +261,6 @@ class TestDockerUpgrader(BaseTestCase):
               'service_name': 'docker-id2',
               'command': 'docker start -a container_name2',
               'autostart': True}])
-        self.supervisor_mock.generate_cobbler_config.assert_called_once_with(
-            'cobbler',
-            'docker-cobbler',
-            'cobbler_container',
-            autostart=True)
 
     def test_switch_to_new_configs(self):
         self.upgrader.switch_to_new_configs()
@@ -281,7 +276,7 @@ class TestDockerUpgrader(BaseTestCase):
 
         self.called_once(self.upgrader.container_docker_id)
         exec_cmd_mock.assert_called_once_with(
-            "lxc-attach --name {0} -- {1}".format(name, cmd))
+            "dockerctl shell {0} {1}".format(name, cmd))
 
     @mock.patch('fuel_upgrade.engines.docker_engine.'
                 'utils.exec_cmd')

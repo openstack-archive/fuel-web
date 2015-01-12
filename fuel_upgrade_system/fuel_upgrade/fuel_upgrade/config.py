@@ -257,7 +257,7 @@ def config(update_path, admin_password):
 
     # Keep only 3 latest database files
     keep_db_backups_count = 3
-    db_backup_timeout = 25
+    db_backup_timeout = 120
     db_backup_interval = 4
 
     current_fuel_astute_path = '/etc/fuel/astute.yaml'
@@ -386,6 +386,8 @@ def config(update_path, admin_password):
         {'id': 'nailgun',
          'supervisor_config': True,
          'from_image': 'nailgun',
+         'privileged': True,
+         'network_mode': 'host',
          'port_bindings': {
              '8001': [
                  ('127.0.0.1', 8001),
@@ -405,6 +407,7 @@ def config(update_path, admin_password):
         {'id': 'astute',
          'supervisor_config': True,
          'from_image': 'astute',
+         'network_mode': 'host',
          'after_container_creation_command': (
              "bash -c 'cp -rn /tmp/upgrade/astute/ "
              "/var/lib/astute/'"),
@@ -424,12 +427,16 @@ def config(update_path, admin_password):
              "/var/lib/cobbler/config/'"),
          'from_image': 'cobbler',
          'privileged': True,
+         'network_mode': 'host',
          'port_bindings': {
              '80': ('0.0.0.0', 80),
              '443': ('0.0.0.0', 443),
              '53/udp': [
                  ('127.0.0.1', 53),
                  (master_ip, 53)],
+             '67/udp': [
+                 ('127.0.0.1', 67),
+                 (master_ip, 67)],
              '69/udp': [
                  ('127.0.0.1', 69),
                  (master_ip, 69)]},
@@ -452,6 +459,7 @@ def config(update_path, admin_password):
          'supervisor_config': True,
          'from_image': 'mcollective',
          'privileged': True,
+         'network_mode': 'host',
          'binds': [
              'volume_logs',
              'volume_repos',
@@ -462,6 +470,7 @@ def config(update_path, admin_password):
         {'id': 'rsync',
          'supervisor_config': True,
          'from_image': 'rsync',
+         'network_mode': 'host',
          'port_bindings': {
              '873': [
                  ('127.0.0.1', 873),
@@ -476,6 +485,7 @@ def config(update_path, admin_password):
         {'id': 'rsyslog',
          'supervisor_config': True,
          'from_image': 'rsyslog',
+         'network_mode': 'host',
          'port_bindings': {
              '514': [
                  ('127.0.0.1', 514),
@@ -495,6 +505,7 @@ def config(update_path, admin_password):
         {'id': 'keystone',
          'supervisor_config': True,
          'from_image': 'keystone',
+         'network_mode': 'host',
          'port_bindings': {
              '5000': ('0.0.0.0', 5000),
              '35357': ('0.0.0.0', 35357)},
@@ -509,6 +520,7 @@ def config(update_path, admin_password):
         {'id': 'nginx',
          'supervisor_config': True,
          'from_image': 'nginx',
+         'network_mode': 'host',
          'port_bindings': {
              '8000': ('0.0.0.0', 8000),
              '8080': ('0.0.0.0', 8080)},
@@ -526,6 +538,7 @@ def config(update_path, admin_password):
         {'id': 'rabbitmq',
          'supervisor_config': True,
          'from_image': 'rabbitmq',
+         'network_mode': 'host',
          'port_bindings': {
              '4369': [
                  ('127.0.0.1', 4369),
@@ -548,6 +561,7 @@ def config(update_path, admin_password):
         {'id': 'ostf',
          'supervisor_config': True,
          'from_image': 'ostf',
+         'network_mode': 'host',
          'port_bindings': {
              '8777': [
                  ('127.0.0.1', 8777),
@@ -568,6 +582,7 @@ def config(update_path, admin_password):
              "postgres\""),
          'supervisor_config': True,
          'from_image': 'postgres',
+         'network_mode': 'host',
          'port_bindings': {
              '5432': [
                  ('127.0.0.1', 5432),

@@ -19,22 +19,35 @@ define(
     'underscore',
     'i18n',
     'backbone',
+    'react',
     'utils',
     'models',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_screen',
-    'text!templates/cluster/edit_node_disks.html',
-    'text!templates/cluster/node_disk.html',
-    'text!templates/cluster/volume_style.html',sfsf
     'jquery-autoNumeric'
 ],
-function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate) {
+function($, _, i18n, Backbone, React, utils, models) {
     'use strict';
-    var EditNodeDisksScreen, NodeDisk;
 
-    EditNodeDisksScreen = EditNodeScreen.extend({
+    var cx = React.addons.classSet;
+
+    var ScreenMixin = {
+        goToNodeList: function() {
+            app.navigate('#cluster/' + this.props.model.get('id') + '/nodes', {trigger: true});
+        },
+        isLockedScreen: function() {
+            return this.model && !!this.model.tasks({group: 'deployment', status: 'running'}).length;
+        },
+        returnToNodeList: function() {
+            if (this.hasChanges()) {
+                app.page.discardSettingsChanges({cb: _.bind(this.goToNodeList, this)});
+            } else {
+                this.goToNodeList();
+            }
+        }
+    };
+
+    var EditNodeDisksScreen = React.createClass({
         className: 'edit-node-disks-screen',
         constructorName: 'EditNodeDisksScreen',
-        template: _.template(editNodeDisksScreenTemplate),
         events: {
             'click .btn-defaults': 'loadDefaults',
             'click .btn-revert-changes': 'revertChanges',
@@ -116,30 +129,6 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
                 this.volumesColors[volume.get('name')] = colors[index];
             }, this);
         },
-        initialize: function() {
-            this.constructor.__super__.initialize.apply(this, arguments);
-            if (this.nodes.length) {
-                this.model.on('change:status', this.revertChanges, this);
-                this.volumes = new models.Volumes();
-                this.volumes.url = _.result(this.nodes.at(0), 'url') + '/volumes';
-                this.loading = $.when.apply($, this.nodes.map(function(node) {
-                        node.disks = new models.Disks();
-                        return node.disks.fetch({url: _.result(node, 'url') + '/disks'});
-                    }, this).concat(this.volumes.fetch()))
-                    .done(_.bind(function() {
-                        this.disks = new models.Disks(_.cloneDeep(this.nodes.at(0).disks.toJSON()), {parse: true});
-                        this.disks.on('sync', this.render, this);
-                        this.disks.on('reset', this.render, this);
-                        this.disks.on('error', this.checkForChanges, this);
-                        this.mapVolumesColors();
-                        this.render();
-                    }, this))
-                    .fail(_.bind(this.goToNodeList, this));
-            } else {
-                this.goToNodeList();
-            }
-            this.initButtons();
-        },
         getDiskMetaData: function(disk) {
             var result;
             var disksMetaData = this.nodes.at(0).get('meta').disks;
@@ -161,40 +150,16 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
 
             return result;
         },
-        renderDisks: function() {
-            this.tearDownRegisteredSubViews();
-            this.$('.node-disks').html('');
-            this.disks.each(function(disk) {
-                var nodeDisk = new NodeDisk({
-                    disk: disk,
-                    diskMetaData: this.getDiskMetaData(disk),
-                    screen: this
-                });
-                this.registerSubView(nodeDisk);
-                this.$('.node-disks').append(nodeDisk.render().el);
-            }, this);
-        },
         render: function() {
-            this.$el.html(this.template({
-                nodes: this.nodes,
-                locked: this.isLocked()
-            })).i18n();
-            if (this.loading && this.loading.state() != 'pending') {
-                this.renderDisks();
-                this.checkForChanges();
-            }
-            this.setupButtonsBindings();
-            return this;
+            return (
+                <div className='test'>
+lalala
+                </div>
+                );
         }
     });
 
-    NodeDisk = Backbone.View.extend({
-        template: _.template(nodeDisksTemplate),
-        volumeStylesTemplate: _.template(volumeStylesTemplate),
-        templateHelpers: {
-            sortEntryProperties: utils.sortEntryProperties,
-            showDiskSize: utils.showDiskSize
-        },
+    var NodeDisk = React.createClass({
         events: {
             'click .toggle-volume': 'toggleEditDiskForm',
             'click .close-btn': 'deleteVolume',
@@ -305,19 +270,21 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
             }, this);
         },
         render: function() {
-            this.$el.html(this.template(_.extend({
-                diskMetaData: this.diskMetaData,
-                disk: this.disk,
-                volumes: this.screen.volumes,
-                locked: this.screen.isLocked()
-            }, this.templateHelpers))).i18n();
-            this.$('.disk-form').collapse({toggle: false});
-            this.applyColors();
-            this.renderVisualGraph();
-            this.$('input').autoNumeric('init', {mDec: 0});
-            this.stickit(this.diskForm, this.diskFormBindings);
-            this.setupVolumesBindings();
-            return this;
+            // this.$el.html(this.template(_.extend({
+            //     diskMetaData: this.diskMetaData,
+            //     disk: this.disk,
+            //     volumes: this.screen.volumes,
+            //     locked: this.screen.isLocked()
+            // }, this.templateHelpers))).i18n();
+            // this.$('.disk-form').collapse({toggle: false});
+            // this.applyColors();
+            // this.renderVisualGraph();
+            // this.$('input').autoNumeric('init', {mDec: 0});
+            // this.stickit(this.diskForm, this.diskFormBindings);
+            // this.setupVolumesBindings();
+            return (
+                
+            );
         }
     });
 

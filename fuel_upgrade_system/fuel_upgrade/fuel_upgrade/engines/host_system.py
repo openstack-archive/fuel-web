@@ -17,6 +17,7 @@
 import os
 
 from fuel_upgrade.engines.base import UpgradeEngine
+from fuel_upgrade.health_checker import FuelUpgradeVerify
 from fuel_upgrade import utils
 
 
@@ -62,6 +63,10 @@ class HostSystemUpgrader(UpgradeEngine):
         #: dst repository path
         self.repo_dst = self.host_system_config['repo_path']['dst']
 
+        #: we need it to make sure that all works fine after
+        #: docker upgrading
+        self.upgrade_verifier = FuelUpgradeVerify(self.config)
+
     @property
     def required_free_space(self):
         """Required free space to run upgrade
@@ -80,6 +85,9 @@ class HostSystemUpgrader(UpgradeEngine):
         self.copy_repo()
         self.update_repo()
         self.run_puppet()
+
+        # Verify that all services up and running
+        self.upgrade_verifier.verify()
 
     def rollback(self):
         """The only thing which we can rollback here

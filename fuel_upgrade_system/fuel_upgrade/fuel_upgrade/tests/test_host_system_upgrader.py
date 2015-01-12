@@ -28,12 +28,14 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.upgrader = HostSystemUpgrader(self.fake_config)
 
     @mock.patch(
+        'fuel_upgrade.engines.host_system.FuelUpgradeVerify.verify')
+    @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.update_repo')
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.run_puppet')
     @mock.patch(
         'fuel_upgrade.engines.host_system.utils')
-    def test_upgrade(self, mock_utils, run_puppet_mock, update_repo_mock):
+    def test_upgrade(self, mock_utils, run_puppet_mock, update_repo_mock, _):
         self.upgrader.upgrade()
 
         mock_utils.copy.assert_called_once_with(

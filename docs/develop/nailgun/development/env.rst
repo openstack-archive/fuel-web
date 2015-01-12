@@ -115,6 +115,38 @@ Setup for Web UI Tests
     ./run_tests.sh --lint-ui
     ./run_tests.sh --webui
 
+.. _running-parallel-tests-py:
+
+Running parallel tests with py.test
+-----------------------------------
+
+Now tests can be run over several processes
+in a distributed manner; each test is executed
+within an isolated database.
+
+In this case, note the following:
+
+* Nailgun user requires createdb permission.
+  It should be in the format, described below.
+
+* Postgres database is used for initial connection.
+
+* If createbd cannot be granted for the environment,
+  then several databases should be created. The number of
+  databases should be equsl to *TEST_WORKERS* variable.
+
+* If no TEST_WORKERS is provided, then a default
+  database name will be used. Often it is nailgun,
+  but you can overwrite it with TEST_NAILGUN_DB
+  environment variable.
+
+* To execute parallel test on your local environment,
+  run the following command:
+
+  ::
+
+     py.test -n 4 nailgun/tests
+
 .. _running-nailgun-in-fake-mode:
 
 Running Nailgun in Fake Mode

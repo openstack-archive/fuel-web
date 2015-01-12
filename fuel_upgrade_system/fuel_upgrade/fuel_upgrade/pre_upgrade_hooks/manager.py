@@ -35,6 +35,10 @@ from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_monitord_credentials \
     import AddMonitordKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys \
     import MoveKeysHook
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf \
+    import FixDhcrelayConf
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers \
+    import RecreateNailgunInPriveleged
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +61,8 @@ class PreUpgradeHookManager(object):
         SyncDnsHook,
         CopyOpenstackReleaseVersions,
         MoveKeysHook,
+        RecreateNailgunInPriveleged,
+        FixDhcrelayConf,
     ]
 
     def __init__(self, upgraders, config):

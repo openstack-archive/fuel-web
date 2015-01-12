@@ -43,6 +43,10 @@ from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_monitord_credentials \
     import AddMonitordKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys \
     import MoveKeysHook
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf \
+    import FixDhcrelayConf
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers \
+    import RecreateNailgunInPriveleged
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
@@ -655,3 +659,122 @@ class TestMoveKeysHook(TestPreUpgradeHooksBase):
                        '/var/lib/fuel/keys/'),
              mock.call('mv /var/lib/fuel/keys/astute/* /var/lib/fuel/keys/'),
              mock.call('rm -r /var/lib/fuel/keys/astute/')])
+
+
+class TestRecreateNailgunInPriveleged(TestPreUpgradeHooksBase):
+
+    HookClass = RecreateNailgunInPriveleged
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers.'
+        'exec_cmd_iterator')
+    def test_is_required_returns_true(self, mock_exec):
+        testcases = [
+            (
+                ['[{ "HostConfig": { "Privileged": false } }]'],
+                ['Docker version 0.10.0, build dc9c28f/0.10.0'],
+            ),
+            (
+                ['[{ "HostConfig": { "Privileged": false } }]'],
+                ['Docker version 0.8.0, build a768964'],
+            )]
+
+        hook = self.get_hook({'from_version': '6.0'})
+        for case in testcases:
+            mock_exec.side_effect = case
+            self.assertTrue(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers.'
+        'exec_cmd_iterator')
+    def test_is_required_returns_false(self, mock_exec):
+        testcases = [
+            (
+                ['[{ "HostConfig": { "Privileged": false } }]'],
+                ['Docker version 0.11.0, build dc9c28f/0.11.0'],
+            ),
+            (
+                ['[{ "HostConfig": { "Privileged": false } }]'],
+                ['Docker version 1.4.1, build d344625'],
+            ),
+            (
+                ['[{ "HostConfig": { "Privileged": true } }]'],
+                ['Docker version 0.10.0, build dc9c28f/0.10.0'],
+            ),
+        ]
+
+        hook = self.get_hook({'from_version': '6.0'})
+        for case in testcases:
+            mock_exec.side_effect = case
+            self.assertFalse(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers.'
+        'safe_exec_cmd')
+    def test_run(self, mock_safe_exec_cmd):
+        hook = self.get_hook()
+        hook.run()
+
+        mock_safe_exec_cmd.assert_has_calls([
+            mock.call('docker stop fuel-core-0-nailgun'),
+            mock.call('docker rm -f fuel-core-0-nailgun'),
+            mock.call(
+                'docker run -d -t --privileged '
+                '-p 0.0.0.0:8001:8001 '
+                '-p 127.0.0.1:8001:8001 '
+                '-v /etc/nailgun -v /var/log/docker-logs:/var/log '
+                '-v /var/www/nailgun:/var/www/nailgun:rw '
+                '-v /etc/yum.repos.d:/etc/yum.repos.d:rw '
+                '-v /etc/fuel:/etc/fuel:ro '
+                '-v /root/.ssh:/root/.ssh:ro '
+                '--name=fuel-core-0-nailgun '
+                'fuel/nailgun_0')])
+
+
+class FixDhcrelayConf(TestPreUpgradeHooksBase):
+
+    HookClass = FixDhcrelayConf
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf.'
+        'os.path.exists', side_effect=[True, False])
+    def test_is_required_returns_true(self, _):
+        hook = self.get_hook()
+        self.assertTrue(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf.'
+        'os.path.exists',)
+    def test_is_required_returns_false(self, mock_exists):
+        testcases = [
+            # save_from exists, save_as exists
+            (True, True),
+            (False, True),
+            (False, False),
+        ]
+
+        hook = self.get_hook()
+        for case in testcases:
+            mock_exists.side_effect = case
+            self.assertFalse(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf.'
+        'safe_exec_cmd')
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf.'
+        'remove')
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf.'
+        'copy_file')
+    def test_run(self, mock_cp, mock_rm, mock_exec):
+        hook = self.get_hook()
+        hook.run()
+
+        mock_cp.assert_called_with(
+            '/etc/supervisord.d/dhcrelay.conf',
+            '/etc/supervisord.d/0/dhcrelay.conf')
+        mock_rm.assert_called_with(
+            '/etc/supervisord.d/dhcrelay.conf')
+        mock_exec.assert_called_with(
+            'supervisorctl stop dhcrelay_monitor')

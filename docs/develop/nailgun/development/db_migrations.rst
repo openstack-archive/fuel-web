@@ -40,3 +40,21 @@ the migration file is called "current.py".
 
 For all additional features and needs, you may refer to Alembic documentation:
 http://alembic.readthedocs.org/en/latest/tutorial.html
+
+
+Using Unix-domain socket to connect to the database
+---------------------------------------------------
+
+Now you can specify Unix-domain socket in 'host' settings
+to connect to PostgreSQL database:
+
+.. code-block:: bash
+
+     DATABASE:
+          engine: "postgresql"
+          name: "nailgun"
+          host: "/var/run/postgresql"
+          port: ""
+          user: "nailgun"
+          passwd: "nailgun"
+

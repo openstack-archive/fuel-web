@@ -31,6 +31,10 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf \
+    import FixDhcrelayConf
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers \
+    import RecreateNailgunInPriveleged
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +55,8 @@ class PreUpgradeHookManager(object):
         FixHostSystemRepoHook,
         SyncDnsHook,
         CopyOpenstackReleaseVersions,
+        RecreateNailgunInPriveleged,
+        FixDhcrelayConf,
     ]
 
     def __init__(self, upgraders, config):

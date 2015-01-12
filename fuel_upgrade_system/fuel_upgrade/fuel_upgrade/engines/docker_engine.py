@@ -324,12 +324,20 @@ class DockerUpgrader(UpgradeEngine):
                 volume_container = self.container_by_id(container_id)
                 volumes_from.append(volume_container['container_name'])
 
+            # NOTE(ikalnitsky):
+            #   Conflicting options: --net=host can't be used with links.
+            #   Still, we need links at least for resolving containers
+            #   start order.
+            if container.get('network_mode') == 'host':
+                links = None
+
             self.start_container(
                 created_container,
                 port_bindings=container.get('port_bindings'),
                 links=links,
                 volumes_from=volumes_from,
                 binds=container.get('binds'),
+                network_mode=container.get('network_mode'),
                 privileged=container.get('privileged', False))
 
             if container.get('after_container_creation_command'):
@@ -338,7 +346,6 @@ class DockerUpgrader(UpgradeEngine):
             if container.get('supervisor_config'):
                 self.start_service_under_supervisor(
                     self.make_service_name(container['id']))
-                self.clean_iptables_rules(container)
 
     def run_after_container_creation_command(self, container):
         """Runs command in container with retries in
@@ -361,14 +368,7 @@ class DockerUpgrader(UpgradeEngine):
         :param name: name of the container, like fuel-core-5.1-nailgun
         """
         db_container_id = self.container_docker_id(container_name)
-        # NOTE(eli): we don't use dockerctl shell
-        # instead of lxc-attach here because
-        # release 5.0 has a bug which doesn't
-        # allow us to use quotes in command
-        # https://bugs.launchpad.net/fuel/+bug/1324200
-        utils.exec_cmd(
-            "lxc-attach --name {0} -- {1}".format(
-                db_container_id, cmd))
+        utils.exec_cmd("dockerctl shell {0} {1}".format(db_container_id, cmd))
 
     def get_ports(self, container):
         """Docker binding accepts ports as tuple,
@@ -458,13 +458,6 @@ class DockerUpgrader(UpgradeEngine):
 
         self.supervisor.generate_configs(configs)
 
-        cobbler_container = self.container_by_id('cobbler')
-        self.supervisor.generate_cobbler_config(
-            cobbler_container['id'],
-            self.make_service_name(cobbler_container['id']),
-            cobbler_container['container_name'],
-            autostart=autostart)
-
     def make_service_name(self, container_name):
         return 'docker-{0}'.format(container_name)
 
@@ -552,50 +545,6 @@ class DockerUpgrader(UpgradeEngine):
 
         return [container_port['PublicPort']
                 for container_port in container_ports]
-
-    def clean_iptables_rules(self, container):
-        """Sometimes when we run docker stop
-        (version dc9c28f/0.10.0) it doesn't clean
-        iptables rules, as result when we run new
-        container on the same port we have two rules
-        with the same port but with different IPs,
-        we have to clean this rules to prevent services
-        unavailability.
-
-        Example of the problem:
-          $ iptables -t nat -S
-          ...
-          -A DOCKER -p tcp -m tcp --dport 443 -j DNAT \
-            --to-destination 172.17.0.7:443
-          -A DOCKER -p tcp -m tcp --dport 443 -j DNAT \
-            --to-destination 172.17.0.3:443
-
-          -A DOCKER -d 10.108.0.2/32 -p tcp -m tcp --dport \
-            8777 -j DNAT --to-destination 172.17.0.10:8777
-          -A DOCKER -d 127.0.0.1/32 -p tcp -m tcp --dport \
-            8777 -j DNAT --to-destination 172.17.0.11:8777
-          -A DOCKER -d 10.108.0.2/32 -p tcp -m tcp --dport \
-            8777 -j DNAT --to-destination 172.17.0.11:8777
-        """
-        if not container.get('port_bindings'):
-            return
-
-        self._log_iptables()
-        utils.safe_exec_cmd('dockerctl post_start_hooks {0}'.format(
-            container['id']))
-        utils.safe_exec_cmd('service iptables save')
-        self._log_iptables()
-
-    def _log_iptables(self):
-        """Method for additional logging of iptables rules
-
-        NOTE(eli): Sometimes there are problems with
-        iptables rules like this
-        https://bugs.launchpad.net/fuel/+bug/1349287
-        """
-        utils.safe_exec_cmd('iptables -t nat -S')
-        utils.safe_exec_cmd('iptables -S')
-        utils.safe_exec_cmd('cat /etc/sysconfig/iptables.save')
 
     def stop_container(self, container_id):
         """Stop docker container
@@ -734,7 +683,7 @@ class DockerUpgrader(UpgradeEngine):
         :param image_type: string, type of image
         :raises UnsupportedImageTypeError:
         """
-        if not image_type in ('base', 'fuel'):
+        if image_type not in ('base', 'fuel'):
             raise errors.UnsupportedImageTypeError(
                 'Unsupported umage type: {0}'.format(image_type))
 

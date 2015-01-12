@@ -26,6 +26,8 @@ command above to run a default Python shell inside the Nailgun environment::
 	(InteractiveConsole)
 	>>>
 
+.. note:: If you want to quickly access the database,
+         use *manage.py dbshell* command.
 
 Interaction
 -----------

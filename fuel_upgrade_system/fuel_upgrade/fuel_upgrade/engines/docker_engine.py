@@ -324,12 +324,20 @@ class DockerUpgrader(UpgradeEngine):
                 volume_container = self.container_by_id(container_id)
                 volumes_from.append(volume_container['container_name'])
 
+            # NOTE(ikalnitsky):
+            #   Conflicting options: --net=host can't be used with links.
+            #   Still, we need links at least for resolving containers
+            #   start order.
+            if container.get('network_mode') == 'host':
+                links = None
+
             self.start_container(
                 created_container,
                 port_bindings=container.get('port_bindings'),
                 links=links,
                 volumes_from=volumes_from,
                 binds=container.get('binds'),
+                network_mode=container.get('network_mode'),
                 privileged=container.get('privileged', False))
 
             if container.get('after_container_creation_command'):
@@ -361,14 +369,7 @@ class DockerUpgrader(UpgradeEngine):
         :param name: name of the container, like fuel-core-5.1-nailgun
         """
         db_container_id = self.container_docker_id(container_name)
-        # NOTE(eli): we don't use dockerctl shell
-        # instead of lxc-attach here because
-        # release 5.0 has a bug which doesn't
-        # allow us to use quotes in command
-        # https://bugs.launchpad.net/fuel/+bug/1324200
-        utils.exec_cmd(
-            "lxc-attach --name {0} -- {1}".format(
-                db_container_id, cmd))
+        utils.exec_cmd("dockerctl shell {0} {1}".format(db_container_id, cmd))
 
     def get_ports(self, container):
         """Docker binding accepts ports as tuple,
@@ -457,13 +458,6 @@ class DockerUpgrader(UpgradeEngine):
                 configs.append(params)
 
         self.supervisor.generate_configs(configs)
-
-        cobbler_container = self.container_by_id('cobbler')
-        self.supervisor.generate_cobbler_config(
-            cobbler_container['id'],
-            self.make_service_name(cobbler_container['id']),
-            cobbler_container['container_name'],
-            autostart=autostart)
 
     def make_service_name(self, container_name):
         return 'docker-{0}'.format(container_name)
@@ -734,7 +728,7 @@ class DockerUpgrader(UpgradeEngine):
         :param image_type: string, type of image
         :raises UnsupportedImageTypeError:
         """
-        if not image_type in ('base', 'fuel'):
+        if image_type not in ('base', 'fuel'):
             raise errors.UnsupportedImageTypeError(
                 'Unsupported umage type: {0}'.format(image_type))
 

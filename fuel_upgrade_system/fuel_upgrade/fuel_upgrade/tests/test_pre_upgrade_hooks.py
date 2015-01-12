@@ -39,6 +39,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers \
+    import RecreateNailgunInPriveleged
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
@@ -505,3 +507,73 @@ class TestCopyOpenstackReleaseVersions(TestPreUpgradeHooksBase):
             mock_utils.copy_if_exists.call_args_list,
             [mock.call(self.hook.version_path_5_0,
                        self.hook.dst_version_path_5_0)])
+
+
+class TestRecreateNailgunInPriveleged(TestPreUpgradeHooksBase):
+
+    HookClass = RecreateNailgunInPriveleged
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers.'
+        'exec_cmd_iterator')
+    def test_is_required_returns_true(self, mock_exec):
+        testcases = [
+            (
+                ['[{ "HostConfig": { "Privileged": false } }]'],
+                ['Docker version 0.10.0, build dc9c28f/0.10.0'],
+            ),
+            (
+                ['[{ "HostConfig": { "Privileged": false } }]'],
+                ['Docker version 0.8.0, build a768964'],
+            )]
+
+        hook = self.get_hook({'from_version': '6.0'})
+        for case in testcases:
+            mock_exec.side_effect = case
+            self.assertTrue(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers.'
+        'exec_cmd_iterator')
+    def test_is_required_returns_false(self, mock_exec):
+        testcases = [
+            (
+                ['[{ "HostConfig": { "Privileged": false } }]'],
+                ['Docker version 0.11.0, build dc9c28f/0.11.0'],
+            ),
+            (
+                ['[{ "HostConfig": { "Privileged": false } }]'],
+                ['Docker version 1.4.1, build d344625'],
+            ),
+            (
+                ['[{ "HostConfig": { "Privileged": true } }]'],
+                ['Docker version 0.10.0, build dc9c28f/0.10.0'],
+            ),
+        ]
+
+        hook = self.get_hook({'from_version': '6.0'})
+        for case in testcases:
+            mock_exec.side_effect = case
+            self.assertFalse(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers.'
+        'safe_exec_cmd')
+    def test_run(self, mock_safe_exec_cmd):
+        hook = self.get_hook()
+        hook.run()
+
+        mock_safe_exec_cmd.assert_has_calls([
+            mock.call('docker stop fuel-core-0-nailgun'),
+            mock.call('docker rm -f fuel-core-0-nailgun'),
+            mock.call(
+                'docker run -d -t --privileged '
+                '-p 0.0.0.0:8001:8001 '
+                '-p 127.0.0.1:8001:8001 '
+                '-v /etc/nailgun -v /var/log/docker-logs:/var/log '
+                '-v /var/www/nailgun:/var/www/nailgun:rw '
+                '-v /etc/yum.repos.d:/etc/yum.repos.d:rw '
+                '-v /etc/fuel:/etc/fuel:ro '
+                '-v /root/.ssh:/root/.ssh:ro '
+                '--name=fuel-core-0-nailgun '
+                'fuel/nailgun_0')])

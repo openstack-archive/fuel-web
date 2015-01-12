@@ -14,10 +14,8 @@
  * under the License.
 **/
 define([
-    'react',
-    'backbone',
-    'jsx!backbone_view_wrapper'
-], function(React, Backbone, BackboneViewWrapper) {
+    'react'
+], function(React) {
     'use strict';
 
     var RootComponent = React.createClass({
@@ -25,9 +23,8 @@ define([
             return {};
         },
         setPage: function(Page, pageOptions) {
-            var isBackboneView = Page.prototype instanceof Backbone.View;
-            this.setState({Page: isBackboneView ? BackboneViewWrapper(Page) : Page, pageOptions: pageOptions});
-            return isBackboneView ? this.refs.page.refs.wrapper.state.view : this.refs.page;
+            this.setState({Page: Page, pageOptions: pageOptions});
+            return this.refs.page;
         },
         render: function() {
             return this.state.Page ? <this.state.Page ref='page' {...this.state.pageOptions} /> : null;

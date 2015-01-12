@@ -282,10 +282,10 @@ define([
             return this.get('tasks') && this.get('tasks').filterTasks(filters);
         },
         hasChanges: function() {
-            return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').currentNodes().length);
+            return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').length);
         },
         needsRedeployment: function() {
-            return !!this.get('nodes').where({pending_addition: false, status: 'error'}).length && this.get('status') != 'update_error';
+            return this.get('nodes').any({pending_addition: false, status: 'error'}) && this.get('status') != 'update_error';
         },
         availableModes: function() {
             return ['ha_compact', 'multinode'];
@@ -366,9 +366,6 @@ define([
             return !!this.filter(function(node) {
                 return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
             }).length;
-        },
-        currentNodes: function() {
-            return this.filter(function(node) {return !node.get('pending_addition');});
         },
         nodesAfterDeployment: function() {
             return this.filter(function(node) {return !node.get('pending_deletion');});

@@ -29,16 +29,16 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
     var releases = new models.Releases();
     var ActionsTab = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('model'),
+            componentMixins.backboneMixin('cluster'),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
-                return props.model.get('tasks');
+                return props.cluster.get('tasks');
             }}),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
-                return props.model.task({group: 'deployment', status: 'running'});
+                return props.cluster.task({group: 'deployment', status: 'running'});
             }})
         ],
         render: function() {
-            var cluster = this.props.model,
+            var cluster = this.props.cluster,
                 task = cluster.task({group: 'deployment', status: 'running'}),
                 isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
             return (

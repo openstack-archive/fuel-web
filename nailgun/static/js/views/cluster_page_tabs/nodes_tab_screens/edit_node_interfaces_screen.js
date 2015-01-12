@@ -88,9 +88,9 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
         },
         bondingAvailable: function() {
             var isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
-            var iserDisabled = this.model.get('settings').get('storage.iser.value') != true;
-            var mellanoxSriovDisabled = this.model.get('settings').get('neutron_mellanox.plugin.value') != 'ethernet';
-            return !this.isLocked() && isExperimental && this.model.get('net_provider') == 'neutron' && iserDisabled && mellanoxSriovDisabled;
+            var iserDisabled = this.cluster.get('settings').get('storage.iser.value') != true;
+            var mellanoxSriovDisabled = this.cluster.get('settings').get('neutron_mellanox.plugin.value') != 'ethernet';
+            return !this.isLocked() && isExperimental && this.cluster.get('net_provider') == 'neutron' && iserDisabled && mellanoxSriovDisabled;
         },
         updateBondingControlsState: function() {
             var checkedInterfaces = this.interfaces.filter(function(ifc) {return ifc.get('checked') && !ifc.isBond();});
@@ -200,12 +200,12 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
         initialize: function() {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
-                this.model.on('change:status', function() {
+                this.cluster.on('change:status', function() {
                     this.revertChanges();
                     this.render();
                     this.checkForChanges();
                 }, this);
-                this.networkConfiguration = this.model.get('networkConfiguration');
+                this.networkConfiguration = this.cluster.get('networkConfiguration');
                 this.loading = $.when.apply($, this.nodes.map(function(node) {
                     node.interfaces = new models.Interfaces();
                     node.interfaces.url = _.result(node, 'url') + '/interfaces';
@@ -216,7 +216,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
                         this.interfaces.on('reset add remove change:slaves', this.render, this);
                         this.interfaces.on('sync change:mode', this.checkForChanges, this);
                         this.interfaces.on('change:checked reset', this.updateBondingControlsState, this);
-                        // FIXME: modifying prototype to easily access NetworkConfiguration model
+                        // FIXME: modifying prototype to easily access NetworkConfiguration cluster
                         // should be reimplemented in a less hacky way
                         var networks = this.networkConfiguration.get('networks');
                         models.InterfaceNetwork.prototype.getFullNetwork = function() {
@@ -249,7 +249,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
             var slaveInterfaceNames = _.pluck(_.flatten(_.filter(this.interfaces.pluck('slaves'))), 'name');
             this.interfaces.each(_.bind(function(ifc) {
                 if (!_.contains(slaveInterfaceNames, ifc.get('name'))) {
-                    var nodeInterface = new NodeInterface({model: ifc, screen: this});
+                    var nodeInterface = new NodeInterface({cluster: ifc, screen: this});
                     this.registerSubView(nodeInterface);
                     this.$('.node-networks').append(nodeInterface.render().el);
                 }
@@ -307,24 +307,24 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
         removeInterface: function(e) {
             var slaveInterfaceId = parseInt($(e.currentTarget).data('interface-id'), 10);
             var slaveInterface = this.screen.interfaces.get(slaveInterfaceId);
-            this.model.set('slaves', _.reject(this.model.get('slaves'), {name: slaveInterface.get('name')}));
+            this.cluster.set('slaves', _.reject(this.cluster.get('slaves'), {name: slaveInterface.get('name')}));
         },
         dragStart: function(event, ui) {
             var networkNames = $(ui.item).find('.logical-network-item').map(function(index, el) {
                 return $(el).data('name');
             }).get();
-            this.screen.draggedNetworks = this.model.get('assigned_networks').filter(function(network) {
+            this.screen.draggedNetworks = this.cluster.get('assigned_networks').filter(function(network) {
                 return _.contains(networkNames, network.get('name'));
             });
             if (event.type == 'sortstart') {
                 this.updateDropTarget();
             } else if (event.type == 'sortremove') {
-                this.model.get('assigned_networks').remove(this.screen.draggedNetworks);
+                this.cluster.get('assigned_networks').remove(this.screen.draggedNetworks);
             }
         },
         dragStop: function(event) {
             if (event.type == 'sortreceive') {
-                this.model.get('assigned_networks').add(this.screen.draggedNetworks);
+                this.cluster.get('assigned_networks').add(this.screen.draggedNetworks);
             }
             this.render();
             this.screen.draggedNetworks = null;
@@ -333,19 +333,19 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
             this.screen.dropTarget = this;
         },
         checkIfEmpty: function() {
-            this.$('.network-help-message').toggle(!this.model.get('assigned_networks').length && !this.screen.isLocked());
+            this.$('.network-help-message').toggle(!this.cluster.get('assigned_networks').length && !this.screen.isLocked());
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
-            this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
+            this.cluster.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
+            this.cluster.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
         },
         handleValidationErrors: function() {
-            var validationResult = this.model.validate();
+            var validationResult = this.cluster.validate();
             if (validationResult.length) {
                 this.screen.applyChangesButton.set('disabled', true);
                 _.each(validationResult, _.bind(function(error) {
-                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
+                    this.$('.physical-network-box[data-name=' + this.cluster.get('name') + ']')
                         .addClass('nodrag')
                         .next('.network-box-error-message').text(error);
                 }, this));
@@ -353,7 +353,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
         },
         render: function() {
             this.$el.html(this.template(_.extend({
-                ifc: this.model,
+                ifc: this.cluster,
                 locked: this.screen.isLocked(),
                 bondingAvailable: this.screen.bondingAvailable()
             }, this.templateHelpers))).i18n();
@@ -365,7 +365,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
                 disabled: this.screen.isLocked()
             }).disableSelection();
             this.handleValidationErrors();
-            this.stickit(this.model);
+            this.stickit(this.cluster);
             return this;
         }
     });

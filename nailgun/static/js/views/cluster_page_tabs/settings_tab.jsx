@@ -30,7 +30,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
 
     var dependenciesMixin = {
         componentWillMount: function() {
-            var cluster = this.props.model;
+            var cluster = this.props.cluster;
             this.settings = cluster.get('settings');
             this.configModels = {
                 cluster: cluster,
@@ -60,7 +60,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         checkDependentRoles: function(path) {
             var setting = this.settings.get(path);
             if (_.contains(['text', 'password', 'hidden'], setting.type)) return false;
-            var roles = this.props.model.get('release').get('role_models');
+            var roles = this.props.cluster.get('release').get('role_models');
             return _.compact(_.map(this.allocatedRoles, function(roleName) {
                 var role = roles.findWhere({name: roleName});
                 if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
@@ -125,15 +125,15 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
     var SettingsTab = React.createClass({
         mixins: [
             dependenciesMixin,
-            componentMixins.backboneMixin('model', 'change:status'),
+            componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
-                return props.model.get('settings');
+                return props.cluster.get('settings');
             }}),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
-                return props.model.get('tasks');
+                return props.cluster.get('tasks');
             }}),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
-                return props.model.task({group: 'deployment', status: 'running'});
+                return props.cluster.task({group: 'deployment', status: 'running'});
             }})
         ],
         getInitialState: function() {
@@ -143,7 +143,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             };
         },
         componentDidMount: function() {
-            var cluster = this.props.model;
+            var cluster = this.props.cluster;
             $.when(this.settings.fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
                 this.updateInitialAttributes();
                 this.setState({loading: false});
@@ -166,7 +166,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     .done(this.updateInitialAttributes)
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
-                        this.props.model.fetch();
+                        this.props.cluster.fetch();
                     }, this))
                     .fail(function() {
                         utils.showErrorDialog({
@@ -206,7 +206,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             this.settings.set(this.settings.makePath(groupName, settingName, settingName == 'metadata' ? 'enabled' : 'value'), value);
         },
         render: function() {
-            var cluster = this.props.model,
+            var cluster = this.props.cluster,
                 sortedSettingGroups = _.sortBy(_.keys(this.settings.attributes), function(groupName) {
                     return this.settings.get(groupName + '.metadata.weight');
                 }, this),

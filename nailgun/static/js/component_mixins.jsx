@@ -82,6 +82,26 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
                 $('html').off(this.state.clickEventName);
                 Backbone.history.off('route', null, this);
             }
+        },
+        editNodesMixin: {
+            goToNodeList: function(cluster) {
+                if (!cluster) cluster = this.props.cluster;
+                app.navigate('#cluster/' + cluster.id + '/nodes', {trigger: true, replace: true});
+            },
+            isLockedScreen: function() {
+                var nodesAvailableForChanges = this.props.nodes.filter(function(node) {
+                    return node.get('pending_addition') || node.get('status') == 'error';
+                });
+                return !nodesAvailableForChanges.length ||
+                    this.props.cluster && !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
+            },
+            returnToNodeList: function() {
+                if (this.hasChanges()) {
+                    this.showDiscardChangesDialog();
+                } else {
+                    this.goToNodeList();
+                }
+            }
         }
     };
 });

@@ -1966,9 +1966,19 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 // Disks styles
 .disk-box {
-  label {
-    .font-semibold;
+  .volumes-color {
+    &.a {background: #23a85e;}
+    &.b {background: #2b6ba9;}
+    &.c {background: #c38812;}
+    &.d {background: #189f99;}
+    &.e {background: #870a0d;}
+    &.f {background: #7a44ac;}
+    &.g {background: #1b88c1;}
+    &.h {background: #71a623;}
+    &.i {background: #6b3e00;}
+    &.unallocated {background: #999;}
   }
+  label {.font-semibold;}
   .disk-visual {
     @disk-visual-block-height: 50px;
     @disk-visual-block-padding: 4px;
@@ -1989,6 +1999,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
       .close-btn {
         position: absolute;
+        z-index: 1000;
         top: 0;
         right: @disk-visual-block-padding;
         cursor: pointer;
@@ -2017,15 +2028,10 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .disk-utility-box {
       @disk-form-margin: 5px;
       .form-group {
-        margin-bottom: @disk-form-margin;
+        margin: 0 0 @disk-form-margin 0;
         .volume-group-flag {
           display: inline-block;
           width: 10px;
-        }
-        .volume-group-use-all-allowed-btn button {
-          font-size: @base-font-size - 4px;
-          padding: 0;
-          text-transform: uppercase;
         }
         .volume-group-size-label {
           padding: 0;
@@ -2033,16 +2039,25 @@ button, .btn:not(.btn-link) {.font-semibold;}
         .volume-group-input {
           padding-right: @disk-form-margin;
         }
-        label, .volume-group-use-all-allowed-btn, .volume-group-size-label {
+        .volume-group-range, .volume-group-input {
+          label {display: none;}
+        }
+        label, .volume-group-size-label {
           padding-top: 6px;
         }
       }
-      .volume-group-error {
+      .volume-group-error, .volume-group-notice {
         font-size: @base-font-size - 2px;
-        margin: 0 @disk-form-margin * 2 @disk-form-margin * 2;
+        color: @red;
+        margin: 0 @disk-form-margin @disk-form-margin * 3 0;
       }
+      .volume-group-notice {color: @blue;}
     }
   }
+}
+
+.node-disks + .page-buttons {
+  margin-top: 30px;
 }
 
 // Interfaces styles

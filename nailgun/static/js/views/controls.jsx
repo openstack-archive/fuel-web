@@ -52,7 +52,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
     controls.Input = React.createClass({
         mixins: [tooltipMixin],
         propTypes: {
-            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number']).isRequired,
+            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range']).isRequired,
             name: React.PropTypes.node,
             label: React.PropTypes.node,
             description: React.PropTypes.node,
@@ -86,7 +86,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             }
         },
         renderInput: function() {
-            var classes = {'form-control': true};
+            var classes = {'form-control': this.props.type != 'range'};
             classes[this.props.inputClassName] = this.props.inputClassName;
             var props = {
                     ref: 'input',

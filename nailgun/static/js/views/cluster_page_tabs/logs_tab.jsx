@@ -104,7 +104,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             var options = {
                 type: this.state.selectedType,
                 source: this.state.selectedSourceId,
-                level: this.state.selectedLevelId.toLowerCase()
+                level: this.state.selectedLevelId ? this.state.selectedLevelId.toLowerCase() : null
             };
             if (options.type == 'remote') options.node = this.state.selectedNodeId;
             return options;

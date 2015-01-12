@@ -26,14 +26,21 @@ function(_, React, models, utils, NodeListScreen) {
 
     var EditNodesScreen = React.createClass({
         getInitialState: function() {
-            var ids = utils.deserializeTabOptions(this.props.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);});
-            return {nodes: new models.Nodes(this.props.model.get('nodes').filter(function(node) {return _.contains(ids, node.id);}))};
+            var serializedIds = this.props.screenOptions[0],
+                ids = serializedIds ? utils.deserializeTabOptions(serializedIds).nodes.split(',').map(function(id) {return parseInt(id, 10);}) : [];
+            return {nodes: new models.Nodes(this.props.cluster.get('nodes').filter(function(node) {return _.contains(ids, node.id);}))};
+        },
+        hasChanges: function() {
+            return _.result(this.refs.screen, 'hasChanges');
+        },
+        revertChanges: function() {
+            return this.refs.screen.revertChanges();
         },
         render: function() {
             return <NodeListScreen
                 ref='screen'
                 mode='edit'
-                cluster={this.props.model}
+                cluster={this.props.cluster}
                 nodes={this.state.nodes}
             />;
         }

@@ -78,8 +78,8 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             params = params || {};
             var options = this.composeOptions();
             this.stopPolling();
-            this.props.model.set({log_options: options}, {silent: true});
-            app.navigate('#cluster/' + this.props.model.id + '/logs/' + utils.serializeTabOptions(options), {trigger: false, replace: true});
+            this.props.cluster.set({log_options: options}, {silent: true});
+            app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options), {trigger: false, replace: true});
             this.fetchLogs(params)
                 .done(_.bind(function(data) {
                     var logsEntries = this.state.logsEntries || [];
@@ -127,7 +127,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                 <div className='wrapper'>
                     <h3>{i18n('cluster_page.logs_tab.title')}</h3>
                     <LogFilterBar
-                        cluster={this.props.model}
+                        cluster={this.props.cluster}
                         tabOptions={this.props.tabOptions}
                         onShowButtonClick={this.onShowButtonClick} />
                     {this.state.loading == 'fail' &&

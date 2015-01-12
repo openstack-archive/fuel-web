@@ -15,22 +15,29 @@
 **/
 define(
 [
+    'underscore',
     'react',
     'models',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function(React, models, NodeListScreen) {
+function(_, React, models, NodeListScreen) {
     'use strict';
 
     var AddNodesScreen = React.createClass({
         getInitialState: function() {
             return {nodes: new models.Nodes()};
         },
+        hasChanges: function() {
+            return _.result(this.refs.screen, 'hasChanges');
+        },
+        revertChanges: function() {
+            return this.refs.screen.revertChanges();
+        },
         render: function() {
             return <NodeListScreen
                 ref='screen'
                 mode='add'
-                cluster={this.props.model}
+                cluster={this.props.cluster}
                 nodes={this.state.nodes}
             />;
         }

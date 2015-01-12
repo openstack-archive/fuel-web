@@ -33,7 +33,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
     NodeListScreen = React.createClass({
         mixins: [
             componentMixins.pollingMixin(20),
-            componentMixins.backboneMixin('model', 'change:status'),
+            componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin('nodes', 'add remove change'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},

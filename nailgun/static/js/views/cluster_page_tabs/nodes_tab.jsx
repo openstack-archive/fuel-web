@@ -22,7 +22,7 @@ define(
     'jsx!views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
 function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
@@ -48,7 +48,7 @@ function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, E
                 list: ClusterNodesScreen,
                 add: AddNodesScreen,
                 edit: EditNodesScreen,
-                disks: BackboneViewWrapper(EditNodeDisksScreen),
+                disks: EditNodeDisksScreen,
                 interfaces: EditNodeInterfacesScreen
             };
         },

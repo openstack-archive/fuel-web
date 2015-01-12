@@ -599,14 +599,30 @@ define([
             var groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
             return minimum - groupAllocatedSpace;
         },
+        getMaxSize: function(data) {
+            var currentDisk = data.disk,
+                currentVolume = data.volume,
+                maximum = currentDisk.get('size');
+            currentDisk.get('volumes').each(function(volume) {
+                if (currentVolume.get('name') != volume.get('name')) {
+                    maximum = maximum - volume.get('size');
+                }
+            }, this);
+            var groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
+            return maximum;
+        },
         validate: function(attrs, options) {
             var error;
             var min = this.getMinimalSize(options.minimum);
+            var max = this.getMaxSize(options.maximum);
             if (_.isNaN(attrs.size)) {
                 error = 'Invalid size';
             } else if (attrs.size < min) {
                 error = 'The value is too low. You must allocate at least ' + utils.formatNumber(min) + ' MB';
+            } else if (attrs.size > max) {
+                error = 'The value is too big';
             }
+            console.log('error: ', error);
             return error;
         }
     });

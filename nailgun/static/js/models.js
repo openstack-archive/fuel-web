@@ -599,13 +599,26 @@ define([
             var groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
             return minimum - groupAllocatedSpace;
         },
+        getMaxSize: function(currentVolume) {
+            var currentDisk = this.collection.disk,
+                maximum = currentDisk.get('size');
+            currentDisk.get('volumes').each(function(volume) {
+                if (currentVolume.get('name') != volume.get('name')) {
+                    maximum = maximum - volume.get('size');
+                }
+            }, this);
+            return maximum;
+        },
         validate: function(attrs, options) {
             var error;
             var min = this.getMinimalSize(options.minimum);
+            var max = this.getMaxSize(options.maximum);
             if (_.isNaN(attrs.size)) {
                 error = 'Invalid size';
             } else if (attrs.size < min) {
-                error = 'The value is too low. You must allocate at least ' + utils.formatNumber(min) + ' MB';
+                error = 'Minimal size for this volume is ' + utils.formatNumber(min) + ' MB';
+            } else if (attrs.size > max) {
+                error = 'You have reached maximum allowed place.';
             }
             return error;
         }

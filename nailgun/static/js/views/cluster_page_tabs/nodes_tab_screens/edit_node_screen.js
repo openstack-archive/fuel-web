@@ -18,9 +18,10 @@ define(
     'underscore',
     'utils',
     'models',
+    'jsx!views/dialogs',
     'views/cluster_page_tabs/nodes_tab_screens/screen'
 ],
-function(_, utils, models, Screen) {
+function(_, utils, models, dialogs, Screen) {
     'use strict';
     var EditNodeScreen;
 
@@ -32,7 +33,7 @@ function(_, utils, models, Screen) {
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                this.tab.page.discardSettingsChanges({cb: _.bind(this.goToNodeList, this)});
+                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(this.goToNodeList, this)});
             } else {
                 this.goToNodeList();
             }

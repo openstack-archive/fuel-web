@@ -27,6 +27,20 @@ Preparing Development Environment
     sudo -u postgres createuser -SDRP nailgun  # enter password "nailgun"
     sudo -u postgres createdb nailgun
 
+   Now you can specify Unix-domain
+   socket in 'host' settings to connect to PostgreSQL database:
+
+   .. code-block:: yaml
+
+     DATABASE:
+          engine: "postgresql"
+          name: "nailgun"
+          host: "/var/run/postgresql"
+          port: ""
+          user: "nailgun"
+          passwd: "nailgun"
+
+
 #. Install pip and development tools::
 
     sudo apt-get install python-dev python-pip

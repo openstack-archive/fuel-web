@@ -30,7 +30,7 @@ function(React, models, NodeListScreen) {
             return <NodeListScreen
                 ref='screen'
                 mode='add'
-                cluster={this.props.model}
+                cluster={this.props.cluster}
                 nodes={this.state.nodes}
             />;
         }

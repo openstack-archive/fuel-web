@@ -26,8 +26,8 @@ function(React, NodeListScreen) {
             return <NodeListScreen
                 ref='screen'
                 mode='list'
-                cluster={this.props.model}
-                nodes={this.props.model.get('nodes')}
+                cluster={this.props.cluster}
+                nodes={this.props.cluster.get('nodes')}
             />;
         }
     });

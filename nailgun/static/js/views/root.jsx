@@ -26,7 +26,12 @@ define([
         },
         setPage: function(Page, pageOptions) {
             var isBackboneView = Page.prototype instanceof Backbone.View;
-            this.setState({Page: isBackboneView ? BackboneViewWrapper(Page) : Page, pageOptions: pageOptions});
+            // special case for nodes tab screen change
+            if (this.refs.page && pageOptions.activeTab == 'nodes' && this.refs.page.constructor.displayName == 'ClusterPage' && this.refs.page.props.cluster.id == pageOptions.cluster.id && this.refs.page.refs.tab.constructor.displayName == 'NodesTab') {
+                this.refs.page.refs.tab.routeScreen(pageOptions.tabOptions);
+            } else {
+                this.setState({Page: isBackboneView ? BackboneViewWrapper(Page) : Page, pageOptions: pageOptions});
+            }
             return isBackboneView ? this.refs.page.refs.wrapper.state.view : this.refs.page;
         },
         render: function() {

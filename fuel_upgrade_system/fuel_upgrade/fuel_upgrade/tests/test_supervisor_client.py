@@ -104,27 +104,3 @@ class TestSupervisorClient(BaseTestCase):
              'command': 'command1',
              'log_path': '/var/log/docker-service_name1.log',
              'autostart': 'true'})
-
-    def test_generate_cobbler_config(self, _):
-        paths = ['script_path', '/path/cobbler_config', '']
-        self.supervisor.generate_config = mock.MagicMock()
-        with mock.patch(
-                'fuel_upgrade.clients.supervisor_client.os.path.join',
-                side_effect=paths):
-
-            self.supervisor.generate_cobbler_config(
-                'config_name1',
-                'service_name1',
-                'container_name1',
-                autostart=False)
-
-        self.utils_mock.render_template_to_file.assert_called_once_with(
-            paths[0],
-            paths[1],
-            {'container_name': 'container_name1'})
-
-        self.supervisor.generate_config.assert_called_once_with(
-            'config_name1',
-            'service_name1',
-            'container_name1',
-            autostart=False)

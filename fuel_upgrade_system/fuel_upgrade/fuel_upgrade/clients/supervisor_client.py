@@ -18,7 +18,6 @@ import httplib
 import logging
 import os
 import socket
-import stat
 import xmlrpclib
 
 from xmlrpclib import Fault
@@ -199,26 +198,3 @@ class SupervisorClient(object):
 
         utils.render_template_to_file(
             self.supervisor_template_path, config_path, params)
-
-    def generate_cobbler_config(self, config_name, service_name,
-                                container_name, autostart=True):
-        """Generates cobbler config
-
-        :param str config_name: is the name of the config
-        :param str service_name: is the name of the service
-        :param bool autostart: run the service on supervisor start
-        """
-        script_template_path = os.path.join(
-            self.templates_dir, 'cobbler_runner')
-        script_path = os.path.join('/usr/bin', container_name)
-
-        utils.render_template_to_file(
-            script_template_path,
-            script_path,
-            {'container_name': container_name})
-
-        self.generate_config(
-            config_name, service_name, container_name, autostart=autostart)
-
-        st = os.stat(script_path)
-        os.chmod(script_path, st.st_mode | stat.S_IEXEC)

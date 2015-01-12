@@ -1987,6 +1987,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
           height: @disk-visual-block-height / 2 - @disk-visual-block-padding;
         }
       }
+      .text-center {margin-right: 20px;}
       .close-btn {
         position: absolute;
         top: 0;
@@ -2039,10 +2040,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
       .volume-group-error {
         font-size: @base-font-size - 2px;
-        margin: 0 @disk-form-margin * 2 @disk-form-margin * 2;
+        color: @red;
+        margin: 0 @disk-form-margin * 2 @disk-form-margin * 2 0;
       }
     }
   }
+}
+
+.page-buttons {
+  margin-top: 30px;
 }
 
 // Interfaces styles

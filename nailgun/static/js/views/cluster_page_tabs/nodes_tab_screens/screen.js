@@ -22,10 +22,10 @@ function(Backbone) {
         constructorName: 'Screen',
         keepScrollPosition: false,
         goToNodeList: function() {
-            app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});
+            app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
         },
         isLocked: function() {
-            return !!this.model.tasks({group: 'deployment', status: 'running'}).length;
+            return !!this.cluster.tasks({group: 'deployment', status: 'running'}).length;
         },
         initButtons: function() {
             this.loadDefaultsButton = new Backbone.Model({disabled: false});

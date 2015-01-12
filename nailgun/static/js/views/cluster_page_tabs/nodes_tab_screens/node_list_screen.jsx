@@ -33,7 +33,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
     NodeListScreen = React.createClass({
         mixins: [
             componentMixins.pollingMixin(20),
-            componentMixins.backboneMixin('model', 'change:status'),
+            componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin('nodes', 'add remove change'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
@@ -453,8 +453,10 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
 
     SelectAllMixin = {
         componentDidUpdate: function() {
-            var input = this.refs['select-all'].getInputDOMNode();
-            input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
+            if (this.props.nodes.length) {
+                var input = this.refs['select-all'].getInputDOMNode();
+                input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
+            }
         },
         renderSelectAllCheckbox: function() {
             var availableNodesIds = _.compact(this.props.nodes.map(function(node) {if (node.isSelectable()) return node.id;}));

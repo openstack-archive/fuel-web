@@ -149,7 +149,7 @@ def grub1_mbr(install_device, boot_disk, boot_part, chroot=''):
     cmd = ['/tmp/grub.sh']
     if chroot:
         cmd[:0] = ['chroot', chroot]
-    stdout, stderr = utils.execute(*cmd, run_as_root=True, check_exit_code=[0])
+    stdout, stderr = utils.execute(*cmd, check_exit_code=[0])
     LOG.debug('Grub script stdout: \n%s' % stdout)
     LOG.debug('Grub script stderr: \n%s' % stderr)
 
@@ -194,7 +194,7 @@ def grub2_install(install_devices, chroot=''):
         cmd = [grub_install, install_device]
         if chroot:
             cmd[:0] = ['chroot', chroot]
-        utils.execute(*cmd, run_as_root=True, check_exit_code=[0])
+        utils.execute(*cmd, check_exit_code=[0])
 
 
 def grub2_cfg(kernel_params='', chroot=''):
@@ -214,4 +214,4 @@ def grub2_cfg(kernel_params='', chroot=''):
     cmd = [guess_grub2_mkconfig(chroot), '-o', guess_grub2_conf(chroot)]
     if chroot:
         cmd[:0] = ['chroot', chroot]
-    utils.execute(*cmd, run_as_root=True)
+    utils.execute(*cmd)

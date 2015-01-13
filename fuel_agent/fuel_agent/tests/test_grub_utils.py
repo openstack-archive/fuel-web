@@ -268,8 +268,7 @@ class TestGrubUtils(test_base.BaseTestCase):
         )
         mock_chmod.assert_called_once_with('/target/tmp/grub.sh', 0o755)
         mock_exec.assert_called_once_with(
-            'chroot', '/target', '/tmp/grub.sh',
-            run_as_root=True, check_exit_code=[0])
+            'chroot', '/target', '/tmp/grub.sh', check_exit_code=[0])
 
     @mock.patch.object(gu, 'guess_grub')
     @mock.patch.object(os, 'chmod')
@@ -302,8 +301,7 @@ class TestGrubUtils(test_base.BaseTestCase):
         )
         mock_chmod.assert_called_once_with('/target/tmp/grub.sh', 0o755)
         mock_exec.assert_called_once_with(
-            'chroot', '/target', '/tmp/grub.sh',
-            run_as_root=True, check_exit_code=[0])
+            'chroot', '/target', '/tmp/grub.sh', check_exit_code=[0])
 
     @mock.patch.object(gu, 'guess_kernel')
     @mock.patch.object(gu, 'guess_initrd')
@@ -350,9 +348,9 @@ title Default (kernel-version-set)
         mock_guess_grub.return_value = '/sbin/grub'
         expected_calls = [
             mock.call('chroot', '/target', '/sbin/grub', '/dev/foo',
-                      run_as_root=True, check_exit_code=[0]),
+                      check_exit_code=[0]),
             mock.call('chroot', '/target', '/sbin/grub', '/dev/bar',
-                      run_as_root=True, check_exit_code=[0])
+                      check_exit_code=[0])
         ]
         gu.grub2_install(['/dev/foo', '/dev/bar'], chroot='/target')
         self.assertEqual(mock_exec.call_args_list, expected_calls)
@@ -390,5 +388,4 @@ bar"""
             handle.write.assert_called_once_with(new_content)
         mock_exec.assert_called_once_with('chroot', '/target',
                                           '/sbin/grub-mkconfig',
-                                          '-o', '/boot/grub/grub.cfg',
-                                          run_as_root=True)
+                                          '-o', '/boot/grub/grub.cfg')

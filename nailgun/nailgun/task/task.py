@@ -30,6 +30,7 @@ from nailgun import objects
 
 from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NODE_STATUSES
+from nailgun.consts import FUEL_GRANULAR_DEPLOY
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
@@ -158,11 +159,14 @@ class DeploymentTask(object):
         for node in nodes:
             node.pending_addition = False
 
-        #NOTE(dshulyak) discussed with warpc, separation is required
-        #to leave legacy deployment model as it is
+        if task.cluster.release.fuel_version < FUEL_GRANULAR_DEPLOY:
+            method_name = 'deploy'
+        else:
+            method_name = 'granular_deploy'
+
         rpc_message = make_astute_message(
             task,
-            'granular_deploy',
+            method_name,
             'deploy_resp',
             {
                 'deployment_info': serialized_cluster,
@@ -198,7 +202,7 @@ class UpdateTask(object):
 
         rpc_message = make_astute_message(
             task,
-            'granular_deploy',
+            'deploy',
             'deploy_resp',
             {
                 'deployment_info': serialized_cluster

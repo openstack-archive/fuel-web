@@ -14,6 +14,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema.disks \
     import disks_simple_format_schema
 from nailgun.api.v1.validators.json_schema import node_schema
@@ -304,3 +305,18 @@ class NodesFilterValidator(BasicValidator):
             raise errors.InvalidData('Provided id is not integer')
 
         return node_ids
+
+
+class NodeDeploymentValidator(NodesFilterValidator):
+
+    @classmethod
+    def validate_deployment(cls, data):
+        """Used to validate attributes used for validate_deployment_attributes
+
+        :param data: raw json data, usually web.data()
+        :returns: loaded json or empty array
+        """
+        data = cls.validate_json(data) or []
+        if data:
+            cls.validate_schema(data, base_types.STRINGS_ARRAY)
+        return data

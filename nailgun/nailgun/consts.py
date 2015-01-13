@@ -237,5 +237,10 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'sync',
     'upload_file',
     'group',
-    'stage'
+    'stage',
+    'stub'
 )
+
+INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
+                  ORCHESTRATOR_TASK_TYPES.stage,
+                  ORCHESTRATOR_TASK_TYPES.stub)

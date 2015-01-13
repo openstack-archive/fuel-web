@@ -230,7 +230,7 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg = {
             'api_version': '1',
-            'method': 'granular_deploy',
+            'method': 'deploy',
             'respond_to': 'deploy_resp',
             'args': {}
         }
@@ -670,7 +670,7 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg = {
             'api_version': '1',
-            'method': 'granular_deploy',
+            'method': 'deploy',
             'respond_to': 'deploy_resp',
             'args': {}
         }
@@ -1129,7 +1129,7 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg = {
             'api_version': '1',
-            'method': 'granular_deploy',
+            'method': 'deploy',
             'respond_to': 'deploy_resp',
             'args': {}
         }

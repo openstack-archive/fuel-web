@@ -279,6 +279,12 @@ LOGS:
     <<: *remote_syslog_log_format
     <<: *install_log_group
     path: "in-target.log"
+  - id: 'install/fuel-agent'
+    name: "fuel-agent"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *install_log_group
+    path: "bootstrap/fuel-agent.log"
 # Bootstrap node logs.
   - id: 'bootstrap/dmesg'
     name: "dmesg"

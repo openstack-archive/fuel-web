@@ -239,3 +239,6 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'group',
     'stage'
 )
+
+INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
+                  ORCHESTRATOR_TASK_TYPES.stage)

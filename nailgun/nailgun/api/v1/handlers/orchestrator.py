@@ -26,6 +26,7 @@ from nailgun.logger import logger
 
 from nailgun import objects
 
+from nailgun.errors import errors
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator.plugins_serializers import post_deployment_serialize
@@ -51,7 +52,6 @@ class NodesFilterMixin(object):
         default nodes.
         """
         nodes = web.input(nodes=None).nodes
-
         if nodes:
             node_ids = self.checked_data(data=nodes)
             return self.get_objects_list_or_404(
@@ -194,6 +194,20 @@ class DeploymentInfo(OrchestratorInfo):
 class SelectedNodesBase(NodesFilterMixin, BaseHandler):
     """Base class for running task manager on selected nodes."""
 
+    def handle_task(self, cluster_id, **kwargs):
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        nodes = self.get_nodes(cluster)
+
+        try:
+            task_manager = self.task_manager(cluster_id=cluster.id)
+            task = task_manager.execute(nodes, **kwargs)
+        except Exception as exc:
+            logger.warn(u'Cannot execute {0} task nodes: {1}'.format(
+                task_manager.__class__.__name__, traceback.format_exc()))
+            raise self.http(400, message=str(exc))
+
+        raise self.http(202, objects.Task.to_json(task))
+
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
@@ -201,18 +215,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
                * 404 (cluster or nodes not found in db)
                * 400 (failed to execute task)
         """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        nodes = self.get_nodes(cluster)
-
-        try:
-            task_manager = self.task_manager(cluster_id=cluster.id)
-            task = task_manager.execute(nodes)
-        except Exception as exc:
-            logger.warn(u'Cannot execute {0} task nodes: {1}'.format(
-                task_manager.__class__.__name__, traceback.format_exc()))
-            raise self.http(400, message=str(exc))
-
-        raise self.http(202, objects.Task.to_json(task))
+        return self.handle_task(cluster_id)
 
 
 class ProvisionSelectedNodes(SelectedNodesBase):
@@ -237,3 +240,22 @@ class DeploySelectedNodes(SelectedNodesBase):
         if cluster.is_ha_mode:
             return TaskHelper.nodes_to_deploy_ha(cluster, nodes_to_deploy)
         return nodes_to_deploy
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 404 (cluster or nodes not found in db)
+               * 400 (failed to execute task)
+        """
+        data = self.validator.validate_json(web.data()) or {}
+        skip_tasks = data.get('skip_tasks', [])
+        only_tasks = data.get('only_tasks', [])
+
+        # TODO(dshulyak) move it to validator
+        if skip_tasks and only_tasks:
+            raise errors.InvalidData(
+                "Skip tasks and Only tasks should not be specified together.")
+
+        return self.handle_task(
+            cluster_id, skip_tasks=skip_tasks, only_tasks=only_tasks)

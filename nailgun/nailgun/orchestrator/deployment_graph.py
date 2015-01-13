@@ -20,6 +20,7 @@ import networkx as nx
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator import tasks_templates as templates
@@ -117,6 +118,40 @@ class DeploymentGraph(nx.DiGraph):
     def topology(self):
         return map(lambda t: self.node[t], nx.topological_sort(self))
 
+    def skip_tasks(self, task_ids):
+        """Removes certain tasks from graph.
+
+        When node removed from graph, all edges removed also, so it is correct
+        interface to remove certain task and dependency
+
+        :param task_names: list of task ids
+        """
+        for task in task_ids:
+            task = self.node[task]
+            if task['type'] in ('group', 'stage'):
+                logger.warning(
+                    'Task of type group/stage cannot be skipped.\n'
+                    'Task: %s', task)
+                continue
+            self.remove_node(task['id'])
+
+    def only_tasks(self, task_ids):
+        """Leave only tasks that are specified in request.
+
+        :param task_names: list of task ids
+        """
+        if not task_ids:
+            return
+
+        for task in self.node.values():
+            if task['type'] in ('group', 'stage'):
+                logger.warning(
+                    'Task of type group/stage cannot be skipped.\n'
+                    'Task: %s', task)
+                continue
+            if task['id'] not in task_ids:
+                self.remove_node(task['id'])
+
 
 class AstuteGraph(object):
     """This object stores logic that required for working with astute
@@ -128,6 +163,12 @@ class AstuteGraph(object):
         self.tasks = objects.Cluster.get_deployment_tasks(cluster)
         self.graph = DeploymentGraph()
         self.graph.add_tasks(self.tasks)
+
+    def skip_tasks(self, task_ids):
+        self.graph.skip_tasks(task_ids)
+
+    def only_tasks(self, task_ids):
+        self.graph.only_tasks(task_ids)
 
     def group_nodes_by_roles(self, nodes):
         """Group nodes by roles

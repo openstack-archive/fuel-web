@@ -389,7 +389,7 @@ class ProvisioningTaskManager(TaskManager):
 
 class DeploymentTaskManager(TaskManager):
 
-    def execute(self, nodes_to_deployment):
+    def execute(self, nodes_to_deployment, skip_tasks=[], only_tasks=[]):
         # locking nodes for update
         objects.NodeCollection.lock_nodes(nodes_to_deployment)
         objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_deployment)
@@ -403,6 +403,8 @@ class DeploymentTaskManager(TaskManager):
             task_deployment,
             tasks.DeploymentTask,
             nodes_to_deployment,
+            skip_tasks=skip_tasks,
+            only_tasks=only_tasks,
             method_name='message')
 
         db().refresh(task_deployment)

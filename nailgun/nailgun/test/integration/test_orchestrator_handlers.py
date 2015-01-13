@@ -27,8 +27,13 @@ from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
-def nodes_filter_param(node_ids):
-    return '?nodes={0}'.format(','.join(node_ids))
+def make_orchestrator_uri(node_ids, skip_tasks=[], only_tasks=[]):
+    uri = '?nodes={0}'.format(','.join(node_ids))
+    if skip_tasks:
+        uri = uri + '&skip_tasks={0}'.format(','.join(skip_tasks))
+    elif only_tasks:
+        uri = uri + '&only_tasks={0}'.format(','.join(only_tasks))
+    return uri
 
 
 class TestOrchestratorInfoHandlers(BaseIntegrationTest):
@@ -135,7 +140,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         url = reverse(
             'DefaultProvisioningInfo',
             kwargs={'cluster_id': self.cluster.id}) + \
-            nodes_filter_param(node_ids)
+            make_orchestrator_uri(node_ids)
         resp = self.app.get(url, headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
@@ -149,7 +154,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         url = reverse(
             'DefaultDeploymentInfo',
             kwargs={'cluster_id': self.cluster.id}) + \
-            nodes_filter_param(node_ids)
+            make_orchestrator_uri(node_ids)
         resp = self.app.get(url, headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
@@ -194,10 +199,10 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         self.assertEqual(response.status_code, 200)
 
 
-class TestSelectedNodesAction(BaseIntegrationTest):
+class BaseSelectedNodes(BaseIntegrationTest):
 
     def setUp(self):
-        super(TestSelectedNodesAction, self).setUp()
+        super(BaseSelectedNodes, self).setUp()
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -216,13 +221,16 @@ class TestSelectedNodesAction(BaseIntegrationTest):
         return self.app.put(
             url, '', headers=self.default_headers, expect_errors=True)
 
+
+class TestSelectedNodesAction(BaseSelectedNodes):
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_start_provisioning_on_selected_nodes(self, mock_rpc):
         action_url = reverse(
             'ProvisionSelectedNodes',
             kwargs={'cluster_id': self.cluster.id}) + \
-            nodes_filter_param(self.node_uids)
+            make_orchestrator_uri(self.node_uids)
 
         self.send_empty_put(action_url)
 
@@ -243,7 +251,7 @@ class TestSelectedNodesAction(BaseIntegrationTest):
         action_url = reverse(
             'DeploySelectedNodes',
             kwargs={'cluster_id': self.cluster.id}) + \
-            nodes_filter_param(node_uids)
+            make_orchestrator_uri(node_uids)
 
         self.send_empty_put(action_url)
 
@@ -251,3 +259,39 @@ class TestSelectedNodesAction(BaseIntegrationTest):
         deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
         self.assertEqual(3, len(deployed_uids))
         self.assertItemsEqual(self.node_uids, deployed_uids)
+
+
+class TestDeploymentHandlerSkipTasks(BaseSelectedNodes):
+
+    def setUp(self):
+        super(TestDeploymentHandlerSkipTasks, self).setUp()
+        self.tasks = ['deploy_legacy']
+        self.non_existent = ['non_existent']
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_skip_tasks(self, mcast):
+        action_url = reverse(
+            'DeploySelectedNodes',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_orchestrator_uri(self.node_uids, skip_tasks=self.tasks)
+        out = self.send_empty_put(action_url)
+        self.assertEqual(out.status_code, 202)
+        args, kwargs = mcast.call_args
+        deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
+        deployment_data = next(n for n in args[1]['args']['deployment_info'])
+        self.assertEqual(deployed_uids, self.node_uids)
+        self.assertEqual(deployment_data['tasks'], [])
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_use_only_certain_tasks(self, mcast):
+        action_url = reverse(
+            'DeploySelectedNodes',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_orchestrator_uri(self.node_uids, only_tasks=self.non_existent)
+        out = self.send_empty_put(action_url)
+        self.assertEqual(out.status_code, 202)
+        args, kwargs = mcast.call_args
+        deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
+        deployment_data = next(n for n in args[1]['args']['deployment_info'])
+        self.assertEqual(deployed_uids, self.node_uids)
+        self.assertEqual(deployment_data['tasks'], [])

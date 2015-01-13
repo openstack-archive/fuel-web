@@ -20,6 +20,7 @@ import networkx as nx
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator import tasks_templates as templates
@@ -106,16 +107,60 @@ class DeploymentGraph(nx.DiGraph):
 
     def get_tasks(self, group_name):
         tasks = []
-        filter_by = (consts.ORCHESTRATOR_TASK_TYPES.group,
-                     consts.ORCHESTRATOR_TASK_TYPES.stage)
         for task in self.predecessors(group_name):
-            if self.node[task]['type'] not in filter_by:
+            if self.node[task]['type'] not in consts.INTERNAL_TASKS:
                 tasks.append(task)
         return self.subgraph(tasks)
 
     @property
     def topology(self):
         return map(lambda t: self.node[t], nx.topological_sort(self))
+
+    def skip_tasks(self, task_ids):
+        """Removes certain tasks from graph.
+
+        When node removed from graph, all edges removed also, so it is correct
+        interface to remove certain task and dependency
+
+        :param task_names: list of task ids
+        """
+        # TODO(dshulyak) Make it possible to remove whole stage.
+        for task_id in task_ids:
+
+            if task_id in self.node:
+                task = self.node[task_id]
+            else:
+                logger.warning('Task %s not present in graph', task_id)
+
+            if task['type'] in consts.INTERNAL_TASKS:
+                logger.warning(
+                    'Task of type group/stage cannot be skipped.\n'
+                    'Task: %s', task)
+                continue
+
+            self.remove_node(task['id'])
+
+    def only_tasks(self, task_ids):
+        """Leave only tasks that are specified in request.
+
+        :param task_names: list of task ids
+        """
+        if not task_ids:
+            return
+
+        for task_id in task_ids:
+            if task_id not in self.node:
+                logger.warning('Task %s not present in graph', task_id)
+
+        # TODO(dshulyak) Make it possible to remove whole stage.
+        for task in self.node.values():
+            if task['type'] in consts.INTERNAL_TASKS:
+                logger.warning(
+                    'Task of type group/stage cannot be skipped.\n'
+                    'Task: %s', task)
+                continue
+            if task['id'] not in task_ids:
+                self.remove_node(task['id'])
 
 
 class AstuteGraph(object):
@@ -128,6 +173,12 @@ class AstuteGraph(object):
         self.tasks = objects.Cluster.get_deployment_tasks(cluster)
         self.graph = DeploymentGraph()
         self.graph.add_tasks(self.tasks)
+
+    def skip_tasks(self, task_ids):
+        self.graph.skip_tasks(task_ids)
+
+    def only_tasks(self, task_ids):
+        self.graph.only_tasks(task_ids)
 
     def group_nodes_by_roles(self, nodes):
         """Group nodes by roles

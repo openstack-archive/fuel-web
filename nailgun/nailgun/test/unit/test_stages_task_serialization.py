@@ -180,6 +180,7 @@ class TestPostTaskSerialization(base.BaseTestCase):
         tasks = self.graph.post_tasks_serialize(self.nodes)
         self.assertEqual(tasks, [])
 
+
 class ContainerMock(mock.Mock):
     #expression parser works only with objects that conforms
     #to container interface

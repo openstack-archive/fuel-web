@@ -246,3 +246,6 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.void)
 
 ALL_ROLES = '*'
+
+# version of fuel when we added granular deploy support
+FUEL_GRANULAR_DEPLOY = '6.1'

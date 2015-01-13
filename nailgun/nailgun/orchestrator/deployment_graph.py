@@ -20,6 +20,7 @@ import networkx as nx
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator import tasks_templates as templates
@@ -106,16 +107,76 @@ class DeploymentGraph(nx.DiGraph):
 
     def get_tasks(self, group_name):
         tasks = []
-        filter_by = (consts.ORCHESTRATOR_TASK_TYPES.group,
-                     consts.ORCHESTRATOR_TASK_TYPES.stage)
         for task in self.predecessors(group_name):
-            if self.node[task]['type'] not in filter_by:
+            if self.node[task]['type'] not in consts.INTERNAL_TASKS:
                 tasks.append(task)
         return self.subgraph(tasks)
 
     @property
     def topology(self):
         return map(lambda t: self.node[t], nx.topological_sort(self))
+
+    def stub_task(self, task):
+        """Make some task in graph simple stub
+
+        We can not just remove node because it also stores edges, that connects
+        graph in correct order
+
+        :param task_id: id of the node in graph
+        """
+        if task['type'] in consts.INTERNAL_TASKS:
+            logger.debug(
+                'Task of type group/stage cannot be skipped.\n'
+                'Task: %s', task)
+            return
+
+        task['type'] = consts.ORCHESTRATOR_TASK_TYPES.stub
+
+    def skip_tasks(self, task_ids):
+        """Removes certain tasks from graph.
+
+        When node removed from graph, all edges removed also, so it is correct
+        interface to remove certain task and dependency
+
+        :param task_ids: list of task ids
+        """
+
+        for task_id in task_ids:
+
+            if task_id in self.node:
+                task = self.node[task_id]
+                if task['type'] == consts.ORCHESTRATOR_TASK_TYPES.stage:
+                    stage_tasks_ids = self.get_tasks(task['id']).nodes()
+                    self.skip_tasks(stage_tasks_ids)
+            else:
+                logger.warning('Task %s not present in graph', task_id)
+                continue
+
+            self.stub_task(task)
+
+    def only_tasks(self, task_ids):
+        """Leave only tasks that are specified in request.
+
+        :param task_ids: list of task ids
+        """
+        # make copy of tasks, because we are chaning them later
+        task_ids = task_ids[:]
+
+        if not task_ids:
+            return
+
+        for task_id in task_ids:
+            if task_id not in self.node:
+                logger.warning('Task %s not present in graph', task_id)
+            else:
+                task = self.node[task_id]
+                if task['type'] == consts.ORCHESTRATOR_TASK_TYPES.stage:
+                    tasks = self.get_tasks(task['id'])
+                    task_ids.extend(tasks.nodes())
+
+        for task in self.node.values():
+            if task['id'] not in task_ids:
+                self.stub_task(task)
 
 
 class AstuteGraph(object):
@@ -128,6 +189,12 @@ class AstuteGraph(object):
         self.tasks = objects.Cluster.get_deployment_tasks(cluster)
         self.graph = DeploymentGraph()
         self.graph.add_tasks(self.tasks)
+
+    def skip_tasks(self, task_ids):
+        self.graph.skip_tasks(task_ids)
+
+    def only_tasks(self, task_ids):
+        self.graph.only_tasks(task_ids)
 
     def group_nodes_by_roles(self, nodes):
         """Group nodes by roles

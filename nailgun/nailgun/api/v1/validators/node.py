@@ -17,6 +17,7 @@ from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.disks \
     import disks_simple_format_schema
 from nailgun.api.v1.validators.json_schema import node_schema
+from nailgun.api.v1.validators.json_schema import orchestrator
 
 from nailgun import objects
 
@@ -304,3 +305,21 @@ class NodesFilterValidator(BasicValidator):
             raise errors.InvalidData('Provided id is not integer')
 
         return node_ids
+
+
+class NodeDeploymentValidator(NodesFilterValidator):
+
+    @classmethod
+    def validate_deployment_flags(cls, data):
+        """Used to validate attributes used for validate_deployment_attributes
+
+        :param data: raw json data, usually web.data()
+        :returns: loaded json
+        """
+        data = cls.validate_json(data)
+        cls.validate_schema(data, orchestrator.DEPLOYMENT_CONFIG)
+
+        if data and data.get('skip_tasks') and data.get('only_tasks'):
+            raise errors.InvalidData(
+                "Skip tasks and Only tasks should not be specified together.")
+        return data

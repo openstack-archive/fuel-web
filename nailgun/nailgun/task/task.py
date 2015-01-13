@@ -119,8 +119,10 @@ class DeploymentTask(object):
 #   those which are prepared for removal.
 
     @classmethod
-    def message(cls, task, nodes):
+    def message(cls, task, nodes, skip_tasks=None, only_tasks=None):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
+        skip_tasks = skip_tasks or []
+        only_tasks = only_tasks or []
 
         nodes_ids = [n.id for n in nodes]
         for n in db().query(Node).filter_by(
@@ -141,7 +143,12 @@ class DeploymentTask(object):
         db().flush()
 
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+        orchestrator_graph.skip_tasks(skip_tasks)
+        orchestrator_graph.only_tasks(only_tasks)
 
+        #NOTE(dshulyak) At this point parts of the orchestration can be empty,
+        # it should not cause any issues with deployment/progress and was
+        # done by design
         serialized_cluster = deployment_serializers.serialize(
             orchestrator_graph, task.cluster, nodes)
         pre_deployment = plugins_serializers.pre_deployment_serialize(

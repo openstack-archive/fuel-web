@@ -20,6 +20,7 @@ import networkx as nx
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator import tasks_templates as templates
@@ -106,16 +107,42 @@ class DeploymentGraph(nx.DiGraph):
 
     def get_tasks(self, group_name):
         tasks = []
-        filter_by = (consts.ORCHESTRATOR_TASK_TYPES.group,
-                     consts.ORCHESTRATOR_TASK_TYPES.stage)
         for task in self.predecessors(group_name):
-            if self.node[task]['type'] not in filter_by:
+            if self.node[task]['type'] not in consts.INTERNAL_TASKS:
                 tasks.append(task)
         return self.subgraph(tasks)
 
     @property
     def topology(self):
         return map(lambda t: self.node[t], nx.topological_sort(self))
+
+    def stub_task(self, task):
+        """Make some task in graph simple void
+
+        We can not just remove node because it also stores edges, that connects
+        graph in correct order
+
+        :param task_id: id of the node in graph
+        """
+        if task['type'] in consts.INTERNAL_TASKS:
+            logger.debug(
+                'Task of type group/stage cannot be skipped.\n'
+                'Task: %s', task)
+            return
+
+        task['type'] = consts.ORCHESTRATOR_TASK_TYPES.void
+
+    def only_tasks(self, task_ids):
+        """Leave only tasks that are specified in request.
+
+        :param task_ids: list of task ids
+        """
+        if not task_ids:
+            return
+
+        for task in self.node.values():
+            if task['id'] not in task_ids:
+                self.stub_task(task)
 
 
 class AstuteGraph(object):
@@ -128,6 +155,9 @@ class AstuteGraph(object):
         self.tasks = objects.Cluster.get_deployment_tasks(cluster)
         self.graph = DeploymentGraph()
         self.graph.add_tasks(self.tasks)
+
+    def only_tasks(self, task_ids):
+        self.graph.only_tasks(task_ids)
 
     def group_nodes_by_roles(self, nodes):
         """Group nodes by roles

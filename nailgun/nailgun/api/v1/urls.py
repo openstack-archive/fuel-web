@@ -75,6 +75,7 @@ from nailgun.api.v1.handlers.orchestrator import DefaultPrePluginsHooksInfo
 from nailgun.api.v1.handlers.orchestrator import DefaultProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import DeploymentInfo
 from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
+from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodesWithTasks
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 
@@ -147,6 +148,8 @@ urls = (
     ProvisionSelectedNodes,
     r'/clusters/(?P<cluster_id>\d+)/deploy/?$',
     DeploySelectedNodes,
+    r'/clusters/(?P<cluster_id>\d+)/deploy_tasks/?$',
+    DeploySelectedNodesWithTasks,
     r'/clusters/(?P<cluster_id>\d+)/stop_deployment/?$',
     ClusterStopDeploymentHandler,
     r'/clusters/(?P<cluster_id>\d+)/reset/?$',

@@ -97,7 +97,7 @@ module.exports = function(grunt) {
                 strict: true,
                 lastsemic: true,
                 scripturl: true,
-                "-W041": false
+                '-W041': false
             },
             all: [
                 staticBuildPreparationDir + '/static/**/*.js',
@@ -143,13 +143,25 @@ module.exports = function(grunt) {
                 disallowYodaConditions: true,
                 disallowNewlineBeforeBlockStatements: true,
                 validateLineBreaks: 'LF',
-                validateParameterSeparator: ', '
+                validateParameterSeparator: ', ',
+                validateQuoteMarks: {mark: "'", escape: true}
             },
-            all: [
-                staticBuildPreparationDir + '/static/**/*.js',
-                '!' + staticBuildPreparationDir + '/static/js/libs/**',
-                '!' + staticBuildPreparationDir + '/static/js/expression/parser.js'
-            ]
+            js: {
+                src: [
+                    'Gruntfile.js',
+                    'static/**/*.js',
+                    '!static/js/libs/**',
+                    '!static/js/expression/parser.js'
+                ]
+            },
+            jsx: {
+                options: {
+                    esprima: 'esprima-fb'
+                },
+                src: [
+                    'static/**/*.jsx'
+                ]
+            }
         },
         less: {
             all: {
@@ -172,7 +184,7 @@ module.exports = function(grunt) {
                     verbose: true,
                     cleanTargetDir: false,
                     cleanBowerDir: true,
-                    layout: "byComponent",
+                    layout: 'byComponent',
                     bowerOptions: {
                         production: true,
                         install: '--offline'
@@ -220,7 +232,7 @@ module.exports = function(grunt) {
                     }
                 ],
                 options: {
-                    process: function (content, path) {
+                    process: function(content, path) {
                         // use CSS loader instead LESS loader - styles are precompiled
                         content = content.replace(/less!/g, 'require-css/css!');
                         // remove explicit calls to JSX loader plugin
@@ -305,7 +317,7 @@ module.exports = function(grunt) {
             }
         },
         jison: {
-            target : {
+            target: {
                 src: 'static/js/expression/config.jison',
                 dest: 'static/js/expression/parser.js',
                 options: {
@@ -338,12 +350,12 @@ module.exports = function(grunt) {
     grunt.registerTask('default', ['build']);
     grunt.registerTask('lint-ui', [
         'lintspaces',
+        'jscs',
         'clean:prepare_build',
         'copy:preprocess_js',
         'react',
         'clean:jsx',
-        'jshint',
-        'jscs'
+        'jshint'
     ]);
     grunt.task.loadTasks('grunt');
 };

@@ -153,8 +153,16 @@ class DeploymentTask(object):
         for node in nodes:
             node.pending_addition = False
 
-        #NOTE(dshulyak) discussed with warpc, separation is required
-        #to leave legacy deployment model as it is
+        # TODO(dshulyak) maybe it should be reimplemented with versioning
+        # based on cluster version, but it seems that this is enough
+        # pre/post tasks will be stored only with new release configuration
+        # in fuel-library, therefore it is impossible that granular_deploy
+        # will be chosen for old clusters
+        if pre_deployment or post_deployment:
+            method_name = 'granular_deploy'
+        else:
+            method_name = 'deploy'
+
         rpc_message = make_astute_message(
             task,
             'granular_deploy',
@@ -193,7 +201,7 @@ class UpdateTask(object):
 
         rpc_message = make_astute_message(
             task,
-            'granular_deploy',
+            'deploy',
             'deploy_resp',
             {
                 'deployment_info': serialized_cluster

@@ -21,24 +21,36 @@ define([
     'utils',
     'expression',
     'expression/objects',
-    'deepModel',
-    'backbone-lodash-monkeypatch'
+    'deepModel'
 ], function($, _, i18n, Backbone, utils, Expression, expressionObjects) {
     'use strict';
 
     var models = {};
+
+    var superMixin = {
+        _super: function(method, args) {
+            var object = this;
+            while (object[method] === this[method]) object = object.constructor.__super__;
+            return object[method].apply(this, args || []);
+        }
+    };
+
+    var BaseModel = models.BaseModel = Backbone.Model.extend(superMixin);
+    var BaseCollection = models.BaseCollection = Backbone.Collection.extend({
+        getByIds: function(ids) {
+            return this.filter(function(model) {return _.contains(ids, model.id);});
+        }
+    }).extend(superMixin);
 
     var cacheMixin = {
         fetch: function(options) {
             if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {
                 return $.Deferred().resolve();
             }
-            //FIXME: ignoring inheritance here and calling fetch method of Backbone.Model/Backbone.Collection
-            return Backbone[this instanceof Backbone.Model ? 'Model' : 'Collection'].prototype.fetch.apply(this, arguments);
+            return this._super('fetch', arguments);
         },
         sync: function() {
-            //FIXME: ignoring inheritance here and calling sync method of Backbone.Model/Backbone.Collection
-            var deferred = Backbone[this instanceof Backbone.Model ? 'Model' : 'Collection'].prototype.sync.apply(this, arguments);
+            var deferred = this._super('sync', arguments);
             if (this.cacheFor) {
                 deferred.done(_.bind(function() {
                     this.lastSyncTime = new Date();
@@ -200,12 +212,11 @@ define([
         }
     };
 
-    models.Role = Backbone.Model.extend({
+    models.Role = BaseModel.extend(restrictionMixin).extend({
         constructorName: 'Role'
     });
-    _.extend(models.Role.prototype, restrictionMixin);
 
-    models.Roles = Backbone.Collection.extend({
+    models.Roles = BaseCollection.extend(restrictionMixin).extend({
         constructorName: 'Roles',
         model: models.Role,
         processConflicts: function() {
@@ -224,7 +235,7 @@ define([
         }
     });
 
-    models.Release = Backbone.Model.extend({
+    models.Release = BaseModel.extend({
         constructorName: 'Release',
         urlRoot: '/api/releases',
         parse: function(response) {
@@ -243,13 +254,13 @@ define([
         }
     });
 
-    models.Releases = Backbone.Collection.extend({
+    models.Releases = BaseCollection.extend({
         constructorName: 'Releases',
         model: models.Release,
         url: '/api/releases'
     });
 
-    models.Cluster = Backbone.Model.extend({
+    models.Cluster = BaseModel.extend({
         constructorName: 'Cluster',
         urlRoot: '/api/clusters',
         defaults: function() {
@@ -298,14 +309,14 @@ define([
         }
     });
 
-    models.Clusters = Backbone.Collection.extend({
+    models.Clusters = BaseCollection.extend({
         constructorName: 'Clusters',
         model: models.Cluster,
         url: '/api/clusters',
         comparator: 'id'
     });
 
-    models.Node = Backbone.Model.extend({
+    models.Node = BaseModel.extend({
         constructorName: 'Node',
         urlRoot: '/api/nodes',
         resource: function(resourceName) {
@@ -355,7 +366,7 @@ define([
         }
     });
 
-    models.Nodes = Backbone.Collection.extend({
+    models.Nodes = BaseCollection.extend({
         constructorName: 'Nodes',
         model: models.Node,
         url: '/api/nodes',
@@ -379,18 +390,15 @@ define([
         resources: function(resourceName) {
             var resources = this.map(function(node) {return node.resource(resourceName);});
             return _.reduce(resources, function(sum, n) {return sum + n;}, 0);
-        },
-        getByIds: function(ids) {
-            return this.filter(function(node) {return _.contains(ids, node.id);});
         }
     });
 
-    models.NodesStatistics = Backbone.Model.extend({
+    models.NodesStatistics = BaseModel.extend({
         constructorName: 'NodesStatistics',
         urlRoot: '/api/nodes/allocation/stats'
     });
 
-    models.Task = Backbone.Model.extend({
+    models.Task = BaseModel.extend({
         constructorName: 'Task',
         urlRoot: '/api/tasks',
         releaseId: function() {
@@ -428,7 +436,7 @@ define([
         }
     });
 
-    models.Tasks = Backbone.Collection.extend({
+    models.Tasks = BaseCollection.extend({
         constructorName: 'Tasks',
         model: models.Task,
         url: '/api/tasks',
@@ -474,12 +482,12 @@ define([
         }
     });
 
-    models.Notification = Backbone.Model.extend({
+    models.Notification = BaseModel.extend({
         constructorName: 'Notification',
         urlRoot: '/api/notifications'
     });
 
-    models.Notifications = Backbone.Collection.extend({
+    models.Notifications = BaseCollection.extend({
         constructorName: 'Notifications',
         model: models.Notification,
         url: '/api/notifications',
@@ -488,7 +496,7 @@ define([
         }
     });
 
-    models.Settings = Backbone.DeepModel.extend({
+    models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).extend(restrictionMixin).extend({
         constructorName: 'Settings',
         urlRoot: '/api/clusters/',
         root: 'editable',
@@ -499,9 +507,9 @@ define([
         parse: function(response) {
             return response[this.root];
         },
-        toJSON: function(options) {
+        toJSON: function() {
             var data = {};
-            data[this.root] = Backbone.Model.prototype.toJSON.call(this, options);
+            data[this.root] = this._super('toJSON', arguments);
             return data;
         },
         processRestrictions: function() {
@@ -551,7 +559,6 @@ define([
             }, this);
         }
     });
-    _.extend(models.Settings.prototype, cacheMixin, restrictionMixin);
 
     models.FuelSettings = models.Settings.extend({
         constructorName: 'FuelSettings',
@@ -559,7 +566,7 @@ define([
         root: 'settings'
     });
 
-    models.Disk = Backbone.Model.extend({
+    models.Disk = BaseModel.extend({
         constructorName: 'Disk',
         urlRoot: '/api/nodes/',
         parse: function(response) {
@@ -586,14 +593,14 @@ define([
         }
     });
 
-    models.Disks = Backbone.Collection.extend({
+    models.Disks = BaseCollection.extend({
         constructorName: 'Disks',
         model: models.Disk,
         url: '/api/nodes/',
         comparator: 'name'
     });
 
-    models.Volume = Backbone.Model.extend({
+    models.Volume = BaseModel.extend({
         constructorName: 'Volume',
         urlRoot: '/api/volumes/',
         getMinimalSize: function(minimum) {
@@ -613,13 +620,13 @@ define([
         }
     });
 
-    models.Volumes = Backbone.Collection.extend({
+    models.Volumes = BaseCollection.extend({
         constructorName: 'Volumes',
         model: models.Volume,
         url: '/api/volumes/'
     });
 
-    models.Interface = Backbone.Model.extend({
+    models.Interface = BaseModel.extend({
         constructorName: 'Interface',
         bondingModes: ['active-backup', 'balance-slb', 'lacp-balance-tcp'],
         parse: function(response) {
@@ -655,7 +662,7 @@ define([
         }
     });
 
-    models.Interfaces = Backbone.Collection.extend({
+    models.Interfaces = BaseCollection.extend({
         constructorName: 'Interfaces',
         model: models.Interface,
         generateBondName: function() {
@@ -672,11 +679,11 @@ define([
         }
     });
 
-    models.InterfaceNetwork = Backbone.Model.extend({
+    models.InterfaceNetwork = BaseModel.extend({
         constructorName: 'InterfaceNetwork'
     });
 
-    models.InterfaceNetworks = Backbone.Collection.extend({
+    models.InterfaceNetworks = BaseCollection.extend({
         constructorName: 'InterfaceNetworks',
         model: models.InterfaceNetwork,
         preferredOrder: ['public', 'floating', 'storage', 'management', 'fixed'],
@@ -685,20 +692,20 @@ define([
         }
     });
 
-    models.Network = Backbone.Model.extend({
+    models.Network = BaseModel.extend({
         constructorName: 'Network'
     });
 
-    models.Networks = Backbone.Collection.extend({
+    models.Networks = BaseCollection.extend({
         constructorName: 'Networks',
         model: models.Network
     });
 
-    models.NetworkingParameters = Backbone.Model.extend({
+    models.NetworkingParameters = BaseModel.extend({
         constructorName: 'NetworkingParameters'
     });
 
-    models.NetworkConfiguration = Backbone.Model.extend({
+    models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
         constructorName: 'NetworkConfiguration',
         cacheFor: 60 * 1000,
         parse: function(response) {
@@ -828,20 +835,19 @@ define([
             return _.isEmpty(errors) ? null : errors;
         }
     });
-    _.extend(models.NetworkConfiguration.prototype, cacheMixin);
 
-    models.LogSource = Backbone.Model.extend({
+    models.LogSource = BaseModel.extend({
         constructorName: 'LogSource',
         urlRoot: '/api/logs/sources'
     });
 
-    models.LogSources = Backbone.Collection.extend({
+    models.LogSources = BaseCollection.extend({
         constructorName: 'LogSources',
         model: models.LogSource,
         url: '/api/logs/sources'
     });
 
-    models.RedHatAccount = Backbone.Model.extend({
+    models.RedHatAccount = BaseModel.extend({
         constructorName: 'RedHatAccount',
         urlRoot: '/api/redhat/account',
         validate: function(attrs) {
@@ -871,56 +877,56 @@ define([
         }
     });
 
-    models.TestSet = Backbone.Model.extend({
+    models.TestSet = BaseModel.extend({
         constructorName: 'TestSet',
         urlRoot: '/ostf/testsets'
     });
 
-    models.TestSets = Backbone.Collection.extend({
+    models.TestSets = BaseCollection.extend({
         constructorName: 'TestSets',
         model: models.TestSet,
         url: '/ostf/testsets'
     });
 
-    models.Test = Backbone.Model.extend({
+    models.Test = BaseModel.extend({
         constructorName: 'Test',
         urlRoot: '/ostf/tests'
     });
 
-    models.Tests = Backbone.Collection.extend({
+    models.Tests = BaseCollection.extend({
         constructorName: 'Tests',
         model: models.Test,
         url: '/ostf/tests'
     });
 
-    models.TestRun = Backbone.Model.extend({
+    models.TestRun = BaseModel.extend({
         constructorName: 'TestRun',
         urlRoot: '/ostf/testruns'
     });
 
-    models.TestRuns = Backbone.Collection.extend({
+    models.TestRuns = BaseCollection.extend({
         constructorName: 'TestRuns',
         model: models.TestRun,
         url: '/ostf/testruns'
     });
 
-    models.OSTFClusterMetadata = Backbone.Model.extend({
+    models.OSTFClusterMetadata = BaseModel.extend({
         constructorName: 'OSTFClusterMetadata',
         urlRoot: '/api/ostf'
     });
 
-    models.FuelKey = Backbone.Model.extend({
+    models.FuelKey = BaseModel.extend({
         constructorName: 'FuelKey',
         urlRoot: '/api/registration/key'
     });
 
-    models.FuelVersion = Backbone.Model.extend({
+    models.FuelVersion = BaseModel.extend({
         constructorName: 'FuelVersion',
         urlRoot: '/api/version',
         authExempt: true
     });
 
-    models.User = Backbone.Model.extend({
+    models.User = BaseModel.extend({
         constructorName: 'User',
         locallyStoredAttributes: ['username', 'token'],
         initialize: function() {
@@ -940,12 +946,12 @@ define([
         }
     });
 
-    models.LogsPackage = Backbone.Model.extend({
+    models.LogsPackage = BaseModel.extend({
         constructorName: 'LogsPackage',
         urlRoot: '/api/logs/package'
     });
 
-    models.CapacityLog = Backbone.Model.extend({
+    models.CapacityLog = BaseModel.extend({
         constructorName: 'CapacityLog',
         urlRoot: '/api/capacity'
     });

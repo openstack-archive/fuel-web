@@ -237,8 +237,9 @@ class TestPrePostHooks(BasePluginTest):
 
     def test_generate_post_hooks(self):
         tasks = self.get_post_hooks(self.cluster).json
-        self.assertEqual(len(tasks), 1)
-        task = tasks[0]
+        plugins_tasks = [t for t in tasks if t.get('diagnostic_name')]
+        self.assertEqual(len(plugins_tasks), 1)
+        task = plugins_tasks[0]
         controller_id = [n.uid for n in self.cluster.nodes
                          if 'controller' in n.roles]
         self.assertEqual(controller_id, task['uids'])

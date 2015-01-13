@@ -124,6 +124,23 @@ DEPLOYMENT_CURRENT = """
   parameters:
     cmd: sh /etc/puppet/modules/osnailyfacter/modular/astute/restart_radosgw.sh
     timeout: 180
+
+- id: enable_quorum
+  type: shell
+  role: [primary-controller]
+  stage: post_deployment
+  condition: cluster:mode != 'multinode'
+  parameters:
+    cmd: sh /etc/puppet/modules/osnailyfacter/modular/astute/enable_quorum.sh
+    timeout: 180
+
+- id: upload_cirros
+  type: shell
+  role: [primary-controller, controller]
+  stage: post_deployment
+  parameters:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/astute/upload_cirros.rb
+    timeout: 180
 """
 
 DEPLOYMENT_50 = """

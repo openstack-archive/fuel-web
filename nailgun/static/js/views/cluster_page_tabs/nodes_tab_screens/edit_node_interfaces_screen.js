@@ -89,7 +89,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeInterfaces
         bondingAvailable: function() {
             var isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
             var iserDisabled = this.model.get('settings').get('storage.iser.value') != true;
-            var mellanoxSriovDisabled = this.model.get('settings').get('neutron_mellanox.plugin.value') != "ethernet";
+            var mellanoxSriovDisabled = this.model.get('settings').get('neutron_mellanox.plugin.value') != 'ethernet';
             return !this.isLocked() && isExperimental && this.model.get('net_provider') == 'neutron' && iserDisabled && mellanoxSriovDisabled;
         },
         updateBondingControlsState: function() {

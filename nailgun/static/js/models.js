@@ -829,7 +829,7 @@ define([
                                 break;
                             case 'password':
                             case 'text':
-                                attributeConfigValue = "";
+                                attributeConfigValue = '';
                                 break;
                         }
                     }

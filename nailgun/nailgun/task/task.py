@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+from distutils.version import StrictVersion
 
 import netaddr
 
@@ -29,6 +30,7 @@ import nailgun.rpc as rpc
 from nailgun import objects
 
 from nailgun.consts import CLUSTER_STATUSES
+from nailgun.consts import FUEL_GRANULAR_DEPLOY
 from nailgun.consts import NODE_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
@@ -119,6 +121,18 @@ class DeploymentTask(object):
 #   those which are prepared for removal.
 
     @classmethod
+    def _get_deployment_method(cls, cluster):
+        """Get deployment method name based on cluster version
+
+        :param cluster: Cluster db object
+        :returns: string - deploy/granular_deploy
+        """
+        if (StrictVersion(cluster.release.fuel_version)
+            < StrictVersion(FUEL_GRANULAR_DEPLOY)):
+            return 'deploy'
+        return 'granular_deploy'
+
+    @classmethod
     def message(cls, task, nodes, deployment_tasks=None):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
         deployment_tasks = deployment_tasks or []
@@ -158,11 +172,9 @@ class DeploymentTask(object):
         for node in nodes:
             node.pending_addition = False
 
-        #NOTE(dshulyak) discussed with warpc, separation is required
-        #to leave legacy deployment model as it is
         rpc_message = make_astute_message(
             task,
-            'granular_deploy',
+            cls._get_deployment_method(task.cluster),
             'deploy_resp',
             {
                 'deployment_info': serialized_cluster,
@@ -198,7 +210,7 @@ class UpdateTask(object):
 
         rpc_message = make_astute_message(
             task,
-            'granular_deploy',
+            'deploy',
             'deploy_resp',
             {
                 'deployment_info': serialized_cluster

@@ -124,6 +124,15 @@ DEPLOYMENT_CURRENT = """
   parameters:
     cmd: /etc/pupppet/modules/osnailyfacter/modular/astute/restart_radosgw.sh
     timeout: 180
+
+- id: enable_quorum
+  type: shell
+  role: [primary-controller]
+  stage: post_deployment
+  condition: cluster:mode != multinode
+  parameters:
+    cmd: /etc/pupppet/modules/osnailyfacter/modular/astute/restart_radosgw.sh
+    timeout: 180
 """
 
 DEPLOYMENT_50 = """

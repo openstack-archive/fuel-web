@@ -28,6 +28,10 @@ NULLABLE_STRING = {
     'type': ['string', 'null']
 }
 
+NULLABLE_ARRAY = {
+    'type': ['array', 'null']
+}
+
 POSITIVE_INTEGER = {
     'type': 'integer',
     'minValue': 1

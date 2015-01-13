@@ -205,6 +205,16 @@ class RestartRadosGW(GenericRolesHook):
         return False
 
 
+class UploadCirros(GenericRolesHook):
+
+    identity = 'upload_cirros'
+
+    def get_uids(self):
+        controllers = super(UploadCirros, self).get_uids()
+        #Upload cirros should be executed only on one node
+        return controllers[0:1]
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 

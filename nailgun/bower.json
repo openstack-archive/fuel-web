@@ -15,6 +15,7 @@
         "autoNumeric": "1.9.12",
         "backbone": "1.1.2",
         "backbone.stickit": "0.7.0",
+        "backbone-super": "1.0.2",
         "cocktail": "0.5.7",
         "i18next": "1.7.1",
         "backbone-deep-model": "0.10.4",

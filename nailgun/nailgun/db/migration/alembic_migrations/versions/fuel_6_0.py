@@ -369,7 +369,7 @@ _master_node_settings = {
             "label": "statistics.setting_labels.email",
             "weight": 40,
             "regex": {
-                "source": "\\S",
+                "source": "^\S+@\S+[\.][0-9a-z]+$",
                 "error": "statistics.errors.email"
             },
             "restrictions": [

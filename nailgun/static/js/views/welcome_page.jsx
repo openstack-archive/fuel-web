@@ -59,7 +59,6 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
             if (this.state.loading) return null;
             var ns = 'welcome_page.',
                 contacts = ['name', 'email', 'company'],
-                error = _.compact(_.map(contacts, this.getError, this))[0],
                 isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
             return (
                 <div className='welcome-page'>
@@ -75,13 +74,10 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                                 <div className='welcome-text-box'>{i18n(ns + 'provide_contacts')}</div>
                             }
                             { _.map(contacts, function(settingName) {
-                                return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box', true);
+                                return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box');
                             }, this)}
-                            {error &&
-                                <div className='welcome-form-error'>{i18n(error)}</div>
-                            }
                             <div className='welcome-button-box'>
-                                <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress} onClick={this.onStartButtonClick}>
+                                <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress || !!this.props.settings.validationError} onClick={this.onStartButtonClick}>
                                     {i18n(ns + 'start_fuel')}
                                 </button>
                             </div>

@@ -57,46 +57,96 @@ class TestManager(test_base.BaseTestCase):
     @mock.patch.object(lu, 'vgcreate')
     @mock.patch.object(lu, 'pvcreate')
     @mock.patch.object(mu, 'mdcreate')
-    @mock.patch.object(pu, 'set_gpt_type')
-    @mock.patch.object(pu, 'set_partition_flag')
-    @mock.patch.object(pu, 'make_partition')
+    @mock.patch.object(pu, 'info')
     @mock.patch.object(pu, 'make_label')
+    @mock.patch.object(pu, 'reread_partitions')
+    @mock.patch.object(pu, 'set_gpt_type')
     @mock.patch.object(hu, 'list_block_devices')
-    def test_do_partitioning(self, mock_hu_lbd, mock_pu_ml, mock_pu_mp,
-                             mock_pu_spf, mock_pu_sgt, mock_mu_m, mock_lu_p,
+    def test_do_partitioning(self, mock_hu_lbd, mock_pu_sgt, mock_pu_rp,
+                             mock_pu_ml, mock_pu_i, mock_mu_m, mock_lu_p,
                              mock_lu_v, mock_lu_l, mock_fu_mf, mock_pvr,
                              mock_vgr, mock_lvr, mock_mdr, mock_exec):
         mock_hu_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
+        mock_exec.return_value = ('out', None)
+        mock_pu_i.return_value = {'parts': [{'fstype': 'free', 'end': 100000,
+                                             'begin': 0}]}
         self.mgr.do_parsing()
         self.mgr.do_partitioning()
+
         mock_pu_ml_expected_calls = [mock.call('/dev/sda', 'gpt'),
                                      mock.call('/dev/sdb', 'gpt'),
                                      mock.call('/dev/sdc', 'gpt')]
         self.assertEqual(mock_pu_ml_expected_calls, mock_pu_ml.call_args_list)
 
-        mock_pu_mp_expected_calls = [
-            mock.call('/dev/sda', 1, 25, 'primary'),
-            mock.call('/dev/sda', 25, 225, 'primary'),
-            mock.call('/dev/sda', 225, 425, 'primary'),
-            mock.call('/dev/sda', 425, 625, 'primary'),
-            mock.call('/dev/sda', 625, 20063, 'primary'),
-            mock.call('/dev/sda', 20063, 65660, 'primary'),
-            mock.call('/dev/sda', 65660, 65680, 'primary'),
-            mock.call('/dev/sdb', 1, 25, 'primary'),
-            mock.call('/dev/sdb', 25, 225, 'primary'),
-            mock.call('/dev/sdb', 225, 425, 'primary'),
-            mock.call('/dev/sdb', 425, 65396, 'primary'),
-            mock.call('/dev/sdc', 1, 25, 'primary'),
-            mock.call('/dev/sdc', 25, 225, 'primary'),
-            mock.call('/dev/sdc', 225, 425, 'primary'),
-            mock.call('/dev/sdc', 425, 65396, 'primary')]
-        self.assertEqual(mock_pu_mp_expected_calls, mock_pu_mp.call_args_list)
+        mock_pu_rp_expected_calls = [mock.call('/dev/sda', out='out'),
+                                     mock.call('/dev/sdb', out='out'),
+                                     mock.call('/dev/sdc', out='out')]
+        self.assertEqual(mock_pu_rp_expected_calls, mock_pu_rp.call_args_list)
 
-        mock_pu_spf_expected_calls = [mock.call('/dev/sda', 1, 'bios_grub'),
-                                      mock.call('/dev/sdb', 1, 'bios_grub'),
-                                      mock.call('/dev/sdc', 1, 'bios_grub')]
-        self.assertEqual(mock_pu_spf_expected_calls,
-                         mock_pu_spf.call_args_list)
+        mock_exec_expected_calls = [
+            mock.call('parted', '-a', 'optimal', '-s', '/dev/sda', '--',
+                      'unit', 'MiB', 'mkpart', 'primary', '1', '25', 'set',
+                      '1', 'bios_grub', 'on', 'mkpart', 'primary', '25',
+                      '225', 'mkpart', 'primary', '225', '425', 'mkpart',
+                      'primary', '425', '625', 'mkpart', 'primary', '625',
+                      '20063', 'mkpart', 'primary', '20063', '65660', 'mkpart',
+                      'primary', '65660', '65680', check_exit_code=[0, 1]),
+            mock.call('test', '-e', '/dev/sda1', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sda1',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sda2', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sda2',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sda3', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sda3',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sda4', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sda4',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sda5', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sda5',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sda6', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sda6',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sda7', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sda7',
+                      check_exit_code=[0]),
+            mock.call('parted', '-a', 'optimal', '-s', '/dev/sdb', '--',
+                      'unit', 'MiB', 'mkpart', 'primary', '1', '25', 'set',
+                      '1', 'bios_grub', 'on', 'mkpart', 'primary', '25', '225',
+                      'mkpart', 'primary', '225', '425', 'mkpart', 'primary',
+                      '425', '65396', check_exit_code=[0, 1]),
+            mock.call('test', '-e', '/dev/sdb1', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sdb1',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sdb2', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sdb2',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sdb3', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sdb3',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sdb4', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sdb4',
+                      check_exit_code=[0]),
+            mock.call('parted', '-a', 'optimal', '-s', '/dev/sdc', '--',
+                      'unit', 'MiB', 'mkpart', 'primary', '1', '25', 'set',
+                      '1', 'bios_grub', 'on', 'mkpart', 'primary', '25',
+                      '225', 'mkpart', 'primary', '225', '425', 'mkpart',
+                      'primary', '425', '65396', check_exit_code=[0, 1]),
+            mock.call('test', '-e', '/dev/sdc1', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sdc1',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sdc2', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sdc2',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sdc3', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sdc3',
+                      check_exit_code=[0]),
+            mock.call('test', '-e', '/dev/sdc4', check_exit_code=[0]),
+            mock.call('dd', 'if=/dev/zero', 'bs=1M', 'count=1', 'of=/dev/sdc4',
+                      check_exit_code=[0])]
+        self.assertEqual(mock_exec_expected_calls, mock_exec.call_args_list)
 
         mock_pu_sgt_expected_calls = [mock.call('/dev/sda', 4, 'fake_guid')]
         self.assertEqual(mock_pu_sgt_expected_calls,

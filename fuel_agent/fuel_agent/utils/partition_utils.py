@@ -79,14 +79,13 @@ def make_label(dev, label='gpt'):
     if label not in ('gpt', 'msdos'):
         raise errors.WrongPartitionLabelError(
             'Wrong partition label type: %s' % label)
-    out, err = utils.execute('parted', '-s', dev, 'mklabel', label,
-                             check_exit_code=[0, 1])
-    LOG.debug('Parted output: \n%s' % out)
+    out, err = utils.execute('parted', '-s', dev, 'mklabel',
+                             label, check_exit_code=[0, 1])
     reread_partitions(dev, out=out)
 
 
-def set_partition_flag(dev, num, flag, state='on'):
-    """Sets flag on a partition
+def get_set_partition_flag_cmd(dev, num, flag, state='on'):
+    """Returns parted's command to set a flag on a partition
 
     :param dev: A device file, e.g. /dev/sda.
     :param num: Partition number
@@ -94,7 +93,7 @@ def set_partition_flag(dev, num, flag, state='on'):
     'boot', 'raid', 'lvm'
     :param state: Desiable flag state. 'on' or 'off'. Default is 'on'.
 
-    :returns: None
+    :returns: list of command args
     """
     LOG.debug('Trying to set partition flag: dev=%s num=%s flag=%s state=%s' %
               (dev, num, flag, state))
@@ -107,10 +106,7 @@ def set_partition_flag(dev, num, flag, state='on'):
     if state not in ('on', 'off'):
         raise errors.WrongPartitionSchemeError(
             'Wrong partition flag state: %s' % state)
-    out, err = utils.execute('parted', '-s', dev, 'set', str(num),
-                             flag, state, check_exit_code=[0, 1])
-    LOG.debug('Parted output: \n%s' % out)
-    reread_partitions(dev, out=out)
+    return ['set', str(num), flag, state]
 
 
 def set_gpt_type(dev, num, type_guid):
@@ -131,7 +127,7 @@ def set_gpt_type(dev, num, type_guid):
                   dev, check_exit_code=[0])
 
 
-def make_partition(dev, begin, end, ptype):
+def get_make_partition_cmd(dev, begin, end, ptype):
     LOG.debug('Trying to create a partition: dev=%s begin=%s end=%s' %
               (dev, begin, end))
     if ptype not in ('primary', 'logical'):
@@ -150,11 +146,7 @@ def make_partition(dev, begin, end, ptype):
             'Invalid boundaries: begin and end '
             'are not inside available free space')
 
-    out, err = utils.execute(
-        'parted', '-a', 'optimal', '-s', dev, 'unit', 'MiB',
-        'mkpart', ptype, str(begin), str(end), check_exit_code=[0, 1])
-    LOG.debug('Parted output: \n%s' % out)
-    reread_partitions(dev, out=out)
+    return ['mkpart', ptype, str(begin), str(end)]
 
 
 def remove_partition(dev, num):

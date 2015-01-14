@@ -80,9 +80,19 @@ class Manager(object):
         lu.pvremove_all()
 
         for parted in self.partition_scheme.parteds:
+            pcmd = []
             pu.make_label(parted.name, parted.label)
             for prt in parted.partitions:
-                pu.make_partition(prt.device, prt.begin, prt.end, prt.type)
+                pcmd.extend(pu.get_make_partition_cmd(prt.device, prt.begin,
+                                                      prt.end, prt.type))
+                for flag in prt.flags:
+                    pcmd.extend(pu.get_set_partition_flag_cmd(prt.device,
+                                                              prt.count, flag))
+            out, err = utils.execute('parted', '-a', 'optimal', '-s',
+                                     parted.name, '--', 'unit', 'MiB', *pcmd,
+                                     check_exit_code=[0, 1])
+            pu.reread_partitions(parted.name, out=out)
+            for prt in parted.partitions:
                 # We wipe out the beginning of every new partition
                 # right after creating it. It allows us to avoid possible
                 # interactive dialog if some data (metadata or file system)
@@ -104,8 +114,6 @@ class Manager(object):
                                       'of=%s' % prt.name, check_exit_code=[0])
                         break
 
-                for flag in prt.flags:
-                    pu.set_partition_flag(prt.device, prt.count, flag)
                 if prt.guid:
                     pu.set_gpt_type(prt.device, prt.count, prt.guid)
 

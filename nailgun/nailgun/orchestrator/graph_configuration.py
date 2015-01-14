@@ -82,6 +82,13 @@ DEPLOYMENT_CURRENT = """
   parameters:
     strategy:
       type: parallel
+- id: base-os
+  type: group
+  role: [base-os]
+  required_for: [deploy]
+  parameters:
+    strategy:
+      type: parallel
 - id: deploy_legacy
   type: puppet
   groups: [primary-controller, controller,

@@ -16,7 +16,9 @@
 import functools
 
 from mock import patch
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import reverse
 from nailgun.test.performance.base import BaseIntegrationLoadTestCase
 
 
@@ -24,6 +26,8 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
 
     MAX_EXEC_TIME = 60
     MAX_TOTAL_EXEC_TIME = 350
+
+    INITIAL_DEPLOY_TIME = 0
 
     def setUp(self):
         super(IntegrationClusterTests, self).setUp()
@@ -80,3 +84,58 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
         self.check_time_exec(func, 10)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_double_deploy(self, mock_rpc):
+        self.provision(self.cluster['id'], self.nodes_ids)
+        self.deployment(self.cluster['id'], self.nodes_ids)
+        new_nodes = self.env.create_nodes(self.NODES_NUM, api=True)
+
+        ids = [str(node['id']) for node in new_nodes]
+
+        self.provision(self.cluster['id'], ids)
+        self.deployment(self.cluster['id'], ids)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_divided_deploy(self, mock_rpc):
+        self.provision(self.cluster['id'], self.nodes_ids)
+        self.deployment(self.cluster['id'], self.nodes_ids)
+
+        new_nodes = self.env.create_nodes(self.NODES_NUM, api=True)
+        ids = [str(node['id']) for node in new_nodes]
+
+        self.provision(self.cluster['id'], ids)
+        self.deployment(self.cluster['id'], ids)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_rerun_stopped_deploy(self, mock_rpc):
+        cluster = self.env.clusters[0]
+
+        self.app.put(
+            reverse(
+                'DeploySelectedNodes',
+                kwargs={'cluster_id': cluster.id}),
+            headers=self.default_headers)
+
+        stop_resp = self.app.put(
+            reverse(
+                'ClusterStopDeploymentHandler',
+                kwargs={'cluster_id': cluster.id}),
+            headers=self.default_headers)
+
+        self.tester.assertEqual(202, stop_resp.status_code)
+
+        second_deploy_response = self.app.put(
+            reverse(
+                'DeploySelectedNodes',
+                kwargs={'cluster_id': cluster.id}),
+            headers=self.default_headers)
+
+        task = self.db.query(Task).filter_by(
+            uuid=second_deploy_response.json_body['uuid']
+        ).first()
+
+        self.env.wait_ready(task, 350)

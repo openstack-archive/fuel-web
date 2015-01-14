@@ -39,7 +39,7 @@
           label: "statistics.setting_labels.email"
           weight: 40
           regex:
-            source: *non_empty_string
+            source: "^\\S+@\\S+[\\.][0-9a-z]+$"
             error: "statistics.errors.email"
           restrictions: *user_info_restrictions
         company:

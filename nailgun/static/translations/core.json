@@ -138,9 +138,9 @@
                     "company": "Company"
                 },
                 "errors": {
-                    "name": "Please fill your name",
-                    "email": "Please fill email address",
-                    "company": "Please fill company name"
+                    "name": "Please fill in your name",
+                    "email": "Please fill in correct email address",
+                    "company": "Please fill in company name"
                 }
             },
             "welcome_page": {

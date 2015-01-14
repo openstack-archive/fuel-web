@@ -282,6 +282,13 @@ def upgrade_attributes_metadata_6_0_to_6_1(attributes_meta):
     return attributes_meta
 
 
+def upgrade_master_node_settings_6_0_to_6_1(master_node_settings):
+    master_node_settings['statistics']['email']['regex']['source'] = \
+        '^\S+@\S+[\.][0-9a-z]+$'
+
+    return master_node_settings
+
+
 def upgrade_role_limits_6_0_to_6_1(roles_meta, _limits_to_update):
     for role_name, role_definition in six.iteritems(roles_meta):
         if role_name in _limits_to_update:

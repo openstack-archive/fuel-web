@@ -18,20 +18,19 @@ import random
 
 from nailgun import consts
 from nailgun.openstack.common import jsonutils
+from nailgun.test.base import fake_tasks
+from nailgun.test.performance import base
 from nailgun.test.utils import random_string
 
-from nailgun.test.performance.base import BaseUnitLoadTestCase
-from nailgun.test.performance.base import evaluate_unit_performance
 
-
-class NodeOperationsLoadTest(BaseUnitLoadTestCase):
+class NodeOperationsLoadTest(base.BaseUnitLoadTestCase):
 
     @classmethod
     def setUpClass(cls):
         super(NodeOperationsLoadTest, cls).setUpClass()
         cls.env.create_nodes(cls.NODES_NUM, cluster_id=cls.cluster['id'])
 
-    @evaluate_unit_performance
+    @base.evaluate_unit_performance
     def test_put_node(self):
         func = functools.partial(
             self.put_handler,
@@ -42,7 +41,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
-    @evaluate_unit_performance
+    @base.evaluate_unit_performance
     def test_get_nodes(self):
         func = functools.partial(
             self.get_handler,
@@ -51,7 +50,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func, 6)
 
-    @evaluate_unit_performance
+    @base.evaluate_unit_performance
     def test_get_defaults_disk(self):
         func = functools.partial(
             self.get_handler,
@@ -60,7 +59,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
-    @evaluate_unit_performance
+    @base.evaluate_unit_performance
     def test_get_volumes_info(self):
         func = functools.partial(
             self.get_handler,
@@ -69,7 +68,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
-    @evaluate_unit_performance
+    @base.evaluate_unit_performance
     def test_get_node_nic(self):
         func = functools.partial(
             self.get_handler,
@@ -78,7 +77,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
-    @evaluate_unit_performance
+    @base.evaluate_unit_performance
     def test_put_nodes_nics(self):
         nodes_list = []
         for node in self.env.nodes:
@@ -96,7 +95,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func, 14)
 
-    @evaluate_unit_performance
+    @base.evaluate_unit_performance
     def test_get_allocation_stats(self):
         func = functools.partial(
             self.get_handler,
@@ -104,7 +103,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
-    @evaluate_unit_performance
+    @base.evaluate_unit_performance
     def test_add_delete_nodes(self):
         nodes_delete_list = []
         nodes_add_list = []
@@ -125,3 +124,34 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
             nodes_add_list
         )
         self.check_time_exec(func, 30)
+
+    @fake_tasks()
+    @base.evaluate_unit_performance
+    def test_provision_nodes(self):
+        func = functools.partial(
+            self.put_handler,
+            'ProvisionSelectedNodes',
+            {},
+            handler_kwargs={'cluster_id': self.cluster.id},
+        )
+
+        for node in self.cluster.nodes:
+            node.pending_addition = True
+
+        self.env.db.commit()
+
+        self.check_time_exec(func, 30)
+
+        for node in self.cluster.nodes:
+            node.pending_addition = False
+
+        self.env.db.commit()
+
+    @base.evaluate_unit_performance
+    def test_node_collection_network_interface_controllers_retrieve(self):
+        func = functools.partial(
+            self.get_handler,
+            'NodeCollectionNICsDefaultHandler',
+        )
+
+        self.check_time_exec(func, 20)

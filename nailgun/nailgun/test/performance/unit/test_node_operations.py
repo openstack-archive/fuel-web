@@ -23,6 +23,8 @@ from nailgun.test.utils import random_string
 from nailgun.test.performance.base import BaseUnitLoadTestCase
 from nailgun.test.performance.base import evaluate_unit_performance
 
+from nailgun.test.base import fake_tasks
+
 
 class NodeOperationsLoadTest(BaseUnitLoadTestCase):
 
@@ -125,3 +127,34 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
             nodes_add_list
         )
         self.check_time_exec(func, 30)
+
+    @fake_tasks()
+    @evaluate_unit_performance
+    def test_provision_nodes(self):
+        func = functools.partial(
+            self.put_handler,
+            'ProvisionSelectedNodes',
+            {},
+            handler_kwargs={'cluster_id': self.cluster.id},
+        )
+
+        for node in self.cluster.nodes:
+            node.pending_addition = True
+
+        self.env.db.commit()
+
+        self.check_time_exec(func, 30)
+
+        for node in self.cluster.nodes:
+            node.pending_addition = False
+
+        self.env.db.commit()
+
+    @evaluate_unit_performance
+    def test_node_collection_network_interface_controllers_retrieve(self):
+        func = functools.partial(
+            self.get_handler,
+            'NodeCollectionNICsDefaultHandler',
+        )
+
+        self.check_time_exec(func, 20)

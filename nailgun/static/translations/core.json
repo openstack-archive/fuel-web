@@ -134,7 +134,7 @@
                 },
                 "errors": {
                     "name": "Please fill your name",
-                    "email": "Please fill email address",
+                    "email": "Please fill correct email address",
                     "company": "Please fill company name"
                 }
             },

@@ -82,14 +82,39 @@ DEPLOYMENT_CURRENT = """
   parameters:
     strategy:
       type: parallel
-- id: deploy_legacy
+
+#DEPLOYMENT TASKS
+
+- id: hiera
+  type: puppet
+  groups: [primary-controller, controller, cinder, compute, ceph-osd,
+           zabbix-server, primary-mongo, mongo]
+  required_for: [deploy]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/hiera.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: netconfig
+  type: puppet
+  groups: [primary-controller, controller, cinder, compute, ceph-osd,
+           zabbix-server, primary-mongo, mongo]
+  required_for: [deploy]
+  requires: [hiera]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/netconfig.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: legacy
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
            zabbix-server, primary-mongo, mongo]
   required_for: [deploy]
+  requires: [hiera, netconfig]
   parameters:
-    puppet_manifest: /etc/puppet/manifests/site.pp
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/legacy.pp
     puppet_modules: /etc/puppet/modules
     timeout: 3600
 """

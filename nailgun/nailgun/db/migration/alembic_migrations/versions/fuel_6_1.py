@@ -31,6 +31,7 @@ from sqlalchemy.sql import text
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import upgrade_attributes_metadata_6_0_to_6_1
+from nailgun.utils.migration import upgrade_master_node_settings_6_0_to_6_1
 from nailgun.utils.migration import upgrade_role_limits_6_0_to_6_1
 from nailgun.utils.migration import upgrade_role_restrictions_6_0_to_6_1
 
@@ -91,9 +92,32 @@ def upgrade_data():
             attrs=jsonutils.dumps(attributes_meta)
         )
 
+    upgrade_master_node_settings(connection)
+
 
 def downgrade_data():
     pass
+
+
+def upgrade_master_node_settings(connection):
+    select = text(
+        "SELECT master_node_uid, settings FROM master_node_settings"
+    )
+    update = text(
+        """UPDATE master_node_settings
+        SET settings = :settings
+        WHERE master_node_uid = :uid""")
+
+    masters = connection.execute(select)
+
+    for master in masters:
+        settings = upgrade_master_node_settings_6_0_to_6_1(
+            jsonutils.loads(master[1]))
+
+        connection.execute(
+            update,
+            uid=master[0],
+            settings=jsonutils.dumps(settings))
 
 
 _limits_to_update = {

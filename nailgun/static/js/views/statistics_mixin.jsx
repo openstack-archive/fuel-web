@@ -91,7 +91,7 @@ define([
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) return i18n(key);
             return i18n(key + '_community');
         },
-        renderInput: function(settingName, labelClassName, wrapperClassName, hideErrors) {
+        renderInput: function(settingName, labelClassName, wrapperClassName) {
             if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result) return null;
             var setting = this.props.settings.get(this.props.settings.makePath('statistics', settingName)),
                 error = this.getError(settingName),
@@ -108,7 +108,7 @@ define([
                 labelClassName={labelClassName}
                 wrapperClassName={wrapperClassName}
                 onChange={this.onSettingChange}
-                error={error ? hideErrors ? '' : i18n(error) : null}
+                error={error && i18n(error)}
             />;
         },
         renderList: function(list, key) {

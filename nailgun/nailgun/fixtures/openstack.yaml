@@ -177,12 +177,6 @@
             restrictions:
               - condition: "settings:common.libvirt_type.value != 'vcenter'"
                 action: "hide"
-          use_vcenter:
-            value: true
-            label: ""
-            description: ""
-            weight: 5
-            type: "hidden"
           host_ip:
             value: ""
             label: "vCenter IP"

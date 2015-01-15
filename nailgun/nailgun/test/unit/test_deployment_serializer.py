@@ -20,6 +20,18 @@ from nailgun.test.base import BaseUnitTest
 from nailgun.orchestrator import deployment_serializers as ds
 
 
+class TestDeploymentSerializer(BaseUnitTest):
+
+    def test_set_node_name(self):
+        data = {}
+        node_name = 'Custom node name'
+        node_mock = mock.MagicMock()
+        node_mock.name = node_name
+        ds.set_node_name(data, node_mock)
+
+        self.assertEqual({'user_node_name': node_name}, data)
+
+
 class TestCreateSerializer(BaseUnitTest):
     """Test cases for `create_serializer` function.
     """

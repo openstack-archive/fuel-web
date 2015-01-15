@@ -36,7 +36,12 @@ from nailgun.orchestrator.deployment_serializers import\
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer51
 from nailgun.orchestrator.deployment_serializers import\
+    DeploymentHASerializer61
+from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer
+from nailgun.orchestrator.deployment_serializers import\
+    DeploymentMultinodeSerializer61
+
 
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 
@@ -1632,3 +1637,62 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertIn('enable_metadata_network', l3_settings['dhcp_agent'])
         self.assertEqual(l3_settings['dhcp_agent']['enable_metadata_network'],
                          True)
+
+
+class BaseDeploymentSerializer61(BaseIntegrationTest):
+
+    node_name = 'node name'
+
+    def create_env(self, mode):
+        return self.env.create(
+            cluster_kwargs={
+                'mode': mode,
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'},
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'pending_addition': True,
+                 'name': self.node_name}])
+
+    def check_serialize_node(self):
+        self.assertEqual(
+            self.serializer.serialize_node(
+                self.env.nodes[0], 'role')['user_node_name'],
+            self.node_name)
+
+    def check_serialize_node_for_node_list(self):
+        self.assertEqual(
+            self.serializer.serialize_node_for_node_list(
+                self.env.nodes[0], 'role')['user_node_name'],
+            self.node_name)
+
+
+class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
+
+    def setUp(self):
+        super(TestDeploymentMultinodeSerializer61, self).setUp()
+        self.cluster = self.create_env('multinode')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+
+        self.serializer = DeploymentMultinodeSerializer61(self.cluster)
+
+    def test_serialize_node(self):
+        self.check_serialize_node()
+
+    def test_serialize_node_for_node_list(self):
+        self.check_serialize_node_for_node_list()
+
+
+class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
+
+    def setUp(self):
+        super(TestDeploymentHASerializer61, self).setUp()
+        self.cluster = self.create_env('ha_compact')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        self.serializer = DeploymentHASerializer61(self.cluster)
+
+    def test_serialize_node(self):
+        self.check_serialize_node()
+
+    def test_serialize_node_for_node_list(self):
+        self.check_serialize_node_for_node_list()

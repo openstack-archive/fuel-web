@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import time
 
 from oslo.config import cfg
 
@@ -80,30 +79,19 @@ class Manager(object):
         lu.pvremove_all()
 
         for parted in self.partition_scheme.parteds:
+            for prt in parted.partitions:
+                # We wipe out the beginning of every new partition
+                # even before creating it. It allows us to avoid possible
+                # interactive dialog if some data (metadata or file system)
+                # present on this new partition and it also allows udev not
+                # hanging trying to parse this data.
+                utils.execute('dd', 'if=/dev/zero', 'bs=1M',
+                              'seek=%s' % max(prt.begin - 1, 0), 'count=2',
+                              'of=%s' % prt.device, check_exit_code=[0])
+
             pu.make_label(parted.name, parted.label)
             for prt in parted.partitions:
                 pu.make_partition(prt.device, prt.begin, prt.end, prt.type)
-                # We wipe out the beginning of every new partition
-                # right after creating it. It allows us to avoid possible
-                # interactive dialog if some data (metadata or file system)
-                # present on this new partition.
-                timestamp = time.time()
-                while 1:
-                    if time.time() > timestamp + 30:
-                        raise errors.PartitionNotFoundError(
-                            'Error while wiping data on partition %s.'
-                            'Partition not found' % prt.name)
-                    try:
-                        utils.execute('test', '-e', prt.name,
-                                      check_exit_code=[0])
-                    except errors.ProcessExecutionError:
-                        time.sleep(1)
-                        continue
-                    else:
-                        utils.execute('dd', 'if=/dev/zero', 'bs=1M', 'count=1',
-                                      'of=%s' % prt.name, check_exit_code=[0])
-                        break
-
                 for flag in prt.flags:
                     pu.set_partition_flag(prt.device, prt.count, flag)
                 if prt.guid:

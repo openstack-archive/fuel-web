@@ -15,6 +15,7 @@
       - ceph-osd
       - mongo
       - zabbix-server
+      - base-os
     roles_metadata:
       controller:
         name: "Controller"
@@ -70,6 +71,9 @@
         restrictions:
           - condition: "not ('experimental' in version:feature_groups)"
             action: "hide"
+      base-os:
+        name: "Operating System"
+        description: "Install base Operating System without additional packages and configuration."
     networks_metadata:
       nova_network:
         networks:
@@ -214,6 +218,12 @@
           - {allocate_size: "all", id: "mysql"}
         other:
           - {allocate_size: "all", id: "os"}
+        # NOTE(eli): it's better to use entire disk
+        # for OS, but currently we have a bug for
+        # Ubuntu which doesn't allow to do that:
+        # https://bugs.launchpad.net/fuel/+bug/1278964
+        base-os:
+          - {allocate_size: "min", id: "os"}
       volumes:
         - id: "os"
           type: "vg"

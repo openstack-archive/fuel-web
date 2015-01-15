@@ -43,7 +43,6 @@ class InstallationInfo(object):
         (('nsx_plugin', 'connector_type', 'value'), 'nsx_transport'),
         (('nsx_plugin', 'replication_mode', 'value'), 'nsx_replication'),
 
-        (('vcenter', 'use_vcenter', 'value'), 'vcenter'),
         (('public_network_assignment', 'assign_to_all_nodes', 'value'),
          'assign_public_to_all_nodes'),
         (('syslog', 'syslog_transport', 'value'), 'syslog_transport'),

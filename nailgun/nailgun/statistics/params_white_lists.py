@@ -153,9 +153,6 @@ _task_output_white_list_template = {
                 },
                 "role": "",
                 "online": "",
-                "vcenter": {
-                    "use_vcenter": ""
-                },
                 "auto_assign_floating_ip": "",
                 "ceilometer": {
                     "enabled": ""

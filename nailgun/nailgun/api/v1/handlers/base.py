@@ -30,6 +30,7 @@ from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
+from nailgun import utils
 
 
 def forbid_client_caching(handler):
@@ -391,6 +392,65 @@ class CollectionHandler(BaseHandler):
             raise self.http(400, exc.message)
 
         raise self.http(201, self.collection.single.to_json(new_obj))
+
+
+class DBSingletonHandler(BaseHandler):
+    """Manages an object that is supposed to have only one entry in the DB
+    (a DB singleton).
+    """
+
+    not_found_error = "Object not found in the DB"
+
+    def get_one_or_404(self):
+        try:
+            instance = self.single.get_one(fail_if_not_found=True)
+        except errors.ObjectNotFound:
+            raise self.http(404, self.not_found_error)
+
+        return instance
+
+    @content
+    def GET(self):
+        """Get singleton object from DB
+        :http: * 200 (OK)
+               * 404 (Object not found in DB)
+        """
+        instance = self.get_one_or_404()
+
+        return self.single.to_json(instance)
+
+    @content
+    def PUT(self):
+        """Change object in DB
+        :http: * 200 (OK)
+               * 400 (Invalid data)
+               * 404 (Object not present in DB)
+        """
+        data = self.checked_data(self.validator.validate_update)
+
+        instance = self.get_one_or_404()
+
+        self.single.update(instance, data)
+
+        return self.single.to_json(instance)
+
+    @content
+    def PATCH(self):
+        """Update object
+        :http: * 200 (OK)
+               * 400 (Invalid data)
+               * 404 (Object not present in DB)
+
+        """
+        data = self.checked_data(self.validator.validate_update)
+
+        instance = self.get_one_or_404()
+
+        instance.update(utils.dict_merge(
+            self.single.serializer.serialize(instance), data
+        ))
+
+        return self.single.to_json(instance)
 
 
 # TODO(enchantner): rewrite more handlers to inherit from this

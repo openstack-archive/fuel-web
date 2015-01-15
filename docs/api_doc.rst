@@ -1,3 +1,6 @@
+.. _api_doc:
+
+
 REST API Reference
 ==================
 

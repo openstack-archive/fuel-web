@@ -40,8 +40,12 @@ class TestClusterChanges(BaseIntegrationTest):
             name="networks"
         ).all()
         self.assertEqual(len(networks_changes), 1)
+        vmware_changes = self.db.query(ClusterChanges).filter_by(
+            name="vmware_attributes"
+        ).all()
+        self.assertEqual(len(vmware_changes), 1)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEqual(len(all_changes), 2)
+        self.assertEqual(len(all_changes), 3)
 
     def test_node_volumes_modification_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
@@ -188,12 +192,16 @@ class TestClusterChanges(BaseIntegrationTest):
             name="networks"
         ).all()
         self.assertEqual(len(networks_changes), 1)
+        vmware_changes = self.db.query(ClusterChanges).filter_by(
+            name="vmware_attributes"
+        ).all()
+        self.assertEqual(len(vmware_changes), 1)
         disks_changes = self.db.query(ClusterChanges).filter_by(
             name="disks"
         ).all()
         self.assertEqual(len(disks_changes), 1)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEqual(len(all_changes), 4)
+        self.assertEqual(len(all_changes), 5)
 
     @fake_tasks(godmode=True)
     def test_role_unassignment_drops_changes(self):

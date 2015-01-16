@@ -139,3 +139,24 @@ class ClusterChangesValidator(BaseDefferedTaskValidator):
     @classmethod
     def validate(cls, cluster):
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
+
+
+class VmwareAttributesValidator(BasicValidator):
+
+    single_schema = cluster_schema.vmware_attributes_schema
+
+    @classmethod
+    def validate(cls, data, instance=None):
+        d = cls.validate_json(data)
+        if 'metadata' in d.get('editable'):
+            db_metadata = instance.editable.get('metadata')
+            input_metadata = d.get('editable').get('metadata')
+            if db_metadata != input_metadata:
+                raise errors.InvalidData(
+                    'Metadata shouldn\'t change',
+                    log_message=True
+                )
+
+        # TODO(apopovych): write validation processing from
+        # openstack.yaml for vmware
+        return d

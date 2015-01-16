@@ -23,7 +23,7 @@ import mock
 from netaddr import IPNetwork
 from netaddr import IPRange
 
-from nailgun.consts import OVS_BOND_MODES
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
@@ -115,7 +115,12 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster = self.create_env('ha_compact')
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
-    def create_env(self, mode, network_manager='FlatDHCPManager'):
+    def create_env(self, mode, network_manager='FlatDHCPManager',
+                   env_version=None):
+        release_kwargs = {}
+        if env_version:
+            release_kwargs['version'] = env_version
+
         node_args = [
             {'roles': ['controller', 'cinder'], 'pending_addition': True},
             {'roles': ['compute', 'cinder'], 'pending_addition': True},
@@ -123,7 +128,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'roles': ['mongo'], 'pending_addition': True},
             {'roles': [], 'pending_roles': ['cinder'],
              'pending_addition': True}]
+
         cluster = self.env.create(
+            release_kwargs=release_kwargs,
             cluster_kwargs={
                 'mode': mode,
                 'net_manager': network_manager},
@@ -366,6 +373,157 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'role': 'ceph-osd', 'fail_if_error': True}
         ]
         self.assertEqual(expected_ciritial_roles, nodes)
+
+
+class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
+
+    def create_env(self, manager, nodes_count=3, ctrl_count=1, nic_count=2):
+        cluster = self.env.create(
+            release_kwargs={'version': '2014.2-6.1'},
+            cluster_kwargs={'mode': 'ha_compact'}
+        )
+
+        data = {'networking_parameters': {'net_manager': manager}}
+        self.env.nova_networks_put(cluster['id'], data)
+
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=ctrl_count,
+            if_count=nic_count,
+            roles=['controller', 'cinder'],
+            pending_addition=True,
+            cluster_id=cluster['id'])
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=nodes_count - ctrl_count,
+            if_count=nic_count,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=cluster['id'])
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        objects.Cluster.set_primary_roles(cluster_db, cluster_db.nodes)
+        self.db.flush()
+        return cluster_db
+
+    def test_flat_dhcp_schema(self):
+        cluster = self.create_env(
+            manager=consts.NOVA_NET_MANAGERS.FlatDHCPManager
+        )
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            scheme = node['network_scheme']
+            self.assertEqual(
+                set(scheme.keys()),
+                set(['version', 'provider', 'interfaces',
+                     'endpoints', 'roles', 'transformations'])
+            )
+            self.assertEqual(scheme['version'], '1.1')
+            self.assertEqual(scheme['provider'], 'lnx')
+            self.assertEqual(
+                set(scheme['interfaces'].keys()),
+                set(['eth0', 'eth1'])
+            )
+            self.assertEqual(
+                set(scheme['endpoints'].keys()),
+                set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-ex',
+                     'eth0.103'])
+            )
+            self.assertEqual(
+                scheme['roles'],
+                {'storage': 'br-storage',
+                 'management': 'br-mgmt',
+                 'fw-admin': 'br-fw-admin',
+                 'ex': 'br-ex',
+                 'novanetwork/fixed': 'eth0.103'}
+            )
+            self.assertEqual(
+                scheme['transformations'],
+                [
+                    {'action': 'add-br',
+                     'name': 'br-fw-admin'},
+                    {'action': 'add-br',
+                     'name': 'br-storage'},
+                    {'action': 'add-br',
+                     'name': 'br-mgmt'},
+                    {'action': 'add-br',
+                     'name': 'br-ex'},
+                    {'action': 'add-port',
+                     'bridge': 'br-fw-admin',
+                     'name': 'eth0'},
+                    {'action': 'add-port',
+                     'bridge': 'br-storage',
+                     'name': 'eth0.102'},
+                    {'action': 'add-port',
+                     'bridge': 'br-mgmt',
+                     'name': 'eth0.101'},
+                    {'action': 'add-port',
+                     'bridge': 'br-ex',
+                     'name': 'eth1'},
+                    {'action': 'add-port',
+                     'name': 'eth0.103'},
+                ]
+            )
+
+    def test_vlan_schema(self):
+        cluster = self.create_env(
+            manager=consts.NOVA_NET_MANAGERS.VlanManager
+        )
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            scheme = node['network_scheme']
+            self.assertEqual(
+                set(scheme.keys()),
+                set(['version', 'provider', 'interfaces',
+                     'endpoints', 'roles', 'transformations'])
+            )
+            self.assertEqual(scheme['version'], '1.1')
+            self.assertEqual(scheme['provider'], 'lnx')
+            self.assertEqual(
+                set(scheme['interfaces'].keys()),
+                set(['eth0', 'eth1'])
+            )
+            self.assertEqual(
+                set(scheme['endpoints'].keys()),
+                set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-ex',
+                     'eth0'])
+            )
+            self.assertEqual(
+                scheme['roles'],
+                {'storage': 'br-storage',
+                 'management': 'br-mgmt',
+                 'fw-admin': 'br-fw-admin',
+                 'ex': 'br-ex',
+                 'novanetwork/vlan': 'eth0'}
+            )
+            self.assertEqual(
+                scheme['transformations'],
+                [
+                    {'action': 'add-br',
+                     'name': 'br-fw-admin'},
+                    {'action': 'add-br',
+                     'name': 'br-storage'},
+                    {'action': 'add-br',
+                     'name': 'br-mgmt'},
+                    {'action': 'add-br',
+                     'name': 'br-ex'},
+                    {'action': 'add-port',
+                     'bridge': 'br-fw-admin',
+                     'name': 'eth0'},
+                    {'action': 'add-port',
+                     'bridge': 'br-storage',
+                     'name': 'eth0.102'},
+                    {'action': 'add-port',
+                     'bridge': 'br-mgmt',
+                     'name': 'eth0.101'},
+                    {'action': 'add-port',
+                     'bridge': 'br-ex',
+                     'name': 'eth1'},
+                ]
+            )
 
 
 class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
@@ -1344,13 +1502,13 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
             bonds = filter(lambda t: t['action'] == 'add-bond',
                            transforms)
             self.assertEqual(len(bonds), 1)
-            if mode == OVS_BOND_MODES.lacp_balance_tcp:
+            if mode == consts.OVS_BOND_MODES.lacp_balance_tcp:
                 self.check_add_bond_msg_lacp(bonds[0])
             else:
                 self.check_add_bond_msg_non_lacp(bonds[0], mode)
 
     def test_bonds_serialization(self):
-        for mode in OVS_BOND_MODES:
+        for mode in consts.OVS_BOND_MODES:
             self.check_bond_with_mode(mode)
 
 

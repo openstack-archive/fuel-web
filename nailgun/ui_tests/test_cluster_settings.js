@@ -29,7 +29,7 @@ casper.then(function() {
     this.click('input[type=checkbox]');
     this.test.assertExists('.btn-apply-changes:not(:disabled)', 'Save settings button is enabled if there are changes');
     this.click('input[type=checkbox]');
-    this.test.assertExists('.btn-apply-changes:disabled', 'Save settings button is disabled again if there are no changes');
+    this.test.assertSelectorAppears('.btn-apply-changes:disabled', 'Save settings button is disabled again if there are no changes');
 });
 
 casper.then(function() {

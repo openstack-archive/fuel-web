@@ -28,7 +28,6 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 
-from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
@@ -45,8 +44,25 @@ release_states_old = (
     'error',
     'available',
 )
+release_states_new = (
+    'available',
+    'unavailable',
+)
 
-release_states_new = consts.RELEASE_STATES
+
+cluster_changes_old = (
+    'networks',
+    'attributes',
+    'disks',
+    'interfaces',
+)
+cluster_changes_new = (
+    'networks',
+    'attributes',
+    'disks',
+    'interfaces',
+    'vmware_attributes'
+)
 
 
 def upgrade():
@@ -66,6 +82,16 @@ def upgrade_schema():
     op.add_column(
         'releases',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
+    op.add_column(
+        'releases',
+        sa.Column('vmware_attributes_metadata', fields.JSON(), nullable=True))
+    op.create_table(
+        'vmware_attributes',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('cluster_id', sa.Integer()),
+        sa.Column('editable', fields.JSON()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id'))
 
     upgrade_enum(
         'releases',                 # table
@@ -73,6 +99,14 @@ def upgrade_schema():
         'release_state',            # ENUM name
         release_states_old,         # old options
         release_states_new,         # new options
+    )
+
+    upgrade_enum(
+        "cluster_changes",          # table
+        "name",                     # column
+        "possible_changes",         # ENUM name
+        cluster_changes_old,        # old options
+        cluster_changes_new         # new options
     )
     # OpenStack workload statistics
     op.create_table('oswl_stats',
@@ -125,12 +159,21 @@ def upgrade_schema():
                         index=True
                     ),
                     sa.PrimaryKeyConstraint('id'))
+    ### end Alembic commands ###
 
 
 def downgrade_schema():
     # OpenStack workload statistics
     op.drop_table('oswl_stats')
     drop_enum('oswl_resource_type')
+
+    upgrade_enum(
+        "cluster_changes",          # table
+        "name",                     # column
+        "possible_changes",         # ENUM name
+        cluster_changes_new,        # new options
+        cluster_changes_old,        # old options
+    )
 
     upgrade_enum(
         'releases',                 # table
@@ -140,8 +183,11 @@ def downgrade_schema():
         release_states_old,         # old options
     )
 
+    op.drop_table('vmware_attributes')
+    op.drop_column('releases', 'vmware_attributes_metadata')
     op.drop_column('clusters', 'deployment_tasks')
     op.drop_column('releases', 'deployment_tasks')
+    ### end Alembic commands ###
 
 
 def upgrade_data():

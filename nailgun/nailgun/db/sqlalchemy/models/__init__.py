@@ -22,6 +22,7 @@ from nailgun.db.sqlalchemy.models.base import CapacityLog
 from nailgun.db.sqlalchemy.models.cluster import Attributes
 from nailgun.db.sqlalchemy.models.cluster import Cluster
 from nailgun.db.sqlalchemy.models.cluster import ClusterChanges
+from nailgun.db.sqlalchemy.models.cluster import VmwareAttributes
 
 from nailgun.db.sqlalchemy.models.release import Release
 from nailgun.db.sqlalchemy.models.release import ReleaseOrchestratorData

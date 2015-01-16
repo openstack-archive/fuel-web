@@ -1291,6 +1291,70 @@
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
       Ready: {}
+    vmware_attributes_metadata:
+      editable:
+        metadata:
+          -
+            name: "availability_zones"
+            type: "array"
+            fields:
+              -
+                name: "az_name"
+                type: "text"
+                label: "AZ Name"
+                description: "..."
+              -
+                name: "vcenter_host"
+                type: "text"
+                label: "vCenter Host"
+                description: "..."
+              -
+                name: "nova_computes"
+                type: "array"
+                fields:
+                  -
+                    name: "vsphere_cluster"
+                    type: "text"
+                    label: "VSphere Cluster"
+                    description: "..."
+                  -
+                    name: "service_name"
+                    type: "text"
+                    label: "Service Name"
+                    description: "..."
+              -
+                name: "cinder"
+                type: "object"
+                fields:
+                  -
+                    name: "enable"
+                    type: "checkbox"
+                    label: "Enable Cinder"
+                    description: "..."
+                  -
+                    name: "datacenter"
+                    type: "text"
+                    label: "Datacenter"
+                    description: "..."
+          -
+            name: "glance"
+            type: "object"
+            fields:
+              -
+                name: "vcenter_host"
+                type: "text"
+                label: "VCenter Host"
+                description: "..."
+          -
+            name: "network"
+            type: "object"
+            fields:
+              -
+                name: "esxi_vlan_interface"
+                type: "text"
+                label: "VLAN interface"
+                description: "..."
+
 - pk: 1
   extend: *base_release
   fields:

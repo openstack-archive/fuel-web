@@ -31,6 +31,7 @@ from nailgun import objects
 
 from nailgun import consts
 from nailgun.db import db
+
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
@@ -940,6 +941,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             'name': objects.Node.make_slave_name(node),
             'role': role}
 
+    # TODO: (apopovych) we have method with more general logic 'filter_by_roles'
     def by_role(self, nodes, role):
         return filter(lambda node: node['role'] == role, nodes)
 
@@ -981,14 +983,15 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             'online': node.online
         }
 
-        node_attrs.update(self.get_net_provider_serializer(
-            node.cluster).get_node_attrs(node))
-        node_attrs.update(
-            self.get_net_provider_serializer(node.cluster).
-            network_ranges(node.group_id)
-        )
+        net_serializer = self.get_net_provider_serializer(node.cluster)
+        node_attrs.update(net_serializer.get_node_attrs(node))
+        node_attrs.update(net_serializer.network_ranges(node.group_id))
         node_attrs.update(self.get_image_cache_max_size(node))
         node_attrs.update(self.generate_test_vm_image_data(node))
+        # TODO: (apopovych) specify criteria for vmware attributes
+        if role in ['controller', 'primary-controller', 'cinder-vmdk']:
+            node_attrs.update(self.generate_vmware_data(node))
+
         return node_attrs
 
     def get_image_cache_max_size(self, node):
@@ -1073,6 +1076,58 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
     def filter_by_roles(self, nodes, roles):
         return filter(
             lambda node: node['role'] in roles, nodes)
+
+    def generate_vmware_data(self, node):
+        """Extend serialize data with vmware attributes
+        """
+        vmware_data = {}
+        compute_instances = []
+        cinder_instances = []
+
+        vmware_attributes = node.cluster.vmware_attributes.editable
+        availability_zones = vmware_attributes.get('availability_zones', {})
+        zone_instances = availability_zones.get('instances', {})
+        glance_instance = vmware_attributes.get('glance', {}).get('instance')
+
+        for zone in zone_instances:
+            for compute in zone.get('computes', {}).get('instances', {}):
+                compute_item = {
+                    'availability_zone_name': zone.get('name', ''),
+                    'vc_host': zone.get('vc_host', ''),
+                    'vc_user': zone.get('vc_user', ''),
+                    'vc_password': zone.get('vc_password', ''),
+                    'service_name': compute.get('name', ''),
+                    'cluster': compute.get('vshpere_cluster', ''),
+                    'datastore_regex': compute.get('datastore_regex', '')
+                }
+
+                compute_instances.append(compute_item)
+
+            cinder_instance = zone.get('cinder', {}).get('instance')
+            if cinder_instance.get('enable_cinder_vmdk'):
+                cinder_item = {
+                    'availability_zone_name': zone.get('name', ''),
+                    'vc_host': zone.get('vc_host', ''),
+                    'vc_user': zone.get('vc_user', ''),
+                    'vc_password': zone.get('vc_password', '')
+                }
+
+                cinder_instances.append(cinder_item)
+
+        if compute_instances:
+            vmware_data['vcenter'] = {
+                'computes': compute_instances
+            }
+
+        if cinder_instances:
+            vmware_data['cinder'] = {
+                'instances': cinder_instances
+            }
+
+        if glance_instance:
+            vmware_data['glance'] = glance_instance
+
+        return vmware_data
 
 
 class DeploymentHASerializer(DeploymentMultinodeSerializer):

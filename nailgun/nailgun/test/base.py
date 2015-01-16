@@ -139,6 +139,8 @@ class EnvironmentManager(object):
             'volumes_metadata': self.get_default_volumes_metadata(),
             'roles_metadata': self.get_default_roles_metadata(),
             'orchestrator_data': self.get_default_orchestrator_data(),
+            'vmware_attributes_metadata': \
+                self.get_default_vmware_attributes_metadata()
         }
         if kwargs:
             release_data.update(kwargs)
@@ -488,6 +490,10 @@ class EnvironmentManager(object):
         }
         orchestrator_data.update(kwargs)
         return orchestrator_data
+
+    def get_default_vmware_attributes_metadata(self, **kwargs):
+        return self.read_fixtures(
+            ['openstack'])[0]['fields']['vmware_attributes_metadata']
 
     def upload_fixtures(self, fxtr_names):
         for fxtr_path in self.fxtr_paths_by_names(fxtr_names):

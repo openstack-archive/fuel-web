@@ -139,7 +139,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         getInitialState: function() {
             return {
                 loading: true,
-                actionInProgress: false
+                actionInProgress: false,
+                forcedValuesDisplay: false
             };
         },
         componentDidMount: function() {
@@ -151,6 +152,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         componentWillUpdate: function() {
             this.settings.isValid({models: this.configModels});
+        },
+        componentDidUpdate: function() {
+            if (this.state.forcedValuesDisplay) this.setState({forcedValuesDisplay: false});
         },
         componentWillUnmount: function() {
             this.loadInitialSettings();
@@ -180,7 +184,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         loadDefaults: function() {
             var deferred = this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'});
             if (deferred) {
-                this.setState({actionInProgress: true});
+                this.setState({
+                    actionInProgress: true,
+                    forcedValuesDisplay: true
+                });
                 deferred
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
@@ -194,6 +201,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }
         },
         revertChanges: function() {
+            this.setState({forcedValuesDisplay: true});
             this.loadInitialSettings();
         },
         loadInitialSettings: function() {
@@ -223,12 +231,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 var path = groupName + '.metadata';
                                 if (!this.checkRestrictions('hide', path).result) {
                                     var processedRestrictions = this.processRestrictions(path);
-                                    return <SettingGroup {...this.props}
+                                    return <SettingGroup
                                         key={groupName}
+                                        model={this.props.model}
                                         groupName={groupName}
                                         onChange={_.bind(this.onChange, this, groupName)}
                                         disabled={locked || (!!this.settings.get(path).toggleable && processedRestrictions.result)}
                                         message={processedRestrictions.message}
+                                        forcedValuesDisplay={this.state.forcedValuesDisplay}
                                     />;
                                 }
                             }, this)}
@@ -265,21 +275,25 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 );
             });
         },
+        onChange: _.debounce(function(name, value) {
+            return this.props.onChange(name, value);
+        }, 200),
         render: function() {
             var group = this.settings.get(this.props.groupName),
                 metadata = group.metadata,
                 sortedSettings = _.chain(_.keys(group))
                     .without('metadata')
                     .sortBy(function(settingName) {return group[settingName].weight;})
-                    .value();
+                    .value(),
+                valueProp = this.props.forcedValuesDisplay ? {checked: metadata.enabled} : {};
             return (
                 <div className='fieldset-group wrapper'>
                     <legend className='openstack-settings'>
                         {metadata.toggleable ?
-                            <controls.Input
+                            <controls.Input {...valueProp}
                                 type='checkbox'
                                 name='metadata'
-                                checked={metadata.enabled}
+                                defaultChecked={metadata.enabled}
                                 label={metadata.label || this.props.groupName}
                                 disabled={this.props.disabled}
                                 tooltipText={this.props.message}
@@ -303,8 +317,13 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                             var valuePath = this.settings.makePath(path, value.data),
                                                 processedValueRestrictions = this.checkRestrictions('disable', valuePath);
                                             if (!this.checkRestrictions('hide', valuePath).result) {
+                                                var checkedOption = value.data == setting.value;
+                                                if (this.props.forcedValuesDisplay) {
+                                                    value.checked = checkedOption;
+                                                } else {
+                                                    value.defaultChecked = checkedOption;
+                                                }
                                                 value.disabled = this.props.disabled || disabled || processedValueRestrictions.result;
-                                                value.checked = value.data == setting.value;
                                                 value.tooltipText = processedValueRestrictions.message;
                                                 return value;
                                             }
@@ -320,13 +339,15 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                         tooltipText={processedRestrictions.message}
                                     />;
                                 }
-                                return <controls.Input {...this.props}
+                                var checked = _.isBoolean(setting.value) ? setting.value : false,
+                                    valueProps = this.props.forcedValuesDisplay ? {value: setting.value, checked: checked} : {};
+                                return <controls.Input {...valueProps}
                                     key={settingName}
                                     type={setting.type}
                                     name={settingName}
                                     children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
-                                    value={setting.value}
-                                    checked={_.isBoolean(setting.value) ? setting.value : false}
+                                    defaultValue={setting.value}
+                                    defaultChecked={checked}
                                     label={setting.label}
                                     description={setting.description}
                                     toggleable={setting.type == 'password'}
@@ -334,6 +355,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     disabled={this.props.disabled || disabled}
                                     wrapperClassName='tablerow-wrapper'
                                     tooltipText={processedRestrictions.message}
+                                    onChange={_.contains(['text', 'password'], setting.type) ? this.onChange : this.props.onChange}
                                 />;
                             }
                         }, this)}

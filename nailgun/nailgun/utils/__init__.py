@@ -167,3 +167,21 @@ def get_fuel_release_versions(path_mask):
                     )
                 )
     return result
+
+
+def generate_ids(data):
+    for k, v in data.iteritems():
+        if k == 'instances' and isinstance(v, list):
+            max_id = max(v, key=lambda item:item.get('id', 0)).get('id', 0)
+            id_number = int(max_id)
+            for item in v:
+                item_id = item.get('id')
+                if not item_id:
+                    item['id'] = id_number + 1
+                    id_number += 1
+        if isinstance(v, dict):
+            generate_ids(v)
+        elif isinstance(v, list):
+            for item in v:
+                if isinstance(item, dict):
+                    generate_ids(item)

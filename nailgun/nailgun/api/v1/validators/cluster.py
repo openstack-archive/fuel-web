@@ -130,3 +130,21 @@ class AttributesValidator(BasicValidator):
                 log_message=True
             )
         return d
+
+
+class VmwareAttributesValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data, instance=None):
+        d = cls.validate_json(data)
+        if "generated" in d:
+            raise errors.InvalidData(
+                "It is not allowed to update generated settings",
+                log_message=True
+            )
+        if "editable" in d and not isinstance(d["editable"], dict):
+            raise errors.InvalidData(
+                "Editable settings should be a dictionary",
+                log_message=True
+            )
+        return d

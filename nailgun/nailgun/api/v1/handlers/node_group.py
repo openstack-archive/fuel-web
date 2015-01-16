@@ -16,7 +16,6 @@
 
 import web
 
-from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 
@@ -74,28 +73,3 @@ class NodeGroupCollectionHandler(CollectionHandler):
             )
         else:
             return self.collection.to_json()
-
-
-class NodeGroupAssignmentHandler(BaseHandler):
-    """Node group assignment handler
-    """
-
-    @content
-    def POST(self, group_id):
-        """:returns: Http response.
-        :http: * 201 (nodes are successfully assigned)
-               * 400 (invalid nodes data specified)
-        """
-        self.get_object_or_404(
-            objects.NodeGroup,
-            group_id
-        )
-        data = self.checked_data()
-
-        nodes = self.get_objects_list_or_404(
-            objects.NodeCollection,
-            data
-        )
-
-        for node in nodes:
-            objects.Node.update(node, {"group_id": group_id})

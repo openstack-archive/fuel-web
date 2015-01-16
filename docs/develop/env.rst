@@ -1,6 +1,8 @@
 Fuel Development Environment
 ============================
 
+.. warning:: Fuel ISO build works only on 64-bit operating system.
+
 If you are modifying or augmenting the Fuel source code or if you
 need to build a Fuel ISO from the latest branch, you will need
 an environment with the necessary packages installed.  This page
@@ -10,7 +12,7 @@ Fuel, and build the ISO which will be used to deploy your
 Fuel master node.
 
 The basic operating system for Fuel development is Ubuntu Linux.
-The setup instructions below assume Ubuntu 14.04 though most of
+The setup instructions below assume Ubuntu 14.04 (64 bit) though most of
 them should be applicable to other Ubuntu and Debian versions, too.
 
 Each subsequent section below assumes that you have followed the steps

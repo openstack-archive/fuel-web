@@ -158,9 +158,9 @@ class TestNetworkManager(BaseIntegrationTest):
             self.env.nodes[0]
         )
 
-        self.assertEqual(len(network_data), 4)
+        self.assertEqual(len(network_data), 5)
         fixed_nets = filter(lambda net: net['name'] == 'fixed', network_data)
-        self.assertEqual(fixed_nets, [])
+        self.assertEqual(len(fixed_nets), 1)
 
     def test_assign_admin_ip_multiple_groups(self):
         self.env.create(

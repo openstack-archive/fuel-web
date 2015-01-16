@@ -180,12 +180,14 @@ class Cluster(NailgunObject):
         cls.create_default_group(new_cluster)
 
         cls.create_attributes(new_cluster)
+        cls.create_vmware_attributes(new_cluster)
 
         try:
             cls.get_network_manager(new_cluster).\
                 create_network_groups_and_config(new_cluster, data)
             cls.add_pending_changes(new_cluster, "attributes")
             cls.add_pending_changes(new_cluster, "networks")
+            cls.add_pending_changes(new_cluster, "vmware_attributes")
 
             if assign_nodes:
                 cls.update_nodes(new_cluster, assign_nodes)
@@ -691,6 +693,53 @@ class Cluster(NailgunObject):
         else:
             return Release.get_deployment_tasks(instance.release)
 
+    @classmethod
+    def create_vmware_attributes(cls, instance):
+        """Write description
+        """
+        attributes = VmwareAttributes.create(
+            {
+                "editable": instance.release.vmware_attributes_metadata.get(
+                    "editable"),
+                "cluster_id": instance.id
+            }
+        )
+        db().flush()
+
+        return attributes
+
+    @classmethod
+    def get_vmware_attributes(cls, instance):
+        """Get VmwareAttributes instance from DB. Now we have
+        relation with cluster 1:1.
+        """
+        return db().query(models.VmwareAttributes).filter(
+            models.VmwareAttributes.cluster_id == instance.id
+        ).first()
+
+    @classmethod
+    def get_default_vmware_attributes(cls, instance):
+        """Get metadata from release with empty value section.
+        """
+        editable = instance.release.vmware_attributes_metadata.get("editable")
+        generate_editables(editable, AttributesGenerator)
+        return editable
+
+    @classmethod
+    def update_vmware_attributes(cls, instance, data):
+        """Update Vmware attributes. Actually we allways update only
+        value section in editable.
+        """
+        metadata = instance.vmware_attributes.editable['metadata']
+        value = data.get('editable', {}).get('value')
+        vmware_attr = {
+            'metadata': metadata,
+            'value': value
+        }
+        setattr(instance.vmware_attributes, 'editable', vmware_attr)
+        cls.add_pending_changes(instance, "vmware_attributes")
+        db().flush()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection
@@ -698,3 +747,7 @@ class ClusterCollection(NailgunCollection):
 
     #: Single Cluster object class
     single = Cluster
+
+
+class VmwareAttributes(NailgunObject):
+    model = models.VmwareAttributes

@@ -550,11 +550,6 @@ class NetworkManager(object):
             else getattr(cl_db.network_config, net_db.meta['ext_net_data'][0])
 
     @classmethod
-    def fixed_and_vlan_manager(cls, net, cluster_db):
-        return net.name == 'fixed' \
-            and cluster_db.network_config.net_manager == 'VlanManager'
-
-    @classmethod
     def _get_network_data_with_ip(cls, node_db, interface, net, ip):
         prefix = str(IPNetwork(net.cidr).prefixlen)
         return {
@@ -596,9 +591,8 @@ class NetworkManager(object):
                     network_data.append(cls._get_network_data_with_ip(
                         node, interface, net, ip))
                 else:
-                    if not cls.fixed_and_vlan_manager(net, cluster_db):
-                        network_data.append(cls._get_network_data_wo_ip(
-                            node, interface, net))
+                    network_data.append(cls._get_network_data_wo_ip(
+                        node, interface, net))
 
         network_data.append(cls._get_admin_node_network(node.id))
 
@@ -1135,3 +1129,11 @@ class NetworkManager(object):
             output[name].append(cidr)
 
         return output
+
+    @classmethod
+    def get_lnx_bond_properties(cls, bond):
+        return {}
+
+    @classmethod
+    def get_iface_properties(cls, iface):
+        return {}

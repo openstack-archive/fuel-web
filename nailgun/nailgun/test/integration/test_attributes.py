@@ -25,7 +25,40 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
 
-class TestAttributes(BaseIntegrationTest):
+class CompareMixin(object):
+
+    def _compare_generated(self, d1, d2):
+        if isinstance(d1, dict) and isinstance(d2, dict):
+            for s_field, s_value in d1.iteritems():
+                if s_field not in d2:
+                    raise KeyError()
+                self._compare_generated(s_value, d2[s_field])
+        elif isinstance(d1, str) or isinstance(d1, unicode):
+            if d1 in [u"", ""]:
+                self.assertEqual(len(d2), 8)
+            else:
+                self.assertEqual(d1, d2)
+
+    def _compare_editable(self, r_attrs, c_attrs):
+        """Compare editable attributes omitting the check of generated values
+
+        :param r_attrs: attributes from release
+        :param c_attrs: attributes from cluster
+        """
+        if isinstance(r_attrs, dict) and isinstance(c_attrs, dict):
+            for s_field, s_value in six.iteritems(r_attrs):
+                if s_field not in c_attrs:
+                    self.fail("'{0}' not found in '{1}'".format(s_field,
+                                                                c_attrs))
+                self._compare_editable(s_value, c_attrs[s_field])
+        elif isinstance(c_attrs, six.string_types) and \
+                isinstance(r_attrs, dict):
+            self.assertIn("generator", r_attrs)
+        else:
+            self.assertEqual(c_attrs, r_attrs)
+
+
+class TestAttributes(BaseIntegrationTest, CompareMixin):
 
     def test_attributes_creation(self):
         cluster = self.env.create_cluster(api=True)
@@ -222,36 +255,6 @@ class TestAttributes(BaseIntegrationTest):
                 else:
                     self.assertEqual(orig_value, value)
 
-    def _compare_generated(self, d1, d2):
-        if isinstance(d1, dict) and isinstance(d2, dict):
-            for s_field, s_value in d1.iteritems():
-                if s_field not in d2:
-                    raise KeyError()
-                self._compare_generated(s_value, d2[s_field])
-        elif isinstance(d1, str) or isinstance(d1, unicode):
-            if d1 in [u"", ""]:
-                self.assertEqual(len(d2), 8)
-            else:
-                self.assertEqual(d1, d2)
-
-    def _compare_editable(self, r_attrs, c_attrs):
-        """Compare editable attributes omitting the check of generated values
-
-        :param r_attrs: attributes from release
-        :param c_attrs: attributes from cluster
-        """
-        if isinstance(r_attrs, dict) and isinstance(c_attrs, dict):
-            for s_field, s_value in six.iteritems(r_attrs):
-                if s_field not in c_attrs:
-                    self.fail("'{0}' not found in '{1}'".format(s_field,
-                                                                c_attrs))
-                self._compare_editable(s_value, c_attrs[s_field])
-        elif isinstance(c_attrs, six.string_types) and \
-                isinstance(r_attrs, dict):
-            self.assertIn("generator", r_attrs)
-        else:
-            self.assertEqual(c_attrs, r_attrs)
-
     def test_compare_editable(self):
         r_attrs = {
             'section1': {
@@ -301,3 +304,42 @@ class TestAttributes(BaseIntegrationTest):
             editable["external_ntp"]["ntp_list"]["value"],
             settings.NTP_UPSTREAM
         )
+
+
+class TestVmwareAttributes(BaseIntegrationTest, CompareMixin):
+
+    def test_vmware_attributes_creation(self):
+        cluster = self.env.create_cluster(api=True)
+        cluster_db = self.env.clusters[0]
+        resp = self.app.get(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            headers=self.default_headers
+        )
+        release = objects.Release.get_by_uid(cluster['release_id'])
+        self.assertEqual(200, resp.status_code)
+
+        attrs = objects.Cluster.get_vmware_attributes(cluster_db)
+        self._compare_editable(
+            release.vmware_attributes_metadata['editable'],
+            attrs.editable
+        )
+
+    def test_vmware_attributes_update(self):
+        cluster_id = self.env.create_cluster(api=True)['id']
+        cluster_db = self.env.clusters[0]
+        resp = self.app.put(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': cluster_id}),
+            params=jsonutils.dumps({"foo": "bar"}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+
+        attrs = objects.Cluster.get_vmware_attributes(cluster_db)
+        self.assertEqual('bar', attrs.editable['foo'])
+        attrs.editable.pop('foo')
+        self.assertEqual(attrs.editable, {})
+        # TODO: (apopovych) check validation on update

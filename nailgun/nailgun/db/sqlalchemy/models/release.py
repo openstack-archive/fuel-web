@@ -71,6 +71,7 @@ class Release(Base):
     wizard_metadata = Column(JSON, default={})
     is_deployable = Column(Boolean, default=True, nullable=False)
     deployment_tasks = Column(JSON, default=[])
+    vmware_attributes_metadata = Column(JSON, default=[])
 
     role_list = relationship(
         "Role",

@@ -148,7 +148,8 @@ class Release(NailgunObject):
             "wizard_metadata": {"type": "object"},
             "roles": {"type": "array"},
             "clusters": {"type": "array"},
-            "is_deployable": {"type": "boolean"}
+            "is_deployable": {"type": "boolean"},
+            "vmware_attributes_metadata" : {"type": "object"}
         }
     }
 

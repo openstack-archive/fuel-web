@@ -130,3 +130,13 @@ class AttributesValidator(BasicValidator):
                 log_message=True
             )
         return d
+
+
+class VmwareAttributesValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data, instance=None):
+        d = cls.validate_json(data)
+        # TODO: (apopovych) write validation for vmware
+
+        return d

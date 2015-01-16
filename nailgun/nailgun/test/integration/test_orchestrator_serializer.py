@@ -115,7 +115,12 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster = self.create_env('ha_compact')
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
-    def create_env(self, mode, network_manager='FlatDHCPManager'):
+    def create_env(self, mode, network_manager='FlatDHCPManager',
+                   env_version=None):
+        release_kwargs = {}
+        if env_version:
+            release_kwargs['version'] = env_version
+
         node_args = [
             {'roles': ['controller', 'cinder'], 'pending_addition': True},
             {'roles': ['compute', 'cinder'], 'pending_addition': True},
@@ -123,7 +128,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'roles': ['mongo'], 'pending_addition': True},
             {'roles': [], 'pending_roles': ['cinder'],
              'pending_addition': True}]
+
         cluster = self.env.create(
+            release_kwargs=release_kwargs,
             cluster_kwargs={
                 'mode': mode,
                 'net_manager': network_manager},
@@ -364,6 +371,91 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'role': 'ceph-osd', 'fail_if_error': True}
         ]
         self.assertEqual(expected_ciritial_roles, nodes)
+
+
+class TestNovaFlatOrchestratorSerializer61(OrchestratorSerializerTestBase):
+
+    def setUp(self):
+        super(TestNovaFlatOrchestratorSerializer61, self).setUp()
+        self.cluster = self.create_env()
+        objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
+
+    def create_env(self):
+        release_kwargs = {'version': '2014.2-6.1'}
+        node_args = [
+            {'roles': ['controller', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute'], 'pending_addition': True},
+            {'roles': ['mongo'], 'pending_addition': True},
+            {'roles': [], 'pending_roles': ['cinder'],
+             'pending_addition': True}]
+
+        cluster = self.env.create(
+            release_kwargs=release_kwargs,
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'net_manager': 'FlatDHCPManager'},
+            nodes_kwargs=node_args)
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        self.db.flush()
+        return cluster_db
+
+    def test_network_schema(self):
+        serializer = get_serializer_for_cluster(self.cluster)
+        facts = serializer(AstuteGraph(self.cluster)).serialize(
+            self.cluster, self.cluster.nodes)
+        for node in facts:
+            scheme = node['network_scheme']
+            self.assertEqual(
+                set(scheme.keys()),
+                set(['version', 'provider', 'interfaces',
+                     'endpoints', 'roles', 'transformations'])
+            )
+            self.assertEqual(scheme['version'], '1.1')
+            self.assertEqual(scheme['provider'], 'lnx')
+            self.assertEqual(
+                set(scheme['interfaces'].keys()),
+                set(['eth0', 'eth1'])
+            )
+            self.assertEqual(
+                set(scheme['endpoints'].keys()),
+                set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-ex',
+                     'eth0.103'])
+            )
+            self.assertEqual(
+                set(scheme['roles'].keys()),
+                set(['storage', 'management', 'fw-admin', 'ex',
+                     'novanetwork/fixed'])
+            )
+            self.assertEqual(
+                scheme['transformations'],
+                [
+                    {'action': 'add-br',
+                     'name': 'br-fw-admin'},
+                    {'action': 'add-br',
+                     'name': 'br-storage'},
+                    {'action': 'add-br',
+                     'name': 'br-mgmt'},
+                    {'action': 'add-br',
+                     'name': 'br-ex'},
+                    {'action': 'add-port',
+                     'bridge': 'br-storage',
+                     'name': 'eth0.102'},
+                    {'action': 'add-port',
+                     'bridge': 'br-mgmt',
+                     'name': 'eth0.101'},
+                    {'action': 'add-port',
+                     'bridge': 'br-ex',
+                     'name': 'eth0'},
+                    {'action': 'add-port',
+                     'bridge': 'br-fw-admin',
+                     'name': 'eth1'},
+                    {'action': 'add-port',
+                     'name': 'eth0.103'},
+                ]
+            )
 
 
 class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):

@@ -159,7 +159,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return this.state.loading ? false : this.settings.hasChanges(this.initialAttributes, this.configModels);
         },
         applyChanges: function() {
-            var deferred = this.settings.save(null, {patch: true, wait: true, validate: false});
+            var deferred = this.settings.save(null, {patch: true, wait: true, models: this.configModels});
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
@@ -183,7 +183,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 this.setState({actionInProgress: true});
                 deferred
                     .always(_.bind(function() {
-                        this.setState({actionInProgress: false});
+                        this.setState({
+                            actionInProgress: false,
+                            key: Date.now()
+                        });
                     }, this))
                     .fail(function() {
                         utils.showErrorDialog({
@@ -195,6 +198,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         revertChanges: function() {
             this.loadInitialSettings();
+            this.setState({key: Date.now()});
         },
         loadInitialSettings: function() {
             this.settings.set(_.cloneDeep(this.initialAttributes));
@@ -213,7 +217,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}) || !cluster.isAvailableForSettingsChanges(),
                 hasChanges = this.hasChanges();
             return (
-                <div className={React.addons.classSet({'openstack-settings wrapper': true, 'changes-locked': locked})}>
+                <div key={this.state.key} className={React.addons.classSet({'openstack-settings wrapper': true, 'changes-locked': locked})}>
                     <h3>{i18n('cluster_page.settings_tab.title')}</h3>
                     {this.state.loading ?
                         <controls.ProgressBar />
@@ -223,8 +227,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 var path = groupName + '.metadata';
                                 if (!this.checkRestrictions('hide', path).result) {
                                     var processedRestrictions = this.processRestrictions(path);
-                                    return <SettingGroup {...this.props}
+                                    return <SettingGroup
                                         key={groupName}
+                                        cluster={this.props.cluster}
                                         groupName={groupName}
                                         onChange={_.bind(this.onChange, this, groupName)}
                                         disabled={locked || (!!this.settings.get(path).toggleable && processedRestrictions.result)}
@@ -265,6 +270,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 );
             });
         },
+        debouncedOnChange: _.debounce(function(name, value) {
+            return this.props.onChange(name, value);
+        }, 200, {leading: true}),
         render: function() {
             var group = this.settings.get(this.props.groupName),
                 metadata = group.metadata,
@@ -279,7 +287,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                             <controls.Input
                                 type='checkbox'
                                 name='metadata'
-                                checked={metadata.enabled}
+                                defaultChecked={metadata.enabled}
                                 label={metadata.label || this.props.groupName}
                                 disabled={this.props.disabled}
                                 tooltipText={this.props.message}
@@ -304,7 +312,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                                 processedValueRestrictions = this.checkRestrictions('disable', valuePath);
                                             if (!this.checkRestrictions('hide', valuePath).result) {
                                                 value.disabled = this.props.disabled || disabled || processedValueRestrictions.result;
-                                                value.checked = value.data == setting.value;
+                                                value.defaultChecked = value.data == setting.value;
                                                 value.tooltipText = processedValueRestrictions.message;
                                                 return value;
                                             }
@@ -320,13 +328,13 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                         tooltipText={processedRestrictions.message}
                                     />;
                                 }
-                                return <controls.Input {...this.props}
+                                return <controls.Input
                                     key={settingName}
                                     type={setting.type}
                                     name={settingName}
                                     children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
-                                    value={setting.value}
-                                    checked={_.isBoolean(setting.value) ? setting.value : false}
+                                    defaultValue={setting.value}
+                                    defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
                                     label={setting.label}
                                     description={setting.description}
                                     toggleable={setting.type == 'password'}
@@ -334,6 +342,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     disabled={this.props.disabled || disabled}
                                     wrapperClassName='tablerow-wrapper'
                                     tooltipText={processedRestrictions.message}
+                                    onChange={this.debouncedOnChange}
                                 />;
                             }
                         }, this)}

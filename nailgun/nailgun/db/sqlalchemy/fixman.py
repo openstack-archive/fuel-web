@@ -64,7 +64,6 @@ def load_fixture(fileobj, loader=None):
             return dict_merge(obj.get('extend', {}), obj)
         fixture[i] = extend(fixture[i])
         fixture[i].pop('extend', None)
-
     return fixture
 
 

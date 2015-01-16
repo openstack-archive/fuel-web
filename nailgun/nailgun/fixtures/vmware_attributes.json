@@ -1,0 +1,119 @@
+[
+    {
+        "pk": 1,
+        "editable": {
+            "metadata": [
+                {
+                    "fields": [
+                        {
+                            "type": "text",
+                            "description": "...",
+                            "name": "az_name",
+                            "label": "AZ Name"
+                        },
+                        {
+                            "type": "text",
+                            "description": "...",
+                            "name": "vcenter_host",
+                            "label": "vCenter Host"
+                        },
+                        {
+                            "fields": [
+                                {
+                                    "type": "text",
+                                    "description": "...",
+                                    "name": "vsphere_cluster",
+                                    "label": "VSphere Cluster"
+                                },
+                                {
+                                    "type": "text",
+                                    "description": "...",
+                                    "name": "service_name",
+                                    "label": "Service Name"
+                                }
+                            ],
+                            "type": "array",
+                            "name": "nova_computes"
+                        },
+                        {
+                            "fields": [
+                                {
+                                    "type": "checkbox",
+                                    "description": "...",
+                                    "name": "enable",
+                                    "label": "Enable Cinder"
+                                },
+                                {
+                                    "type": "text",
+                                    "description": "...",
+                                    "name": "datacenter",
+                                    "label": "Datacenter"
+                                }
+                            ],
+                            "type": "object",
+                            "name": "cinder"
+                        }
+                    ],
+                    "type": "array",
+                    "name": "availability_zones"
+                },
+                {
+                    "fields": [
+                        {
+                            "type": "text",
+                            "description": "...",
+                            "name": "vcenter_host",
+                            "label": "VCenter Host"
+                        }
+                    ],
+                    "type": "object",
+                    "name": "glance"
+                },
+                {
+                    "fields": [
+                        {
+                            "type": "text",
+                            "description": "...",
+                            "name": "esxi_vlan_interface",
+                            "label": "VLAN interface"
+                        }
+                    ],
+                    "type": "object",
+                    "name": "network"
+                }
+            ],
+            "value": {
+                "availability_zones": [
+                    {
+                        "az_name": "Zone 1",
+                        "vcenter_host": "1.2.3.4",
+                        "vcenter_user": "admin",
+                        "vcenter_password": "secret",
+                        "nova_computes": [
+                            {
+                                "vsphere_cluster": "cluster1",
+                                "service_name": "Compute 1"
+                            },
+                            {
+                                "vsphere_cluster": "cluster2",
+                                "service_name": "Compute 3"
+                            }
+                        ],
+                        "cinder": {
+                            "enable": true,
+                            "datacenter": "some_name"
+                        }
+                    }
+                ],
+                "glance": {
+                    "vcenter_host": "1.2.3.4",
+                    "vcenter_user": "admin",
+                    "vcenter_password": "secret"
+                },
+                "network": {
+                    "esxi_vlan_interface": "eth0"
+                }
+            }
+        }
+    }
+]

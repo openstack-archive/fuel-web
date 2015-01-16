@@ -139,3 +139,18 @@ class ClusterChangesValidator(BaseDefferedTaskValidator):
     @classmethod
     def validate(cls, cluster):
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
+
+
+class VmwareAttributesValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data, instance=None):
+        d = cls.validate_json(data)
+        # TODO(apopovych): write validation for vmware
+        if "editable" in d and not isinstance(d["editable"], dict):
+            raise errors.InvalidData(
+                "Editable attributes should be a dictionary",
+                log_message=True
+            )
+
+        return d

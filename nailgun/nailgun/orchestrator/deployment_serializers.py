@@ -31,6 +31,7 @@ from nailgun import objects
 
 from nailgun import consts
 from nailgun.db import db
+
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
@@ -47,6 +48,65 @@ def get_nodes_not_for_deletion(cluster):
     return db().query(Node).filter(
         and_(Node.cluster == cluster,
              False == Node.pending_deletion)).order_by(Node.id)
+
+
+class VmwareDeploymentSerializerMixin(object):
+
+    def generate_vmware_data(self, node):
+        """Extend serialize data with vmware attributes
+        """
+        vmware_data = {}
+        compute_instances = []
+        cinder_instances = []
+
+        vmware_attributes = node.cluster.vmware_attributes.editable \
+            .get('value', {})
+        availability_zones = vmware_attributes.get('availability_zones', {})
+        glance_instance = vmware_attributes.get('glance', {})
+        esxi_vlan_interface = vmware_attributes.get('esxi_vlan_interface')
+
+        for zone in availability_zones:
+            for compute in zone.get('nova_computes', {}):
+                compute_item = {
+                    'availability_zone_name': zone.get('az_name', ''),
+                    'vc_host': zone.get('vcenter_host', ''),
+                    'vc_user': zone.get('vcenter_user', ''),
+                    'vc_password': zone.get('vcenter_password', ''),
+                    'service_name': compute.get('service_name', ''),
+                    'cluster': compute.get('vshpere_cluster', ''),
+                    'datastore_regex': compute.get('datastore_regex', '')
+                }
+
+                compute_instances.append(compute_item)
+
+            cinder_instance = zone.get('cinder', {})
+            if cinder_instance.get('enable'):
+                cinder_item = {
+                    'availability_zone_name': zone.get('az_name', ''),
+                    'vc_host': zone.get('vcenter_host', ''),
+                    'vc_user': zone.get('vcenter_user', ''),
+                    'vc_password': zone.get('vcenter_password', '')
+                }
+
+                cinder_instances.append(cinder_item)
+
+        vmware_data['use_vcenter'] = True
+
+        if compute_instances:
+            vmware_data['vcenter'] = {
+                'esxi_vlan_interface': esxi_vlan_interface,
+                'computes': compute_instances
+            }
+
+        if cinder_instances:
+            vmware_data['cinder'] = {
+                'instances': cinder_instances
+            }
+
+        if glance_instance:
+            vmware_data['glance'] = glance_instance
+
+        return vmware_data
 
 
 class NetworkDeploymentSerializer(object):
@@ -940,6 +1000,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             'name': objects.Node.make_slave_name(node),
             'role': role}
 
+    # TODO(apopovych): we have more generical method 'filter_by_roles'
     def by_role(self, nodes, role):
         return filter(lambda node: node['role'] == role, nodes)
 
@@ -981,14 +1042,12 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             'online': node.online
         }
 
-        node_attrs.update(self.get_net_provider_serializer(
-            node.cluster).get_node_attrs(node))
-        node_attrs.update(
-            self.get_net_provider_serializer(node.cluster).
-            network_ranges(node.group_id)
-        )
+        net_serializer = self.get_net_provider_serializer(node.cluster)
+        node_attrs.update(net_serializer.get_node_attrs(node))
+        node_attrs.update(net_serializer.network_ranges(node.group_id))
         node_attrs.update(self.get_image_cache_max_size(node))
         node_attrs.update(self.generate_test_vm_image_data(node))
+
         return node_attrs
 
     def get_image_cache_max_size(self, node):
@@ -1158,7 +1217,8 @@ class DeploymentHASerializer60(DeploymentHASerializer):
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
 
 
-class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
+class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
+                                      VmwareDeploymentSerializerMixin):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
@@ -1174,10 +1234,19 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
             DeploymentMultinodeSerializer61,
             self).serialize_node_for_node_list(node, role)
         serialized_node['user_node_name'] = node.name
+
+        use_vcenter = node.cluster.attributes.editable.get('common', {}) \
+            .get('use_vcenter', {}).get('value')
+
+        if (use_vcenter and
+                role in ['controller', 'primary-controller', 'cinder-vmdk']):
+            serialized_node.update(self.generate_vmware_data(node))
+
         return serialized_node
 
 
-class DeploymentHASerializer61(DeploymentHASerializer):
+class DeploymentHASerializer61(DeploymentHASerializer,
+                               VmwareDeploymentSerializerMixin):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
@@ -1186,6 +1255,14 @@ class DeploymentHASerializer61(DeploymentHASerializer):
         serialized_node = super(
             DeploymentHASerializer61, self).serialize_node(node, role)
         serialized_node['user_node_name'] = node.name
+
+        use_vcenter = node.cluster.attributes.editable.get('common', {}) \
+            .get('use_vcenter', {}).get('value')
+
+        if (use_vcenter and
+                role in ['controller', 'primary-controller', 'cinder-vmdk']):
+            serialized_node.update(self.generate_vmware_data(node))
+
         return serialized_node
 
     def serialize_node_for_node_list(self, node, role):

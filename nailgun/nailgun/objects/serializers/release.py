@@ -31,7 +31,8 @@ class ReleaseSerializer(BasicSerializer):
         "roles_metadata",
         "wizard_metadata",
         "state",
-        "attributes_metadata"
+        "attributes_metadata",
+        "vmware_attributes_metadata",
     )
 
     @classmethod

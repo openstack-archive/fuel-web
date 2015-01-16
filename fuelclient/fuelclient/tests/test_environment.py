@@ -54,3 +54,10 @@ class TestEnvironmentOstf(base.UnitTestCase):
         self.assertEqual(tests, [
             {'id': 1, 'status': 'running'},
             {'id': 2, 'status': 'finished'}])
+
+    @mock.patch('fuelclient.client.requests')
+    def test_get_deployment_tasks_with_end(self, mrequests):
+        end_task = 'task1'
+        self.env.get_deployment_tasks(end=end_task)
+        kwargs = mrequests.get.call_args[1]
+        self.assertEqual(kwargs['params'], {'end_task': end_task})

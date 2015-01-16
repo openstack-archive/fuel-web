@@ -27,6 +27,7 @@ define(
     'js/coccyx_mixins',
     'models',
     'keystone_client',
+    'jsx!views/root',
     'jsx!views/login_page',
     'jsx!views/welcome_page',
     'views/cluster_page',
@@ -45,7 +46,7 @@ define(
     'less!/static/css/styles'
 
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -196,10 +197,10 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             }, this));
         },
         setPage: function(Page, options) {
-            if (this.page) {
-                utils.universalUnmount(this.page);
+            if (!this.rootComponent) {
+                this.rootComponent = utils.universalMount(RootComponent, {}, this.content);
             }
-            this.page = utils.universalMount(Page, options, this.content);
+            this.page = this.rootComponent.setPage(Page, options);
             this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
             this.updateTitle();
             this.toggleElements(!this.page.hiddenLayout);

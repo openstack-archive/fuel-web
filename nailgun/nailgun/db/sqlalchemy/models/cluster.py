@@ -81,6 +81,8 @@ class Cluster(Base):
                               backref="cluster", cascade="delete")
     changes_list = relationship("ClusterChanges", backref="cluster",
                                 cascade="delete")
+    vmware_attributes = relationship("VmwareAttributes", uselist=False,
+                                     backref="cluster", cascade="delete")
     # We must keep all notifications even if cluster is removed.
     # It is because we want user to be able to see
     # the notification history so that is why we don't use
@@ -142,3 +144,10 @@ class Attributes(Base):
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     editable = Column(JSON)
     generated = Column(JSON)
+
+
+class VmwareAttributes(Base):
+    __tablename__ = 'vmware_attributes'
+    id = Column(Integer, primary_key=True)
+    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    editable = Column(JSON)

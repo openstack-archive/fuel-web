@@ -66,6 +66,17 @@ def upgrade_schema():
     op.add_column(
         'releases',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
+    op.add_column(
+        'releases',
+        sa.Column('vmware_attributes_metadata', fields.JSON(), nullable=True))
+    op.create_table(
+        'vmware_attributes',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('cluster_id', sa.Integer(), nullable=True),
+        sa.Column('editable', fields.JSON(), nullable=True),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id'))
+    ### end Alembic commands ###
 
     upgrade_enum(
         'releases',                 # table
@@ -142,6 +153,9 @@ def downgrade_schema():
 
     op.drop_column('clusters', 'deployment_tasks')
     op.drop_column('releases', 'deployment_tasks')
+    op.drop_column('releases', 'vmware_attributes_metadata')
+    op.drop_table('vmware_attributes')
+    ### end Alembic commands ###
 
 
 def upgrade_data():

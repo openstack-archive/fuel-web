@@ -32,6 +32,8 @@ from nailgun.api.v1.handlers.cluster import ClusterHandler
 from nailgun.api.v1.handlers.cluster import ClusterResetHandler
 from nailgun.api.v1.handlers.cluster import ClusterStopDeploymentHandler
 from nailgun.api.v1.handlers.cluster import ClusterUpdateHandler
+from nailgun.api.v1.handlers.cluster import VmwareAttributesHandler
+from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
 
 from nailgun.api.v1.handlers.disks import NodeDefaultsDisksHandler
 from nailgun.api.v1.handlers.disks import NodeDisksHandler
@@ -234,6 +236,12 @@ urls = (
 
     r'/settings/?$',
     MasterNodeSettingsHandler,
+
+    r'/vmware/(?P<cluster_id>\d+)/settings/?$',
+    VmwareAttributesHandler,
+
+    r'/vmware/(?P<cluster_id>\d+)/settings/defaults/?$',
+    VmwareAttributesDefaultsHandler,
 )
 
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]

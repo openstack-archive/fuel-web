@@ -16,6 +16,7 @@
 
 """Deployment serializers for orchestrator"""
 
+from collections import defaultdict
 from copy import deepcopy
 from itertools import groupby
 
@@ -223,6 +224,56 @@ class NetworkDeploymentSerializer(object):
 
         return str(admin_ip)
 
+    @classmethod
+    def add_bridge(cls, name, provider=None):
+        """Add bridge to schema
+        It will take global provider if it is omitted here
+        """
+        bridge = {
+            'action': 'add-br',
+            'name': name
+        }
+        if provider:
+            bridge['provider'] = provider
+        return bridge
+
+    @classmethod
+    def add_port(cls, name, bridge, provider=None):
+        """Add port to schema
+        Bridge name may be None, port will not be connected to any bridge then
+        It will take global provider if it is omitted here
+        Port name can be in form "XX" or "XX.YY", where XX - NIC name,
+        YY - vlan id. E.g. "eth0", "eth0.1021".
+        """
+        port = {
+            'action': 'add-port',
+            'name': name
+        }
+        if bridge:
+            port['bridge'] = bridge
+        if provider:
+            bridge['provider'] = provider
+        return port
+
+    @classmethod
+    def add_bond(cls, iface, parameters):
+        """Add bond to schema
+        All required parameters should be inside parameters dict. (e.g.
+        bond_properties, interface_properties, provider, bridge).
+        bond_properties is obligatory, others are optional.
+        bridge should be set if bridge for untagged network is to be connected
+        to bond. Ports are to be created for tagged networks which should be
+        connected to bond (e.g. port "bond-X.212" for bridge "br-ex").
+        """
+        bond = {
+            'action': 'add-bond',
+            'name': iface.name,
+            'interfaces': sorted(x['name'] for x in iface.slaves),
+        }
+        if parameters:
+            bond.update(parameters)
+        return bond
+
 
 class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
@@ -355,6 +406,145 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             if network['name'] == 'public':
                 interfaces['floating_interface'] = if_name
         return interfaces
+
+
+class NovaNetworkDeploymentSerializer61(
+    NovaNetworkDeploymentSerializer
+):
+
+    @classmethod
+    def network_provider_node_attrs(cls, cluster, node):
+        return {'network_scheme': cls.generate_network_scheme(node)}
+
+    @classmethod
+    def subiface_name(cls, iface_name, net_descr):
+        if not net_descr['vlan_id']:
+            return iface_name
+        else:
+            return "{0}.{1}".format(iface_name, net_descr['vlan_id'])
+
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces,
+                                 fixed_sub_iface):
+        iface_types = consts.NETWORK_INTERFACE_TYPES
+        brnames = ['br-fw-admin', 'br-storage', 'br-mgmt', 'br-ex']
+        transformations = []
+
+        # add bridges for network roles
+        for brname in brnames:
+            transformations.append(cls.add_bridge(brname))
+
+        # fill up ports and bonds
+        bonded_ifaces = [x for x in node.nic_interfaces if x.bond]
+        for iface in node.interfaces:
+            if iface.type == iface_types.ether:
+                if iface in bonded_ifaces:
+                    # don't create anything for slave NICs
+                    continue
+                # add ports for all networks on every unbonded NIC
+                if iface.name in nets_by_ifaces:
+                    for net in nets_by_ifaces[iface.name]:
+                        sub_iface = cls.subiface_name(iface.name, net)
+                        transformations.append(
+                            cls.add_port(sub_iface, net['br_name']))
+                        # we should avoid adding the port twice in case of
+                        # VlanManager
+                        if fixed_sub_iface == sub_iface:
+                            fixed_sub_iface = None
+            elif iface.type == iface_types.bond:
+                # Add bonds and connect untagged networks' bridges to them.
+                # There can be no more than one untagged network on each bond.
+                bond_params = {
+                    'bond_properties': nm.get_lnx_bond_properties(iface),
+                    'interface_properties': nm.get_iface_properties(iface)
+                }
+                bond_ports = []
+                if iface.name in nets_by_ifaces:
+                    for net in nets_by_ifaces[iface.name]:
+                        if net['vlan_id']:
+                            bond_ports.append(cls.add_port(
+                                cls.subiface_name(iface.name, net),
+                                net['br_name']))
+                        else:
+                            bond_params['bridge'] = net['br_name']
+                transformations.append(cls.add_bond(iface, bond_params))
+                transformations.extend(bond_ports)
+        # add manager-related ports
+        if fixed_sub_iface:
+            transformations.append(cls.add_port(fixed_sub_iface, None))
+        return transformations
+
+    @classmethod
+    def generate_network_scheme(cls, node):
+
+        # create network scheme structure and fill it with static values
+        attrs = {
+            'version': '1.1',
+            'provider': 'lnx',
+            'interfaces': {},
+            'endpoints': {},
+            'roles': {
+                'fw-admin': 'br-fw-admin',
+                'storage': 'br-storage',
+                'management': 'br-mgmt',
+                'ex': 'br-ex',
+            },
+        }
+
+        netgroup_mapping = [
+            ('fuelweb_admin', 'br-fw-admin'),
+            ('storage', 'br-storage'),
+            ('management', 'br-mgmt'),
+            ('public', 'br-ex'),
+            ('fixed', '')  # will be determined in code below
+        ]
+
+        nm = objects.Node.get_network_manager(node)
+
+        # populate IP address information to endpoints
+        netgroups = {}
+        nets_by_ifaces = defaultdict(list)
+        fixed_sub_iface = None
+        for ngname, brname in netgroup_mapping:
+            # Here we get a dict with network description for this particular
+            # node with its assigned IPs and device names for each network.
+            netgroup = nm.get_node_network_by_netname(node, ngname)
+            if ngname == 'fixed':
+                vlan_id = None
+                if node.cluster.network_config.net_manager == \
+                        consts.NOVA_NET_MANAGERS.FlatDHCPManager:
+                    vlan_id = \
+                        node.cluster.network_config.fixed_networks_vlan_start
+                net = {'vlan_id': vlan_id}
+                fixed_sub_iface = cls.subiface_name(netgroup['dev'], net)
+                attrs['endpoints'][fixed_sub_iface] = {'IP': 'none'}
+            else:
+                nets_by_ifaces[netgroup['dev']].append({
+                    'br_name': brname,
+                    'vlan_id': netgroup['vlan']
+                })
+                if netgroup.get('ip'):
+                    attrs['endpoints'][brname] = {'IP': netgroup['ip']}
+            netgroups[ngname] = netgroup
+
+        attrs['endpoints']['br-ex']['gateway'] = \
+            netgroups['public']['gateway']
+
+        # add manager-related roles
+        if node.cluster.network_config.net_manager == \
+                consts.NOVA_NET_MANAGERS.VlanManager:
+            attrs['roles']['novanetwork/vlan'] = fixed_sub_iface
+        else:
+            attrs['roles']['novanetwork/fixed'] = fixed_sub_iface
+
+        for iface in node.nic_interfaces:
+            attrs['interfaces'][iface.name] = {}
+
+        attrs['transformations'] = \
+            cls.generate_transformations(node, nm, nets_by_ifaces,
+                                         fixed_sub_iface)
+
+        return attrs
 
 
 class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
@@ -871,6 +1061,12 @@ class NeutronNetworkDeploymentSerializer60(
         return attrs
 
 
+class NeutronNetworkDeploymentSerializer61(
+    NeutronNetworkDeploymentSerializer60
+):
+    pass
+
+
 class GraphBasedSerializer(object):
 
     def __init__(self, graph):
@@ -1238,8 +1434,8 @@ class DeploymentHASerializer60(DeploymentHASerializer):
 class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
                                       VmwareDeploymentSerializerMixin):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+    nova_network_serializer = NovaNetworkDeploymentSerializer61
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer61
 
     def serialize_node(self, node, role):
         serialized_node = super(
@@ -1261,8 +1457,8 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
 class DeploymentHASerializer61(DeploymentHASerializer,
                                VmwareDeploymentSerializerMixin):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+    nova_network_serializer = NovaNetworkDeploymentSerializer61
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer61
 
     def serialize_node(self, node, role):
         serialized_node = super(

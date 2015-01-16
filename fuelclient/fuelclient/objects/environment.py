@@ -370,9 +370,29 @@ class Environment(BaseObject):
             )
         )
 
-    def get_deployment_tasks(self):
+    def execute_tasks(self, nodes, tasks):
+        return Task.init_with_data(
+            self.connection.put_request(
+                self._get_method_url('deploy_tasks', nodes),
+                tasks
+            )
+        )
+
+    def get_tasks(self, skip=None, end=None):
+        """Stores logic to filter tasks by known parameters.
+
+        :param skip: list of tasks or None
+        :param end: string or None
+        """
+        tasks = [t['id'] for t in self.get_deployment_tasks(end=end)]
+        if skip:
+            tasks_to_execute = set(tasks) - set(skip)
+            return list(tasks_to_execute)
+        return tasks
+
+    def get_deployment_tasks(self, end=None):
         url = self.deployment_tasks_path.format(self.id)
-        return self.connection.get_request(url)
+        return self.connection.get_request(url, params={'end_task': end})
 
     def update_deployment_tasks(self, data):
         url = self.deployment_tasks_path.format(self.id)

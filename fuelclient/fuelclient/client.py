@@ -144,7 +144,7 @@ class Client(object):
         return resp.json()
 
     @exceptions_decorator
-    def get_request(self, api, ostf=False):
+    def get_request(self, api, ostf=False, params=None):
         """Make GET request to specific API
         """
         url = (self.ostf_root if ostf else self.api_root) + api
@@ -154,7 +154,8 @@ class Client(object):
         )
 
         headers = {'x-auth-token': self.auth_token}
-        resp = requests.get(url, headers=headers)
+        params = params or {}
+        resp = requests.get(url, params=params, headers=headers)
         resp.raise_for_status()
 
         return resp.json()

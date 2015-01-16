@@ -691,6 +691,58 @@ class Cluster(NailgunObject):
         else:
             return Release.get_deployment_tasks(instance.release)
 
+    # TODO: where better descibe CRUD operations in Cluster or VmwareAttributes
+    @classmethod
+    def create_vmware_attributes(cls, instance, data):
+        """ Write description
+        """
+        attributes = VmwareAttributes.create(
+            {
+                "editable": data,
+                "generated": instance.release.attributes_metadata.get(
+                    "generated"
+                ),
+                "cluster_id": instance.id
+            }
+        )
+
+        return attributes
+
+    @classmethod
+    def get_vmware_attributes(cls, instance):
+        """Write description
+        """
+        return db().query(models.VmwareAttributes).filter(
+            models.VmwareAttributes.cluster_id == instance.id
+        ).first()
+
+    @classmethod
+    def get_editable_vmware_attributes(cls, instance):
+        """Write description
+        """
+        attrs = cls.get_vmware_attributes(instance)
+        editable = attrs.editable
+        return {'editable': editable}
+
+    @classmethod
+    def update_vmware_attributes(cls, instance, data):
+        """Write description
+        """
+        setattr(instance.vmware_attributes, 'editable', data)
+
+        #db().add(instance)
+        db().flush()
+
+    @classmethod
+    def patch_vmware_attributes(cls, instance, data):
+        """Write description
+        """
+        instance.attributes.editable = dict_merge(
+            instance.attributes.editable, data)
+
+        #db().add(instance)
+        db().flush()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection
@@ -698,3 +750,7 @@ class ClusterCollection(NailgunCollection):
 
     #: Single Cluster object class
     single = Cluster
+
+
+class VmwareAttributes(NailgunObject):
+    model = models.VmwareAttributes

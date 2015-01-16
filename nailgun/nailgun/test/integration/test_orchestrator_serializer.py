@@ -1695,6 +1695,69 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
                 self.env.nodes[0])['test_vm_image'][0]['img_path'],
             img_path)
 
+    def check_generate_vmware_attributes_data(self):
+        cluster_db = self.db.query(Cluster).get(self.cluster['id'])
+        cluster_attrs = objects.Cluster.get_attributes(cluster_db).editable
+        cluster_attrs.get('common', {}).setdefault('use_vcenter', {})
+        cluster_attrs['common']['use_vcenter']['value'] = True
+
+        objects.Cluster.update_attributes(
+            cluster_db, {'editable': cluster_attrs})
+        setattr(
+            cluster_db.vmware_attributes,
+            'editable',
+            self.vm_data[0]['editable'])
+        self.db.flush()
+
+        result = self.serializer.serialize_node(
+            self.env.nodes[0], 'controller')
+
+        self.assertEqual(len(result['vcenter']['computes']), 2)
+
+        self.assertIn(
+            result['vcenter']['computes'][0]['service_name'],
+            ['Compute 1', 'Compute 3'])
+
+        self.assertIn(
+            result['vcenter']['computes'][1]['service_name'],
+            ['Compute 1', 'Compute 3'])
+
+        # check compute parameters
+        self.assertEqual(
+            result['vcenter']['computes'][0]['availability_zone_name'],
+            "Zone 1")
+        self.assertEqual(
+            result['vcenter']['computes'][0]['vc_host'],
+            "1.2.3.4")
+        self.assertEqual(
+            result['vcenter']['computes'][0]['vc_user'],
+            "admin")
+        self.assertEqual(
+            result['vcenter']['computes'][0]['vc_password'],
+            "secret")
+
+        self.assertTrue(result['use_vcenter'])
+        self.assertEqual(result['vcenter']['esxi_vlan_interface'], "eth0")
+
+        # check cinder parameters
+        self.assertEqual(
+            result['cinder']['instances'][0]['availability_zone_name'],
+            "Zone 1")
+        self.assertEqual(
+            result['cinder']['instances'][0]['vc_host'],
+            "1.2.3.4")
+        self.assertEqual(
+            result['cinder']['instances'][0]['vc_user'],
+            "admin")
+        self.assertEqual(
+            result['cinder']['instances'][0]['vc_password'],
+            "secret")
+
+        # check glance parameters
+        self.assertEqual(result['glance']['vc_host'], "1.2.3.4")
+        self.assertEqual(result['glance']['vc_user'], "admin")
+        self.assertEqual(result['glance']['vc_password'], "secret")
+
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
 
@@ -1703,12 +1766,16 @@ class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
         self.cluster = self.create_env('multinode')
         objects.NodeCollection.prepare_for_deployment(self.env.nodes)
         self.serializer = DeploymentMultinodeSerializer61(self.cluster)
+        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def test_serialize_node(self):
         self.check_serialize_node()
 
     def test_serialize_node_for_node_list(self):
         self.check_serialize_node_for_node_list()
+
+    def test_generate_vmware_attributes_data(self):
+        self.check_generate_vmware_attributes_data()
 
 
 class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
@@ -1718,6 +1785,7 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
         self.cluster = self.create_env('ha_compact')
         objects.NodeCollection.prepare_for_deployment(self.env.nodes)
         self.serializer = DeploymentHASerializer61(self.cluster)
+        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def check_generate_test_vm_image_data(self):
         kvm_img_name = 'TestVM'
@@ -1776,3 +1844,6 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
         objects.Cluster.update_attributes(
             cluster_db, {'editable': cluster_attrs})
         self.check_generate_test_vm_image_data()
+
+    def test_generate_vmware_attributes_data(self):
+        self.check_generate_vmware_attributes_data()

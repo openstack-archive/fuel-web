@@ -1,0 +1,152 @@
+[{
+    "pk": 1,
+    "editable": {
+        "metadata": [
+            {
+                "fields": [
+                    {
+                        "type": "text",
+                        "description": "Availability zone name",
+                        "name": "az_name",
+                        "label": "AZ name"
+                    },
+                    {
+                        "type": "text",
+                        "description": "vCenter host or IP",
+                        "name": "vcenter_host",
+                        "label": "vCenter host"
+                    },
+                    {
+                        "type": "text",
+                        "description": "vCenter username",
+                        "name": "vcenter_username",
+                        "label": "vCenter username"
+                    },
+                    {
+                        "type": "password",
+                        "description": "vCenter password",
+                        "name": "vcenter_password",
+                        "label": "vCenter password"
+                    },
+                    {
+                        "fields": [
+                            {
+                                "type": "text",
+                                "description": "VSphere Cluster",
+                                "name": "vsphere_cluster",
+                                "label": "VSphere Cluster"
+                            },
+                            {
+                                "type": "text",
+                                "description": "Service name",
+                                "name": "service_name",
+                                "label": "Service name"
+                            },
+                            {
+                                "type": "text",
+                                "description": "Datastore regex",
+                                "name": "datastore_regex",
+                                "label": "Datastore regex"
+                            }
+                        ],
+                        "type": "array",
+                        "name": "nova_computes"
+                    },
+                    {
+                        "fields": [
+                            {
+                                "type": "checkbox",
+                                "description": "",
+                                "name": "enable",
+                                "label": "Enable Cinder"
+                            }
+                        ],
+                        "type": "object",
+                        "name": "cinder"
+                    }
+                ],
+                "type": "array",
+                "name": "availability_zones"
+            },
+            {
+                "fields": [
+                    {
+                        "type": "text",
+                        "description": "VLAN interface",
+                        "name": "esxi_vlan_interface",
+                        "label": "VLAN interface"
+                    }
+                ],
+                "type": "object",
+                "name": "network"
+            },
+            {
+                "fields": [
+                    {
+                        "type": "text",
+                        "description": "VCenter host or IP",
+                        "name": "vcenter_host",
+                        "label": "VCenter Host"
+                    },
+                    {
+                        "type": "text",
+                        "description": "vCenter username",
+                        "name": "vcenter_username",
+                        "label": "vCenter username"
+                    },
+                    {
+                        "type": "password",
+                        "description": "vCenter password",
+                        "name": "vcenter_password",
+                        "label": "vCenter password"
+                    },
+                    {
+                        "type": "text",
+                        "description": "Datacenter",
+                        "name": "datacenter",
+                        "label": "Datacenter"
+                    },
+                    {
+                        "type": "text",
+                        "description": "Datastore",
+                        "name": "datastore",
+                        "label": "Datastore"
+                    }
+                ],
+                "type": "object",
+                "name": "glance"
+            }
+        ],
+        "value": {
+            "availability_zones": [
+                {
+                    "az_name": "Zone 1",
+                    "vcenter_host": "1.2.3.4",
+                    "vcenter_username": "admin",
+                    "vcenter_password": "secret",
+                    "nova_computes": [
+                        {
+                            "vsphere_cluster": "cluster1",
+                            "service_name": "Compute 1"
+                        },
+                        {
+                            "vsphere_cluster": "cluster2",
+                            "service_name": "Compute 3"
+                        }
+                    ],
+                    "cinder": {
+                        "enable": true
+                    }
+                }
+            ],
+            "glance": {
+                "vcenter_host": "1.2.3.4",
+                "vcenter_username": "admin",
+                "vcenter_password": "secret"
+            },
+            "network": {
+                "esxi_vlan_interface": "eth0"
+            }
+        }
+    }
+}]

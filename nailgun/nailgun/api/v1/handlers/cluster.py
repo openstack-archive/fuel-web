@@ -34,6 +34,8 @@ from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.cluster import AttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterChangesValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
+from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
+
 from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
@@ -248,3 +250,91 @@ class ClusterDeploymentTasksHandler(DeploymentTasksHandler):
     """Cluster Handler for deployment graph serialization."""
 
     single = objects.Cluster
+
+
+class VmwareAttributesHandler(BaseHandler):
+    """Vmware attributes handler
+    """
+
+    fields = (
+        "editable",
+    )
+
+    validator = VmwareAttributesValidator
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: JSONized Cluster vmware attributes.
+        :http: * 200 (OK)
+               * 204 (cluster has no attributes)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(
+            objects.Cluster, cluster_id,
+            log_404=(
+                "error",
+                "Error: there is no cluster "
+                "with id '{0}' in DB.".format(cluster_id)
+            )
+        )
+        attributes = objects.Cluster.get_vmware_attributes(cluster)
+        if not attributes:
+            raise self.http(204)
+
+        return self.render(attributes)
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized Cluster vmware attributes.
+        :http: * 200 (OK)
+               * 204 (cluster has no vmware attributes)
+               * 400 (wrong attributes data specified)
+               * 403 (attriutes can't be changed)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(
+            objects.Cluster, cluster_id,
+            log_404=(
+                "error",
+                "Error: there is no cluster "
+                "with id '{0}' in DB.".format(cluster_id)
+            )
+        )
+
+        attributes = objects.Cluster.get_vmware_attributes(cluster)
+        if not attributes:
+            raise self.http(204)
+
+        if cluster.is_locked:
+            raise self.http(403, "Environment attributes can't be changed "
+                                 "after or during deployment.")
+
+        data = self.checked_data(instance=attributes)
+        attributes = objects.Cluster.update_vmware_attributes(cluster, data)
+
+        return {"editable": attributes}
+
+
+class VmwareAttributesDefaultsHandler(BaseHandler):
+    """Vmware default attributes handler
+    """
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: JSONized default Cluster vmware attributes.
+        :http: * 200 (OK)
+               * 204 (cluster has no default vmware attributes)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(
+            objects.Cluster, cluster_id,
+            log_404=(
+                "error",
+                "Error: there is no cluster "
+                "with id '{0}' in DB.".format(cluster_id)
+            )
+        )
+
+        attributes = objects.Cluster.get_default_vmware_attributes(cluster)
+
+        return {"editable": attributes}

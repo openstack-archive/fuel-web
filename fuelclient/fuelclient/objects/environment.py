@@ -370,6 +370,24 @@ class Environment(BaseObject):
             )
         )
 
+    def execute_tasks(self, nodes, tasks):
+        return Task.init_with_data(
+            self.connection.put_request(
+                self._get_method_url('deploy_tasks', nodes),
+                tasks
+            )
+        )
+
+    def skip_tasks(self, nodes, tasks):
+        all_tasks = [t['id'] for t in self.get_deployment_tasks()]
+        tasks_to_execute = set(all_tasks) - set(tasks)
+        return Task.init_with_data(
+            self.connection.put_request(
+                self._get_method_url('deploy_tasks', nodes),
+                list(tasks_to_execute)
+            )
+        )
+
     def get_deployment_tasks(self):
         url = self.deployment_tasks_path.format(self.id)
         return self.connection.get_request(url)

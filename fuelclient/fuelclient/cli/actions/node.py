@@ -64,7 +64,11 @@ class NodeAction(Action):
             Args.get_node_arg("Node id."),
             Args.get_force_arg("Bypassing parameter validation."),
             Args.get_all_arg("Select all nodes."),
-            Args.get_role_arg("Role to assign for node.")
+            Args.get_role_arg("Role to assign for node."),
+            group(
+                Args.get_skip_tasks(),
+                Args.get_tasks()
+            )
         ]
 
         self.flag_func_map = (
@@ -75,6 +79,8 @@ class NodeAction(Action):
             ("deploy", self.start),
             ("provision", self.start),
             ("delete-from-db", self.delete_from_db),
+            ("skip", self.skip_tasks),
+            ("tasks", self.execute_tasks),
             (None, self.list)
         )
 
@@ -205,6 +211,14 @@ class NodeAction(Action):
                       " to:\n{1}".format(attribute_type, "\n".join(files))
         print(message)
 
+    def get_env_id(self, node_collection):
+        env_ids = set(n.env_id for n in node_collection)
+        if len(env_ids) != 1:
+            raise ActionException(
+                "Inputed nodes assigned to multiple environments!")
+        else:
+            return env_ids.pop()
+
     @check_all("env", "node")
     def start(self, params):
         """Deploy/Provision some node:
@@ -213,18 +227,47 @@ class NodeAction(Action):
         """
         node_collection = NodeCollection.init_with_ids(params.node)
         method_type = "deploy" if params.deploy else "provision"
-        env_ids = set(n.env_id for n in node_collection)
-        if len(env_ids) != 1:
-            raise ActionException(
-                "Inputed nodes assigned to multiple environments!")
-        else:
-            env_id_to_start = env_ids.pop()
+        env_id_to_start = self.get_env_id(node_collection)
+
         task = Environment(env_id_to_start).install_selected_nodes(
             method_type, node_collection.collection)
+
         self.serializer.print_to_output(
             task.data,
             "Started {0}ing {1}."
             .format(method_type, node_collection))
+
+    @check_all("env", "node")
+    def execute_tasks(self, params):
+        """Execute deployment tasks
+                fuel node --node-id 2 --tasks hiera netconfig
+        """
+        node_collection = NodeCollection.init_with_ids(params.node)
+        env_id_to_start = self.get_env_id(node_collection)
+
+        task = Environment(env_id_to_start).execute_tasks(
+            node_collection.collection, tasks=params.tasks)
+
+        self.serializer.print_to_output(
+            task.data,
+            "Started tasks {0} for nodes {1}."
+            .format(params.tasks, node_collection))
+
+    @check_all("env", "node")
+    def skip_tasks(self, params):
+        """Skip particular tasks
+                fuel node --node-id 2 --skip hiera netconfig
+        """
+        node_collection = NodeCollection.init_with_ids(params.node)
+        env_id_to_start = self.get_env_id(node_collection)
+
+        task = Environment(env_id_to_start).skip_tasks(
+            node_collection.collection, tasks=params.skip)
+
+        self.serializer.print_to_output(
+            task.data,
+            "Started execution with skipped tasks {0} for nodes {1}."
+            .format(params.skip, node_collection))
 
     def list(self, params):
         """To list all available nodes:

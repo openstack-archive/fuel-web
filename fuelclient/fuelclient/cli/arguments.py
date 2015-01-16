@@ -280,6 +280,29 @@ def get_net_arg(help_msg):
                    default="nova")
 
 
+def get_tasks_arg(name, help_msg, flags):
+    return get_arg(
+        name,
+        flags=flags,
+        nargs = '+',
+        default=[],
+        help=help_msg)
+
+
+def get_skip_tasks():
+    return get_tasks_arg(
+        "skip",
+        "Skip specified tasks",
+        ("--skip",))
+
+
+def get_only_tasks():
+    return get_tasks_arg(
+        "only",
+        "Execute only specified tasks.",
+        ("--only",))
+
+
 def get_nst_arg(help_msg):
     return get_arg("nst",
                    flags=("--net-segment-type",),

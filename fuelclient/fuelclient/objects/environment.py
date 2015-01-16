@@ -361,10 +361,12 @@ class Environment(BaseObject):
             method_type,
             ','.join(map(lambda n: str(n.id), nodes)))
 
-    def install_selected_nodes(self, method_type, nodes):
+    def install_selected_nodes(self, method_type, nodes,
+                               skip_tasks, only_tasks):
         return Task.init_with_data(
             self.connection.put_request(
                 self._get_method_url(method_type, nodes),
-                {}
+                {'skip_tasks': skip_tasks,
+                 'only_tasks': only_tasks}
             )
         )

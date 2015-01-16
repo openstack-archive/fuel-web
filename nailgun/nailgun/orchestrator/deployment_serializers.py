@@ -282,6 +282,12 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         return interfaces
 
 
+class NovaNetworkDeploymentSerializer61(
+    NovaNetworkDeploymentSerializer
+):
+    pass
+
+
 class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
@@ -796,6 +802,12 @@ class NeutronNetworkDeploymentSerializer60(
         return attrs
 
 
+class NeutronNetworkDeploymentSerializer61(
+    NeutronNetworkDeploymentSerializer60
+):
+    pass
+
+
 class GraphBasedSerializer(object):
 
     def __init__(self, graph):
@@ -1157,14 +1169,14 @@ class DeploymentHASerializer60(DeploymentHASerializer):
 
 class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+    nova_network_serializer = NovaNetworkDeploymentSerializer61
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer61
 
 
 class DeploymentHASerializer61(DeploymentHASerializer):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+    nova_network_serializer = NovaNetworkDeploymentSerializer61
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer61
 
 
 def create_serializer(orchestrator_graph, cluster):

@@ -64,7 +64,11 @@ class NodeAction(Action):
             Args.get_node_arg("Node id."),
             Args.get_force_arg("Bypassing parameter validation."),
             Args.get_all_arg("Select all nodes."),
-            Args.get_role_arg("Role to assign for node.")
+            Args.get_role_arg("Role to assign for node."),
+            group(
+                Args.get_skip_tasks(),
+                Args.get_only_tasks()
+            )
         ]
 
         self.flag_func_map = (
@@ -209,7 +213,7 @@ class NodeAction(Action):
     def start(self, params):
         """Deploy/Provision some node:
                 fuel node --node-id 2 --provision
-                fuel node --node-id 2 --deploy
+                fuel node --node-id 2 --deploy --tasks netconfig
         """
         node_collection = NodeCollection.init_with_ids(params.node)
         method_type = "deploy" if params.deploy else "provision"
@@ -220,7 +224,8 @@ class NodeAction(Action):
         else:
             env_id_to_start = env_ids.pop()
         task = Environment(env_id_to_start).install_selected_nodes(
-            method_type, node_collection.collection)
+            method_type, node_collection.collection,
+            tasks=params.tasks)
         self.serializer.print_to_output(
             task.data,
             "Started {0}ing {1}."

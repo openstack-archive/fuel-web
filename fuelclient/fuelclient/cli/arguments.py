@@ -292,6 +292,16 @@ def get_net_arg(help_msg):
                    default="nova")
 
 
+def get_tasks():
+    return get_arg(
+        'tasks',
+        flags=('--tasks',),
+        nargs = '+',
+        default=[],
+        help="Get list of tasks to be executed.")
+
+
+
 def get_nst_arg(help_msg):
     return get_arg("nst",
                    flags=("--net-segment-type",),

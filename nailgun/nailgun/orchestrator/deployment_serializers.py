@@ -31,6 +31,7 @@ from nailgun import objects
 
 from nailgun import consts
 from nailgun.db import db
+# TODO(apopovych): shouldn't we incapsulate alchemy logic in objects?
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors

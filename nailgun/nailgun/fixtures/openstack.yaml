@@ -1291,6 +1291,49 @@
           bind: "settings:additional_components.ceilometer.value"
           weight: 30
       Ready: {}
+    vmware_attributes_metadata:
+      editable:
+        availability_zones:
+          metadata:
+            -
+              name: "name"
+              label: "Name"
+              description: "Oppa Name"
+              type: "text"
+          instances:
+            -
+              computes:
+                metadata:
+                  -
+                    name: "vSphereCluster"
+                    label: "vSphere Cluster"
+                    description: "Oppa vSphere Cluster"
+                    type: "text"
+                instances:
+                  -
+              cinder:
+                metadata:
+                  -
+                    name: "enableCinderVMDK"
+                    label: "Enable Cinder"
+                    description: "Enable Cinder"
+                    type: "bool"
+                instance: {}
+        network:
+          metadata:
+            -
+              name: "name"
+              label: "Name"
+              description: "Oppa Name"
+              type: "select"
+        glance:
+          metadata:
+            -
+              name: "name"
+              label: "Name"
+              description: "Oppa Name"
+              type: "select"
+
 - pk: 1
   extend: *base_release
   fields:

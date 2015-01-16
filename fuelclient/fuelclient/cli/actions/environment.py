@@ -14,6 +14,7 @@
 
 from fuelclient.cli.actions.base import Action
 from fuelclient.cli.actions.base import check_all
+from fuelclient.cli.actions.base import check_any
 import fuelclient.cli.arguments as Args
 from fuelclient.cli.arguments import group
 from fuelclient.cli.formatting import format_table
@@ -61,9 +62,19 @@ class EnvironmentAction(Action):
             ),
             Args.get_nst_arg(
                 "Set network segment type"
-            )
+            ),
+            Args.get_deployment_tasks_arg("Environment tasks configuration."),
+            group(
+                Args.get_download_arg(
+                    "Download configuration of specific cluster"),
+                Args.get_upload_arg(
+                    "Upload configuration to specific cluster")
+            ),
+            Args.get_dir_arg(
+                "Select directory to which download release attributes"),
         ]
         self.flag_func_map = (
+            ("deployment-tasks", self.deployment_tasks),
             ("create", self.create),
             ("set", self.set),
             ("delete", self.delete),
@@ -182,3 +193,25 @@ class EnvironmentAction(Action):
             {},
             msg
         )
+
+    @check_all("env")
+    @check_any("download", "upload")
+    def deployment_tasks(self, params):
+        """Modify deployment_tasks for environment.
+        fuel env --env 1 --deployment-tasks --download
+        fuel env --env 1 --deployment-tasks --upload
+        """
+        cluster = Environment(params.env)
+        dir_path = self.full_path_directory(
+            params.dir, 'cluster_{0}'.format(params.env))
+        full_path = '{0}/deployment_tasks'.format(dir_path)
+        if params.download:
+            tasks = cluster.get_deployment_tasks()
+            self.serializer.write_to_file(full_path, tasks)
+            print("Deployment tasks for cluster {0} "
+                  "downloaded into {1}.yaml.".format(cluster.id, full_path))
+        elif params.upload:
+            tasks = self.serializer.read_from_file(full_path)
+            cluster.update_deployment_tasks(tasks)
+            print("Deployment tasks for release {0} "
+                  " uploaded from {1}.yaml".format(cluster.id, full_path))

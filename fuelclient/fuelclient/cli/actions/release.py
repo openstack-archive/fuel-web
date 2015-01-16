@@ -31,7 +31,8 @@ class ReleaseAction(Action):
         self.args = [
             Args.get_release_arg('Specify particular release id'),
             Args.get_list_arg("List all available releases."),
-            Args.get_network_arg("Node network configuration."),
+            Args.get_network_arg("Release network configuration."),
+            Args.get_deployment_tasks_arg("Release tasks configuration."),
             Args.get_dir_arg(
                 "Select directory to which download release attributes"),
             group(
@@ -42,6 +43,7 @@ class ReleaseAction(Action):
             )
         ]
         self.flag_func_map = (
+            ('deployment-tasks', self.deployment_tasks),
             ('network', self.network),
             (None, self.list),
         )
@@ -94,3 +96,25 @@ class ReleaseAction(Action):
             release.update_networks(networks)
             print("Networks for release {0} uploaded from {1}.yaml".format(
                 release.id, full_path))
+
+    @check_all("release")
+    @check_any("download", "upload")
+    def deployment_tasks(self, params):
+        """Modify deployment_tasks for release.
+        fuel rel --rel 1 --deployment-tasks --download
+        fuel rel --rel 1 --deployment-tasks --upload
+        """
+        release = Release(params.release)
+        dir_path = self.full_path_directory(
+            params.dir, 'release_{0}'.format(params.release))
+        full_path = '{0}/deployment_tasks'.format(dir_path)
+        if params.download:
+            tasks = release.get_deployment_tasks()
+            self.serializer.write_to_file(full_path, tasks)
+            print("Deployment tasks for release {0} "
+                  "downloaded into {1}.yaml.".format(release.id, full_path))
+        elif params.upload:
+            tasks = self.serializer.read_from_file(full_path)
+            release.update_deployment_tasks(tasks)
+            print("Deployment tasks for release {0}"
+                  " uploaded from {1}.yaml".format(release.id, dir_path))

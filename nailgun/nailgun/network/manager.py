@@ -1135,3 +1135,11 @@ class NetworkManager(object):
             output[name].append(cidr)
 
         return output
+
+    @classmethod
+    def get_lnx_bond_properties(cls, bond):
+        return {}
+
+    @classmethod
+    def get_iface_properties(cls, iface):
+        return {}

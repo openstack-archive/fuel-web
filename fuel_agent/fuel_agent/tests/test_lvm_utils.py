@@ -335,9 +335,23 @@ class TestLvmUtils(test_base.BaseTestCase):
                                         mock_vgdisplay):
         mock_vgdisplay.return_value = [{'name': 'vgname', 'free': 2000},
                                        {'name': 'some'}]
-        mock_lvdisplay.return_value = [{'name': 'lvname'}]
+        mock_lvdisplay.return_value = [{'name': 'lvname', 'vg': 'vgname'}]
         self.assertRaises(errors.LVAlreadyExistsError, lu.lvcreate, 'vgname',
                           'lvname', 1000)
+
+    @mock.patch.object(lu, 'vgdisplay')
+    @mock.patch.object(lu, 'lvdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_lvcreate_lv_name_collision(self, mock_exec, mock_lvdisplay,
+                                        mock_vgdisplay):
+        # lv lvname already exists in another pv
+        mock_vgdisplay.return_value = [{'name': 'vgname', 'free': 2000},
+                                       {'name': 'some', 'free': 2000}]
+        mock_lvdisplay.return_value = [{'name': 'lvname', 'vg': 'some'}]
+        lu.lvcreate('vgname', 'lvname', 1000)
+        mock_exec.assert_called_once_with('lvcreate', '-L', '1000m', '-n',
+                                          'lvname', 'vgname',
+                                          check_exit_code=[0])
 
     @mock.patch.object(utils, 'execute')
     def test_lvdisplay(self, mock_exec):

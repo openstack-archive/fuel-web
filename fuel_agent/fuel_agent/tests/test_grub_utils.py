@@ -121,7 +121,8 @@ class TestGrubUtils(test_base.BaseTestCase):
         mock_ggi.return_value = '/grub_install'
         mock_exec.return_value = ('foo 0.97 bar', '')
         version = gu.guess_grub_version('/target')
-        mock_exec.assert_called_once_with('/target/grub_install', '-v')
+        cmd = 'chroot /target /grub_install --version'.split()
+        mock_exec.assert_called_once_with(*cmd)
         self.assertEqual(version, 1)
 
     @mock.patch.object(gu, 'guess_grub_install')
@@ -130,7 +131,8 @@ class TestGrubUtils(test_base.BaseTestCase):
         mock_ggi.return_value = '/grub_install'
         mock_exec.return_value = ('foo bar', '')
         version = gu.guess_grub_version('/target')
-        mock_exec.assert_called_once_with('/target/grub_install', '-v')
+        cmd = 'chroot /target /grub_install --version'.split()
+        mock_exec.assert_called_once_with(*cmd)
         self.assertEqual(version, 2)
 
     @mock.patch.object(os.path, 'isfile')

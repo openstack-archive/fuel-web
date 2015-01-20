@@ -144,6 +144,49 @@ class DeploymentGraph(nx.DiGraph):
             if task['id'] not in task_ids:
                 self.stub_task(task)
 
+    def find_stage(self, task):
+        end_stage = None
+        for stage in consts.STAGES:
+            if self.has_successor(task, stage):
+                end_stage = stage
+            elif task == stage:
+                end_stage = stage
+
+        if end_stage is None:
+            raise errors.InvalidData(
+                "Current task %s doesnt belong to graph"
+                " or not connected to any stages.", task)
+        return end_stage
+
+    def find_subgraph(self, end_task):
+        """Find subgraph that has only tasks required for end_task
+
+        :param end_task: string
+        """
+        # groups and stages should be always present in structure
+        # because it is really 3 separate subgraphs, and for all of them
+        # we are expecting core stuff to be present
+        end_stage = self.find_stage(end_task)
+        all_tasks = set()
+        reversed_graph = self.reverse()
+        for task in self.node.values():
+            if task['type'] in consts.INTERNAL_TASKS:
+                all_tasks.add(task['id'])
+
+        for stage in consts.STAGES:
+
+            if stage != end_stage:
+                all_tasks.update(
+                    nx.dfs_postorder_nodes(reversed_graph, stage))
+            else:
+                all_tasks.update(
+                    nx.dfs_postorder_nodes(reversed_graph, end_task))
+                # if we are at stage where end_task is, we should just stop
+                # traversal
+                break
+
+        return self.subgraph(all_tasks)
+
 
 class AstuteGraph(object):
     """This object stores logic that required for working with astute

@@ -14,10 +14,14 @@
 #    under the License.
 
 import functools
+import random
 
 from nailgun import consts
 from nailgun.openstack.common import jsonutils
+from nailgun.test.utils import random_string
+
 from nailgun.test.performance.base import BaseUnitLoadTestCase
+from nailgun.test.performance.base import evaluate_unit_performance
 
 
 class NodeOperationsLoadTest(BaseUnitLoadTestCase):
@@ -27,51 +31,54 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         super(NodeOperationsLoadTest, cls).setUpClass()
         cls.env.create_nodes(cls.NODES_NUM, cluster_id=cls.cluster['id'])
 
+    @evaluate_unit_performance
     def test_put_node(self):
-        for node in self.env.nodes:
-            func = functools.partial(
-                self.put_handler,
-                'NodeHandler',
-                {'status': consts.NODE_STATUSES.ready},
-                handler_kwargs={'obj_id': node.id}
-            )
-            self.check_time_exec(func)
+        func = functools.partial(
+            self.put_handler,
+            'NodeHandler',
+            {'status': consts.NODE_STATUSES.ready,
+             'name': random_string(20)},
+            handler_kwargs={'obj_id': random.choice(self.env.nodes).id}
+        )
+        self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_nodes(self):
         func = functools.partial(
             self.get_handler,
             'NodeCollectionHandler',
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
-        self.check_time_exec(func, 5)
+        self.check_time_exec(func, 6)
 
+    @evaluate_unit_performance
     def test_get_defaults_disk(self):
-        for node in self.env.nodes:
-            func = functools.partial(
-                self.get_handler,
-                'NodeDefaultsDisksHandler',
-                handler_kwargs={'node_id': node.id}
-            )
-            self.check_time_exec(func)
+        func = functools.partial(
+            self.get_handler,
+            'NodeDefaultsDisksHandler',
+            handler_kwargs={'node_id': random.choice(self.env.nodes).id}
+        )
+        self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_volumes_info(self):
-        for node in self.env.nodes:
-            func = functools.partial(
-                self.get_handler,
-                'NodeVolumesInformationHandler',
-                handler_kwargs={'node_id': node.id}
-            )
-            self.check_time_exec(func)
+        func = functools.partial(
+            self.get_handler,
+            'NodeVolumesInformationHandler',
+            handler_kwargs={'node_id': random.choice(self.env.nodes).id}
+        )
+        self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_get_node_nic(self):
-        for node in self.env.nodes:
-            func = functools.partial(
-                self.get_handler,
-                'NodeNICsHandler',
-                handler_kwargs={'node_id': node.id}
-            )
-            self.check_time_exec(func)
+        func = functools.partial(
+            self.get_handler,
+            'NodeNICsHandler',
+            handler_kwargs={'node_id': random.choice(self.env.nodes).id}
+        )
+        self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_put_nodes_nics(self):
         nodes_list = []
         for node in self.env.nodes:
@@ -89,6 +96,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func, 14)
 
+    @evaluate_unit_performance
     def test_get_allocation_stats(self):
         func = functools.partial(
             self.get_handler,
@@ -96,6 +104,7 @@ class NodeOperationsLoadTest(BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
+    @evaluate_unit_performance
     def test_add_delete_nodes(self):
         nodes_delete_list = []
         nodes_add_list = []

@@ -802,10 +802,14 @@ DUMP:
 
 # performance tests settings
 PERFORMANCE_PROFILING_TESTS: 0
+PERFORMANCE_TESTS_RUN_NUMBER: 10
+PERFORMANCE_TESTS_TOLERANCE: 0.1
 LOAD_TESTS_PATHS:
     load_tests_base: "/tmp/nailgun_performance_tests/tests/"
     last_performance_test: "/tmp/nailgun_performance_tests/tests/last/"
+    last_performance_test_run: "/tmp/nailgun_performance_tests/tests/last/run/"
     load_tests_results: "/tmp/nailgun_performance_tests/results/"
+    load_previous_tests_results: "/tmp/nailgun_performance_tests/previous_results.json"
 
 DNS_UPSTREAM: "8.8.8.8, 8.8.4.4"
 NTP_UPSTREAM: "0.pool.ntp.org, 1.pool.ntp.org"

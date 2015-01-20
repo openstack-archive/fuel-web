@@ -190,8 +190,11 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             this.setState({actionInProgress: true});
             this.props.nodes.each(function(node) {
                 var data;
-                if (this.props.mode == 'add') data = {cluster_id: this.props.cluster.id, pending_addition: true};
-                if (!node.get('pending_roles').length && node.get('pending_addition')) data = {cluster_id: null, pending_addition: false};
+                if (node.get('pending_roles').length) {
+                    if (this.props.mode == 'add') data = {cluster_id: this.props.cluster.id, pending_addition: true};
+                } else {
+                    if (node.get('pending_addition')) data = {cluster_id: null, pending_addition: false};
+                }
                 node.set(data, {silent: true});
             }, this);
             this.props.nodes.toJSON = function() {
@@ -453,8 +456,10 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
 
     SelectAllMixin = {
         componentDidUpdate: function() {
-            var input = this.refs['select-all'].getInputDOMNode();
-            input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
+            if (this.props.nodes.length) {
+                var input = this.refs['select-all'].getInputDOMNode();
+                input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
+            }
         },
         renderSelectAllCheckbox: function() {
             var availableNodesIds = _.compact(this.props.nodes.map(function(node) {if (node.isSelectable()) return node.id;}));
@@ -635,7 +640,8 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             }
             return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
         },
-        showNodeDetails: function() {
+        showNodeDetails: function(e) {
+            e.preventDefault();
             utils.showDialog(dialogs.ShowNodeInfoDialog, {
                 node: this.props.node,
                 title: this.props.node.get('name') || this.props.node.get('mac')

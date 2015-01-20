@@ -194,6 +194,7 @@ PROVISION_METHODS = Enum(
 
 STAGES = Enum(
     'pre_deployment',
+    'deploy',
     'post_deployment'
 )
 

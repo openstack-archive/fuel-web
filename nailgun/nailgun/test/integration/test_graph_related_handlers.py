@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
 import yaml
 
 from nailgun import objects
@@ -208,3 +209,28 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 405)
+
+
+@patch('nailgun.api.v1.handlers.base.deployment_graph.DeploymentGraph')
+class TestEndTaskPassedCorrectly(BaseGraphTasksTests):
+
+    def assert_end_task_passed_correctly(self, url, graph_mock):
+        resp = self.app.get(
+            url,
+            params={'end_task': 'task'},
+            headers=self.default_headers,
+        )
+        self.assertEqual(resp.status_code, 200)
+        graph_mock().find_subgraph.assert_called_with('task')
+
+    def test_end_task_passed_correctly_for_cluster(self, graph_mock):
+        self.assert_end_task_passed_correctly(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}),
+            graph_mock)
+
+    def test_end_task_passed_correctly_for_release(self, graph_mock):
+        self.assert_end_task_passed_correctly(
+            reverse('ReleaseDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.release.id}),
+            graph_mock)

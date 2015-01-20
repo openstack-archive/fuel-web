@@ -47,6 +47,11 @@ class DeploymentGraph(nx.DiGraph):
     parameters: specific for each task type parameters
     """
 
+    def __init__(self, tasks=None, *args, **kwargs):
+        super(DeploymentGraph, self).__init__(*args, **kwargs)
+        if tasks is not None:
+            self.add_tasks(tasks)
+
     def add_tasks(self, tasks):
         for task in tasks:
             self.add_task(task)
@@ -143,6 +148,52 @@ class DeploymentGraph(nx.DiGraph):
         for task in self.node.values():
             if task['id'] not in task_ids:
                 self.make_void_task(task)
+
+    def find_stage(self, task):
+        for stage in consts.STAGES:
+            if self.has_successor(task, stage) or task == stage:
+                return stage
+
+        raise errors.InvalidData(
+            "Current task %s doesnt belong to graph"
+            " or not connected to any stages.", task)
+
+    def find_subgraph(self, end_task):
+        """Find subgraph that has only tasks required for end_task
+
+        :param end_task: string
+        """
+
+        end_stage = self.find_stage(end_task)
+        all_tasks = set()
+
+        # groups and stages are backbone of graph
+        # that is always required for orchestration for legacy behaviour
+        # reasons, so on next few lines we need to be sure that they are
+        # always present in graph
+        for task in self.node.values():
+            if task['type'] in consts.INTERNAL_TASKS:
+                all_tasks.add(task['id'])
+
+        reversed_graph = self.reverse()
+        for stage in consts.STAGES:
+
+            # nx.dfs_postorder_nodes traverses graph from specified point
+            # to the end by following successors, here is example:
+            # A->B, C-D, B->D , and we want to traverse up to the D
+            # for this we need to reverse graph and make it
+            # B->A, D->C, D->B and use dfs_postorder
+            if stage != end_stage:
+                all_tasks.update(
+                    nx.dfs_postorder_nodes(reversed_graph, stage))
+            else:
+                all_tasks.update(
+                    nx.dfs_postorder_nodes(reversed_graph, end_task))
+                # if we are at stage where end_task is, we should just stop
+                # traversal
+                break
+
+        return self.subgraph(all_tasks)
 
 
 class AstuteGraph(object):

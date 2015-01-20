@@ -883,6 +883,9 @@ class BaseTestCase(TestCase):
     def tearDown(self):
         self.db.remove()
 
+    def assertEqualSet(self, iterable1, iterable2):
+        self.assertEqual(set(iterable1), set(iterable2))
+
     def assertNotRaises(self, exception, method, *args, **kwargs):
         try:
             method(*args, **kwargs)

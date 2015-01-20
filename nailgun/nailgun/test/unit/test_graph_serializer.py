@@ -26,6 +26,8 @@ from nailgun.test import base
 
 
 TASKS = """
+- id: pre_deployment
+  type: stage
 - id: deploy
   type: stage
 - id: primary-controller
@@ -87,6 +89,14 @@ SUBTASKS = """
   parameters:
     cmd: run_setup_network.sh
     timeout: 120
+
+- id: setup_anything
+  stage: pre_deployment
+  type: shell
+- id: setup_more_stuff
+  stage: pre_deployment
+  type: shell
+  requires: [setup_anything]
 """
 
 

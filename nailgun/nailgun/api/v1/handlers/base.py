@@ -29,6 +29,7 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.openstack.common import jsonutils
+from nailgun.orchestrator import deployment_graph
 from nailgun.settings import settings
 
 
@@ -464,7 +465,12 @@ class DeploymentTasksHandler(SingleHandler):
                * 404 (release object not found)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-        return self.single.get_deployment_tasks(obj)
+        end_task = web.input(end_task=None).end_task
+        tasks = self.single.get_deployment_tasks(obj)
+        if end_task:
+            graph = deployment_graph.DeploymentGraph(tasks)
+            return graph.find_subgraph(end_task).node.values()
+        return tasks
 
     @content
     def PUT(self, obj_id):

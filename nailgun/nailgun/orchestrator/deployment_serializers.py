@@ -929,13 +929,16 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
         for node in nodes:
             for role in objects.Node.all_roles(node):
-                node_list.append({
-                    'uid': node.uid,
-                    'fqdn': node.fqdn,
-                    'name': objects.Node.make_slave_name(node),
-                    'role': role})
+                node_list.append(self.serialize_node_for_node_list(node, role))
 
         return node_list
+
+    def serialize_node_for_node_list(self, node, role):
+        return {
+            'uid': node.uid,
+            'fqdn': node.fqdn,
+            'name': objects.Node.make_slave_name(node),
+            'role': role}
 
     def by_role(self, nodes, role):
         return filter(lambda node: node['role'] == role, nodes)
@@ -1160,11 +1163,37 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
 
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentMultinodeSerializer61, self).serialize_node(node, role)
+        serialized_node['user_node_name'] = node.name
+        return serialized_node
+
+    def serialize_node_for_node_list(self, node, role):
+        serialized_node = super(
+            DeploymentMultinodeSerializer61,
+            self).serialize_node_for_node_list(node, role)
+        serialized_node['user_node_name'] = node.name
+        return serialized_node
+
 
 class DeploymentHASerializer61(DeploymentHASerializer):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer61, self).serialize_node(node, role)
+        serialized_node['user_node_name'] = node.name
+        return serialized_node
+
+    def serialize_node_for_node_list(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer61,
+            self).serialize_node_for_node_list(node, role)
+        serialized_node['user_node_name'] = node.name
+        return serialized_node
 
 
 def create_serializer(orchestrator_graph, cluster):

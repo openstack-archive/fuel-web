@@ -26,6 +26,8 @@ from nailgun.test import base
 
 
 TASKS = """
+- id: pre_deployment
+  type: stage
 - id: deploy
   type: stage
 - id: primary-controller
@@ -88,6 +90,14 @@ SUBTASKS = """
     puppet_manifest: run_setup_network.pp
     puppet_modules: /etc/puppet
     timeout: 120
+
+- id: setup_anything
+  stage: pre_deployment
+  type: shell
+- id: setup_more_stuff
+  stage: pre_deployment
+  type: shell
+  requires: [setup_anything]
 """
 
 
@@ -242,3 +252,120 @@ class TestTasksRemoval(base.BaseTestCase):
         self.assertEqual(len(tasks), 2)
         self.assertEqual(
             tasks.node.keys(), ['setup_network', 'install_controller'])
+
+
+COMPLEX_DEPENDENCIES = """
+- id: pre_deployment
+  type: stage
+- id: deploy
+  type: stage
+
+- id: pre_a
+  stage: pre_deployment
+  type: shell
+- id: pre_b
+  stage: pre_deployment
+  requires: [pre_a]
+  type: shell
+- id: pre_c
+  stage: pre_deployment
+  requires: [pre_a]
+  type: shell
+- id: pre_d
+  stage: pre_deployment
+  requires: [pre_b]
+  type: shell
+
+- id: group_a
+  type: group
+  stage: deploy
+- id: group_b
+  type: group
+  stage: deploy
+  requires: [group_a]
+- id: group_c
+  type: group
+  stage: deploy
+
+- id: task_a
+  groups: [group_a, group_b]
+  stage: deploy
+  type: puppet
+- id: task_b
+  requires: [task_a]
+  type: puppet
+  stage: deploy
+  groups: [group_a, group_c]
+- id: task_c
+  requires: [task_a]
+  type: puppet
+  stage: deploy
+  groups: [group_a, group_b]
+- id: task_d
+  requires: [task_b, task_c]
+  type: puppet
+  groups: [group_b]
+  stage: deploy
+"""
+
+
+class TestFindGraph(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestFindGraph, self).setUp()
+        self.tasks = yaml.load(COMPLEX_DEPENDENCIES)
+        self.graph = deployment_graph.DeploymentGraph()
+        self.graph.add_tasks(self.tasks)
+
+    def test_end_at_pre_deployment(self):
+        """Only pre_deployment tasks, groups and stages."""
+        subgraph = self.graph.find_subgraph("pre_deployment")
+        self.assertEqualSet(
+            subgraph.nodes(),
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy',
+             'pre_deployment', 'group_b', 'group_a', 'group_c'])
+
+    def test_end_at_task_in_pre_deployment(self):
+        """Task pre_d doesnt requires pre_c, but requires pre_b."""
+        subgraph = self.graph.find_subgraph("pre_d")
+        self.assertEqualSet(
+            subgraph.nodes(),
+            ['pre_d', 'pre_b', 'pre_a', 'deploy',
+             'pre_deployment', 'group_b', 'group_a', 'group_c'])
+
+    def test_end_at_deploy(self):
+        """All tasks should be included because deploy is last node
+        in this graph.
+        """
+        subgraph = self.graph.find_subgraph("deploy")
+        self.assertEqualSet(
+            subgraph.nodes(),
+            [t['id'] for t in self.tasks])
+
+    def test_end_at_group(self):
+        """In general end_at group should be used only when tasks that are
+        specific for that group, and there is no deps between those groups
+
+        In current graph only task_a and task_b will be present, because
+        there is link between them
+        """
+        subgraph = self.graph.find_subgraph("group_c")
+        self.assertEqualSet(
+            subgraph.nodes(),
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy', 'pre_deployment',
+             'group_c', 'group_b', 'group_a', 'task_a', 'task_b'])
+
+    def test_end_at_task_that_has_two_parents(self):
+        """Both parents should be in the graph."""
+        subgraph = self.graph.find_subgraph("task_d")
+        self.assertEqualSet(
+            subgraph.nodes(),
+            [t['id'] for t in self.tasks])
+
+    def test_end_at_first_task(self):
+        """Only that task will be present."""
+        subgraph = self.graph.find_subgraph("task_a")
+        self.assertEqualSet(
+            subgraph.nodes(),
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy',
+             'pre_deployment', 'group_c', 'group_b', 'group_a', 'task_a'])

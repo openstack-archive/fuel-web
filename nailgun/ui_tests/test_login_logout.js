@@ -18,7 +18,7 @@ casper.start().loadPage('#');
 
 casper.then(function() {
     this.evaluate(function() {
-        window.app.logout();
+        window.app.logout().waitForSelector('.login-box');
     })
 });
 

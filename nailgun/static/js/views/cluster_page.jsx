@@ -50,18 +50,22 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                 renderOn: 'add remove change'
             })
         ],
-        navbarActiveElement: 'clusters',
-        breadcrumbsPath: function() {
-            return [['home', '#'], ['environments', '#clusters'], [this.props.cluster.get('name'), null, true]];
-        },
-        title: function() {
-            return this.props.cluster.get('name');
-        },
         statics: {
+            navbarActiveElement: 'clusters',
+            getBreadcrumbs: function(pageOptions) {
+                var cluster = pageOptions.cluster,
+                    breadcrumbs = [
+                        ['home', '#'],
+                        ['environments', '#clusters'],
+                        [cluster.get('name'), '#cluster/' + cluster.get('id') + '/nodes'],
+                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, !pageOptions.tabOptions[0]]
+                    ];
+                if (pageOptions.tabOptions[0]) breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + pageOptions.tabOptions[0]), null, true]);
+                return breadcrumbs;
+            },
             fetchData: function(id, activeTab) {
                 var cluster, promise, currentClusterId;
                 var tabOptions = _.toArray(arguments).slice(2);
-
                 try {
                     currentClusterId = app.page.props.cluster.id;
                 } catch (ignore) {}
@@ -149,7 +153,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             }, this));
         },
         deploymentTaskFinished: function() {
-            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(app.navbar.refresh);
+            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(app.rootComponent.refreshNavbar);
         },
         componentWillUnmount: function() {
             $(window).off('beforeunload.' + this.eventNamespace);
@@ -181,7 +185,6 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
         },
         componentWillMount: function() {
             this.checkTab();
-            this.props.cluster.on('change:name', app.updateTitle, app);
             this.props.cluster.on('change:release_id', function() {
                 var release = new models.Release({id: this.props.cluster.get('release_id')});
                 release.fetch().done(_.bind(function() {

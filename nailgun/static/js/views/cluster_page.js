@@ -37,13 +37,6 @@ function($, _, i18n, Backbone, React, utils, models, commonViews, clusterPageSub
     'use strict';
 
     var ClusterPage = commonViews.Page.extend({
-        navbarActiveElement: 'clusters',
-        breadcrumbsPath: function() {
-            return [['home', '#'], ['environments', '#clusters'], [this.model.get('name'), null, true]];
-        },
-        title: function() {
-            return this.model.get('name');
-        },
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
         removeFinishedNetworkTasks: function(removeSilently) {
@@ -109,7 +102,7 @@ function($, _, i18n, Backbone, React, utils, models, commonViews, clusterPageSub
         },
         deploymentTaskFinished: function() {
             $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).always(_.bind(function() {
-                app.navbar.refresh();
+                app.rootComponent.refreshNavbar();
             }, this));
         },
         beforeTearDown: function() {
@@ -216,7 +209,10 @@ function($, _, i18n, Backbone, React, utils, models, commonViews, clusterPageSub
                 model: cluster,
                 activeTab: activeTab,
                 tabOptions: tabOptions,
-                tasks: tasks
+                tasks: tasks,
+                breadcrumbsPath: [['home', '#'], ['environments', '#clusters'], [cluster.get('name'), null, true]],
+                navbarActiveElement: 'clusters',
+                title: cluster.get('name')
             };
         });
     };

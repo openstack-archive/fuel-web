@@ -111,7 +111,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                     return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
                 }, this))
                 .done(_.bind(function() {
-                    app.navbar.refresh();
+                    app.rootComponent.refreshNavbar();
                     this.close();
                 }, this))
                 .fail(this.showError);
@@ -310,7 +310,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
             this.props.cluster.destroy({wait: true})
                 .always(this.close)
                 .done(function() {
-                    app.navbar.refresh();
+                    app.rootComponent.refreshNavbar();
                     app.navigate('#clusters', {trigger: true});
                 })
                 .fail(this.showError);
@@ -636,7 +636,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 }, this))
                 .always(this.close)
                 .done(function() {
-                    app.navbar.refresh();
+                    app.rootComponent.refreshNavbar();
                     app.page.removeFinishedNetworkTasks();
                 })
                 .fail(_.bind(function() {

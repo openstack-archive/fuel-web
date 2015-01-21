@@ -14,23 +14,78 @@
  * under the License.
 **/
 define([
+    'i18n',
     'react',
     'backbone',
-    'jsx!backbone_view_wrapper'
-], function(React, Backbone, BackboneViewWrapper) {
+    'jsx!backbone_view_wrapper',
+    'jsx!views/layout',
+    'models'
+], function(i18n, React, Backbone, BackboneViewWrapper, layoutComponents, models) {
     'use strict';
 
     var RootComponent = React.createClass({
         getInitialState: function() {
-            return {};
+            return {
+                statistics: new models.NodesStatistics(),
+                notifications: new models.Notifications()
+            };
         },
-        setPage: function(Page, pageOptions) {
+        setPage: function(Page, pageOptions, version, user) {
             var isBackboneView = Page.prototype instanceof Backbone.View;
-            this.setState({Page: isBackboneView ? BackboneViewWrapper(Page) : Page, pageOptions: pageOptions});
-            return isBackboneView ? this.refs.page.refs.wrapper.state.view : this.refs.page;
+            this.setState({
+                Page: isBackboneView ? BackboneViewWrapper(Page) : Page,
+                pageOptions: pageOptions,
+                version: version,
+                user: user
+            });
+            var view = isBackboneView ? this.refs.page.refs.wrapper.state.view : this.refs.page;
+            return view;
         },
+        refreshNavbar: function() {this.refs.navbar.refresh();},
+        updateTitle: function(newTitle) {document.title = i18n('common.title') + (newTitle ? ' - ' + newTitle : '');},
         render: function() {
-            return this.state.Page ? <this.state.Page ref='page' {...this.state.pageOptions} /> : null;
+            var Page = this.state.Page;
+            if (!Page) return null;
+            var pageComponent = <Page ref='page' {...this.state.pageOptions} />;
+            this.updateTitle(Page.title || pageComponent.props.title);
+            return (
+                <div className='main-container'>
+                    <div id='wrap'>
+                        <div className='container'>
+                            {!Page.hiddenLayout &&
+                                <div>
+                                    <layoutComponents.Navbar
+                                        ref='navbar'
+                                        elements={[
+                                            {label: 'environments', url: '#clusters'},
+                                            {label: 'releases', url: '#releases'},
+                                            {label: 'support', url: '#support'}
+                                        ]}
+                                        activeElement={Page.navbarActiveElement || pageComponent.props.navbarActiveElement}
+                                        user={this.state.user}
+                                        version={this.state.version}
+                                        statistics={this.state.statistics}
+                                        notifications={this.state.notifications}
+                                    />
+                                    <div id='breadcrumbs' className='container'>
+                                        <layoutComponents.Breadcrumbs path={Page.breadcrumbsPath || pageComponent.props.breadcrumbsPath}/>
+                                    </div>
+                                </div>
+                            }
+                            <div id='content'>
+                                {pageComponent}
+                            </div>
+                            <div id='push'></div>
+                        </div>
+                    </div>
+                    {!Page.hiddenLayout &&
+                        <div id='footer'>
+                            <layoutComponents.Footer version={this.state.version}/>
+                        </div>
+                    }
+                </div>
+
+            );
         }
     });
 

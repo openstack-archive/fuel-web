@@ -22,6 +22,8 @@ casper.then(function() {
     })
 });
 
+casper.loadPage('#').waitForSelector('.login-box');
+
 casper.then(function() {
     var authenticated = this.evaluate(function() {
             return window.app.user.get('authenticated');

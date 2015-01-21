@@ -219,3 +219,25 @@ class TestLegacyGraphSerialized(base.BaseTestCase):
         self.assertEqual(
             set([i['role'] for i in by_priority[600]]),
             set(['compute', 'cinder', 'ceph-osd']))
+
+
+class TestTasksRemoval(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestTasksRemoval, self).setUp()
+        self.cluster = mock.Mock()
+        self.cluster.deployment_tasks = yaml.load(TASKS + SUBTASKS)
+        self.astute = deployment_graph.AstuteGraph(self.cluster)
+
+    def test_only_tasks(self):
+        self.astute.only_tasks(['setup_network'])
+        tasks = self.astute.graph.get_tasks('controller')
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(tasks.node.keys(), ['setup_network'])
+
+    def test_full_graph_content(self):
+        self.astute.only_tasks([])
+        tasks = self.astute.graph.get_tasks('controller')
+        self.assertEqual(len(tasks), 2)
+        self.assertEqual(
+            tasks.node.keys(), ['setup_network', 'install_controller'])

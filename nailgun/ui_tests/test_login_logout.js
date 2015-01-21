@@ -14,7 +14,7 @@
  * under the License.
  **/
 
-casper.start().loadPage('#');
+casper.start().loadPage('#').waitForSelector('.login-placeholder');
 
 casper.then(function() {
     this.evaluate(function() {

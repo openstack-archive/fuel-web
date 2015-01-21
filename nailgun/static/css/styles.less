@@ -348,6 +348,10 @@ body {
   user-select: none;
 }
 
+#main-container, #content-wrapper {
+  height: 100%;
+}
+
 ::selection {background: #fff2a8; }
 ::-moz-selection {background: #fff2a8; }
 
@@ -1312,10 +1316,9 @@ label {cursor: default;}
 }
 
 .loading {
-  margin-top: 200px;
+  .position(absolute, 200px);
   .width-height-mixin(100%, 90px);
   background: url(../img/cloud-loader.gif) no-repeat top center;
-  &.layout-loaded {margin-top: 88px;}
 }
 
 .progress-bar {

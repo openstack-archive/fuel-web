@@ -30,12 +30,12 @@ function(_, i18n, React, models, componentMixins, controls) {
             componentMixins.backboneMixin('capacityLog'),
             componentMixins.pollingMixin(2)
         ],
-        navbarActiveElement: 'support',
-        breadcrumbsPath: [['home', '#'], ['support', '#support'], 'capacity'],
         title: function() {
             return i18n('capacity_page.title');
         },
         statics: {
+            navbarActiveElement: 'support',
+            breadcrumbsPath: [['home', '#'], ['support', '#support'], 'capacity'],
             fetchData: function() {
                 var task = new models.Task();
                 return task.save({}, {url: '/api/capacity/', method: 'PUT'}).then(function() {

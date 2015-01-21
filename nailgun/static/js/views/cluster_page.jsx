@@ -50,18 +50,11 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                 renderOn: 'add remove change'
             })
         ],
-        navbarActiveElement: 'clusters',
-        breadcrumbsPath: function() {
-            return [['home', '#'], ['environments', '#clusters'], [this.props.cluster.get('name'), null, true]];
-        },
-        title: function() {
-            return this.props.cluster.get('name');
-        },
         statics: {
+            navbarActiveElement: 'clusters',
             fetchData: function(id, activeTab) {
                 var cluster, promise, currentClusterId;
                 var tabOptions = _.toArray(arguments).slice(2);
-
                 try {
                     currentClusterId = app.page.props.cluster.id;
                 } catch (ignore) {}
@@ -149,7 +142,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             }, this));
         },
         deploymentTaskFinished: function() {
-            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(app.navbar.refresh);
+            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(app.rootComponent.refreshNavbar);
         },
         componentWillUnmount: function() {
             $(window).off('beforeunload.' + this.eventNamespace);

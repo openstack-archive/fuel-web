@@ -206,7 +206,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                 .done(_.bind(function() {
                     $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
                         this.changeScreen();
-                        app.navbar.refresh();
+                        app.rootComponent.refreshNavbar();
                         app.page.removeFinishedNetworkTasks();
                     }, this));
                 }, this))
@@ -622,7 +622,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                     $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).done(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this));
-                    app.navbar.refresh();
+                    app.rootComponent.refreshNavbar();
                     app.page.removeFinishedNetworkTasks();
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: i18n('dialog.discard_changes.cant_discard')});});

@@ -35,7 +35,7 @@ define(function() {
             react: 'js/libs/bower/react/js/react-with-addons',
             JSXTransformer: 'js/libs/bower/react/js/JSXTransformer',
             jsx: 'js/libs/bower/jsx-requirejs-plugin/jsx',
-            'react.backbone': 'js/libs/bower/react.backbone/react.backbone',
+            'react.backbone': 'js/libs/custom/react.backbone',
             stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
             coccyx: 'js/libs/custom/coccyx',
             cocktail: 'js/libs/bower/cocktail/Cocktail',

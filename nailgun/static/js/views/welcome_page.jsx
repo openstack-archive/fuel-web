@@ -30,12 +30,9 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
             statisticsMixin,
             componentMixins.backboneMixin('settings')
         ],
-        breadcrumbsPath: [],
-        hiddenLayout: true,
-        title: function() {
-            return this.getText('welcome_page.title');
-        },
         statics: {
+            title: i18n('welcome_page.title'),
+            hiddenLayout: true,
             fetchData: function() {
                 return app.settings.fetch({cache: true}).then(function() {
                     return {settings: app.settings};

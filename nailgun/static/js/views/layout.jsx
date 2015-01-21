@@ -73,19 +73,21 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
             }, this);
         },
         getDefaultProps: function() {
-            return {notificationsDisplayCount: 5};
+            return {
+                notificationsDisplayCount: 5,
+                elements: [
+                    {label: 'environments', url: '#clusters'},
+                    {label: 'releases', url: '#releases'},
+                    {label: 'support', url: '#support'}
+                ]
+            };
         },
         getInitialState: function() {
             return {
-                activeElement: null,
-                popoverVisible: false,
-                hidden: false
+                popoverVisible: false
             };
         },
         render: function() {
-            if (this.state.hidden) {
-                return null;
-            }
             return (
                 <div>
                     <div className='user-info-box'>
@@ -106,7 +108,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                                 </li>
                                 {_.map(this.props.elements, function(element) {
                                     return <li key={element.label}>
-                                        <a className={cx({active: this.state.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
+                                        <a className={cx({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
                                     </li>;
                                 }, this)}
                                 <li className='space'></li>
@@ -239,37 +241,31 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     components.Footer = React.createClass({
         mixins: [componentMixins.backboneMixin('version')],
-        getInitialState: function() {
-            return {
-                hidden: false
-            };
-        },
         render: function() {
-            if (this.state.hidden) {
-                return null;
-            }
-
+            var version = this.props.version;
             return (
-                <div className='footer-box'>
-                    {_.contains(this.props.version.get('feature_groups'), 'mirantis') &&
-                        <div>
-                            <a href='http://www.mirantis.com' target='_blank' className='footer-logo'></a>
-                            <div className='footer-copyright pull-left'>{i18n('common.copyright')}</div>
-                        </div>
-                    }
-                    {this.props.version.get('release') &&
-                        <div className='footer-version pull-right'>Version: {this.props.version.get('release')}</div>
-                    }
-                    <div className='footer-lang pull-right'>
-                        <div className='dropdown dropup'>
-                            <button className='dropdown-toggle current-locale btn btn-link' data-toggle='dropdown'>{this.getCurrentLocale().name}</button>
-                            <ul className='dropdown-menu locales'>
-                                {_.map(this.props.locales, function(locale) {
-                                    return <li key={locale.name} onClick={_.bind(this.setLocale, this, locale)}>
-                                        <a>{locale.name}</a>
-                                    </li>;
-                                }, this)}
-                            </ul>
+                <div id='footer'>
+                    <div className='footer-box'>
+                        {_.contains(version.get('feature_groups'), 'mirantis') &&
+                            <div>
+                                <a href='http://www.mirantis.com' target='_blank' className='footer-logo'></a>
+                                <div className='footer-copyright pull-left'>{i18n('common.copyright')}</div>
+                            </div>
+                        }
+                        {version.get('release') &&
+                            <div className='footer-version pull-right'>Version: {version.get('release')}</div>
+                        }
+                        <div className='footer-lang pull-right'>
+                            <div className='dropdown dropup'>
+                                <button className='dropdown-toggle current-locale btn btn-link' data-toggle='dropdown'>{this.getCurrentLocale().name}</button>
+                                <ul className='dropdown-menu locales'>
+                                    {_.map(this.props.locales, function(locale) {
+                                        return <li key={locale.name} onClick={_.bind(this.setLocale, this, locale)}>
+                                            <a>{locale.name}</a>
+                                        </li>;
+                                    }, this)}
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -302,30 +298,29 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     components.Breadcrumbs = React.createClass({
         getInitialState: function() {
-            return {
-                hidden: false
-            };
+            return {path: this.getBreadcrumbsPath()};
         },
-        update: function(path) {
-            path = path || _.result(app.page, 'breadcrumbsPath');
-            this.setProps({path: path});
+        getBreadcrumbsPath: function() {
+            var page = this.props.Page;
+            return _.isFunction(page.breadcrumbsPath) ? page.breadcrumbsPath(this.props.pageOptions) : page.breadcrumbsPath;
+        },
+        refresh: function() {
+            this.setState({path: this.getBreadcrumbsPath()});
         },
         render: function() {
-            if (this.state.hidden) {
-                return null;
-            }
-
-            return <ul className='breadcrumb'>
-                {_.map(this.props.path, function(breadcrumb, index) {
-                    if (_.isArray(breadcrumb)) {
-                        if (breadcrumb[2]) {
-                            return <li key={index} className='active'>{breadcrumb[0]}</li>;
+            return <div id='breadcrumbs' className='container'>
+                <ul className='breadcrumb'>
+                    {_.map(this.state.path, function(breadcrumb, index) {
+                        if (_.isArray(breadcrumb)) {
+                            if (breadcrumb[2]) {
+                                return <li key={index} className='active'>{breadcrumb[0]}</li>;
+                            }
+                            return <li key={index}><a href={breadcrumb[1]}>{i18n('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a><span className='divider'>/</span></li>;
                         }
-                        return <li key={index}><a href={breadcrumb[1]}>{i18n('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a><span className='divider'>/</span></li>;
-                    }
-                    return <li key={index} className='active'>{i18n('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
-                })}
-            </ul>;
+                        return <li key={index} className='active'>{i18n('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
+                    })}
+                </ul>
+            </div>;
         }
     });
 

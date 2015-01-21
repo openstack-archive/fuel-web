@@ -61,8 +61,8 @@ define([
             return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
-            var compiledExpression = new Expression(expression, models, options);
-            var value = compiledExpression.evaluate();
+            var compiledExpression = new Expression(expression, models, options),
+                value = compiledExpression.evaluate();
             return {
                 value: value,
                 modelPaths: compiledExpression.modelPaths
@@ -276,7 +276,7 @@ define([
                 // hex regexp
                 hre = /^0x[0-9a-f]+$/i,
                 ore = /^0/,
-                caseInsensitive = function(s) { return options.insensitive && s.toLowerCase() || s; },
+                caseInsensitive = function(s) {return options.insensitive && s.toLowerCase() || s;},
                 // convert all to strings strip whitespace
                 caseInsensitive1 = caseInsensitive(str1).replace(sre, '') || '',
                 caseInsensitive2 = caseInsensitive(str2).replace(sre, '') || '',

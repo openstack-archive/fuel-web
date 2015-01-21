@@ -27,12 +27,10 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
 
     var SupportPage = React.createClass({
         mixins: [componentMixins.backboneMixin('tasks')],
-        navbarActiveElement: 'support',
-        breadcrumbsPath: [['home', '#'], 'support'],
-        title: function() {
-            return i18n('support_page.title');
-        },
         statics: {
+            title: i18n('support_page.title'),
+            navbarActiveElement: 'support',
+            breadcrumbsPath: [['home', '#'], 'support'],
             fetchData: function() {
                 var tasks = new models.Tasks();
                 return tasks.fetch().then(function() {

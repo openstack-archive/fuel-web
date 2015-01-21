@@ -14,20 +14,85 @@
  * under the License.
 **/
 define([
-    'react'
-], function(React) {
+    'i18n',
+    'react',
+    'backbone',
+    'jsx!backbone_view_wrapper',
+    'jsx!views/layout',
+    'models'
+], function(i18n, React, Backbone, BackboneViewWrapper, layoutComponents, models) {
     'use strict';
 
     var RootComponent = React.createClass({
         getInitialState: function() {
-            return {};
+            return {
+                statistics: new models.NodesStatistics(),
+                notifications: new models.Notifications()
+            };
         },
-        setPage: function(Page, pageOptions) {
-            this.setState({Page: Page, pageOptions: pageOptions});
-            return this.refs.page;
+        setPage: function(Page, pageOptions, version, user) {
+            var isBackboneView = Page.prototype instanceof Backbone.View;
+            this.setState({
+                Page: isBackboneView ? BackboneViewWrapper(Page) : Page,
+                pageOptions: pageOptions,
+                version: version,
+                user: user
+            });
+            return isBackboneView ? this.refs.page.refs.wrapper.state.view : this.refs.page;
+        },
+        getClusterBreadcrumbs: function(cluster) {
+            return [['home', '#'], ['environments', '#clusters'], [cluster.get('name'), null, true]];
+        },
+        refreshNavbar: function() {
+            this.refs.navbar.refresh();
+        },
+        updateTitle: function(newTitle, cluster) {
+            var title = cluster ? cluster.get('name') : newTitle;
+            document.title = i18n('common.title') + (title ? ' - ' + title : '');
+        },
+        updateView: function() {
+            this.forceUpdate();
+        },
+        componentDidUpdate: function() {
+            this.updateTitle(this.state.Page.title, this.refs.page.props.cluster);
         },
         render: function() {
-            return this.state.Page ? <this.state.Page ref='page' {...this.state.pageOptions} /> : null;
+            var Page = this.state.Page;
+            if (!Page) return null;
+            var pageComponent = <Page ref='page' {...this.state.pageOptions} />,
+                cluster = pageComponent.props.cluster;
+            return (
+                <div>
+                    <div id='wrap'>
+                        <div className='container'>
+                            {!Page.hiddenLayout &&
+                                <div>
+                                    <layoutComponents.Navbar
+                                        ref='navbar'
+                                        elements={[
+                                            {label: 'environments', url: '#clusters'},
+                                            {label: 'releases', url: '#releases'},
+                                            {label: 'support', url: '#support'}
+                                        ]}
+                                        activeElement={Page.navbarActiveElement}
+                                        user={this.state.user}
+                                        version={this.state.version}
+                                        statistics={this.state.statistics}
+                                        notifications={this.state.notifications}
+                                    />
+                                    <layoutComponents.Breadcrumbs path={cluster ? this.getClusterBreadcrumbs(cluster) : Page.breadcrumbsPath}/>
+                                </div>
+                            }
+                            <div id='content'>
+                                {pageComponent}
+                            </div>
+                            <div id='push'></div>
+                        </div>
+                    </div>
+                    {!Page.hiddenLayout && <layoutComponents.Footer version={this.state.version}/>}
+                </div>
+
+            );
         }
     });
 

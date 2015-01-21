@@ -29,12 +29,10 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
     var ClustersPage, ClusterList, Cluster;
 
     ClustersPage = React.createClass({
-        navbarActiveElement: 'clusters',
-        breadcrumbsPath: [['home', '#'], 'environments'],
-        title: function() {
-            return i18n('clusters_page.title');
-        },
         statics: {
+            title: i18n('clusters_page.title'),
+            navbarActiveElement: 'clusters',
+            breadcrumbsPath: [['home', '#'], 'environments'],
             fetchData: function() {
                 var clusters = new models.Clusters();
                 var nodes = new models.Nodes();
@@ -107,7 +105,7 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                 request.fail(_.bind(function(response) {
                     if (response.status == 404) {
                         this.props.cluster.collection.remove(this.props.cluster);
-                        app.navbar.refresh();
+                        app.rootComponent.refreshNavbar();
                     }
                 }, this));
                 requests.push(request);
@@ -118,7 +116,7 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                 request.done(_.bind(function() {
                     if (deploymentTask.get('status') != 'running') {
                         this.props.cluster.fetch();
-                        app.navbar.refresh();
+                        app.rootComponent.refreshNavbar();
                     }
                 }, this));
                 requests.push(request);

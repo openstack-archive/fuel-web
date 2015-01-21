@@ -159,36 +159,8 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             }, this)).then(_.bind(function() {
                 return this.settings.fetch();
             }, this)).always(_.bind(function() {
-                this.renderLayout();
                 Backbone.history.start();
             }, this));
-        },
-        renderLayout: function() {
-            this.content = $('#content');
-            this.navbar = React.render(React.createElement(layoutComponents.Navbar, {
-                elements: [
-                    {label: 'environments', url: '#clusters'},
-                    {label: 'releases', url: '#releases'},
-                    {label: 'support', url: '#support'}
-                ],
-                user: this.user,
-                version: this.version,
-                statistics: new models.NodesStatistics(),
-                notifications: new models.Notifications()
-            }), $('#navbar')[0]);
-            this.breadcrumbs = React.render(React.createElement(layoutComponents.Breadcrumbs), $('#breadcrumbs')[0]);
-            this.footer = React.render(React.createElement(layoutComponents.Footer, {version: this.version}), $('#footer')[0]);
-            this.content.find('.loading').addClass('layout-loaded');
-        },
-        updateTitle: function() {
-            var newTitle = _.result(this.page, 'title');
-            document.title = i18n('common.title') + (newTitle ? ' - ' + newTitle : '');
-            this.breadcrumbs.update();
-        },
-        toggleElements: function(state) {
-            app.footer.setState({hidden: !state});
-            app.breadcrumbs.setState({hidden: !state});
-            app.navbar.setState({hidden: !state});
         },
         loadPage: function(Page, options) {
             return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
@@ -197,12 +169,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
         },
         setPage: function(Page, options) {
             if (!this.rootComponent) {
-                this.rootComponent = utils.universalMount(RootComponent, {}, this.content);
+                this.rootComponent = utils.universalMount(RootComponent, {}, $('#main-container'));
             }
-            this.page = this.rootComponent.setPage(Page, options);
-            this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
-            this.updateTitle();
-            this.toggleElements(!this.page.hiddenLayout);
+            this.page = this.rootComponent.setPage(Page, options, this.version, this.user);
         },
         // pre-route hook
         before: function(currentUrl) {

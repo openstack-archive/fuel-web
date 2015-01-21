@@ -22,7 +22,10 @@ casper.then(function() {
     })
 });
 
+casper.loadPage('#login').waitForSelector('.welcome-page');
+
 casper.then(function() {
+    this.capture('test.png');
     var authenticated = this.evaluate(function() {
             return window.app.user.get('authenticated');
         }),

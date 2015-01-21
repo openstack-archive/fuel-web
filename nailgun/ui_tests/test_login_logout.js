@@ -14,13 +14,15 @@
  * under the License.
  **/
 
-casper.start().loadPage('#');
+casper.start().loadPage('#').waitForSelector('.login-placeholder');
 
 casper.then(function() {
     this.evaluate(function() {
         window.app.logout();
     })
 });
+
+casper.loadPage('#login').waitForSelector('.login-placeholder');
 
 casper.then(function() {
     var authenticated = this.evaluate(function() {

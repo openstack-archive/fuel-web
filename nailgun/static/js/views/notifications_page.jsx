@@ -29,14 +29,12 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
 
     NotificationsPage = React.createClass({
         mixins: [componentMixins.backboneMixin('notifications')],
-        navbarActiveElement: null,
-        breadcrumbsPath: [['home', '#'], 'notifications'],
-        title: function() {
-            return i18n('notifications_page.title');
-        },
         statics: {
+            title: i18n('notifications_page.title'),
+            navbarActiveElement: null,
+            breadcrumbsPath: [['home', '#'], 'notifications'],
             fetchData: function() {
-                var notifications = app.navbar.props.notifications;
+                var notifications = app.notifications;
                 return notifications.fetch().then(function() {
                     return {notifications: notifications};
                 });

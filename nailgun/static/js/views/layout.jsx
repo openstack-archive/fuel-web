@@ -77,13 +77,11 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         },
         getInitialState: function() {
             return {
-                activeElement: null,
-                popoverVisible: false,
-                hidden: false
+                popoverVisible: false
             };
         },
         render: function() {
-            if (this.state.hidden) {
+            if (this.props.hidden) {
                 return null;
             }
             return (
@@ -106,7 +104,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                                 </li>
                                 {_.map(this.props.elements, function(element) {
                                     return <li key={element.label}>
-                                        <a className={cx({active: this.state.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
+                                        <a className={cx({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
                                     </li>;
                                 }, this)}
                                 <li className='space'></li>
@@ -239,26 +237,18 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     components.Footer = React.createClass({
         mixins: [componentMixins.backboneMixin('version')],
-        getInitialState: function() {
-            return {
-                hidden: false
-            };
-        },
         render: function() {
-            if (this.state.hidden) {
-                return null;
-            }
-
+            var version = this.props.version;
             return (
                 <div className='footer-box'>
-                    {_.contains(this.props.version.get('feature_groups'), 'mirantis') &&
+                    {version && _.contains(version.get('feature_groups'), 'mirantis') &&
                         <div>
                             <a href='http://www.mirantis.com' target='_blank' className='footer-logo'></a>
                             <div className='footer-copyright pull-left'>{i18n('common.copyright')}</div>
                         </div>
                     }
-                    {this.props.version.get('release') &&
-                        <div className='footer-version pull-right'>Version: {this.props.version.get('release')}</div>
+                    {version && version.get('release') &&
+                        <div className='footer-version pull-right'>Version: {version.get('release')}</div>
                     }
                     <div className='footer-lang pull-right'>
                         <div className='dropdown dropup'>
@@ -301,20 +291,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
     });
 
     components.Breadcrumbs = React.createClass({
-        getInitialState: function() {
-            return {
-                hidden: false
-            };
-        },
-        update: function(path) {
-            path = path || _.result(app.page, 'breadcrumbsPath');
-            this.setProps({path: path});
-        },
         render: function() {
-            if (this.state.hidden) {
-                return null;
-            }
-
             return <ul className='breadcrumb'>
                 {_.map(this.props.path, function(breadcrumb, index) {
                     if (_.isArray(breadcrumb)) {

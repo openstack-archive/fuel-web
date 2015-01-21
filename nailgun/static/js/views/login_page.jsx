@@ -24,12 +24,11 @@ function($, _, i18n, React) {
     'use strict';
 
     var LoginPage, LoginForm;
-
     LoginPage = React.createClass({
-        breadcrumbsPath: [],
-        hiddenLayout: true,
-        title: function() {
-            return i18n('login_page.title');
+        statics: {
+            title: i18n('login_page.title'),
+            breadcrumbsPath: [],
+            hiddenLayout: true
         },
         render: function() {
             return (

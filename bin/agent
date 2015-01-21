@@ -315,7 +315,7 @@ class NodeAgent
       devname = basename_dir.gsub(/!/, '/')
 
       @logger.debug("Getting udev properties for device: #{devname}")
-      properties = `udevadm info --query=property --export --name=#{devname}`.inject({}) do |result, raw_propety|
+      properties = `udevadm info --query=property --export --name=#{devname}`.split("\n").inject({}) do |result, raw_propety|
        key, value = raw_propety.split(/\=/)
        result.update(key.strip => value.strip.chomp("'").reverse.chomp("'").reverse)
       end
@@ -377,7 +377,7 @@ class NodeAgent
   # * for physical HW that would be unique chassis id (from BIOS settings)
   # * for other hypervizors - not tested
   def uuid
-    node_uuid = @os.fetch(:dmi, {}).fetch(:system, {}).fetch(:uuid, nil)
+    node_uuid = @os.data.fetch(:dmi, {}).fetch(:system, {}).fetch(:uuid, nil)
     node_uuid && node_uuid.strip
   end
 

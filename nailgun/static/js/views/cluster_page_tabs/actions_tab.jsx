@@ -93,7 +93,7 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
                             }
                         }, this))
                         .done(function() {
-                            app.updateTitle();
+                            app.rootComponent.updateLayout();
                         })
                         .always(_.bind(function() {
                             this.setState({disabled: false});

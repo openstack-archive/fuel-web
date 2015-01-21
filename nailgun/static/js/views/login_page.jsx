@@ -23,13 +23,10 @@ define(
 function($, _, i18n, React) {
     'use strict';
 
-    var LoginPage, LoginForm;
-
-    LoginPage = React.createClass({
-        breadcrumbsPath: [],
-        hiddenLayout: true,
-        title: function() {
-            return i18n('login_page.title');
+    var LoginPage = React.createClass({
+        statics: {
+            title: i18n('login_page.title'),
+            hiddenLayout: true
         },
         render: function() {
             return (
@@ -52,7 +49,7 @@ function($, _, i18n, React) {
         }
     });
 
-    LoginForm = React.createClass({
+    var LoginForm = React.createClass({
         login: function(username, password) {
             var keystoneClient = app.keystoneClient;
 

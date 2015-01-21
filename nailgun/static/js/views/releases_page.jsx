@@ -27,15 +27,13 @@ function(_, i18n, React, models, controls, componentMixins) {
 
     var ReleasesPage = React.createClass({
         mixins: [componentMixins.backboneMixin('releases')],
-        navbarActiveElement: 'releases',
-        breadcrumbsPath: [['home', '#'], 'releases'],
-        title: function() {
-            return i18n('release_page.title');
-        },
         getDefaultProps: function() {
             return {columns: ['name', 'version', 'state']};
         },
         statics: {
+            title: i18n('release_page.title'),
+            navbarActiveElement: 'releases',
+            breadcrumbsPath: [['home', '#'], 'releases'],
             fetchData: function() {
                 var releases = new models.Releases();
                 return releases.fetch().then(function() {

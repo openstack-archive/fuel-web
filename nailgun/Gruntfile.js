@@ -86,18 +86,7 @@ module.exports = function(grunt) {
         jshint: {
             options: {
                 reporter: require('jshint-stylish'),
-                eqeqeq: false,
-                browser: true,
-                bitwise: true,
-                laxbreak: true,
-                newcap: false,
-                undef: true,
-                unused: true,
-                predef: ['requirejs', 'require', 'define', 'app'],
-                strict: true,
-                lastsemic: true,
-                scripturl: true,
-                '-W041': false
+                jshintrc: '.jshintrc'
             },
             all: [
                 staticBuildPreparationDir + '/static/**/*.js',
@@ -107,44 +96,7 @@ module.exports = function(grunt) {
         },
         jscs: {
             options: {
-                requireSpaceBeforeKeywords: ['else', 'catch', 'finally'],
-                requireParenthesesAroundIIFE: true,
-                requireSpaceAfterKeywords: ['do', 'for', 'if', 'else', 'switch', 'case', 'try', 'while', 'return', 'typeof'],
-                requireSpaceBeforeBlockStatements: true,
-                requireSpacesInConditionalExpression: true,
-                requireSpacesInFunction: {beforeOpeningCurlyBrace: true},
-                disallowSpacesInFunction: {beforeOpeningRoundBrace: true},
-                disallowSpacesInCallExpression: true,
-                requireBlocksOnNewline: 1,
-                disallowPaddingNewlinesInBlocks: true,
-                disallowEmptyBlocks: true,
-                disallowSpacesInsideObjectBrackets: 'all',
-                disallowSpacesInsideArrayBrackets: 'all',
-                disallowSpacesInsideParentheses: true,
-                disallowQuotedKeysInObjects: true,
-                disallowSpaceAfterObjectKeys: true,
-                requireSpaceBeforeObjectValues: true,
-                requireCommaBeforeLineBreak: true,
-                requireOperatorBeforeLineBreak: true,
-                disallowSpaceAfterPrefixUnaryOperators: true,
-                disallowSpaceBeforePostfixUnaryOperators: true,
-                requireSpaceBeforeBinaryOperators: true,
-                requireSpaceAfterBinaryOperators: true,
-                disallowImplicitTypeConversion: ['numeric', 'string'],
-                requireCamelCaseOrUpperCaseIdentifiers: 'ignoreProperties',
-                disallowKeywords: ['with'],
-                disallowMultipleLineStrings: true,
-                disallowMultipleLineBreaks: true,
-                disallowMixedSpacesAndTabs: true,
-                disallowTrailingComma: true,
-                disallowKeywordsOnNewLine: ['else'],
-                requireCapitalizedConstructors: true,
-                requireDotNotation: true,
-                disallowYodaConditions: true,
-                disallowNewlineBeforeBlockStatements: true,
-                validateLineBreaks: 'LF',
-                validateParameterSeparator: ', ',
-                validateQuoteMarks: {mark: "'", escape: true}
+                config: '.jscsrc'
             },
             js: {
                 src: [

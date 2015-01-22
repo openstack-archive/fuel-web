@@ -784,7 +784,7 @@ define([
                 if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {
                     idRangeErrors[0] = i18n('cluster_page.network_tab.validation.invalid_id_start');
                 } else if (!utils.isNaturalNumber(idEnd) || idEnd < 2 || idEnd > maxId) {
-                    idRangeErrors[1 ] = i18n('cluster_page.network_tab.validation.invalid_id_end');
+                    idRangeErrors[1] = i18n('cluster_page.network_tab.validation.invalid_id_end');
                 } else if (idStart > idEnd) {
                     idRangeErrors[0] = idRangeErrors[1] = i18n('cluster_page.network_tab.validation.invalid_id_range');
                 } else if (segmentation == 'vlan') {

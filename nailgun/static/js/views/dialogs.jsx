@@ -224,7 +224,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 });
             return (
                 <div className='display-changes-dialog'>
-                    {(isNewOrNeedsRedeployment || !isInvalid) &&
+                    {(isNewOrNeedsRedeployment || isInvalid) &&
                         <div>
                             <div className={warningMessageClasses}>
                                 <i className='icon-attention' />

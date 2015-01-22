@@ -147,9 +147,9 @@ _limits_to_update = {
         'overrides': [
             {
                 'condition': "settings:storage.volumes_lvm.value == true",
-                'recommended': 1,
+                'min': 1,
                 'message': (
-                    "At least 1 Cinder node is recommended when "
+                    "At least 1 Cinder node is required when "
                     "Cinder LVM is selected")
             }
         ]

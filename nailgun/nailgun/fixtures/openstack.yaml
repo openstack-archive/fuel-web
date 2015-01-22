@@ -50,8 +50,8 @@
         limits:
           overrides:
             - condition: "settings:storage.volumes_lvm.value == true"
-              recommended: 1
-              message: "At least 1 Cinder node is recommended when Cinder LVM is selected"
+              min: 1
+              message: "At least 1 Cinder node is required when Cinder LVM is selected"
         restrictions:
           - condition: "settings:storage.volumes_lvm.value == false and settings:storage.volumes_vmdk.value == false"
             message: "Cinder LVM or VMDK should be enabled in settings"

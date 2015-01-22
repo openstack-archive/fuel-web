@@ -219,12 +219,11 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid,
                 warningMessageClasses = cx({
                     'deploy-task-notice': true,
-                    'text-error': isInvalid,
-                    'text-warning': isNewOrNeedsRedeployment
+                    'text-error': isInvalid || isNewOrNeedsRedeployment
                 });
             return (
                 <div className='display-changes-dialog'>
-                    {(isNewOrNeedsRedeployment || !isInvalid) &&
+                    {(isNewOrNeedsRedeployment || isInvalid) &&
                         <div>
                             <div className={warningMessageClasses}>
                                 <i className='icon-attention' />

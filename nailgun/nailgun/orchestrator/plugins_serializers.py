@@ -44,6 +44,10 @@ class BasePluginDeploymentHooksSerializer(object):
                 lambda t: (t['type'] == 'shell' and
                            t['stage'] == stage),
                 plugin.tasks)
+            reboot_tasks = filter(
+                lambda t: (t['type'] == 'reboot' and
+                           t['stage'] == stage),
+                plugin.tasks)
 
             for task in shell_tasks:
                 uids = get_uids_for_roles(self.nodes, task['role'])
@@ -62,6 +66,15 @@ class BasePluginDeploymentHooksSerializer(object):
                     plugin, task,
                     templates.make_puppet_task(
                         uids, task, plugin.slaves_scripts_path)))
+
+            for task in reboot_tasks:
+                uids = self.get_uids_for_task(task)
+                if not uids:
+                    continue
+                tasks.append(self.serialize_task(
+                    plugin, task,
+                    templates.make_reboot_task(
+                        uids, task)))
 
         return tasks
 

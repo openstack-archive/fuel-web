@@ -34,3 +34,15 @@ class TestMakeTask(base.BaseTestCase):
                 'path': '/etc/apt/sources.list.d/plugin_name.list'},
              'type': 'upload_file',
              'uids': [1, 2, 3]})
+
+    def test_make_reboot_task(self):
+        result = tasks_templates.make_reboot_task(
+            [1, 2, 3],
+            {'parameters': {'timeout': 10}})
+
+        self.assertEqual(
+            result,
+            {'type': 'reboot',
+             'uids': [1, 2, 3],
+             'parameters': {
+                 'timeout': 10}})

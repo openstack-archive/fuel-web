@@ -289,7 +289,10 @@ def read_previous_results():
        settings.LOAD_TESTS_PATHS['load_previous_tests_results']):
         with open(settings.LOAD_TESTS_PATHS['load_previous_tests_results'],
                   'r') as results_file:
-            results = jsonutils.load(results_file)
+            try:
+                results = jsonutils.load(results_file)
+            except ValueError:
+                results = {}
         return results
     return {}
 
@@ -304,7 +307,8 @@ def write_results(test_class_name, results):
         prev_results[test_class_name] = results
     with open(settings.LOAD_TESTS_PATHS['load_previous_tests_results'],
               'w') as results_file:
-            results_file.write(jsonutils.dumps(prev_results))
+            results_file.write(
+                jsonutils.dumps(prev_results, sort_keys=True, indent=4))
 
 
 def evaluate_unit_performance(f):

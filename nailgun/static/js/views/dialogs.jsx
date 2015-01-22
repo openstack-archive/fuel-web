@@ -190,6 +190,11 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 .done(_.bind(app.page.deploymentTaskStarted, app.page))
                 .fail(this.showError);
         },
+        renderChangedNodesAmount: function(nodes, dictKey) {
+            return !!nodes.length && <div key={dictKey} className='deploy-task-name'>
+                {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
+            </div>;
+        },
         renderChange: function(change, nodeIds) {
             var nodes = this.props.cluster.get('nodes');
             return (
@@ -207,6 +212,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         renderBody: function() {
             var ns = 'dialog.display_changes.',
                 cluster = this.props.cluster,
+                nodes = cluster.get('nodes'),
                 roleModels = cluster.get('release').get('role_models'),
                 isNew = cluster.get('status') == 'new',
                 isNewOrNeedsRedeployment = isNew || cluster.needsRedeployment(),
@@ -228,6 +234,8 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                             <hr className='slim' />
                         </div>
                     }
+                    {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
+                    {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
                     {_.map(_.groupBy(cluster.get('changes'), function(change) {return change.name;}), function(nodes, change) {
                         return this.renderChange(change, _.compact(_.pluck(nodes, 'node_id')));
                     }, this)}

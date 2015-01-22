@@ -78,3 +78,10 @@ def make_puppet_task(uids, task, cwd='/'):
             'puppet_modules': task['parameters']['puppet_modules'],
             'timeout': task['parameters']['timeout'],
             'cwd': cwd}}
+
+def make_reboot_task(uids, task):
+    return {
+        'type': 'reboot',
+        'uids': uids,
+        'parameters': {
+            'timeout': task['parameters']['timeout']}}

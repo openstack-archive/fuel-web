@@ -55,6 +55,11 @@ class BasePluginDeploymentHooksSerializer(object):
                         plugin, task,
                         templates.make_puppet_task(
                             uids, task, plugin.slaves_scripts_path)))
+                elif task['type'] == 'reboot':
+                    tasks.append(self.serialize_task(
+                        plugin, task,
+                        templates.make_reboot_task(
+                            uids, task)))
                 else:
                     logger.warn('Task is skipped {0}, because its type is '
                                 'not supported').format(task)

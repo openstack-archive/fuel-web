@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?><testsuite errors="0" failures="0" name="pytest" skips="0" tests="2" time="7.029"><testcase classname="nailgun.test.unit.test_plugins_serializers.TestBasePluginDeploymentHooksSerializer" name="test_original_order_of_deployment_tasks" time="0.157361030579"><system-err>INFO  [alembic.migration] Context impl PostgresqlImpl.
+INFO  [alembic.migration] Will assume transactional DDL.
+</system-err></testcase><testcase classname="nailgun.test.unit.test_plugins_serializers.TestBasePluginDeploymentHooksSerializer" name="test_support_reboot_type_task" time="0.0407481193542"/></testsuite>

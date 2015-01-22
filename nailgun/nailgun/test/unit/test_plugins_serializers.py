@@ -65,3 +65,27 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
             raw_result[1]['parameters']['puppet_modules'],
             'modules')
         self.assertEqual(raw_result[2]['parameters']['cmd'], 'test2')
+
+    @mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_roles')
+    def test_support_reboot_type_task(self, get_uids_for_roles_mock):
+        stage = 'pre_deployment'
+
+        plugin = mock.Mock()
+        plugin.full_name = 'plugin_name'
+
+        plugin.tasks = [
+            {'type': 'reboot', 'role': 'controller', 'stage': stage,
+             'parameters': {'timeout': 15}}
+        ]
+
+        get_uids_for_roles_mock.return_value = [1, 2]
+
+        result = self.hook.deployment_tasks([plugin], stage)
+        expecting_format = {
+            'diagnostic_name': 'plugin_name',
+            'fail_on_error': True,
+            'parameters': {'timeout': 15},
+            'type': 'reboot',
+            'uids': [1, 2]}
+
+        self.assertEqual(result, [expecting_format])

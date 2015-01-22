@@ -216,17 +216,12 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 roleModels = cluster.get('release').get('role_models'),
                 isNew = cluster.get('status') == 'new',
                 isNewOrNeedsRedeployment = isNew || cluster.needsRedeployment(),
-                isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid,
-                warningMessageClasses = cx({
-                    'deploy-task-notice': true,
-                    'text-error': isInvalid,
-                    'text-warning': isNewOrNeedsRedeployment
-                });
+                isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid;
             return (
                 <div className='display-changes-dialog'>
-                    {(isNewOrNeedsRedeployment || !isInvalid) &&
+                    {(isNewOrNeedsRedeployment || isInvalid) &&
                         <div>
-                            <div className={warningMessageClasses}>
+                            <div className='text-error deploy-task-notice'>
                                 <i className='icon-attention' />
                                 <span>{i18n(ns + (isInvalid ? 'warnings.no_deployment' :
                                     isNew ? 'locked_settings_alert' : 'redeployment_needed'))}</span>

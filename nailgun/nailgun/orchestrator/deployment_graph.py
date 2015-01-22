@@ -270,35 +270,40 @@ class AstuteGraph(object):
             processed_groups.update(current_groups)
             current_groups = groups_subgraph.get_next_groups(processed_groups)
 
-    def stage_tasks_serialize(self, stage, nodes):
+    def stage_tasks_serialize(self, stage, nodes, serialized_cluster):
         """Serialize tasks for certain stage
 
         :param stage: oneof consts.STAGES
         :param nodes: list of node db objects
+        :param serialized_cluster: cluster serialized for deployment
         """
         tasks = self.graph.get_tasks(stage).topology
         serialized = []
         for task in tasks:
             serializer = self.serializers.get_stage_serializer(task)(
-                task, self.cluster, nodes)
+                task, self.cluster, nodes, serialized_cluster)
             if not serializer.should_execute():
                 continue
             serialized.extend(serializer.serialize())
         return serialized
 
-    def post_tasks_serialize(self, nodes):
+    def post_tasks_serialize(self, nodes, serialized_cluster):
         """Serialize tasks for post_deployment hook
 
         :param nodes: list of node db objects
+        :param serialized_cluster: cluster serialized for deployment
         """
-        return self.stage_tasks_serialize(consts.STAGES.post_deployment, nodes)
+        return self.stage_tasks_serialize(consts.STAGES.post_deployment, nodes,
+                                          serialized_cluster)
 
-    def pre_tasks_serialize(self, nodes):
+    def pre_tasks_serialize(self, nodes, serialized_cluster):
         """Serialize tasks for pre_deployment hook
 
         :param nodes: list of node db objects
+        :param serialized_cluster: cluster serialized for deployment
         """
-        return self.stage_tasks_serialize(consts.STAGES.pre_deployment, nodes)
+        return self.stage_tasks_serialize(consts.STAGES.pre_deployment, nodes,
+                                          serialized_cluster)
 
     def deploy_task_serialize(self, node):
         """Serialize tasks with necessary for orchestrator attributes

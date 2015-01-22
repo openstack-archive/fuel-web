@@ -150,9 +150,9 @@ class DeploymentTask(object):
         serialized_cluster = deployment_serializers.serialize(
             orchestrator_graph, task.cluster, nodes)
         pre_deployment = stages.pre_deployment_serialize(
-            orchestrator_graph, task.cluster, nodes)
+            orchestrator_graph, task.cluster, nodes, serialized_cluster)
         post_deployment = stages.post_deployment_serialize(
-            orchestrator_graph, task.cluster, nodes)
+            orchestrator_graph, task.cluster, nodes, serialized_cluster)
 
         # After serialization set pending_addition to False
         for node in nodes:

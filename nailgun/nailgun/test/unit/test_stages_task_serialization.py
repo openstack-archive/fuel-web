@@ -37,6 +37,12 @@ class TestHooksSerializers(base.BaseTestCase):
             '6.0': '{MASTER_IP}//{OPENSTACK_VERSION}'
         }
         self.cluster.release.version = '1111'
+        self.serialized_cluster = [{
+            'nodes': [
+                {'uid': '3'},
+                {'uid': '4'},
+            ],
+        }]
 
     def test_sync_puppet(self):
         task_config = {'id': 'rsync_mos_puppet',
@@ -45,7 +51,7 @@ class TestHooksSerializers(base.BaseTestCase):
                        'parameters': {'src': '/etc/puppet/{OPENSTACK_VERSION}',
                                       'dst': '/etc/puppet'}}
         task = tasks_serializer.RsyncPuppet(
-            task_config, self.cluster, self.nodes)
+            task_config, self.cluster, self.nodes, self.serialized_cluster)
         serialized = next(task.serialize())
         self.assertEqual(serialized['type'], 'sync')
         self.assertIn(
@@ -59,7 +65,7 @@ class TestHooksSerializers(base.BaseTestCase):
                        'role': '*'}
         self.cluster.release.operating_system = consts.RELEASE_OS.centos
         task = tasks_serializer.UploadMOSRepo(
-            task_config, self.cluster, self.nodes)
+            task_config, self.cluster, self.nodes, self.serialized_cluster)
         serialized = list(task.serialize())
         self.assertEqual(len(serialized), 2)
         self.assertEqual(serialized[0]['type'], 'upload_file')
@@ -73,7 +79,7 @@ class TestHooksSerializers(base.BaseTestCase):
                        'role': '*'}
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         task = tasks_serializer.UploadMOSRepo(
-            task_config, self.cluster, self.nodes)
+            task_config, self.cluster, self.nodes, self.serialized_cluster)
         serialized = list(task.serialize())
         self.assertEqual(len(serialized), 2)
         self.assertEqual(serialized[0]['type'], 'upload_file')
@@ -89,7 +95,7 @@ class TestHooksSerializers(base.BaseTestCase):
                        'parameters': {'cmd': '/cmd.sh', 'timeout': 60}}
         self.nodes.append(mock.Mock(uid='7', all_roles=['ceph-osd']))
         task = tasks_serializer.RestartRadosGW(
-            task_config, self.cluster, self.nodes)
+            task_config, self.cluster, self.nodes, self.serialized_cluster)
         serialized = list(task.serialize())
         self.assertEqual(len(serialized), 1)
         self.assertEqual(serialized[0]['type'], 'shell')
@@ -104,8 +110,34 @@ class TestHooksSerializers(base.BaseTestCase):
                        'stage': 'post-deployment',
                        'parameters': {'cmd': '/cmd.sh', 'timeout': 60}}
         task = tasks_serializer.RestartRadosGW(
-            task_config, self.cluster, self.nodes)
+            task_config, self.cluster, self.nodes, self.serialized_cluster)
         self.assertFalse(task.should_execute())
+
+    def test_upload_nodes_info(self):
+        dst = '/some/path/file.yaml'
+
+        task_config = {
+            'id': 'upload_nodes_info',
+            'type': 'upload_file',
+            'role': '*',
+            'parameters': {
+                'path': dst,
+            },
+        }
+
+        task = tasks_serializer.UploadNodesInfo(
+            task_config, self.cluster, self.nodes, self.serialized_cluster)
+        serialized_tasks = list(task.serialize())
+        self.assertEqual(len(serialized_tasks), 1)
+
+        serialized_task = serialized_tasks[0]
+        self.assertEqual(serialized_task['type'], 'upload_file')
+        self.assertItemsEqual(serialized_task['uids'], self.all_uids)
+        self.assertEqual(serialized_task['parameters']['path'], dst)
+
+        serialized_nodes = yaml.safe_load(
+            serialized_task['parameters']['data'])
+        self.assertEqual(serialized_nodes, self.serialized_cluster[0])
 
 
 class TestPreTaskSerialization(base.BaseTestCase):
@@ -140,10 +172,12 @@ class TestPreTaskSerialization(base.BaseTestCase):
         self.cluster.deployment_tasks = yaml.load(self.TASKS)
         self.all_uids = set([n.uid for n in self.nodes])
         self.graph = deployment_graph.AstuteGraph(self.cluster)
+        self.serialized_cluster = mock.Mock()
 
     def test_tasks_serialized_correctly(self):
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
-        tasks = self.graph.pre_tasks_serialize(self.nodes)
+        tasks = self.graph.pre_tasks_serialize(self.nodes,
+                                               self.serialized_cluster)
         self.assertEqual(len(tasks), 3)
         self.assertEqual(tasks[0]['type'], 'upload_file')
         self.assertEqual(set(tasks[0]['uids']), self.all_uids)
@@ -163,6 +197,24 @@ class TestPostTaskSerialization(base.BaseTestCase):
       parameters:
         cmd: /etc/pupppet/restart_radosgw.sh
         timeout: 180
+
+    - id: upload_nodes_info
+      type: upload_file
+      role: '*'
+      stage: post_deployment
+      parameters:
+        path: /etc/hiera/fuel_nodes.yaml
+
+    - id: update_hosts
+      type: puppet
+      role: '*'
+      stage: post_deployment
+      requires: [upload_nodes_info]
+      parameters:
+        puppet_manifest: /etc/pupppet/modules/osnailyfacter/modular/astute/update_hosts_files.pp # noqa
+        puppet_modules: /etc/puppet/modules
+        timeout: 3600
+        cwd: /
     """
 
     def setUp(self):
@@ -174,10 +226,17 @@ class TestPostTaskSerialization(base.BaseTestCase):
         self.cluster.deployment_tasks = yaml.load(self.TASKS)
         self.control_uids = ['3', '4']
         self.graph = deployment_graph.AstuteGraph(self.cluster)
+        self.serialized_cluster = [{
+            'nodes': [
+                {'uid': '3'},
+                {'uid': '4'},
+            ],
+        }]
 
     def test_post_task_serialize_all_tasks(self):
         self.nodes.append(mock.Mock(uid='5', all_roles=['ceph-osd']))
-        tasks = self.graph.post_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 1)
-        self.assertEqual(tasks[0]['uids'], self.control_uids)
-        self.assertEqual(tasks[0]['type'], 'shell')
+        tasks = self.graph.post_tasks_serialize(self.nodes,
+                                                self.serialized_cluster)
+        self.assertEqual(len(tasks), 3)
+        self.assertEqual(tasks[2]['uids'], self.control_uids)
+        self.assertEqual(tasks[2]['type'], 'shell')

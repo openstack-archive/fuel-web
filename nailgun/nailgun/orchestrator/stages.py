@@ -20,8 +20,8 @@ from nailgun.orchestrator import plugins_serializers
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
 
 
-def stage_serialize(stage, serializer,
-                    orchestrator_graph, cluster, nodes):
+def stage_serialize(stage, serializer, orchestrator_graph, cluster, nodes,
+                    serialized_cluster):
     """Serialize tasks for given stage
 
     :param stage: oneOf consts.STAGES
@@ -29,24 +29,42 @@ def stage_serialize(stage, serializer,
     :param orchestrator_graph: instance of AstuteGraph
     :param cluster: cluster db object
     :param nodes: list of node db objects
+    :param serialized_cluster: cluster serialized for deployment
     """
     priority = PriorityStrategy()
-    tasks = orchestrator_graph.stage_tasks_serialize(stage, nodes)
+    tasks = orchestrator_graph.stage_tasks_serialize(stage, nodes,
+                                                     serialized_cluster)
     plugins = serializer(cluster, nodes)
     tasks.extend(plugins.serialize())
     priority.one_by_one(tasks)
     return tasks
 
 
-def pre_deployment_serialize(orchestrator_graph, cluster, nodes):
+def pre_deployment_serialize(orchestrator_graph, cluster, nodes,
+                             serialized_cluster):
+    """Serializes tasks for pre_deployment stage
+
+    :param orchestrator_graph: instance of AstuteGraph
+    :param cluster: cluster db object
+    :param nodes: list of node db objects
+    :param serialized_cluster: cluster serialized for deployment
+    """
     return stage_serialize(
         consts.STAGES.pre_deployment,
         plugins_serializers.PluginsPreDeploymentHooksSerializer,
-        orchestrator_graph, cluster, nodes)
+        orchestrator_graph, cluster, nodes, serialized_cluster)
 
 
-def post_deployment_serialize(orchestrator_graph, cluster, nodes):
+def post_deployment_serialize(orchestrator_graph, cluster, nodes,
+                              serialized_cluster):
+    """Serializes tasks for post_deployment stage
+
+    :param orchestrator_graph: instance of AstuteGraph
+    :param cluster: cluster db object
+    :param nodes: list of node db objects
+    :param serialized_cluster: cluster serialized for deployment
+    """
     return stage_serialize(
         consts.STAGES.post_deployment,
         plugins_serializers.PluginsPostDeploymentHooksSerializer,
-        orchestrator_graph, cluster, nodes)
+        orchestrator_graph, cluster, nodes, serialized_cluster)

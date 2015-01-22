@@ -16,6 +16,7 @@
 
 import abc
 import six
+import yaml
 
 from nailgun import consts
 from nailgun.errors import errors
@@ -106,10 +107,11 @@ class PuppetHook(GenericNodeHook):
 class StandartConfigRolesHook(DeploymentHook):
     """Role hooks that serializes task based on config file only."""
 
-    def __init__(self, task, cluster, nodes):
+    def __init__(self, task, cluster, nodes, serialized_cluster):
         self.task = task
         self.cluster = cluster
         self.nodes = nodes
+        self.serialized_cluster = serialized_cluster
 
     def get_uids(self):
         return get_uids_for_roles(self.nodes, self.task['role'])
@@ -188,10 +190,26 @@ class RestartRadosGW(GenericRolesHook):
         return False
 
 
+class UploadNodesInfo(GenericRolesHook):
+    """Hook that uploads info about all nodes in cluster."""
+
+    identity = 'upload_nodes_info'
+
+    def serialize(self):
+        uids = self.get_uids()
+        serialized_nodes = self.serialized_cluster[0]['nodes']
+        data = yaml.safe_dump({
+            'nodes': serialized_nodes,
+        })
+        path = self.task['parameters']['path']
+        yield templates.make_upload_task(uids, path=path, data=data)
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW]
+    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW,
+                         UploadNodesInfo]
     deploy_serializers = [PuppetHook]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

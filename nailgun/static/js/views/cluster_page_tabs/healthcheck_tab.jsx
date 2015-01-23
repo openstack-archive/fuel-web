@@ -31,14 +31,14 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
     var HealthCheckTab = React.createClass({
         mixins: [
             componentMixins.backboneMixin({
-                modelOrCollection: function(props) {return props.model.get('tasks');},
+                modelOrCollection: function(props) {return props.cluster.get('tasks');},
                 renderOn: 'add remove change:status'
             }),
             componentMixins.backboneMixin('cluster', 'change:status')
         ],
         getInitialState: function() {
             var ostf = {},
-                clusterId = this.props.model.id;
+                clusterId = this.props.cluster.id;
             ostf.testsets = new models.TestSets();
             ostf.testsets.url = _.result(ostf.testsets, 'url') + '/' + clusterId;
             ostf.tests = new models.Tests();
@@ -52,14 +52,14 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             };
         },
         componentDidMount: function() {
-            if (!this.props.model.get('ostf')) {
+            if (!this.props.cluster.get('ostf')) {
                 $.when(
                     this.state.ostf.testsets.fetch(),
                     this.state.ostf.tests.fetch(),
                     this.state.ostf.testruns.fetch()
                 )
                 .done(_.bind(function() {
-                    this.props.model.set({ostf: this.state.ostf});
+                    this.props.cluster.set({ostf: this.state.ostf});
                     this.setState({loaded: true});
                 }, this))
                 .fail(_.bind(function() {
@@ -70,7 +70,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             }
         },
         render: function() {
-            var cluster = this.props.model,
+            var cluster = this.props.cluster,
                 ostf = cluster.get('ostf') || this.state.ostf;
             return (
                 <div className='wrapper'>

@@ -3456,7 +3456,10 @@ form.create-cluster-form {
     .font-layout-mixin(@font-size: @font-size-small-3, @color: @fuel-light-5);
     display: inline-block;
     margin-right: 12px;
-    strong { color: @fuel-light-3; }
+    span {
+      color: @fuel-light-3;
+      font-weight: bold;
+    }
     span { text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
     &.status { text-transform: capitalize; }
     &.error {
@@ -3498,23 +3501,6 @@ i.btn-cluster-details {
   color: @fuel-blue-smoke;
   height: 20px;
   overflow: hidden;
-}
-
-.cluster-details {
-  text-align: left;
-  .indent-mixin (0, 10px);
-  position: absolute;
-  z-index: 10000;
-  li {
-    min-width: 200px;
-    margin-bottom: 10px;
-    .font-layout-mixin(@font-size-base, @fuel-dark-5);
-    strong {
-      display: block;
-      margin-bottom: -4px;
-      .font-layout-mixin(@font-size-small-2, @font-color-light, lighter);
-    }
-  }
 }
 
 .create-cluster-modal {

@@ -88,7 +88,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
                     return Backbone.sync('update', node.disks, {url: _.result(node, 'url') + '/disks'});
                 }, this))
                 .done(_.bind(function() {
-                    this.model.fetch();
+                    this.cluster.fetch();
                     this.render();
                 }, this))
                 .fail(_.bind(function(response) {
@@ -119,7 +119,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
         initialize: function() {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
-                this.model.on('change:status', this.revertChanges, this);
+                this.cluster.on('change:status', this.revertChanges, this);
                 this.volumes = new models.Volumes();
                 this.volumes.url = _.result(this.nodes.at(0), 'url') + '/volumes';
                 this.loading = $.when.apply($, this.nodes.map(function(node) {
@@ -250,7 +250,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
             _.defaults(this, options);
             this.diskForm = new Backbone.Model({visible: false});
             this.diskForm.on('change:visible', this.checkForGroupsDeletionAvailability, this);
-            this.disk.on('invalid', function(model, error) {
+            this.disk.on('invalid', function(cluster, error) {
                 this.$('.disk-visual').addClass('invalid');
                 this.$('input').addClass('error');
                 this.$('.volume-group-error-message.common').text(error);
@@ -258,7 +258,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
             this.disk.get('volumes').each(function(volume) {
                 volume.on('change:size', this.updateDisks, this);
                 volume.on('change:size', function() {_.invoke(this.screen.subViews, 'checkForGroupsDeletionAvailability', this);}, this);
-                volume.on('invalid', function(model, error) {
+                volume.on('invalid', function(cluster, error) {
                     this.$('.disk-visual').addClass('invalid');
                     this.$('input[name=' + volume.get('name') + ']').addClass('error').parents('.volume-group').next().text(error);
                 }, this);

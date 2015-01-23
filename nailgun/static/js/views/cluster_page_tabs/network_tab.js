@@ -21,7 +21,6 @@ define(
     'backbone',
     'utils',
     'models',
-    'views/common',
     'jsx!views/dialogs',
     'text!templates/cluster/network_tab.html',
     'text!templates/cluster/network.html',
@@ -29,11 +28,11 @@ define(
     'text!templates/cluster/networking_parameters.html',
     'text!templates/cluster/verify_network_control.html'
 ],
-function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, networkingParametersTemplate, networkTabVerificationControlTemplate) {
+function($, _, i18n, Backbone, utils, models, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, networkingParametersTemplate, networkTabVerificationControlTemplate) {
     'use strict';
     var NetworkTab, NetworkTabSubview, Network, NetworkingParameters, NetworkTabVerificationControl;
 
-    NetworkTab = commonViews.Tab.extend({
+    NetworkTab = Backbone.View.extend({
         template: _.template(networkTabTemplate),
         updateInterval: 3000,
         events: {
@@ -45,7 +44,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             var hasChanges = this.hasChanges();
             var locked = this.isLocked();
             var errors = !!this.networkConfiguration.validationError;
-            this.$('.btn.verify-networks-btn').attr('disabled', errors || !!this.model.task({group: ['deployment', 'network'], status: 'running'}));
+            this.$('.btn.verify-networks-btn').attr('disabled', errors || !!this.cluster.task({group: ['deployment', 'network'], status: 'running'}));
             this.$('.btn.btn-revert-changes').attr('disabled', !(hasChanges || errors) || locked);
             this.$('.btn.apply-btn').attr('disabled', !hasChanges || errors || locked);
         },
@@ -53,7 +52,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             this.$('.btn, input, select').attr('disabled', true);
         },
         isLocked: function() {
-            return this.model.task({group: ['deployment', 'network'], status: 'running'}) || !this.model.isAvailableForSettingsChanges();
+            return this.cluster.task({group: ['deployment', 'network'], status: 'running'}) || !this.cluster.isAvailableForSettingsChanges();
         },
         hasChanges: function() {
             return !_.isEqual(this.initialConfiguration.toJSON(), this.networkConfiguration.toJSON());
@@ -62,7 +61,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             if (!this.networkConfiguration.validationError) {
                 this.disableControls();
                 this.prepareIpRanges();
-                this.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
+                app.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
             }
         },
         prepareIpRanges: function() {
@@ -95,12 +94,12 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
                     this.calculateButtonsState();
                 }, this))
                 .always(_.bind(function() {
-                    this.model.fetchRelated('tasks').done(_.bind(this.scheduleUpdate, this));
+                    this.cluster.fetchRelated('tasks').done(_.bind(this.scheduleUpdate, this));
                 }, this));
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
-            this.page.removeFinishedNetworkTasks().always(_.bind(this.render, this));
+            app.page.removeFinishedNetworkTasks().always(_.bind(this.render, this));
         },
         beforeTearDown: function() {
             this.loadInitialConfiguration();
@@ -119,24 +118,24 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
                 deferred = Backbone.sync('update', this.networkConfiguration)
                     .done(_.bind(function(task) {
                         if (task && task.status == 'error') {
-                            this.page.removeFinishedNetworkTasks().always(_.bind(function() {
+                            app.page.removeFinishedNetworkTasks().always(_.bind(function() {
                                 this.calculateButtonsState();
-                                this.model.fetch();
-                                this.model.fetchRelated('tasks').done(_.bind(function() {
-                                    this.page.removeFinishedNetworkTasks(true);
+                                this.cluster.fetch();
+                                this.cluster.fetchRelated('tasks').done(_.bind(function() {
+                                    app.page.removeFinishedNetworkTasks(true);
                                 }, this));
                             }, this));
                         } else {
                             this.updateInitialConfiguration();
-                            this.model.fetch();
-                            this.model.fetchRelated('tasks');
+                            this.cluster.fetch();
+                            this.cluster.fetchRelated('tasks');
                         }
                     }, this))
                     .fail(_.bind(function() {
                         utils.showErrorDialog({title: i18n('cluster_page.network_tab.verify_networks.verification_error.title')});
                         this.calculateButtonsState();
-                        this.model.fetch();
-                        this.model.fetchRelated('tasks');
+                        this.cluster.fetch();
+                        this.cluster.fetchRelated('tasks');
                     }, this));
             } else {
                 deferred = new $.Deferred();
@@ -145,12 +144,12 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             return deferred;
         },
         scheduleUpdate: function() {
-            if (this.model.task('verify_networks', 'running')) {
+            if (this.cluster.task('verify_networks', 'running')) {
                 this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
             }
         },
         update: function() {
-            var task = this.model.task('verify_networks', 'running');
+            var task = this.cluster.task('verify_networks', 'running');
             if (task) {
                 this.registerDeferred(task.fetch().always(_.bind(this.scheduleUpdate, this)));
             }
@@ -162,17 +161,17 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             this.$('input[type=text]').removeClass('error').parents('.network-attribute').find('.help-inline').text('');
             this.networkConfiguration.isValid();
             this.calculateButtonsState();
-            this.page.removeFinishedNetworkTasks();
+            app.page.removeFinishedNetworkTasks();
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.on('change:status', this.render, this);
-            this.model.get('tasks').bindToView(this, [{group: ['deployment', 'network']}], function(task) {
+            this.cluster.on('change:status', this.render, this);
+            this.cluster.get('tasks').bindToView(this, [{group: ['deployment', 'network']}], function(task) {
                 task.on('change:status', this.render, this);
             }, this.render, this.renderVerificationControl);
             this.initialConfiguration = new models.NetworkConfiguration();
-            this.networkConfiguration = this.model.get('networkConfiguration');
-            this.networkConfiguration.on('invalid', function(model, errors) {
+            this.networkConfiguration = this.cluster.get('networkConfiguration');
+            this.networkConfiguration.on('invalid', function(cluster, errors) {
                 _.each(errors.networking_parameters, _.bind(function(error, field) {
                     if (field != 'floating_ranges') {
                         if (_.isArray(error)) {
@@ -208,25 +207,25 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
                     }, this));
                 }, this));
             }, this);
-            (this.loading = $.when(this.model.get('settings').fetch({cache: true}), this.networkConfiguration.fetch({cache: true}))).done(_.bind(this.updateInitialConfiguration, this));
+            (this.loading = $.when(this.cluster.get('settings').fetch({cache: true}), this.networkConfiguration.fetch({cache: true}))).done(_.bind(this.updateInitialConfiguration, this));
             if (this.loading.state() == 'pending') {
                 this.loading.done(_.bind(this.render, this));
             }
         },
         renderVerificationControl: function() {
             var verificationView = new NetworkTabVerificationControl({
-                cluster: this.model,
+                cluster: this.cluster,
                 networks: this.networkConfiguration.get('networks')
             });
             this.registerSubView(verificationView);
             this.$('.verification-control').html(verificationView.render().el);
             this.showVerificationErrors();
             if (this.hasChanges()) {
-                this.page.removeFinishedNetworkTasks(true);
+                app.page.removeFinishedNetworkTasks(true);
             }
         },
         showVerificationErrors: function() {
-            var task = this.model.task({group: 'network', status: 'error'});
+            var task = this.cluster.task({group: 'network', status: 'error'});
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(verificationError) {
                     _.each(verificationError.ids, function(networkId) {
@@ -257,7 +256,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             var networkingParameters = this.networkConfiguration.get('networking_parameters');
             this.$el.html(this.template({
                 loading: this.loading,
-                provider: this.model.get('net_provider'),
+                provider: this.cluster.get('net_provider'),
                 locked: this.isLocked(),
                 segment_type: networkingParameters ? networkingParameters.get('segmentation_type') : null,
                 l23_provider: networkingParameters ? networkingParameters.get('net_l23_provider') : null
@@ -282,22 +281,22 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
         changeIPRanges: function(e) {
             var config = this.ipRangesConfig;
             var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index($(e.currentTarget).parents('.range-row'));
-            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
+            var ipRanges = _.cloneDeep(config.cluster.get(config.attribute));
             if (this.$(e.currentTarget).hasClass('ip-ranges-add')) {
                 ipRanges.splice(rowIndex + 1, 0, ['', '']);
             } else {
                 ipRanges.splice(rowIndex, 1);
             }
-            config.model.set(config.attribute, ipRanges);
+            config.cluster.set(config.attribute, ipRanges);
         },
         autoCompleteIPRanges: function(e) {
             var config = this.ipRangesConfig;
             var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index(this.$(e.currentTarget).parents('.range-row'));
-            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
+            var ipRanges = _.cloneDeep(config.cluster.get(config.attribute));
             var startIP = ipRanges[rowIndex][0];
             if (!ipRanges[rowIndex][1] && !utils.validateIP(startIP)) {
                 ipRanges[rowIndex][1] = startIP;
-                config.model.set(config.attribute, ipRanges);
+                config.cluster.set(config.attribute, ipRanges);
                 var input = this.$(e.currentTarget)[0];
                 if (input.setSelectionRange) {
                     var startPos = _.lastIndexOf(startIP, '.') + 1;
@@ -308,7 +307,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
         },
         composeIpRangesBindings: function() {
             var config = this.ipRangesConfig;
-            _.each(config.model.get(config.attribute), function(range, rangeIndex) {
+            _.each(config.cluster.get(config.attribute), function(range, rangeIndex) {
                 _.each(range, function(ip, index) {
                     this.bindings['.' + config.domSelector + '-ranges-rows input[name=range' + index + '][data-range=' + rangeIndex + ']'] = {
                         observe: config.attribute,
@@ -316,7 +315,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
                             return value[rangeIndex] ? value[rangeIndex][index] : null;
                         },
                         getVal: function($el) {
-                            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
+                            var ipRanges = _.cloneDeep(config.cluster.get(config.attribute));
                             ipRanges[$el.data('range')][index] = $el.val();
                             return ipRanges;
                         }
@@ -329,7 +328,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
             var $el = this.$('.' + config.domSelector + '-ranges-rows');
             $el.html('');
             var isFloatingNeutron = (config.attribute == 'floating_ranges') && this.parameters && !this.parameters.get('net_manager');
-            var ipRanges = config.model.get(config.attribute);
+            var ipRanges = config.cluster.get(config.attribute);
             _.each(ipRanges, function(range, rangeIndex) {
                 $el.append(this.rangeTemplate({
                     index: rangeIndex,
@@ -339,7 +338,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
                 }));
             }, this);
             this.composeIpRangesBindings();
-            this.stickit(config.model);
+            this.stickit(config.cluster);
         },
         composeVlanBindings: function(observe) {
             observe = observe || 'vlan_start';
@@ -393,7 +392,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.ipRangesConfig = {model: this.network, attribute: 'ip_ranges', domSelector: 'ip'};
+            this.ipRangesConfig = {cluster: this.network, attribute: 'ip_ranges', domSelector: 'ip'};
             this.network.on('change:ip_ranges', function(network, ipRanges) {
                 if (ipRanges.length != network.previous('ip_ranges').length) {
                     this.renderIpRanges();
@@ -444,7 +443,7 @@ function($, _, i18n, Backbone, utils, models, commonViews, dialogViews, networkT
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.ipRangesConfig = {model: this.parameters, attribute: 'floating_ranges', domSelector: 'floating'};
+            this.ipRangesConfig = {cluster: this.parameters, attribute: 'floating_ranges', domSelector: 'floating'};
             this.parameters.on('change:net_manager', function(parameters, manager) {
                 parameters.set({fixed_networks_amount: manager == 'FlatDHCPManager' ? 1 : this.fixedAmount}, {silent: true});
                 this.render();

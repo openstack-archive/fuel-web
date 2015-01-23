@@ -8,7 +8,7 @@ disable_root: false
 # password: RANDOM
 # chpasswd: { expire: True }
 
-ssh_pwauth: true
+ssh_pwauth: false
 ssh_authorized_keys:
 {% for key in common.ssh_auth_keys %}
   - {{ key }}

@@ -182,7 +182,7 @@ class TestPartition(base.BaseFuelAgentCITest):
                 'MAC': self.dhcp_hosts[0]['mac'],
                 'MASTER_IP': self.net.ip,
                 'MASTER_HTTP_PORT': self.http.port,
-                'PROFILE': 'ubuntu_1204_x86_64'
+                'PROFILE': 'ubuntu_1404_x86_64'
             },
             template_name='provision.json'
         )
@@ -196,7 +196,7 @@ class TestPartition(base.BaseFuelAgentCITest):
                 'MAC': self.dhcp_hosts[0]['mac'],
                 'MASTER_IP': self.net.ip,
                 'MASTER_HTTP_PORT': self.http.port,
-                'PROFILE': 'ubuntu_1204_x86_64'
+                'PROFILE': 'ubuntu_1404_x86_64'
             },
             template_name='provision_ceph.json'
         )

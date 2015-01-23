@@ -229,6 +229,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                             processBind(_.keys(bind)[0], _.values(bind)[0]);
                         });
                     }
+                //    @TODO: process checkbox binds here also
                 }, this);
             }, this);
             return result;

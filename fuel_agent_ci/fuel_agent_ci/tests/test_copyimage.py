@@ -58,4 +58,4 @@ class TestCopyImage(base.BaseFuelAgentCITest):
         self._test_copyimage('centos_65_x86_64')
 
     def test_copyimage_ubuntu(self):
-        self._test_copyimage('ubuntu_1204_x86_64')
+        self._test_copyimage('ubuntu_1404_x86_64')

@@ -249,6 +249,17 @@ class NodeValidator(BasicValidator):
             cls.validate_update(nd)
         return d
 
+    @classmethod
+    def validate_collection_delete(cls, data):
+        if isinstance(data, basestring):
+            d = cls.validate_json(data)
+        else:
+            d = data
+
+        cls.validate_schema(d, base_types.IDS_ARRAY)
+
+        return d
+
 
 class NodeDisksValidator(BasicValidator):
     @classmethod

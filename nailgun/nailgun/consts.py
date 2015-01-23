@@ -162,7 +162,9 @@ TASK_NAMES = Enum(
     # dump
     'dump',
 
-    'capacity_log'
+    'capacity_log',
+
+    'remove_nodes'
 )
 
 NOTIFICATION_STATUSES = Enum(

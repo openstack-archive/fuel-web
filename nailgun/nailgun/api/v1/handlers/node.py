@@ -39,6 +39,8 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 
+from nailgun.task.manager import NodeDeletionTaskManager
+
 from nailgun.logger import logger
 from nailgun import notifier
 
@@ -46,6 +48,21 @@ from nailgun import notifier
 class NodeHandler(SingleHandler):
     single = objects.Node
     validator = NodeValidator
+
+    @content
+    def DELETE(self, obj_id):
+        """Deletes a node from DB and from Cobbler.
+
+        :return: JSON-ed deletion task
+        :http: * 202 (nodes are successfully scheduled for deletion)
+               * 404 (invalid node id specified)
+        """
+
+        node = self.get_object_or_404(self.single, obj_id)
+        task_manager = NodeDeletionTaskManager(cluster_id=node.cluster_id)
+        task = task_manager.execute([node], mclient_remove=False)
+
+        raise self.http(202, objects.Task.to_json(task))
 
 
 class NodeCollectionHandler(CollectionHandler):
@@ -105,6 +122,30 @@ class NodeCollectionHandler(CollectionHandler):
             nodes_updated
         )
         return self.collection.to_json(nodes)
+
+    @content
+    def DELETE(self):
+        """Deletes a batch of nodes.
+
+        Takes (JSONed) list of node ids to delete.
+
+        :return: JSON-ed deletion task
+        :http: * 202 (nodes are successfully scheduled for deletion)
+               * 400 (invalid nodes data specified)
+        """
+        # TODO(pkaminski): web.py does not support parsing of array arguments
+        # in the queryset so we specify the input as comma-separated list
+        node_ids = self.checked_data(
+            validate_method=self.validator.validate_collection_delete,
+            data=web.input().get('ids', '')
+        )
+
+        nodes = self.get_objects_list_or_404(self.collection, node_ids)
+
+        task_manager = NodeDeletionTaskManager(cluster_id=nodes[0].cluster_id)
+        task = task_manager.execute(nodes)
+
+        raise self.http(202, objects.Task.to_json(task))
 
 
 class NodeAgentHandler(BaseHandler):

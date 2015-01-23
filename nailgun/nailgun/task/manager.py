@@ -876,3 +876,23 @@ class GenerateCapacityLogTaskManager(TaskManager):
             task,
             tasks.GenerateCapacityLogTask)
         return task
+
+
+class NodeDeletionTaskManager(TaskManager):
+
+    def execute(self, nodes):
+        logger.info("Trying to execute node deletion task")
+
+        if not hasattr(self, 'cluster'):
+            raise errors.InvalidData("Cluster needs to be specified")
+
+        task = Task(name=TASK_NAMES.node_deletion, cluster=self.cluster)
+        db().add(task)
+        db().flush()
+
+        self._call_silently(
+            task,
+            tasks.DeletionTask,
+            nodes=tasks.DeletionTask.get_task_nodes(nodes))
+
+        return task

@@ -988,12 +988,7 @@ def fake_tasks(fake_rpc=True,
             'nailgun.task.fake.settings.FAKE_TASKS_TICK_INTERVAL',
             tick_interval
         )(func)
-        if fake_rpc and not kwargs:
-            func = mock.patch(
-                'nailgun.task.task.rpc.cast',
-                nailgun.task.task.fake_cast
-            )(func)
-        elif fake_rpc and kwargs:
+        if fake_rpc:
             func = mock.patch(
                 'nailgun.task.task.rpc.cast',
                 partial(
@@ -1003,7 +998,8 @@ def fake_tasks(fake_rpc=True,
             )(func)
         elif mock_rpc:
             func = mock.patch(
-                'nailgun.task.task.rpc.cast'
+                'nailgun.task.task.rpc.cast',
+                **kwargs
             )(func)
         return func
     return wrapper

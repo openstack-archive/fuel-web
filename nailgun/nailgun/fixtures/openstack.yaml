@@ -1356,7 +1356,7 @@
 - pk: 2
   extend: *base_release
   fields:
-    name: "Juno on Ubuntu 12.04.4"
+    name: "Juno on Ubuntu 14.04.1"
     version: "2014.2-6.1"
     can_update_from_versions: []
     operating_system: "Ubuntu"
@@ -1365,19 +1365,19 @@
       generated:
         cobbler:
           profile:
-            generator_arg: "ubuntu_1204_x86_64"
+            generator_arg: "ubuntu_1404_x86_64"
         provision:
           image_data:
             /:
-              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64.img.gz"
+              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1404_amd64.img.gz"
               format: "ext4"
               container: "gzip"
             /boot:
-              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64-boot.img.gz"
+              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1404_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
     orchestrator_data:
       puppet_manifests_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/"
       puppet_modules_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/"
       repo_metadata:
-        "{OPENSTACK_VERSION}": "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/ubuntu/x86_64 precise main"
+        "{OPENSTACK_VERSION}": "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/ubuntu/x86_64 trusty main"

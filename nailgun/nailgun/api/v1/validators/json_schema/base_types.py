@@ -56,12 +56,17 @@ NULLABLE_NON_NEGATIVE_INTEGER = {
     'anyOf': [NON_NEGATIVE_INTEGER, NULL]
 }
 
+ID = POSITIVE_INTEGER
+
+IDS_ARRAY = {
+    'type': 'array',
+    'items': ID,
+}
+
 STRINGS_ARRAY = {
     'type': 'array',
     'items': {'type': 'string'}
 }
-
-ID = POSITIVE_INTEGER
 
 NULLABLE_ID = {
     'anyOf': [ID, NULL]

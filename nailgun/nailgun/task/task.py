@@ -451,7 +451,7 @@ class StopDeploymentTask(object):
         return rpc_message
 
     @classmethod
-    def execute(cls, task, deploy_task, provision_task):
+    def execute(cls, task, deploy_task=None, provision_task=None):
         if provision_task:
             rpc.cast(
                 'naily',

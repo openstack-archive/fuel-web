@@ -249,6 +249,18 @@ class NodeValidator(BasicValidator):
             cls.validate_update(nd)
         return d
 
+    @classmethod
+    def validate_collection_delete(cls, data):
+        try:
+            d = map(int, data.split(','))
+        except ValueError:
+            raise errors.InvalidData('Comma-separated number list expected',
+                                     log_message=True)
+
+        cls.validate_schema(d, base_types.IDS_ARRAY)
+
+        return d
+
 
 class NodeDisksValidator(BasicValidator):
     @classmethod

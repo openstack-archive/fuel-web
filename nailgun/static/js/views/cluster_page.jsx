@@ -41,6 +41,8 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
     ClusterPage = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5),
+            componentMixins.dispatcherMixin('deployment:started', 'deploymentTaskStarted'),
+            componentMixins.dispatcherMixin('deployment:finished', 'deploymentTaskFinished'),
             componentMixins.backboneMixin('cluster', 'change:is_customized'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('nodes');}

@@ -164,7 +164,7 @@ TASK_NAMES = Enum(
     # dump
     'dump',
 
-    'capacity_log'
+    'capacity_log',
 )
 
 NOTIFICATION_STATUSES = Enum(

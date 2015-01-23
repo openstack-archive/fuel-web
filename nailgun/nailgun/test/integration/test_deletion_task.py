@@ -130,9 +130,6 @@ class TestDeletionTask(BaseIntegrationTest):
         message = mmake_astute_message.call_args[0][3]
 
         self.assertIn('nodes', message)
-        self.assertItemsEqual(
-            message['nodes'],
-            astute_nodes
-        )
+        self.assertItemsEqual(message['nodes'], astute_nodes)
 
         self.assertEqual(mrpc.cast.call_count, 1)

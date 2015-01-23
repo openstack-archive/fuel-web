@@ -16,8 +16,6 @@
 
 import logging
 
-from mock import patch
-
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -32,9 +30,8 @@ logger = logging.getLogger(__name__)
 
 class TestNodeDeletion(BaseIntegrationTest):
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_node_deletion_and_attributes_clearing(self, mocked_rpc):
+    @fake_tasks()
+    def test_node_deletion_and_attributes_clearing(self):
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},
@@ -45,6 +42,7 @@ class TestNodeDeletion(BaseIntegrationTest):
 
         cluster = self.env.clusters[0]
         node = self.env.nodes[0]
+        node_id = node.id
 
         resp = self.app.delete(
             reverse(
@@ -52,12 +50,14 @@ class TestNodeDeletion(BaseIntegrationTest):
                 kwargs={'obj_id': node.id}),
             headers=self.default_headers
         )
-        self.assertEqual(204, resp.status_code)
+        self.assertEqual(202, resp.status_code)
+        task = objects.Task.get_by_uuid(resp.json_body['uuid'])
+        self.env.wait_ready(task)
 
         node_try = self.db.query(Node).filter_by(
             cluster_id=cluster.id
         ).first()
-        self.assertEqual(node_try, None)
+        self.assertIsNone(node_try)
 
         management_net = self.db.query(NetworkGroup).\
             filter(NetworkGroup.group_id ==
@@ -65,7 +65,34 @@ class TestNodeDeletion(BaseIntegrationTest):
             filter_by(name='management').first()
 
         ipaddrs = self.db.query(IPAddr).\
-            filter_by(node=node.id).all()
+            filter_by(node=node_id).all()
 
         self.assertEqual(list(management_net.nodes), [])
         self.assertEqual(list(ipaddrs), [])
+
+    @fake_tasks()
+    def test_batch_node_deletion_and_attributes_clearing(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+            ]
+        )
+
+        self.env.launch_deployment()
+
+        cluster = self.env.clusters[0]
+        node_ids = [node.id for node in cluster.nodes]
+
+        url = reverse('NodeCollectionHandler')
+        query_str = 'ids={0}'.format(','.join(map(str, node_ids)))
+
+        resp = self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers
+        )
+        self.assertEqual(202, resp.status_code)
+        task = objects.Task.get_by_uuid(resp.json_body['uuid'])
+        self.env.wait_ready(task)
+
+        node_query = self.db.query(Node).filter_by(cluster_id=cluster.id)
+        self.assertEquals(node_query.count(), 0)

@@ -393,7 +393,7 @@ class StopDeploymentTask(object):
         return rpc_message
 
     @classmethod
-    def execute(cls, task, deploy_task, provision_task):
+    def execute(cls, task, deploy_task=None, provision_task=None):
         if provision_task:
             rpc.cast(
                 'naily',
@@ -848,3 +848,37 @@ class GenerateCapacityLogTask(object):
         task.status = 'ready'
         task.progress = '100'
         db().commit()
+
+
+class RemoveNodesTask(object):
+    @classmethod
+    def execute(cls, task, nodes):
+        logger.debug("RemoveNodesTask: task={0}".format(task.uuid))
+        nodes_to_delete = [{
+            'id': node.id,
+            'uid': node.id,
+            'roles': node.roles,
+            'slave_name': objects.Node.make_slave_name(node)
+        } for node in nodes]
+
+        msg_delete = make_astute_message(
+            task,
+            'remove_nodes',
+            'quick_remove_nodes_resp',
+            {
+                'nodes': nodes_to_delete,
+                'engine': {
+                    'url': settings.COBBLER_URL,
+                    'username': settings.COBBLER_USER,
+                    'password': settings.COBBLER_PASSWORD,
+                    'master_ip': settings.MASTER_IP,
+                }
+            }
+        )
+        # only fake tasks
+        USE_FAKE = settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
+        if USE_FAKE and nodes_to_restore:
+            msg_delete['args']['nodes_to_restore'] = nodes_to_restore
+        # /only fake tasks
+        logger.debug("Calling rpc remove_nodes method")
+        rpc.cast('naily', msg_delete)

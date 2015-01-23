@@ -39,6 +39,8 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 
+from nailgun.task.manager import RemoveNodesTaskManager
+
 from nailgun.logger import logger
 from nailgun import notifier
 
@@ -46,6 +48,19 @@ from nailgun import notifier
 class NodeHandler(SingleHandler):
     single = objects.Node
     validator = NodeValidator
+
+    @content
+    def DELETE(self, obj_id):
+        """Deletes a node from DB and from Cobbler.
+        """
+
+        task_manager = RemoveNodesTaskManager()
+        node = self.get_object_or_404(self.single, obj_id)
+        task = task_manager.execute([node])
+
+        super(NodeHandler, self).DELETE(obj_id)
+
+        raise self.http(202, objects.Task.to_json(task))
 
 
 class NodeCollectionHandler(CollectionHandler):

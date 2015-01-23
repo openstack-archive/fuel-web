@@ -869,3 +869,12 @@ class GenerateCapacityLogTaskManager(TaskManager):
             task,
             tasks.GenerateCapacityLogTask)
         return task
+
+
+class RemoveNodesTaskManager(TaskManager):
+    def execute(self, nodes):
+        task = Task(name='remove_nodes')
+        db().add(task)
+        db().commit()
+        self._call_silently(task, tasks.RemoveNodesTask, nodes)
+        return task

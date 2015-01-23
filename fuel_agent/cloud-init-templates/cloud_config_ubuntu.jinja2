@@ -7,7 +7,7 @@ disable_root: false
 user: root
 password: r00tme
 chpasswd: { expire: false }
-ssh_pwauth: true
+ssh_pwauth: false
 ssh_authorized_keys:
 {% for key in common.ssh_auth_keys %}
   - {{ key }}

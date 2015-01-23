@@ -1094,66 +1094,13 @@
               bind:
                 - "wizard:Storage.cinder": "default"
                 - "wizard:Network.manager": "neutron-vlan"
-            - data: "vcenter"
-              label: "dialog.create_cluster_wizard.compute.vcenter"
-              description: "dialog.create_cluster_wizard.compute.vcenter_description"
-              bind:
-                - "wizard:Storage.cinder": "vcenter"
-                - "wizard:Network.manager": "nova-network"
-        host_ip:
-          type: "text"
-          label: "dialog.create_cluster_wizard.compute.vcenter_ip"
-          description: "dialog.create_cluster_wizard.compute.vcenter_ip_description"
+        vcenter:
+          type: "checkbox"
           weight: 10
+          label: "dialog.create_cluster_wizard.compute.vcenter"
+          description: "dialog.create_cluster_wizard.compute.vcenter_description"
           bind:
-            - "settings:vcenter.host_ip.value"
-            - "settings:storage.vc_host.value"
-          restrictions:
-            - condition: "Compute.hypervisor != 'vcenter'"
-              action: "hide"
-          regex:
-            source: *ipv4_or_hostname_regex
-            error: "dialog.create_cluster_wizard.compute.vcenter_ip_warning"
-        vc_user:
-          type: "text"
-          label: "dialog.create_cluster_wizard.compute.vcenter_username"
-          description: "dialog.create_cluster_wizard.compute.vcenter_username_description"
-          weight: 20
-          bind:
-            - "settings:vcenter.vc_user.value"
-            - "settings:storage.vc_user.value"
-          restrictions:
-            - condition: "Compute.hypervisor != 'vcenter'"
-              action: "hide"
-          regex:
-            source: *non_empty_string
-            error: "dialog.create_cluster_wizard.compute.vcenter_user_warning"
-        vc_password:
-          type: "password"
-          label: "dialog.create_cluster_wizard.compute.vcenter_password"
-          description: "dialog.create_cluster_wizard.compute.vcenter_password_description"
-          weight: 30
-          bind:
-            - "settings:vcenter.vc_password.value"
-            - "settings:storage.vc_password.value"
-          restrictions:
-            - condition: "Compute.hypervisor != 'vcenter'"
-              action: "hide"
-          regex:
-            source: *non_empty_string
-            error: "dialog.create_cluster_wizard.compute.vcenter_password_warning"
-        cluster:
-          type: "text"
-          label: "dialog.create_cluster_wizard.compute.vcenter_cluster"
-          description: "dialog.create_cluster_wizard.compute.vcenter_cluster_description"
-          weight: 40
-          bind: "settings:vcenter.cluster.value"
-          restrictions:
-            - condition: "Compute.hypervisor != 'vcenter'"
-              action: "hide"
-          regex:
-            source: *valid_cluster_name
-            error: "dialog.create_cluster_wizard.compute.vcenter_cluster_warning"
+            - "wizard:Network.manager": "nova-network"
       Network:
         manager:
           type: "radio"

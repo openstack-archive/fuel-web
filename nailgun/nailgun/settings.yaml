@@ -801,7 +801,6 @@ DUMP:
         to_file: proc_interrupts.txt
 
 # performance tests settings
-PERFORMANCE_PROFILING_TESTS: 0
 PERFORMANCE_TESTS_RUN_NUMBER: 10
 PERFORMANCE_TESTS_TOLERANCE: 0.1
 LOAD_TESTS_PATHS:

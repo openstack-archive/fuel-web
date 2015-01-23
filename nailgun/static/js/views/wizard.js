@@ -177,7 +177,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             _.each(this.config, function(paneConfig, paneName) {
                 restrictions[paneName] = {};
                 _.each(paneConfig, function(attributeConfig, attribute) {
-                    if (attributeConfig.type == 'radio') {
+                    if (attributeConfig.type == 'radio' || attributeConfig.type == 'mixed') {
                         _.each(attributeConfig.values, function(attributeValueConfig) {
                             processControlRestrictions(attributeValueConfig, paneName, attribute);
                         }, this);
@@ -206,6 +206,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                     utils.parseModelPath(path, this.configModels).set(value);
                 }
             }, this);
+            var processMultipleBinds = _.bind(function(attributeConfig, value) {
+                _.each(_.find(attributeConfig.values, {data: value}).bind, function(bind) {
+                    processBind(_.keys(bind)[0], _.values(bind)[0]);
+                });
+            }, this);
             _.each(this.config, function(paneConfig, paneName) {
                 if (paneNameToProcess && paneNameToProcess != paneName) {
                     return;
@@ -223,11 +228,15 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         // for the case of multiple bindings
                         _.each(bind, function(bindItem) {processBind(bindItem, value)});
                     }
-                    if (attributeConfig.type == 'radio') {
+                    if (attributeConfig.type == 'radio' || attributeConfig.type == 'mixed') {
                         // radiobuttons can have values with their own bindings
-                        _.each(_.find(attributeConfig.values, {data: value}).bind, function(bind) {
-                            processBind(_.keys(bind)[0], _.values(bind)[0]);
-                        });
+                        if (_.isArray(value)) {
+                            _.each(value, function(val) {
+                                processMultipleBinds(attributeConfig, val);
+                            });
+                        } else {
+                            processMultipleBinds(attributeConfig, value);
+                        }
                     }
                 }, this);
             }, this);
@@ -396,15 +405,33 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             });
             _.each(sortedConfig, function(configEntry) {
                 var attribute = configEntry[0];
-                var attributeConfig = configEntry[1];
+                var attributeConfig = _.cloneDeep(configEntry[1]);
+                var commonConfig = _.extend(attributeConfig, {
+                    pane: attribute,
+                    labelClasses: configToUse.labelClasses || '',
+                    descriptionClasses: configToUse.descriptionClasses || '',
+                    hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription,
+                    isMixed: false
+                });
                 switch (attributeConfig.type) {
+                    case 'mixed':
+                        _.each(attributeConfig.values, function(value) {
+                            var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
+                            if (shouldBeAdded) {
+                                controlsHtml += (controlTpl(_.extend(commonConfig, {
+                                    pane: value.type == 'checkbox' ? value.data : attribute,
+                                    type: value.type,
+                                    value: value.data,
+                                    label: value.label,
+                                    description: value.description || '',
+                                    isMixed: true
+                                })));
+                            }
+                        }, this);
+                        break;
                     case 'checkbox':
-                        controlsHtml += (controlTpl(_.extend(attributeConfig, {
-                            pane: attribute,
-                            labelClasses: configToUse.labelClasses,
-                            descriptionClasses: configToUse.descriptionClasses,
+                        controlsHtml += (controlTpl(_.extend(commonConfig, {
                             label: attributeConfig.label,
-                            hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription ,
                             description: attributeConfig.description
                         })));
                         break;
@@ -412,13 +439,9 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         _.each(attributeConfig.values, function(value) {
                             var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
                             if (shouldBeAdded) {
-                                controlsHtml += (controlTpl(_.extend(attributeConfig, {
+                                controlsHtml += (controlTpl(_.extend(commonConfig, {
                                     value: value.data,
-                                    pane: attribute,
-                                    labelClasses: configToUse.labelClasses || '',
-                                    descriptionClasses: configToUse.descriptionClasses || '',
                                     label: value.label,
-                                    hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription,
                                     description: value.description || ''
                                 })));
                             }
@@ -452,8 +475,51 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         composePaneBindings: function() {
             this.bindings = {};
             _.each(this.config, function(attributeConfig, attribute) {
-                this.bindings['[name=' + attribute + ']'] = {observe: this.constructorName + '.' + attribute};
+                if (attributeConfig.type == 'mixed') {
+                    this.bindings['[name=' + attribute + ']'] = {
+                        observe: this.constructorName + '.' + attribute,
+                        onGet: function(value) {
+                            if (_.isArray(value)) {
+                                return _.without(value, 'vcenter')[0];
+                            }
+                            return value;
+                        },
+                        onSet: function(value, options) {
+                            if (_.contains(this.wizard.model.get(options.observe), 'vcenter')) {
+                                var resultingArray = ['vcenter'];
+                                resultingArray.push(value);
+                                return resultingArray;
+                            }
+                            return value;
+                        }
+                    };
+
+                    this.bindings['[name=vcenter]'] = {
+                        observe: this.constructorName + '.' + attribute,
+                        onGet: function(value) {
+                            var vcenter = 'vcenter';
+                            if (_.isArray(value)) {
+                                return _.contains(value, vcenter);
+                            }
+                            return value == vcenter;
+                        },
+                        onSet: function(value, options) {
+                            var vcenter = 'vcenter',
+                                modelValue = this.wizard.model.get(options.observe);
+                            if (_.isNull(value)) {
+                                return _.without(modelValue, vcenter);
+                            }
+                            var resultingArray = [modelValue];
+                            resultingArray.push(vcenter);
+                            return resultingArray;
+                        }
+                    };
+                } else {
+                    this.bindings['[name=' + attribute + ']'] = {observe: this.constructorName + '.' + attribute};
+                }
+
                 switch (attributeConfig.type) {
+                    case 'mixed':
                     case 'radio':
                         _.each(attributeConfig.values, function(value) {
                             this.createRestrictionBindings(value.restrictions, {name: attribute, value: value.data});
@@ -528,14 +594,19 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             var result = {};
             _.each(this.wizard.model.attributes, function(paneConfig, paneName) {
                 _.each(paneConfig, function(value, attribute) {
+                    var attributeConfig = this.wizard.config[paneName][attribute];
                     if (!_.isObject(value)) {
-                        var attributeConfig = this.wizard.config[paneName][attribute];
                         if (attributeConfig && attributeConfig.type == 'radio') {
                             result[paneName + '.' + attribute] = i18n(_.find(attributeConfig.values, {data: value}).label);
                         } else if (attributeConfig && attributeConfig.label) {
                             result[paneName + '.' + attribute] = i18n(attributeConfig.label);
                         } else {
                             result[paneName + '.' + attribute] = value;
+                        }
+                    } else if (attributeConfig && attributeConfig.type == 'mixed') {
+                        // @TODO: refactor this to some universal solition
+                        if (_.contains(value, 'vcenter')) {
+                            result[paneName + '.' + attribute] = i18n(_.find(attributeConfig.values, {data: 'vcenter'}).label);
                         }
                     }
                 }, this);

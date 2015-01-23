@@ -1,7 +1,7 @@
 <label class="parameter-box clearfix <%- labelClasses %>">
   <div class="parameter-control">
     <div class="custom-tumbler">
-      <input type="<%- type %>" name="<%- pane %>" <% if (type == 'radio') { %> value="<%- value %>" <% } %> />
+      <input type="<%- type %>" name="<%- pane %>" <% if (type == 'radio' || isMixed) { %> value="<%- value %>" <% } %> />
       <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
     </div>
   </div>

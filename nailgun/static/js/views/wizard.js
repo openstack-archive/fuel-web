@@ -221,7 +221,13 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         processBind(_.values(bind)[0], value.get(_.keys(bind)[0]));
                     } else if (_.isArray(bind)) {
                         // for the case of multiple bindings
-                        _.each(bind, function(bindItem) {processBind(bindItem, value)});
+                        _.each(bind, function(bindItem) {
+                            if (_.isPlainObject(bindItem)) {
+                                processBind(_.keys(bindItem)[0], _.values(bindItem)[0]);
+                            } else {
+                                processBind(bindItem, value);
+                            }
+                        });
                     }
                     if (attributeConfig.type == 'radio') {
                         // radiobuttons can have values with their own bindings
@@ -452,7 +458,6 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         composePaneBindings: function() {
             this.bindings = {};
             _.each(this.config, function(attributeConfig, attribute) {
-                this.bindings['[name=' + attribute + ']'] = {observe: this.constructorName + '.' + attribute};
                 switch (attributeConfig.type) {
                     case 'radio':
                         _.each(attributeConfig.values, function(value) {
@@ -467,6 +472,8 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         this.createRestrictionBindings(attributeConfig.restrictions, {'data-attribute': attribute});
                         break;
                 }
+
+                this.bindings['[name=' + attribute + ']'] = {observe: this.constructorName + '.' + attribute};
             }, this);
             this.stickit(this.wizard.model);
         },

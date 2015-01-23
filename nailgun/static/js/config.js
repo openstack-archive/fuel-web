@@ -49,6 +49,7 @@ define(function() {
             'require-css': 'js/libs/bower/require-css',
             'require-less': 'js/require-less',
             i18n: 'js/i18n',
+            dispatcher: 'js/dispatcher',
             app: 'js/app',
             models: 'js/models',
             backbone_view_wrapper: 'js/backbone_view_wrapper',

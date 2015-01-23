@@ -35,7 +35,7 @@ from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.task.helpers import TaskHelper
-from nailgun.task.manager import ApplyChangesTaskManager
+from nailgun.task import manager
 from nailgun.task.task import DeletionTask
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -456,14 +456,14 @@ class TestTaskManagers(BaseIntegrationTest):
     def test_no_node_no_cry(self):
         cluster = self.env.create_cluster(api=True)
         cluster_id = cluster['id']
-        manager = ApplyChangesTaskManager(cluster_id)
+        manager_ = manager.ApplyChangesTaskManager(cluster_id)
         task = Task(name='provision', cluster_id=cluster_id)
         self.db.add(task)
         self.db.commit()
         rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
             {'uid': 666, 'id': 666, 'status': 'discover'}
         ], task_uuid=task.uuid)
-        self.assertRaises(errors.WrongNodeStatus, manager.execute)
+        self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @fake_tasks()
     @mock.patch('nailgun.task.manager.tasks.DeletionTask.execute')
@@ -479,14 +479,14 @@ class TestTaskManagers(BaseIntegrationTest):
             roles=['controller'])
         node_db = self.db.query(Node).get(node['id'])
 
-        manager = ApplyChangesTaskManager(cluster_id)
+        manager_ = manager.ApplyChangesTaskManager(cluster_id)
         task = Task(name='provision', cluster_id=cluster_id)
         self.db.add(task)
         self.db.commit()
         rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
             {'uid': node['id'], 'id': node['id'], 'status': node['status']}
         ], task_uuid=task.uuid)
-        manager.execute()
+        manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)
         task, nodes = mdeletion_execute.call_args[0]
@@ -509,8 +509,8 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
-        manager = ApplyChangesTaskManager(cluster_db.id)
-        self.assertRaises(errors.WrongNodeStatus, manager.execute)
+        manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
+        self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @fake_tasks(recover_offline_nodes=False)
     def test_deletion_offline_node(self):
@@ -618,3 +618,32 @@ class TestTaskManagers(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
         self.assertEqual(self.env.db.query(Node).count(), 0)
+
+    @fake_tasks(recover_nodes=False)
+    def test_node_deletion_task_manager(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_deletion": True, "status": "ready"}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        objects.Cluster.clear_pending_changes(cluster_db)
+        manager_ = manager.NodeDeletionTaskManager(cluster_id=cluster_db.id)
+        task = manager_.execute(cluster_db.nodes)
+        self.db.commit()
+        self.env.wait_ready(task, timeout=5)
+
+        self.assertEqual(self.db.query(Node).count(), 0)
+
+    @fake_tasks(recover_nodes=False)
+    def test_node_deletion_task_manager_no_cluster(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_deletion": True, "status": "ready"}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        objects.Cluster.clear_pending_changes(cluster_db)
+        manager_ = manager.NodeDeletionTaskManager()
+        self.assertRaises(
+            errors.InvalidData, manager_.execute, cluster_db.nodes)

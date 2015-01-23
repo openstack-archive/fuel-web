@@ -54,7 +54,7 @@ class NailgunReceiver(object):
         inaccessible_nodes = kwargs.get('inaccessible_nodes') or []
         error_msg = kwargs.get('error')
         status = kwargs.get('status')
-        progress = kwargs.get('progress')
+        progress = kwargs.get('progress') or 100
 
         # locking tasks on cluster
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)

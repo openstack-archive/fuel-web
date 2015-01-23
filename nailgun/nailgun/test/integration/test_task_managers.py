@@ -29,13 +29,10 @@ from nailgun.consts import TASK_NAMES
 from nailgun.consts import TASK_STATUSES
 from nailgun.settings import settings
 
-from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import Notification
-from nailgun.db.sqlalchemy.models import Task
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.task.helpers import TaskHelper
-from nailgun.task.manager import ApplyChangesTaskManager
+from nailgun.task import manager
 from nailgun.task.task import DeletionTask
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -49,7 +46,7 @@ class TestTaskManagers(BaseIntegrationTest):
         super(TestTaskManagers, self).tearDown()
 
     def check_node_presence(self, nodes_count):
-        return self.db.query(Node).count() == nodes_count
+        return self.db.query(models.Node).count() == nodes_count
 
     @fake_tasks(godmode=True)
     def test_deployment_task_managers(self):
@@ -296,7 +293,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         timer = time.time()
         timeout = 15
-        clstr = self.db.query(Cluster).get(self.env.clusters[0].id)
+        clstr = self.db.query(models.Cluster).get(self.env.clusters[0].id)
         while clstr:
             time.sleep(1)
             try:
@@ -306,13 +303,13 @@ class TestTaskManagers(BaseIntegrationTest):
             if time.time() - timer > timeout:
                 raise Exception("Cluster deletion seems to be hanged")
 
-        notification = self.db.query(Notification)\
-            .filter(Notification.topic == "done")\
-            .filter(Notification.message == "Environment '%s' and all its "
-                    "nodes are deleted" % cluster["name"]).first()
+        notification = self.db.query(models.Notification)\
+            .filter(models.Notification.topic == "done")\
+            .filter(models.Notification.message == "Environment '%s' and all "
+                    "its nodes are deleted" % cluster["name"]).first()
         self.assertIsNotNone(notification)
 
-        tasks = self.db.query(Task).all()
+        tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])
 
     @fake_tasks()
@@ -336,7 +333,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         timer = time.time()
         timeout = 15
-        clstr = self.db.query(Cluster).get(cluster_id)
+        clstr = self.db.query(models.Cluster).get(cluster_id)
         while clstr:
             time.sleep(1)
             try:
@@ -346,13 +343,13 @@ class TestTaskManagers(BaseIntegrationTest):
             if time.time() - timer > timeout:
                 raise Exception("Cluster deletion seems to be hanged")
 
-        notification = self.db.query(Notification)\
-            .filter(Notification.topic == "done")\
-            .filter(Notification.message == "Environment '%s' and all its "
-                    "nodes are deleted" % cluster_name).first()
+        notification = self.db.query(models.Notification)\
+            .filter(models.Notification.topic == "done")\
+            .filter(models.Notification.message == "Environment '%s' and all "
+                    "its nodes are deleted" % cluster_name).first()
         self.assertIsNotNone(notification)
 
-        tasks = self.db.query(Task).all()
+        tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])
 
     @fake_tasks(recover_nodes=False)
@@ -378,16 +375,16 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
         def cluster_is_deleted():
-            return not self.db.query(Cluster).get(cluster_id)
+            return not self.db.query(models.Cluster).get(cluster_id)
 
         self.env.wait_for_true(cluster_is_deleted,
                                error_message="Cluster deletion timeout")
 
-        task_deploy = self.db.query(Task).filter_by(
+        task_deploy = self.db.query(models.Task).filter_by(
             uuid=deploy_uuid
         ).first()
         self.assertIsNone(task_deploy)
-        task_delete = self.db.query(Task).filter_by(
+        task_delete = self.db.query(models.Task).filter_by(
             cluster_id=cluster_id,
             name="cluster_deletion"
         ).first()
@@ -419,7 +416,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         timer = time.time()
         timeout = 15
-        clstr = self.db.query(Cluster).get(cluster_id)
+        clstr = self.db.query(models.Cluster).get(cluster_id)
         while clstr:
             time.sleep(1)
             try:
@@ -429,13 +426,13 @@ class TestTaskManagers(BaseIntegrationTest):
             if time.time() - timer > timeout:
                 raise Exception("Cluster deletion seems to be hanged")
 
-        notification = self.db.query(Notification)\
-            .filter(Notification.topic == "done")\
-            .filter(Notification.message == "Environment '%s' and all its "
-                    "nodes are deleted" % cluster_name).first()
+        notification = self.db.query(models.Notification)\
+            .filter(models.Notification.topic == "done")\
+            .filter(models.Notification.message == "Environment '%s' and all "
+                    "its nodes are deleted" % cluster_name).first()
         self.assertIsNotNone(notification)
 
-        tasks = self.db.query(Task).all()
+        tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])
 
     @fake_tasks()
@@ -456,14 +453,14 @@ class TestTaskManagers(BaseIntegrationTest):
     def test_no_node_no_cry(self):
         cluster = self.env.create_cluster(api=True)
         cluster_id = cluster['id']
-        manager = ApplyChangesTaskManager(cluster_id)
-        task = Task(name='provision', cluster_id=cluster_id)
+        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        task = models.Task(name='provision', cluster_id=cluster_id)
         self.db.add(task)
         self.db.commit()
         rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
             {'uid': 666, 'id': 666, 'status': 'discover'}
         ], task_uuid=task.uuid)
-        self.assertRaises(errors.WrongNodeStatus, manager.execute)
+        self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @fake_tasks()
     @mock.patch('nailgun.task.manager.tasks.DeletionTask.execute')
@@ -477,16 +474,16 @@ class TestTaskManagers(BaseIntegrationTest):
             pending_deletion=True,
             status='ready',
             roles=['controller'])
-        node_db = self.db.query(Node).get(node['id'])
+        node_db = self.db.query(models.Node).get(node['id'])
 
-        manager = ApplyChangesTaskManager(cluster_id)
-        task = Task(name='provision', cluster_id=cluster_id)
+        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        task = models.Task(name='provision', cluster_id=cluster_id)
         self.db.add(task)
         self.db.commit()
         rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
             {'uid': node['id'], 'id': node['id'], 'status': node['status']}
         ], task_uuid=task.uuid)
-        manager.execute()
+        manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)
         task, nodes = mdeletion_execute.call_args[0]
@@ -509,8 +506,8 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
-        manager = ApplyChangesTaskManager(cluster_db.id)
-        self.assertRaises(errors.WrongNodeStatus, manager.execute)
+        manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
+        self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @fake_tasks(recover_offline_nodes=False)
     def test_deletion_offline_node(self):
@@ -528,8 +525,8 @@ class TestTaskManagers(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
 
-        self.assertEqual(self.env.db.query(Node).count(), 1)
-        remaining_node = self.env.db.query(Node).first()
+        self.assertEqual(self.env.db.query(models.Node).count(), 1)
+        remaining_node = self.env.db.query(models.Node).first()
         self.assertNotIn(remaining_node.id, to_delete_ids)
 
     @fake_tasks(recover_offline_nodes=False, tick_interval=1)
@@ -555,22 +552,24 @@ class TestTaskManagers(BaseIntegrationTest):
 
         # Offline nodes were deleted, online node came back
         self.assertEqual(
-            self.db.query(Node).filter(
-                Node.cluster_id == cluster['id']).count(),
+            self.db.query(models.Node).filter(
+                models.Node.cluster_id == cluster['id']).count(),
             0
         )
         self.assertEqual(
-            self.db.query(Node).filter(
-                Node.cluster_id == None  # flake8: noqa
+            self.db.query(models.Node).filter(
+                models.Node.cluster_id == None  # flake8: noqa
             ).count(),
             1
         )
         self.assertEqual(
-            self.db.query(Node).filter(Node.status == 'discover').count(),
+            self.db.query(models.Node).filter(
+                models.Node.status == 'discover').count(),
             1
         )
         self.assertEqual(
-            self.db.query(Node).filter(Node.online == True).count(),
+            self.db.query(models.Node).filter(
+                models.Node.online == True).count(),
             1
         )
 
@@ -591,7 +590,7 @@ class TestTaskManagers(BaseIntegrationTest):
         # same as in previous test
         self.env.wait_for_true(self.check_node_presence, args=[3])
 
-        q_nodes = self.env.db.query(Node)
+        q_nodes = self.env.db.query(models.Node)
 
         online_nodes_count = q_nodes.filter_by(online=True).count()
         self.assertEqual(online_nodes_count, 1)
@@ -617,4 +616,56 @@ class TestTaskManagers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
-        self.assertEqual(self.env.db.query(Node).count(), 0)
+        self.assertEqual(self.env.db.query(models.Node).count(), 0)
+
+    @fake_tasks(recover_nodes=False)
+    def test_node_deletion_task_manager(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_deletion": True, "status": "ready"}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        objects.Cluster.clear_pending_changes(cluster_db)
+        manager_ = manager.NodeDeletionTaskManager(cluster_id=cluster_db.id)
+        task = manager_.execute(cluster_db.nodes)
+        self.db.commit()
+        self.env.wait_ready(task, timeout=5)
+
+        self.assertEqual(self.db.query(models.Node).count(), 0)
+
+    @fake_tasks(recover_nodes=False)
+    def test_node_deletion_task_manager_works_for_nodes_not_in_cluster(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_deletion": True, "status": "ready"}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        objects.Cluster.clear_pending_changes(cluster_db)
+        node = cluster_db.nodes[0]
+        objects.Node.update(node, {'cluster_id': None})
+        self.db.commit()
+
+        self.db.refresh(node)
+        self.db.refresh(cluster_db)
+        manager_ = manager.NodeDeletionTaskManager()
+        task = manager_.execute([node])
+        self.db.commit()
+        self.env.wait_ready(task, timeout=5)
+
+        self.assertEqual(self.db.query(models.Node).count(), 0)
+
+    @fake_tasks(recover_nodes=False)
+    def test_node_deletion_task_manager_invalid_cluster(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_deletion": True, "status": "ready"}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        objects.Cluster.clear_pending_changes(cluster_db)
+        manager_ = manager.NodeDeletionTaskManager()
+
+        self.assertRaises(
+            errors.InvalidData, manager_.execute, cluster_db.nodes)

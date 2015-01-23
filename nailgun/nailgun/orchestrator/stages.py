@@ -15,24 +15,38 @@
 #    under the License.
 
 
+from nailgun import consts
 from nailgun.orchestrator import plugins_serializers
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
 
 
-def pre_deployment_serialize(orchestrator_graph, cluster, nodes):
+def stage_serialize(stage, serializer,
+                    orchestrator_graph, cluster, nodes):
+    """Serialize tasks for given stage
+
+    :param stage: oneOf consts.STAGES
+    :param serialize: orchestrator.plugins.BasePluginDeploymentHooksSerializer
+    :param orchestrator_graph: instance of AstuteGraph
+    :param cluster: cluster db object
+    :param nodes: list of node db objects
+    """
     priority = PriorityStrategy()
-    tasks = orchestrator_graph.pre_tasks_serialize(nodes)
-    plugins = plugins_serializers.PluginsPreDeploymentHooksSerializer(
-        cluster, nodes)
+    tasks = orchestrator_graph.stage_tasks_serialize(stage, nodes)
+    plugins = serializer(cluster, nodes)
     tasks.extend(plugins.serialize())
     priority.one_by_one(tasks)
     return tasks
 
 
-def post_deployment_serialize(cluster, nodes):
-    priority = PriorityStrategy()
-    plugins = plugins_serializers.PluginsPostDeploymentHooksSerializer(
-        cluster, nodes)
-    tasks = plugins.serialize()
-    priority.one_by_one(tasks)
-    return tasks
+def pre_deployment_serialize(orchestrator_graph, cluster, nodes):
+    return stage_serialize(
+        consts.STAGES.pre_deployment,
+        plugins_serializers.PluginsPreDeploymentHooksSerializer,
+        orchestrator_graph, cluster, nodes)
+
+
+def post_deployment_serialize(orchestrator_graph, cluster, nodes):
+    return stage_serialize(
+        consts.STAGES.post_deployment,
+        plugins_serializers.PluginsPostDeploymentHooksSerializer,
+        orchestrator_graph, cluster, nodes)

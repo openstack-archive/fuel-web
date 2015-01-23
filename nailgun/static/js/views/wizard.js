@@ -221,7 +221,16 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         processBind(_.values(bind)[0], value.get(_.keys(bind)[0]));
                     } else if (_.isArray(bind)) {
                         // for the case of multiple bindings
-                        _.each(bind, function(bindItem) {processBind(bindItem, value)});
+                        _.each(bind, function(bindItem) {
+                            // for checkboxes
+                            if (this.model.get(paneName)[attribute] && attributeConfig.type == 'checkbox') {
+                                if (_.isPlainObject(bindItem)) {
+                                    processBind(_.keys(bindItem)[0], _.values(bindItem)[0]);
+                                }
+                            } else if (attributeConfig.type != 'checkbox') {
+                                processBind(bindItem, value);
+                            }
+                        }, this);
                     }
                     if (attributeConfig.type == 'radio') {
                         // radiobuttons can have values with their own bindings

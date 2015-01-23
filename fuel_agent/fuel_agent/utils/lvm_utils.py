@@ -208,7 +208,8 @@ def lvcreate(vgname, lvname, size):
             'Error while creating lv: vg %s has only %s m of free space, '
             'but at least %s m is needed' % (vgname, vg[0]['free'], size))
     # check if lv already exists
-    if filter(lambda x: x['name'] == lvname, lvdisplay()):
+    if filter(lambda x: x['name'] == lvname and x['vg'] == vgname,
+              lvdisplay()):
         raise errors.LVAlreadyExistsError(
             'Error while creating lv: lv %s already exists' % lvname)
     utils.execute('lvcreate', '-L', '%sm' % size, '-n', lvname,

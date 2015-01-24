@@ -22,8 +22,6 @@ function usage {
   echo ""
   echo "  -a, --agent                 Run FUEL_AGENT unit tests"
   echo "  -A, --no-agent              Don't run FUEL_AGENT unit tests"
-  echo "  -c, --cli                   Run FUELCLIENT tests"
-  echo "  -C, --no-cli                Don't run FUELCLIENT tests"
   echo "  -h, --help                  Print this usage message"
   echo "  -k, --tasklib               Run tasklib unit and functional tests"
   echo "  -K, --no-tasklib            Don't run tasklib unit and functional tests"
@@ -61,8 +59,6 @@ function process_options {
       -K|--no-tasklib) no_tasklib_tests=1;;
       -w|--webui) webui_tests=1;;
       -W|--no-webui) no_webui_tests=1;;
-      -c|--cli) cli_tests=1;;
-      -C|--no-cli) no_cli_tests=1;;
       -u|--upgrade) upgrade_system=1;;
       -U|--no-upgrade) no_upgrade_system=1;;
       -s|--shotgun) shotgun_tests=1;;
@@ -92,7 +88,6 @@ testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 
 # nosetest xunit options
 NAILGUN_XUNIT=${NAILGUN_XUNIT:-"$ROOT/nailgun.xml"}
-FUELCLIENT_XUNIT=${FUELCLIENT_XUNIT:-"$ROOT/fuelclient.xml"}
 FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
 FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-"$ROOT/fuelupgradedownloader.xml"}
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
@@ -114,8 +109,6 @@ no_nailgun_tests=0
 performance_tests=0
 webui_tests=0
 no_webui_tests=0
-cli_tests=0
-no_cli_tests=0
 upgrade_system=0
 no_upgrade_system=0
 shotgun_tests=0
@@ -156,7 +149,6 @@ function run_tests {
       $performance_tests -eq 0 && \
       $tasklib_tests -eq 0 && \
       $webui_tests -eq 0 && \
-      $cli_tests -eq 0 && \
       $upgrade_system -eq 0 && \
       $shotgun_tests -eq 0 && \
       $flake8_checks -eq 0 && \
@@ -166,7 +158,6 @@ function run_tests {
     if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
     if [ $no_tasklib_tests -ne 1 ];  then tasklib_tests=1;  fi
     if [ $no_webui_tests -ne 1 ];    then webui_tests=1;    fi
-    if [ $no_cli_tests -ne 1 ];      then cli_tests=1;      fi
     if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
     if [ $no_shotgun_tests -ne 1 ];  then shotgun_tests=1;  fi
     if [ $no_flake8_checks -ne 1 ];  then flake8_checks=1;  fi
@@ -197,11 +188,6 @@ function run_tests {
   if [ $webui_tests -eq 1 ]; then
     echo "Starting WebUI tests..."
     run_webui_tests || errors+=" webui_tests"
-  fi
-
-  if [ $cli_tests -eq 1 ]; then
-    echo "Starting Fuel client tests..."
-    run_cli_tests || errors+=" cli_tests"
   fi
 
   if [ $upgrade_system -eq 1 ]; then
@@ -352,56 +338,6 @@ function run_webui_tests {
 }
 
 
-# Run fuelclient tests.
-#
-# Arguments:
-#
-#   $@ -- tests to be run; with no arguments all tests will be run
-#
-# It is supposed that nailgun server is up and working.
-# We are going to pass nailgun url to test runner.
-function run_cli_tests {
-  local SERVER_PORT=$FUELCLIENT_SERVER_PORT
-  local TESTS=$ROOT/fuelclient/fuelclient/tests
-  local artifacts=$ARTIFACTS/cli
-  local config=$artifacts/test.yaml
-  local pid
-
-  prepare_artifacts $artifacts $config
-
-  if [ $# -ne 0 ]; then
-    TESTS=$@
-  fi
-
-  local server_log=`mktemp /tmp/test_nailgun_cli_server.XXXX`
-  local result=0
-
-  dropdb $config
-  syncdb $config true
-
-  pid=`run_server $SERVER_PORT $server_log $config` || \
-      { echo 'Failed to start Nailgun'; return 1; }
-
-  if [ "$pid" -ne "0" ]; then
-
-    pushd $ROOT/fuelclient >> /dev/null
-    # run tests
-    NAILGUN_CONFIG=$config LISTEN_PORT=$SERVER_PORT \
-    tox -epy26 -- -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT || result=1
-    popd >> /dev/null
-
-    kill $pid
-    wait $pid 2> /dev/null
-  else
-    cat $server_log
-    result=1
-  fi
-
-  rm $server_log
-
-  return $result
-}
-
 # Run tests for fuel upgrade system
 #
 # Arguments:
@@ -486,7 +422,6 @@ function run_flake8 {
   run_flake8_subproject fuel_agent && \
   run_flake8_subproject nailgun && \
   run_flake8_subproject tasklib && \
-  run_flake8_subproject fuelclient && \
   run_flake8_subproject fuelmenu && \
   run_flake8_subproject network_checker && \
   run_flake8_subproject fuel_upgrade_system/fuel_update_downloader && \
@@ -636,8 +571,6 @@ EOL
 function guess_test_run {
   if [[ $1 == *ui_tests* && $1 == *.js ]]; then
     run_webui_tests $1 || echo "ERROR: $1"
-  elif [[ $1 == *fuelclient* ]]; then
-    run_cli_tests $1 || echo "ERROR: $1"
   elif [[ $1 == *fuel_upgrade_system* ]]; then
     run_upgrade_system_tests $1 || echo "ERROR: $1"
   elif [[ $1 == *shotgun* ]]; then

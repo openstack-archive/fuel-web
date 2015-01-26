@@ -249,3 +249,13 @@ ALL_ROLES = '*'
 
 # version of fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'
+
+OSWL_RESOURCE_TYPES = Enum(
+    'vm',
+    'tenant',
+    'volume',
+    'security_group',
+    'keystone_user',
+    'flavor',
+    'cluster_stats'
+)

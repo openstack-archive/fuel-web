@@ -293,7 +293,8 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    self.env.network_manager.get_admin_network_group(n.id).cidr
+                    self.env.network_manager.get_admin_network_group(n.id).cidr,
+                    'image_data': cluster_attrs['provision']['image_data']
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -349,7 +350,7 @@ class TestHandlers(BaseIntegrationTest):
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
-                        'provision_method': consts.PROVISION_METHODS.cobbler
+                        'provision_method': consts.PROVISION_METHODS.image
                     },
                     'nodes': provision_nodes}}}
 
@@ -403,7 +404,7 @@ class TestHandlers(BaseIntegrationTest):
         attrs = cluster_db.attributes.editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
-        attrs['provision']['method'] = consts.PROVISION_METHODS.image
+        attrs['provision']['method'] = consts.PROVISION_METHODS.cobbler
         resp = self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
@@ -730,7 +731,6 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
-                    'image_data': cluster_attrs['provision']['image_data'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
@@ -790,7 +790,7 @@ class TestHandlers(BaseIntegrationTest):
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
-                        'provision_method': consts.PROVISION_METHODS.image
+                        'provision_method': consts.PROVISION_METHODS.cobbler
                     },
                     'nodes': provision_nodes}}}
 
@@ -844,7 +844,7 @@ class TestHandlers(BaseIntegrationTest):
         attrs = cluster_db.attributes.editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
-        attrs['provision']['method'] = consts.PROVISION_METHODS.image
+        attrs['provision']['method'] = consts.PROVISION_METHODS.cobbler
         resp = self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
@@ -1189,7 +1189,6 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
-                    'image_data': cluster_attrs['provision']['image_data'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
@@ -1249,7 +1248,7 @@ class TestHandlers(BaseIntegrationTest):
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
-                        'provision_method': consts.PROVISION_METHODS.image
+                        'provision_method': consts.PROVISION_METHODS.cobbler
                     },
                     'nodes': provision_nodes}}}
 

@@ -349,7 +349,7 @@ class TestHandlers(BaseIntegrationTest):
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
-                        'provision_method': consts.PROVISION_METHODS.cobbler
+                        'provision_method': consts.PROVISION_METHODS.image
                     },
                     'nodes': provision_nodes}}}
 

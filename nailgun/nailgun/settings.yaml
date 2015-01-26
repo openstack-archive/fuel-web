@@ -801,7 +801,7 @@ DUMP:
         to_file: proc_interrupts.txt
 
 # performance tests settings
-PERFORMANCE_TESTS_RUN_NUMBER: 10
+PERFORMANCE_TESTS_RUN_NUMBER: 2
 PERFORMANCE_TESTS_TOLERANCE: 0.1
 LOAD_TESTS_PATHS:
     load_tests_base: "/tmp/nailgun_performance_tests/tests/"

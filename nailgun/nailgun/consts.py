@@ -24,10 +24,8 @@ def Enum(*values, **kwargs):
     return namedtuple('Enum', values)(*values)
 
 RELEASE_STATES = Enum(
-    'not_available',
-    'downloading',
-    'error',
-    'available'
+    'available',
+    'unavailable',
 )
 
 RELEASE_OS = Enum(

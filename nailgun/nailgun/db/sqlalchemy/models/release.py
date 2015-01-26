@@ -61,7 +61,7 @@ class Release(Base):
             name='release_state'
         ),
         nullable=False,
-        default='not_available'
+        default=consts.RELEASE_STATES.unavailable
     )
     networks_metadata = Column(JSON, default=[])
     attributes_metadata = Column(JSON, default={})

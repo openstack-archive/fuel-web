@@ -602,8 +602,6 @@
                     "added_node_plural": "Added __count__ nodes.",
                     "deleted_node": "Deleted __count__ node.",
                     "deleted_node_plural":  "Deleted __count__ nodes.",
-                    "reconfigured_node": "Reconfigured roles of  __count__ node.",
-                    "reconfigured_node_plural": "Reconfigured roles of  __count__ nodes.",
                     "settings_changes": {
                         "attributes": "Changed OpenStack settings.",
                         "networks": "Changed network settings.",
@@ -1167,8 +1165,6 @@
                     "added_node_plural": "增加__count__个节点。",
                     "deleted_node": "删除__count__个节点。",
                     "deleted_node_plural":  "删除__count__个节点。",
-                    "reconfigured_node": "__count__个节点重置角色。",
-                    "reconfigured_node_plural": "__count__个节点重置角色。",
                     "settings_changes": {
                         "attributes": "OpenStack设置",
                         "networks": "网络设置",
@@ -1652,8 +1648,6 @@
                     "added_node_plural": "__count__複数ノードを追加しました。",
                     "deleted_node": "__count__ノードを削除しました。",
                     "deleted_node_plural":  "__count__複数ノードを削除しました。",
-                    "reconfigured_node": "__count__ノードの役割を再設定しました。",
-                    "reconfigured_node_plural": "__count__複数ノードの役割を再設定しました。",
                     "settings_changes": {
                         "attributes": "OpenStack 設定",
                         "networks": "ネットワーク 設定",
@@ -2150,8 +2144,6 @@
                     "added_node_plural": "__count__ 노드들을 추가",
                     "deleted_node": "__count__ 노드를 삭제",
                     "deleted_node_plural":  "__count__ 노드들을 삭제",
-                    "reconfigured_node": "__count__ 노드의 역할을 다시 설정합니다",
-                    "reconfigured_node_plural": "__count__ 노드들의 역할을 다시 설정합니다",
                     "settings_changes": {
                         "attributes": "OpenStack 설정",
                         "networks": "네트워크 설정",

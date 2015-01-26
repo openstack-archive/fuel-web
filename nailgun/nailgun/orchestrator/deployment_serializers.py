@@ -921,7 +921,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             pg_num = 128
         attrs['storage']['pg_num'] = pg_num
 
-    def node_list(self, nodes):
+    @classmethod
+    def node_list(cls, nodes):
         """Generate nodes list. Represents
         as "nodes" parameter in facts.
         """
@@ -929,11 +930,12 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
         for node in nodes:
             for role in objects.Node.all_roles(node):
-                node_list.append(self.serialize_node_for_node_list(node, role))
+                node_list.append(cls.serialize_node_for_node_list(node, role))
 
         return node_list
 
-    def serialize_node_for_node_list(self, node, role):
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
         return {
             'uid': node.uid,
             'fqdn': node.fqdn,
@@ -1096,12 +1098,13 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         return {'last_controller': last_controller}
 
-    def node_list(self, nodes):
+    @classmethod
+    def node_list(cls, nodes):
         """Node list
         """
         node_list = super(
             DeploymentHASerializer,
-            self
+            cls
         ).node_list(nodes)
 
         for node in node_list:
@@ -1169,10 +1172,11 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
-    def serialize_node_for_node_list(self, node, role):
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
         serialized_node = super(
             DeploymentMultinodeSerializer61,
-            self).serialize_node_for_node_list(node, role)
+            cls).serialize_node_for_node_list(node, role)
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
@@ -1188,19 +1192,19 @@ class DeploymentHASerializer61(DeploymentHASerializer):
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
-    def serialize_node_for_node_list(self, node, role):
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
         serialized_node = super(
             DeploymentHASerializer61,
-            self).serialize_node_for_node_list(node, role)
+            cls).serialize_node_for_node_list(node, role)
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
 
-def create_serializer(orchestrator_graph, cluster):
+def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
     :param cluster: cluster to process
-    :param orchestrator_graph: orchestrator_graph to use for serialization
     :returns: a serializer for a given cluster
     """
     serializers_map = {
@@ -1226,9 +1230,20 @@ def create_serializer(orchestrator_graph, cluster):
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
     for version, serializers in six.iteritems(serializers_map):
         if env_version.startswith(version):
-            return serializers[env_mode](orchestrator_graph)
+            return serializers[env_mode]
 
     raise errors.UnsupportedSerializer()
+
+
+def create_serializer(orchestrator_graph, cluster):
+    """Returns an instance of serializer dependend on a given `cluster`.
+
+    :param cluster: cluster to process
+    :param orchestrator_graph: orchestrator_graph to use for serialization
+    :returns: an instance serializer for a given cluster
+    """
+    serializer = get_serializer_for_cluster(cluster)
+    return serializer(orchestrator_graph)
 
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):

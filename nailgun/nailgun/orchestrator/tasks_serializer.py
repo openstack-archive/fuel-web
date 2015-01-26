@@ -16,10 +16,12 @@
 
 import abc
 import six
+import yaml
 
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
 
@@ -188,10 +190,38 @@ class RestartRadosGW(GenericRolesHook):
         return False
 
 
+class UploadNodesInfo(GenericRolesHook):
+    """Hook that uploads info about all nodes in cluster."""
+
+    identity = 'upload_nodes_info'
+
+    def serialize(self):
+        uids = self.get_uids()
+        serialized_nodes = self._get_all_nodes()
+        data = yaml.safe_dump({
+            'nodes': serialized_nodes,
+        })
+        path = self.task['parameters']['path']
+        yield templates.make_upload_task(uids, path=path, data=data)
+
+    def _get_all_nodes(self):
+        """Returns all nodes in cluster serialized for deployment.
+
+        If node is going to be deleted, it will not be included
+        """
+        serializer = deployment_serializers.get_serializer_for_cluster(
+            self.cluster)
+        all_nodes = deployment_serializers.get_nodes_not_for_deletion(
+            self.cluster)
+        serialized_nodes = serializer.node_list(all_nodes)
+        return serialized_nodes
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW]
+    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW,
+                         UploadNodesInfo]
     deploy_serializers = [PuppetHook]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

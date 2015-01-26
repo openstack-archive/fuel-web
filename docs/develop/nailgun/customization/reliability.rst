@@ -38,7 +38,7 @@ failed node. It was impossible to do any action on UI.
 These two examples give us the starting point to rethink on how to avoid
 Nailgun crash just if one of the meta attr is wrong.
 
-First, we must devide the meta attributes discovered by agent on two categories:
+First, we must divide the meta attributes discovered by agent on two categories:
 
 * absolutely required for node discovering (i.e. MAC address)
 

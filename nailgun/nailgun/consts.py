@@ -246,3 +246,13 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.void)
 
 ALL_ROLES = '*'
+
+OSWL_RESOURCE_TYPES = Enum(
+    'vm',
+    'tenant',
+    'volume',
+    'security_group',
+    'keystone_user',
+    'flavor',
+    'cluster_stats'
+)

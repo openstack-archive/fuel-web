@@ -15,6 +15,8 @@
 
 from nailgun.db.sqlalchemy.models.action_logs import ActionLog
 
+from nailgun.db.sqlalchemy.models.oswl import OpenStackWorkloadStats
+
 from nailgun.db.sqlalchemy.models.base import CapacityLog
 
 from nailgun.db.sqlalchemy.models.cluster import Attributes

@@ -290,6 +290,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
                     'repo_setup': cluster_attrs['repo_setup'],
+                    'image_data': cluster_attrs['provision']['image_data'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
@@ -334,7 +335,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'native_provision',
+            'method': 'image_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,
@@ -397,7 +398,7 @@ class TestHandlers(BaseIntegrationTest):
         attrs = cluster_db.attributes.editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
-        attrs['provision']['method'] = consts.PROVISION_METHODS.image
+        attrs['provision']['method'] = consts.PROVISION_METHODS.cobbler
         resp = self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
@@ -723,7 +724,6 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
-                    'image_data': cluster_attrs['provision']['image_data'],
                     'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
@@ -769,7 +769,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'image_provision',
+            'method': 'native_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,
@@ -832,7 +832,7 @@ class TestHandlers(BaseIntegrationTest):
         attrs = cluster_db.attributes.editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
-        attrs['provision']['method'] = consts.PROVISION_METHODS.image
+        attrs['provision']['method'] = consts.PROVISION_METHODS.cobbler
         resp = self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
@@ -1175,7 +1175,6 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
-                    'image_data': cluster_attrs['provision']['image_data'],
                     'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
@@ -1221,7 +1220,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'image_provision',
+            'method': 'native_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,

@@ -30,8 +30,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.openstack.common import jsonutils
 
 from nailgun.orchestrator.deployment_serializers import\
-    create_serializer
-from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer51
@@ -41,6 +39,8 @@ from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer61
+from nailgun.orchestrator.deployment_serializers import\
+    get_serializer_for_cluster
 
 
 from nailgun.orchestrator.deployment_graph import AstuteGraph
@@ -704,7 +704,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def serialize_env_w_version(self, version):
         self.new_env_release_version = version
         cluster = self.create_env(mode='ha_compact')
-        return create_serializer(AstuteGraph(cluster), cluster).serialize(
+        serializer = get_serializer_for_cluster(cluster)
+        return serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
 
     def assert_roles_flattened(self, nodes):
@@ -1010,7 +1011,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.db.flush()
 
         objects.NodeCollection.prepare_for_deployment(cluster.nodes)
-        serializer = create_serializer(AstuteGraph(cluster), cluster)
+        serializer = get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
         facts = serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:

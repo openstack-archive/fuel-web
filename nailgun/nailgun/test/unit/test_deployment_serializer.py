@@ -20,8 +20,8 @@ from nailgun.test.base import BaseUnitTest
 from nailgun.orchestrator import deployment_serializers as ds
 
 
-class TestCreateSerializer(BaseUnitTest):
-    """Test cases for `create_serializer` function.
+class TestGetSerializer(BaseUnitTest):
+    """Test cases for `get_serializer_for_cluster` function.
     """
 
     @mock.patch(
@@ -29,50 +29,41 @@ class TestCreateSerializer(BaseUnitTest):
         return_value='5.0')
     def test_retreiving_ha_for_5_0(self, _):
         cluster = mock.MagicMock(is_ha_mode=True)
-        graph = mock.Mock()
-        self.assertTrue(
-            isinstance(
-                ds.create_serializer(graph, cluster),
-                ds.DeploymentHASerializer))
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentHASerializer)
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',
         return_value='5.0')
     def test_retreiving_multinode_for_5_0(self, _):
         cluster = mock.MagicMock(is_ha_mode=False)
-        graph = mock.Mock()
-        self.assertTrue(
-            isinstance(
-                ds.create_serializer(graph, cluster),
-                ds.DeploymentMultinodeSerializer))
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentMultinodeSerializer)
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',
         return_value='5.1')
     def test_retreiving_ha_for_5_1(self, _):
         cluster = mock.MagicMock(is_ha_mode=True)
-        graph = mock.Mock()
-        self.assertTrue(
-            isinstance(
-                ds.create_serializer(graph, cluster),
-                ds.DeploymentHASerializer51))
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentHASerializer51)
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',
         return_value='5.1')
     def test_retreiving_multinode_for_5_1(self, _):
         cluster = mock.MagicMock(is_ha_mode=False)
-        graph = mock.Mock()
-        self.assertTrue(
-            isinstance(
-                ds.create_serializer(graph, cluster),
-                ds.DeploymentMultinodeSerializer51))
+        self.assertIs(
+            ds.get_serializer_for_cluster(cluster),
+            ds.DeploymentMultinodeSerializer51)
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',
         return_value='9999.0')
     def test_unsupported_serializer(self, _):
         cluster = mock.MagicMock(is_ha_mode=True)
-        graph = mock.Mock()
-        self.assertRaises(
-            errors.UnsupportedSerializer, ds.create_serializer, graph, cluster)
+        with self.assertRaises(errors.UnsupportedSerializer):
+            ds.get_serializer_for_cluster(cluster)

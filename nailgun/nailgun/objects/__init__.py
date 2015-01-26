@@ -21,6 +21,9 @@ from nailgun.objects.base import NailgunCollection
 from nailgun.objects.action_log import ActionLog
 from nailgun.objects.action_log import ActionLogCollection
 
+from nailgun.objects.oswl import OpenStackWorkloadStats
+from nailgun.objects.oswl import OpenStackWorkloadStatsCollection
+
 from nailgun.objects.release import Release
 from nailgun.objects.release import ReleaseCollection
 from nailgun.objects.release import ReleaseOrchestratorData

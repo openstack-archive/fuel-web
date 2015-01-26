@@ -16,6 +16,7 @@
 from mock import Mock
 from mock import patch
 
+import datetime
 import requests
 import urllib3
 
@@ -23,6 +24,7 @@ from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
 from nailgun.objects import Cluster
+from nailgun.objects import OpenStackWorkloadStats
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
@@ -371,3 +373,45 @@ class TestStatisticsSender(BaseTestCase):
         ss.send_stats_once()
         # one more call was made (all went ok)
         self.assertEqual(sleep.call_count, 2)
+
+
+class TestOSWLObject(BaseTestCase):
+
+    def test_oswl_get_last_by_cluster_id_resource_type(self):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['compute']},
+                {'roles': ['compute']},
+                {'roles': ['controller']}
+            ]
+        )
+        dt = datetime.datetime.utcnow()
+        obj_data = {
+            'cluster_id': cluster['id'],
+            'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
+
+            'created_date': dt.date(),
+            'updated_time': dt.time(),
+
+            'resource_current_checksum': ""
+        }
+        obj = OpenStackWorkloadStats.create(obj_data)
+        self.assertEqual(
+            OpenStackWorkloadStats.get_last_by(
+                cluster['id'], consts.OSWL_RESOURCE_TYPES.vm),
+            obj
+        )
+        self.assertIsNone(
+            OpenStackWorkloadStats.get_last_by(
+                0, consts.OSWL_RESOURCE_TYPES.vm)
+        )
+        self.assertIsNone(
+            OpenStackWorkloadStats.get_last_by(
+                cluster['id'], consts.OSWL_RESOURCE_TYPES.tenant)
+        )
+
+        OpenStackWorkloadStats.delete(obj)
+        self.assertIsNone(
+            OpenStackWorkloadStats.get_last_by(
+                cluster['id'], consts.OSWL_RESOURCE_TYPES.vm)
+        )

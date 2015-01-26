@@ -103,7 +103,7 @@ class TestGraphDependencies(base.BaseTestCase):
         self.graph.add_tasks(self.tasks)
         roles = self.graph.get_groups_subgraph()
         topology_by_id = [item['id'] for item in roles.topology]
-        self.assertEqual(
+        self.assertItemsEqual(
             topology_by_id,
             ['primary-controller', 'controller',
              'network', 'compute', 'cinder'])
@@ -112,7 +112,7 @@ class TestGraphDependencies(base.BaseTestCase):
         self.graph.add_tasks(self.tasks + self.subtasks)
         subtask_graph = self.graph.get_tasks('controller')
         topology_by_id = [item['id'] for item in subtask_graph.topology]
-        self.assertEqual(
+        self.assertItemsEqual(
             topology_by_id,
             ['setup_network', 'install_controller'])
 
@@ -171,14 +171,14 @@ class TestAddDependenciesToNodes(base.BaseTestCase):
         by_priority = defaultdict(list)
         for role, group in groupby(nodes, lambda node: node['priority']):
             by_priority[role].extend(list(group))
-        self.assertEqual(
+        self.assertItemsEqual(
             by_priority[100],
             [{'uid': '3', 'role': 'primary-controller', 'priority': 100}])
-        self.assertEqual(
+        self.assertItemsEqual(
             by_priority[200],
             [{'uid': '1', 'role': 'controller', 'priority': 200},
              {'uid': '2', 'role': 'controller', 'priority': 200}])
-        self.assertEqual(
+        self.assertItemsEqual(
             by_priority[300],
             [{'uid': '1', 'role': 'cinder', 'priority': 300},
              {'uid': '4', 'role': 'cinder', 'priority': 300}])
@@ -240,5 +240,7 @@ class TestTasksRemoval(base.BaseTestCase):
         self.astute.only_tasks([])
         tasks = self.astute.graph.get_tasks('controller')
         self.assertEqual(len(tasks), 2)
-        self.assertEqual(
-            tasks.node.keys(), ['setup_network', 'install_controller'])
+        self.assertItemsEqual(
+            tasks.node.keys(),
+            ['setup_network', 'install_controller']
+        )

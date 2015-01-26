@@ -15,18 +15,18 @@
 #    under the License.
 
 
-def make_repo_task(uids, repo_data, repo_path):
+def make_upload_task(uids, data, path):
     return {
         'type': 'upload_file',
         'uids': uids,
         'parameters': {
-            'path': repo_path,
-            'data': repo_data}}
+            'path': path,
+            'data': data}}
 
 
 def make_ubuntu_repo_task(name, repo_url, uids, repo_data):
     repo_path = '/etc/apt/sources.list.d/{0}.list'.format(name)
-    return make_repo_task(uids, repo_data, repo_path)
+    return make_upload_task(uids, repo_data, repo_path)
 
 
 def make_versioned_ubuntu(name, repo_url, uids):
@@ -47,7 +47,7 @@ def make_centos_repo_task(plugin_name, repo_url, uids):
         'gpgcheck=0']).format(plugin_name, repo_url)
     repo_path = '/etc/yum.repos.d/{0}.repo'.format(plugin_name)
 
-    return make_repo_task(uids, repo_data, repo_path)
+    return make_upload_task(uids, repo_data, repo_path)
 
 
 def make_sync_scripts_task(uids, src, dst):

@@ -13,8 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import cluster_schema
+from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
 
 from nailgun.errors import errors
 
@@ -130,3 +132,10 @@ class AttributesValidator(BasicValidator):
                 log_message=True
             )
         return d
+
+
+class ClusterChangesValidator(BaseDefferedTaskValidator):
+
+    @classmethod
+    def validate(cls, cluster):
+        ProvisionSelectedNodesValidator.validate_provision(None, cluster)

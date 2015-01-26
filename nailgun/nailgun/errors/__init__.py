@@ -50,6 +50,7 @@ default_messages = {
     "UnsupportedSerializer": "There are no serializers for a given cluster",
     "InvalidOperatingSystem": "Invalid operating system",
     "CannotFindPluginForRelease": "Cannot find plugin for the release",
+    "UnavailableRelease": "Release is unavailable",
 
     # disk errors
     "NotEnoughFreeSpace": "Not enough free space",

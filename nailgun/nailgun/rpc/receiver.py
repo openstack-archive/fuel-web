@@ -1011,36 +1011,6 @@ class NailgunReceiver(object):
         objects.Task.update(task, data)
 
     @classmethod
-    def _update_release_state(cls, release_id, state):
-        release = db().query(Release).get(release_id)
-        release.state = state
-        db.add(release)
-        db.flush()
-
-    @classmethod
-    def _download_release_completed(cls, release_id):
-        release = db().query(Release).get(release_id)
-        release.state = 'available'
-        db().flush()
-        success_msg = u"Successfully downloaded {0}".format(
-            release.name
-        )
-        notifier.notify("done", success_msg)
-
-    @classmethod
-    def _download_release_error(
-        cls,
-        release_id,
-        error_message
-    ):
-        release = db().query(Release).get(release_id)
-        release.state = 'error'
-        db().flush()
-        # TODO(NAME): remove this ugly checks
-        if error_message != 'Task aborted':
-            notifier.notify('error', error_message)
-
-    @classmethod
     def dump_environment_resp(cls, **kwargs):
         logger.info(
             "RPC method dump_environment_resp received: %s" %

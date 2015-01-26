@@ -130,6 +130,7 @@ class EnvironmentManager(object):
         release_data = {
             'name': u"release_name_" + version,
             'version': version,
+            'state': consts.RELEASE_STATES.available,
             'description': u"release_desc" + version,
             'operating_system': 'CentOS',
             'roles': self.get_default_roles(),

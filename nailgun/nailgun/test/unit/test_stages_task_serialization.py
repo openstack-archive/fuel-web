@@ -14,12 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 import yaml
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_serializer
 from nailgun.test import base
+
+
+def update_nodes_net_info(cluster, nodes):
+    return nodes
 
 
 class BaseTaskSerializationTest(base.BaseTestCase):
@@ -117,6 +124,42 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             task_config, self.cluster, self.nodes)
         self.assertFalse(task.should_execute())
 
+    @mock.patch.object(deployment_serializers.NetworkDeploymentSerializer,
+                       'update_nodes_net_info')
+    @mock.patch.object(deployment_serializers, 'get_nodes_not_for_deletion')
+    @mock.patch.object(objects.Node, 'all_roles')
+    def test_upload_nodes_info(self, m_roles, m_get_nodes, m_update_nodes):
+        m_roles.return_value = ['role_1', ]
+        m_get_nodes.return_value = self.nodes
+        m_update_nodes.side_effect = lambda cluster, nodes: nodes
+
+        self.cluster.release.version = '2014.1.1-6.1'
+        dst = '/some/path/file.yaml'
+
+        task_config = {
+            'id': 'upload_nodes_info',
+            'type': 'upload_file',
+            'role': '*',
+            'parameters': {
+                'path': dst,
+            },
+        }
+
+        task = tasks_serializer.UploadNodesInfo(
+            task_config, self.cluster, self.nodes)
+        serialized_tasks = list(task.serialize())
+        self.assertEqual(len(serialized_tasks), 1)
+
+        serialized_task = serialized_tasks[0]
+        self.assertEqual(serialized_task['type'], 'upload_file')
+        self.assertItemsEqual(serialized_task['uids'], self.all_uids)
+        self.assertEqual(serialized_task['parameters']['path'], dst)
+
+        serialized_nodes = yaml.safe_load(
+            serialized_task['parameters']['data'])
+        serialized_uids = [n['uid'] for n in serialized_nodes['nodes']]
+        self.assertItemsEqual(serialized_uids, self.all_uids)
+
 
 class TestPreTaskSerialization(BaseTaskSerializationTest):
 
@@ -173,7 +216,7 @@ class TestPostTaskSerialization(BaseTaskSerializationTest):
             roles=['ceph-osd'], cluster_id=self.cluster.id))
         tasks = self.graph.post_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 1)
-        self.assertEqual(tasks[0]['uids'], self.control_uids)
+        self.assertItemsEqual(tasks[0]['uids'], self.control_uids)
         self.assertEqual(tasks[0]['type'], 'shell')
 
 

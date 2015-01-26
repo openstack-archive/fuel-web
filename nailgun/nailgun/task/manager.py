@@ -23,6 +23,7 @@ from nailgun.objects.serializers.network_configuration \
 
 from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NODE_STATUSES
+from nailgun.consts import RELEASE_STATES
 from nailgun.consts import TASK_NAMES
 from nailgun.consts import TASK_STATUSES
 from nailgun.db import db

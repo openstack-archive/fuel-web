@@ -1605,6 +1605,23 @@ class TestHandlers(BaseIntegrationTest):
             'Please either assign ceph-osd role to more nodes, '
             'or reduce Ceph replication factor in the Settings tab.')
 
+    def test_occurs_error_release_is_unavailable(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}],
+            release_kwargs={
+                'state': consts.RELEASE_STATES.unavailable})
+
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}),
+            headers=self.default_headers,
+            expect_errors=True)
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
+
     @fake_tasks(godmode=True)
     def test_enough_osds_for_ceph(self):
         cluster = self.env.create(

@@ -21,6 +21,7 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
@@ -224,10 +225,26 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
 class ProvisionSelectedNodes(SelectedNodesBase):
     """Handler for provisioning selected nodes."""
 
+    validator = ProvisionSelectedNodesValidator
     task_manager = ProvisioningTaskManager
 
     def get_default_nodes(self, cluster):
         TaskHelper.nodes_to_provision(cluster)
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 404 (cluster or nodes not found in db)
+               * 400 (failed to execute task)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+
+        # actually, there is no data in http body. the only reason why
+        # we use it here is to follow dry rule and do not convert exceptions
+        # into http status codes again.
+        self.checked_data(self.validator.validate_provision, cluster=cluster)
+        return self.handle_task(cluster)
 
 
 class BaseDeploySelectedNodes(SelectedNodesBase):

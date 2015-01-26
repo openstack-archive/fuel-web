@@ -13,9 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import cluster_schema
 
+from nailgun import consts
 from nailgun.errors import errors
 
 from nailgun.objects import ClusterCollection
@@ -130,3 +132,20 @@ class AttributesValidator(BasicValidator):
                 log_message=True
             )
         return d
+
+
+class ProvisionSelectedNodesValidator(BasicValidator):
+    @classmethod
+    def validate_provision(cls, data, cluster):
+        if cluster.release.state == consts.RELEASE_STATES.unavailable:
+            raise errors.UnavailableRelease(
+                "Release '{0} {1}' is unavailable!".format(
+                    cluster.release.name, cluster.release.version)
+            )
+
+
+class ClusterChangesValidator(BaseDefferedTaskValidator):
+
+    @classmethod
+    def validate(cls, cluster):
+        ProvisionSelectedNodesValidator.validate_provision(None, cluster)

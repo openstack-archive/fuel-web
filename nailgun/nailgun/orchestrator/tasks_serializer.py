@@ -16,10 +16,12 @@
 
 import abc
 import six
+import yaml
 
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
 
@@ -124,6 +126,15 @@ class GenericRolesHook(StandartConfigRolesHook):
 
     identity = abc.abstractproperty
 
+    def get_all_cluster_nodes(self):
+        """Returns all nodes in cluster.
+
+        If node is going to be deleted, it will not be included.
+        """
+        all_nodes = deployment_serializers.get_nodes_not_for_deletion(
+            self.cluster)
+        return all_nodes
+
 
 class UploadMOSRepo(GenericRolesHook):
 
@@ -188,10 +199,50 @@ class RestartRadosGW(GenericRolesHook):
         return False
 
 
+class UploadNodesInfo(GenericRolesHook):
+    """Hook that uploads info about all nodes in cluster."""
+
+    identity = 'upload_nodes_info'
+
+    def serialize(self):
+        all_nodes = self.get_all_cluster_nodes()
+        uids = [n.uid for n in all_nodes]
+
+        serialized_nodes = self._serialize_nodes(all_nodes)
+        data = yaml.safe_dump({
+            'nodes': serialized_nodes,
+        })
+
+        path = self.task['parameters']['path']
+        yield templates.make_upload_task(uids, path=path, data=data)
+
+    def _serialize_nodes(self, nodes):
+        serializer = deployment_serializers.get_serializer_for_cluster(
+            self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+
+        serialized_nodes = serializer.node_list(nodes)
+        serialized_nodes = net_serializer.update_nodes_net_info(
+            self.cluster, serialized_nodes)
+        return serialized_nodes
+
+
+class UpdateHosts(GenericRolesHook):
+    """Updates hosts info on all nodes in cluster."""
+
+    identity = 'update_hosts'
+
+    def serialize(self):
+        all_nodes = self.get_all_cluster_nodes()
+        uids = [n.uid for n in all_nodes]
+        yield templates.make_puppet_task(uids, self.task)
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW]
+    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW,
+                         UploadNodesInfo, UpdateHosts]
     deploy_serializers = [PuppetHook]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

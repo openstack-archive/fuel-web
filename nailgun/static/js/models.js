@@ -227,6 +227,9 @@ define([
     models.Release = Backbone.Model.extend({
         constructorName: 'Release',
         urlRoot: '/api/releases',
+        isUnavailable: function() {
+            return this.get('state') == 'unavailable';
+        },
         parse: function(response) {
             response.role_models = new models.Roles(_.map(response.roles, function(roleName) {
                 var roleData = response.roles_metadata[roleName];

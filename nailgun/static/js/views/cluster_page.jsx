@@ -41,7 +41,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
     ClusterPage = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5),
-            componentMixins.backboneMixin('cluster', 'change:is_customized'),
+            componentMixins.backboneMixin('cluster', 'change:is_customized change:release'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('nodes');}
             }),
@@ -194,6 +194,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
         },
         render: function() {
             var cluster = this.props.cluster,
+                release = cluster.get('release'),
                 availableTabs = this.getAvailableTabs(),
                 tabs = _.pluck(availableTabs, 'url'),
                 tabObject = _.find(availableTabs, {url: this.props.activeTab});
@@ -204,6 +205,11 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                 <div>
                     <ClusterInfo cluster={cluster} />
                     <DeploymentResult cluster={cluster} />
+                    {release.get('state') == 'unavailable' &&
+                        <div className='alert alert-block globalalert'>
+                            <p className='enable-selection'>{i18n('cluster_page.unavailable_release', {name: release.get('name')})}</p>
+                        </div>
+                    }
                     {cluster.get('is_customized') &&
                         <div className='alert alert-block globalalert'>
                             <p className='enable-selection'>{i18n('cluster_page.cluster_was_modified_from_cli')}</p>
@@ -240,7 +246,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
 
     ClusterInfo = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('cluster', 'change:name change:status change:release')
+            componentMixins.backboneMixin('cluster', 'change:name change:status')
         ],
         render: function() {
             var cluster =   this.props.cluster;
@@ -332,7 +338,8 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                 taskName = task ? task.get('name') : '',
                 taskProgress = task && task.get('progress') || 0,
                 infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
-                itemClass = 'deployment-control-item-box';
+                itemClass = 'deployment-control-item-box',
+                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.hasChanges() && !cluster.needsRedeployment());
             return (
                 <div className='cluster-deploy-placeholder'>
                     {task ? (
@@ -367,7 +374,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                             <div className={itemClass}>
                                 <button
                                     className='deploy-btn'
-                                    disabled={!cluster.hasChanges() && !cluster.needsRedeployment()}
+                                    disabled={isDeploymentImpossible}
                                     onClick={this.onDeployRequest}
                                 >
                                     <i className='icon-upload-cloud' />

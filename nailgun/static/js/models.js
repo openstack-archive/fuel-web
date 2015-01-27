@@ -406,7 +406,6 @@ define([
             return id;
         },
         groups: {
-            release_setup: ['redhat_setup'],
             network: ['verify_networks', 'check_networks'],
             deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment']
         },
@@ -844,6 +843,7 @@ define([
         url: '/api/logs/sources'
     });
 
+<<<<<<< HEAD
     models.RedHatAccount = BaseModel.extend({
         constructorName: 'RedHatAccount',
         urlRoot: '/api/redhat/account',

@@ -20,6 +20,7 @@ import yaml
 from nailgun import consts
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import tasks_serializer
+from nailgun.settings import settings
 from nailgun.test import base
 
 
@@ -107,25 +108,84 @@ class TestHooksSerializers(base.BaseTestCase):
             task_config, self.cluster, self.nodes)
         self.assertFalse(task.should_execute())
 
+    def test_rsync_keys(self):
+        task_config = {
+            'id': 'rsync_keys',
+            'type': 'sync',
+            'role': '*',
+            'parameters': {
+                'src': 'root@{MASTER_IP}:/etc/fuel/keys/{CLUSTER_ID}/',
+                'dst': '/var/lib/astute',
+                'timeout': 180}}
+        self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
+        task = tasks_serializer.RsyncKeys(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'sync')
+        self.assertEqual(
+            serialized['parameters']['src'],
+            'root@{MASTER_IP}:/etc/fuel/keys/{CLUSTER_ID}/'.format(
+            CLUSTER_ID=self.cluster.id, MASTER_IP=settings.MASTER_IP))
+
+    def test_generate_keys(self):
+        task_config = {
+            'id': 'generate_keys',
+            'type': 'shell',
+            'role': 'master',
+            'parameters': {
+                'cmd': ("sh /etc/puppet/modules/osnailyfacter/modular/generate"
+                        "_keys.sh -i {CLUSTER_ID} -o 'mongodb' -s 'neutron nov"
+                        "a ceph mysql' -p /etc/fuel/keys/"),
+                'timeout': 180}}
+        self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
+        task = tasks_serializer.GenerateKeys(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'shell')
+        self.assertEqual(
+            serialized['parameters']['cmd'],
+            "sh /etc/puppet/modules/osnailyfacter/modular/generate_keys.sh -i "
+            "{CLUSTER_ID} -o 'mongodb' -s 'neutron nova ceph mysql' -p "
+            "/etc/fuel/keys/".format(CLUSTER_ID=self.cluster.id))
+
 
 class TestPreTaskSerialization(base.BaseTestCase):
 
-    TASKS = """
-    - id: upload_core_repos
-      type: upload_file
-      role: '*'
-      stage: pre_deployment
+    TASKS = ("""
+        - id: upload_core_repos
+          type: upload_file
+          role: '*'
+          stage: pre_deployment
 
-    - id: rsync_core_puppet
-      type: sync
-      role: '*'
-      stage: pre_deployment
-      requires: [upload_core_repos]
-      parameters:
-        src: /etc/puppet/{OPENSTACK_VERSION}/
-        dst: /etc/puppet
-        timeout: 180
-    """
+        - id: rsync_core_puppet
+          type: sync
+          role: '*'
+          stage: pre_deployment
+          requires: [upload_core_repos]
+          parameters:
+            src: /etc/puppet/{OPENSTACK_VERSION}/
+            dst: /etc/puppet
+            timeout: 180
+
+        - id: rsync_keys
+          type: sync
+          role: '*'
+          stage: pre_deployment
+          requires: [generate_keys]
+          parameters:
+            src: root@{MASTER_IP}:/etc/fuel/keys/{CLUSTER_ID}/
+            dst: /var/lib/astute
+            timeout: 180
+
+        - id: generate_keys
+          type: shell
+          role: 'master'
+          stage: pre_deployment
+          required_for: [rsync_keys]
+          parameters:
+            cmd: shorted_command
+            timeout: 180
+        """)
 
     def setUp(self):
         super(TestPreTaskSerialization, self).setUp()
@@ -144,13 +204,16 @@ class TestPreTaskSerialization(base.BaseTestCase):
     def test_tasks_serialized_correctly(self):
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 3)
-        self.assertEqual(tasks[0]['type'], 'upload_file')
-        self.assertEqual(set(tasks[0]['uids']), self.all_uids)
-        self.assertEqual(tasks[1]['type'], 'shell')
-        self.assertEqual(set(tasks[1]['uids']), self.all_uids)
-        self.assertEqual(tasks[2]['type'], 'sync')
-        self.assertEqual(set(tasks[2]['uids']), self.all_uids)
+        self.assertEqual(len(tasks), 5)
+        tasks_tests = [('shell', set(['master'])),
+                       ('upload_file', self.all_uids),
+                       ('sync', self.all_uids),
+                       ('sync', self.all_uids),
+                       ('shell', self.all_uids)]
+        tasks_output = []
+        for task in tasks:
+            tasks_output.append((task['type'], set(task['uids'])))
+        self.assertItemsEqual(tasks_tests, tasks_output)
 
 
 class TestPostTaskSerialization(base.BaseTestCase):

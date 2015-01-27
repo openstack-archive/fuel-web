@@ -50,13 +50,14 @@ def make_centos_repo_task(plugin_name, repo_url, uids):
     return make_repo_task(uids, repo_data, repo_path)
 
 
-def make_sync_scripts_task(uids, src, dst):
+def make_sync_scripts_task(uids, src, dst, options=None):
     return {
         'type': 'sync',
         'uids': uids,
         'parameters': {
             'src': src,
-            'dst': dst}}
+            'dst': dst,
+            'options': options or '-c -r --delete'}}
 
 
 def make_shell_task(uids, task, cwd='/'):

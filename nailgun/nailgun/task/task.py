@@ -29,9 +29,7 @@ import nailgun.rpc as rpc
 
 from nailgun import objects
 
-from nailgun.consts import CLUSTER_STATUSES
-from nailgun.consts import FUEL_GRANULAR_DEPLOY
-from nailgun.consts import NODE_STATUSES
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
@@ -122,14 +120,18 @@ class DeploymentTask(object):
 
     @classmethod
     def _get_deployment_method(cls, cluster):
-        """Get deployment method name based on cluster version
+        """Get deployment method name based on cluster version or mode
 
         :param cluster: Cluster db object
         :returns: string - deploy/granular_deploy
         """
         if (StrictVersion(cluster.release.fuel_version) <
-                StrictVersion(FUEL_GRANULAR_DEPLOY)):
+                StrictVersion(consts.FUEL_GRANULAR_DEPLOY)):
             return 'deploy'
+
+        elif cluster.mode == consts.CLUSTER_MODES.multinode:
+            return 'deploy'
+
         return 'granular_deploy'
 
     @classmethod
@@ -149,8 +151,8 @@ class DeploymentTask(object):
                 # If reciever for some reasons didn't update
                 # node's status to provisioned when deployment
                 # started, we should do it in nailgun
-                if n.status in (NODE_STATUSES.deploying,):
-                    n.status = NODE_STATUSES.provisioned
+                if n.status == consts.NODE_STATUSES.deploying:
+                    n.status = consts.NODE_STATUSES.provisioned
                 n.progress = 0
                 db().add(n)
         db().flush()
@@ -637,9 +639,9 @@ class CheckBeforeDeploymentTask(object):
                 "controller" % (cluster.mode))
 
         if cluster.status in (
-                CLUSTER_STATUSES.operational,
-                CLUSTER_STATUSES.error,
-                CLUSTER_STATUSES.update_error):
+                consts.CLUSTER_STATUSES.operational,
+                consts.CLUSTER_STATUSES.error,
+                consts.CLUSTER_STATUSES.update_error):
             # get a list of deployed controllers - which are going
             # don't to be changed
             deployed_controllers = filter(

@@ -684,6 +684,11 @@ class Cluster(NailgunObject):
             - if instance assigned for patching - return custom patching graph
             - else return default for release deployment graph
         """
+        # NOTE(dshulyak) this is considered as cheapest hack to support
+        # multinode but dont waste time on it
+        if instance.mode == consts.CLUSTER_MODES.multinode:
+            return Release.get_deployment_tasks_by_version(instance.release)
+
         if instance.deployment_tasks:
             return instance.deployment_tasks
         elif instance.pending_release_id:

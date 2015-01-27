@@ -247,11 +247,16 @@ class Release(NailgunObject):
 
     @classmethod
     def get_deployment_tasks(cls, instance):
-        """Get deployment graph based on release version."""
-        env_version = extract_env_version(instance.version)
+        """Get user defined deployment tasks or based on release version."""
         if instance.deployment_tasks:
             return instance.deployment_tasks
-        elif env_version.startswith('5.0'):
+        return cls.get_deployment_tasks_by_version(instance)
+
+    @classmethod
+    def get_deployment_tasks_by_version(cls, instance):
+        """Get deployment graph based on release version."""
+        env_version = extract_env_version(instance.version)
+        if env_version.startswith('5.0'):
             return yaml.load(graph_configuration.DEPLOYMENT_50)
         else:
             return yaml.load(graph_configuration.DEPLOYMENT_CURRENT)

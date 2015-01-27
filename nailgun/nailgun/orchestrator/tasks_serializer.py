@@ -144,13 +144,13 @@ class GenericRolesHook(StandartConfigRolesHook):
 
     identity = abc.abstractproperty
 
+    def get_uids(self):
+        return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
+
 
 class UploadMOSRepo(GenericRolesHook):
 
     identity = 'upload_core_repos'
-
-    def get_uids(self):
-        return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
 
     def make_repo_url(self, repo_mask, context):
         return repo_mask.format(**context)
@@ -185,9 +185,6 @@ class RsyncPuppet(GenericRolesHook):
 
     identity = 'rsync_core_puppet'
 
-    def get_uids(self):
-        return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
-
     def serialize(self):
         src_path = self.task['parameters']['src'].format(
             MASTER_IP=settings.MASTER_IP,
@@ -195,6 +192,37 @@ class RsyncPuppet(GenericRolesHook):
         uids = self.get_uids()
         yield templates.make_sync_scripts_task(
             uids, src_path, self.task['parameters']['dst'])
+
+
+class GenerateKeys(GenericRolesHook):
+
+    identity = 'generate_keys'
+
+    def get_uids(self):
+        return ['master']
+
+    def serialize(self):
+        uids = self.get_uids()
+        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
+            CLUSTER_ID=self.cluster.id)
+        yield templates.make_shell_task(uids, self.task)
+
+
+class CopyKeys(GenericRolesHook):
+
+    identity = 'copy_keys'
+
+    def serialize(self):
+        files = []
+        for key_name in consts.KEYS_TYPES:
+            files.append((
+                self.task['parameters']['srcs_and_dests'][0].format(
+                    CLUSTER_ID=self.cluster.id, KEY_NAME=key_name),
+                self.task['parameters']['srcs_and_dests'][1].format(
+                    KEY_NAME=key_name)))
+        uids = self.get_uids()
+        yield templates.make_copy_keys_task(
+            uids, self.task, files)
 
 
 class RestartRadosGW(GenericRolesHook):
@@ -211,7 +239,7 @@ class RestartRadosGW(GenericRolesHook):
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW]
+    stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, GenerateKeys]
     deploy_serializers = [PuppetHook]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

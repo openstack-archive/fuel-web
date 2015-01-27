@@ -76,6 +76,16 @@ class servicepws(urwid.WidgetWrap):
                 "mcollective/password": {"label": "Mcollective password",
                                          "tooltip": "",
                                          "value": pwgen.password()},
+                "monitord/user": {
+                    "label": "Master node monitoring user",
+                    "tooltip": "",
+                    "value": "monitord"
+                },
+                "monitord/password": {
+                    "label": "Master node monitoring password",
+                    "tooltip": "",
+                    "value": pwgen.password(),
+                },
                 "postgres/keystone_dbname": {"label": "Keystone DB name",
                                              "tooltip": "",
                                              "value": "keystone"},

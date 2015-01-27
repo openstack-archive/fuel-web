@@ -259,3 +259,5 @@ OSWL_RESOURCE_TYPES = Enum(
     'flavor',
     'cluster_stats'
 )
+
+KEYS_TYPES = ['neutron', 'nova', 'ceph', 'mysql', 'mongodb']

@@ -39,6 +39,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
+from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_monitord_credentials \
+    import AddMonitordKeystoneCredentialsHook
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
@@ -555,3 +557,58 @@ class TestCopyOpenstackReleaseVersions(TestPreUpgradeHooksBase):
             mock_utils.copy_if_exists.call_args_list,
             [mock.call(self.hook.version_path_5_0,
                        self.hook.dst_version_path_5_0)])
+
+
+class TestAddMonitordKeystoneCredentialsHook(TestPreUpgradeHooksBase):
+
+    HookClass = AddMonitordKeystoneCredentialsHook
+
+    def setUp(self):
+        super(TestAddMonitordKeystoneCredentialsHook, self).setUp()
+        self.monitord_keys = [
+            'monitord_user',
+            'monitord_password',
+        ]
+
+    def test_is_required_returns_true(self):
+        hook = self.get_hook({})
+        self.assertTrue(hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        hook = self.get_hook({
+            'astute': {
+                'keystone': {
+                    'monitord_user': '',
+                    'monitord_password': '',
+                }
+            }
+        })
+
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.copy_file')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.save_as_yaml')
+    def test_run(self, msave_as_yaml, mcopy_file, mread_yaml_config):
+        file_key = 'this_key_was_here_before_upgrade'
+        file_value = 'some value'
+        hook = self.get_hook({
+            'astute': {
+                'keystone': {file_key: file_value}}
+        })
+        mread_yaml_config.return_value = hook.config.astute
+        hook.run()
+
+        mcopy_file.assert_called_once_with(
+            '/etc/fuel/astute.yaml',
+            '/etc/fuel/astute.yaml_0',
+            overwrite=False)
+
+        args = msave_as_yaml.call_args
+        self.assertEqual(args[0][0], '/etc/fuel/astute.yaml')
+
+        # Check that all required keys are in method call
+        called_config = args[0][1]['keystone']
+        self.assertTrue(set(self.monitord_keys).issubset(called_config))
+        # Check that nothing else was changed
+        self.assertEqual(called_config[file_key], file_value)

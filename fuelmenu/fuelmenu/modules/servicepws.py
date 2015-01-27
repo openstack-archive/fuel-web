@@ -70,6 +70,16 @@ class servicepws(urwid.WidgetWrap):
                     "label": "Keystone password for OSTF",
                     "tooltip": "",
                     "value": pwgen.password()},
+                "keystone/monitord_user": {
+                    "label": "Master node monitoring user",
+                    "tooltip": "",
+                    "value": "monitord"
+                },
+                "keystone/monitord_password": {
+                    "label": "Master node monitoring password",
+                    "tooltip": "",
+                    "value": pwgen.password(),
+                },
                 "mcollective/user": {"label": "Mcollective user",
                                      "tooltip": "",
                                      "value": "mcollective"},

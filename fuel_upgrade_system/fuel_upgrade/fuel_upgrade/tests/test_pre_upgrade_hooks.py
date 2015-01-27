@@ -94,10 +94,8 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_add_credentials.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_add_credentials.utils')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
     def test_run(self, utils_mock, read_yaml_config_mock):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({'astute': {file_key: file_key}})
@@ -187,10 +185,8 @@ class TestAddKeystoneCredentialsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_1_to_any_add_keystone_credentials.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_1_to_any_add_keystone_credentials.utils')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
     def test_run(self, utils_mock, read_yaml_config_mock):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({
@@ -242,10 +238,8 @@ class TestSyncDnsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_sync_dns.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_sync_dns.utils')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
     def test_run(self, utils_mock, read_yaml_config):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({'astute': {file_key: file_key}})
@@ -420,6 +414,34 @@ class TestPreUpgradeHookBase(TestPreUpgradeHooksBase):
             self.get_hook(
                 check_if_required=True,
                 enable_for_engines=[SomeEngine]).is_required)
+
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils')
+    def test_update_astute_config(self, utils_mock, read_yaml_config_mock):
+        hook = self.get_hook()
+        read_yaml_config_mock.return_value = {
+            'a': 1,
+        }
+
+        defaults = {'b': 2}
+        hook.update_astute_config(defaults=defaults)
+        args = utils_mock.save_as_yaml.call_args
+        self.assertDictEqual(args[0][1], {'a': 1, 'b': 2})
+
+        defaults = {'a': 2}
+        hook.update_astute_config(defaults=defaults)
+        args = utils_mock.save_as_yaml.call_args
+        self.assertDictEqual(args[0][1], {'a': 1})
+
+        overwrites = {'a': 2}
+        hook.update_astute_config(overwrites=overwrites)
+        args = utils_mock.save_as_yaml.call_args
+        self.assertDictEqual(args[0][1], {'a': 2})
+
+        overwrites = {'b': 2}
+        hook.update_astute_config(overwrites=overwrites)
+        args = utils_mock.save_as_yaml.call_args
+        self.assertDictEqual(args[0][1], {'a': 1, 'b': 2})
 
 
 class TestPreUpgradeHookManager(TestPreUpgradeHooksBase):

@@ -20,6 +20,7 @@ from nailgun import objects
 
 from mock import patch
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
@@ -315,3 +316,8 @@ class TestDeployMethodVersioning(BaseSelectedNodesTest):
     @patch('nailgun.task.task.rpc.cast')
     def test_granular_is_used_in_61(self, mcast):
         self.assert_deployment_method('2014.2-6.1', 'granular_deploy', mcast)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_deploy_used_for_multinode(self, mcast):
+        self.cluster.mode = consts.CLUSTER_MODES.multinode
+        self.assert_deployment_method('2014.2-6.1', 'deploy', mcast)

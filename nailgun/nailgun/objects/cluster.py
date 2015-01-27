@@ -684,6 +684,9 @@ class Cluster(NailgunObject):
             - if instance assigned for patching - return custom patching graph
             - else return default for release deployment graph
         """
+        if instance.mode == consts.CLUSTER_MODES.multinode:
+            return yaml.load(graph_configuration.DEPLOYMENT_CURRENT)
+
         if instance.deployment_tasks:
             return instance.deployment_tasks
         elif instance.pending_release_id:

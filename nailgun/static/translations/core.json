@@ -474,7 +474,6 @@
                 },
                 "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
-                "redhat_setup": "Downloading",
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
@@ -482,7 +481,7 @@
                 "openstack_release": "OpenStack Release",
                 "environment_status": "Status",
                 "cluster_was_modified_from_cli" : "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
-                "reconfigure_redhat_account": "You can __opt1__ reconfigure your Red Hat account __opt2__ or "
+                "unavailable_release": "__name__ release is unavailable. The environment can not be deployed."
             },
             "capacity_page": {
                 "title": "Capacity Audit",
@@ -509,7 +508,6 @@
                         "title": "Name and Release",
                         "name": "Name",
                         "release_label": "OpenStack Release",
-                        "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment.",
                         "existing_environment": "Environment with name \"__name__\" already exists"
                     },
                     "mode": {
@@ -631,15 +629,6 @@
                 "delete_nodes": {
                     "title": "Delete Nodes",
                     "message": "Are you sure you want to delete the selected nodes?"
-                },
-                "rhel_license": {
-                    "title": "Red Hat Enterprise Linux Account Settings",
-                    "description": "To deploy the Red Hat Enterprise Linux OpenStack Platform, you must first download it to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  The RHEL OpenStack Platform will be automatically downloaded and cached after you create the environment.",
-                    "rhn_sattelite": "RHN Satellite",
-                    "redhat_username": "Red Hat Username",
-                    "redhat_password": "Red Hat Password",
-                    "satellite_server_hostname": "Satellite Server Hostname",
-                    "activation_key": "Activation Key"
                 },
                 "discard_changes": {
                     "title": "Discard Changes",
@@ -1106,8 +1095,7 @@
                     "name_release": {
                         "title": "名称和版本",
                         "name": "名称",
-                        "release_label": "OpenStack版本",
-                        "red_hat_info": "要安装Red Hat OpenStack, 您需要先下载缓存在Fuel主节点上的RHOS和RHEL。你可以前往版本页面操作，或者在下方选择您的订阅类型并输入认证，RHEL和RHOS将会在新建环境后自动下载并存储。"
+                        "release_label": "OpenStack版本"
                     },
                     "mode": {
                         "title": "部署模式"
@@ -1205,15 +1193,6 @@
                     "product":"产品",
                     "family":"系列",
                     "version":"版本"
-                },
-                "rhel_license": {
-                    "title": "红帽企业版Linux账户设置",
-                    "description": "安装红帽版的OpenStack平台, 你首先必须下载RHOS和RHEL并缓存在Fuel的主节点上。请选择你的订阅并在下面输入你的凭据开始下载。",
-                    "cancel_button": "取消",
-                    "redhat_username": "红帽账户",
-                    "redhat_password": "红帽密码",
-                    "satellite_server_hostname": "satellite服务器主机名",
-                    "activation_key": "激活码"
                 },
                 "discard_changes": {
                     "title": "放弃变更",
@@ -1553,15 +1532,13 @@
                 },
                 "discard_changes": "変更取消",
                 "deploy_changes": "変更デプロイ",
-                "redhat_setup": "ダウンロード中",
                 "reset_environment": "リセット中",
                 "stop_deployment": "停止中",
                 "stop_deployment_button": "デプロイ停止",
                 "deployment_mode": "環境デプロイモード:",
                 "openstack_release": "OpenStack リリース:",
                 "environment_status": "環境の状況:",
-                "cluster_was_modified_from_cli" : "この環境のいくつかのデプロイパラメータは、FuleCLIから変更されてます。FuleCLIからの変更は、ブラウザから行われた設定よりも優先されます。注意して行ってください。",
-                "reconfigure_redhat_account": "You can __opt1__ reconfigure your Red Hat account __opt2__ or "
+                "cluster_was_modified_from_cli" : "この環境のいくつかのデプロイパラメータは、FuleCLIから変更されてます。FuleCLIからの変更は、ブラウザから行われた設定よりも優先されます。注意して行ってください。"
             },
             "capacity_page": {
                 "title": "容量監査",
@@ -1586,8 +1563,7 @@
                     "name_release": {
                         "title": "名前とリリース",
                         "name": "名前",
-                        "release_label": "OpenStack リリース",
-                        "red_hat_info": "RedHatのOpenStackをデプロイするには、FuelマスターノードでキャッシュされるためまずRHOSとRHELの両方をダウンロードする必要があります。もしリリースページからこれを行うか、単にサブスクリプションの種類を選択し、以下の証明情報を入力することができます。 RHELとRHOSは自動的にダウンロードして、環境を作成した後にキャッシュされます。"
+                        "release_label": "OpenStack リリース"
                     },
                     "mode": {
                         "title": "デプロイモード"
@@ -1670,15 +1646,6 @@
                     "bytes": "バイト",
                     "drive": "ドライブ",
                     "drive_plural": "複数ドライブ"
-                },
-                "rhel_license": {
-                    "title": "Red Hat Enterprise Linux アカウントの設定",
-                    "description": "RedHatのOpenStackをデプロイするには、FuelマスターノードでキャッシュされるためまずRHOSとRHELの両方をダウンロードする必要があります。もしリリースページからこれを行うか、単にサブスクリプションの種類を選択し、以下の証明情報を入力することができます。 RHELとRHOSは自動的にダウンロードして、環境を作成した後にキャッシュされます。",
-                    "rhn_sattelite": "RHN サテライト",
-                    "redhat_username": "Red Hat ユーザ名",
-                    "redhat_password": "Red Hat パスワード",
-                    "satellite_server_hostname": "サテライトサーバーのホスト名",
-                    "activation_key": "アクティベーションキー"
                 },
                 "discard_changes": {
                     "title": "変更取消",
@@ -2049,15 +2016,13 @@
                 },
                 "discard_changes": "변경내용 취소",
                 "deploy_changes": "변경내용 배치",
-                "redhat_setup": "다운로드",
                 "reset_environment": "재설정",
                 "stop_deployment": "중지",
                 "stop_deployment_button": "배치중지",
                 "deployment_mode": "환경배치 모드:",
                 "openstack_release": "OpenStack 출시:",
                 "environment_status": "환경 상태:",
-                "cluster_was_modified_from_cli" : "이 환경에 대한 몇 가지 배치 매개 변수는 Fuel CLI에서 수정되었습니다. Fuel CLI의 변경은 브라우저에서의 설정보다 우선합니다. 주의해서 진행하십시요.",
-                "reconfigure_redhat_account": "You can __opt1__ reconfigure your Red Hat account __opt2__ or "
+                "cluster_was_modified_from_cli" : "이 환경에 대한 몇 가지 배치 매개 변수는 Fuel CLI에서 수정되었습니다. Fuel CLI의 변경은 브라우저에서의 설정보다 우선합니다. 주의해서 진행하십시요."
             },
             "capacity_page": {
                 "title": "용량 감사",
@@ -2082,8 +2047,7 @@
                     "name_release": {
                         "title": "이름 및 출시",
                         "name": "이름",
-                        "release_label": "OpenStack 출시",
-                        "red_hat_info": "레드햇 OpenStack을 배치하려면, Fuel 마스터 노드에 캐시하기위해 먼저 RHOS와 RHEL를 다운로드해야합니다. 출시페이지에서이 작업을 수행하거나 가입신청 유형을 선택하고 아래에 비밀정보를 입력합니다. 환경을 만든 후 RHEL 및 RHOS가 자동적으로 다운로드되고 캐시됩니다."
+                        "release_label": "OpenStack 출시"
                     },
                     "mode": {
                         "title": "배치 모드"
@@ -2166,15 +2130,6 @@
                     "bytes": "bytes",
                     "drive": "드라이브",
                     "drive_plural": "드라이브"
-                },
-                "rhel_license": {
-                    "title": "레드햇 엔터프라이즈 리눅스 계정 설정",
-                    "description": "레드햇 OpenStack을 배치하려면, Fuel 마스터 노드에 캐시하기위해 먼저 RHOS와 RHEL를 다운로드해야합니다. 출시페이지에서이 작업을 수행하거나 가입신청 유형을 선택하고 아래에 비밀정보를 입력합니다. 환경을 만든 후 RHEL 및 RHOS가 자동적으로 다운로드되고 캐시됩니다.",
-                    "rhn_sattelite": "RHN 위성",
-                    "redhat_username": "Red Hat 이름",
-                    "redhat_password": "Red Hat 암호",
-                    "satellite_server_hostname": "위성 서버의 호스트이름",
-                    "activation_key": "Activation Key"
                 },
                 "discard_changes": {
                     "title": "변경내용 취소",

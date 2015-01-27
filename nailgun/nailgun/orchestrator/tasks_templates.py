@@ -103,3 +103,14 @@ def make_generic_task(uids, task):
         'fail_on_error': task.get('fail_on_error', True),
         'parameters': task['parameters']
     }
+
+
+def make_copy_keys_task(uids, task, files):
+    return {
+        'type': task['type'],
+        'uids': uids,
+        'parameters': {
+            'files': files,
+            'permissions': task['parameters']['permissions'],
+            'dir_permissions': task['parameters']['dir_permissions']}
+    }

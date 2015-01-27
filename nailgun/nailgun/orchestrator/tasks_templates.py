@@ -111,3 +111,14 @@ def make_reboot_task(uids, task):
         'uids': uids,
         'parameters': {
             'timeout': task['parameters']['timeout']}}
+
+
+def make_copy_keys_task(uids, task):
+    return {
+        'type': task['type'],
+        'uids': uids,
+        'parameters': {
+            'files': task['parameters']['files'],
+            'permissions': task['parameters']['permissions'],
+            'dir_permissions': task['parameters']['dir_permissions']}
+    }

@@ -39,6 +39,8 @@ def get_uids_for_tasks(nodes, tasks):
     for task in tasks:
         if task['role'] == consts.ALL_ROLES:
             return get_uids_for_roles(nodes, consts.ALL_ROLES)
+        elif task['role'] == consts.MASTER_ROLE:
+            return ['master']
         elif isinstance(task['role'], list):
             roles.extend(task['role'])
         else:
@@ -60,6 +62,8 @@ def get_uids_for_roles(nodes, roles):
 
     if roles == consts.ALL_ROLES:
         uids.update([n.uid for n in nodes])
+    elif roles == consts.MASTER_ROLE:
+        return ['master']
     elif isinstance(roles, list):
         for node in nodes:
             if set(roles) & set(objects.Node.all_roles(node)):
@@ -199,6 +203,33 @@ class RsyncPuppet(GenericRolesHook):
             uids, src_path, self.task['parameters']['dst'])
 
 
+class GenerateKeys(GenericRolesHook):
+
+    identity = 'generate_keys'
+
+    def get_uids(self):
+        return get_uids_for_roles(self.nodes, consts.MASTER_ROLE)
+
+    def serialize(self):
+        uids = self.get_uids()
+        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
+            CLUSTER_ID=self.cluster.id)
+        yield templates.make_shell_task(uids, self.task)
+
+
+class CopyKeys(GenericRolesHook):
+
+    identity = 'copy_keys'
+
+    def serialize(self):
+        for file_path in self.task['parameters']['files']:
+            file_path['src'] = file_path['src'].format(
+                CLUSTER_ID=self.cluster.id)
+        uids = self.get_uids()
+        yield templates.make_copy_keys_task(
+            uids, self.task)
+
+
 class RestartRadosGW(GenericRolesHook):
 
     identity = 'restart_radosgw'
@@ -254,8 +285,8 @@ class UpdateHosts(GenericRolesHook):
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW,
-                         UploadNodesInfo, UpdateHosts]
+    stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, RestartRadosGW,
+                         UploadNodesInfo, UpdateHosts, GenerateKeys]
     deploy_serializers = [PuppetHook]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

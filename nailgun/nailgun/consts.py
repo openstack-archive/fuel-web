@@ -240,6 +240,7 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'stage',
     'void',
     'reboot'
+    'copy_files'
 )
 
 INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
@@ -247,6 +248,7 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.void)
 
 ALL_ROLES = '*'
+MASTER_ROLE = 'master'
 
 # version of fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'

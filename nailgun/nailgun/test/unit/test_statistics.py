@@ -16,6 +16,7 @@
 from mock import Mock
 from mock import patch
 
+from copy import deepcopy
 import datetime
 import requests
 import urllib3
@@ -25,9 +26,12 @@ from nailgun.test.base import BaseTestCase
 from nailgun import consts
 from nailgun.objects import Cluster
 from nailgun.objects import OpenStackWorkloadStats
+from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
+from nailgun.statistics.oswl_saver import oswl_data_checksum
+from nailgun.statistics.oswl_saver import oswl_statistics_save
 from nailgun.statistics.statsenderd import StatsSender
 
 FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
@@ -415,3 +419,161 @@ class TestOSWLObject(BaseTestCase):
             OpenStackWorkloadStats.get_last_by(
                 cluster['id'], consts.OSWL_RESOURCE_TYPES.vm)
         )
+
+    def test_save_empty_data(self):
+        oswl_statistics_save(1, consts.OSWL_RESOURCE_TYPES.vm, [])
+        saved = OpenStackWorkloadStatsCollection.all()
+        self.assertEqual(saved.count(), 1)
+        self.assertEqual(
+            OpenStackWorkloadStats.get_last_by(
+                1, consts.OSWL_RESOURCE_TYPES.vm),
+            saved.first()
+        )
+        data = {
+            'cluster_id': 1,
+            'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
+
+            'resource_data_added': {},
+            'resource_data_removed': {},
+            'resource_data_modified': {},
+            'resource_data_current': [],
+            'resource_current_checksum': oswl_data_checksum([]),
+        }
+        obj = saved.first()
+        for k, v in data.iteritems():
+            self.assertEqual(v, getattr(obj, k))
+
+    def test_save_stats_data(self):
+        vms_info1 = [{
+            "id": 1,
+            "status": "running",
+            "power_state": 1,
+            "created_at": "dt",
+            "host_id": "111",
+            "tenant_id": "222",
+            "image_id": "333",
+            "flavor_id": "444"
+        }]
+        oswl_statistics_save(2, consts.OSWL_RESOURCE_TYPES.vm, vms_info1)
+
+        saved = OpenStackWorkloadStatsCollection.all()
+        self.assertEqual(saved.count(), 1)
+        self.assertEqual(
+            OpenStackWorkloadStats.get_last_by(
+                2, consts.OSWL_RESOURCE_TYPES.vm),
+            saved.first()
+        )
+        obj = saved.first()
+        time_update1 = obj.updated_time
+        data = {
+            'cluster_id': 2,
+            'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
+
+            'resource_data_added': {'1': {'time': str(time_update1)}},
+            'resource_data_removed': {},
+            'resource_data_modified': {},
+            'resource_data_current': vms_info1,
+            'resource_current_checksum': oswl_data_checksum(vms_info1)
+        }
+        for k, v in data.iteritems():
+            self.assertEqual(v, getattr(obj, k))
+
+        vms_info2 = [dict(vms_info1[0])]
+        vms_info2[0]["id"] = 2
+        # VM with id=2 is added, VM with id=1 is removed
+        oswl_statistics_save(2, consts.OSWL_RESOURCE_TYPES.vm, vms_info2)
+
+        saved = OpenStackWorkloadStatsCollection.all()
+        self.assertEqual(saved.count(), 1)
+        self.assertEqual(
+            OpenStackWorkloadStats.get_last_by(
+                2, consts.OSWL_RESOURCE_TYPES.vm),
+            saved.first()
+        )
+        obj = saved.first()
+        time_update2 = obj.updated_time
+        removed = dict(vms_info1[0])
+        removed['time'] = str(time_update2)
+        data.update({
+            'resource_data_added': {'1': {'time': str(time_update1)},
+                                    '2': {'time': str(time_update2)}},
+            'resource_data_removed': {'1': removed},
+            'resource_data_current': vms_info2,
+            'resource_current_checksum': oswl_data_checksum(vms_info2)
+        })
+        for k, v in data.iteritems():
+            self.assertEqual(v, getattr(obj, k))
+
+        vms_info3 = [dict(vms_info2[0])]
+        vms_info3[0]["power_state"] = 0
+        # power state of VM with id=2 is changed
+        oswl_statistics_save(2, consts.OSWL_RESOURCE_TYPES.vm, vms_info3)
+
+        saved = OpenStackWorkloadStatsCollection.all()
+        self.assertEqual(saved.count(), 1)
+        self.assertEqual(
+            OpenStackWorkloadStats.get_last_by(
+                2, consts.OSWL_RESOURCE_TYPES.vm),
+            saved.first()
+        )
+        obj = saved.first()
+        time_update3 = obj.updated_time
+        modified = dict(vms_info2[0])
+        modified['time'] = str(time_update3)
+        data.update({
+            'resource_data_modified': {'2': [modified]},
+            'resource_data_current': vms_info3,
+            'resource_current_checksum': oswl_data_checksum(vms_info3)
+        })
+        for k, v in data.iteritems():
+            self.assertEqual(v, getattr(obj, k))
+
+        date_cur = obj.created_date
+        date_1st_rec = date_cur - datetime.timedelta(days=1)
+        OpenStackWorkloadStats.update(obj,
+                                      {'created_date': date_1st_rec})
+        # make existing record one day older and pass the same data
+        oswl_statistics_save(2, consts.OSWL_RESOURCE_TYPES.vm, vms_info3)
+
+        # no new record was created
+        saved = OpenStackWorkloadStatsCollection.all()
+        self.assertEqual(saved.count(), 1)
+        self.assertEqual(
+            OpenStackWorkloadStats.get_last_by(
+                2, consts.OSWL_RESOURCE_TYPES.vm),
+            saved.first()
+        )
+        obj = saved.first()
+        for k, v in data.iteritems():
+            self.assertEqual(v, getattr(obj, k))
+
+        vms_info4 = [dict(vms_info3[0])]
+        vms_info4[0]["power_state"] = 1
+        # power state of VM with id=2 is changed back
+        oswl_statistics_save(2, consts.OSWL_RESOURCE_TYPES.vm, vms_info4)
+
+        # new record was added
+        saved = OpenStackWorkloadStatsCollection.all()
+        self.assertEqual(saved.count(), 2)
+        last = OpenStackWorkloadStats.get_last_by(
+            2, consts.OSWL_RESOURCE_TYPES.vm)
+        time_update4 = last.updated_time
+        data_last_rec = deepcopy(data)
+        modified2 = dict(vms_info3[0])
+        modified2['time'] = str(time_update4)
+        data_last_rec.update({
+            'resource_data_added': {},
+            'resource_data_removed': {},
+            'resource_data_modified': {'2': [modified2]},
+            'resource_data_current': vms_info4,
+            'resource_current_checksum': oswl_data_checksum(vms_info4)
+        })
+        self.assertEqual(last.created_date, date_cur)
+        for rec in saved:
+            if rec.created_date == date_cur:
+                self.assertEqual(rec, last)
+                for k, v in data_last_rec.iteritems():
+                    self.assertEqual(v, getattr(rec, k))
+            elif rec.created_date == date_1st_rec:
+                for k, v in data.iteritems():
+                    self.assertEqual(v, getattr(rec, k))

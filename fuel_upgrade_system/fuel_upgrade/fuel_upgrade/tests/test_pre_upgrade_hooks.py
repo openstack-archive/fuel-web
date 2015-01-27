@@ -94,22 +94,24 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_add_credentials.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_add_credentials.utils')
-    def test_run(self, utils_mock, read_yaml_config_mock):
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.copy_file')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.save_as_yaml')
+    def test_run(self,
+                 utils_save_as_yaml_mock,
+                 utils_copy_file_mock,
+                 read_yaml_config_mock):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({'astute': {file_key: file_key}})
         read_yaml_config_mock.return_value = hook.config.astute
         hook.run()
 
-        utils_mock.copy_file.assert_called_once_with(
+        utils_copy_file_mock.assert_called_once_with(
             '/etc/fuel/astute.yaml',
             '/etc/fuel/astute.yaml_0',
             overwrite=False)
 
-        agrs = utils_mock.save_as_yaml.call_args
+        agrs = utils_save_as_yaml_mock.call_args
         self.assertEqual(agrs[0][0], '/etc/fuel/astute.yaml')
 
         # Check that the key which was in file
@@ -187,11 +189,13 @@ class TestAddKeystoneCredentialsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_1_to_any_add_keystone_credentials.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_1_to_any_add_keystone_credentials.utils')
-    def test_run(self, utils_mock, read_yaml_config_mock):
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.copy_file')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.save_as_yaml')
+    def test_run(self,
+                 utils_save_as_yaml_mock,
+                 utils_copy_file_mock,
+                 read_yaml_config_mock):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({
             'astute': {
@@ -200,12 +204,12 @@ class TestAddKeystoneCredentialsHook(TestPreUpgradeHooksBase):
         read_yaml_config_mock.return_value = hook.config.astute
         hook.run()
 
-        utils_mock.copy_file.assert_called_once_with(
+        utils_copy_file_mock.assert_called_once_with(
             '/etc/fuel/astute.yaml',
             '/etc/fuel/astute.yaml_0',
             overwrite=False)
 
-        agrs = utils_mock.save_as_yaml.call_args
+        agrs = utils_save_as_yaml_mock.call_args
         self.assertEqual(agrs[0][0], '/etc/fuel/astute.yaml')
 
         # Check that the key which was in
@@ -242,22 +246,24 @@ class TestSyncDnsHook(TestPreUpgradeHooksBase):
 
         self.assertFalse(hook.check_if_required())
 
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_sync_dns.read_yaml_config')
-    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
-                'from_5_0_to_any_sync_dns.utils')
-    def test_run(self, utils_mock, read_yaml_config):
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.copy_file')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.save_as_yaml')
+    def test_run(self,
+                 utils_save_as_yaml_mock,
+                 utils_copy_file_mock,
+                 read_yaml_config):
         file_key = 'this_key_was_here_before_upgrade'
         hook = self.get_hook({'astute': {file_key: file_key}})
         read_yaml_config.return_value = hook.config.astute
         hook.run()
 
-        utils_mock.copy_file.assert_called_once_with(
+        utils_copy_file_mock.assert_called_once_with(
             '/etc/fuel/astute.yaml',
             '/etc/fuel/astute.yaml_0',
             overwrite=False)
 
-        args = utils_mock.save_as_yaml.call_args
+        args = utils_save_as_yaml_mock.call_args
         self.assertEqual(args[0][0], '/etc/fuel/astute.yaml')
 
         # Check that the key which was in file
@@ -420,6 +426,50 @@ class TestPreUpgradeHookBase(TestPreUpgradeHooksBase):
             self.get_hook(
                 check_if_required=True,
                 enable_for_engines=[SomeEngine]).is_required)
+
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.copy_file')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.save_as_yaml')
+    def test_update_astute_config(self,
+                                  utils_save_as_yaml_mock,
+                                  utils_copy_file_mock,
+                                  read_yaml_config_mock):
+        hook = self.get_hook()
+        read_yaml_config_mock.return_value = {
+            'a': 1,
+            'dict': {
+                'a': 1,
+                'b': 2,
+            }
+        }
+
+        defaults = {'b': 2, 'dict': {'a': 5, 'c': 6}}
+        hook.update_astute_config(defaults=defaults)
+        args = utils_save_as_yaml_mock.call_args
+        self.assertDictEqual(
+            args[0][1],
+            {'a': 1, 'b': 2, 'dict': {'a': 1, 'b': 2, 'c': 6}})
+
+        defaults = {'a': 2, 'dict': {'c': 5}}
+        hook.update_astute_config(defaults=defaults)
+        args = utils_save_as_yaml_mock.call_args
+        self.assertDictEqual(
+            args[0][1],
+            {'a': 1, 'dict': {'a': 1, 'b': 2, 'c': 5}})
+
+        overwrites = {'a': 2, 'dict': {'a': 5}}
+        hook.update_astute_config(overwrites=overwrites)
+        args = utils_save_as_yaml_mock.call_args
+        self.assertDictEqual(
+            args[0][1],
+            {'a': 2, 'dict': {'a': 5, 'b': 2}})
+
+        overwrites = {'b': 2, 'dict': {'c': 5}}
+        hook.update_astute_config(overwrites=overwrites)
+        args = utils_save_as_yaml_mock.call_args
+        self.assertDictEqual(
+            args[0][1],
+            {'a': 1, 'b': 2, 'dict': {'a': 1, 'b': 2, 'c': 5}})
 
 
 class TestPreUpgradeHookManager(TestPreUpgradeHooksBase):

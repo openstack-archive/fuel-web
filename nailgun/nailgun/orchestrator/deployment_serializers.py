@@ -1195,6 +1195,47 @@ class DeploymentHASerializer61(DeploymentHASerializer):
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
+    # Alternate VMWare specific values.
+    # FiXME(who): srogov
+    # This a temporary workaround to keep existing functioanality
+    # after fully implementation of the multi HV support and astute part
+    # for multiple images support, it is need to change
+    # dict image_data['test_vm_image'] to list of dicts
+    def generate_test_vm_image_data(self, node):
+        attrs = node.cluster.attributes
+        image_data = super(
+            DeploymentHASerializer61,
+            self).generate_test_vm_image_data(node)
+        if 'use_vcenter' not in attrs['editable']['common']:
+            use_multi_hv = False
+        else:
+            use_multi_hv = attrs['editable']['common']['use_vcenter']['value']
+
+        images_data = {}
+        images_data['test_vm_image'] = []
+        if use_multi_hv is True:
+            image_vmdk_data = deepcopy(image_data['test_vm_image'])
+            img_path = image_vmdk_data['img_path']. \
+                replace('x86_64-disk.img', 'i386-disk.vmdk')
+            image_vmdk_data.update({
+                'img_name': 'TestVM-VMDK',
+                'disk_format': 'vmdk',
+                'img_path': img_path,
+            })
+            glance_vmdk_properties = []
+            glance_vmdk_properties.append('--property vmware_disktype=sparse')
+            glance_vmdk_properties. \
+                append('--property vmware_adaptertype=lsilogic')
+            glance_vmdk_properties.append('--property hypervisor_type=vmware')
+            image_vmdk_data['glance_properties'] = ' '. \
+                join(glance_vmdk_properties)
+            images_data['test_vm_image'].append(image_vmdk_data)
+            images_data['test_vm_image'].append(image_data['test_vm_image'])
+        else:
+            images_data = image_data
+
+        return images_data
+
 
 def create_serializer(orchestrator_graph, cluster):
     """Returns a serializer depends on a given `cluster`.

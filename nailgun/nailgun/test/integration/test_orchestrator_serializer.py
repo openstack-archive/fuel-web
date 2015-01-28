@@ -1645,6 +1645,20 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
     # Needs to be set in childs
     serializer = None
 
+    test_vm_image = {
+        'container_format': 'bare',
+        'public': 'true',
+        'disk_format': 'qcow2',
+        'img_name': 'TestVM',
+        'img_path': '/opt/vm/cirros-x86_64-disk.img',
+        'os_name': 'cirros',
+        'min_ram': 64,
+        'glance_properties': (
+            """--property murano_image_info="""
+            """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
+        ),
+    }
+
     def create_env(self, mode):
         return self.env.create(
             cluster_kwargs={
@@ -1654,7 +1668,11 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'pending_addition': True,
-                 'name': self.node_name}])
+                 'name': self.node_name,
+                 'use_vcenter': True,
+                 'test_vm_image': self.test_vm_image,
+                 }
+            ])
 
     def check_serialize_node(self):
         self.assertEqual(
@@ -1667,6 +1685,30 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
             self.serializer.serialize_node_for_node_list(
                 self.env.nodes[0], 'role')['user_node_name'],
             self.node_name)
+
+    def check_generate_test_vm_image_data(self):
+        img_name = 'TestVM-VMDK'
+        disk_format = 'vmdk'
+        img_path = '/opt/vm/cirros-i386-disk.vmdk'
+
+        self.assertEqual(
+            len(self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0]))['test_vm_image'], 2)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['img_name'],
+            img_name)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['disk_format'],
+            disk_format)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['img_path'],
+            img_path)
 
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
@@ -1697,3 +1739,6 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
 
     def test_serialize_node_for_node_list(self):
         self.check_serialize_node_for_node_list()
+
+    def test_generate_test_vm_image_data(self):
+        self.check_generate_test_vm_image_data()

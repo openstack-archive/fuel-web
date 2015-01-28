@@ -37,14 +37,17 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                 var clusters = new models.Clusters();
                 var nodes = new models.Nodes();
                 var tasks = new models.Tasks();
-                return $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch()).done(_.bind(function() {
+                return $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch(), app.tasks.fetch()).done(_.bind(function() {
                     clusters.each(function(cluster) {
                         cluster.set('nodes', new models.Nodes(nodes.where({cluster: cluster.id})));
                         cluster.get('nodes').deferred = nodes.deferred;
                         cluster.set('tasks', new models.Tasks(tasks.where({cluster: cluster.id})));
                     }, this);
                 }, this)).then(function() {
-                    return {clusters: clusters};
+                    return {
+                        clusters: clusters,
+                        releasePreparationTasks: new models.Tasks(app.tasks.filterTasks({name: 'prepare_release', status: 'running'}))
+                    };
                 });
             }
         },
@@ -68,7 +71,11 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                 <div className="cluster-list">
                     <div className="roles-block-row">
                         {this.props.clusters.map(function(cluster) {
-                            return <Cluster key={cluster.id} cluster={cluster} />;
+                            return <Cluster
+                                key={cluster.id}
+                                cluster={cluster}
+                                releasePreparationTask={this.props.releasePreparationTasks && this.props.releasePreparationTasks.findTask({release: cluster.get('release_id')})}
+                            />;
                         }, this)}
                         <div key="add" className="span3 clusterbox create-cluster" onClick={this.createCluster}>
                             <div className="add-icon"><i className="icon-create"></i></div>
@@ -92,33 +99,35 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
             componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.task({group: 'deployment', status: 'running'});
             }}),
+            componentMixins.backboneMixin('releasePreparationTask', 'change'),
             componentMixins.pollingMixin(3)
         ],
         shouldDataBeFetched: function() {
-            return this.props.cluster.task('cluster_deletion', ['running', 'ready']) || this.props.cluster.task({group: 'deployment', status: 'running'});
+            return this.props.releasePreparationTask || this.props.cluster.task('cluster_deletion', ['running', 'ready']) || this.props.cluster.task({group: 'deployment', status: 'running'});
         },
         fetchData: function() {
-            var request, requests = [];
-            var deletionTask = this.props.cluster.task('cluster_deletion');
+            var cluster = this.props.cluster,
+                request, requests = [];
+            var deletionTask = cluster.task('cluster_deletion');
             if (deletionTask) {
                 request = deletionTask.fetch();
-                request.fail(_.bind(function(response) {
+                request.fail(function(response) {
                     if (response.status == 404) {
-                        this.props.cluster.collection.remove(this.props.cluster);
+                        cluster.collection.remove(cluster);
                         app.rootComponent.refreshNavbar();
                     }
-                }, this));
+                });
                 requests.push(request);
             }
-            var deploymentTask = this.props.cluster.task({group: 'deployment', status: 'running'});
-            if (deploymentTask) {
-                request = deploymentTask.fetch();
-                request.done(_.bind(function() {
-                    if (deploymentTask.get('status') != 'running') {
-                        this.props.cluster.fetch();
+            var task = this.props.releasePreparationTask || cluster.task({group: 'deployment', status: 'running'});
+            if (task) {
+                request = task.fetch();
+                request.done(function() {
+                    if (!task.match({status: 'running'})) {
+                        cluster.fetch();
                         app.rootComponent.refreshNavbar();
                     }
-                }, this));
+                });
                 requests.push(request);
             }
             return $.when.apply($, requests);
@@ -127,7 +136,7 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
             var cluster = this.props.cluster;
             var nodes = cluster.get('nodes');
             var deletionTask = cluster.task('cluster_deletion', ['running', 'ready']);
-            var deploymentTask = cluster.task({group: 'deployment', status: 'running'});
+            var task = this.props.releasePreparationTask || cluster.task({group: 'deployment', status: 'running'});
             return (
                 <a className={'span3 clusterbox ' + (deletionTask ? 'disabled-cluster' : '')} href={!deletionTask ? '#cluster/' + cluster.id + '/nodes' : 'javascript:void 0'}>
                     <div className="cluster-name">{cluster.get('name')}</div>
@@ -148,10 +157,10 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                         }
                     </div>
                     <div className="cluster-status">
-                        {deploymentTask ?
-                            <div className={'cluster-status-progress ' + deploymentTask.get('name')}>
-                                <div className={'progress progress-' + (_.contains(['stop_deployment', 'reset_environment'], deploymentTask.get('name')) ? 'warning' : 'success') + ' progress-striped active'}>
-                                    <div className="bar" style={{width: (deploymentTask.get('progress') > 3 ? deploymentTask.get('progress') : 3) + '%'}}></div>
+                        {task ?
+                            <div className={'cluster-status-progress ' + task.get('name')}>
+                                <div className={'progress progress-' + (_.contains(['stop_deployment', 'reset_environment', 'prepare_release'], task.get('name')) ? 'warning' : 'success') + ' progress-striped active'}>
+                                    <div className="bar" style={{width: (task.get('progress') > 3 ? task.get('progress') : 3) + '%'}}></div>
                                 </div>
                             </div>
                         :

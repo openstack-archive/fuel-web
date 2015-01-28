@@ -250,6 +250,8 @@ define([
             });
             response.role_models.processConflicts();
             delete response.roles_metadata;
+            // FIXME(ja): need correct Ubuntu status from nailgun
+            if (response.operating_system == 'Ubuntu') response.state = 'unavailable';
             return response;
         }
     });
@@ -395,16 +397,9 @@ define([
     models.Task = BaseModel.extend({
         constructorName: 'Task',
         urlRoot: '/api/tasks',
-        releaseId: function() {
-            var id;
-            try {
-                id = this.get('result').release_info.release_id;
-            } catch (ignore) {}
-            return id;
-        },
         groups: {
             network: ['verify_networks', 'check_networks'],
-            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment']
+            deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'prepare_release']
         },
         extendGroups: function(filters) {
             return _.union(utils.composeList(filters.name), _.flatten(_.map(utils.composeList(filters.group), _.bind(function(group) {return this.groups[group];}, this))));
@@ -419,7 +414,7 @@ define([
                         result = _.contains(utils.composeList(filters.status), this.get('status'));
                     }
                     if (filters.release) {
-                        result = result && this.releaseId() == filters.release;
+                        result = result && this.get('release_id') == filters.release;
                     }
                 }
             } else if (filters.status) {

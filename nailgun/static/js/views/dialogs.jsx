@@ -94,6 +94,52 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         }
     });
 
+    dialogs.UploadISODialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {title: i18n('dialog.upload_iso.title')};
+        },
+        uploadISO: function() {
+            var file = this.refs.file.getInputDOMNode().files[0];
+            if (file) {
+                var formData = new FormData();
+                formData.append('iso', file);
+                (new models.Task()).save({}, {
+                    url: _.result(this.props.release, 'url') + '/upload/iso',
+                    type: 'POST',
+                    data: formData,
+                    processData: false
+                })
+                .done(function() {
+                    app.tasks.fetch();
+                    this.close();
+                })
+                .fail(_.bind(function(response) {
+                    this.showError(utils.getResponseText(response) || i18n('dialog.upload_iso.task_error.warning'));
+                }, this));
+            }
+        },
+        renderBody: function() {
+            var ns = 'dialog.upload_iso.';
+            return (
+                <div className='upload-iso-dialog'>
+                    <p>
+                        {i18n(ns + 'ubuntu_text_begin')}
+                        <a target='_blank' href='http://www.ubuntu.com/download'>{i18n(ns + 'ubuntu_link')}</a>
+                        {i18n(ns + 'ubuntu_text_end')}
+                    </p>
+                    <controls.Input type='file' name='file' ref='file' />
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='upload' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.uploadISO}>{i18n('dialog.upload_iso.upload_button')}</button>
+            ]);
+        }
+    });
+
     dialogs.DiscardNodeChangesDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.discard_changes.title')};},

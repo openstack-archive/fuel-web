@@ -214,7 +214,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className='progress-bar'>
                     <div className='progress progress-striped progress-success active'>
-                        <div className='bar'/>
+                        <div className='bar' style={_.isNumber(this.props.progress) ? {width: this.props.progress + '%'} : null} />
                     </div>
                 </div>
             );

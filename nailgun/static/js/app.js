@@ -94,6 +94,8 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             this.user = new models.User();
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
+            this.tasks = new models.Tasks();
+            this.tasks.url = '/api/v1/releases/';
 
             this.version.fetch().then(_.bind(function() {
                 this.user.set({authenticated: !this.version.get('auth_required')});
@@ -159,7 +161,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
                 }
                 return $.Deferred().resolve();
             }, this)).then(_.bind(function() {
-                return this.settings.fetch();
+                return $.when(this.settings.fetch(), this.tasks.fetch());
             }, this)).always(_.bind(function() {
                 this.renderLayout();
                 Backbone.history.start();

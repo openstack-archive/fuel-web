@@ -15,14 +15,17 @@
 **/
 define(
 [
+    'jquery',
     'underscore',
     'i18n',
     'react',
     'models',
+    'utils',
+    'jsx!views/dialogs',
     'jsx!views/controls',
     'jsx!component_mixins'
 ],
-function(_, i18n, React, models, controls, componentMixins) {
+function($, _, i18n, React, models, utils, dialogs, controls, componentMixins) {
     'use strict';
 
     var ReleasesPage = React.createClass({
@@ -36,16 +39,35 @@ function(_, i18n, React, models, controls, componentMixins) {
             breadcrumbsPath: [['home', '#'], 'releases'],
             fetchData: function() {
                 var releases = new models.Releases();
-                return releases.fetch().then(function() {
-                    return {releases: releases};
+                return $.when(releases.fetch(), app.tasks.fetch()).then(function() {
+                    return {
+                        releases: releases,
+                        tasks: new models.Tasks(app.tasks.filterTasks({name: 'prepare_release', status: 'running'}))
+                    };
                 });
             }
         },
         getReleaseData: function(release) {
             return _.map(this.props.columns, function(attr) {
-                if (attr == 'state') return i18n('release_page.release.' + release.get(attr));
+                if (attr == 'state') {
+                    var task = this.props.tasks.findTask({release: release.id});
+                    if (task) {
+                        return (
+                            <div className='progress progress-success progress-striped active'>
+                                <div className='bar' style={{width: '100%'}}></div>
+                            </div>
+                        );
+                    }
+                    if (release.get(attr) == 'unavailable') {
+                        return <button className='btn' onClick={_.bind(this.showUploadISODialog, this, release)}>{i18n('release_page.upload_iso')}</button>;
+                    }
+                    return i18n('release_page.states.' + release.get(attr));
+                }
                 return release.get(attr) || i18n('common.not_available');
-            });
+            }, this);
+        },
+        showUploadISODialog: function(release) {
+            utils.showDialog(dialogs.UploadISODialog, {release: release});
         },
         render: function() {
             return (

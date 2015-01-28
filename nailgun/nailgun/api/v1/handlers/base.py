@@ -466,10 +466,11 @@ class DeploymentTasksHandler(SingleHandler):
         """
         obj = self.get_object_or_404(self.single, obj_id)
         end = web.input(end=None).end
+        start = web.input(start=None).start
         tasks = self.single.get_deployment_tasks(obj)
-        if end:
+        if end or start:
             graph = deployment_graph.DeploymentGraph(tasks)
-            return graph.find_subgraph(end).node.values()
+            return graph.find_subgraph(end=end, start=start).node.values()
         return tasks
 
     @content

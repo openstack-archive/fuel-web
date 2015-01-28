@@ -30,9 +30,10 @@ define(
     'jsx!views/cluster_page_tabs/settings_tab',
     'jsx!views/cluster_page_tabs/logs_tab',
     'jsx!views/cluster_page_tabs/actions_tab',
-    'jsx!views/cluster_page_tabs/healthcheck_tab'
+    'jsx!views/cluster_page_tabs/healthcheck_tab',
+    'plugins/vmware/vmware'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, VmWareTab) {
     'use strict';
 
     var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl,
@@ -173,14 +174,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
         },
         getAvailableTabs: function() {
-            return [
-                {url: 'nodes', tab: NodesTab},
-                {url: 'network', tab: NetworkTab},
-                {url: 'settings', tab: SettingsTab},
-                {url: 'logs', tab: LogsTab},
-                {url: 'healthcheck', tab: HealthCheckTab},
-                {url: 'actions', tab: ActionsTab}
+            var tabs = [
+                {url: 'nodes', tab: NodesTab, weight: 10},
+                {url: 'network', tab: NetworkTab, weight: 11},
+                {url: 'settings', tab: SettingsTab, weight: 12},
+                //{url: 'vmware', tab: VmWareTab},
+                {url: 'logs', tab: LogsTab, weight: 30},
+                {url: 'healthcheck', tab: HealthCheckTab, weight: 31},
+                {url: 'actions', tab: ActionsTab, weight: 32}
             ];
+            var settings = this.props.cluster.get('settings');
+            var useVCenter = settings.get('common.use_vcenter').value;
+            if(true || useVCenter) {
+                tabs.push({url: 'vmware', tab: VmWareTab, weight: 20});
+            }
+            return tabs.sort(function(tab1,tab2) { return (tab1.weight-tab2.weight)});
         },
         checkTab: function(props) {
             props = props || this.props;

@@ -48,7 +48,8 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
                 renderOn: 'add remove change'
-            })
+            }),
+            componentMixins.backboneMixin('releasePreparationTask', 'change')
         ],
         statics: {
             navbarActiveElement: 'clusters',
@@ -74,7 +75,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                     var settings = new models.Settings();
                     settings.url = _.result(cluster, 'url') + '/attributes';
                     cluster.set({settings: settings});
-                    promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'))
+                    promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), app.tasks.fetch({data: {cluster_id: ''}}))
                         .then(function() {
                             var networkConfiguration = new models.NetworkConfiguration();
                             networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
@@ -88,6 +89,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                 return promise.then(function() {
                     return {
                         cluster: cluster,
+                        releasePreparationTask: app.tasks.findTask({name: 'prepare_release', release: cluster.get('release_id')}),
                         activeTab: activeTab,
                         tabOptions: tabOptions
                     };
@@ -98,7 +100,12 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             return this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}), removeSilently);
         },
         removeFinishedDeploymentTasks: function(removeSilently) {
-            return this.removeFinishedTasks(this.props.cluster.tasks({group: 'deployment'}), removeSilently);
+            return this.removeFinishedReleaseTask().then(_.bind(function() {
+                this.removeFinishedTasks(this.props.cluster.tasks({group: 'deployment'}), removeSilently);
+            }, this));
+        },
+        removeFinishedReleaseTask: function() {
+            return this.props.releasePreparationTask ? this.props.releasePreparationTask.destroy() : $.Deferred().resolve();
         },
         removeFinishedTasks: function(tasks, removeSilently) {
             var requests = [];
@@ -123,14 +130,14 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             }
         },
         shouldDataBeFetched: function() {
-            return this.props.cluster.task({group: ['deployment', 'network'], status: 'running'});
+            return this.getTask('running', ['deployment', 'network']);
         },
         fetchData: function() {
-            var task = this.props.cluster.task({group: 'deployment', status: 'running'});
+            var task = this.getTask('running');
             if (task) {
                 return task.fetch()
                     .done(_.bind(function() {
-                        if (!task.match({status: 'running'})) this.deploymentTaskFinished();
+                        if (!task.match({status: 'running', name: 'prepare_release'})) this.deploymentTaskFinished();
                     }, this))
                     .then(_.bind(function() {
                         return this.props.cluster.fetchRelated('nodes');
@@ -186,8 +193,16 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
             $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },
+        getTask: function(status, group) {
+            if (this.props.releasePreparationTask && this.props.releasePreparationTask.match({status: status})) {
+                return this.props.releasePreparationTask;
+            }
+            group = group || 'deployment';
+            return this.props.cluster.task({group: group, status: status});
+        },
         render: function() {
-            var cluster = this.props.cluster,
+            var ns = 'cluster_page.unavailable_release.',
+                cluster = this.props.cluster,
                 release = cluster.get('release'),
                 availableTabs = this.getAvailableTabs(),
                 tabs = _.pluck(availableTabs, 'url'),
@@ -198,10 +213,14 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             return (
                 <div>
                     <ClusterInfo cluster={cluster} />
-                    <DeploymentResult cluster={cluster} />
+                    <DeploymentResult task={this.getTask(['ready', 'error'])} />
                     {release.get('state') == 'unavailable' &&
                         <div className='alert alert-block globalalert'>
-                            <p className='enable-selection'>{i18n('cluster_page.unavailable_release', {name: release.get('name')})}</p>
+                            <p className='enable-selection'>
+                                {i18n(ns + 'text_begining')}
+                                <a href='#releases'>{i18n(ns + 'page')}</a>
+                                {i18n(ns + 'text_end')}
+                            </p>
                         </div>
                     }
                     {cluster.get('is_customized') &&
@@ -221,6 +240,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                             }, this)}
                             <DeploymentControl
                                 cluster={cluster}
+                                task={this.getTask('running')}
                                 hasChanges={_.result(tab, 'hasChanges')}
                                 revertChanges={tab.revertChanges}
                             />
@@ -276,14 +296,12 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
 
     DeploymentResult = React.createClass({
         dismissTaskResult: function() {
-            var task = this.props.cluster.task({group: 'deployment'});
-            if (task) task.destroy();
+            this.props.task.destroy();
         },
         render: function() {
-            var task = this.props.cluster.task({group: 'deployment', status: ['ready', 'error']});
-            if (!task) return null;
-            var error = task.match({status: 'error'}),
-                deploymentOrUpdate = task.match({name: ['deploy', 'update']}),
+            if (!this.props.task) return null;
+            var error = this.props.task.match({status: 'error'}),
+                deploymentOrUpdate = this.props.task.match({name: ['deploy', 'update']}),
                 classes = {
                     'alert alert-block': true,
                     'alert-error global-error': error,
@@ -293,11 +311,11 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                 };
             return (
                 <div className='deployment-result'>
-                    {task &&
+                    {this.props.task &&
                         <div className={cs(classes)}>
                             <button className='close' onClick={this.dismissTaskResult}>&times;</button>
                             <h4>{i18n('common.' + (error ? 'error' : 'success'))}</h4>
-                            <p className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(task.escape('message')))}} />
+                            <p className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(this.props.task.escape('message')))}} />
                         </div>
                     }
                 </div>
@@ -328,15 +346,14 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
         render: function() {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                task = cluster.task({group: 'deployment', status: 'running'}),
-                taskName = task ? task.get('name') : '',
-                taskProgress = task && task.get('progress') || 0,
-                infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
+                taskName = this.props.task && this.props.task.get('name') || '',
+                taskProgress = this.props.task && this.props.task.get('progress') || 0,
+                infiniteTask = _.contains(['stop_deployment', 'reset_environment', 'prepare_request'], taskName),
                 itemClass = 'deployment-control-item-box',
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
+                isDeploymentImpossible = this.props.task || cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
             return (
                 <div className='cluster-deploy-placeholder'>
-                    {task ? (
+                    {this.props.task ? (
                         <div className={'pull-right deployment-progress-box ' + taskName}>
                             {!infiniteTask &&
                                 <div>

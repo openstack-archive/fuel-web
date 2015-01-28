@@ -3231,6 +3231,26 @@ form.create-cluster-form {
   text-align: center;
 }
 
+.release-alert {
+  width: 335px;
+  > div {
+    margin-top: 14px;
+    padding: 10px 14px 0 0;
+    line-height: 15px;
+    background: none;
+    border: none;
+    border-top: 1px dashed @fuel-grey-color;
+    .font-layout-mixin(@font-size-small-1, @fuel-goldenrod);
+    .border-radius-mixin(0);
+    label {
+      color: @fuel-dark-4;
+      .parameter-name {
+        font-weight: 100;
+      }
+    }
+  }
+}
+
 // OpenStack Health Check
 // -------------------------
 

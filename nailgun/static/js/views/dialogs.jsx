@@ -94,6 +94,80 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         }
     });
 
+    dialogs.UploadISODialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {title: i18n('dialog.upload_iso.title')};
+        },
+        getInitialState: function() {
+            return {
+                uploading: false,
+                progressAvailable: false,
+                progress: 0
+            };
+        },
+        progressUpdate: function(e) {
+            this.setState({progress: Math.floor(100 * e.loaded / e.total)});
+        },
+        componentWillUnmount: function() {
+            if (this.state.xhr) this.state.xhr.abort();
+        },
+        uploadISO: function() {
+            var file = this.refs.file.getInputDOMNode().files[0];
+            if (file) {
+                var xhr;
+                (new models.Task()).save({}, {
+                    url: _.result(this.props.release, 'url') + '/upload/iso',
+                    type: 'POST',
+                    xhr: _.bind(function() {
+                        xhr = $.ajaxSettings.xhr();
+                        if (xhr.upload) {
+                            xhr.upload.addEventListener('progress', this.progressUpdate, false);
+                        }
+                        return xhr;
+                    }, this),
+                    data: file,
+                    processData: false
+                }).done(function() {
+                    app.tasks.fetch({data: {cluster_id: ''}});
+                    this.close();
+                }).fail(_.bind(function(response) {
+                    this.showError(utils.getResponseText(response) || i18n('dialog.upload_iso.task_error.warning'));
+                }, this));
+
+                this.setState({
+                    actionInProgress: true,
+                    uploading: true,
+                    progressAvailable: !!xhr.upload,
+                    xhr: xhr
+                });
+            }
+        },
+        renderBody: function() {
+            var ns = 'dialog.upload_iso.';
+            return (
+                <div className='upload-iso-dialog'>
+                    <p>
+                        {i18n(ns + 'ubuntu_text_begin')}
+                        <a target='_blank' href='http://www.ubuntu.com/download'>{i18n(ns + 'ubuntu_link')}</a>
+                        {i18n(ns + 'ubuntu_text_end')}
+                    </p>
+                    {this.state.uploading ?
+                        <controls.ProgressBar progress={this.state.progressAvailable && this.state.progress} />
+                    :
+                        <controls.Input type='file' name='file' ref='file' />
+                    }
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='upload' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.uploadISO}>{i18n('dialog.upload_iso.upload_button')}</button>
+            ]);
+        }
+    });
+
     dialogs.DiscardNodeChangesDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.discard_changes.title')};},

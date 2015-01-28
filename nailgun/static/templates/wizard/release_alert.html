@@ -1,0 +1,18 @@
+<%
+  var ns = 'dialog.create_cluster_wizard.name_release.release_alert.';
+%>
+
+<div class="alert alert-warning">
+  <%- i18n(ns + 'text_begining') %>
+  <a class="go_to_link" href="#releases"><%- i18n(ns + 'page') %></a>
+  <%- i18n(ns + 'text_end') %>
+  <label class="parameter-box clearfix">
+    <div class="parameter-control">
+      <div class="custom-tumbler">
+        <input type="checkbox" name="proceed">
+        <span>&nbsp;</span>
+      </div>
+    </div>
+    <div class="parameter-name"><%-i18n(ns + 'proceed') %></div>
+  </label>
+</div>

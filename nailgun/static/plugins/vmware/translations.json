@@ -1,0 +1,20 @@
+{
+    "en-US": {
+        "translation": {
+            "cluster_page": {
+                "tabs": {
+                    "vmware": "vmWare"
+                }
+            },
+            "vmware": {
+                "title": "vmWare Settings Oppa Page",
+                "availability_zones": "Availability Zones",
+                "network": "Network",
+                "glance": "Glance",
+                "reset_to_defaults": "Reset to Defaults",
+                "cancel": "Cancel",
+                "apply": "Apply"
+            }
+        }
+    }
+}

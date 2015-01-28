@@ -762,7 +762,7 @@
               generator: "from_settings"
               generator_arg: "DNS_UPSTREAM"
             label: "DNS list"
-            description: "List of upstream DNS servers separated by comma"
+            description: "List of upstream DNS servers, separated by comma"
             weight: 10
             type: "text"
         external_ntp:
@@ -774,7 +774,7 @@
               generator: "from_settings"
               generator_arg: "NTP_UPSTREAM"
             label: "NTP servers list"
-            description: "List of upstream NTP servers separated by comma"
+            description: "List of upstream NTP servers, separated by comma"
             weight: 10
             type: "text"
         kernel_params:

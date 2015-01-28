@@ -158,13 +158,14 @@ class DeploymentGraph(nx.DiGraph):
             "Current task %s doesnt belong to graph"
             " or not connected to any stages.", task)
 
-    def find_subgraph(self, end):
-        """Find subgraph that has only tasks required for end
+    def find_subgraph(self, start=None, end=None):
+        """Find subgraph by provided start and end endpoints
 
         :param end: string
+        :param start: string
+        :returns: DeploymentGraph instance (subgraph from original)
         """
-
-        end_stage = self.find_stage(end)
+        working_graph = self
         all_tasks = set()
 
         # groups and stages are backbone of graph
@@ -175,25 +176,69 @@ class DeploymentGraph(nx.DiGraph):
             if task['type'] in consts.INTERNAL_TASKS:
                 all_tasks.add(task['id'])
 
-        reversed_graph = self.reverse()
-        for stage in consts.STAGES:
+        if start:
+            working_graph = self.subgraph(
+                all_tasks | working_graph.traverse_from_start(start))
+        if end:
+            working_graph = self.subgraph(
+                all_tasks | working_graph.traverse_to_end(end))
 
-            # nx.dfs_postorder_nodes traverses graph from specified point
-            # to the end by following successors, here is example:
-            # A->B, C-D, B->D , and we want to traverse up to the D
-            # for this we need to reverse graph and make it
-            # B->A, D->C, D->B and use dfs_postorder
-            if stage != end_stage:
-                all_tasks.update(
-                    nx.dfs_postorder_nodes(reversed_graph, stage))
-            else:
-                all_tasks.update(
-                    nx.dfs_postorder_nodes(reversed_graph, end))
-                # if we are at stage where end is, we should just stop
-                # traversal
-                break
+        return working_graph
 
-        return self.subgraph(all_tasks)
+    def traverse_stages(self, stages):
+        """Get all tasks in stages.
+
+        :param stages: list of strings
+        :returns: set with strings
+        """
+        tasks = set()
+        for stage in stages:
+            tasks.update(nx.dfs_postorder_nodes(self.reverse(), stage))
+        return tasks
+
+    def traverse_from_start(self, start):
+        """Traverse graph from specified point to the end.
+        For stage where task is stored, we need to apply dfs_postorder
+        without reverse, so all successors will be found correctly.
+
+        Tasks from previous stages should not be added to subgraph, and
+        this is why we are skipping them.
+
+        All tasks from later stages should be included.
+        """
+        task_stage = self.find_stage(start)
+        stage_pos = consts.STAGES.index(task_stage)
+
+        # get all graph nodes connected to stages after current one
+        tasks = self.traverse_stages(consts.STAGES[stage_pos + 1:])
+
+        # simply traverse starting from root,
+        # A->B, B->C, B->D, C->E
+        tasks.update(nx.dfs_postorder_nodes(self, start))
+        return tasks
+
+    def traverse_to_end(self, end):
+        """Traverse graph from specified point to the start.
+        For stage where task is stored we need included only tasks
+        that are used up to this task.
+
+        For stages that was before task_stage - all tasks should be included.
+
+        All stages that comes after task - should be skipped.
+        """
+        task_stage = self.find_stage(end)
+        stage_pos = consts.STAGES.index(task_stage)
+
+        # get all tasks for stages before current one
+        tasks = self.traverse_stages(consts.STAGES[:stage_pos])
+
+        # nx.dfs_postorder_nodes traverses graph from specified point
+        # to the end by following successors, here is example:
+        # A->B, C->D, B->D , and we want to traverse up to the D
+        # for this we need to reverse graph and make it
+        # B->A, D->C, D->B and use dfs_postorder
+        tasks.update(nx.dfs_postorder_nodes(self.reverse(), end))
+        return tasks
 
 
 class AstuteGraph(object):

@@ -19,6 +19,7 @@ import yaml
 
 from nailgun import objects
 from nailgun.openstack.common import jsonutils
+from nailgun.orchestrator.deployment_graph import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -211,26 +212,48 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
         self.assertEqual(resp.status_code, 405)
 
 
-@patch('nailgun.api.v1.handlers.base.deployment_graph.DeploymentGraph')
-class TestEndTaskPassedCorrectly(BaseGraphTasksTests):
+class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
 
-    def assert_end_passed_correctly(self, url, graph_mock):
-        resp = self.app.get(
-            url,
-            params={'end': 'task'},
-            headers=self.default_headers,
-        )
+    def assert_passed_correctly(self, url, **kwargs):
+        with patch.object(DeploymentGraph, 'find_subgraph') as mfind_subgraph:
+            resp = self.app.get(
+                url,
+                params=kwargs,
+                headers=self.default_headers,
+            )
         self.assertEqual(resp.status_code, 200)
-        graph_mock().find_subgraph.assert_called_with('task')
+        defaults = {'start': None, 'end': None}
+        defaults.update(kwargs)
+        mfind_subgraph.assert_called_with(**defaults)
 
-    def test_end_passed_correctly_for_cluster(self, graph_mock):
-        self.assert_end_passed_correctly(
+    def test_end_passed_correctly_for_cluster(self):
+        self.assert_passed_correctly(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}), end='task')
+
+    def test_end_passed_correctly_for_release(self):
+        self.assert_passed_correctly(
+            reverse('ReleaseDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.release.id}), end='task')
+
+    def test_start_passed_correctly_release(self):
+        self.assert_passed_correctly(
+            reverse('ReleaseDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.release.id}), start='task')
+
+    def test_start_passed_correctly_cluster(self):
+        self.assert_passed_correctly(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}), end='task')
+
+    def test_start_end_passed_correctly_cluster(self):
+        self.assert_passed_correctly(
             reverse('ClusterDeploymentTasksHandler',
                     kwargs={'obj_id': self.cluster.id}),
-            graph_mock)
+            end='task', start='another_task')
 
-    def test_end_passed_correctly_for_release(self, graph_mock):
-        self.assert_end_passed_correctly(
+    def test_start_end_passed_correctly_release(self):
+        self.assert_passed_correctly(
             reverse('ReleaseDeploymentTasksHandler',
                     kwargs={'obj_id': self.cluster.release.id}),
-            graph_mock)
+            end='task', start='another_task')

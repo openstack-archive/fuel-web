@@ -487,7 +487,7 @@
             weight: 50
             type: "text"
             regex:
-              source:  '^(\S.*\S|\S|)$'
+              source: '^(\S.*\S|\S|)$'
               error: "Invalid datastore regexp"
           vlan_interface:
             value: ""
@@ -1313,23 +1313,35 @@
               -
                 name: "az_name"
                 type: "text"
-                label: "AZ name"
+                label: "Availability zone"
                 description: "Availability zone name"
+                regex:
+                  source: &availability_zone_blacklist "^(?!nova$)\w+$"
+                  error: "Invalid Availability zone name"
               -
                 name: "vcenter_host"
                 type: "text"
                 label: "vCenter host"
                 description: "vCenter host or IP"
+                regex:
+                  source: *ipv4_or_hostname_regex
+                  error: "Invalid VCenter host"
               -
                 name: "vcenter_username"
                 type: "text"
                 label: "vCenter username"
                 description: "vCenter username"
+                regex:
+                  source: *non_empty_string
+                  error: "Invalid VCenter username"
               -
                 name: "vcenter_password"
                 type: "password"
                 label: "vCenter password"
                 description: "vCenter password"
+                regex:
+                  source: *non_empty_string
+                  error: "Empty VCenter password"
               -
                 name: "nova_computes"
                 type: "array"
@@ -1337,18 +1349,27 @@
                   -
                     name: "vsphere_cluster"
                     type: "text"
-                    label: "VSphere Cluster"
-                    description: "VSphere Cluster"
+                    label: "VSphere cluster"
+                    description: "VSphere cluster"
+                    regex:
+                      source: *non_empty_string
+                      error: "Invalid VSphere cluster"
                   -
                     name: "service_name"
                     type: "text"
                     label: "Service name"
                     description: "Service name"
+                    regex:
+                      source: "^\w+$"
+                      error: "Invalid service name"
                   -
                     name: "datastore_regex"
                     type: "text"
                     label: "Datastore regex"
                     description: "Datastore regex"
+                    regex:
+                      source: *non_empty_string
+                      error: "Invalid datastore regex"
               -
                 name: "cinder"
                 type: "object"
@@ -1367,39 +1388,59 @@
                 type: "text"
                 label: "VLAN interface"
                 description: "VLAN interface"
+                regex:
+                  source: *non_empty_string
+                  error: "Invalid Network Interface"
           -
             name: "glance"
             type: "object"
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == false or settings:common.use_vcenter == false"
             fields:
               -
                 name: "vcenter_host"
                 type: "text"
-                label: "VCenter Host"
+                label: "VCenter host"
                 description: "VCenter host or IP"
+                regex:
+                  source: *ipv4_or_hostname_regex
+                  error: "Invalid VCenter host"
               -
                 name: "vcenter_username"
                 type: "text"
                 label: "vCenter username"
                 description: "vCenter username"
+                regex:
+                  source: *non_empty_string
+                  error: "Invalid VCenter username"
               -
                 name: "vcenter_password"
                 type: "password"
                 label: "vCenter password"
                 description: "vCenter password"
+                regex:
+                  source: *non_empty_string
+                  error: "Empty VCenter password"
               -
                 name: "datacenter"
                 type: "text"
                 label: "Datacenter"
                 description: "Datacenter"
+                regex:
+                  source: *non_empty_string
+                  error: "Invalid Datacenter"
               -
                 name: "datastore"
                 type: "text"
                 label: "Datastore"
                 description: "Datastore"
+                regex:
+                  source: *non_empty_string
+                  error: "Invalid Datastore"
         value:
           availability_zones:
             -
-              az_name: ""
+              az_name: "vcenter"
               vcenter_host: ""
               vcenter_username: ""
               vcenter_password: ""
@@ -1418,7 +1459,6 @@
             vcenter_password: ""
             datacenter: ""
             datastore: ""
-
 - pk: 1
   extend: *base_release
   fields:

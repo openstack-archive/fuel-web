@@ -1,0 +1,23 @@
+{
+    "en-US": {
+        "translation": {
+            "cluster_page": {
+                "tabs": {
+                    "vmware": "VMware"
+                }
+            },
+            "vmware": {
+                "title": "VMware vCenter Settings",
+                "availability_zones": "vCenter",
+                "network": "Network",
+                "glance": "Glance",
+                "cinder": "Cinder",
+                "reset_to_defaults": "Load Defaults",
+                "cancel": "Cancel Changes",
+                "apply": "Save Changes",
+                "nova_computes": "Nova Computes",
+                "nova_compute": "Nova Compute Instance"
+            }
+        }
+    }
+}

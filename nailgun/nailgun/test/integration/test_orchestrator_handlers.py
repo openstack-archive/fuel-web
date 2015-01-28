@@ -293,3 +293,25 @@ class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
             make_orchestrator_uri(self.node_uids)
         out = self.send_put(action_url, [])
         self.assertEqual(out.status_code, 400)
+
+
+class TestDeployMethodVersioning(BaseSelectedNodesTest):
+
+    def assert_deployment_method(self, version, method, mcast):
+        self.cluster.release.version = version
+        self.db.flush()
+        action_url = reverse(
+            'DeploySelectedNodes',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_orchestrator_uri(self.node_uids)
+        self.send_put(action_url)
+        deployment_method = mcast.call_args_list[0][0][1]['method']
+        self.assertEqual(deployment_method, method)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_deploy_is_used_before_61(self, mcast):
+        self.assert_deployment_method('2014.2-6.0', 'deploy', mcast)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_granular_is_used_in_61(self, mcast):
+        self.assert_deployment_method('2014.2-6.1', 'granular_deploy', mcast)

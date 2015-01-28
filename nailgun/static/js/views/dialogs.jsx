@@ -94,6 +94,42 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         }
     });
 
+    dialogs.UploadISODialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {title: i18n('dialog.upload_iso.title')};
+        },
+        uploadISO: function() {
+            var link = this.refs.link.getInputDOMNode().value,
+                file = this.refs.file.getInputDOMNode().value;
+            if (!link && !file) return;
+        },
+        renderBody: function() {
+            return (
+                <div className='upload-iso-dialog'>
+                    <controls.Input
+                        type='text'
+                        name='link'
+                        ref='link'
+                        label={i18n('dialog.upload_iso.insert_link')}
+                    />
+                    <controls.Input
+                        type='file'
+                        name='file'
+                        ref='file'
+                        label={i18n('dialog.upload_iso.upload_file')}
+                    />
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='upload' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.uploadISO}>{i18n('dialog.upload_iso.upload_button')}</button>
+            ]);
+        }
+    });
+
     dialogs.DiscardNodeChangesDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.discard_changes.title')};},

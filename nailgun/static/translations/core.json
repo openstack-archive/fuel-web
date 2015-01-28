@@ -208,11 +208,12 @@
                 "version": "Version",
                 "state": "Status",
                 "no_releases_message": "There are no releases available.",
-                "release": {
+                "states": {
                     "available": "Active",
                     "error": "Error",
                     "not_available": "Not available"
-                }
+                },
+                "upload_iso": "Upload ISO"
             },
             "clusters_page": {
                 "title": "My OpenStack Environments",
@@ -481,7 +482,10 @@
                 "openstack_release": "OpenStack Release",
                 "environment_status": "Status",
                 "cluster_was_modified_from_cli" : "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
-                "unavailable_release": "__name__ release is unavailable. The environment can not be deployed."
+                "unavailable_release": {
+                    "text": "__name__ release is unavailable. The environment can not be deployed. You should upload an ISO to proceed with this release. You can do this on ",
+                    "page": "Releases page"
+                }
             },
             "capacity_page": {
                 "title": "Capacity Audit",
@@ -508,7 +512,12 @@
                         "title": "Name and Release",
                         "name": "Name",
                         "release_label": "OpenStack Release",
-                        "existing_environment": "Environment with name \"__name__\" already exists"
+                        "existing_environment": "Environment with name \"__name__\" already exists",
+                        "release_alert": {
+                            "text": "This release is not available. You should upload an iso to proceed with it. Please go to",
+                            "page": "Releases page",
+                            "proceed": "I'm Ok with it, will upload the iso later"
+                        }
                     },
                     "mode": {
                         "title": "Deployment Mode"
@@ -677,6 +686,12 @@
                     "confirm_new_password": "Confirm new password",
                     "wrong_current_password": "Wrong password",
                     "new_password_mismatch": "Passwords do not match"
+                },
+                "upload_iso": {
+                    "title": "Upload ISO",
+                    "upload_button": "Upload",
+                    "insert_link": "Insert link to ISO",
+                    "upload_file": "or choose a file to upload"
                 }
             }
         }
@@ -784,7 +799,7 @@
                 "version": "发布",
                 "state": "状态",
                 "no_releases_message": "没有版本可用",
-                "release": {
+                "states": {
                     "available": "活动",
                     "error": "错误",
                     "not_available": "不可用"
@@ -1320,7 +1335,7 @@
                 "version": "バージョン",
                 "state": "ステータス",
                 "no_releases_message": "利用可能なリリースはありません。",
-                "release": {
+                "states": {
                     "available": "アクティブ",
                     "error": "エラー",
                     "not_available": "利用不可"
@@ -1785,7 +1800,7 @@
                 "version": "버젼",
                 "state": "상태",
                 "no_releases_message": "사용 가능한 출시가 없습니다.",
-                "release": {
+                "states": {
                     "available": "유효한",
                     "error": "오류",
                     "not_available": "사용할 수 없음"

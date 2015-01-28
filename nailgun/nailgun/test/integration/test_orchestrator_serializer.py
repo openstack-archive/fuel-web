@@ -1654,7 +1654,9 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'pending_addition': True,
-                 'name': self.node_name}])
+                 'name': self.node_name,
+                 }
+            ])
 
     def check_serialize_node(self):
         self.assertEqual(
@@ -1667,6 +1669,30 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
             self.serializer.serialize_node_for_node_list(
                 self.env.nodes[0], 'role')['user_node_name'],
             self.node_name)
+
+    def check_generate_test_vm_image_data(self):
+        img_name = 'TestVM-VMDK'
+        disk_format = 'vmdk'
+        img_path = '/opt/vm/cirros-i386-disk.vmdk'
+
+        self.assertEqual(
+            len(self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image']), 2)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['img_name'],
+            img_name)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['disk_format'],
+            disk_format)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['img_path'],
+            img_path)
 
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
@@ -1697,3 +1723,17 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
 
     def test_serialize_node_for_node_list(self):
         self.check_serialize_node_for_node_list()
+
+    def test_generate_test_vm_image_data(self):
+        cluster_db = self.db.query(Cluster).get(self.cluster['id'])
+        cluster_attrs = objects.Cluster.get_attributes(cluster_db).editable
+        if 'use_vcenter' in cluster_attrs['common']:
+            cluster_attrs['common']['use_vcenter']['value'] = True
+        else:
+            cluster_attrs['common']['use_vcenter'] = {}
+            cluster_attrs['common']['use_vcenter']['value'] = True
+
+        objects.Cluster.update_attributes(
+            cluster_db, {'editable': cluster_attrs})
+        objects.Cluster.save(cluster_db)
+        self.check_generate_test_vm_image_data()

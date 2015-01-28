@@ -44,7 +44,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
             var $el = $(this.getDOMNode());
             $el.on('hidden', this.handleHidden);
             $el.on('shown', function() {$el.find('[autofocus]:first').focus();});
-            $el.modal({background: true, keyboard: true});
+            $el.modal({background: true, keyboard: true, backdrop: this.props.backdrop});
         },
         componentWillUnmount: function() {
             $(this.getDOMNode()).off('shown hidden');
@@ -91,6 +91,90 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         mixins: [dialogMixin],
         getDefaultProps: function() {
             return {error: true};
+        }
+    });
+
+    dialogs.UploadISODialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {title: i18n('dialog.upload_iso.title')};
+        },
+        getInitialState: function() {
+            return {
+                progressAvailable: false,
+                progress: 0
+            };
+        },
+        progressUpdate: function(e) {
+            this.setState({progress: Math.floor(100 * e.loaded / e.total)});
+        },
+        stopUploading: function() {
+            if (this.state.request) this.state.request.abort();
+        },
+        componentWillUnmount: function() {
+            this.stopUploading();
+        },
+        uploadISO: function() {
+            var progressAvailable = false;
+            var request = $.ajax({
+                url: _.result(this.props.release, 'url') + '/upload/iso',
+                type: 'POST',
+                xhr: _.bind(function() {
+                    var xhr = $.ajaxSettings.xhr();
+                    if (xhr.upload) {
+                        progressAvailable = true;
+                        xhr.upload.addEventListener('progress', this.progressUpdate, false);
+                    }
+                    return xhr;
+                }, this),
+                data: this.state.file,
+                processData: false,
+                success: _.bind(function() {
+                    this.props.release.fetch().done(_.bind(function() {
+                        app.page.releaseUploadingStarted();
+                        this.close();
+                    }, this));
+                }, this),
+                error: _.bind(function(response) {
+                    this.showError(utils.getResponseText(response) || i18n('dialog.upload_iso.task_error.warning'));
+                }, this)
+            });
+            this.setState({
+                progressAvailable: progressAvailable,
+                request: request
+            });
+        },
+        onChange: function() {
+            this.setState({file: this.refs.file.getInputDOMNode().files[0]});
+        },
+        renderBody: function() {
+            var ns = 'dialog.upload_iso.';
+            return (
+                <div className='upload-iso-dialog'>
+                    <p>
+                        {i18n(ns + 'ubuntu_text_begin')}
+                        <a target='_blank' href='http://www.ubuntu.com/download'>{i18n(ns + 'ubuntu_link')}</a>
+                        {i18n(ns + 'ubuntu_text_end')}
+                    </p>
+                    {this.state.request ?
+                        <controls.ProgressBar progress={this.state.progressAvailable && this.state.progress} />
+                    :
+                        <controls.Input type='file' name='file' ref='file' onChange={this.onChange} />
+                    }
+                </div>
+            );
+        },
+        renderFooter: function() {
+            var button, buttons = [
+                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>
+            ];
+            if (this.state.request) {
+                button = <button key='stop' className='btn btn-danger' onClick={this.stopUploading}>{i18n('dialog.upload_iso.stop_uploading_button')}</button>;
+            } else {
+                button = <button key='upload' className='btn btn-success' disabled={!this.state.file} onClick={this.uploadISO}>{i18n('dialog.upload_iso.upload_button')}</button>;
+            }
+            buttons.push(button);
+            return buttons;
         }
     });
 

@@ -1003,7 +1003,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
     def generate_test_vm_image_data(self, node):
         # Instantiate all default values in dict.
-        image_data = {
+        image_data = []
+        image_data.append({
             'container_format': 'bare',
             'public': 'true',
             'disk_format': 'qcow2',
@@ -1012,31 +1013,47 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             'os_name': 'cirros',
             'min_ram': 64,
             'glance_properties': '',
-        }
+        })
         # Generate a right path to image.
         c_attrs = node.cluster.attributes
         if 'ubuntu' in c_attrs['generated']['cobbler']['profile']:
             img_dir = '/usr/share/cirros-testvm/'
         else:
             img_dir = '/opt/vm/'
-        image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
+        image_data[0]['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
         # Add default Glance property for Murano.
         glance_properties = [
             """--property murano_image_info="""
             """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
         ]
 
+        # Fixme! Delete this if case when multi HV support has been done
         # Alternate VMWare specific values.
         if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':
-            image_data.update({
+            image_data[0].update({
                 'disk_format': 'vmdk',
                 'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
             })
             glance_properties.append('--property vmware_disktype=sparse')
             glance_properties.append('--property vmware_adaptertype=lsilogic')
             glance_properties.append('--property hypervisor_type=vmware')
+        # For multi HV we need both images
+        elif c_attrs['editable']['common']['use_vcenter']['value'] == True:
+           image_data.append(dict(image_data[0]))
+           image_data[1].update({
+                'img_name': 'TestVM-VMDK',
+                'disk_format': 'vmdk',
+                'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
+           })
+           vmdk_glance_properties = list(glance_properties)
+           vmdk_glance_properties.append('--property vmware_disktype=sparse')
+           vmdk_glance_properties.append(
+               '--property vmware_adaptertype=lsilogic')
+           vmdk_glance_properties.append('--property hypervisor_type=vmware')
+           image_data[1]['glance_properties'] = ' '.join(
+               vmdk_glance_properties)
 
-        image_data['glance_properties'] = ' '.join(glance_properties)
+        image_data[0]['glance_properties'] = ' '.join(glance_properties)
 
         return {'test_vm_image': image_data}
 

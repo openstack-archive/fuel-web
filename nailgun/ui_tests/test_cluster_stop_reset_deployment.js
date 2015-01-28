@@ -86,10 +86,12 @@ casper.then(function() {
         this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-striped', 'Deployment progress-stopping bar appears');
         this.test.assertSelectorDisappears('.cluster-deploy-placeholder .progress-striped', 'Deployment progress-stopping bar disappears', 60000);
     });
+
     this.then(function() {
-        this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
-        this.test.assertExists('.alert-success', 'Success stopping deployment alert message appears');
+        this.test.assertSelectorAppears('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
+        this.test.assertSelectorAppears('.alert-success', 'Success stopping deployment alert message appears');
     });
+
     this.loadPage('#cluster/1/actions').waitForSelector('#tab-actions > *');
     this.then(function() {
         this.test.assertExists('.action-item-controls .reset-environment-btn:not(:disabled)', 'Reset button exist and enabled after stopped deployment');

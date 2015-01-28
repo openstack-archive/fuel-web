@@ -1718,6 +1718,48 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
         objects.NodeCollection.prepare_for_deployment(self.env.nodes)
         self.serializer = DeploymentHASerializer61(self.cluster)
 
+    def check_generate_test_vm_image_data(self):
+        kvm_img_name = 'TestVM'
+        kvm_img_disk_format = 'qcow2'
+        kvm_img_path = '/opt/vm/cirros-x86_64-disk.img'
+        vmdk_img_name = 'TestVM-VMDK'
+        vmdk_disk_format = 'vmdk'
+        vmdk_img_path = '/opt/vm/cirros-i386-disk.vmdk'
+
+        self.assertEqual(
+            len(self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image']), 2)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['img_name'],
+            vmdk_img_name)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['disk_format'],
+            vmdk_disk_format)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['img_path'],
+            vmdk_img_path)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][1]['img_name'],
+            kvm_img_name)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][1]['disk_format'],
+            kvm_img_disk_format)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][1]['img_path'],
+            kvm_img_path)
+
     def test_serialize_node(self):
         self.check_serialize_node()
 
@@ -1727,13 +1769,9 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
     def test_generate_test_vm_image_data(self):
         cluster_db = self.db.query(Cluster).get(self.cluster['id'])
         cluster_attrs = objects.Cluster.get_attributes(cluster_db).editable
-        if 'use_vcenter' in cluster_attrs['common']:
-            cluster_attrs['common']['use_vcenter']['value'] = True
-        else:
-            cluster_attrs['common']['use_vcenter'] = {}
-            cluster_attrs['common']['use_vcenter']['value'] = True
+        cluster_attrs['common'].setdefault('use_vcenter', {})
+        cluster_attrs['common']['use_vcenter']['value'] = True
 
         objects.Cluster.update_attributes(
             cluster_db, {'editable': cluster_attrs})
-        objects.Cluster.save(cluster_db)
         self.check_generate_test_vm_image_data()

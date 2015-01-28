@@ -41,13 +41,17 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
     ClusterPage = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5),
-            componentMixins.backboneMixin('cluster', 'change:is_customized change:release'),
+            componentMixins.backboneMixin('cluster', 'change:is_customized'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('nodes');}
             }),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
                 renderOn: 'add remove change'
+            }),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {return props.cluster.get('release');},
+                renderOn: 'change:state'
             })
         ],
         statics: {
@@ -123,7 +127,8 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             }
         },
         shouldDataBeFetched: function() {
-            return this.props.cluster.task({group: ['deployment', 'network'], status: 'running'});
+            var cluster = this.props.cluster;
+            return cluster.get('release').get('state') == 'processing' || cluster.task({group: ['deployment', 'network'], status: 'running'});
         },
         fetchData: function() {
             var task = this.props.cluster.task({group: 'deployment', status: 'running'});
@@ -135,10 +140,14 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                     .then(_.bind(function() {
                         return this.props.cluster.fetchRelated('nodes');
                     }, this));
-            } else {
-                task = this.props.cluster.task('verify_networks', 'running');
-                return task ? task.fetch() : $.Deferred().resolve();
             }
+            var requests = [];
+            task = this.props.cluster.task('verify_networks', 'running');
+            if (task) requests.push(task.fetch());
+            if (this.props.cluster.get('release').get('state') == 'processing') {
+                requests.push(this.props.cluster.get('release').fetch());
+            }
+            return $.when.apply($, requests);
         },
         deploymentTaskStarted: function() {
             $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(_.bind(this.startPolling, this));
@@ -187,7 +196,8 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },
         render: function() {
-            var cluster = this.props.cluster,
+            var ns = 'cluster_page.unavailable_release.',
+                cluster = this.props.cluster,
                 release = cluster.get('release'),
                 availableTabs = this.getAvailableTabs(),
                 tabs = _.pluck(availableTabs, 'url'),
@@ -199,9 +209,13 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                 <div>
                     <ClusterInfo cluster={cluster} />
                     <DeploymentResult cluster={cluster} />
-                    {release.get('state') == 'unavailable' &&
+                    {release.get('state') != 'available' &&
                         <div className='alert alert-block globalalert'>
-                            <p className='enable-selection'>{i18n('cluster_page.unavailable_release', {name: release.get('name')})}</p>
+                            <p className='enable-selection'>
+                                {i18n(ns + 'text_begining')}
+                                <a href='#releases'>{i18n(ns + 'page')}</a>
+                                {i18n(ns + 'text_end')}
+                            </p>
                         </div>
                     }
                     {cluster.get('is_customized') &&
@@ -329,16 +343,16 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 task = cluster.task({group: 'deployment', status: 'running'}),
-                taskName = task ? task.get('name') : '',
-                taskProgress = task && task.get('progress') || 0,
-                infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
+                releaseUpload = cluster.get('release').get('state') == 'processing',
+                taskName = task ? task.get('name') : releaseUpload ? 'prepare_release' : '',
+                progress = task ? task.get('progress') : releaseUpload ? 100 : 0,
                 itemClass = 'deployment-control-item-box',
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
+                isDeploymentImpossible = task || cluster.get('release').get('state') != 'available' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
             return (
                 <div className='cluster-deploy-placeholder'>
-                    {task ? (
+                    {(task || releaseUpload) ? (
                         <div className={'pull-right deployment-progress-box ' + taskName}>
-                            {!infiniteTask &&
+                            {_.contains(['deploy', 'update'], taskName) &&
                                 <div>
                                     {taskName != 'update' &&
                                         <div className={itemClass}>
@@ -352,13 +366,13 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                                         </div>
                                     }
                                     <div className={itemClass}>
-                                        <div className='deploying-progress-text-box percentage'>{taskProgress + '%'}</div>
+                                        <div className='deploying-progress-text-box percentage'>{progress + '%'}</div>
                                     </div>
                                 </div>
                             }
                             <div className={itemClass}>
-                                <div className={'progress progress-striped active progress-' + (infiniteTask ? 'warning' : 'success')}>
-                                    <div className='bar' style={{width: (taskProgress > 3 ? taskProgress : 3) + '%'}} />
+                                <div className={'progress progress-striped active progress-' + (_.contains(['deploy', 'update'], taskName) ? 'success' : 'warning')}>
+                                    <div className='bar' style={{width: (progress > 3 ? progress : 3) + '%'}} />
                                 </div>
                             </div>
                             <div className='progress-bar-description'>{i18n('cluster_page.' + taskName, {defaultValue: ''})}</div>

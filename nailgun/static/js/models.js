@@ -395,13 +395,6 @@ define([
     models.Task = BaseModel.extend({
         constructorName: 'Task',
         urlRoot: '/api/tasks',
-        releaseId: function() {
-            var id;
-            try {
-                id = this.get('result').release_info.release_id;
-            } catch (ignore) {}
-            return id;
-        },
         groups: {
             network: ['verify_networks', 'check_networks'],
             deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment']
@@ -419,7 +412,7 @@ define([
                         result = _.contains(utils.composeList(filters.status), this.get('status'));
                     }
                     if (filters.release) {
-                        result = result && this.releaseId() == filters.release;
+                        result = result && this.get('release_id') == filters.release;
                     }
                 }
             } else if (filters.status) {

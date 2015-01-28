@@ -15,18 +15,24 @@
 **/
 define(
 [
+    'jquery',
     'underscore',
     'i18n',
     'react',
     'models',
+    'utils',
+    'jsx!views/dialogs',
     'jsx!views/controls',
     'jsx!component_mixins'
 ],
-function(_, i18n, React, models, controls, componentMixins) {
+function($, _, i18n, React, models, utils, dialogs, controls, componentMixins) {
     'use strict';
 
     var ReleasesPage = React.createClass({
-        mixins: [componentMixins.backboneMixin('releases')],
+        mixins: [
+            componentMixins.backboneMixin('releases', 'change:state'),
+            componentMixins.pollingMixin(3)
+        ],
         getDefaultProps: function() {
             return {columns: ['name', 'version', 'state']};
         },
@@ -36,16 +42,51 @@ function(_, i18n, React, models, controls, componentMixins) {
             breadcrumbsPath: [['home', '#'], 'releases'],
             fetchData: function() {
                 var releases = new models.Releases();
-                return releases.fetch().then(function() {
-                    return {releases: releases};
+                var tasks = new models.Tasks();
+                tasks.url = 'api/tasks';
+                return $.when(releases.fetch(), tasks.fetch({data: {cluster_id: ''}})).then(function() {
+                    return {
+                        releases: releases,
+                        tasks: tasks.filterTasks({name: 'prepare_release', status: 'error'})
+                    };
                 });
             }
         },
+        shouldDataBeFetched: function() {
+            return !!this.props.releases.findWhere({state: 'processing'});
+        },
+        fetchData: function() {
+            return $.when(_.invoke(this.props.releases.where({state: 'processing'}), 'fetch'));
+        },
+        releaseUploadingStarted: function() {
+            this.startPolling();
+        },
         getReleaseData: function(release) {
             return _.map(this.props.columns, function(attr) {
-                if (attr == 'state') return i18n('release_page.release.' + release.get(attr));
+                if (attr == 'state') {
+                    if (release.get(attr) == 'processing') return <controls.ProgressBar />;
+                    if (release.get(attr) == 'unavailable') {
+                        var data = [
+                            <button key='button' className='btn' onClick={_.bind(this.showUploadISODialog, this, release)}>
+                                {i18n('release_page.upload_iso')}
+                            </button>
+                        ];
+                        var task = _.find(this.props.tasks, {release_id: release.id});
+                        if (task) {
+                            data.push(<p key='error'
+                                className='enable-selection release-error'
+                                dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(task.escape('message')))}}
+                            />);
+                        }
+                        return data;
+                    }
+                    return i18n('release_page.states.' + release.get(attr));
+                }
                 return release.get(attr) || i18n('common.not_available');
-            });
+            }, this);
+        },
+        showUploadISODialog: function(release) {
+            utils.showDialog(dialogs.UploadISODialog, {release: release, backdrop: 'static'});
         },
         render: function() {
             return (

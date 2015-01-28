@@ -1003,7 +1003,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
     def generate_test_vm_image_data(self, node):
         # Instantiate all default values in dict.
-        image_data = {
+        image_kvm_data = {
             'container_format': 'bare',
             'public': 'true',
             'disk_format': 'qcow2',
@@ -1019,26 +1019,47 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             img_dir = '/usr/share/cirros-testvm/'
         else:
             img_dir = '/opt/vm/'
-        image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
+        image_kvm_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
         # Add default Glance property for Murano.
         glance_properties = [
             """--property murano_image_info="""
             """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
         ]
 
+        image_kvm_data['glance_properties'] = ' '.join(glance_properties)
+        use_multi_hv = c_attrs['editable']['common']['use_vcenter']['value']
+        images_data = []
+
         # Alternate VMWare specific values.
-        if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':
-            image_data.update({
+        # FiXME(who): srogov
+        # This a temporary workaround to keep existing functioanality
+        # after fully implementation of the multi HV support it is need to
+        # delete 'libvirt_type' case
+        if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter' \
+            or use_multi_hv == True:
+            image_vmdk_data = copy.deepcopy(image_kvm_data)
+            image_vmdk_data.update({
                 'disk_format': 'vmdk',
                 'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
             })
-            glance_properties.append('--property vmware_disktype=sparse')
-            glance_properties.append('--property vmware_adaptertype=lsilogic')
-            glance_properties.append('--property hypervisor_type=vmware')
+            glance_vmdk_properties = copy.deepcopy(glance_properties)
+            glance_vmdk_properties.append('--property vmware_disktype=sparse')
+            glance_vmdk_properties.append('--property vmware_disktype=sparse')
+            glance_vmdk_properties.append('--property vmware_adaptertype=lsilogic')
+            glance_vmdk_properties.append('--property hypervisor_type=vmware')
+            image_vmdk_data['glance_properties'] = ' '.join(glance_vmdk_properties)
+            if use_multi_hv == True:
+                image_vmdk_data.update({
+                'img_name': 'TestVM-VMDK',
+                })
+                images_data.append(image_kvm_data)
 
-        image_data['glance_properties'] = ' '.join(glance_properties)
+            images_data.append(image_vmdk_data)
+        else:
+            images_data.append(image_kvm_data)
+            
 
-        return {'test_vm_image': image_data}
+        return {'test_vm_image': images_data}
 
     def get_net_provider_serializer(self, cluster):
         if cluster.net_provider == 'nova_network':

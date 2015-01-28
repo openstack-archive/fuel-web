@@ -22,9 +22,10 @@ define(
     'models',
     'utils',
     'jsx!component_mixins',
+    'jsx!views/controls',
     'views/wizard'
 ],
-function($, _, i18n, React, models, utils, componentMixins, wizard) {
+function($, _, i18n, React, models, utils, componentMixins, controls, wizard) {
     'use strict';
     var ClustersPage, ClusterList, Cluster;
 
@@ -37,14 +38,18 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                 var clusters = new models.Clusters();
                 var nodes = new models.Nodes();
                 var tasks = new models.Tasks();
-                return $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch()).done(_.bind(function() {
+                var releases = new models.Releases();
+                return $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch(), releases.fetch()).done(_.bind(function() {
                     clusters.each(function(cluster) {
                         cluster.set('nodes', new models.Nodes(nodes.where({cluster: cluster.id})));
                         cluster.get('nodes').deferred = nodes.deferred;
                         cluster.set('tasks', new models.Tasks(tasks.where({cluster: cluster.id})));
                     }, this);
                 }, this)).then(function() {
-                    return {clusters: clusters};
+                    return {
+                        clusters: clusters,
+                        releases: releases
+                    };
                 });
             }
         },
@@ -52,7 +57,7 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
             return (
                 <div>
                     <h3 className="page-title">{i18n('clusters_page.title')}</h3>
-                    <ClusterList clusters={this.props.clusters} />
+                    <ClusterList {... _.pick(this.props, 'clusters', 'releases')} />
                 </div>
             );
         }
@@ -68,7 +73,11 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                 <div className="cluster-list">
                     <div className="roles-block-row">
                         {this.props.clusters.map(function(cluster) {
-                            return <Cluster key={cluster.id} cluster={cluster} />;
+                            return <Cluster
+                                key={cluster.id}
+                                cluster={cluster}
+                                release={this.props.releases.get(cluster.get('release_id'))}
+                            />;
                         }, this)}
                         <div key="add" className="span3 clusterbox create-cluster" onClick={this.createCluster}>
                             <div className="add-icon"><i className="icon-create"></i></div>
@@ -89,13 +98,14 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
             componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.get('tasks');
             }}),
+            componentMixins.backboneMixin('release', 'change:state'),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.task({group: 'deployment', status: 'running'});
             }}),
             componentMixins.pollingMixin(3)
         ],
         shouldDataBeFetched: function() {
-            return this.props.cluster.task('cluster_deletion', ['running', 'ready']) || this.props.cluster.task({group: 'deployment', status: 'running'});
+            return this.props.release.get('state') == 'processing' || this.props.cluster.task('cluster_deletion', ['running', 'ready']) || this.props.cluster.task({group: 'deployment', status: 'running'});
         },
         fetchData: function() {
             var request, requests = [];
@@ -114,12 +124,14 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
             if (deploymentTask) {
                 request = deploymentTask.fetch();
                 request.done(_.bind(function() {
-                    if (deploymentTask.get('status') != 'running') {
+                    if (!deploymentTask.match({status: 'running'})) {
                         this.props.cluster.fetch();
                         app.rootComponent.refreshNavbar();
                     }
                 }, this));
                 requests.push(request);
+            } else if (this.props.release.get('state') == 'processing') {
+                requests.push(this.props.release.fetch());
             }
             return $.when.apply($, requests);
         },
@@ -154,6 +166,8 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                                     <div className="bar" style={{width: (deploymentTask.get('progress') > 3 ? deploymentTask.get('progress') : 3) + '%'}}></div>
                                 </div>
                             </div>
+                        : this.props.release.get('state') == 'processing' ?
+                            <controls.ProgressBar className='warning' />
                         :
                             i18n('cluster.status.' + cluster.get('status'), {defaultValue: cluster.get('status')})
                         }

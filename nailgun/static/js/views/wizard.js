@@ -26,6 +26,7 @@ define(
     'view_mixins',
     'text!templates/wizard/create_cluster_wizard.html',
     'text!templates/wizard/name_and_release.html',
+    'text!templates/wizard/release_alert.html',
     'text!templates/wizard/common_wizard_panel.html',
     'text!templates/wizard/mode.html',
     'text!templates/wizard/network.html',
@@ -35,7 +36,7 @@ define(
     'text!templates/wizard/warning.html',
     'text!templates/wizard/text_input.html'
 ],
-function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, releaseAlertTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {},
@@ -597,8 +598,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         constructorName: 'NameAndRelease',
         title: 'dialog.create_cluster_wizard.name_release.title',
         template: _.template(clusterNameAndReleasePaneTemplate),
+        releaseAlertTemplate: _.template(releaseAlertTemplate),
         events: {
-            'keydown input': 'onInputKeydown'
+            'keydown input': 'onInputKeydown',
+            'click .go_to_link': 'onLinkClick',
+            'change [name=proceed]': 'proceedwithUnavailableRelease'
         },
         processPaneData: function() {
             var success = this.createCluster();
@@ -628,7 +632,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         onInputKeydown: function() {
             this.$('.control-group.error').removeClass('error');
             this.$('.help-inline').html('');
-            this.wizard.panesModel.set('invalid', false);
+            this.wizard.panesModel.set('invalid', this.$('[name=proceed]').length && !this.$('[name=proceed]').is(':checked'));
         },
         composePaneBindings: function() {
             this.constructor.__super__.composePaneBindings.apply(this, arguments);
@@ -671,7 +675,8 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             });
             this.wizard.panesModel.set({
                 activePaneIndex: 0,
-                maxAvailablePaneIndex: 0
+                maxAvailablePaneIndex: 0,
+                invalid: release.get('state') == 'unavailable' || !name
             });
             this.wizard.processRestrictions();
             this.wizard.attachModelListeners();
@@ -681,6 +686,12 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             var release = this.wizard.model.get('NameAndRelease.release');
             this.updateConfig(release.get('wizard_metadata'));
         },
+        onLinkClick: function() {
+            this.wizard.$el.modal('hide');
+        },
+        proceedwithUnavailableRelease: function(e) {
+            this.wizard.panesModel.set({invalid: !e.target.checked || !this.wizard.model.get('NameAndRelease.name')});
+        },
         render: function() {
             this.constructor.__super__.render.call(this);
             if (this.releases.length) {
@@ -689,6 +700,9 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                     this.wizard.model.set('NameAndRelease.release', this.releases.first());
                 } else {
                     this.$('.release-description').text(release.get('description'));
+                    if (release.get('state') == 'unavailable') {
+                        this.$('.release-alert').html(this.releaseAlertTemplate()).i18n();
+                    }
                 }
             }
             return this;

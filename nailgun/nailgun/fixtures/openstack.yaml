@@ -1311,23 +1311,35 @@
               -
                 name: "az_name"
                 type: "text"
-                label: "AZ name"
+                label: "Availability zone"
                 description: "Availability zone name"
+                regex:
+                  source:  &availability_zone_balcklist '^(?!nova$)\w+$'
+                  error: 'Bad Availability zone name'
               -
                 name: "vcenter_host"
                 type: "text"
                 label: "vCenter host"
                 description: "vCenter host or IP"
+                regex:
+                  source:  '\w'
+                  error: 'Bad VCenter Host'
               -
                 name: "vcenter_username"
                 type: "text"
                 label: "vCenter username"
                 description: "vCenter username"
+                regex:
+                  source:  '\w'
+                  error: 'Bad VCenter Username'
               -
                 name: "vcenter_password"
                 type: "password"
                 label: "vCenter password"
                 description: "vCenter password"
+                regex:
+                  source:  '.*'
+                  error: 'Bad VCenter Password'
               -
                 name: "nova_computes"
                 type: "array"
@@ -1337,16 +1349,25 @@
                     type: "text"
                     label: "VSphere Cluster"
                     description: "VSphere Cluster"
+                    regex:
+                      source:  '\w'
+                      error: 'Bad VSphere cluster'
                   -
                     name: "service_name"
                     type: "text"
                     label: "Service name"
                     description: "Service name"
+                    regex:
+                      source:  '\w'
+                      error: 'Bad service name'
                   -
                     name: "datastore_regex"
                     type: "text"
                     label: "Datastore regex"
                     description: "Datastore regex"
+                    regex:
+                      source:  '\w'
+                      error: 'Bad datastore regex'
               -
                 name: "cinder"
                 type: "object"
@@ -1365,35 +1386,56 @@
                 type: "text"
                 label: "VLAN interface"
                 description: "VLAN interface"
+                regex:
+                  source: ^\w+$
+                  error: 'Bad Network Interface'
           -
             name: "glance"
             type: "object"
+            restrictions:
+              - condition: "settings:common.libvirt_type.value == 'vcenter'"
+                acton: hide
             fields:
               -
                 name: "vcenter_host"
                 type: "text"
                 label: "VCenter Host"
                 description: "VCenter host or IP"
+                regex:
+                  source:  '\w'
+                  error: 'Bad VCenter host'
               -
                 name: "vcenter_username"
                 type: "text"
                 label: "vCenter username"
                 description: "vCenter username"
+                regex:
+                  source:  '\w'
+                  error: 'Bad VCenter username'
               -
                 name: "vcenter_password"
                 type: "password"
                 label: "vCenter password"
                 description: "vCenter password"
+                regex:
+                  source:  '.*'
+                  error: 'Bad VCenter password'
               -
                 name: "datacenter"
                 type: "text"
                 label: "Datacenter"
                 description: "Datacenter"
+                regex:
+                  source:  '\w'
+                  error: 'Bad Datacenter'
               -
                 name: "datastore"
                 type: "text"
                 label: "Datastore"
                 description: "Datastore"
+                regex:
+                  source:  '\w'
+                  error: 'Bad Datastore'
         value:
           availability_zones:
             -

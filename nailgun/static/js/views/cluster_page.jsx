@@ -30,9 +30,10 @@ define(
     'jsx!views/cluster_page_tabs/settings_tab',
     'jsx!views/cluster_page_tabs/logs_tab',
     'jsx!views/cluster_page_tabs/actions_tab',
-    'jsx!views/cluster_page_tabs/healthcheck_tab'
+    'jsx!views/cluster_page_tabs/healthcheck_tab',
+    'plugins/vmware/vmware'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, VmWareTab) {
     'use strict';
 
     var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl,
@@ -173,14 +174,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
         },
         getAvailableTabs: function() {
-            return [
+            var tabs = [
                 {url: 'nodes', tab: NodesTab},
                 {url: 'network', tab: NetworkTab},
                 {url: 'settings', tab: SettingsTab},
+                //{url: 'vmware', tab: VmWareTab},
                 {url: 'logs', tab: LogsTab},
                 {url: 'healthcheck', tab: HealthCheckTab},
                 {url: 'actions', tab: ActionsTab}
             ];
+            var settings = this.props.cluster.get('settings');
+            var useVCenter = settings.get('common.use_vcenter').value;
+            console.log('useVCenter =',useVCenter); // TODO remove it
+            if(useVCenter) {
+                tabs.splice(3, 0, {url: 'vmware', tab: VmWareTab});
+            }
+            return tabs;
         },
         checkTab: function(props) {
             props = props || this.props;

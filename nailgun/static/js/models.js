@@ -60,7 +60,7 @@ define([
         }
     };
 
-    var restrictionMixin = {
+    var restrictionMixin = models.restrictionMixin = {
         expandRestrictions: function(restrictions, path) {
             path = path || 'restrictions';
             this.expandedRestrictions = this.expandedRestrictions || {};

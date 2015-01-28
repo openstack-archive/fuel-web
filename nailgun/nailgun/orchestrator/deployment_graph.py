@@ -158,13 +158,14 @@ class DeploymentGraph(nx.DiGraph):
             "Current task %s doesnt belong to graph"
             " or not connected to any stages.", task)
 
-    def find_subgraph(self, end):
+    def find_subgraph(self, start=None, end=None):
         """Find subgraph that has only tasks required for end
 
         :param end: string
+        :param start: string
+        :returns: DeploymentGraph instance (subgraph from original)
         """
-
-        end_stage = self.find_stage(end)
+        working_graph = self
         all_tasks = set()
 
         # groups and stages are backbone of graph
@@ -175,15 +176,58 @@ class DeploymentGraph(nx.DiGraph):
             if task['type'] in consts.INTERNAL_TASKS:
                 all_tasks.add(task['id'])
 
+        if start:
+            working_graph = self.subgraph(
+                all_tasks | working_graph.traverse_from_start(start))
+        if end:
+            working_graph = self.subgraph(
+                all_tasks | working_graph.traverse_to_end(end))
+
+        return working_graph
+
+    def traverse_from_start(self, start):
+        """Traverse graph from specified point to the end.
+        For stage where task is stored, we need to apply dfs_postorder
+        without reverse, so all successors will be found correctly.
+
+        Tasks from previous stages should not be added to subgraph, and
+        this is why we are skipping them.
+
+        All tasks from later stages should be included.
+        """
+        task_stage = self.find_stage(start)
+        all_tasks = set()
+        stage_pos = consts.STAGES.index(task_stage)
+
+        all_tasks.update(
+            nx.dfs_postorder_nodes(self, start))
+
+        for stage in consts.STAGES[stage_pos + 1:]:
+            all_tasks.update(
+                nx.dfs_postorder_nodes(self.reverse(), stage))
+
+        return all_tasks
+
+    def traverse_to_end(self, end):
+        """Traverse graph from specified point to the start.
+        For stage where task is stored we need included only tasks
+        that are used up to this task.
+
+        For stages that was before task_stage - all tasks should be included.
+
+        All stages that comes after task - should be skipped.
+        """
+        task_stage = self.find_stage(end)
+        all_tasks = set()
         reversed_graph = self.reverse()
         for stage in consts.STAGES:
 
             # nx.dfs_postorder_nodes traverses graph from specified point
             # to the end by following successors, here is example:
-            # A->B, C-D, B->D , and we want to traverse up to the D
+            # A->B, C->D, B->D , and we want to traverse up to the D
             # for this we need to reverse graph and make it
             # B->A, D->C, D->B and use dfs_postorder
-            if stage != end_stage:
+            if stage != task_stage:
                 all_tasks.update(
                     nx.dfs_postorder_nodes(reversed_graph, stage))
             else:
@@ -193,7 +237,7 @@ class DeploymentGraph(nx.DiGraph):
                 # traversal
                 break
 
-        return self.subgraph(all_tasks)
+        return all_tasks
 
 
 class AstuteGraph(object):

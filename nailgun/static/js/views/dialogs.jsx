@@ -94,6 +94,35 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         }
     });
 
+    dialogs.UploadISODialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {
+            return {title: i18n('dialog.upload_iso.title')};
+        },
+        uploadISO: function() {
+
+        },
+        renderBody: function() {
+            var ns = 'dialog.upload_iso.';
+            return (
+                <div className='upload-iso-dialog'>
+                    <p>
+                        {i18n(ns + 'ubuntu_text_begin')}
+                        <a target='_blank' href='http://www.ubuntu.com/download'>{i18n(ns + 'ubuntu_link')}</a>
+                        {i18n(ns + 'ubuntu_text_end')}
+                    </p>
+                    <controls.Input type='file' name='file' ref='file' label={i18n(ns + 'upload_file')} />
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return ([
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='upload' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.uploadISO}>{i18n('dialog.upload_iso.upload_button')}</button>
+            ]);
+        }
+    });
+
     dialogs.DiscardNodeChangesDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.discard_changes.title')};},

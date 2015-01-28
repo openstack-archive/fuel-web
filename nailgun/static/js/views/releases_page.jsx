@@ -19,10 +19,12 @@ define(
     'i18n',
     'react',
     'models',
+    'utils',
+    'jsx!views/dialogs',
     'jsx!views/controls',
     'jsx!component_mixins'
 ],
-function(_, i18n, React, models, controls, componentMixins) {
+function(_, i18n, React, models, utils, dialogs, controls, componentMixins) {
     'use strict';
 
     var ReleasesPage = React.createClass({
@@ -45,9 +47,17 @@ function(_, i18n, React, models, controls, componentMixins) {
         },
         getReleaseData: function(release) {
             return _.map(this.props.columns, function(attr) {
-                if (attr == 'state') return i18n('release_page.release.' + release.get(attr));
+                if (attr == 'state') {
+                    if (release.get(attr) == 'unavailable') {
+                        return <button className='btn' onClick={this.showUploadISODialog}>{i18n('release_page.upload_iso')}</button>;
+                    }
+                    return i18n('release_page.states.' + release.get(attr));
+                }
                 return release.get(attr) || i18n('common.not_available');
-            });
+            }, this);
+        },
+        showUploadISODialog: function() {
+            utils.showDialog(dialogs.UploadISODialog);
         },
         render: function() {
             return (

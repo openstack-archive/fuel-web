@@ -207,7 +207,10 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                     <DeploymentResult cluster={cluster} />
                     {release.get('state') == 'unavailable' &&
                         <div className='alert alert-block globalalert'>
-                            <p className='enable-selection'>{i18n('cluster_page.unavailable_release', {name: release.get('name')})}</p>
+                            <p className='enable-selection'>
+                                {i18n('cluster_page.unavailable_release.text', {name: release.get('name')})}
+                                <a href="#releases">{i18n('cluster_page.unavailable_release.page')}</a>.
+                            </p>
                         </div>
                     }
                     {cluster.get('is_customized') &&

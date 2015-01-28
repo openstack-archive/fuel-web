@@ -1,0 +1,249 @@
+/*
+ * Copyright 2014 Mirantis, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
+
+define(
+[
+    'react',
+    'jquery',
+    'jsx!views/controls',
+    'jsx!component_mixins',
+    'plugins/vmware/vmware_models'
+], function(React, $, controls, componentMixins, VmwareModels) {
+    'use strict';
+
+    var cx = React.addons.classSet;
+
+    function isRegularField(field) {
+        return field.type=='text' || field.type=='password' || field.type=='checkbox';
+    }
+
+    var Field = React.createClass({
+        render: function() {
+            var key = this.props.key;
+            var meta = this.props.metadata;
+            var options = this.props.options || [];
+            var classes = cx({
+                'settings-group': true,
+                'table-wrapper': true,
+                'parameter-box': true,
+                'password' : meta.type == 'password'
+            });
+            console.log('MEGAPROPS:', this.props);
+            return (
+                <div key={meta.name} className={classes}>
+                    <controls.Input
+                        key={meta.name}
+                        name={meta.name}
+                        type={meta.type || 'text'}
+                        label={meta.label}
+                        value={this.props.model.get(meta.name) || ''}
+                        description={meta.description}
+                        toggleable={meta.type == 'password' ? true : false}
+                        wrapperClassName="tablerow-wrapper"
+                        onChange={_.bind(function(name, val) {
+                            onChange(meta.name, name, val)
+                        }, this)}
+                        disabled={ this.props.isNew ? false : meta.lockOnEdit }
+                    >
+                        {options.map(function(index) {
+                            return <option key={Math.random()} value={index.value}>{index.label}</option>
+                        }, this)}
+                    </controls.Input>
+                </div>
+            );
+        }
+    });
+
+    var FieldGroup = React.createClass({
+        render: function() {
+            var metadata = _.filter(this.props.model.get('metadata'), isRegularField);
+            var fields = metadata.map(function(meta, index) {
+                var meta = metadata[index];
+                return (
+                    <Field metadata={meta} model={this.props.model}/>
+                );
+            }, this);
+            return (
+                <div>
+                    {fields}
+                </div>
+            );
+        }
+    });
+
+    var Cinder = React.createClass({
+        render: function() {
+            var model = this.props.model;
+            if(!model) {
+                return false;
+            }
+            return (
+                <div className="cinder">
+                    <legend className="vmware">{$.t('vmware.cinder')}</legend>
+                    <FieldGroup model={model}/>
+                </div>
+            );
+        }
+    });
+
+    var NovaCompute = React.createClass({
+        render: function() {
+            var model = this.props.model;
+            if(!model) {
+                return false;
+            }
+            return (
+                <div className="nova-compute">
+                    <h4>
+                        <button className="btn btn-link"><i className="icon-plus-circle"></i></button>
+                        <button className="btn btn-link"><i className="icon-minus-circle"></i></button>
+                        &nbsp; Compute Instance
+                    </h4>
+                    <FieldGroup model={model}/>
+                </div>
+            );
+        }
+    });
+
+        <button class="btn btn-link ip-ranges-add"><i class="icon-plus-circle"></i></button>
+    var AvailabilityZone = React.createClass({
+        renderFields: function() {
+            var model = this.props.model;
+            var meta = this.props.model.get('metadata');
+            meta = _.filter(meta, isRegularField);
+            return (
+                <FieldGroup model={model}/>
+            );
+        },
+        renderComputes: function() {
+            var nova_computes = this.props.model.get('nova_computes');
+            console.log('$$$', nova_computes);
+            return (
+                <div className="idented">
+                    <legend className="vmware">{$.t('vmware.nova_computes')}</legend>
+                    {
+                        nova_computes.map(function (value) {
+                            console.log('---===---', value, arguments);
+                            return (<NovaCompute model={value} />);
+                        })
+                    }
+                </div>
+            )
+        },
+        renderCinder: function() {
+            return (
+                <Cinder  model={this.props.model.get('cinder')}/>
+            )
+        },
+        render: function() {
+            return (
+                <div>
+                    {this.renderFields()}
+                    {this.renderComputes()}
+                    {this.renderCinder()}
+                </div>
+            );
+        }
+    });
+
+    var AvailabilityZones = React.createClass({
+        renderInstance: function(model) {
+            return (<AvailabilityZone model={model}/>);
+        },
+        render: function() {
+            if(!this.props.collection) {
+                return false;
+            }
+            return (
+                <div className="availability-zones">
+                    <legend className="vmware">{$.t('vmware.availability_zones')}</legend>
+                    {
+                        this.props.collection.map( function(model) {
+                            return <AvailabilityZone model={model}/>
+                        })
+                    }
+                </div>
+            );
+        }
+    });
+
+    var Network = React.createClass({
+        render: function() {
+            var model = this.props.model;
+            if(!model) {
+                return false;
+            }
+            return (
+                <div className="network">
+                    <legend className="vmware">{$.t('vmware.network')}</legend>
+                    <FieldGroup meta={model.get('metadata')} model={model}/>
+                </div>
+            );
+        }
+    });
+
+    var Glance = React.createClass({
+        render: function() {
+            var model = this.props.model;
+            if(!model) {
+                return false;
+            }
+            return (
+                <div className="glance">
+                    <legend className="vmware">{$.t('vmware.glance')}</legend>
+                    <FieldGroup meta={model.get('metadata')} model={model}/>
+                </div>
+            );
+        }
+    });
+
+    return React.createClass({
+        componentWillMount: function() {
+            this.clusterId = this.props.cluster.id;
+            this.model = new VmwareModels.VCenter({id: this.clusterId});
+            this.setState({model: this.model});
+            this.updateData();
+        },
+        updateData: function() {
+            this.model.fetch().done( _.bind(function() {
+                this.setState({model: this.model, ok:1});
+            }, this));
+
+        },
+        render: function() {
+            console.log('=== RENDER VCenter ===', this.props);
+            var model = this.state.model;
+            return (
+                <div className="vmware">
+                    <div className="wrapper">
+                        <h3>{$.t('vmware.title')}</h3>
+                        <AvailabilityZones collection={model.get('availability_zones')}/>
+                        <Network model={model.get('network')}/>
+                        <Glance  model={model.get('glance')}/>
+                    </div>
+                    <div className="page-control-box">
+                        <div className="page-control-button-placeholder">
+                            <button className="btn btn-load-defaults">{$.t('vmware.reset_to_defaults')}</button>
+                            <button className="btn btn-revert-changes">{$.t('vmware.cancel')}</button>
+                            <button className="btn btn-success btn-apply-changes">{$.t('vmware.apply')}</button>
+                        </div>
+                    </div>
+                </div>
+
+            );
+        }
+    });
+});

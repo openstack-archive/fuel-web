@@ -29,10 +29,11 @@ define(
     'jsx!views/cluster_page_tabs/settings_tab',
     'jsx!views/cluster_page_tabs/logs_tab',
     'jsx!views/cluster_page_tabs/actions_tab',
-    'jsx!views/cluster_page_tabs/healthcheck_tab'
+    'jsx!views/cluster_page_tabs/healthcheck_tab',
+    'plugins/vmware/vmware'
 ],
-function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab) {
-    'use strict';
+function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, VmWareTab) {
+git     'use strict';
 
     var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl,
         cs = React.addons.classSet;
@@ -157,6 +158,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
                 {url: 'nodes', tab: NodesTab},
                 {url: 'network', tab: NetworkTab},
                 {url: 'settings', tab: SettingsTab},
+                {url: 'vmware', tab: VmWareTab},
                 {url: 'logs', tab: LogsTab},
                 {url: 'healthcheck', tab: HealthCheckTab},
                 {url: 'actions', tab: ActionsTab}

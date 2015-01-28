@@ -158,13 +158,12 @@ class DeploymentGraph(nx.DiGraph):
             "Current task %s doesnt belong to graph"
             " or not connected to any stages.", task)
 
-    def find_subgraph(self, end):
+    def find_subgraph(self, start=None, end=None):
         """Find subgraph that has only tasks required for end
 
         :param end: string
         """
-
-        end_stage = self.find_stage(end)
+        working_graph = self
         all_tasks = set()
 
         # groups and stages are backbone of graph
@@ -175,6 +174,32 @@ class DeploymentGraph(nx.DiGraph):
             if task['type'] in consts.INTERNAL_TASKS:
                 all_tasks.add(task['id'])
 
+        if start:
+            working_graph = self.subgraph(
+                all_tasks | working_graph.traverse_from_start(start))
+        if end:
+            working_graph = self.subgraph(
+                all_tasks | working_graph.traverse_to_end(end))
+
+        return working_graph
+
+    def traverse_from_start(self, start):
+        task_stage = self.find_stage(start)
+        all_tasks = set()
+        stage_pos = consts.STAGES.index(task_stage)
+
+        for stage in consts.STAGES[stage_pos:]:
+            if stage == task_stage:
+                all_tasks.update(
+                    nx.dfs_postorder_nodes(self, start))
+            else:
+                all_tasks.update(
+                    nx.dfs_postorder_nodes(self, stage))
+        return all_tasks
+
+    def traverse_to_end(self, end):
+        task_stage = self.find_stage(end)
+        all_tasks = set()
         reversed_graph = self.reverse()
         for stage in consts.STAGES:
 
@@ -183,7 +208,7 @@ class DeploymentGraph(nx.DiGraph):
             # A->B, C-D, B->D , and we want to traverse up to the D
             # for this we need to reverse graph and make it
             # B->A, D->C, D->B and use dfs_postorder
-            if stage != end_stage:
+            if stage != task_stage:
                 all_tasks.update(
                     nx.dfs_postorder_nodes(reversed_graph, stage))
             else:
@@ -193,7 +218,7 @@ class DeploymentGraph(nx.DiGraph):
                 # traversal
                 break
 
-        return self.subgraph(all_tasks)
+        return all_tasks
 
 
 class AstuteGraph(object):

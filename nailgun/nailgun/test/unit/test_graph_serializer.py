@@ -319,7 +319,7 @@ class TestFindGraph(base.BaseTestCase):
 
     def test_end_at_pre_deployment(self):
         """Only pre_deployment tasks, groups and stages."""
-        subgraph = self.graph.find_subgraph("pre_deployment")
+        subgraph = self.graph.find_subgraph(end="pre_deployment")
         self.assertItemsEqual(
             subgraph.nodes(),
             ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy',
@@ -327,7 +327,7 @@ class TestFindGraph(base.BaseTestCase):
 
     def test_end_at_task_in_pre_deployment(self):
         """Task pre_d doesnt requires pre_c, but requires pre_b."""
-        subgraph = self.graph.find_subgraph("pre_d")
+        subgraph = self.graph.find_subgraph(end="pre_d")
         self.assertItemsEqual(
             subgraph.nodes(),
             ['pre_d', 'pre_b', 'pre_a', 'deploy',
@@ -337,7 +337,7 @@ class TestFindGraph(base.BaseTestCase):
         """All tasks should be included because deploy is last node
         in this graph.
         """
-        subgraph = self.graph.find_subgraph("deploy")
+        subgraph = self.graph.find_subgraph(end="deploy")
         self.assertItemsEqual(
             subgraph.nodes(),
             [t['id'] for t in self.tasks])
@@ -349,7 +349,7 @@ class TestFindGraph(base.BaseTestCase):
         In current graph only task_a and task_b will be present, because
         there is link between them
         """
-        subgraph = self.graph.find_subgraph("group_c")
+        subgraph = self.graph.find_subgraph(end="group_c")
         self.assertItemsEqual(
             subgraph.nodes(),
             ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy', 'pre_deployment',
@@ -357,14 +357,14 @@ class TestFindGraph(base.BaseTestCase):
 
     def test_end_at_task_that_has_two_parents(self):
         """Both parents should be in the graph."""
-        subgraph = self.graph.find_subgraph("task_d")
+        subgraph = self.graph.find_subgraph(end="task_d")
         self.assertItemsEqual(
             subgraph.nodes(),
             [t['id'] for t in self.tasks])
 
     def test_end_at_first_task(self):
         """Only that task will be present."""
-        subgraph = self.graph.find_subgraph("task_a")
+        subgraph = self.graph.find_subgraph(end="task_a")
         self.assertItemsEqual(
             subgraph.nodes(),
             ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy',

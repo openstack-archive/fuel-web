@@ -469,7 +469,7 @@ class DeploymentTasksHandler(SingleHandler):
         tasks = self.single.get_deployment_tasks(obj)
         if end:
             graph = deployment_graph.DeploymentGraph(tasks)
-            return graph.find_subgraph(end).node.values()
+            return graph.find_subgraph(end=end).node.values()
         return tasks
 
     @content

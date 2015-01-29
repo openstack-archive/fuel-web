@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+import six
 
 import netaddr
 
@@ -28,8 +29,7 @@ import nailgun.rpc as rpc
 
 from nailgun import objects
 
-from nailgun.consts import CLUSTER_STATUSES
-from nailgun.consts import NODE_STATUSES
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
@@ -118,7 +118,7 @@ class DeploymentTask(object):
 #   those which are prepared for removal.
 
     @classmethod
-    def message(cls, task, nodes):
+    def message(cls, task, nodes, deployment_tasks=None):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
 
         nodes_ids = [n.id for n in nodes]
@@ -133,8 +133,8 @@ class DeploymentTask(object):
                 # If reciever for some reasons didn't update
                 # node's status to provisioned when deployment
                 # started, we should do it in nailgun
-                if n.status in (NODE_STATUSES.deploying,):
-                    n.status = NODE_STATUSES.provisioned
+                if n.status in (consts.NODE_STATUSES.deploying,):
+                    n.status = consts.NODE_STATUSES.provisioned
                 n.progress = 0
                 db().add(n)
         db().flush()
@@ -236,60 +236,149 @@ class ProvisionTask(object):
 class DeletionTask(object):
 
     @classmethod
-    def execute(cls, task, respond_to='remove_nodes_resp'):
-        logger.debug("DeletionTask.execute(task=%s)" % task.uuid)
-        task_uuid = task.uuid
-        logger.debug("Nodes deletion task is running")
+    def format_node_to_delete(cls, node, mclient_remove=True):
+        """Convert node to dict for deletion.
+
+        :param node: Node object
+        :param mclient_remove: Boolean flag telling Astute whether to also
+            remove node from mclient (True by default). For offline nodes this
+            can be set to False to avoid long retrying unsuccessful deletes.
+        :return: Dictionary in format accepted by Astute.
+        """
+        return {
+            'id': node.id,
+            'uid': node.id,
+            'roles': node.roles,
+            'slave_name': objects.Node.make_slave_name(node),
+            'mclient_remove': mclient_remove,
+        }
+
+    # TODO(ikalnitsky): Get rid of this, maybe move to fake handlers?
+    @classmethod
+    def format_node_to_restore(cls, node):
+        """Convert node to dict for restoring, works only in fake mode.
+
+        Fake mode can optionally restore the removed node (this simulates
+        the node being rediscovered). This method creates the appropriate
+        input for that procedure.
+        :param node:
+        :return: dict
+        """
+        # only fake tasks
+        if cls.use_fake():
+            new_node = {}
+            reset_attrs = (
+                'id',
+                'cluster_id',
+                'roles',
+                'pending_deletion',
+                'pending_addition',
+                'group_id',
+            )
+            for prop in object_mapper(node).iterate_properties:
+                if isinstance(
+                    prop, ColumnProperty
+                ) and prop.key not in reset_attrs:
+                    new_node[prop.key] = getattr(node, prop.key)
+            return new_node
+        # /only fake tasks
+
+    @classmethod
+    def prepare_nodes_for_task(cls, nodes, mclient_remove=True):
+        """Format all specified nodes for the deletion task.
+
+        :param nodes:
+        :param mclient_remove:
+        :return: dict
+        """
         nodes_to_delete = []
         nodes_to_restore = []
 
-        USE_FAKE = settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
+        for node in nodes:
+            nodes_to_delete.append(
+                cls.format_node_to_delete(node, mclient_remove=mclient_remove)
+            )
 
-        # no need to call astute if there are no nodes in cluster
+            if not node.pending_deletion:
+                objects.Node.update(node, {'pending_deletion': True})
+                db().flush()
+
+            node_to_restore = cls.format_node_to_restore(node)
+            if node_to_restore:
+                nodes_to_restore.append(node_to_restore)
+
+        return {
+            'nodes_to_delete': nodes_to_delete,
+            'nodes_to_restore': nodes_to_restore,
+        }
+
+    @classmethod
+    def get_task_nodes_for_cluster(cls, cluster):
+        return cls.prepare_nodes_for_task(TaskHelper.nodes_to_delete(cluster))
+
+    @classmethod
+    def remove_undeployed_nodes_from_db(cls, nodes_to_delete):
+        """Removes undeployed nodes from the given list from the DB.
+
+        :param List nodes_to_delete: List of nodes as returned by
+            :meth:`DeletionTask.format_node_to_delete`
+        :returns: Remaining (non-undeployed) nodes to delete.
+        """
+
+        remaining_nodes = list(nodes_to_delete)
+
+        # locking nodes
+        nodes_dict = dict((node['id'], node) for node in nodes_to_delete)
+        nodes_db = objects.NodeCollection.filter_by_list(
+            None,
+            'id',
+            nodes_dict.keys(),
+            order_by='id'
+        ).filter(objects.Node.model.status == consts.NODE_STATUSES.discover)
+        objects.NodeCollection.lock_for_update(nodes_db).all()
+
+        nodes_db_dict = dict((node_db.id, node_db) for node_db in nodes_db)
+
+        for node_id, node_db in six.iteritems(nodes_db_dict):
+            node = nodes_dict[node_id]
+            logger.info("Node is not deployed yet, can't clean MBR: %s",
+                        node['slave_name'])
+            db().delete(node_db)
+            remaining_nodes.remove(node)
+        db().commit()
+
+        return remaining_nodes
+
+    @classmethod
+    def execute(cls, task, nodes=None, respond_to='remove_nodes_resp'):
+        logger.debug("DeletionTask.execute(task=%s, nodes=%s)",
+                     task.uuid, nodes)
+        task_uuid = task.uuid
+        logger.debug("Nodes deletion task is running")
+
+        # TODO(ikalnitsky): remove this, let the flow always go through Astute
+        # No need to call Astute if no nodes are specified
         if respond_to == 'remove_cluster_resp' and \
-                not list(task.cluster.nodes):
+                not (nodes and nodes['nodes_to_delete']):
+            logger.debug("No nodes specified, exiting")
             rcvr = rpc.receiver.NailgunReceiver()
             rcvr.remove_cluster_resp(
                 task_uuid=task_uuid,
-                status='ready',
+                status=consts.TASK_STATUSES.ready,
                 progress=100
             )
             return
 
-        for node in task.cluster.nodes:
-            if node.pending_deletion:
-                nodes_to_delete.append({
-                    'id': node.id,
-                    'uid': node.id,
-                    'roles': node.roles,
-                    'slave_name': objects.Node.make_slave_name(node)
-                })
+        nodes_to_delete = nodes['nodes_to_delete']
+        nodes_to_restore = nodes['nodes_to_restore']
 
-                if USE_FAKE:
-                    # only fake tasks
-                    new_node = {}
-                    keep_attrs = (
-                        'id',
-                        'cluster_id',
-                        'roles',
-                        'pending_deletion',
-                        'pending_addition'
-                    )
-                    for prop in object_mapper(node).iterate_properties:
-                        if isinstance(
-                            prop, ColumnProperty
-                        ) and prop.key not in keep_attrs:
-                            new_node[prop.key] = getattr(node, prop.key)
-                    nodes_to_restore.append(new_node)
-                    # /only fake tasks
-
-        # check if there's a zabbix server in an environment
+        # check if there's a Zabbix server in an environment
         # and if there is, remove hosts
         if ZabbixManager.get_zabbix_node(task.cluster):
             zabbix_credentials = ZabbixManager.get_zabbix_credentials(
                 task.cluster
             )
-            logger.debug("Removing nodes %s from zabbix" % (nodes_to_delete))
+            logger.debug("Removing nodes %s from zabbix", nodes_to_delete)
             try:
                 ZabbixManager.remove_from_zabbix(
                     zabbix_credentials, nodes_to_delete
@@ -298,33 +387,13 @@ class DeletionTask(object):
                     errors.ZabbixRequestError) as e:
                 logger.warning("%s, skipping removing nodes from Zabbix", e)
 
-        # this variable is used to iterate over it
-        # and be able to delete node from nodes_to_delete safely
-        nodes_to_delete_constant = list(nodes_to_delete)
+        nodes_to_delete = cls.remove_undeployed_nodes_from_db(nodes_to_delete)
 
-        # locking nodes
-        nodes_ids = [node['id'] for node in nodes_to_delete_constant]
-        nodes_db = objects.NodeCollection.filter_by_list(
-            None,
-            'id',
-            nodes_ids,
-            order_by='id'
+        logger.debug(
+            "Removing nodes from database and pending them to clean their "
+            "MBR: %s",
+            ', '.join(node['slave_name'] for node in nodes_to_delete)
         )
-        objects.NodeCollection.lock_for_update(nodes_db).all()
-
-        for node in nodes_to_delete_constant:
-            node_db = objects.Node.get_by_uid(node['id'], lock_for_update=True)
-            slave_name = objects.Node.make_slave_name(node_db)
-            logger.debug("Removing node from database and pending it "
-                         "to clean its MBR: %s", slave_name)
-            if node_db.status == 'discover':
-                logger.info(
-                    "Node is not deployed yet,"
-                    " can't clean MBR: %s", slave_name)
-                db().delete(node_db)
-                db().flush()
-                nodes_to_delete.remove(node)
-        db().commit()
 
         msg_delete = make_astute_message(
             task,
@@ -341,12 +410,19 @@ class DeletionTask(object):
             }
         )
         db().flush()
+
         # only fake tasks
-        if USE_FAKE and nodes_to_restore:
+        if cls.use_fake() and nodes_to_restore:
             msg_delete['args']['nodes_to_restore'] = nodes_to_restore
         # /only fake tasks
-        logger.debug("Calling rpc remove_nodes method")
+
+        logger.debug("Calling rpc remove_nodes method with nodes %s",
+                     nodes_to_delete)
         rpc.cast('naily', msg_delete)
+
+    @classmethod
+    def use_fake(cls):
+        return settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
 
 
 class StopDeploymentTask(object):
@@ -441,7 +517,10 @@ class ClusterDeletionTask(object):
     @classmethod
     def execute(cls, task):
         logger.debug("Cluster deletion task is running")
-        DeletionTask.execute(task, 'remove_cluster_resp')
+        DeletionTask.execute(
+            task,
+            nodes=DeletionTask.get_task_nodes_for_cluster(task.cluster),
+            respond_to='remove_cluster_resp')
 
 
 class BaseNetworkVerification(object):
@@ -613,9 +692,9 @@ class CheckBeforeDeploymentTask(object):
                 "controller" % (cluster.mode))
 
         if cluster.status in (
-                CLUSTER_STATUSES.operational,
-                CLUSTER_STATUSES.error,
-                CLUSTER_STATUSES.update_error):
+                consts.CLUSTER_STATUSES.operational,
+                consts.CLUSTER_STATUSES.error,
+                consts.CLUSTER_STATUSES.update_error):
             # get a list of deployed controllers - which are going
             # don't to be changed
             deployed_controllers = filter(

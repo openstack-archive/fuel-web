@@ -74,7 +74,7 @@ class ClientProvider(object):
             os_password = access_data["password"]["value"]
             os_tenant = access_data["tenant"]["value"]
 
-            auth_host = _get_host_for_auth()
+            auth_host = _get_host_for_auth(self.cluster)
             auth_url = "http://{0}:{1}/{2}/".format(
                 auth_host, settings.AUTH_PORT,
                 settings.OPENSTACK_API_VERSION["keystone"])
@@ -84,9 +84,9 @@ class ClientProvider(object):
         return self._credentials
 
 
-def _get_host_for_auth(self):
+def _get_host_for_auth(cluster):
     return manager.NetworkManager._get_ip_by_network_name(
-        _get_online_controller(self.cluster),
+        _get_online_controller(cluster),
         consts.NETWORKS.management
     ).ip_addr
 
@@ -141,10 +141,10 @@ def _get_value_from_nested_dict(obj_dict, key_path):
 
 def _get_nested_attr(obj, attr_path):
     if attr_path:
-        attr_name = attr_path.pop(0)
+        attr_name = attr_path[0]
         attr_value = getattr(obj, attr_name)
 
-        nested_value = _get_nested_attr(attr_value, attr_path)
+        nested_value = _get_nested_attr(attr_value, attr_path[1:])
 
         if nested_value:
             return nested_value

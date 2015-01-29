@@ -68,7 +68,8 @@ if __name__ == "__main__":
                   'nailgund = nailgun.app:appstart',
                   'assassind = nailgun.assassin.assassind:run',
                   'receiverd = nailgun.rpc.receiverd:run',
-                  'statsenderd = nailgun.statistics.statsenderd:run'
+                  'statsenderd = nailgun.statistics.statsenderd:run',
+                  'oswl_collectord = nailgun.statistics.oswl_collector:run',
               ],
               'nose.plugins.0.10': [
                   'db = nailgun.test.db_plugin:DbPlugin'

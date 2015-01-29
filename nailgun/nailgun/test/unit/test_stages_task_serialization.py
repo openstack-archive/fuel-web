@@ -117,6 +117,27 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             task_config, self.cluster, self.nodes)
         self.assertFalse(task.should_execute())
 
+    def test_sync_time(self):
+        task_config = {
+            'id': 'sync_time',
+            'type': 'shell',
+            'role': '*',
+            'parameters': {
+                'cmd': ("ntpdate -u $(egrep '^server' /etc/ntp.conf | sed "
+                        "'/^#/d' | awk '{print $2}')"),
+                'timeout': 180,
+                'retry': True
+                }}
+        task = tasks_serializer.SyncTime(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'shell')
+        self.assertEqual(
+            serialized['parameters']['cmd'],
+            "ntpdate -u $(egrep '^server' /etc/ntp.conf | sed "
+            "'/^#/d' | awk '{print $2}')")
+        self.assertEqual(serialized['parameters']['retry'], True)
+
 
 class TestPreTaskSerialization(BaseTaskSerializationTest):
 
@@ -135,19 +156,30 @@ class TestPreTaskSerialization(BaseTaskSerializationTest):
         src: /etc/puppet/{OPENSTACK_VERSION}/
         dst: /etc/puppet
         timeout: 180
+
+    - id: sync_time
+      type: shell
+      role: '*'
+      stage: pre_deployment
+      parameters:
+        cmd: shorted_command
+        retry: true
+        timeout: 180
     """
 
     def test_tasks_serialized_correctly(self):
         self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 3)
-        self.assertEqual(tasks[0]['type'], 'upload_file')
-        self.assertItemsEqual(tasks[0]['uids'], self.all_uids)
-        self.assertEqual(tasks[1]['type'], 'shell')
-        self.assertItemsEqual(tasks[1]['uids'], self.all_uids)
-        self.assertEqual(tasks[2]['type'], 'sync')
-        self.assertItemsEqual(tasks[2]['uids'], self.all_uids)
+        self.assertEqual(len(tasks), 4)
+        tasks_tests = [('upload_file', self.all_uids),
+                       ('sync', self.all_uids),
+                       ('shell', self.all_uids),
+                       ('shell', self.all_uids)]
+        tasks_output = []
+        for task in tasks:
+            tasks_output.append((task['type'], set(task['uids'])))
+        self.assertItemsEqual(tasks_tests, tasks_output)
 
 
 class TestPostTaskSerialization(BaseTaskSerializationTest):
@@ -173,7 +205,7 @@ class TestPostTaskSerialization(BaseTaskSerializationTest):
             roles=['ceph-osd'], cluster_id=self.cluster.id))
         tasks = self.graph.post_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 1)
-        self.assertEqual(tasks[0]['uids'], self.control_uids)
+        self.assertItemsEqual(tasks[0]['uids'], self.control_uids)
         self.assertEqual(tasks[0]['type'], 'shell')
 
 

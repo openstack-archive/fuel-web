@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 import yaml
 
 from nailgun import consts
@@ -23,20 +22,30 @@ from nailgun.orchestrator import tasks_serializer
 from nailgun.test import base
 
 
-class TestHooksSerializers(base.BaseTestCase):
+class BaseTaskSerializationTest(base.BaseTestCase):
+
+    TASKS = """"""
 
     def setUp(self):
-        super(TestHooksSerializers, self).setUp()
+        super(BaseTaskSerializationTest, self).setUp()
+        self.release = self.env.create_release(
+            api=False,
+            orchestrator_data={'repo_metadata': {
+                '6.0': '{MASTER_IP}//{OPENSTACK_VERSION}'}})
+        self.cluster = self.env.create_cluster(
+            api=False, release_id=self.release.id)
         self.nodes = [
-            mock.Mock(uid='3', all_roles=['controller']),
-            mock.Mock(uid='4', all_roles=['primary-controller']),
-            mock.Mock(uid='5', all_roles=['cinder', 'compute'])]
+            self.env.create_node(
+                roles=['controller'], cluster_id=self.cluster.id),
+            self.env.create_node(
+                roles=['primary-controller'], cluster_id=self.cluster.id),
+            self.env.create_node(
+                roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
-        self.cluster = mock.Mock()
-        self.cluster.release.orchestrator_data.repo_metadata = {
-            '6.0': '{MASTER_IP}//{OPENSTACK_VERSION}'
-        }
-        self.cluster.release.version = '1111'
+        self.cluster.deployment_tasks = yaml.load(self.TASKS)
+
+
+class TestHooksSerializers(BaseTaskSerializationTest):
 
     def test_sync_puppet(self):
         task_config = {'id': 'rsync_mos_puppet',
@@ -87,7 +96,8 @@ class TestHooksSerializers(base.BaseTestCase):
                        'role': ['controller', 'primary-controller'],
                        'stage': 'post-deployment',
                        'parameters': {'cmd': '/cmd.sh', 'timeout': 60}}
-        self.nodes.append(mock.Mock(uid='7', all_roles=['ceph-osd']))
+        self.nodes.append(self.env.create_node(
+            roles=['ceph-osd'], cluster_id=self.cluster.id))
         task = tasks_serializer.RestartRadosGW(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
@@ -108,7 +118,7 @@ class TestHooksSerializers(base.BaseTestCase):
         self.assertFalse(task.should_execute())
 
 
-class TestPreTaskSerialization(base.BaseTestCase):
+class TestPreTaskSerialization(BaseTaskSerializationTest):
 
     TASKS = """
     - id: upload_core_repos
@@ -127,33 +137,20 @@ class TestPreTaskSerialization(base.BaseTestCase):
         timeout: 180
     """
 
-    def setUp(self):
-        super(TestPreTaskSerialization, self).setUp()
-        self.nodes = [
-            mock.Mock(uid='3', all_roles=['controller']),
-            mock.Mock(uid='4', all_roles=['primary-controller']),
-            mock.Mock(uid='5', all_roles=['cinder', 'compute'])]
-        self.cluster = mock.Mock()
-        self.cluster.release.orchestrator_data.repo_metadata = {
-            '6.0': '{MASTER_IP}//{OPENSTACK_VERSION}'
-        }
-        self.cluster.deployment_tasks = yaml.load(self.TASKS)
-        self.all_uids = set([n.uid for n in self.nodes])
-        self.graph = deployment_graph.AstuteGraph(self.cluster)
-
     def test_tasks_serialized_correctly(self):
+        self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 3)
         self.assertEqual(tasks[0]['type'], 'upload_file')
-        self.assertEqual(set(tasks[0]['uids']), self.all_uids)
+        self.assertItemsEqual(tasks[0]['uids'], self.all_uids)
         self.assertEqual(tasks[1]['type'], 'shell')
-        self.assertEqual(set(tasks[1]['uids']), self.all_uids)
+        self.assertItemsEqual(tasks[1]['uids'], self.all_uids)
         self.assertEqual(tasks[2]['type'], 'sync')
-        self.assertEqual(set(tasks[2]['uids']), self.all_uids)
+        self.assertItemsEqual(tasks[2]['uids'], self.all_uids)
 
 
-class TestPostTaskSerialization(base.BaseTestCase):
+class TestPostTaskSerialization(BaseTaskSerializationTest):
 
     TASKS = """
     - id: restart_radosgw
@@ -167,31 +164,20 @@ class TestPostTaskSerialization(base.BaseTestCase):
 
     def setUp(self):
         super(TestPostTaskSerialization, self).setUp()
-        self.nodes = [
-            mock.Mock(uid='3', all_roles=['controller']),
-            mock.Mock(uid='4', all_roles=['primary-controller'])]
-        self.cluster = mock.Mock()
-        self.cluster.deployment_tasks = yaml.load(self.TASKS)
-        self.control_uids = ['3', '4']
+        self.control_uids = [n.uid for n in self.nodes
+                             if 'controller' in n.roles]
         self.graph = deployment_graph.AstuteGraph(self.cluster)
 
     def test_post_task_serialize_all_tasks(self):
-        self.nodes.append(mock.Mock(uid='5', all_roles=['ceph-osd']))
+        self.nodes.append(self.env.create_node(
+            roles=['ceph-osd'], cluster_id=self.cluster.id))
         tasks = self.graph.post_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0]['uids'], self.control_uids)
         self.assertEqual(tasks[0]['type'], 'shell')
 
 
-class ContainerMock(mock.Mock):
-    # expression parser works only with objects that conforms
-    # to container interface
-
-    def __getitem__(self, item):
-        return getattr(self, item)
-
-
-class TestConditionalTasksSerializers(base.BaseTestCase):
+class TestConditionalTasksSerializers(BaseTaskSerializationTest):
 
     TASKS = """
     - id: generic_uid
@@ -215,18 +201,12 @@ class TestConditionalTasksSerializers(base.BaseTestCase):
 
     def setUp(self):
         super(TestConditionalTasksSerializers, self).setUp()
-
-        self.nodes = [
-            mock.Mock(uid='3', all_roles=['controller']),
-            mock.Mock(uid='4', all_roles=['primary-controller'])]
-
-        self.cluster = ContainerMock()
-        self.cluster.deployment_tasks = yaml.load(self.TASKS)
         self.graph = deployment_graph.AstuteGraph(self.cluster)
 
     def test_conditions_satisfied(self):
         self.cluster.status = 'operational'
-        self.cluster.attributes.editable.enabled = True
+        self.cluster.attributes.editable = {'enabled': True}
+        self.db.flush()
 
         tasks = self.graph.pre_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 2)
@@ -236,7 +216,7 @@ class TestConditionalTasksSerializers(base.BaseTestCase):
 
     def test_conditions_not_satisfied(self):
         self.cluster.status = 'new'
-        self.cluster.attributes.editable.enabled = False
+        self.cluster.attributes.editable['enabled'] = False
 
         tasks = self.graph.pre_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 0)

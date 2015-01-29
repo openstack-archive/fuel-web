@@ -12,17 +12,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects.serializers.oswl import OpenStackWorkloadStatsSerializer
 
 
 class OpenStackWorkloadStats(NailgunObject):
 
     #: SQLAlchemy model for OpenStackWorkloadStats
     model = models.OpenStackWorkloadStats
+
+    #: Serializer for OpenStackWorkloadStats
+    serializer = OpenStackWorkloadStatsSerializer
 
     @classmethod
     def get_last_by(cls, cluster_id, resource_type):
@@ -39,3 +44,14 @@ class OpenStackWorkloadStats(NailgunObject):
 
 class OpenStackWorkloadStatsCollection(NailgunCollection):
     single = OpenStackWorkloadStats
+
+    @classmethod
+    def get_ready_to_send(cls):
+        """Get entries which are ready to send but were not sent yet.
+        """
+        instance = db().query(models.OpenStackWorkloadStats) \
+            .filter_by(is_sent=False) \
+            .filter(models.OpenStackWorkloadStats.created_date <
+                    datetime.utcnow().date())
+
+        return instance

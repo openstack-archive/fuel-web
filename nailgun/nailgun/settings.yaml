@@ -75,6 +75,7 @@ SYSLOG_DIR: &remote_syslog_dir "/var/log/remote/"
 
 COLLECTOR_ACTION_LOGS_URL: "https://{collector_server}/api/v1/action_logs/"
 COLLECTOR_INST_INFO_URL: "https://{collector_server}/api/v1/installation_structure/"
+COLLECTOR_OSWL_INFO_URL: "https://{collector_server}/api/v1/oswl_stats/"
 COLLECTOR_PING_URL: "https://{collector_server}/api/v1/ping/"
 
 # statistics send interval
@@ -87,8 +88,11 @@ STATS_ENABLE_CHECK_INTERVAL: 300
 OSWL_COLLECTORS_POLLING_INTERVAL:
   vm: 300
 
-# statistics send records per request
+# Action log send records per request
 STATS_SEND_COUNT: 100
+
+# OSWL data send records per request
+OSWL_SEND_COUNT: 10
 
 # statistics collector ping interval (in sec.)
 COLLECTOR_PING_INTERVAL: 300

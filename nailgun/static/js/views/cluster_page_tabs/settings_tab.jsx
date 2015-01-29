@@ -64,7 +64,18 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return _.compact(_.map(this.allocatedRoles, function(roleName) {
                 var role = roles.findWhere({name: roleName});
                 if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
-                    return _.contains(restriction.condition, 'settings:' + path) && !(new Expression(restriction.condition, this.configModels).evaluate());
+                    var condition = restriction.condition;
+                    if (_.contains(condition, 'settings:' + path) && !(new Expression(condition, this.configModels).evaluate())) {
+                        var valueAttr = _.isUndefined(setting.value) ? 'enabled' : 'value',
+                            currentValue = setting[valueAttr],
+                            values = setting.values ? _.without(_.pluck(setting.values, 'data'), currentValue) : [!currentValue],
+                            settingsForTests = {settings: new models.Settings(_.cloneDeep(this.settings.attributes))};
+                        return _.any(values, function(value) {
+                            settingsForTests.settings.get(path)[valueAttr] = value;
+                            return (new Expression(condition, settingsForTests).evaluate());
+                        });
+                    }
+                    return false;
                 }, this)) return role.get('label');
             }, this));
         },

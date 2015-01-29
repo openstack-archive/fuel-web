@@ -28,7 +28,6 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 
-from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
@@ -45,8 +44,51 @@ release_states_old = (
     'error',
     'available',
 )
+release_states_new = (
+    'available',
+    'unavailable',
+    'processing',
+)
 
-release_states_new = consts.RELEASE_STATES
+task_names_old = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'dump',
+    'capacity_log'
+)
+task_names_new = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'dump',
+    'capacity_log',
+    'prepare_release',
+)
 
 
 def upgrade():
@@ -66,6 +108,9 @@ def upgrade_schema():
     op.add_column(
         'releases',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
+    op.add_column(
+        'tasks',
+        sa.Column('release_id', sa.Integer, sa.ForeignKey('releases.id')))
 
     upgrade_enum(
         'releases',                 # table
@@ -126,11 +171,27 @@ def upgrade_schema():
                     ),
                     sa.PrimaryKeyConstraint('id'))
 
+    upgrade_enum(
+        'tasks',                    # table
+        'name',                     # column
+        'task_name',                # ENUM name
+        task_names_old,             # old options
+        task_names_new,             # new options
+    )
+
 
 def downgrade_schema():
     # OpenStack workload statistics
     op.drop_table('oswl_stats')
     drop_enum('oswl_resource_type')
+
+    upgrade_enum(
+        'tasks',                    # table
+        'name',                     # column
+        'task_name',                # ENUM name
+        task_names_new,             # new options
+        task_names_old,             # old options
+    )
 
     upgrade_enum(
         'releases',                 # table

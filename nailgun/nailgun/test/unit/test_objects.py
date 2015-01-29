@@ -842,3 +842,69 @@ class TestClusterObject(BaseTestCase):
         bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
+
+
+class TestReleaseObject(BaseTestCase):
+
+    def test_set_state_processing_from_unavailable(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.unavailable)
+
+        self.assertTrue(objects.Release.set_state(
+            release, consts.RELEASE_STATES.processing))
+
+    def test_set_state_processing_from_processing(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.processing)
+
+        self.assertFalse(objects.Release.set_state(
+            release, consts.RELEASE_STATES.processing))
+
+    def test_set_state_processing_from_available(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.available)
+
+        self.assertFalse(objects.Release.set_state(
+            release, consts.RELEASE_STATES.processing))
+
+    def test_set_state_available_from_unavailable(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.unavailable)
+
+        self.assertFalse(objects.Release.set_state(
+            release, consts.RELEASE_STATES.available))
+
+    def test_set_state_available_from_processing(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.processing)
+
+        self.assertTrue(objects.Release.set_state(
+            release, consts.RELEASE_STATES.available))
+
+    def test_set_state_available_from_available(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.available)
+
+        self.assertFalse(objects.Release.set_state(
+            release, consts.RELEASE_STATES.available))
+
+    def test_set_state_unavailable_from_unavailable(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.unavailable)
+
+        self.assertFalse(objects.Release.set_state(
+            release, consts.RELEASE_STATES.unavailable))
+
+    def test_set_state_unavailable_from_processing(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.processing)
+
+        self.assertTrue(objects.Release.set_state(
+            release, consts.RELEASE_STATES.unavailable))
+
+    def test_set_state_unavailable_from_available(self):
+        release = self.env.create_release(
+            state=consts.RELEASE_STATES.available)
+
+        self.assertFalse(objects.Release.set_state(
+            release, consts.RELEASE_STATES.unavailable))

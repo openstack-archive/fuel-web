@@ -77,6 +77,9 @@ COLLECTOR_ACTION_LOGS_URL: "https://{collector_server}/api/v1/action_logs/"
 COLLECTOR_INST_INFO_URL: "https://{collector_server}/api/v1/installation_structure/"
 COLLECTOR_PING_URL: "https://{collector_server}/api/v1/ping/"
 
+# path to the directory where uploaded images will be saved
+IMAGE_UPLOAD_PATH: "/tmp"
+
 # statistics send interval
 STATS_SEND_INTERVAL: 3600
 

@@ -1353,6 +1353,7 @@
 - pk: 2
   extend: *base_release
   fields:
+    state: "unavailable"
     name: "Juno on Ubuntu 12.04.4"
     version: "2014.2-6.1"
     can_update_from_versions: []

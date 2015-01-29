@@ -24,6 +24,7 @@ import mock
 import os
 import re
 import time
+import StringIO
 
 from datetime import datetime
 from functools import partial
@@ -1083,3 +1084,13 @@ def datadiff(data1, data2, branch, p=True):
                         print("v2 = %s" % v2)
                     diff.extend(datadiff(v1, v2, newbranch))
     return diff
+
+
+class FakeFile(StringIO.StringIO):
+    """In-memory file implementation. It's very useful to use with mock."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass

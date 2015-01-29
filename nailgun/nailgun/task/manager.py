@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 
 #    Copyright 2013 Mirantis, Inc.
 #
@@ -181,7 +181,10 @@ class ApplyChangesTaskManager(TaskManager):
                                                      weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
 
-            self._call_silently(task_deletion, tasks.DeletionTask)
+            self._call_silently(
+                task_deletion,
+                tasks.DeletionTask,
+                tasks.DeletionTask.get_nodes_for_cluster(self.cluster))
             # we should have task committed for processing in other threads
             db().commit()
 
@@ -356,7 +359,7 @@ class ProvisioningTaskManager(TaskManager):
         logger.debug('Nodes to provision: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_provision])))
 
-        task_provision = Task(name='provision', cluster=self.cluster)
+        task_provision = Task(name=TASK_NAMES.provision, cluster=self.cluster)
         db().add(task_provision)
         db().commit()
 
@@ -398,7 +401,7 @@ class DeploymentTaskManager(TaskManager):
 
         logger.debug('Nodes to deploy: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_deployment])))
-        task_deployment = Task(name='deployment', cluster=self.cluster)
+        task_deployment = Task(name=TASK_NAMES.deployment, cluster=self.cluster)
         db().add(task_deployment)
 
         deployment_message = self._call_silently(
@@ -493,7 +496,7 @@ class StopDeploymentTaskManager(TaskManager):
             )
 
         task = Task(
-            name="stop_deployment",
+            name=TASK_NAMES.stop_deployment,
             cluster=self.cluster
         )
         db().add(task)
@@ -512,7 +515,7 @@ class ResetEnvironmentTaskManager(TaskManager):
     def execute(self):
         deploy_running = db().query(Task).filter_by(
             cluster=self.cluster,
-            name='deploy',
+            name=TASK_NAMES.deploy,
             status='running'
         ).first()
         if deploy_running:
@@ -527,9 +530,9 @@ class ResetEnvironmentTaskManager(TaskManager):
             cluster_id=self.cluster.id,
         ).filter(
             Task.name.in_([
-                'deploy',
-                'deployment',
-                'stop_deployment'
+                TASK_NAMES.deploy,
+                TASK_NAMES.deployment,
+                TASK_NAMES.stop_deployment
             ])
         )
         for task in obsolete_tasks:
@@ -537,7 +540,7 @@ class ResetEnvironmentTaskManager(TaskManager):
         db().commit()
 
         task = Task(
-            name="reset_environment",
+            name=TASK_NAMES.reset_environment,
             cluster=self.cluster
         )
         db().add(task)
@@ -562,10 +565,10 @@ class UpdateEnvironmentTaskManager(TaskManager):
             status='running'
         ).filter(
             Task.name.in_([
-                'deploy',
-                'deployment',
-                'reset_environment',
-                'stop_deployment'
+                TASK_NAMES.deploy,
+                TASK_NAMES.deployment,
+                TASK_NAMES.reset_environment,
+                TASK_NAMES.stop_deployment
             ])
         )
         if running_tasks.first():
@@ -580,7 +583,7 @@ class UpdateEnvironmentTaskManager(TaskManager):
         objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_change)
         logger.debug('Nodes to update: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_change])))
-        task_update = Task(name='update', cluster=self.cluster)
+        task_update = Task(name=TASK_NAMES.update, cluster=self.cluster)
         db().add(task_update)
         self.cluster.status = 'update'
         db().flush()
@@ -833,7 +836,7 @@ class ClusterDeletionManager(TaskManager):
         db().add(self.cluster)
 
         logger.debug("Creating cluster deletion task")
-        task = Task(name="cluster_deletion", cluster=self.cluster)
+        task = Task(name=TASK_NAMES.cluster_deletion, cluster=self.cluster)
         db().add(task)
         db().commit()
         self._call_silently(
@@ -847,9 +850,9 @@ class DumpTaskManager(TaskManager):
 
     def execute(self):
         logger.info("Trying to start dump_environment task")
-        self.check_running_task('dump')
+        self.check_running_task(TASK_NAMES.dump)
 
-        task = Task(name="dump")
+        task = Task(name=TASK_NAMES.dump)
         db().add(task)
         db().commit()
         self._call_silently(
@@ -863,12 +866,27 @@ class GenerateCapacityLogTaskManager(TaskManager):
 
     def execute(self):
         logger.info("Trying to start capacity_log task")
-        self.check_running_task('capacity_log')
+        self.check_running_task(TASK_NAMES.capacity_log)
 
-        task = Task(name='capacity_log')
+        task = Task(name=TASK_NAMES.capacity_log)
         db().add(task)
         db().commit()
         self._call_silently(
             task,
             tasks.GenerateCapacityLogTask)
+        return task
+
+
+class NodeDeletionTaskManager(TaskManager):
+
+    def execute(self, nodes):
+        logger.info("Trying to execute node deletion task")
+
+        task = Task(name=TASK_NAMES.node_deletion)
+        db().add(task)
+        db().commit()
+        self._call_silently(
+            task,
+            tasks.DeletionTask,
+            nodes=tasks.DeletionTask.get_task_nodes(nodes))
         return task

@@ -21,6 +21,7 @@ from nailgun.objects.serializers.network_configuration \
 from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
 
+from nailgun import consts
 from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NODE_STATUSES
 from nailgun.consts import TASK_NAMES
@@ -871,4 +872,28 @@ class GenerateCapacityLogTaskManager(TaskManager):
         self._call_silently(
             task,
             tasks.GenerateCapacityLogTask)
+        return task
+
+
+class PrepareReleaseTaskManager(TaskManager):
+
+    def execute(self, release, image):
+        logger.info('Trying to start prepare_release task for %d', release.id)
+
+        # create tasks for tracking progress
+        task = Task(
+            name=consts.TASK_NAMES.prepare_release,
+            release_id=release.id,
+            result={
+                'image': image,
+                # TODO(ikalnitsky): remove hardcode
+                'output': '/var/www/nailgun/2014.2-6.1/vanilla-ubuntu',
+            }
+        )
+
+        db().add(task)
+        db().commit()
+
+        # run prepare release
+        self._call_silently(task, tasks.PrepareReleaseTask)
         return task

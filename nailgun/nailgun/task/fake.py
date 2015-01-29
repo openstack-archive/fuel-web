@@ -16,6 +16,7 @@
 
 from itertools import chain
 from itertools import repeat
+from random import choice
 from random import randrange
 import threading
 import time
@@ -28,6 +29,7 @@ from kombu import Queue
 
 from nailgun import objects
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.rpc.receiver import NailgunReceiver
@@ -660,6 +662,25 @@ class FakeCapacityLog(FakeAmpqThread):
         }]
 
 
+class FakeExecuteTasks(FakeAmpqThread):
+
+    def message_gen(self):
+        self.sleep(self.tick_interval)
+        return getattr(self, self.respond_to)()
+
+    def prepare_release_resp(self):
+        # fail with 50% percent
+        status = choice([
+            consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error])
+
+        return [{
+            'task_uuid': self.task_uuid,
+            'status': status,
+            'progress': 100,
+            'error': 'wow!'
+        }]
+
+
 FAKE_THREADS = {
     'provision': FakeProvisionThread,
     'granular_deploy': FakeDeploymentThread,
@@ -671,5 +692,6 @@ FAKE_THREADS = {
     'check_dhcp': FakeCheckingDhcpThread,
     'dump_environment': FakeDumpEnvironment,
     'generate_capacity_log': FakeCapacityLog,
-    'multicast_verification': FakeMulticastVerifications
+    'multicast_verification': FakeMulticastVerifications,
+    'execute_tasks': FakeExecuteTasks,
 }

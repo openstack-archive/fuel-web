@@ -84,6 +84,7 @@ from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
 from nailgun.api.v1.handlers.release import ReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
 from nailgun.api.v1.handlers.release import ReleaseNetworksHandler
+from nailgun.api.v1.handlers.release import ReleaseUploadISO
 
 from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
@@ -105,6 +106,8 @@ urls = (
     ReleaseNetworksHandler,
     r'/releases/(?P<obj_id>\d+)/deployment_tasks/?$',
     ReleaseDeploymentTasksHandler,
+    r'/releases/(?P<obj_id>\d+)/upload/iso/?$',
+    ReleaseUploadISO,
 
     r'/clusters/?$',
     ClusterCollectionHandler,

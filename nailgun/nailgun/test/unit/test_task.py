@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 from mock import patch
 
 from nailgun import consts
@@ -21,6 +22,7 @@ from nailgun.errors import errors
 from nailgun import objects
 from nailgun.openstack.common import jsonutils
 from nailgun.task.task import CheckBeforeDeploymentTask
+from nailgun.task.task import PrepareReleaseTask
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import reverse
 from nailgun.volumes.manager import VolumeManager
@@ -357,3 +359,39 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             errors.NetworkCheckError,
             CheckBeforeDeploymentTask._check_public_network,
             self.task)
+
+
+class TestPrepareReleaseTask(BaseTestCase):
+
+    _fake_task = mock.Mock(
+        uuid='uuid4',
+        result={
+            'image': 'path/to/image',
+            'output': 'extract/to',
+        }
+    )
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_message(self, rpc_cast):
+        PrepareReleaseTask.execute(self._fake_task)
+
+        args = rpc_cast.call_args[0][1]
+        self.assertEqual(args, {
+            'method': 'execute_tasks',
+            'respond_to': 'prepare_release_resp',
+            'args': {
+                'task_uuid': 'uuid4',
+                'tasks': [
+                    {
+                        'type': 'shell',
+                        'uids': ['master'],
+                        'parameters': {
+                            'cmd': 'extract_repos path/to/image extract/to',
+                            'cwd': '/',
+                            'timeout': 180,
+                        }
+                    }
+                ],
+            },
+            'api_version': '1',
+        })

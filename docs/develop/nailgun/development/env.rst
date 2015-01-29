@@ -84,7 +84,6 @@ Setup for Nailgun Unit Tests
     tox -r -epy26 -- -vv nailgun/test
     tox -r -epep8
 
-
 Setup for Web UI Tests
 ----------------------
 

@@ -154,6 +154,12 @@ Simplest way is to install Fuel, and OSTF will be installed as part of it.
       service supervisord start
   - go to Fuel UI and run your new tests
 
+  
+.. note:: You can now use **run_tests.sh -h** command
+     to learn tests usage information. To run only selected
+     tests, you should use **run_tests.sh -t selected_tests.py**
+     command.
+
 Now I'm done, what's next?
 --------------------------
 

@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from random import randint
-
 import requests
 import urllib3
 
@@ -31,6 +29,7 @@ from nailgun import objects
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
+from nailgun.statistics.utils import dithered
 
 
 class StatsSender(object):
@@ -165,6 +164,53 @@ class StatsSender(object):
             logger.error("Unexpected collector answer: %s",
                          six.text_type(resp.text))
 
+    def send_oswl_serialized(self, rec_data, ids):
+        if rec_data:
+            resp = self.send_data_to_url(
+                url=self.build_collector_url("COLLECTOR_OSWL_INFO_URL"),
+                data={"oswl_stats": rec_data}
+            )
+            resp_dict = resp.json()
+            if self.is_status_acceptable(resp.status_code,
+                                         resp_dict["status"]):
+                records_resp = resp_dict["oswl_stats"]
+                saved_ids = set()
+                failed_ids = set()
+                for record in records_resp:
+                    if record["status"] == \
+                            consts.LOG_RECORD_SEND_STATUS.failed:
+                        failed_ids.add(record["id"])
+                    else:
+                        saved_ids.add(record["id"])
+                sent_saved_ids = set(saved_ids) & set(ids)
+                logger.info("OSWL info records saved: %s, failed: %s",
+                            six.text_type(list(sent_saved_ids)),
+                            six.text_type(list(failed_ids)))
+                db().query(models.OpenStackWorkloadStats).filter(
+                    models.OpenStackWorkloadStats.id.in_(sent_saved_ids)
+                ).update(
+                    {"is_sent": True}, synchronize_session=False
+                )
+                db().commit()
+            else:
+                logger.error("Unexpected collector answer: %s",
+                             six.text_type(resp.text))
+
+    def send_oswl_info(self):
+        logger.info("Sending OpenStack workload info")
+        oswl_data = \
+            objects.OpenStackWorkloadStatsCollection.get_ready_to_send()
+        uid = InstallationInfo().get_master_node_uid()
+        logger.info("Pending records count: %s",
+                    six.text_type(oswl_data.count()))
+        for rec in oswl_data:
+            rec_data = objects.OpenStackWorkloadStats.to_dict(rec)
+            rec_data['master_node_uid'] = uid
+            rec_data['created_date'] = rec_data['created_date'].isoformat()
+            rec_data['updated_time'] = rec_data['updated_time'].isoformat()
+            rec_data.pop('is_sent')
+            self.send_oswl_serialized([rec_data], [rec_data['id']])
+
     def must_send_stats(self):
         try:
             stat_settings = getattr(
@@ -180,15 +226,12 @@ class StatsSender(object):
             return False
 
     def send_stats_once(self):
-
-        def dithered(medium):
-            return randint(int(medium * 0.9), int(medium * 1.1))
-
         try:
             if self.must_send_stats():
                 if self.ping_collector():
                     self.send_action_log()
                     self.send_installation_info()
+                    self.send_oswl_info()
                     time.sleep(dithered(settings.STATS_SEND_INTERVAL))
                 else:
                     time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))

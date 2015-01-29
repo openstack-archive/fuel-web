@@ -66,7 +66,8 @@ def make_shell_task(uids, task, cwd='/'):
         'parameters': {
             'cmd': task['parameters']['cmd'],
             'timeout': task['parameters']['timeout'],
-            'cwd': cwd}}
+            'cwd': cwd,
+            'retry': task['parameters'].get('retry', False)}}
 
 
 def make_yum_clean(uids):

@@ -208,10 +208,22 @@ class RestartRadosGW(GenericRolesHook):
         return False
 
 
+class SyncTime(GenericRolesHook):
+
+    identity = 'sync_time'
+
+    def get_uids(self):
+        return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
+
+    def serialize(self):
+        uids = self.get_uids()
+        yield templates.make_shell_task(uids, self.task)
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
-    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW]
+    stage_serializers = [UploadMOSRepo, RsyncPuppet, RestartRadosGW, SyncTime]
     deploy_serializers = [PuppetHook]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

@@ -19,6 +19,7 @@ from nailgun.api.v1.validators.json_schema.disks \
     import disks_simple_format_schema
 from nailgun.api.v1.validators.json_schema import node_schema
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db import db
@@ -335,3 +336,19 @@ class NodeDeploymentValidator(NodesFilterValidator):
             raise errors.InvalidData('Tasks list must be specified.')
 
         return data
+
+
+class ProvisionSelectedNodesValidator(NodesFilterValidator):
+
+    @classmethod
+    def validate_provision(cls, data, cluster):
+        """Check whether provision allowed or not for a given cluster
+
+        :param data: raw json data, usually web.data()
+        :param cluster: cluster instance
+        :returns: loaded json or empty array
+        """
+        if cluster.release.state == consts.RELEASE_STATES.unavailable:
+            raise errors.UnavailableRelease(
+                "Release '{0} {1}' is unavailable!".format(
+                    cluster.release.name, cluster.release.version))

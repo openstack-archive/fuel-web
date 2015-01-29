@@ -16,6 +16,7 @@
 
 import nailgun
 
+from nailgun import consts
 from nailgun import objects
 
 from mock import patch
@@ -236,6 +237,18 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         self.assertEqual(3, len(provisioned_uids))
         self.assertItemsEqual(self.node_uids, provisioned_uids)
+
+    def test_start_provisioning_is_unavailable(self):
+        action_url = reverse(
+            'ProvisionSelectedNodes',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_orchestrator_uri(self.node_uids)
+        self.env.releases[0].state = consts.RELEASE_STATES.unavailable
+
+        resp = self.send_put(action_url)
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

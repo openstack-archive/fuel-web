@@ -84,6 +84,10 @@ Setup for Nailgun Unit Tests
     tox -r -epy26 -- -vv nailgun/test
     tox -r -epep8
 
+.. note:: You can now use **run_tests.sh -h** command
+     to learn tests usage information. To run only selected
+     tests, you should use **run_tests.sh -t selected_tests.py**
+     command.
 
 Setup for Web UI Tests
 ----------------------

@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from distutils.version import StrictVersion
 import glob
 import os
 from urlparse import urljoin
@@ -50,6 +51,20 @@ class ClusterAttributesPlugin(object):
                 return yaml.load(conf.read())
         else:
             logger.warning("Config {0} is not readable.".format(config))
+
+    def _load_tasks(self, config):
+        data = self._load_config(config)
+        for item in data:
+            # backward compatibility for plugins added in version 6.0,
+            # and it is expected that task with role: [controller]
+            # will be executed on all controllers
+
+            if (StrictVersion(self.plugin.package_version)
+                    == StrictVersion('1.0')
+                    and isinstance(item['role'], list)
+                    and 'controller' in item['role']):
+                item['role'].append('primary-controller')
+        return data
 
     def get_plugin_attributes(self, cluster):
         """Should be used for initial configuration uploading to
@@ -136,7 +151,7 @@ class ClusterAttributesPlugin(object):
             self.plugin_path,
             self.task_config_name)
         if os.path.exists(task_yaml):
-            self.tasks = self._load_config(task_yaml)
+            self.tasks = self._load_tasks(task_yaml)
 
     def filter_tasks(self, tasks, stage):
         filtered = []

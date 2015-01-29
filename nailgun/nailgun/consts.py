@@ -26,6 +26,7 @@ def Enum(*values, **kwargs):
 RELEASE_STATES = Enum(
     'available',
     'unavailable',
+    'processing',
 )
 
 RELEASE_OS = Enum(
@@ -162,7 +163,10 @@ TASK_NAMES = Enum(
     # dump
     'dump',
 
-    'capacity_log'
+    'capacity_log',
+
+    # release's tasks
+    'prepare_release',
 )
 
 NOTIFICATION_STATUSES = Enum(

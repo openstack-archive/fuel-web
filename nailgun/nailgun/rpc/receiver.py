@@ -33,7 +33,6 @@ from nailgun.consts import TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import Release
 from nailgun.logger import logger
 from nailgun.network import utils as net_utils
 from nailgun.openstack.common import jsonutils
@@ -969,48 +968,6 @@ class NailgunReceiver(object):
                                             error_msg, result)
 
     @classmethod
-    def download_release_resp(cls, **kwargs):
-        logger.info(
-            "RPC method download_release_resp received: %s" %
-            jsonutils.dumps(kwargs)
-        )
-        task_uuid = kwargs.get('task_uuid')
-        error_msg = kwargs.get('error')
-        status = kwargs.get('status')
-        progress = kwargs.get('progress')
-
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
-
-        release_info = task.cache['args']['release_info']
-        release_id = release_info['release_id']
-        release = db().query(Release).get(release_id)
-        if not release:
-            logger.error("download_release_resp: Release"
-                         " with ID %s not found", release_id)
-            return
-
-        if error_msg:
-            status = 'error'
-            error_msg = "{0} download and preparation " \
-                        "has failed.".format(release.name)
-            cls._download_release_error(
-                release_id,
-                error_msg
-            )
-        elif progress == 100 and status == 'ready':
-            cls._download_release_completed(release_id)
-
-        result = {
-            "release_info": {
-                "release_id": release_id
-            }
-        }
-
-        data = {'status': status, 'progress': progress, 'message': error_msg,
-                'result': result}
-        objects.Task.update(task, data)
-
-    @classmethod
     def dump_environment_resp(cls, **kwargs):
         logger.info(
             "RPC method dump_environment_resp received: %s" %
@@ -1037,3 +994,45 @@ class NailgunReceiver(object):
             data = {'status': status, 'progress': progress,
                     'message': '/dump/{0}'.format(dumpfile)}
             objects.Task.update(task, data)
+
+    @classmethod
+    def execute_tasks_resp(cls, **kwargs):
+        logger.info(
+            "RPC method execute_tasks_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+
+        task_uuid = kwargs.get('task_uuid')
+        progress = kwargs.get('progress')
+        message = kwargs.get('error')
+        status = kwargs.get('status')
+
+        if status == consts.TASK_STATUSES.error:
+            progress = 100
+
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        objects.Task.update(task, {
+            'message': message,
+            'progress': progress,
+            'status': status,
+        })
+
+    @classmethod
+    def prepare_release_resp(cls, **kwargs):
+        cls.execute_tasks_resp(**kwargs)
+
+        task_uuid = kwargs.get('task_uuid')
+        status = kwargs.get('status')
+
+        if status in (consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error):
+            task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+            release = objects.Release.get_by_uid(task.release_id)
+
+            if status == consts.TASK_STATUSES.ready:
+                objects.Release.set_state(
+                    release, consts.RELEASE_STATES.available)
+            elif status == consts.TASK_STATUSES.error:
+                objects.Release.set_state(
+                    release, consts.RELEASE_STATES.unavailable)
+
+            # TODO(ikalnitsky): remove file in case of ready/error

@@ -256,6 +256,37 @@ class Release(NailgunObject):
         else:
             return yaml.load(graph_configuration.DEPLOYMENT_CURRENT)
 
+    @classmethod
+    def set_state(cls, instance, state):
+        """Atomic operation - try to set state.
+
+        Please note, there's no way to change state from available to
+        another. Use pure SA's model if you want to do so.
+
+        :param instance: a release instance
+        :param state: a release state to be set
+        :returns: True if success; otherwise - False
+        """
+        # a transition graph that shows which transtions are allowed
+        # and which are not
+        if state == consts.RELEASE_STATES.processing:
+            prev_state = consts.RELEASE_STATES.unavailable
+        elif state == consts.RELEASE_STATES.unavailable:
+            prev_state = consts.RELEASE_STATES.processing
+        elif state == consts.RELEASE_STATES.available:
+            prev_state = consts.RELEASE_STATES.processing
+
+        # only one process will successfully perform below operation.
+        rows = db().query(models.Release).filter_by(
+            id=instance.id,
+            state=prev_state,
+        ).update({'state': state})
+        return rows > 0
+
+    @classmethod
+    def prepare_release(cls, release):
+        pass
+
 
 class ReleaseCollection(NailgunCollection):
     """Release collection

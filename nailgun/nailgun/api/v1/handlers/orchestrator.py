@@ -229,7 +229,7 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     task_manager = ProvisioningTaskManager
 
     def get_default_nodes(self, cluster):
-        TaskHelper.nodes_to_provision(cluster)
+        return TaskHelper.nodes_to_provision(cluster)
 
 
 class BaseDeploySelectedNodes(SelectedNodesBase):

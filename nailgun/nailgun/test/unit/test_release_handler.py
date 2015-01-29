@@ -16,10 +16,13 @@
 
 import mock
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Release
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import FakeFile
 from nailgun.test.base import reverse
 
 
@@ -134,3 +137,79 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(
             orchestrator_data['puppet_manifests_source'],
             'rsync://127.0.0.1:/puppet/manifests/')
+
+
+class TestReleaseUploadISO(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestReleaseUploadISO, self).setUp()
+        self.release = self.env.create_release(
+            state=consts.RELEASE_STATES.unavailable)
+
+    def _put(self, data, release_id=None):
+        release_id = release_id or self.release.id
+        return self.app.put(
+            reverse('ReleaseUploadISO', kwargs={'obj_id': release_id}),
+            params=data,
+            headers=self.default_headers,
+            expect_errors=True)
+
+    def test_release_not_found(self):
+        resp = self._put('paydata', release_id=42)
+
+        self.assertEqual(404, resp.status_code)
+        self.assertRegexpMatches(resp.body, 'Release not found')
+
+    def test_successfull_uploading(self):
+        output = FakeFile()
+
+        # we need to mock output in order to be sure that the all content
+        # we pass will be saved properly
+        open_fn = 'nailgun.api.v1.handlers.release.open'
+        mopen = mock.mock_open()
+        mopen.return_value = output
+        with mock.patch(open_fn, mopen, create=True):
+            resp = self._put('image bytestream')
+
+        # check that the file was written with correct data
+        self.assertEqual(output.getvalue(), 'image bytestream')
+
+        # check release outcome
+        self.assertEqual(202, resp.status_code)
+        self.assertEqual(self.release.state, consts.RELEASE_STATES.processing)
+
+        # test that task was properly created
+        task = self.db.query(Task).filter_by(
+            uuid=resp.json_body['uuid']).first()
+        self.assertEqual(task.release_id, self.release.id)
+        self.assertEqual(task.name, consts.TASK_NAMES.prepare_release)
+        self.assertEqual(task.status, consts.TASK_STATUSES.running)
+
+    def test_concurrent_request_conflict(self):
+        # we need to perform one successful upload in order to
+        # change release's state to 'processing'
+        self.test_successfull_uploading()
+
+        # .. and now we're going to perform a new one and check
+        # that it's forbidden
+        resp = self._put('new image bytestream')
+        self.assertEqual(409, resp.status_code)
+
+    def test_not_allowed_for_available_release(self):
+        self.release = self.env.create_release(
+            state=consts.RELEASE_STATES.available)
+
+        resp = self._put('new image bytestream')
+        self.assertEqual(405, resp.status_code)
+
+    # def test_checksum_fail(self):
+    #     # we need to mock in order to do not create real file
+    #     # in /tmp
+    #     open_fn = 'nailgun.api.v1.handlers.release.open'
+    #     with mock.patch(open_fn, mock.mock_open(), create=True):
+    #         resp = self._put('image bytestream')
+
+    #     # check release outcome
+    #     self.assertEqual(400, resp.status_code)
+    #     self.assertEqual(
+    #         self.release.state, consts.RELEASE_STATES.unavailable)

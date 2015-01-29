@@ -22,6 +22,7 @@ class TaskSerializer(BasicSerializer):
     fields = (
         "id",
         "cluster",
+        "release_id",
         "uuid",
         "name",
         "result",

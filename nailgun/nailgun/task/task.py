@@ -43,6 +43,7 @@ from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
+from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
@@ -865,3 +866,35 @@ class GenerateCapacityLogTask(object):
         task.status = 'ready'
         task.progress = '100'
         db().commit()
+
+
+class PrepareReleaseTask(object):
+
+    @classmethod
+    def _get_tasks(cls, task):
+        image = task.result['image']
+        output = task.result['output']
+
+        return [
+            tasks_templates.make_shell_task(['master'], task={
+                'parameters': {
+                    'cmd': 'extract_repos {0} {1}'.format(image, output),
+                    'timeout': 180,
+                }
+            }),
+        ]
+
+    @classmethod
+    def execute(cls, task):
+        logger.debug('PrepareReleaseTask: task=%s', task.uuid)
+
+        message = make_astute_message(
+            task,
+            'execute_tasks',
+            'prepare_release_resp',
+            {
+                'tasks': cls._get_tasks(task),
+            }
+        )
+        db().commit()
+        rpc.cast('naily', message)

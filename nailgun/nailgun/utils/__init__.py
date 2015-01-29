@@ -13,13 +13,14 @@
 #    under the License.
 
 import glob
+import hashlib
 import os
 import string
-import six
-import yaml
-
 from copy import deepcopy
 from random import choice
+
+import six
+import yaml
 
 from nailgun.logger import logger
 from nailgun.settings import settings
@@ -167,3 +168,22 @@ def get_fuel_release_versions(path_mask):
                     )
                 )
     return result
+
+
+def upload_image(input_stream, output_stream, chunksize=32768):
+    """Redirect `input_stream` to `output_stream` by chunks.
+
+    :param input_stream: a stream read from
+    :param output_stream: a stream write to
+    :param chunksize: read/write by chunks of this size
+    :returns: SHA1 sum of a given file
+    """
+    sha1 = hashlib.sha1()
+
+    # read input stream by chunks until it gets empty. the .read()
+    # will return an empty bytesting when there's nothing to read.
+    for buf in iter(lambda: input_stream.read(chunksize), b''):
+        output_stream.write(buf)
+        sha1.update(buf)
+
+    return sha1.hexdigest()

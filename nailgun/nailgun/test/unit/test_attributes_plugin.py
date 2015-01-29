@@ -45,6 +45,29 @@ class TestPlugin(base.BaseTestCase):
 
         db().flush()
 
+    def test_primary_added_for_1_version(self):
+        # specified package version just for visibility
+        stub = 'stub'
+        self.plugin.package_version = '1.0.0'
+        self.db.flush()
+        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
+            load_conf.return_value = [{'role': ['controller']}]
+
+            tasks = self.attr_plugin._load_tasks(stub)
+            self.assertItemsEqual(
+                tasks[0]['role'], ['primary-controller', 'controller'])
+
+    def test_role_not_changed_for_2_version(self):
+        stub = 'stub'
+        self.plugin.package_version = '2.0.0'
+        self.db.flush()
+        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
+            load_conf.return_value = [{'role': ['controller']}]
+
+            tasks = self.attr_plugin._load_tasks(stub)
+            self.assertItemsEqual(
+                tasks[0]['role'], ['controller'])
+
     @mock.patch('nailgun.plugins.attr_plugin.open', create=True)
     @mock.patch('nailgun.plugins.attr_plugin.os.access')
     @mock.patch('nailgun.plugins.attr_plugin.os.path.exists')

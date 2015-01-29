@@ -19,7 +19,7 @@ import nailgun
 import nailgun.rpc as rpc
 import time
 
-from mock import patch
+import mock
 
 from nailgun import objects
 
@@ -34,7 +34,9 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import ApplyChangesTaskManager
+from nailgun.task.task import DeletionTask
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -166,7 +168,7 @@ class TestTaskManagers(BaseIntegrationTest):
                                      supertask.id)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock.patch('nailgun.rpc.cast')
     def test_do_not_send_node_to_orchestrator_which_has_status_discover(
             self, _):
 
@@ -184,7 +186,7 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEqual(len(self.env.nodes), 0)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock.patch('nailgun.rpc.cast')
     def test_send_to_orchestrator_offline_nodes(self, _):
         self.env.create(
             nodes_kwargs=[
@@ -464,6 +466,41 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertRaises(errors.WrongNodeStatus, manager.execute)
 
     @fake_tasks()
+    @mock.patch('nailgun.task.manager.tasks.DeletionTask.execute')
+    def test_deletion_task_called(self, mdeletion_execute):
+        cluster = self.env.create_cluster()
+        cluster_id = cluster['id']
+        node = self.env.create_node(
+            api=False,
+            cluster_id=cluster['id'],
+            pending_addition=False,
+            pending_deletion=True,
+            status='ready',
+            roles=['controller'])
+        node_db = self.db.query(Node).get(node['id'])
+
+        manager = ApplyChangesTaskManager(cluster_id)
+        task = Task(name='provision', cluster_id=cluster_id)
+        self.db.add(task)
+        self.db.commit()
+        rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
+            {'uid': node['id'], 'id': node['id'], 'status': node['status']}
+        ], task_uuid=task.uuid)
+        manager.execute()
+
+        self.assertEqual(mdeletion_execute.call_count, 1)
+        task, nodes = mdeletion_execute.call_args[0]
+        # unfortunately assertItemsEqual does not recurse into dicts
+        self.assertItemsEqual(
+            nodes['nodes_to_delete'],
+            DeletionTask.get_task_nodes([node_db])['nodes_to_delete']
+        )
+        self.assertItemsEqual(
+            nodes['nodes_to_restore'],
+            DeletionTask.get_task_nodes([node_db])['nodes_to_restore']
+        )
+
+    @fake_tasks()
     def test_no_changes_no_cry(self):
         self.env.create(
             nodes_kwargs=[
@@ -484,13 +521,20 @@ class TestTaskManagers(BaseIntegrationTest):
             ]
         )
 
+        to_delete = TaskHelper.nodes_to_delete(self.env.clusters[0])
+        to_delete_ids = [node.id for node in to_delete]
+        self.assertEqual(len(to_delete_ids), 1)
+
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
+
         self.assertEqual(self.env.db.query(Node).count(), 1)
+        remaining_node = self.env.db.query(Node).first()
+        self.assertNotIn(remaining_node.id, to_delete_ids)
 
     @fake_tasks(recover_offline_nodes=False, tick_interval=1)
     def test_deletion_three_offline_nodes_and_one_online(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"online": False, "pending_deletion": True},
                 {"online": False, "pending_deletion": True},
@@ -509,12 +553,28 @@ class TestTaskManagers(BaseIntegrationTest):
         # pass we have to wait for data to be present in db
         self.env.wait_for_true(self.check_node_presence, args=[1])
 
-        node = self.db.query(Node).first()
-        self.assertEqual(node.status, 'discover')
-        self.assertEqual(node.cluster_id, None)
+        # Offline nodes were deleted, online node came back
+        self.assertEqual(
+            self.db.query(Node).filter(
+                Node.cluster_id == cluster['id']).count(),
+            0
+        )
+        self.assertEqual(
+            self.db.query(Node).filter(
+                Node.cluster_id == None  # flake8: noqa
+            ).count(),
+            1
+        )
+        self.assertEqual(
+            self.db.query(Node).filter(Node.status == 'discover').count(),
+            1
+        )
+        self.assertEqual(
+            self.db.query(Node).filter(Node.online == True).count(),
+            1
+        )
 
-    @fake_tasks(recover_nodes=True, recover_offline_nodes=True,
-                tick_interval=1)
+    @fake_tasks(tick_interval=1)
     def test_delete_offile_nodes_and_recover_them(self):
         self.env.create(
             nodes_kwargs=[

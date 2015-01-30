@@ -906,6 +906,8 @@
             description: "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing."
             weight: 30
             type: "checkbox"
+            restrictions:
+              - condition: "settings:storage.images_vcenter.value == true"
           images_vcenter:
             value: false
             label: "VMWare vCenter/ESXi datastore for images (Glance)"

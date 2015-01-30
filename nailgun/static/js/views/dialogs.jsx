@@ -195,20 +195,6 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
             </div>;
         },
-        renderChange: function(change, nodeIds) {
-            var nodes = this.props.cluster.get('nodes');
-            return (
-                <div key={change}>
-                    <div className='deploy-task-name'>{i18n('dialog.display_changes.settings_changes.' + change)}</div>
-                    <ul>
-                        {_.map(nodeIds, function(id) {
-                            var node = nodes.get(id);
-                            return node ? <li key={change + id}>{node.get('name')}</li> : null;
-                        })}
-                    </ul>
-                </div>
-            );
-        },
         renderBody: function() {
             var ns = 'dialog.display_changes.',
                 cluster = this.props.cluster,
@@ -231,9 +217,6 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
                     {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                    {_.map(_.groupBy(cluster.get('changes'), function(change) {return change.name;}), function(nodes, change) {
-                        return this.renderChange(change, _.compact(_.pluck(nodes, 'node_id')));
-                    }, this)}
                     {!_.isNull(this.state.settingsValidationErrors) &&
                         <div className='errors'>
                             {_.map(this.state.settingsValidationErrors, function(error) {

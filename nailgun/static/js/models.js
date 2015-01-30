@@ -292,9 +292,6 @@ define([
             var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
             return this.get('tasks') && this.get('tasks').filterTasks(filters);
         },
-        hasChanges: function() {
-            return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').length);
-        },
         needsRedeployment: function() {
             return this.get('nodes').any({pending_addition: false, status: 'error'}) && this.get('status') != 'update_error';
         },

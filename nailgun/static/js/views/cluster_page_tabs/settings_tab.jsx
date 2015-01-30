@@ -95,7 +95,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     } else {
                         var activeOption = _.find(setting.values, {data: setting.value});
                         if (activeOption) {
-                            dependentRestrictions = getDependentRestrictions(this.settings.makePath(pathToCheck, value.data));
+                            dependentRestrictions = getDependentRestrictions(this.settings.makePath(pathToCheck, activeOption.data));
                             if (dependentRestrictions.length) {
                                 dependentSettings[setting.label] = _.union(dependentSettings[setting.label], dependentRestrictions);
                             }

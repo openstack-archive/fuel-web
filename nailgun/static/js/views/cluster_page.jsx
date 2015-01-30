@@ -142,11 +142,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
             }
         },
         deploymentTaskStarted: function() {
-            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(_.bind(function() {
-                // FIXME: hack to prevent 'Deploy' button flashing after deployment is finished
-                this.props.cluster.set({changes: []}, {silent: true});
-                this.startPolling();
-            }, this));
+            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(_.bind(this.startPolling, this));
         },
         deploymentTaskFinished: function() {
             $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(app.navbar.refresh);
@@ -339,7 +335,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, BackboneVi
                 taskProgress = task && task.get('progress') || 0,
                 infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
                 itemClass = 'deployment-control-item-box',
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.hasChanges() && !cluster.needsRedeployment());
+                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
             return (
                 <div className='cluster-deploy-placeholder'>
                     {task ? (

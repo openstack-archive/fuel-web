@@ -92,6 +92,8 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             this.version = new models.FuelVersion();
             this.settings = new models.FuelSettings();
             this.user = new models.User();
+            this.statistics = new models.NodesStatistics();
+            this.notifications = new models.Notifications();
 
             this.version.fetch().then(_.bind(function() {
                 this.user.set({authenticated: !this.version.get('auth_required')});
@@ -164,31 +166,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             }, this));
         },
         renderLayout: function() {
-            this.content = $('#content');
-            this.navbar = React.render(React.createElement(layoutComponents.Navbar, {
-                elements: [
-                    {label: 'environments', url: '#clusters'},
-                    {label: 'releases', url: '#releases'},
-                    {label: 'support', url: '#support'}
-                ],
-                user: this.user,
-                version: this.version,
-                statistics: new models.NodesStatistics(),
-                notifications: new models.Notifications()
-            }), $('#navbar')[0]);
-            this.breadcrumbs = React.render(React.createElement(layoutComponents.Breadcrumbs), $('#breadcrumbs')[0]);
-            this.footer = React.render(React.createElement(layoutComponents.Footer, {version: this.version}), $('#footer')[0]);
-            this.content.find('.loading').addClass('layout-loaded');
-        },
-        updateTitle: function() {
-            var newTitle = _.result(this.page, 'title');
-            document.title = i18n('common.title') + (newTitle ? ' - ' + newTitle : '');
-            this.breadcrumbs.update();
-        },
-        toggleElements: function(state) {
-            app.footer.setState({hidden: !state});
-            app.breadcrumbs.setState({hidden: !state});
-            app.navbar.setState({hidden: !state});
+            this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
         },
         loadPage: function(Page, options) {
             return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
@@ -196,13 +174,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             }, this));
         },
         setPage: function(Page, options) {
-            if (!this.rootComponent) {
-                this.rootComponent = utils.universalMount(RootComponent, {}, this.content);
-            }
             this.page = this.rootComponent.setPage(Page, options);
-            this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
-            this.updateTitle();
-            this.toggleElements(!this.page.hiddenLayout);
         },
         // pre-route hook
         before: function(currentUrl) {

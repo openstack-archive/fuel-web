@@ -17,9 +17,6 @@
 import logging
 import os
 
-from fuel_upgrade.config import read_yaml_config
-from fuel_upgrade import utils
-
 from fuel_upgrade.engines.docker_engine import DockerUpgrader
 from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.pre_upgrade_hooks.base import PreUpgradeHookBase
@@ -62,20 +59,8 @@ class SyncDnsHook(PreUpgradeHookBase):
     def run(self):
         """Replaces config file with current DNS domain
         """
-        # NOTE(ikalnitsky): we need to re-read astute.yaml in order protect
-        # us from loosing some useful injection of another hook
-        astute_config = read_yaml_config(self.config.current_fuel_astute_path)
         hostname, sep, realdomain = os.uname()[1].partition('.')
-
-        astute_config['DNS_DOMAIN'] = realdomain
-        astute_config['DNS_SEARCH'] = realdomain
-
-        # NOTE(mattymo): Just save file for backup in case
-        # if user wants to restore it manually
-        utils.copy_file(
-            self.config.current_fuel_astute_path,
-            '{0}_{1}'.format(self.config.current_fuel_astute_path,
-                             self.config.from_version),
-            overwrite=False)
-
-        utils.save_as_yaml(self.config.current_fuel_astute_path, astute_config)
+        self.update_astute_config(overwrites={
+            'DNS_DOMAIN': realdomain,
+            'DNS_SEARCH': realdomain,
+        })

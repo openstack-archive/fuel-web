@@ -121,7 +121,7 @@
           - name: "public"
             cidr: "172.16.0.0/24"
             gateway: "172.16.0.1"
-            ip_range: ["172.16.0.2", "172.16.0.127"]
+            ip_range: ["172.16.0.3", "172.16.0.127"]
             vlan_start: null
             use_gateway: true
             notation: "ip_ranges"
@@ -171,7 +171,7 @@
         networks:
           - name: "public"
             cidr: "172.16.0.0/24"
-            ip_range: ["172.16.0.2", "172.16.0.126"]
+            ip_range: ["172.16.0.3", "172.16.0.126"]
             vlan_start: null
             use_gateway: true
             notation: "ip_ranges"
@@ -659,7 +659,7 @@
             label: "Common"
             weight: 30
           debug:
-            value: false
+            value: true
             label: "OpenStack debug logging"
             description: "Debug logging mode provides more information, but requires more disk space."
             weight: 20
@@ -679,7 +679,7 @@
             restrictions:
               - "cluster:net_provider == 'neutron'"
           libvirt_type:
-            value: "qemu"
+            value: "kvm"
             values:
               - data: "kvm"
                 label: "KVM"
@@ -769,7 +769,7 @@
             label: "Syslog"
             weight: 50
           syslog_transport:
-            value: "tcp"
+            value: "udp"
             values:
               - data: "udp"
                 label: "UDP"
@@ -825,7 +825,7 @@
             type: "radio"
             label: "Provision method"
             description: "Which provision method to use for this cluster."
-            value: "cobbler"
+            value: "image"
             values:
               - data: "image"
                 label: "Image"
@@ -1106,14 +1106,14 @@
           type: "radio"
           bind: "cluster:mode"
           values:
-          - data: "ha_compact"
-            label: "cluster.mode.ha_compact"
           - data: "multinode"
             label: "cluster.mode.multinode"
+          - data: "ha_compact"
+            label: "cluster.mode.ha_compact"
       Compute:
         hypervisor:
           type: "radio"
-          value: "qemu"
+          value: "kvm"
           weight: 5
           bind: "settings:common.libvirt_type.value"
           values:

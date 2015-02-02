@@ -24,25 +24,35 @@ def make_upload_task(uids, data, path):
             'data': data}}
 
 
-def make_ubuntu_repo_task(name, repo_url, uids, repo_data):
-    repo_path = '/etc/apt/sources.list.d/{0}.list'.format(name)
-    return make_upload_task(uids, repo_data, repo_path)
+def make_ubuntu_sources_task(uids, repo):
+    sources_content = 'deb {uri} {suite} {section}'.format(**repo)
+    sources_path = '/etc/apt/sources.list.d/{name}.list'.format(
+        name=repo['name'])
+    return make_upload_task(uids, sources_content, sources_path)
 
 
-def make_multiversion_ubuntu(name, repo_url, uids):
-    repo_data = 'deb {0} /'.format(repo_url)
-    return make_ubuntu_repo_task(name, repo_url, uids, repo_data)
+def make_ubuntu_preferencies_task(uids, repo):
+    # NOTE(kozhukalov): maybe here we need to have more robust preferences
+    # template because in general it allows us to set priorities for
+    # releases, codenames, origins, etc. (see man apt_preferences)
+    preferences_content = '\n'.join([
+        'Package: *',
+        'Pin: release a={suite}',
+        'Pin-Priority: {priority}']).format(**repo)
+    preferences_path = '/etc/apt/preferences.d/{name}'.format(
+        name=repo['name'])
+    return make_upload_task(uids, preferences_content, preferences_path)
 
 
-def make_centos_repo_task(plugin_name, repo_url, uids):
-    repo_data = '\n'.join([
-        '[{0}]',
-        'name=Plugin {0} repository',
-        'baseurl={1}',
-        'gpgcheck=0']).format(plugin_name, repo_url)
-    repo_path = '/etc/yum.repos.d/{0}.repo'.format(plugin_name)
-
-    return make_upload_task(uids, repo_data, repo_path)
+def make_centos_repo_task(uids, repo):
+    repo_content = '\n'.join([
+        '[{name}]',
+        'name=Plugin {name} repository',
+        'baseurl={uri}',
+        'gpgcheck=0',
+        'priority={priority}']).format(**repo)
+    repo_path = '/etc/yum.repos.d/{name}.repo'.format(name=repo['name'])
+    return make_upload_task(uids, repo_content, repo_path)
 
 
 def make_sync_scripts_task(uids, src, dst):

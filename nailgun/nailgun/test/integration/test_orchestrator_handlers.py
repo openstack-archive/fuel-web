@@ -32,64 +32,6 @@ def make_orchestrator_uri(node_ids):
     return '?nodes={0}'.format(','.join(node_ids))
 
 
-class TestOrchestratorInfoHandlers(BaseIntegrationTest):
-
-    def setUp(self):
-        super(TestOrchestratorInfoHandlers, self).setUp()
-        self.cluster = self.env.create_cluster(api=False)
-
-    def check_info_handler(
-            self, handler_name, get_info, orchestrator_data, default=[]):
-        # updating provisioning info
-        put_resp = self.app.put(
-            reverse(handler_name,
-                    kwargs={'cluster_id': self.cluster.id}),
-            jsonutils.dumps(orchestrator_data),
-            headers=self.default_headers)
-
-        self.assertEqual(put_resp.status_code, 200)
-        self.assertEqual(get_info(), orchestrator_data)
-
-        # getting provisioning info
-        get_resp = self.app.get(
-            reverse(handler_name,
-                    kwargs={'cluster_id': self.cluster.id}),
-            headers=self.default_headers)
-
-        self.assertEqual(get_resp.status_code, 200)
-        self.datadiff(orchestrator_data, get_resp.json_body)
-
-        # deleting provisioning info
-        delete_resp = self.app.delete(
-            reverse(handler_name,
-                    kwargs={'cluster_id': self.cluster.id}),
-            headers=self.default_headers)
-
-        self.assertEqual(delete_resp.status_code, 202)
-        self.assertEqual(get_info(), default)
-
-    def test_cluster_provisioning_info(self):
-        orchestrator_data = {'engine': {}, 'nodes': []}
-        for node in self.env.nodes:
-            orchestrator_data['nodes'].append(
-                {"field": "test", "uid": node.uid})
-
-        self.check_info_handler(
-            'ProvisioningInfo',
-            lambda: objects.Cluster.get_provisioning_info(self.cluster),
-            orchestrator_data,
-            default={})
-
-    def test_cluster_deployment_info(self):
-        orchestrator_data = []
-        for node in self.env.nodes:
-            orchestrator_data.append({"field": "test", "uid": node.uid})
-        self.check_info_handler(
-            'DeploymentInfo',
-            lambda: objects.Cluster.get_deployment_info(self.cluster),
-            orchestrator_data)
-
-
 class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
 
     def setUp(self):

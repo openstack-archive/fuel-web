@@ -36,9 +36,7 @@ class BaseTaskSerializationTest(base.BaseTestCase):
     def setUp(self):
         super(BaseTaskSerializationTest, self).setUp()
         self.release = self.env.create_release(
-            api=False,
-            orchestrator_data={'repo_metadata': {
-                '6.0': '{MASTER_IP}//{OPENSTACK_VERSION}'}})
+            api=False)
         self.cluster = self.env.create_cluster(
             api=False, release_id=self.release.id)
         self.nodes = [
@@ -50,6 +48,44 @@ class BaseTaskSerializationTest(base.BaseTestCase):
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
         self.cluster.deployment_tasks = yaml.load(self.TASKS)
+
+
+class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
+    TASKS = """"""
+
+    def setUp(self):
+        super(BaseTaskSerializationTestUbuntu, self).setUp()
+        self.release = self.env.create_release(
+            api=False, attributes_metadata=self.env.read_fixtures(
+                ['openstack'])[1]['fields']['attributes_metadata'])
+        self.cluster = self.env.create_cluster(
+            api=False, release_id=self.release.id)
+        self.nodes = [
+            self.env.create_node(
+                roles=['controller'], cluster_id=self.cluster.id),
+            self.env.create_node(
+                roles=['primary-controller'], cluster_id=self.cluster.id),
+            self.env.create_node(
+                roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
+        self.all_uids = [n.uid for n in self.nodes]
+        self.cluster.deployment_tasks = yaml.load(self.TASKS)
+
+
+class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
+    def test_create_repo_ubuntu(self):
+        task_config = {'id': 'upload_mos_repos',
+                       'type': 'upload_file',
+                       'role': '*'}
+        self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
+        task = tasks_serializer.UploadMOSRepo(
+            task_config, self.cluster, self.nodes)
+        serialized = list(task.serialize())
+        self.assertEqual(len(serialized), 3)
+        self.assertEqual(serialized[0]['type'], 'upload_file')
+        self.assertEqual(serialized[1]['type'], 'upload_file')
+        self.assertEqual(serialized[2]['type'], 'shell')
+        self.assertEqual(serialized[2]['parameters']['cmd'], 'apt-get update')
+        self.assertItemsEqual(serialized[2]['uids'], self.all_uids)
 
 
 class TestHooksSerializers(BaseTaskSerializationTest):
@@ -81,20 +117,6 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         self.assertEqual(serialized[0]['type'], 'upload_file')
         self.assertEqual(serialized[1]['type'], 'shell')
         self.assertEqual(serialized[1]['parameters']['cmd'], 'yum clean all')
-        self.assertItemsEqual(serialized[1]['uids'], self.all_uids)
-
-    def test_create_repo_ubuntu(self):
-        task_config = {'id': 'upload_mos_repos',
-                       'type': 'upload_file',
-                       'role': '*'}
-        self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
-        task = tasks_serializer.UploadMOSRepo(
-            task_config, self.cluster, self.nodes)
-        serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 2)
-        self.assertEqual(serialized[0]['type'], 'upload_file')
-        self.assertEqual(serialized[1]['type'], 'shell')
-        self.assertEqual(serialized[1]['parameters']['cmd'], 'apt-get update')
         self.assertItemsEqual(serialized[1]['uids'], self.all_uids)
 
     def test_serialize_rados_with_ceph(self):
@@ -204,7 +226,7 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             "/etc/fuel/keys/".format(CLUSTER_ID=self.cluster.id))
 
 
-class TestPreTaskSerialization(BaseTaskSerializationTest):
+class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
 
     TASKS = ("""
         - id: upload_core_repos
@@ -248,8 +270,9 @@ class TestPreTaskSerialization(BaseTaskSerializationTest):
         self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 5)
+        self.assertEqual(len(tasks), 6)
         tasks_tests = [('shell', ['master']),
+                       ('upload_file', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),
                        ('copy_files', sorted(self.all_uids)),
                        ('sync', sorted(self.all_uids)),
@@ -268,7 +291,7 @@ class TestPostTaskSerialization(BaseTaskSerializationTest):
       role: [controller, primary-controller]
       stage: post_deployment
       parameters:
-        cmd: /etc/pupppet/restart_radosgw.sh
+        cmd: /etc/puppet/restart_radosgw.sh
         timeout: 180
     """
 

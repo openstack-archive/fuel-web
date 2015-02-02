@@ -25,7 +25,6 @@ from nailgun.db.sqlalchemy.models.cluster import ClusterChanges
 from nailgun.db.sqlalchemy.models.cluster import VmwareAttributes
 
 from nailgun.db.sqlalchemy.models.release import Release
-from nailgun.db.sqlalchemy.models.release import ReleaseOrchestratorData
 
 from nailgun.db.sqlalchemy.models.node import Node
 from nailgun.db.sqlalchemy.models.node import NodeRoles

@@ -129,11 +129,9 @@ class ProvisioningSerializer(object):
                 serialized_node['ks_meta']['image_data'] = \
                     provision_data['image_data']
 
-        orchestrator_data = objects.Release.get_orchestrator_data_dict(
-            node.cluster.release)
-        if orchestrator_data:
-            serialized_node['ks_meta']['repo_metadata'] = \
-                orchestrator_data['repo_metadata']
+        repo_setup = cluster_attrs.get('repo_setup')
+        if repo_setup:
+            serialized_node['ks_meta']['repo_metadata'] = repo_setup
 
         vlan_splinters = cluster_attrs.get('vlan_splinters', {})
         if vlan_splinters.get('vswitch') == 'kernel_lt':

@@ -917,11 +917,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
     def serialize_customized(self, cluster, nodes):
         serialized = []
-        release_data = objects.Release.get_orchestrator_data_dict(
-            self.current_release(cluster))
         for node in nodes:
             for role_data in node.replaced_deployment_info:
-                role_data.update(release_data)
                 serialized.append(role_data)
         return serialized
 
@@ -936,9 +933,6 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             self.previous_release(cluster), 'version', None)
         attrs['openstack_version'] = release.version
         attrs['fuel_version'] = cluster.fuel_version
-        attrs.update(
-            objects.Release.get_orchestrator_data_dict(release)
-        )
         attrs['nodes'] = self.node_list(get_nodes_not_for_deletion(cluster))
 
         for node in attrs['nodes']:

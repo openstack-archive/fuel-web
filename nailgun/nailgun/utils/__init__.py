@@ -59,6 +59,8 @@ def traverse(cdict, generator_class):
                     raise
                 else:
                     new_dict[i] = generator(val.get("generator_arg"))
+            elif isinstance(val, list):
+                new_dict[i] = [traverse(v, generator_class) for v in val]
             else:
                 new_dict[i] = traverse(val, generator_class)
     return new_dict

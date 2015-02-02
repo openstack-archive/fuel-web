@@ -560,7 +560,7 @@ define([
                 }
                 return result || _.any(group, function(setting, settingName) {
                     if (this.checkRestrictions(models, null, this.makePath(groupName, settingName)).result) return false;
-                    return setting.value != initialAttributes[groupName][settingName].value;
+                    return !_.isEqual(setting.value, initialAttributes[groupName][settingName].value);
                 }, this);
             }, this);
         }

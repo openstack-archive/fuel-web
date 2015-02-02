@@ -90,7 +90,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
         func = functools.partial(
             self.put_handler,
             'DeploymentInfo',
-            [{'repo_metadata': 'new_data'}],
+            [],
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
         self.check_time_exec(func)

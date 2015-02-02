@@ -158,39 +158,29 @@ class UploadMOSRepo(GenericRolesHook):
     def get_uids(self):
         return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
 
-    def make_repo_url(self, repo_mask, context):
-        return repo_mask.format(**context)
-
     def serialize(self):
         uids = self.get_uids()
         operating_system = self.cluster.release.operating_system
-        repo_metadata = self.cluster.release.orchestrator_data.repo_metadata
-        repo_name = 'nailgun'
-
-        context = {
-            'MASTER_IP': settings.MASTER_IP,
-            'OPENSTACK_VERSION': self.cluster.release.version}
-
-        # repo_metadata stores its values by key of release
-        for release, repo_url_mask in six.iteritems(repo_metadata):
-
-            if operating_system == consts.RELEASE_OS.centos:
-
-                repo_url = self.make_repo_url(repo_url_mask, context)
-                yield templates.make_centos_repo_task(
-                    repo_name, repo_url, uids)
-
-            elif operating_system == consts.RELEASE_OS.ubuntu:
-
-                # we need to overwrite file with default sources, by default
-                # a lot of unnecessary repos
-                repo_url = 'deb ' + self.make_repo_url(repo_url_mask, context)
-                yield templates.make_upload_task(
-                    uids, repo_url, '/etc/apt/sources.list')
+        repos = objects.Attributes.merged_attrs_values(
+            self.cluster.attributes)['repo_setup']['repos']
 
         if operating_system == consts.RELEASE_OS.centos:
+            for repo in repos:
+                yield templates.make_centos_repo_task(repo, uids)
             yield templates.make_yum_clean(uids)
         elif operating_system == consts.RELEASE_OS.ubuntu:
+            for repo in repos:
+                # NOTE(ikalnitsky):
+                #   We have to remove /etc/apt/sources.list, because it
+                #   has a lot of invalid repos right after provisioning
+                #   and that lead us to deployment failures.
+                yield templates.make_shell_task(uids, {
+                    'parameters': {
+                        'cmd': 'rm /etc/apt/sources.list',
+                        'timeout': 10
+                    }})
+                yield templates.make_ubuntu_sources_task(repo, uids)
+                yield templates.make_ubuntu_preferencies_task(repo, uids)
             yield templates.make_apt_update_task(uids)
 
 

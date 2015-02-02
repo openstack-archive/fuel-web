@@ -27,6 +27,8 @@ from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 from nailgun.openstack.common import jsonutils
+from nailgun.orchestrator.provisioning_serializers \
+    import ProvisioningSerializer
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -94,10 +96,6 @@ class TestHandlers(BaseIntegrationTest):
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
-
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
         )
@@ -296,11 +294,12 @@ class TestHandlers(BaseIntegrationTest):
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
+            serialized_repo_metadata = \
+                ProvisioningSerializer.serialize_repo_metadata(
+                    cluster_attrs, node)
+            if serialized_repo_metadata:
                 pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
+                    serialized_repo_metadata
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':
@@ -436,9 +435,6 @@ class TestHandlers(BaseIntegrationTest):
             'fuel_version': cluster_db.fuel_version,
             'tasks': []
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
 
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
@@ -737,11 +733,13 @@ class TestHandlers(BaseIntegrationTest):
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
+
+            serialized_repo_metadata = \
+                ProvisioningSerializer.serialize_repo_metadata(
+                    cluster_attrs, node)
+            if serialized_repo_metadata:
                 pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
+                    serialized_repo_metadata
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':
@@ -876,10 +874,6 @@ class TestHandlers(BaseIntegrationTest):
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
-
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
         )
@@ -1196,11 +1190,13 @@ class TestHandlers(BaseIntegrationTest):
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
+
+            serialized_repo_metadata = \
+                ProvisioningSerializer.serialize_repo_metadata(
+                    cluster_attrs, node)
+            if serialized_repo_metadata:
                 pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
+                    serialized_repo_metadata
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':

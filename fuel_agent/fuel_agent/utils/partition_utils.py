@@ -52,7 +52,7 @@ def info(dev):
     output = utils.execute('parted', '-s', dev, '-m',
                            'unit', 'MiB',
                            'print', 'free',
-                           check_exit_code=[0, 1])[0]
+                           check_exit_code=[0])[0]
     LOG.debug('Info output: \n%s' % output)
     result = parse_partition_info(output)
     LOG.debug('Info result: %s' % result)
@@ -163,11 +163,11 @@ def remove_partition(dev, num):
                for x in info(dev)['parts']):
         raise errors.PartitionNotFoundError('Partition %s not found' % num)
     out, err = utils.execute('parted', '-s', dev, 'rm',
-                             str(num), check_exit_code=[0])
+                             str(num), check_exit_code=[0, 1])
     reread_partitions(dev, out=out)
 
 
-def reread_partitions(dev, out='Device or resource busy', timeout=30):
+def reread_partitions(dev, out='Device or resource busy', timeout=60):
     # The reason for this method to exist is that old versions of parted
     # use ioctl(fd, BLKRRPART, NULL) to tell Linux to re-read partitions.
     # This system call does not work sometimes. So we try to re-read partition
@@ -182,8 +182,6 @@ def reread_partitions(dev, out='Device or resource busy', timeout=30):
                                    'device %s' % dev)
         LOG.debug('Last time output contained "Device or resource busy". '
                   'Trying to re-read partition table on device %s' % dev)
+        time.sleep(2)
         out, err = utils.execute('partprobe', dev, check_exit_code=[0, 1])
         LOG.debug('Partprobe output: \n%s' % out)
-        pout, perr = utils.execute('partx', '-a', dev, check_exit_code=[0, 1])
-        LOG.debug('Partx output: \n%s' % pout)
-        time.sleep(1)

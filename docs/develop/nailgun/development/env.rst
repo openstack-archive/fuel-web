@@ -13,7 +13,7 @@ Preparing Development Environment
     does not match, please install Python 2.6 as described in step 1.
     If Python version matches, skip step 1.
 
-    Please note that these instructions were tested on Ubuntu 12.04.4 (64 bit)
+    Please note that these instructions were tested on Ubuntu 12.04.4/14.04.1 (64 bit)
     that contains Python 2.7 and requires downgrade to Python 2.6.
     PPA instructions listed below install Python 2.6 but do not remove Python 2.7.
     The default Python version remains 2.7.
@@ -29,7 +29,9 @@ Preparing Development Environment
 
 #. Nailgun can be found in fuel-web/nailgun
 
-#. Install and configure PostgreSQL database::
+#. Install and configure PostgreSQL database. Please note that
+   Ubuntu 12.04 requires postgresql-server-dev-9.1 while
+   Ubuntu 14.04 requires postgresql-server-dev-9.3::
 
     sudo apt-get install postgresql postgresql-server-dev-9.1
     sudo -u postgres createuser -SDRP nailgun  # enter password "nailgun"
@@ -114,7 +116,7 @@ Setup for Web UI Tests
     sudo apt-get install nodejs
     sudo npm install -g grunt-cli
     cd nailgun
-    npm install
+    sudo npm install
 
 #. Install CasperJS::
 

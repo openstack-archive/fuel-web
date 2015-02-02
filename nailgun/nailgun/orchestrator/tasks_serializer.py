@@ -21,6 +21,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun.expression import Expression
 from nailgun.logger import logger
+from nailgun import objects
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
 
@@ -59,7 +60,7 @@ def get_uids_for_roles(nodes, roles):
         uids.update([n.uid for n in nodes])
     elif isinstance(roles, list):
         for node in nodes:
-            if set(roles) & set(node.all_roles):
+            if set(roles) & set(objects.Node.all_roles(node)):
                 uids.add(node.uid)
     else:
         logger.warn(

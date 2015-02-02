@@ -216,7 +216,9 @@ class TestHandlers(BaseIntegrationTest):
         for node in self.env.nodes:
             role_info = {
                 "field": "deployment_info",
-                "uid": node.uid
+                "uid": node.uid,
+                "role": node.roles[0],
+                "tasks": []
             }
             node.replaced_deployment_info = [deepcopy(role_info)]
             role_info.update(orch_data)
@@ -227,6 +229,7 @@ class TestHandlers(BaseIntegrationTest):
             }
             nodes.append(
                 node.replaced_provisioning_info)
+
         new_provisioning_info['nodes'] = nodes
         self.env.launch_deployment()
         # intercepting arguments with which rpc.cast was called

@@ -184,7 +184,7 @@ class TestPartitionUtils(test_base.BaseTestCase):
         }
         pu.remove_partition('/dev/fake', 1)
         mock_exec.assert_called_once_with(
-            'parted', '-s', '/dev/fake', 'rm', '1', check_exit_code=[0])
+            'parted', '-s', '/dev/fake', 'rm', '1', check_exit_code=[0, 1])
         mock_rerd.assert_called_once_with('/dev/fake', out='out')
 
     @mock.patch.object(pu, 'info')
@@ -249,7 +249,7 @@ class TestPartitionUtils(test_base.BaseTestCase):
         self.assertEqual(expected, actual)
         mock_exec.assert_called_once_with('parted', '-s', '/dev/fake', '-m',
                                           'unit', 'MiB', 'print', 'free',
-                                          check_exit_code=[0, 1])
+                                          check_exit_code=[0])
 
     @mock.patch.object(utils, 'execute')
     def test_reread_partitions_ok(self, mock_exec):
@@ -263,10 +263,9 @@ class TestPartitionUtils(test_base.BaseTestCase):
         pu.reread_partitions('/dev/fake', out='_Device or resource busy_')
         mock_exec_expected = [
             mock.call('partprobe', '/dev/fake', check_exit_code=[0, 1]),
-            mock.call('partx', '-a', '/dev/fake', check_exit_code=[0, 1])
         ]
         self.assertEqual(mock_exec.call_args_list, mock_exec_expected)
-        mock_sleep.assert_called_once_with(1)
+        mock_sleep.assert_called_once_with(2)
 
     @mock.patch.object(utils, 'execute')
     def test_reread_partitions_timeout(self, mock_exec):

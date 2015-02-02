@@ -984,6 +984,10 @@
           metadata:
             metadata_proxy_shared_secret:
               generator: "password"
+        puppet:
+          # TODO(ikalnitsky): consider to use generators here for openstack version
+          manifests: "rsync://{{settings.MASTER_IP}}:/puppet/2014.2-6.1/manifests/"
+          modules: "rsync://{{settings.MASTER_IP}}:/puppet/2014.2-6.1/modules/"
     wizard_metadata:
       Mode:
         metadata:
@@ -1311,6 +1315,21 @@
               - data: "kernel_lt"
                 label: "EXPERIMENTAL: Use Fedora longterm kernel"
                 description: "Install the Fedora 3.10 longterm kernel instead of the default 2.6.32 kernel. This should remove any need for VLAN Splinters workarounds as the 3.10 kernel has better support for OVS VLANs. This kernel may not work with all hardware platforms, use caution."
+        repo_setup:
+          metadata:
+            restrictions:
+              - condition: "true"
+                action: "hide"
+            label: "Repositories"
+            weight: 50
+          repos:
+            type: "custom_repo_configuration"
+            extra_priority: 15
+            value:
+              - type: "rpm"
+                name: "MOS"
+                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/centos/x86_64"
+                priority: 20
       generated:
         cobbler:
           profile:
@@ -1325,11 +1344,6 @@
               uri: "http://{{settings.MASTER_IP}}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-    orchestrator_data:
-      puppet_manifests_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/"
-      puppet_modules_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/"
-      repo_metadata:
-        "{OPENSTACK_VERSION}": "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/centos/x86_64"
 - pk: 2
   extend: *base_release
   fields:
@@ -1339,6 +1353,21 @@
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Juno packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
+      editable:
+        repo_setup:
+          metadata:
+            label: "Repositories"
+            weight: 50
+          repos:
+            type: "custom_repo_configuration"
+            extra_priority: 1050
+            value:
+              - type: "deb"
+                name: "MOS"
+                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/ubuntu/x86_64"
+                suite: "precise"
+                section: "main"
+                priority: 1001
       generated:
         cobbler:
           profile:
@@ -1353,8 +1382,3 @@
               uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-    orchestrator_data:
-      puppet_manifests_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/"
-      puppet_modules_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/"
-      repo_metadata:
-        "{OPENSTACK_VERSION}": "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/ubuntu/x86_64 precise main"

@@ -17,9 +17,7 @@
 """
 Release object and collection
 """
-import copy
 
-import six
 from sqlalchemy import not_
 import yaml
 
@@ -32,81 +30,6 @@ from nailgun.objects.serializers import release as release_serializer
 from nailgun.orchestrator import graph_configuration
 from nailgun.settings import settings
 from nailgun.utils import extract_env_version
-
-
-class ReleaseOrchestratorData(NailgunObject):
-    """ReleaseOrchestratorData object
-    """
-
-    #: SQLAlchemy model
-    model = models.ReleaseOrchestratorData
-
-    #: Serializer for ReleaseOrchestratorData
-    serializer = release_serializer.ReleaseOrchestratorDataSerializer
-
-    #: JSON schema
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "ReleaseOrchestratorData",
-        "description": "Serialized ReleaseOrchestratorData object",
-        "type": "object",
-        "required": [
-            "release_id"
-        ],
-        "properties": {
-            "id": {"type": "number"},
-            "release_id": {"type": "number"},
-            "repo_metadata": {"type": "object"},
-            "puppet_manifests_source": {"type": "string"},
-            "puppet_modules_source": {"type": "string"}
-        }
-    }
-
-    @classmethod
-    def create(cls, data):
-        rendered_data = cls.render_data(data)
-        return super(ReleaseOrchestratorData, cls).create(rendered_data)
-
-    @classmethod
-    def update(cls, instance, data):
-        rendered_data = cls.render_data(data)
-        return super(ReleaseOrchestratorData, cls).update(
-            instance, rendered_data)
-
-    @classmethod
-    def render_data(cls, data):
-        # Actually, we don't have any reason to make copy at least now.
-        # The only reason I want to make copy is to be sure that changed
-        # data don't broke something somewhere in the code, since
-        # without a copy our changes affect entire application.
-        rendered_data = copy.deepcopy(data)
-
-        # create context for rendering
-        release = Release.get_by_uid(rendered_data['release_id'])
-        context = {
-            'MASTER_IP': settings.MASTER_IP,
-            'OPENSTACK_VERSION': release.version}
-
-        # render all the paths
-        repo_metadata = {}
-        for key, value in six.iteritems(rendered_data['repo_metadata']):
-            formatted_key = cls.render_path(key, context)
-            repo_metadata[formatted_key] = cls.render_path(value, context)
-        rendered_data['repo_metadata'] = repo_metadata
-
-        rendered_data['puppet_manifests_source'] = \
-            cls.render_path(rendered_data.get(
-                'puppet_manifests_source', 'default'), context)
-
-        rendered_data['puppet_modules_source'] = \
-            cls.render_path(rendered_data.get(
-                'puppet_modules_source', 'default'), context)
-
-        return rendered_data
-
-    @classmethod
-    def render_path(cls, path, context):
-        return path.format(**context)
 
 
 class Release(NailgunObject):
@@ -163,13 +86,9 @@ class Release(NailgunObject):
         :returns: Release instance
         """
         roles = data.pop("roles", None)
-        orch_data = data.pop("orchestrator_data", None)
         new_obj = super(Release, cls).create(data)
         if roles:
             cls.update_roles(new_obj, roles)
-        if orch_data:
-            orch_data["release_id"] = new_obj.id
-            ReleaseOrchestratorData.create(orch_data)
         return new_obj
 
     @classmethod
@@ -183,12 +102,9 @@ class Release(NailgunObject):
         :returns: Release instance
         """
         roles = data.pop("roles", None)
-        orch_data = data.pop("orchestrator_data", None)
         super(Release, cls).update(instance, data)
         if roles is not None:
             cls.update_roles(instance, roles)
-        if orch_data:
-            cls.update_orchestrator_data(instance, orch_data)
         return instance
 
     @classmethod
@@ -220,19 +136,6 @@ class Release(NailgunObject):
                 db().add(new_role)
                 added_roles.append(role)
         db().flush()
-
-    @classmethod
-    def update_orchestrator_data(cls, instance, orchestrator_data):
-        orchestrator_data.pop("id", None)
-        orchestrator_data["release_id"] = instance.id
-
-        ReleaseOrchestratorData.update(
-            instance.orchestrator_data, orchestrator_data)
-
-    @classmethod
-    def get_orchestrator_data_dict(cls, instance):
-        data = instance.orchestrator_data
-        return ReleaseOrchestratorData.serializer.serialize(data)
 
     @classmethod
     def is_deployable(cls, instance):

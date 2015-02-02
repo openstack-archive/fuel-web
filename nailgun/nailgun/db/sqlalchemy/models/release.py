@@ -34,15 +34,6 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Role
 
 
-class ReleaseOrchestratorData(Base):
-    __tablename__ = 'release_orchestrator_data'
-    id = Column(Integer, primary_key=True)
-    release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
-    repo_metadata = Column(JSON, nullable=False)
-    puppet_manifests_source = Column(Text, nullable=False)
-    puppet_modules_source = Column(Text, nullable=False)
-
-
 class Release(Base):
     __tablename__ = 'releases'
     __table_args__ = (
@@ -85,9 +76,6 @@ class Release(Base):
         backref="release",
         cascade="all,delete"
     )
-    orchestrator_data = relationship("ReleaseOrchestratorData",
-                                     uselist=False,
-                                     cascade="delete")
 
     #TODO(enchantner): get rid of properties
 

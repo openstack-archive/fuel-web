@@ -158,32 +158,19 @@ class UploadMOSRepo(GenericRolesHook):
     def get_uids(self):
         return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
 
-    def make_repo_url(self, repo_mask, context):
-        return repo_mask.format(**context)
-
     def serialize(self):
         uids = self.get_uids()
         operating_system = self.cluster.release.operating_system
-        repo_metadata = self.cluster.release.orchestrator_data.repo_metadata
-        repo_name = 'nailgun'
-
-        context = {
-            'MASTER_IP': settings.MASTER_IP,
-            'OPENSTACK_VERSION': self.cluster.release.version}
-
-        # repo_metadata stores its values by key of release
-        for release, repo_url_mask in six.iteritems(repo_metadata):
-            repo_url = self.make_repo_url(repo_url_mask, context)
-            if operating_system == consts.RELEASE_OS.centos:
-                yield templates.make_centos_repo_task(
-                    repo_name, repo_url, uids)
-            elif operating_system == consts.RELEASE_OS.ubuntu:
-                yield templates.make_versioned_ubuntu(
-                    repo_name, repo_url, uids)
-
+        repo_metadata = objects.Attributes.merged_attrs_values(
+            self.cluster.attributes)['repo']['repo_metadata']
         if operating_system == consts.RELEASE_OS.centos:
+            for meta in repo_metadata:
+                yield templates.make_centos_repo_task(meta, uids)
             yield templates.make_yum_clean(uids)
         elif operating_system == consts.RELEASE_OS.ubuntu:
+            for meta in repo_metadata:
+                yield templates.make_ubuntu_sources_task(meta, uids)
+                yield templates.make_ubuntu_preferencies_task(meta, uids)
             yield templates.make_apt_update_task(uids)
 
 

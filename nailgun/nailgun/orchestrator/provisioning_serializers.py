@@ -129,11 +129,11 @@ class ProvisioningSerializer(object):
                 serialized_node['ks_meta']['image_data'] = \
                     provision_data['image_data']
 
-        orchestrator_data = objects.Release.get_orchestrator_data_dict(
-            node.cluster.release)
-        if orchestrator_data:
+        serialized_repo_metadata = \
+            cls.serialize_repo_metadata(cluster_attrs, node)
+        if serialized_repo_metadata:
             serialized_node['ks_meta']['repo_metadata'] = \
-                orchestrator_data['repo_metadata']
+                serialized_repo_metadata
 
         vlan_splinters = cluster_attrs.get('vlan_splinters', {})
         if vlan_splinters.get('vswitch') == 'kernel_lt':
@@ -231,6 +231,57 @@ class ProvisioningSerializer(object):
         logger.info(u'Node %s seems booted with real system', node.full_name)
         return settings.PATH_TO_SSH_KEY
 
+    @classmethod
+    def serialize_repo_metadata(cls, cluster_attrs, node):
+        serialized_repo_metadata = []
+        repo_attr = cluster_attrs.get('repo')
+        if repo_attr:
+            if isinstance(repo_attr['repo_metadata'], dict):
+                # NOTE(kozhukalov): This conditional section is for
+                # backward compatibility with those releases where
+                # repo is defined as
+                #   repo_metadata:
+                #     "{OPENSTACK_VERSION}": "http://host/path"
+                for name, repo in repo_attr['repo_metadata']:
+                    os = node.cluster.release.operating_system
+                    if os == consts.RELEASE_OS.ubuntu:
+                        serialized_repo_metadata.append(
+                            deb_repo_str2spec(name, repo))
+                    elif os == consts.RELEASE_OS.centos:
+                        serialized_repo_metadata.append(
+                            rpm_repo_str2spec(name, repo))
+            else:
+                # NOTE(kozhukalov): This conditional section is for the case
+                # when repositories are defined as a list
+                #   repo_metadata:
+                #     - type: deb
+                #       name: some
+                #       uri: http://host/path
+                #       suite: trusty
+                #       section: main
+                serialized_repo_metadata = repo_attr['repo_metadata']
+        return serialized_repo_metadata
+
+    @classmethod
+    def deb_repo_str2spec(cls, name, repo):
+        uri, suite, section = repo.split()
+        return {
+            "name": name,
+            "type": "deb",
+            "uri": uri,
+            "suite": suite,
+            "section": section,
+            "priority": 1001
+        }
+
+    @classmethod
+    def rpm_repo_str2spec(cls, name, repo):
+        return {
+            "name": name,
+            "type": "rpm",
+            "uri": repo,
+            "priority": 1
+        }
 
 def serialize(cluster, nodes, ignore_customized=False):
     """Serialize cluster for provisioning."""

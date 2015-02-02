@@ -176,8 +176,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
             return {
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
-                areLimitsValid: _.all(limitValidations, function(limitValidation) {return limitValidation.valid;}),
-                areSettingsValid: settings.isValid({models: configModels}),
+                isInvalid: _.any(limitValidations, {valid: false}) || !settings.isValid({models: configModels}),
                 settingsValidationErrors: settings.validationError
             };
         },
@@ -201,15 +200,19 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 nodes = cluster.get('nodes'),
                 roleModels = cluster.get('release').get('role_models'),
                 isNew = cluster.get('status') == 'new',
-                isNewOrNeedsRedeployment = isNew || cluster.needsRedeployment(),
-                isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid;
+                needsRedeployment = cluster.needsRedeployment();
+            var warningClasses = {
+                'deploy-task-notice': true,
+                'text-error': needsRedeployment || this.state.isInvalid,
+                'text-warning': isNew
+            };
             return (
                 <div className='display-changes-dialog'>
-                    {(isNewOrNeedsRedeployment || isInvalid) &&
+                    {(isNew || needsRedeployment || this.state.isInvalid) &&
                         <div>
-                            <div className='text-error deploy-task-notice'>
+                            <div className={cx(warningClasses)}>
                                 <i className='icon-attention' />
-                                <span>{i18n(ns + (isInvalid ? 'warnings.no_deployment' :
+                                <span>{i18n(ns + (this.state.isInvalid ? 'warnings.no_deployment' :
                                     isNew ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
@@ -246,13 +249,11 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
             );
         },
         renderFooter: function() {
-            var isInvalid = !this.state.areSettingsValid || !this.state.areLimitsValid;
-
             return ([
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
-                    className={'btn start-deployment-btn btn-' + (_.compact(_.values(this.state.amountRestrictions)).length ? 'danger' : 'success')}
-                    disabled={this.state.actionInProgress || isInvalid}
+                    className={'btn start-deployment-btn btn-' + (this.state.isInvalid ? 'danger' : 'success')}
+                    disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
                 >{i18n('dialog.display_changes.deploy')}</button>
             ]);

@@ -145,6 +145,30 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
                     ep['IP'] == 'none' or isinstance(ep['IP'], list))
 
 
+class TestReplacedDeploymentInfoSerialization(OrchestratorSerializerTestBase):
+
+    def setUp(self):
+        super(TestReplacedDeploymentInfoSerialization, self).setUp()
+        self.cluster = self.env.create_cluster(api=False)
+        objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
+
+    def test_replaced_tasks_is_not_preserved(self):
+        node = self.env.create_node(
+            api=False,
+            cluster_id=self.cluster.id,
+            pending_addition=True,
+            roles=['controller'])
+        node.replaced_deployment_info = [
+            {'role': 'controller', 'priority': 'XXX', 'tasks': [], 'uid': '1'}]
+        self.db.flush()
+
+        serialized_data = self.serializer.serialize(self.cluster, [node])
+        # verify that task list is not empty
+        self.assertTrue(serialized_data[0]['tasks'])
+        # verify that priority is preserved
+        self.assertEqual(serialized_data[0]['priority'], 'XXX')
+
+
 # TODO(awoodward): multinode deprecation: probably has duplicates
 class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 

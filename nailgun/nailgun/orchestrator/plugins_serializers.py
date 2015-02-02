@@ -24,6 +24,7 @@ from nailgun.orchestrator.tasks_serializer import get_uids_for_roles
 from nailgun.orchestrator.tasks_serializer import get_uids_for_tasks
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.plugins.manager import PluginManager
+from nailgun.settings import settings
 
 
 class BasePluginDeploymentHooksSerializer(object):
@@ -98,21 +99,38 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
                 continue
 
             if operating_system == consts.RELEASE_OS.centos:
+                repo = {
+                    'type': 'rpm',
+                    'name': plugin.full_name,
+                    'uri': plugin.repo_url(self.cluster),
+                    'priority': settings.REPO_PRIORITIES['plugins']['centos']}
+
                 repo_tasks.append(
                     self.serialize_task(
                         plugin, {},
-                        templates.make_centos_repo_task(
-                            plugin.full_name,
-                            plugin.repo_url(self.cluster), uids)))
+                        templates.make_centos_repo_task(repo, uids)))
+
             elif operating_system == consts.RELEASE_OS.ubuntu:
+                repo = {
+                    'type': 'deb',
+                    'name': plugin.full_name,
+                    'uri': plugin.repo_url(self.cluster),
+                    'suite': '/',
+                    'section': '',
+                    'priority': settings.REPO_PRIORITIES['plugins']['ubuntu']}
+
                 repo_tasks.append(
                     self.serialize_task(
                         plugin, {},
-                        templates.make_multiversion_ubuntu(
-                            plugin.full_name,
-                            plugin.repo_url(self.cluster), uids)))
-                #apt-get upgrade executed after every additional source.list
-                #to be able understand what plugin source.list caused error
+                        templates.make_ubuntu_sources_task(repo, uids)))
+
+                repo_tasks.append(
+                    self.serialize_task(
+                        plugin, {},
+                        templates.make_ubuntu_preferencies_task(repo, uids)))
+
+                # apt-get update executed after every additional source.list
+                # to be able understand what plugin source.list caused error
                 repo_tasks.append(
                     self.serialize_task(
                         plugin, {},

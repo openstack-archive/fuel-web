@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import time
 
 from oslo.config import cfg
 
@@ -48,6 +47,16 @@ opts = [
         default='/tmp/config-drive.img',
         help='Path where to store generated config drive image',
     ),
+    cfg.StrOpt(
+        'udev_rules_dir',
+        default='/etc/udev/rules.d',
+        help='Path where to store actual rules for udev daemon',
+    ),
+    cfg.StrOpt(
+        'udev_rules_lib_dir',
+        default='/lib/udev/rules.d',
+        help='Path where to store default rules for udev daemon',
+    ),
 ]
 
 CONF = cfg.CONF
@@ -79,35 +88,63 @@ class Manager(object):
         lu.vgremove_all()
         lu.pvremove_all()
 
+        # Here is udev's rules blacklisting to be done:
+        # by adding symlinks to /dev/null in /etc/udev/rules.d for already
+        # existent rules in /lib/.
+        # 'parted' generates too many udev events in short period of time
+        # so we should increase processing speed for those events,
+        # otherwise partitioning is doomed.
+        LOG.debug("Enabling udev's rules blacklisting")
+        for rule in os.listdir(CONF.udev_rules_lib_dir):
+            if rule.endswith('.rules'):
+                dst = os.path.join(CONF.udev_rules_dir, rule)
+                if os.path.exists(dst):
+                    os.remove(dst)
+                os.symlink('/dev/null', dst)
+        utils.execute('udevadm', 'control', '--reload-rules',
+                      check_exit_code=[0])
+
+        for parted in self.partition_scheme.parteds:
+            for prt in parted.partitions:
+                # We wipe out the beginning of every new partition
+                # right after creating it. It allows us to avoid possible
+                # interactive dialog if some data (metadata or file system)
+                # present on this new partition and it also allows udev not
+                # hanging trying to parse this data.
+                utils.execute('dd', 'if=/dev/zero', 'bs=1M',
+                              'seek=%s' % max(prt.begin - 3, 0), 'count=5',
+                              'of=%s' % prt.device, check_exit_code=[0])
+                # Also wipe out the ending of every new partition.
+                # Different versions of md stores metadata in different places.
+                # Adding exit code 1 to be accepted as for handling situation
+                # when 'no space left on device' occurs.
+                utils.execute('dd', 'if=/dev/zero', 'bs=1M',
+                              'seek=%s' % max(prt.end - 3, 0), 'count=5',
+                              'of=%s' % prt.device, check_exit_code=[0, 1])
+
         for parted in self.partition_scheme.parteds:
             pu.make_label(parted.name, parted.label)
             for prt in parted.partitions:
                 pu.make_partition(prt.device, prt.begin, prt.end, prt.type)
-                # We wipe out the beginning of every new partition
-                # right after creating it. It allows us to avoid possible
-                # interactive dialog if some data (metadata or file system)
-                # present on this new partition.
-                timestamp = time.time()
-                while 1:
-                    if time.time() > timestamp + 30:
-                        raise errors.PartitionNotFoundError(
-                            'Error while wiping data on partition %s.'
-                            'Partition not found' % prt.name)
-                    try:
-                        utils.execute('test', '-e', prt.name,
-                                      check_exit_code=[0])
-                    except errors.ProcessExecutionError:
-                        time.sleep(1)
-                        continue
-                    else:
-                        utils.execute('dd', 'if=/dev/zero', 'bs=1M', 'count=1',
-                                      'of=%s' % prt.name, check_exit_code=[0])
-                        break
-
                 for flag in prt.flags:
                     pu.set_partition_flag(prt.device, prt.count, flag)
                 if prt.guid:
                     pu.set_gpt_type(prt.device, prt.count, prt.guid)
+                # If any partition to be created doesn't exist it's an error.
+                # Probably it's again 'device or resource busy' issue.
+                if not os.path.exists(prt.name):
+                    raise errors.PartitionNotFoundError(
+                        'Partition %s not found after creation' % prt.name)
+
+        # disable udev's rules blacklisting
+        LOG.debug("Disabling udev's rules blacklisting")
+        for rule in os.listdir(CONF.udev_rules_dir):
+            if rule.endswith('.rules'):
+                src = os.path.join(CONF.udev_rules_dir, rule)
+                if os.path.islink(src):
+                    os.remove(src)
+        utils.execute('udevadm', 'control', '--reload-rules',
+                      check_exit_code=[0])
 
         # If one creates partitions with the same boundaries as last time,
         # there might be md and lvm metadata on those partitions. To prevent

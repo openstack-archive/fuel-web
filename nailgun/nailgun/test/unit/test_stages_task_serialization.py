@@ -36,9 +36,7 @@ class BaseTaskSerializationTest(base.BaseTestCase):
     def setUp(self):
         super(BaseTaskSerializationTest, self).setUp()
         self.release = self.env.create_release(
-            api=False,
-            orchestrator_data={'repo_metadata': {
-                '6.0': '{MASTER_IP}//{OPENSTACK_VERSION}'}})
+            api=False)
         self.cluster = self.env.create_cluster(
             api=False, release_id=self.release.id)
         self.nodes = [

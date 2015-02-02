@@ -36,10 +36,7 @@ class TestHandlers(BaseIntegrationTest):
             params=jsonutils.dumps({
                 'name': 'Another test release',
                 'version': '1.0',
-                'operating_system': 'CentOS',
-                'orchestrator_data':
-                self.env.get_default_orchestrator_data(),
-            }),
+                'operating_system': 'CentOS'}),
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 201)
@@ -82,9 +79,7 @@ class TestHandlers(BaseIntegrationTest):
                             }
                             ]
                     }
-                },
-                'orchestrator_data':
-                self.env.get_default_orchestrator_data(),
+                }
             }),
             headers=self.default_headers
         )
@@ -113,9 +108,7 @@ class TestHandlers(BaseIntegrationTest):
                             }
                             ]
                     }
-                },
-                'orchestrator_data':
-                self.env.get_default_orchestrator_data()
+                }
             }),
             headers=self.default_headers,
             expect_errors=True
@@ -167,9 +160,7 @@ class TestHandlers(BaseIntegrationTest):
                             }
                             ]
                     }
-                },
-                'orchestrator_data':
-                self.env.get_default_orchestrator_data()
+                }
             }),
             headers=self.default_headers
         )
@@ -198,76 +189,12 @@ class TestHandlers(BaseIntegrationTest):
                             }
                             ]
                     }
-                },
-                'orchestrator_data':
-                self.env.get_default_orchestrator_data(),
+                }
             }),
             headers=self.default_headers,
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 409)
-
-    def test_release_w_orch_data_create(self):
-        release_name = "OpenStack"
-        release_version = "1.0.0"
-        release_description = "This is a release w orchestrator data"
-        orch_data = {
-            "repo_metadata": {
-                "nailgun":
-                "http://10.20.0.2:8080/centos-5.0/centos/x86_64/"
-            },
-            "puppet_modules_source":
-            "rsync://10.20.0.2/puppet/release/5.0/modules",
-            "puppet_manifests_source":
-            "rsync://10.20.0.2/puppet/release/5.0/manifests"
-        }
-        resp = self.app.post(
-            reverse('ReleaseCollectionHandler'),
-            jsonutils.dumps({
-                'name': release_name,
-                'version': release_version,
-                'description': release_description,
-                'operating_system': 'CentOS',
-                "orchestrator_data": orch_data,
-                'networks_metadata': {
-                    "nova_network": {
-                        "networks": [
-                            {
-                                "name": "storage",
-                                "cidr": "192.168.1.0/24",
-                                "gateway": "192.168.1.1",
-                                "ip_range": [
-                                    "192.168.1.1",
-                                    "192.168.1.254"
-                                ],
-                                "vlan_start": 102,
-                                "assign_vip": False
-                            },
-                            {
-                                "name": "management",
-                                "cidr": "10.0.0.0/16",
-                                "gateway": "10.0.0.1",
-                                "ip_range": [
-                                    "10.0.0.2",
-                                    "10.0.255.254"
-                                ],
-                                "vlan_start": 103,
-                                "assign_vip": False
-                            }]
-                    }
-                }
-            }),
-            headers=self.default_headers
-        )
-        self.assertEqual(resp.status_code, 201)
-
-        resp = self.app.get(
-            reverse("ReleaseCollectionHandler"),
-            headers=self.default_headers
-        )
-        self.assertEqual(200, resp.status_code)
-        self.assertEqual(1, len(resp.json_body))
-        self.assertEqual(orch_data, resp.json_body[0]["orchestrator_data"])
 
 
 class ReleaseCollectionSortBaseTest(BaseIntegrationTest):

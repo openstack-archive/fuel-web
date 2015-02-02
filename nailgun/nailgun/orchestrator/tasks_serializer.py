@@ -164,22 +164,6 @@ class UploadMOSRepo(GenericRolesHook):
     def serialize(self):
         uids = self.get_uids()
         operating_system = self.cluster.release.operating_system
-        repo_metadata = self.cluster.release.orchestrator_data.repo_metadata
-        repo_name = 'nailgun'
-
-        context = {
-            'MASTER_IP': settings.MASTER_IP,
-            'OPENSTACK_VERSION': self.cluster.release.version}
-
-        # repo_metadata stores its values by key of release
-        for release, repo_url_mask in six.iteritems(repo_metadata):
-            repo_url = self.make_repo_url(repo_url_mask, context)
-            if operating_system == consts.RELEASE_OS.centos:
-                yield templates.make_centos_repo_task(
-                    repo_name, repo_url, uids)
-            elif operating_system == consts.RELEASE_OS.ubuntu:
-                yield templates.make_versioned_ubuntu(
-                    repo_name, repo_url, uids)
 
         if operating_system == consts.RELEASE_OS.centos:
             yield templates.make_yum_clean(uids)

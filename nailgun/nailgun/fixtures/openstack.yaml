@@ -1100,6 +1100,9 @@
           metadata:
             metadata_proxy_shared_secret:
               generator: "password"
+        puppet:
+          puppet_manifests_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/"
+          puppet_modules_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/"
     wizard_metadata:
       Mode:
         metadata:
@@ -1468,11 +1471,12 @@
               uri: "http://{{settings.MASTER_IP}}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-    orchestrator_data:
-      puppet_manifests_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/"
-      puppet_modules_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/"
-      repo_metadata:
-        "{OPENSTACK_VERSION}": "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/centos/x86_64"
+        repo:
+          repo_metadata:
+            "{OPENSTACK_VERSION}":
+              - type: "rpm"
+                uri: "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/centos/x86_64"
+                priority: 1
 - pk: 2
   extend: *base_release
   fields:
@@ -1496,8 +1500,11 @@
               uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1204_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-    orchestrator_data:
-      puppet_manifests_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/"
-      puppet_modules_source: "rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/"
-      repo_metadata:
-        "{OPENSTACK_VERSION}": "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/ubuntu/x86_64 precise main"
+        repo:
+          repo_metadata:
+            "{OPENSTACK_VERSION}":
+              - type: "deb"
+                uri: "http://{MASTER_IP}:8080/{OPENSTACK_VERSION}/ubuntu/x86_64"
+                flavour: "precise"
+                space: "main"
+                priority: 1001

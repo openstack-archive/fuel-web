@@ -161,6 +161,11 @@ def upgrade_schema():
                     sa.PrimaryKeyConstraint('id'))
     ### end Alembic commands ###
 
+    # NOTE(kozhukalov): move orchestrator data from
+    # release_orchestrator_data to cluster attributes
+    move_orchestrator_data_to_attributes()
+    op.drop_table('release_orchestrator_data')
+
 
 def downgrade_schema():
     # OpenStack workload statistics
@@ -222,6 +227,10 @@ def upgrade_data():
 
 
 def downgrade_data():
+    pass
+
+
+def move_orchestrator_data_to_attributes():
     pass
 
 

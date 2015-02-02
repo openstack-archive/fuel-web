@@ -20,6 +20,7 @@ except ImportError:
     # Runing unit-tests in production environment
     from unittest2.case import TestCase
 
+import abc
 import mock
 import os
 import re
@@ -33,6 +34,8 @@ from random import randint
 
 from oslo.serialization import jsonutils
 
+import alembic
+import six
 import web
 from webtest import app
 
@@ -42,7 +45,9 @@ from nailgun.api.v1.urls import urls
 from nailgun import consts
 
 from nailgun.db import db
+from nailgun.db import dropdb
 from nailgun.db import flush
+from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.db import syncdb
 
 from nailgun.logger import logger
@@ -139,7 +144,6 @@ class EnvironmentManager(object):
             'attributes_metadata': self.get_default_attributes_metadata(),
             'volumes_metadata': self.get_default_volumes_metadata(),
             'roles_metadata': self.get_default_roles_metadata(),
-            'orchestrator_data': self.get_default_orchestrator_data(),
             'vmware_attributes_metadata':
             self.get_default_vmware_attributes_metadata()
         }
@@ -515,21 +519,6 @@ class EnvironmentManager(object):
 
         sample_plugin.update(kwargs)
         return sample_plugin
-
-    def get_default_orchestrator_data(self, **kwargs):
-        orchestrator_data = {
-            'puppet_manifests_source':
-            'rsync://127.0.0.1:/puppet/2014.2-6.0/manifests/',
-
-            'puppet_modules_source':
-            'rsync://127.0.0.1:/puppet/2014.2-6.0/modules/',
-
-            'repo_metadata': {
-                '2014.2-6.0': 'http://127.0.0.1:8080/2014.2-6.0/centos/x86_64'
-            }
-        }
-        orchestrator_data.update(kwargs)
-        return orchestrator_data
 
     def get_default_vmware_attributes_metadata(self, **kwargs):
         return self.read_fixtures(
@@ -1125,3 +1114,27 @@ def datadiff(data1, data2, branch, p=True):
                         print("v2 = %s" % v2)
                     diff.extend(datadiff(v1, v2, newbranch))
     return diff
+
+
+@six.add_metaclass(abc.ABCMeta)
+class BaseAlembicMigrationTest(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        dropdb()
+        alembic.command.upgrade(ALEMBIC_CONFIG, cls.prepare_revision)
+        cls.prepare()
+        alembic.command.upgrade(ALEMBIC_CONFIG, cls.test_revision)
+
+    @abc.abstractproperty
+    def prepare_revision(self):
+        """Alembic revision to stop and call prepare() method."""
+
+    @abc.abstractproperty
+    def test_revision(self):
+        """Alembic revision to stop and call text() method."""
+
+    @classmethod
+    @abc.abstractmethod
+    def prepare(cls):
+        """Method that should prepare your database state."""

@@ -36,21 +36,6 @@ class ReleaseValidator(BasicValidator):
                         log_message=True
                     )
 
-        if "orchestrator_data" in d:
-            if not isinstance(d["orchestrator_data"], dict):
-                raise errors.InvalidData(
-                    "'orchestrator_data' field must be a dict",
-                    log_message=True
-                )
-            keys = set(["repo_metadata",
-                        "puppet_manifests_source",
-                        "puppet_modules_source"])
-            if not (set(d["orchestrator_data"].keys()) >= keys):
-                raise errors.InvalidData(
-                    "'orchestrator_data' doesn't have all required keys",
-                    log_message=True
-                )
-
     @classmethod
     def validate(cls, data):
         d = cls.validate_json(data)
@@ -68,10 +53,6 @@ class ReleaseValidator(BasicValidator):
             raise errors.InvalidData(
                 "No release operating system specified",
                 log_message=True
-            )
-        if "orchestrator_data" not in d:
-            raise errors.InvalidData(
-                'No orchestrator_data specified', log_message=True
             )
 
         if db().query(Release).filter_by(

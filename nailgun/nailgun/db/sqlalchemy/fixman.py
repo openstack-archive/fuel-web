@@ -106,19 +106,6 @@ def upload_fixture(fileobj, loader=None):
         except Exception:
             break
 
-        # NOTE(ikalnitsly):
-        #   In order to add a release to Nailgun we have to fill two tables:
-        #   releases and release_orchestrator_data. By using former fixture
-        #   approach we can't do it, since the fixture is bond to only one
-        #   database model and can't deal with additional logic. Therefore
-        #   we need to use Nailgun's objects which know how to handle it.
-        #
-        # TODO(ikalnitsky):
-        #   Rewrite fixture logic - it must be simple and obvious.
-        if obj['model'] is objects.Release.model:
-            objects.Release.create(obj['fields'])
-            continue
-
         new_obj = obj['model']()
         fk_fields = {}
         for field, value in obj["fields"].iteritems():

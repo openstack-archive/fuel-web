@@ -31,6 +31,7 @@ from sqlalchemy.sql import text
 
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.utils.migration import drop_enum
+from nailgun.utils.migration import move_orchestrator_data_to_attributes
 from nailgun.utils.migration import \
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping
 from nailgun.utils.migration import upgrade_attributes_metadata_6_0_to_6_1
@@ -97,6 +98,8 @@ def downgrade():
 
 
 def upgrade_schema():
+    connection = op.get_bind()
+
     op.add_column(
         'clusters',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
@@ -205,6 +208,8 @@ def upgrade_schema():
         'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
         ['node_id'], ['id'], ondelete='CASCADE')
     ### end Alembic commands ###
+    move_orchestrator_data_to_attributes(connection)
+    op.drop_table('release_orchestrator_data')
 
 
 def downgrade_schema():
@@ -236,6 +241,18 @@ def downgrade_schema():
         node_statuses_old           # new options
     )
 
+    op.create_table(
+        'release_orchestrator_data',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('release_id', sa.Integer(), nullable=False),
+        sa.Column('repo_metadata', fields.JSON(), nullable=False),
+        sa.Column(
+            'puppet_manifests_source', sa.Text(), nullable=False),
+        sa.Column(
+            'puppet_modules_source', sa.Text(), nullable=False),
+        sa.ForeignKeyConstraint(['release_id'], ['releases.id'], ),
+        sa.PrimaryKeyConstraint('id'))
+
     op.drop_table('vmware_attributes')
     op.drop_column('releases', 'vmware_attributes_metadata')
     op.drop_column('clusters', 'deployment_tasks')
@@ -254,6 +271,7 @@ def downgrade_schema():
     op.create_foreign_key(
         'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
         ['node_id'], ['id'])
+
     ### end Alembic commands ###
 
 

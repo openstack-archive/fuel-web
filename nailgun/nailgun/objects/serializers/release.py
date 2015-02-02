@@ -43,17 +43,4 @@ class ReleaseSerializer(BasicSerializer):
             super(ReleaseSerializer, cls).serialize(instance, fields)
         release_dict["is_deployable"] = Release.is_deployable(instance)
 
-        # we always want to get orchestrator data even it's a default one
-        release_dict["orchestrator_data"] = \
-            Release.get_orchestrator_data_dict(instance)
-
         return release_dict
-
-
-class ReleaseOrchestratorDataSerializer(BasicSerializer):
-
-    fields = (
-        "repo_metadata",
-        "puppet_manifests_source",
-        "puppet_modules_source"
-    )

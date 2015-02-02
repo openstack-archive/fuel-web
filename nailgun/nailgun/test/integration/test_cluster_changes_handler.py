@@ -95,10 +95,6 @@ class TestHandlers(BaseIntegrationTest):
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
-
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
         )
@@ -291,17 +287,13 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
-                pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':
@@ -437,9 +429,6 @@ class TestHandlers(BaseIntegrationTest):
             'fuel_version': cluster_db.fuel_version,
             'tasks': []
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
 
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
@@ -732,17 +721,13 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
                     'image_data': cluster_attrs['provision']['image_data'],
+                    'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
-                pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':
@@ -877,10 +862,6 @@ class TestHandlers(BaseIntegrationTest):
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
-
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
         )
@@ -1191,17 +1172,13 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
                     'image_data': cluster_attrs['provision']['image_data'],
+                    'repo_setup': cluster_attrs['repo_setup'],
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
-                pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':

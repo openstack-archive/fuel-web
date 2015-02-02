@@ -311,21 +311,5 @@ _new_role_restrictions = {
                 "and settings:storage.images_ceph.value == false"),
             'message': "Ceph must be enabled in settings"
         }
-    ],
-    'mongo': [
-        {
-            'condition': "cluster:status == 'operational'",
-            'message': (
-                "MongoDB node can not be added to an operational environment.")
-        },
-        {
-            'condition': (
-                "settings:additional_components.ceilometer.value == false"),
-            'message': "Ceilometer should be enabled."
-        },
-        {
-            'condition': "settings:additional_components.mongo.value == true",
-            'message': "You are already using external MongoDB."
-        }
     ]
 }

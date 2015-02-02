@@ -138,7 +138,6 @@ class EnvironmentManager(object):
             'attributes_metadata': self.get_default_attributes_metadata(),
             'volumes_metadata': self.get_default_volumes_metadata(),
             'roles_metadata': self.get_default_roles_metadata(),
-            'orchestrator_data': self.get_default_orchestrator_data(),
             'vmware_attributes_metadata':
             self.get_default_vmware_attributes_metadata()
         }
@@ -475,21 +474,6 @@ class EnvironmentManager(object):
 
         sample_plugin.update(kwargs)
         return sample_plugin
-
-    def get_default_orchestrator_data(self, **kwargs):
-        orchestrator_data = {
-            'puppet_manifests_source':
-            'rsync://127.0.0.1:/puppet/2014.2-6.0/manifests/',
-
-            'puppet_modules_source':
-            'rsync://127.0.0.1:/puppet/2014.2-6.0/modules/',
-
-            'repo_metadata': {
-                '2014.2-6.0': 'http://127.0.0.1:8080/2014.2-6.0/centos/x86_64'
-            }
-        }
-        orchestrator_data.update(kwargs)
-        return orchestrator_data
 
     def get_default_vmware_attributes_metadata(self, **kwargs):
         return self.read_fixtures(

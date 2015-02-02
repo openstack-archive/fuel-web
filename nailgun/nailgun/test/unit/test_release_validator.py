@@ -26,13 +26,8 @@ class TestReleaseValidator(BaseTestCase):
         self.release = {
             'name': 'Test Release',
             'version': '2014.2-6.0',
-            'operating_system': 'CentOS',
-            'orchestrator_data': {
-                'puppet_manifests_source': 'path/to/manifests',
-                'puppet_modules_source': 'path/to/modules',
-
-                'repo_metadata': {
-                    'repo': 'path/to/repo', }}}
+            'operating_system': 'CentOS'
+        }
         self.validator = ReleaseValidator
 
     def get_release(self, release):
@@ -62,33 +57,6 @@ class TestReleaseValidator(BaseTestCase):
         self.assertRaisesRegexp(
             errors.InvalidData,
             'No release operating system specified',
-            self.validator.validate,
-            self.get_release(self.release))
-
-    def test_orchestrator_data_is_mandatory(self):
-        self.release.pop('orchestrator_data')
-
-        self.assertRaisesRegexp(
-            errors.InvalidData,
-            'No orchestrator_data specified',
-            self.validator.validate,
-            self.get_release(self.release))
-
-    def test_orchestrator_data_must_be_a_dict(self):
-        self.release['orchestrator_data'] = None
-
-        self.assertRaisesRegexp(
-            errors.InvalidData,
-            "'orchestrator_data' field must be a dict",
-            self.validator.validate,
-            self.get_release(self.release))
-
-    def test_orchestrator_data_required_keys(self):
-        self.release['orchestrator_data'] = {}
-
-        self.assertRaisesRegexp(
-            errors.InvalidData,
-            "'orchestrator_data' doesn't have all required keys",
             self.validator.validate,
             self.get_release(self.release))
 

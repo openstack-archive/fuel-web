@@ -275,6 +275,64 @@ def upgrade_release_fill_orchestrator_data(connection, versions):
             )
 
 
+def move_orchestrator_data_to_attributes(connection):
+    """Moving data from orchestrator data db table to cluster attributes
+
+    :param connection: a database connection
+    """
+
+    select_query = text(
+        "SELECT "
+        "id, "
+        "release_id, "
+        "repo_metadata, "
+        "puppet_manifests_source, "
+        "puppet_modules_source "
+        "FROM release_orchestrator_data")
+
+    for odata in connection.execute(select_query):
+        select_query = text(
+            "SELECT "
+            "id, "
+            "attributes_metadata, "
+            "operating_system "
+            "FROM releases WHERE id = :release_id"
+        )
+        for release in connection.execute(select_query, release_id=odata[1]):
+            attributes_metadata = jsonutils.loads(release[1])
+            repo_metadata = []
+            if release[2].lower() == 'ubuntu':
+                for name, repo in jsonutils.loads(odata[2]).iteritems():
+                    uri, suite, section = repo.split()
+                    repo_metadata.append({
+                        'type': 'deb',
+                        'name': name,
+                        'uri': uri,
+                        'suite': suite,
+                        'section': section,
+                        'priority': 1001
+                    })
+            elif release[2].lower() == 'centos':
+                for name, repo in jsonutils.loads(odata[2]).iteritems():
+                    repo_metadata.append({
+                        'type': 'rpm',
+                        'name': name,
+                        'uri': repo,
+                        'priority': 1
+                    })
+            attributes_metadata['generated'].update(
+                {'repo': {'repo_metadata': repo_metadata}})
+            update_query = text(
+                "UPDATE releases "
+                "SET attributes_metadata = :attributes_metadata "
+                "WHERE id = :release_id"
+            )
+            connection.execute(
+                update_query,
+                attributes_metadata=jsonutils.dumps(attributes_metadata),
+                release_id=odata[1])
+
+
 def upgrade_attributes_metadata_6_0_to_6_1(attributes_meta):
     attributes_meta['editable']['storage']['volumes_lvm']['description'] = \
         'It is recommended to have at least one Storage - Cinder LVM node.'

@@ -31,6 +31,7 @@ from sqlalchemy.sql import text
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
+from nailgun.utils.migration import move_orchestrator_data_to_attributes
 from nailgun.utils.migration import \
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping
 from nailgun.utils.migration import upgrade_attributes_metadata_6_0_to_6_1
@@ -78,6 +79,8 @@ def downgrade():
 
 
 def upgrade_schema():
+    connection = op.get_bind()
+
     op.add_column(
         'clusters',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
@@ -162,7 +165,8 @@ def upgrade_schema():
                     ),
                     sa.PrimaryKeyConstraint('id'))
     ### end Alembic commands ###
-
+    move_orchestrator_data_to_attributes(connection)
+    op.drop_table('release_orchestrator_data')
 
 def downgrade_schema():
     # OpenStack workload statistics

@@ -21,17 +21,60 @@ from nailgun.orchestrator import tasks_templates
 
 class TestMakeTask(base.BaseTestCase):
 
-    def test_make_ubuntu_repo_task(self):
-        result = tasks_templates.make_multiversion_ubuntu(
-            'plugin_name',
-            'http://url',
+    def test_make_ubuntu_sources_task(self):
+        result = tasks_templates.make_ubuntu_sources_task(
+            {
+                'name': 'plugin_name',
+                'type': 'deb',
+                'uri': 'http://url',
+                'suite': '/',
+                'section': '',
+                'priority': 1001
+            },
             [1, 2, 3])
 
         self.assertEqual(
             result,
             {'parameters': {
-                'data': 'deb http://url /',
+                'data': 'deb http://url / ',
                 'path': '/etc/apt/sources.list.d/plugin_name.list'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
+    def test_make_ubuntu_preferencies_task(self):
+        result = tasks_templates.make_ubuntu_preferencies_task(
+            {
+                'name': 'plugin_name',
+                'type': 'deb',
+                'uri': 'http://url',
+                'suite': '/',
+                'section': '',
+                'priority': 1001
+            },
+            [1, 2, 3])
+        self.assertEqual(
+            result,
+            {'parameters': {
+                'data': 'Package: *\nPin: release a=/\nPin-Priority: 1001',
+                'path': '/etc/apt/preferences.d/plugin_name'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
+    def test_make_centos_repo_task(self):
+        result = tasks_templates.make_centos_repo_task(
+            {
+                'name': 'plugin_name',
+                'type': 'rpm',
+                'uri': 'http://url',
+                'priority': 1
+            },
+            [1, 2, 3])
+        self.assertEqual(
+            result,
+            {'parameters': {
+                'data': ('[plugin_name]\nname=Plugin plugin_name repository\n'
+                         'baseurl=http://url\ngpgcheck=0\npriority=1'),
+                'path': '/etc/yum.repos.d/plugin_name.repo'},
              'type': 'upload_file',
              'uids': [1, 2, 3]})
 

@@ -101,16 +101,25 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
                 repo_tasks.append(
                     self.serialize_task(
                         plugin, {},
-                        templates.make_centos_repo_task(
-                            plugin.full_name,
-                            plugin.repo_url(self.cluster), uids)))
+                        templates.make_centos_repo_task({
+                            'type': 'rpm',
+                            'name': plugin.full_name,
+                            'uri': plugin.repo_url(self.cluster),
+                            'priority': 1}, uids)))
             elif operating_system == consts.RELEASE_OS.ubuntu:
                 repo_tasks.append(
                     self.serialize_task(
                         plugin, {},
-                        templates.make_multiversion_ubuntu(
-                            plugin.full_name,
-                            plugin.repo_url(self.cluster), uids)))
+                        templates.make_ubuntu_sources_task({
+                            'type': 'deb',
+                            'name': plugin.full_name,
+                            'uri': plugin.repo_url(self.cluster),
+                            'suite': '/',
+                            'section': ''}, uids)))
+                        # NOTE(kozhukalov) maybe here we also need to put
+                        # preferences file to make sure plugin repo has
+                        # a suitable priority level
+
                 #apt-get upgrade executed after every additional source.list
                 #to be able understand what plugin source.list caused error
                 repo_tasks.append(

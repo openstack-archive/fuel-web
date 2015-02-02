@@ -194,50 +194,6 @@ class TestHandlers(BaseIntegrationTest):
         ).all()
         self.assertEqual(ngs, [])
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_replaced_orchestrator_info_should_passed(self, mocked_rpc):
-        # creating cluster with nodes
-        self.env.create(
-            cluster_kwargs={
-                'mode': 'multinode'},
-            nodes_kwargs=[
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['compute'], 'pending_addition': True}])
-        new_deployment_info = []
-        new_provisioning_info = {'engine': {}}
-        nodes = []
-        self.env.clusters[0].replaced_provisioning_info = new_provisioning_info
-        self.db.flush()
-
-        orch_data = objects.Release.get_orchestrator_data_dict(
-            self.env.clusters[0].release)
-
-        for node in self.env.nodes:
-            role_info = {
-                "field": "deployment_info",
-                "uid": node.uid
-            }
-            node.replaced_deployment_info = [deepcopy(role_info)]
-            role_info.update(orch_data)
-            new_deployment_info.append(role_info)
-            node.replaced_provisioning_info = {
-                "field": "provisioning_info",
-                "uid": node.uid
-            }
-            nodes.append(
-                node.replaced_provisioning_info)
-        new_provisioning_info['nodes'] = nodes
-        self.env.launch_deployment()
-        # intercepting arguments with which rpc.cast was called
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        received_provisioning_info = args[1][0]['args']['provisioning_info']
-        received_deployment_info = args[1][1]['args']['deployment_info']
-        self.datadiff(
-            new_provisioning_info, received_provisioning_info)
-        self.datadiff(
-            new_deployment_info, received_deployment_info)
-
     def test_cluster_generated_data_handler(self):
         self.env.create(
             nodes_kwargs=[

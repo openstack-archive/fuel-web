@@ -236,7 +236,7 @@ class TestPrePostHooks(BasePluginTest):
         upload_file = [t for t in plugins_tasks if t['type'] == 'upload_file']
         rsync = [t for t in plugins_tasks if t['type'] == 'sync']
         cmd_tasks = [t for t in plugins_tasks if t['type'] == 'shell']
-        self.assertEqual(len(upload_file), 1)
+        self.assertEqual(len(upload_file), 2)
         self.assertEqual(len(rsync), 1)
         self.assertEqual(len(cmd_tasks), 2)
         for t in plugins_tasks:

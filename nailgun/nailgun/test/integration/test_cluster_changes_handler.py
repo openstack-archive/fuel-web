@@ -94,10 +94,6 @@ class TestHandlers(BaseIntegrationTest):
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
-
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
         )
@@ -296,11 +292,10 @@ class TestHandlers(BaseIntegrationTest):
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
-                pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
+
+            repo_setup = cluster_attrs.get('repo_setup')
+            if repo_setup:
+                pnd['ks_meta']['repo_setup'] = repo_setup
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':
@@ -436,9 +431,6 @@ class TestHandlers(BaseIntegrationTest):
             'fuel_version': cluster_db.fuel_version,
             'tasks': []
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
 
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
@@ -737,11 +729,10 @@ class TestHandlers(BaseIntegrationTest):
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
-                pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
+
+            repo_setup = cluster_attrs.get('repo_setup')
+            if repo_setup:
+                pnd['ks_meta']['repo_setup'] = repo_setup
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':
@@ -876,10 +867,6 @@ class TestHandlers(BaseIntegrationTest):
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version
         }
-        common_attrs.update(
-            objects.Release.get_orchestrator_data_dict(cluster_db.release)
-        )
-
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster_db.attributes
         )
@@ -1196,11 +1183,10 @@ class TestHandlers(BaseIntegrationTest):
                     self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
-            orchestrator_data = objects.Release.get_orchestrator_data_dict(
-                cluster_db.release)
-            if orchestrator_data:
-                pnd['ks_meta']['repo_metadata'] = \
-                    orchestrator_data['repo_metadata']
+
+            repo_setup = cluster_attrs.get('repo_setup')
+            if repo_setup:
+                pnd['ks_meta']['repo_setup'] = repo_setup
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
             if vlan_splinters == 'kernel_lt':

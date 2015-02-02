@@ -275,6 +275,100 @@ def upgrade_release_fill_orchestrator_data(connection, versions):
             )
 
 
+def move_orchestrator_data_to_attributes(connection):
+    """Moving data from orchestrator data db table to cluster attributes
+
+    :param connection: a database connection
+    """
+
+    select_query = text(
+        "SELECT "
+        "id, "
+        "release_id, "
+        "repo_metadata, "
+        "puppet_manifests_source, "
+        "puppet_modules_source "
+        "FROM release_orchestrator_data")
+
+    for odata in connection.execute(select_query):
+        select_query = text(
+            "SELECT id, attributes_metadata, operating_system "
+            "   FROM releases WHERE id = :release_id")
+
+        for release in connection.execute(select_query, release_id=odata[1]):
+            repo_setup = {
+                'metadata': {
+                    'label': 'Repositories',
+                    'weight': 50,
+                },
+                'repos': {
+                    'type': 'custom_repo_configuration',
+                    'value': [],
+                }}
+
+            puppet = {
+                'manifests': odata[3],
+                'modules': odata[4],
+            }
+
+            if release[2].lower() == 'ubuntu':
+                for name, repo in six.iteritems(jsonutils.loads(odata[2])):
+                    uri, suite, section = repo.split()
+                    repo_setup['repos']['value'].append({
+                        'type': 'deb',
+                        'name': name,
+                        'uri': uri,
+                        'suite': suite,
+                        'section': section,
+                        'priority': 1001
+                    })
+            elif release[2].lower() == 'centos':
+                for name, repo in six.iteritems(jsonutils.loads(odata[2])):
+                    repo_setup['repos']['value'].append({
+                        'type': 'rpm',
+                        'name': name,
+                        'uri': repo,
+                        'priority': 1
+                    })
+
+            # update releases
+            attributes_metadata = jsonutils.loads(release[1])
+            attributes_metadata['editable'].update({'repo_setup': repo_setup})
+            attributes_metadata['generated'].update({'puppet': puppet})
+
+            update_query = text(
+                "UPDATE releases "
+                "   SET attributes_metadata = :attributes_metadata "
+                "   WHERE id = :release_id")
+            connection.execute(
+                update_query,
+                attributes_metadata=jsonutils.dumps(attributes_metadata),
+                release_id=odata[1])
+
+            # update cluster attributes
+            select_query = text(
+                "SELECT a.id, a.editable, a.generated "
+                "   FROM attributes as a INNER JOIN clusters as c "
+                "      ON a.cluster_id = c.id "
+                "   WHERE c.release_id = :release_id")
+
+            for attr in connection.execute(select_query, release_id=odata[1]):
+                editable = jsonutils.loads(attr[1])
+                generated = jsonutils.loads(attr[2])
+
+                editable.update({'repo_setup': repo_setup})
+                generated.update({'puppet': puppet})
+
+                connection.execute(
+                    text(
+                        "UPDATE attributes "
+                        "   SET editable = :editable, generated = :generated "
+                        "   WHERE id = :attr_id"),
+                    editable=jsonutils.dumps(editable),
+                    generated=jsonutils.dumps(generated),
+                    attr_id=attr[0])
+
+
 def upgrade_attributes_metadata_6_0_to_6_1(attributes_meta):
     attributes_meta['editable']['storage']['volumes_lvm']['description'] = \
         'It is recommended to have at least one Storage - Cinder LVM node.'

@@ -100,32 +100,29 @@ class BasePluginDeploymentHooksSerializer(object):
         tasks = []
 
         for plugin in plugins:
-            puppet_tasks = filter(
-                lambda t: (t['type'] == 'puppet' and
-                           t['stage'] == stage),
+            plugin_tasks = filter(
+                lambda t: (t['stage'] == stage),
                 plugin.tasks)
-            shell_tasks = filter(
-                lambda t: (t['type'] == 'shell' and
-                           t['stage'] == stage),
-                plugin.tasks)
-
-            for task in shell_tasks:
+            for task in plugin_tasks:
                 uids = self.get_uids_for_task(task)
                 if not uids:
                     continue
-                tasks.append(self.serialize_task(
-                    plugin, task,
-                    make_shell_task(uids, task, plugin.slaves_scripts_path)))
-
-            for task in puppet_tasks:
-                uids = self.get_uids_for_task(task)
-                if not uids:
-                    continue
-                tasks.append(self.serialize_task(
-                    plugin, task,
-                    make_puppet_task(uids, task, plugin.slaves_scripts_path)))
-
-        return tasks
+                if task['type'] == 'shell':
+                    tasks.append(self.serialize_task(
+                        plugin, task,
+                        make_shell_task(
+                            uids, task,
+                            plugin.slaves_scripts_path)))
+                elif task['type'] == 'puppet':
+                    tasks.append(self.serialize_task(
+                        plugin, task,
+                        make_puppet_task(
+                            uids, task,
+                            plugin.slaves_scripts_path)))
+                else:
+                    logger.warn('Task is skipped {0}, because its type is '
+                                'not supported').format(task)
+        return tasks_templates
 
     def get_uids_for_tasks(self, tasks):
         uids = []

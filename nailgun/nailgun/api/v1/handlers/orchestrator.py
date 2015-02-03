@@ -22,6 +22,7 @@ import web
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
+from nailgun.api.v1.validators.graph import GraphVisualizationValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
@@ -31,6 +32,7 @@ from nailgun import objects
 
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
+from nailgun.orchestrator import graph_visualization
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator.stages import post_deployment_serialize
 from nailgun.orchestrator.stages import pre_deployment_serialize
@@ -294,3 +296,42 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
             self.validator.validate_deployment,
             cluster=cluster)
         return self.handle_task(cluster, deployment_tasks=data)
+
+
+class TaskDeployGraph(BaseHandler):
+
+    validator = GraphVisualizationValidator
+
+    def GET(self, cluster_id):
+        """:returns: DOT representation of deployment graph.
+        :http: * 200 (graph returned)
+               * 404 (cluster not found in db)
+               * 400 (failed to get graph)
+        """
+        web.header('Content-Type', 'text/vnd.graphviz', unique=True)
+
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        tasks = objects.Cluster.get_deployment_tasks(cluster)
+        graph = deployment_graph.DeploymentGraph(tasks)
+
+        tasks = web.input(tasks=None).tasks
+        parents_for = web.input(parents_for=None).parents_for
+
+        if tasks:
+            tasks = self.checked_data(
+                self.validator.validate,
+                data=tasks,
+                cluster=cluster)
+            logger.debug('Tasks used in dot graph %s', tasks)
+
+        if parents_for:
+            parents_for = self.checked_data(
+                self.validator.validate_task_presence,
+                data=parents_for,
+                graph=graph)
+            logger.debug('Graph with predecessors for %s', parents_for)
+
+        visualization = graph_visualization.GraphVisualization(graph)
+        dotgraph = visualization.get_dotgraph(tasks=tasks,
+                                              parents_for=parents_for)
+        return dotgraph.to_string()

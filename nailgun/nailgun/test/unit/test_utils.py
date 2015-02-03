@@ -19,8 +19,11 @@ from mock import patch
 import os
 import tempfile
 
+from nailgun.errors import errors
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import dict_merge
+from nailgun.utils import evaluate_expression
+from nailgun.utils import expand_restriction
 from nailgun.utils import extract_env_version
 from nailgun.utils import get_fuel_release_versions
 
@@ -76,3 +79,44 @@ class TestUtils(BaseIntegrationTest):
         self.assertFalse(os.path.exists(file_path))
         versions = get_fuel_release_versions(file_path)
         self.assertDictEqual({}, versions)
+
+    def test_expand_restriction(self):
+        string_restriction = 'settings.some_attribute.value != true'
+        dict_restriction_long_form = {
+            'condition': 'settings.some_attribute.value != true',
+            'message': 'Another attribute required'
+        }
+        dict_restriction_short_form = {
+            'settings.some_attribute.value != true':
+            'Another attribute required'
+        }
+        result = {
+            'action': 'disabled',
+            'condition': 'settings.some_attribute.value != true',
+        }
+        invalid_fromat = ['some_condition']
+
+        self.assertEqual(
+            expand_restriction(string_restriction), result)
+        result['message'] = 'Another attribute required'
+        self.assertEqual(
+            expand_restriction(dict_restriction_long_form), result)
+        self.assertEqual(
+            expand_restriction(dict_restriction_short_form), result)
+        self.assertRaises(
+            errors.InvalidData, expand_restriction, invalid_fromat)
+
+    def test_evaluate_expression(self):
+        settings = {
+            'some_attribute': {
+                'value': True
+            }
+        }
+        models = {
+            'settings': settings
+        }
+
+        test_expression = 'settings:some_attribute.value == true'
+        self.assertTrue(evaluate_expression(test_expression, models))
+        settings['some_attribute']['value'] = False
+        self.assertFalse(evaluate_expression(test_expression, models))

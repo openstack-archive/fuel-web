@@ -22,16 +22,6 @@ timezone: {{ common.timezone }}
 hostname: {{ common.hostname }}
 fqdn: {{ common.fqdn }}
 
-# TODO(kozhukalov) name_servers is set as "1.2.3.4,1.2.3.5"
-resolv_conf:
-  nameservers: [ {{ common.name_servers }} ]
-  searchdomains:
-   - {{ common.search_domain }}
-#  domain: {{ domain }}
-#  options:
-#    rotate: true
-#    timeout: 1
-
 
 # add entries to rsyslog configuration
 rsyslog:

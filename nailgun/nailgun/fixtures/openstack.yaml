@@ -907,7 +907,7 @@
             weight: 30
             type: "checkbox"
             restrictions:
-              - condition: "settings:storage.images_vcenter.value == true"
+              - "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
           images_vcenter:
             value: false
             label: "VMWare vCenter/ESXi datastore for images (Glance)"
@@ -916,6 +916,7 @@
             type: "checkbox"
             restrictions:
               - "settings:common.libvirt_type.value != 'vcenter'"
+              - "settings:storage.images_ceph.value == true": "Only one Glance backend could be selected."
           vc_host:
             value: ""
             label: "Hostname"

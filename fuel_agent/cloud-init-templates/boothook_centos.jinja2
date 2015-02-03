@@ -42,6 +42,24 @@ cloud-init-per instance udev_persistent_net5 service network start
 
 # end of udev
 
+# FROM cloudinit/cc_resolv_conf.py header
+#    Note:
+#    This module is intended to manage resolv.conf in environments where
+#    early configuration of resolv.conf is necessary for further
+#    bootstrapping and/or where configuration management such as puppet or
+#    chef own dns configuration. As Debian/Ubuntu will, by default, utilize
+#    resovlconf, and similarly RedHat will use sysconfig, this module is
+#    likely to be of little use unless those are configured correctly.
+#
+#    For RedHat with sysconfig, be sure to set PEERDNS=no for all DHCP
+#    enabled NICs.  And, in Ubuntu/Debian it is recommended that DNS
+#    be configured via the standard /etc/network/interfaces configuration
+#    file.
+cloud-init-per instance resolv_conf_domain echo "domain {{ common.search_domain|replace('"','') }}" | tee -a /etc/resolv.conf
+{%- for ns in common.name_servers.split(',') %}
+cloud-init-per instance resolv_conf_nameserver_{{ loop.index }} echo nameserver {{ ns|replace('"','') }} | tee -a /etc/resolv.conf
+{%- endfor %}
+
 # configure black module lists
 # virt-what should be installed
 if [ ! -f /etc/modprobe.d/blacklist-i2c_piix4.conf ]; then

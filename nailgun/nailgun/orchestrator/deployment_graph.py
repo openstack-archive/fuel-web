@@ -195,6 +195,24 @@ class DeploymentGraph(nx.DiGraph):
 
         return self.subgraph(all_tasks)
 
+    def get_dotgraph(self):
+        """Get a graph representation in DOT format."""
+        graph = self.copy()
+        # set graph attributes for nodes
+        for name, data in graph.nodes_iter(data=True):
+            node_attrs = {}
+            if name in consts.STAGES:
+                node_attrs = {
+                    'shape': 'rect',
+                    'color': 'red',
+                    'group': 'stages',
+                }
+            graph.node[name] = node_attrs
+        # connect all stages together
+        graph.add_path(list(consts.STAGES))
+        dotgraph = nx.to_pydot(graph)
+        return dotgraph.to_string()
+
 
 class AstuteGraph(object):
     """This object stores logic that required for working with astute
@@ -210,6 +228,9 @@ class AstuteGraph(object):
 
     def only_tasks(self, task_ids):
         self.graph.only_tasks(task_ids)
+
+    def get_dotgraph(self):
+        return self.graph.get_dotgraph()
 
     def group_nodes_by_roles(self, nodes):
         """Group nodes by roles

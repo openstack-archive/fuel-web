@@ -22,7 +22,7 @@ import web
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
-from nailgun.api.v1.validators.node import NodeDeploymentValidator
+from nailgun.api.v1.validators.graph import TaskDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
 from nailgun.logger import logger
@@ -280,7 +280,7 @@ class DeploySelectedNodes(BaseDeploySelectedNodes):
 
 class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
 
-    validator = NodeDeploymentValidator
+    validator = TaskDeploymentValidator
 
     @content
     def PUT(self, cluster_id):
@@ -294,3 +294,41 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
             self.validator.validate_deployment,
             cluster=cluster)
         return self.handle_task(cluster, deployment_tasks=data)
+
+
+class TaskDeployGraph(BaseHandler):
+
+    validator = TaskDeploymentValidator
+
+    def GET(self, cluster_id):
+        """:returns: DOT representation of full deployment graph.
+        :http: * 200 (graph returned)
+               * 404 (cluster not found in db)
+               * 400 (failed to get graph)
+        """
+        web.header('Content-Type', 'text/vnd.graphviz', unique=True)
+
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        orchestrator_graph = deployment_graph.AstuteGraph(cluster)
+
+        dot_graph = orchestrator_graph.get_dotgraph()
+        return dot_graph
+
+    def POST(self, cluster_id):
+        """:returns: DOT representation of selected tasks' graph.
+        :http: * 200 (graph returned)
+               * 404 (cluster not found in db)
+               * 400 (failed to get graph)
+        """
+        web.header('Content-Type', 'text/vnd.graphviz', unique=True)
+
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        orchestrator_graph = deployment_graph.AstuteGraph(cluster)
+
+        selected_tasks = self.checked_data(
+            self.validator.validate_deployment,
+            cluster=cluster)
+        orchestrator_graph.only_tasks(selected_tasks)
+
+        dot_graph = orchestrator_graph.get_dotgraph()
+        return dot_graph

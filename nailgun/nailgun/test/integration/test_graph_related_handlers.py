@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
+import mock
 import yaml
 
 from nailgun import objects
@@ -211,7 +211,7 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
         self.assertEqual(resp.status_code, 405)
 
 
-@patch('nailgun.api.v1.handlers.base.deployment_graph.DeploymentGraph')
+@mock.patch('nailgun.api.v1.handlers.base.deployment_graph.DeploymentGraph')
 class TestEndTaskPassedCorrectly(BaseGraphTasksTests):
 
     def assert_end_passed_correctly(self, url, graph_mock):
@@ -234,3 +234,57 @@ class TestEndTaskPassedCorrectly(BaseGraphTasksTests):
             reverse('ReleaseDeploymentTasksHandler',
                     kwargs={'obj_id': self.cluster.release.id}),
             graph_mock)
+
+
+class TestTaskDeployGraph(BaseGraphTasksTests):
+
+    def setUp(self):
+        super(TestTaskDeployGraph, self).setUp()
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+            ]
+        )
+
+        self.cluster = self.env.clusters[0]
+
+    @mock.patch.object(objects.Cluster, 'get_deployment_tasks')
+    def test_get_all_tasks(self, m_get_tasks):
+        m_get_tasks.return_value = [
+            {'id': 'pre_deployment'},
+            {'id': 'task-A', 'required_for': ['pre_deployment']},
+        ]
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id})
+        )
+        content_type = 'text/vnd.graphviz'
+        self.assertEqual(resp.content_type, content_type)
+        self.assertIn('"task-A" -> pre_deployment', resp.body)
+
+    def test_use_certain_tasks(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+        )
+        resp = self.app.post(
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id}),
+            jsonutils.dumps(['deploy_legacy', ])
+        )
+        content_type = 'text/vnd.graphviz'
+        self.assertEqual(resp.content_type, content_type)
+
+    def test_error_raised_on_non_existent_tasks(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+        )
+        resp = self.app.post(
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id}),
+            jsonutils.dumps(['faketask', ]),
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)

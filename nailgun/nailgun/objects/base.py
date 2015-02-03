@@ -34,14 +34,63 @@ from nailgun.errors import errors
 
 from nailgun.openstack.common.db import api as db_api
 from nailgun.openstack.common import jsonutils
-
+from nailgun.utils import evalutate_expression, expand_restriction
 
 _BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
 
 IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
 
 
-class NailgunObject(object):
+class RestrictionMixin(object):
+    expanded_restrictions = {}
+    expanded_limits = {}
+
+    def check_limits(self):
+        pass
+
+    def check_restrictions(self, models, action, path='restrictions'):
+        restrictions = self.expanded_restrictions.get('path', [])
+        satisfied_restrictions = []
+        if restrictions:
+            if action:
+                restrictions = filter(
+                    self._check_action(action),
+                    restrictions)
+            satisfied_restrictions = filter(
+                    self._evaluate_expression(models),
+                    restrictions
+                )
+
+        return {
+            'result': len(satisfied_restrictions),
+            'message': 'stub_message'
+        }
+
+    def expand_limist(self, limits):
+        pass
+
+    def expand_restriction(self, restrictions, path='restrictions'):
+        self.expanded_restrictions[path] = map(expand_restriction,
+                                               restrictions)
+
+    @staticmethod
+    def _check_action(action):
+        def check(restriction):
+            if restriction.get('action') == action:
+                return restriction
+
+        return check
+
+    @staticmethod
+    def _evaluate_expression(models):
+        def evaluate(restriction):
+            return evalutate_expression(
+                restriction.get('condition'), models)
+
+        return evaluate
+
+
+class NailgunObject(RestrictionMixin):
     """Base class for objects
     """
 

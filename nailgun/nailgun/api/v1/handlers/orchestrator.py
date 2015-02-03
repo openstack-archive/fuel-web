@@ -22,6 +22,7 @@ import web
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
+from nailgun.api.v1.validators.graph import GraphVisualizationValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
@@ -293,4 +294,44 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
         data = self.checked_data(
             self.validator.validate_deployment,
             cluster=cluster)
+        logger.warn(data)
         return self.handle_task(cluster, deployment_tasks=data)
+
+
+class TaskDeployGraph(BaseHandler):
+
+    validator = GraphVisualizationValidator
+
+    def GET(self, cluster_id):
+        """:returns: DOT representation of deployment graph.
+        :http: * 200 (graph returned)
+               * 404 (cluster not found in db)
+               * 400 (failed to get graph)
+        """
+        web.header('Content-Type', 'text/vnd.graphviz', unique=True)
+
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        orchestrator_graph = deployment_graph.AstuteGraph(cluster)
+
+        tasks = web.input(tasks=None).tasks
+        single_task = web.input(single_task=None).single_task
+
+        if tasks:
+            tasks = self.checked_data(
+                self.validator.validate,
+                data=tasks,
+                cluster=cluster)
+            logger.debug('Tasks used in dot graph %s', tasks)
+            orchestrator_graph.only_tasks(tasks)
+
+        if single_task:
+            single_task = self.checked_data(
+                self.validator.validate_task_presence,
+                data=single_task,
+                graph=orchestrator_graph)
+            subgraph = orchestrator_graph.graph.get_tasks(single_task)
+            selected_tasks = subgraph.nodes()
+            selected_tasks.append(single_task)
+            orchestrator_graph = orchestrator_graph.graph.subgraph(
+                selected_tasks)
+        return orchestrator_graph.get_dotgraph()

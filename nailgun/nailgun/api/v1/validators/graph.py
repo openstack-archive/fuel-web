@@ -14,8 +14,10 @@
 #    under the License.
 
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import tasks
 from nailgun.errors import errors
+from nailgun import objects
 from nailgun.orchestrator import deployment_graph
 
 
@@ -31,3 +33,71 @@ class GraphTasksValidator(BasicValidator):
             raise errors.InvalidData(
                 "Tasks can not be processed because it contains cycles in it.")
         return parsed
+
+
+class TaskFilterValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, tasks):
+        """Used for filtering tasks
+
+        :param tasks: list of tasks in string representation.
+                      Example: "hiera,controller"
+
+        :returns: list of tasks
+        """
+        tasks = list(set(tasks.split(',')))
+        return tasks
+
+
+class TaskDeploymentValidator(BasicValidator):
+
+    @classmethod
+    def validate_tasks(cls, tasks, cluster):
+        """Check that passed tasks are present in deployment graph
+
+        :param tasks: list of tasks
+        :param cluster: Cluster DB object
+        :returns: list of tasks
+        """
+        cls.validate_schema(tasks, base_types.STRINGS_ARRAY)
+
+        deployment_tasks = objects.Cluster.get_deployment_tasks(cluster)
+        graph = deployment_graph.DeploymentGraph()
+        graph.add_tasks(deployment_tasks)
+
+        non_existent_tasks = set(tasks) - set(graph.nodes())
+        if non_existent_tasks:
+            raise errors.InvalidData(
+                'Tasks {0} are not present in deployment graph'.format(
+                    ','.join(non_existent_tasks)))
+
+        return tasks
+
+
+class GraphVisualizationValidator(TaskDeploymentValidator,
+                                  TaskFilterValidator):
+
+    @classmethod
+    def validate(cls, data, cluster):
+        """Check that passed tasks are present in deployment graph
+
+        :param data: list of tasks in string representation.
+                      Example: "hiera,controller"
+        :param cluster: Cluster DB object
+        """
+        tasks = super(GraphVisualizationValidator, cls).validate(data)
+        return cls.validate_tasks(tasks, cluster)
+
+    @classmethod
+    def validate_task_presence(cls, task, graph):
+        """Checks if task is present in graph.
+
+        :param task: task name to check
+        :param graph: graph where task presence will be check
+        """
+        if not graph.has_node(task):
+            raise errors.InvalidData(
+                'Task {0} is not present in graph'.format(task))
+
+        return task

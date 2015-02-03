@@ -23,6 +23,7 @@ import collections
 from itertools import ifilter
 import operator
 
+import six
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import joinedload
 
@@ -31,6 +32,7 @@ from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.db import db
 from nailgun.db import NoCacheQuery
 from nailgun.errors import errors
+from nailgun.expression import Expression
 
 from nailgun.openstack.common.db import api as db_api
 from nailgun.openstack.common import jsonutils
@@ -39,6 +41,77 @@ from nailgun.openstack.common import jsonutils
 _BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
 
 IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
+
+
+class RestrictionMixin(object):
+    """Mixin which extend nailgun objects with restriction
+    processing functionality
+    """
+    expanded_restrictions = {}
+    expanded_limits = {}
+
+    @classmethod
+    def check_restrictions(cls, models, restrictions, action=None):
+        """Check if attribute satisfied restriction
+
+        :param models: objects which represent models in restrictions
+        :type models: dict
+        :param path_key: key for getting restriction from storage
+        :type path_key: string
+        :param action: filtering restrictions by action key
+        :type action: string
+        :returns: dict -- object with 'result' as number and 'message' as dict
+        """
+        satisfied = []
+
+        if restrictions:
+            # Filter by action
+            if action:
+                restrictions = filter(
+                    lambda item: item.get('action') == action,
+                    restrictions)
+            # Filter which restriction satisfied condition
+            satisfied = filter(
+                lambda item: Expression(
+                    item.get('condition'), models).evaluate(),
+                restrictions)
+
+        return {
+            'result': len(satisfied),
+            'message': ';'.join([item.get('message') for item in
+            satisfied if item.get('message')])
+        }
+
+    @staticmethod
+    def _expand_restriction(restriction):
+        """Get restriction in different formats like string, short
+        or long dict formats and return in one canonical format
+
+        :param restriction: restriction object
+        :type restriction: string|dict
+        :returns: dict -- restriction object in canonical format:
+                    {
+                        'action': 'enable|disable|hide|none'
+                        'condition': 'value1 == value2',
+                        'message': 'value1 shouldn't equal value2'
+                    }
+        """
+        result = {
+            'action': 'disable'
+        }
+
+        if isinstance(restriction, six.string_types):
+            result['condition'] = restriction
+        elif isinstance(restriction, dict):
+            if 'condition' in restriction:
+                result.update(restriction)
+            else:
+                result['condition'] = list(restriction)[0]
+                result['message'] = list(restriction.values())[0]
+        else:
+            raise errors.InvalidData('Invalid restriction format')
+
+        return result
 
 
 class NailgunObject(object):

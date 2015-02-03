@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
+import mock
 from oslo.serialization import jsonutils
 import yaml
 
@@ -215,7 +215,8 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
 class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
 
     def assert_passed_correctly(self, url, **kwargs):
-        with patch.object(DeploymentGraph, 'find_subgraph') as mfind_subgraph:
+        with mock.patch.object(DeploymentGraph,
+                               'find_subgraph') as mfind_subgraph:
             resp = self.app.get(
                 url,
                 params=kwargs,
@@ -257,3 +258,102 @@ class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
             reverse('ReleaseDeploymentTasksHandler',
                     kwargs={'obj_id': self.cluster.release.id}),
             end='task', start='another_task')
+
+
+@mock.patch.object(objects.Cluster, 'get_deployment_tasks')
+class TestTaskDeployGraph(BaseGraphTasksTests):
+
+    content_type = 'text/vnd.graphviz'
+
+    def setUp(self):
+        super(TestTaskDeployGraph, self).setUp()
+        self.env.create()
+
+        self.cluster = self.env.clusters[0]
+        self.tasks = [
+            {'id': 'pre_deployment', 'type': 'stage'},
+            {'id': 'deploy', 'type': 'stage'},
+            {'id': 'post_deployment', 'type': 'stage'},
+            {'id': 'pre-A', 'required_for': ['pre_deployment'],
+             'type': 'puppet'},
+            {'id': 'pre-B', 'required_for': ['pre_deployment'],
+             'type': 'puppet', 'requires': ['pre-A']},
+            {'id': 'pre-C', 'required_for': ['pre_deployment'],
+             'type': 'puppet', 'requires': ['pre-A', 'pre-D']},
+            {'id': 'pre-D', 'required_for': ['pre_deployment'],
+             'type': 'puppet'},
+        ]
+
+    def test_get_all_tasks(self, m_get_tasks):
+        m_get_tasks.return_value = self.tasks
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id})
+        )
+        self.assertEqual(resp.content_type, self.content_type)
+        self.assertIn('"pre-A" -> pre_deployment', resp.body)
+        self.assertIn('pre_deployment -> deploy', resp.body)
+        self.assertIn('deploy -> post_deployment', resp.body)
+        self.assertIn('"pre-A" -> "pre-B"', resp.body)
+        self.assertIn('"pre-A" -> "pre-C"', resp.body)
+
+    def test_use_certain_tasks(self, m_get_tasks):
+        m_get_tasks.return_value = self.tasks
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': self.cluster.id,
+            }) + '?tasks=pre-A,pre-C',
+        )
+        self.assertEqual(resp.content_type, self.content_type)
+        self.assertIn('"pre-A" -> "pre-B"', resp.body)
+        self.assertIn('"pre-A" -> "pre-C"', resp.body)
+
+    def test_error_raised_on_non_existent_tasks(self, m_get_tasks):
+        m_get_tasks.return_value = self.tasks
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': self.cluster.id,
+            }) + '?tasks=nonexistent',
+            expect_errors=True,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Tasks nonexistent are not present in deployment graph',
+                      resp.body)
+
+    def test_use_single_task(self, m_get_tasks):
+        m_get_tasks.return_value = self.tasks
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': self.cluster.id,
+            }) + '?parents_for=pre-B',
+        )
+        self.assertEqual(resp.content_type, self.content_type)
+        self.assertIn('"pre-A" -> "pre-B"', resp.body)
+        self.assertNotIn('pre_deployment', resp.body)
+        self.assertNotIn('pre-C', resp.body)
+
+    def test_error_raised_on_non_existent_signle_task(self, m_get_tasks):
+        m_get_tasks.return_value = self.tasks
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': self.cluster.id,
+            }) + '?parents_for=nonexistent',
+            expect_errors=True,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Task nonexistent is not present in graph', resp.body)
+
+    def test_single_task_from_tasks_subset(self, m_get_tasks):
+        """If only pre-B and pre-A tasks will be executed,
+        what requirements pre-C will have?
+        """
+        m_get_tasks.return_value = self.tasks
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': self.cluster.id,
+            }) + '?tasks=pre-B,pre-A&parents_for=pre-C',
+        )
+        self.assertEqual(resp.content_type, self.content_type)
+        self.assertIn('"pre-A" -> "pre-C"', resp.body)
+        self.assertIn('"pre-D" -> "pre-C"', resp.body)
+        self.assertNotIn('pre_deployment', resp.body)
+        self.assertNotIn('pre-B', resp.body)

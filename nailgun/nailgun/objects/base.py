@@ -22,7 +22,9 @@ import collections
 
 from itertools import ifilter
 import operator
+import re
 
+import six
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import joinedload
 
@@ -31,6 +33,7 @@ from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.db import db
 from nailgun.db import NoCacheQuery
 from nailgun.errors import errors
+from nailgun.expression import Expression
 
 from nailgun.openstack.common.db import api as db_api
 from nailgun.openstack.common import jsonutils
@@ -39,6 +42,110 @@ from nailgun.openstack.common import jsonutils
 _BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
 
 IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
+
+
+class RestrictionMixin(object):
+    expanded_restrictions = {}
+    expanded_limits = {}
+
+    @classmethod
+    def check_limits(cls):
+        """TODO(apopovych): Write description here
+        """
+        pass
+
+    @classmethod
+    def check_restrictions(cls, models, path_key, action=None):
+        """Check if attribute satisfied restriction
+
+        :param models: 'dict' of objects which represent models in restrictions
+        :param path_key: 'string' key to get restriction from global restrictions dict
+        :param action: 'string' for filtering restrictions by action key
+
+        :return: 'dict' with keys 'result' and 'message'
+        """
+        restrictions = cls.expanded_restrictions.get(path_key, [])
+        satisfied = []
+
+        if restrictions:
+            # Filter by action
+            if action:
+                restrictions = filter(
+                    lambda item: item.get('action') == action,
+                    restrictions)
+            # Filter which restriction satisfied condition
+            satisfied = filter(
+                lambda item: Expression(
+                    item.get('condition'), models).evaluate(),
+                restrictions)
+
+        return {
+            'result': len(satisfied),
+            'message': ';'.join([item.get('message') for item in
+            satisfied if item.get('message')])
+        }
+
+    @classmethod
+    def expand_limit(cls, limits):
+        pass
+
+    @classmethod
+    def process_restrictions(cls, attributes, path_key=None):
+        """ Walk through attributes tree and extend "expanded_restrictions"
+        dict with all finded restrictions. Root path_key will be model name
+        to specifie unique path
+
+        :param attributes: 'dict' of objects
+        :param path_key: 'string' key to store path for restriction
+
+        :return: None
+        """
+
+        if not path_key:
+            path_key = re.sub('([a-z0-9])([A-Z])', r'\1_\2',
+                cls.__name__).lower()
+
+        if isinstance(attributes, dict):
+            if 'restrictions' in attributes:
+                cls.expanded_restrictions[path_key] = map(
+                    cls._expand_restriction,
+                    attributes.get('restrictions'))
+
+            for key, value in six.iteritems(attributes):
+                if key != 'restrictions':
+                    cls.process_restrictions(
+                        value, '.'.join([path_key, key]))
+        elif isinstance(attributes, list):
+            for i, item in enumerate(attributes):
+                current_key = item.get('data') or item.get('name') or str(i)
+                cls.process_restrictions(
+                    item, '.'.join([path_key, current_key]))
+
+    @staticmethod
+    def _expand_restriction(restriction):
+        """Get restriction in different formats like string, short
+        or long dict formats and return in one relevan
+
+        :param restriction: 'string'|'dict' restriction object
+
+        :return: 'dict'
+        """
+        result = {
+            'action': 'disabled'
+        }
+
+        if isinstance(restriction, six.string_types):
+            result['condition'] = restriction
+        elif isinstance(restriction, dict):
+            if 'condition' in restriction:
+                result.update(restriction)
+            else:
+                result['condition'] = list(restriction.keys())[0]
+                result['message'] = list(restriction.values())[0]
+        else:
+            raise errors.InvalidData('Invalid restriction format')
+
+        return result
 
 
 class NailgunObject(object):

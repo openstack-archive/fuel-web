@@ -14,7 +14,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.json_schema import base_types
+from nailgun.api.v1.validators.graph import TaskDeploymentValidator
 from nailgun.api.v1.validators.json_schema.disks \
     import disks_simple_format_schema
 from nailgun.api.v1.validators.json_schema import node_schema
@@ -26,7 +26,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
-from nailgun.orchestrator import deployment_graph
 
 
 class MetaInterfacesValidator(BasicValidator):
@@ -309,7 +308,8 @@ class NodesFilterValidator(BasicValidator):
         return node_ids
 
 
-class NodeDeploymentValidator(NodesFilterValidator):
+class NodeDeploymentValidator(TaskDeploymentValidator,
+                              NodesFilterValidator):
 
     @classmethod
     def validate_deployment(cls, data, cluster):
@@ -321,17 +321,7 @@ class NodeDeploymentValidator(NodesFilterValidator):
         data = cls.validate_json(data)
 
         if data:
-            cls.validate_schema(data, base_types.STRINGS_ARRAY)
-
-            tasks = objects.Cluster.get_deployment_tasks(cluster)
-            graph = deployment_graph.DeploymentGraph()
-            graph.add_tasks(tasks)
-
-            non_existent_tasks = set(data) - set(graph.nodes())
-            if non_existent_tasks:
-                raise errors.InvalidData(
-                    'Tasks %s are not present in deployment graph',
-                    list(non_existent_tasks))
+            cls.validate_tasks(data, cluster)
         else:
             raise errors.InvalidData('Tasks list must be specified.')
 

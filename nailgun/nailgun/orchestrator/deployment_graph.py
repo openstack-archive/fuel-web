@@ -240,6 +240,59 @@ class DeploymentGraph(nx.DiGraph):
         tasks.update(nx.dfs_postorder_nodes(self.reverse(), end))
         return tasks
 
+    def get_dotgraph(self, tasks=None, parents_for=None):
+        """Get a graph representation in DOT format.
+
+        :param tasks: list of tasks that will be used in deployemnt
+        :param parents_for: name of task which parents will be shown
+        """
+        graph = self.copy()
+
+        if tasks:
+            graph.only_tasks(tasks)
+
+        if parents_for:
+            parents = graph.predecessors(parents_for)
+            parents.append(parents_for)
+            graph = graph.subgraph(parents)
+
+        # NOTE(prmtl) it is not guaranted that node default
+        # values will be put on top of DOT file so we must be sure
+        # that each node will have correct attributes
+        default_node_attrs = {
+            'color': 'yellowgreen',
+            'style': 'filled'
+        }
+        type_node_attrs_map = {
+            consts.ORCHESTRATOR_TASK_TYPES.group: {
+                'color': 'lightskyblue',
+                'shape': 'box',
+                'style': 'filled, rounded',
+            },
+            consts.ORCHESTRATOR_TASK_TYPES.void: {
+                'color': 'gray95',
+            }
+        }
+        # set graph attributes for nodes
+        for name, data in graph.nodes_iter(data=True):
+            task_type = data.get('type')
+            node_attrs = type_node_attrs_map.get(task_type, default_node_attrs)
+
+            if name in consts.STAGES:
+                node_attrs = {
+                    'shape': 'rect',
+                    'color': 'red',
+                    'group': 'stages',
+                    'style': 'filled',
+                }
+
+            graph.node[name] = node_attrs
+
+        # connect all stages together
+        stages = [stage for stage in consts.STAGES if graph.has_node(stage)]
+        graph.add_path(stages)
+        return nx.to_pydot(graph)
+
 
 class AstuteGraph(object):
     """This object stores logic that required for working with astute

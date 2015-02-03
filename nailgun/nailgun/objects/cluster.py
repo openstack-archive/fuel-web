@@ -691,6 +691,18 @@ class Cluster(NailgunObject):
         else:
             return Release.get_deployment_tasks(instance.release)
 
+    @classmethod
+    def validate_attribute(cls, instance, path):
+        pass
+        #attributes = cls.get_attributes(instance).editable
+        #models = {
+        #    'settings': attributes,
+        #    'cluster': instance
+        #}
+        #attribute = attributes
+        #for item in path.split('.'):
+        #    attribute = attribute.__getitem__(item)
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

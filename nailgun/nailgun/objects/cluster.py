@@ -18,6 +18,7 @@
 Cluster-related objects and collections
 """
 
+import six
 from sqlalchemy import or_
 import yaml
 
@@ -760,6 +761,27 @@ class Cluster(NailgunObject):
         vmware_attr.pop('metadata')
 
         return vmware_attr
+
+    def validate_attributes(cls, instance, path=None):
+        attributes = cls.get_attributes(instance).editable
+        cls._process_restrictions(attributes, 'editable')
+        models = cls._get_models(instance)
+        for key, value in six.iteritems(cls.expanded_restrictions):
+            result = cls.check_restrictions(models, path=key)
+            if result:
+                return False
+
+    @classmethod
+    def _get_models(cls, instance):
+        attributes = cls.get_attributes(instance).editable
+
+        return {
+            'settings': attributes,
+            'default': attributes,
+            'cluster': instance,
+            'version': settings.VERSION,
+            'networking_parameters': instance.network_config
+        }
 
 
 class ClusterCollection(NailgunCollection):

@@ -114,9 +114,15 @@ class TestGraphDependencies(base.BaseTestCase):
         roles = self.graph.get_groups_subgraph()
         topology_by_id = [item['id'] for item in roles.topology]
         self.assertEqual(
-            topology_by_id,
-            ['primary-controller', 'controller',
-             'network', 'compute', 'cinder'])
+            topology_by_id[:2], ['primary-controller', 'controller'])
+        network_pos = topology_by_id.index('network')
+        compute_pos = topology_by_id.index('compute')
+        cinder_pos = topology_by_id.index('cinder')
+        controller_pos = topology_by_id.index('controller')
+        # we dont have constraint on certain order between cinder and network
+        # therefore there should not be one
+        self.assertGreater(compute_pos, network_pos)
+        self.assertGreater(cinder_pos, controller_pos)
 
     def test_subtasks_in_correct_order(self):
         self.graph.add_tasks(self.tasks + self.subtasks)
@@ -178,23 +184,23 @@ class TestAddDependenciesToNodes(base.BaseTestCase):
                  {'uid': '4', 'role': 'cinder'},
                  {'uid': '4', 'role': 'network'}]
         self.graph.add_priorities(nodes)
-        by_priority = defaultdict(list)
-        for role, group in groupby(nodes, lambda node: node['priority']):
-            by_priority[role].extend(list(group))
-        self.assertEqual(
-            by_priority[100],
+        by_uid = defaultdict(list)
+        for role, group in groupby(nodes, lambda node: node['uid']):
+            by_uid[role].extend(list(group))
+        self.assertItemsEqual(
+            by_uid['3'],
             [{'uid': '3', 'role': 'primary-controller', 'priority': 100}])
-        self.assertEqual(
-            by_priority[200],
-            [{'uid': '1', 'role': 'controller', 'priority': 200},
-             {'uid': '2', 'role': 'controller', 'priority': 200}])
-        self.assertEqual(
-            by_priority[300],
+        self.assertItemsEqual(
+            by_uid['1'],
             [{'uid': '1', 'role': 'cinder', 'priority': 300},
-             {'uid': '4', 'role': 'cinder', 'priority': 300}])
-        self.assertEqual(
-            by_priority[400],
-            [{'uid': '4', 'role': 'network', 'priority': 400}])
+             {'priority': 200, 'role': 'controller', 'uid': '1'}])
+        self.assertItemsEqual(
+            by_uid['2'],
+            [{'uid': '2', 'role': 'controller', 'priority': 200}])
+        # cinder and network roles are equal, so the only condition is that
+        # one of the roles should be deployed first
+        uid_4_priorities = [i['priority'] for i in by_uid['4']]
+        self.assertItemsEqual(uid_4_priorities, [300, 400])
 
 
 class TestLegacyGraphSerialized(base.BaseTestCase):

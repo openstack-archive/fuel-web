@@ -18,6 +18,7 @@
 Cluster-related objects and collections
 """
 
+import six
 from sqlalchemy import or_
 import yaml
 
@@ -709,6 +710,40 @@ class Cluster(NailgunObject):
             return yaml.load(graph_configuration.PATCHING)
         else:
             return Release.get_deployment_tasks(instance.release)
+
+    @classmethod
+    def validate_attributes(cls, instance, path=None):
+        attributes = cls.get_attributes(instance).editable
+        cls._process_restrictions(attributes, 'editable')
+        models = {
+            'settings': attributes,
+            'default': attributes,
+            'cluster': instance,
+            'version': settings.VERSION,
+            'networking_parameters': instance.network_config
+        }
+        for key, value in six.iteritems(cls.expanded_restrictions):
+            result = cls.check_restrictions(models, path=key)
+            if result:
+                return False
+
+    @classmethod
+    def _process_restrictions(cls, attributes, path_key):
+        if isinstance(attributes, dict):
+            if 'restrictions' in attributes:
+                cls.expand_restriction(
+                    attributes.get('restrictions'),
+                    '.'.join([path_key, 'restrictions']))
+                attributes.pop('restrictions')
+
+            for key, value in six.iteritems(attributes):
+                cls._process_restrictions(
+                    value, '.'.join([path_key, key]))
+        elif isinstance(attributes, list):
+            for i, item in enumerate(attributes):
+                if isinstance(item, dict):
+                    cls._process_restrictions(
+                        item, '.'.join([path_key, str(i)]))
 
 
 class ClusterCollection(NailgunCollection):

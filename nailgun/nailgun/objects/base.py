@@ -34,14 +34,68 @@ from nailgun.errors import errors
 
 from nailgun.openstack.common.db import api as db_api
 from nailgun.openstack.common import jsonutils
-
+from nailgun.utils import evaluate_expression
+from nailgun.utils import expand_restriction
 
 _BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
 
 IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
 
 
-class NailgunObject(object):
+class RestrictionMixin(object):
+    expanded_restrictions = {}
+    expanded_limits = {}
+
+    @classmethod
+    def check_limits(cls):
+        pass
+
+    @classmethod
+    def check_restrictions(cls, models, action=None, path='restrictions'):
+        restrictions = cls.expanded_restrictions.get(path, [])
+        satisfied = []
+        if restrictions:
+            if action:
+                restrictions = filter(
+                    cls._check_action(action),
+                    restrictions)
+            satisfied = filter(
+                cls._evaluate_expression(models),
+                restrictions)
+
+        return {
+            'result': len(satisfied),
+            'message': '\n'.join([item.get('message', '')
+            for item in satisfied])
+        }
+
+    @classmethod
+    def expand_limit(cls, limits):
+        pass
+
+    @classmethod
+    def expand_restriction(cls, restrictions, path='restrictions'):
+        cls.expanded_restrictions[path] = map(expand_restriction,
+                                              restrictions)
+
+    @staticmethod
+    def _check_action(action):
+        def check(restriction):
+            if restriction.get('action') == action:
+                return restriction
+
+        return check
+
+    @staticmethod
+    def _evaluate_expression(models):
+        def evaluate(restriction):
+            return evaluate_expression(
+                restriction.get('condition'), models)
+
+        return evaluate
+
+
+class NailgunObject(RestrictionMixin):
     """Base class for objects
     """
 

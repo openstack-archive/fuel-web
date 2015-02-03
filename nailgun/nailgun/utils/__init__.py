@@ -21,6 +21,8 @@ import yaml
 from copy import deepcopy
 from random import choice
 
+from nailgun.errors import errors
+from nailgun.expression import Expression
 from nailgun.logger import logger
 from nailgun.settings import settings
 
@@ -166,4 +168,32 @@ def get_fuel_release_versions(path_mask):
                         six.text_type(exc)
                     )
                 )
+    return result
+
+
+def evaluate_expression(expression, models, options=None):
+    """Return :bool value based on expression
+    """
+    return Expression(expression, models).evaluate()
+
+
+def expand_restriction(restriction):
+    """Get restriction in different formats like string, short or long
+    dict formats and return :dict value as result
+    """
+    result = {
+        'action': 'disabled'
+    }
+
+    if isinstance(restriction, six.string_types):
+        result['condition'] = restriction
+    elif isinstance(restriction, dict):
+        if 'condition' in restriction:
+            result.update(restriction)
+        else:
+            result['condition'] = list(restriction.keys())[0]
+            result['message'] = list(restriction.values())[0]
+    else:
+        raise errors.InvalidData('Invalid restriction format')
+
     return result

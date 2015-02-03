@@ -83,6 +83,12 @@ def execute(*cmd, **kwargs):
     return (stdout, stderr)
 
 
+def kill_nailgun_agent():
+    if os.path.exists('/etc/cron.d/nailgun-agent'):
+        os.remove('/etc/cron.d/nailgun-agent')
+    execute('killall', '-9', 'flock', check_exit_code=[0, 1])
+
+
 def parse_unit(s, unit, ceil=True):
     """Converts '123.1unit' string into 124 if ceil is True
     and converts '123.9unit' into 123 if ceil is False.

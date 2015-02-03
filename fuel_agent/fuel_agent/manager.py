@@ -88,6 +88,7 @@ class Manager(object):
         # If disks are not wiped out at all, it is likely they contain lvm
         # and md metadata which will prevent re-creating a partition table
         # with 'device is busy' error.
+        utils.kill_nailgun_agent()
         mu.mdclean_all()
         lu.lvremove_all()
         lu.vgremove_all()

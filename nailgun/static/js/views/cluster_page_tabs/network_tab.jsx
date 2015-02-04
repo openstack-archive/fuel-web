@@ -117,7 +117,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         getDefaultProps: function() {
             return {
                 extendable: true,
-                placeholder: '127.0.0.1'
+                placeholder: '127.0.0.1',
+                hiddenControls: false,
+                preserveLength: false
             };
         },
         propTypes: {
@@ -127,7 +129,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             autoIncreaseWith: React.PropTypes.number,
             integerValue: React.PropTypes.bool,
             directSetValue: React.PropTypes.bool,
-            placeholder: React.PropTypes.string
+            placeholder: React.PropTypes.string,
+            hiddenControls: React.PropTypes.bool,
+            preserveLength: React.PropTypes.bool
         },
         getInitialState: function() {
             return {pendingFocus: false};
@@ -203,7 +207,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     [attribute || '', this.props.autoIncreaseWith ? (attribute + this.props.autoIncreaseWith - 1 || '') : ''] :
                     attribute,
                 wrapperClasses = {
-                    mini: !this.props.extendable
+                    mini: !this.props.extendable && !this.props.preserveLength
                 },
                 verificationError = this.props.verificationError || null,
                 ns = 'cluster_page.network_tab.';
@@ -218,7 +222,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         </div>
                     }
                     <div className='parameter-name'>{this.props.label}</div>
-                    {(this.props.extendable) ?
+                    {this.props.extendable ?
                         <div className={this.props.rowsClassName}>
                             {_.map(ranges, function(range, index) {
                                 var rangeError = _.findWhere(error, {index: index}) || {};
@@ -239,24 +243,26 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                             onFocus={this.autoCompleteIPRange.bind(this, rangeError && rangeError.start, range[0])}
                                             disabled={this.props.disabled || !!this.props.autoIncreaseWith}
                                         />
-                                        <div>
-                                            <div className='ip-ranges-control'>
-                                                <button
-                                                    className='btn btn-link ip-ranges-add'
-                                                    disabled={this.props.disabled}
-                                                    onClick={this.addRange.bind(this, attributeName)}>
-                                                    <i className='icon-plus-circle'></i>
-                                                </button>
-                                            </div>
-                                            {(ranges.length > 1) &&
+                                        {this.props.hiddenControls &&
+                                            <div>
                                                 <div className='ip-ranges-control'>
-                                                    <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
-                                                        onClick={this.removeRange.bind(this, attributeName, index)}>
-                                                        <i className='icon-minus-circle'></i>
+                                                    <button
+                                                        className='btn btn-link ip-ranges-add'
+                                                        disabled={this.props.disabled}
+                                                        onClick={this.addRange.bind(this, attributeName)}>
+                                                        <i className='icon-plus-circle'></i>
                                                     </button>
                                                 </div>
-                                            }
-                                        </div>
+                                                {(ranges.length > 1) &&
+                                                    <div className='ip-ranges-control'>
+                                                        <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
+                                                            onClick={this.removeRange.bind(this, attributeName, index)}>
+                                                            <i className='icon-minus-circle'></i>
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
                                         <div className='error validation-error'>
                                             <span className='help-inline'>
                                                 {rangeError.start || rangeError.end}
@@ -754,12 +760,14 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <Range
                         {...this.composeProps('floating_ranges', true)}
                         rowsClassName='floating-ranges-rows'
+                        hiddenControls={!!networkParameters.get('net_manager')}
                     />
                     <Range
                         {...this.composeProps('dns_nameservers', true)}
                         extendable={false}
                         rowsClassName='dns_nameservers-row'
                         hiddenHeader={true}
+                        preserveLength={true}
                     />
                 </div>
             );

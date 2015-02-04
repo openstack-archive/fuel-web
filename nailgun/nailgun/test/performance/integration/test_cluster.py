@@ -112,7 +112,8 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
                 kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers)
 
-        task = Task.get_by_uuid(stop_response['uuid'])
+        task = Task.get_by_uuid(stop_response.json_body['uuid'])
+
         self.env.wait_ready(task, 60)
 
         second_deploy_response = self.app.put(
@@ -121,5 +122,5 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
                 kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers)
 
-        task = Task.get_by_uuid(second_deploy_response['uuid'])
+        task = Task.get_by_uuid(second_deploy_response.json_body['uuid'])
         self.env.wait_ready(task, 350)

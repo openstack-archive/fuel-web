@@ -389,20 +389,20 @@
                         "node_interface": "Node Interface",
                         "expected_vlan": "Expected VLAN (not received)"
                     },
-                    "network_parameters": {
-                        "ip_range": "IP Range",
+                    "network": {
+                        "ip_ranges": "IP Range",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
                         "use_vlan_tagging": "Use VLAN tagging"
                     },
                     "networking_parameters": {
-                        "fixed_cidr": "Fixed network CIDR",
-                        "fixed_size": "Fixed network size",
-                        "fixed_amount": "Number of fixed networks",
+                        "fixed_networks_cidr": "Fixed network CIDR",
+                        "fixed_network_size": "Fixed network size",
+                        "fixed_networks_amount": "Number of fixed networks",
                         "fixed_vlan_range": "Fixed VLAN ID range",
                         "use_vlan_tagging_fixed": "Use VLAN tagging for fixed  networks",
                         "nova_configuration": "Nova-network Configuration",
-                        "dns_servers": "DNS Servers",
+                        "dns_nameservers": "DNS Servers",
                         "l2_configuration": "Neutron L2 Configuration",
                         "l3_configuration": "Neutron L3 Configuration",
                         "gre_id_range": "Tunnel ID range",
@@ -1029,7 +1029,7 @@
                         "node_interface": "节点接口",
                         "expected_vlan": "Expected VLAN (未接收)"
                     },
-                    "network_parameters": {
+                    "network": {
                         "ip_range": "IP范围",
                         "gateway": "网关",
                         "cidr": "CIDR",
@@ -1456,20 +1456,20 @@
                         "node_interface": "ノードインタフェース",
                         "expected_vlan": "期待されているVLAN（受信されていない）"
                     },
-                    "network_parameters": {
+                    "network": {
                         "ip_range": "IP Range",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
                         "use_vlan_tagging": "タグ付きVLAN使用"
                     },
                     "networking_parameters": {
-                        "fixed_cidr": "固定ネットワークCIDR",
-                        "fixed_size": "固定ネットワークのサイズ",
-                        "fixed_amount": "固定ネットワークの数",
+                        "fixed_networks_cidr": "固定ネットワークCIDR",
+                        "fixed_network_size": "固定ネットワークのサイズ",
+                        "fixed_networks_amount": "固定ネットワークの数",
                         "fixed_vlan_range": "固定VLAN ID範囲",
                         "use_vlan_tagging_fixed": "固定ネットワークにタグ付きVLAN使用",
                         "nova_configuration": "Nova-network 設定",
-                        "dns_servers": "DNSサーバー",
+                        "dns_nameservers": "DNSサーバー",
                         "l2_configuration": "Neutron L2 設定",
                         "l3_configuration": "Neutron L3 設定",
                         "gre_id_range": "Tunnel ID 範囲",
@@ -1940,20 +1940,20 @@
                         "node_interface": "노드 인터페이스",
                         "expected_vlan": "기대하는 VLAN (수신되지않음)"
                     },
-                    "network_parameters": {
+                    "network": {
                         "ip_range": "IP 범위",
                         "gateway": "게이트웨이",
                         "cidr": "CIDR",
                         "use_vlan_tagging": "VLAN 태그를 사용"
                     },
                     "networking_parameters": {
-                        "fixed_cidr": "고정 네트워크 CIDR",
-                        "fixed_size": "고정 네트워크 크기",
-                        "fixed_amount": "고정 네트워크의 수",
+                        "fixed_networks_cidr": "고정 네트워크 CIDR",
+                        "fixed_network_size": "고정 네트워크 크기",
+                        "fixed_networks_amount": "고정 네트워크의 수",
                         "fixed_vlan_range": "고정 VLAN ID 범위",
                         "use_vlan_tagging_fixed": "고정 네트워크를위한 VLAN 태그를 사용",
                         "nova_configuration": "Nova-network 설정",
-                        "dns_servers": "DNS 서버",
+                        "dns_nameservers": "DNS 서버",
                         "l2_configuration": "Neutron L2 설정",
                         "l3_configuration": "Neutron L3 설정",
                         "gre_id_range": "터널 ID 범위",

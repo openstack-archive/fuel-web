@@ -600,7 +600,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
     def data_w_default_vm_info(self, time):
         data = self.empty_data
         data['resource_data'].update({
-            'added': {'1': {'time': str(time)}},
+            'added': {'1': {'time': time.isoformat()}},
             'current': [self.vms_info]
         })
         return data
@@ -655,8 +655,8 @@ class TestOSWLServerInfoSaving(BaseTestCase):
 
         time_update2 = last.updated_time
         data['resource_data'].update({
-            'added': {'1': {'time': str(time_update1)},
-                      '2': {'time': str(time_update2)}},
+            'added': {'1': {'time': time_update1.isoformat()},
+                      '2': {'time': time_update2.isoformat()}},
             'current': two_vms
         })
         self.check_data_vs_rec(data, last)
@@ -670,7 +670,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
 
         time_update = last.updated_time
         removed = dict(self.vms_info)
-        removed['time'] = str(time_update)
+        removed['time'] = time_update.isoformat()
         data['resource_data'].update({
             'removed': {'1': removed},
             'current': []
@@ -681,14 +681,16 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         # VM is added
         time_update, data = self.add_default_vm_info_and_check()
 
-        # VM power state is changed
+        # VM power state and status are changed
         vms_new = [dict(self.vms_info)]
-        vms_new[0]["power_state"] = 0
+        vms_new[0]['power_state'] = 0
+        vms_new[0]['status'] = 'stopped'
         last = self.save_data_and_check_record(vms_new)
 
         time_update = last.updated_time
-        modified1 = dict(self.vms_info)
-        modified1['time'] = str(time_update)
+        modified1 = {'power_state': self.vms_info['power_state'],
+                     'status': self.vms_info['status'],
+                     'time': time_update.isoformat()}
         data['resource_data'].update({
             'modified': {'1': [modified1]},
             'current': vms_new
@@ -696,13 +698,27 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         self.check_data_vs_rec(data, last)
 
         # VM power state is changed back
+        vms_new1 = [dict(vms_new[0])]
+        vms_new1[0]['power_state'] = 1
+        last = self.save_data_and_check_record(vms_new1)
+
+        time_update = last.updated_time
+        modified2 = {'power_state': vms_new[0]['power_state'],
+                     'time': time_update.isoformat()}
+        data['resource_data'].update({
+            'modified': {'1': [modified1, modified2]},
+            'current': vms_new1
+        })
+        self.check_data_vs_rec(data, last)
+
+        # VM status is changed back
         last = self.save_data_and_check_record([self.vms_info])
 
         time_update = last.updated_time
-        modified2 = dict(vms_new[0])
-        modified2['time'] = str(time_update)
+        modified3 = {'status': vms_new1[0]['status'],
+                     'time': time_update.isoformat()}
         data['resource_data'].update({
-            'modified': {'1': [modified1, modified2]},
+            'modified': {'1': [modified1, modified2, modified3]},
             'current': [self.vms_info]
         })
         self.check_data_vs_rec(data, last)
@@ -736,7 +752,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
                 # last record contains 'removed' and empty 'added'
                 data = self.empty_data
                 removed = dict(self.vms_info)
-                removed['time'] = str(last.updated_time)
+                removed['time'] = last.updated_time.isoformat()
                 data['resource_data']['removed'] = {'1': removed}
                 self.check_data_vs_rec(data, rec)
             elif rec.created_date == date_1st_rec:

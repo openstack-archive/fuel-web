@@ -18,6 +18,7 @@
 from datetime import datetime
 import hashlib
 import json
+import six
 
 from nailgun import objects
 
@@ -27,7 +28,7 @@ def _added(time, prev, curr, collected):
     curr_ids = set(res['id'] for res in curr)
     added_ids = curr_ids - prev_ids
     for id in added_ids:
-        collected[id] = {'time': str(time)}
+        collected[id] = {'time': time.isoformat()}
     return collected
 
 
@@ -38,7 +39,7 @@ def _removed(time, prev, curr, collected):
     for res in prev:
         if res['id'] in removed_ids:
             collected[res['id']] = res
-            collected[res['id']]['time'] = str(time)
+            collected[res['id']]['time'] = time.isoformat()
     return collected
 
 
@@ -48,8 +49,10 @@ def _modified(time, prev, curr, collected):
     same = set(prev_dict.keys()) & set(curr_dict.keys())
     for id in same:
         if curr_dict[id] != prev_dict[id]:
-            m = prev_dict[id]
-            m['time'] = str(time)
+            m = dict((k, v)
+                     for k, v in six.iteritems(prev_dict[id])
+                     if v != curr_dict[id].get(k))
+            m["time"] = time.isoformat()
             collected.setdefault(str(id), []).append(m)
     return collected
 

@@ -404,6 +404,27 @@ class TestStatisticsSender(BaseTestCase):
         # sent as they are not complete and can be updated during the day.
         self.assertEqual(send_data_to_url.call_count, 0)
 
+    @patch('nailgun.db.sqlalchemy.fixman.settings.OSWL_COLLECT_PERIOD', 0)
+    @patch('nailgun.statistics.statsenderd.StatsSender.send_data_to_url')
+    def test_oswl_send_todays_record(self, send_data_to_url):
+        dt = datetime.datetime.utcnow()
+        obj_data = {
+            'cluster_id': 1,
+            'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
+            'created_date': dt.date(),
+            'updated_time': dt.time(),
+            'resource_checksum': ""
+        }
+        obj = OpenStackWorkloadStats.create(obj_data)
+        self.assertEqual(
+            OpenStackWorkloadStats.get_last_by(
+                1, consts.OSWL_RESOURCE_TYPES.vm),
+            obj
+        )
+
+        StatsSender().send_oswl_info()
+        self.assertEqual(send_data_to_url.call_count, 1)
+
     def check_oswl_data_send_result(self, send_data_to_url, status, is_sent):
         # make yesterdays record (today's will not be sent)
         dt = datetime.datetime.utcnow() - datetime.timedelta(days=1)

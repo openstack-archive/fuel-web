@@ -12,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from datetime import datetime
+import datetime
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.oswl import OpenStackWorkloadStatsSerializer
+from nailgun.settings import settings
 
 
 class OpenStackWorkloadStats(NailgunObject):
@@ -49,9 +50,10 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
     def get_ready_to_send(cls):
         """Get entries which are ready to send but were not sent yet.
         """
+        last_date = datetime.datetime.utcnow().date() - \
+            datetime.timedelta(days=settings.OSWL_COLLECT_PERIOD)
         instance = db().query(models.OpenStackWorkloadStats) \
             .filter_by(is_sent=False) \
-            .filter(models.OpenStackWorkloadStats.created_date <
-                    datetime.utcnow().date())
+            .filter(models.OpenStackWorkloadStats.created_date <= last_date)
 
         return instance

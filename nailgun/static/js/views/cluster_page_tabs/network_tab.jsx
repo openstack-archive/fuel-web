@@ -117,7 +117,8 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         getDefaultProps: function() {
             return {
                 extendable: true,
-                placeholder: '127.0.0.1'
+                placeholder: '127.0.0.1',
+                hiddenControls: false
             };
         },
         propTypes: {
@@ -126,8 +127,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             name: React.PropTypes.string,
             autoIncreaseWith: React.PropTypes.number,
             integerValue: React.PropTypes.bool,
-            directSetValue: React.PropTypes.bool,
-            placeholder: React.PropTypes.string
+            placeholder: React.PropTypes.string,
+            hiddenControls: React.PropTypes.bool,
+            mini: React.PropTypes.bool
         },
         getInitialState: function() {
             return {pendingFocus: false};
@@ -137,7 +139,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             // when pressing '+' or '-' buttons button remains focused
             if (this.props.extendable) {
                 if ((this.getModel().get(this.props.name).length > 1) && this.state.pendingFocus) {
-                    $(_.findLast(this.refs).getInputDOMNode()).focus();
+                    $(_.last(_.values(this.refs)).getInputDOMNode()).focus();
                     this.setState({pendingFocus: false});
                 }
             }
@@ -157,7 +159,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 valuesToSet = _.cloneDeep(model.get(attribute)),
                 valuesToModify = hasManyRanges ? valuesToSet[rowIndex] : valuesToSet;
 
-            if (this.props.directSetValue) {
+            if (this.props.autoIncreaseWith) {
                 valuesToSet = newValue;
             } else {
                 // if first range field
@@ -203,7 +205,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     [attribute || '', this.props.autoIncreaseWith ? (attribute + this.props.autoIncreaseWith - 1 || '') : ''] :
                     attribute,
                 wrapperClasses = {
-                    mini: !this.props.extendable
+                    mini: !this.props.extendable && this.props.mini
                 },
                 verificationError = this.props.verificationError || null,
                 ns = 'cluster_page.network_tab.';
@@ -218,7 +220,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         </div>
                     }
                     <div className='parameter-name'>{this.props.label}</div>
-                    {(this.props.extendable) ?
+                    {this.props.extendable ?
                         <div className={this.props.rowsClassName}>
                             {_.map(ranges, function(range, index) {
                                 var rangeError = _.findWhere(error, {index: index}) || {};
@@ -230,6 +232,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                             value={range[0]}
                                             onChange={this.onRangeChange.bind(this, true, index, attributeName)}
                                             ref={'start' + index}
+                                            inputClassName='start'
                                         />
                                         <controls.Input
                                             {...this.getRangeProps(true)}
@@ -239,24 +242,26 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                             onFocus={this.autoCompleteIPRange.bind(this, rangeError && rangeError.start, range[0])}
                                             disabled={this.props.disabled || !!this.props.autoIncreaseWith}
                                         />
-                                        <div>
-                                            <div className='ip-ranges-control'>
-                                                <button
-                                                    className='btn btn-link ip-ranges-add'
-                                                    disabled={this.props.disabled}
-                                                    onClick={this.addRange.bind(this, attributeName)}>
-                                                    <i className='icon-plus-circle'></i>
-                                                </button>
-                                            </div>
-                                            {(ranges.length > 1) &&
+                                        {!this.props.hiddenControls &&
+                                            <div>
                                                 <div className='ip-ranges-control'>
-                                                    <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
-                                                        onClick={this.removeRange.bind(this, attributeName, index)}>
-                                                        <i className='icon-minus-circle'></i>
+                                                    <button
+                                                        className='btn btn-link ip-ranges-add'
+                                                        disabled={this.props.disabled}
+                                                        onClick={this.addRange.bind(this, attributeName)}>
+                                                        <i className='icon-plus-circle'></i>
                                                     </button>
                                                 </div>
-                                            }
-                                        </div>
+                                                {(ranges.length > 1) &&
+                                                    <div className='ip-ranges-control'>
+                                                        <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
+                                                            onClick={this.removeRange.bind(this, attributeName, index)}>
+                                                            <i className='icon-minus-circle'></i>
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
                                         <div className='error validation-error'>
                                             <span className='help-inline'>
                                                 {rangeError.start || rangeError.end}
@@ -273,6 +278,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                 wrapperClassName='parameter-control'
                                 value={ranges[0]}
                                 error={error && error[0] ? '' : null}
+                                inputClassName='start'
                             />
                             <controls.Input
                                 {...this.getRangeProps(true)}
@@ -717,8 +723,8 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                             extendable={false}
                                             autoIncreaseWith={parseInt(networkParameters.get('fixed_networks_amount')) || 0}
                                             integerValue={true}
-                                            directSetValue={true}
                                             placeholder=''
+                                            mini={true}
                                         />
                                     </div>
                                 :
@@ -740,6 +746,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                 extendable={false}
                                 placeholder=''
                                 integerValue={true}
+                                mini={true}
                             />
                             {this.renderInput('base_mac')}
                             <div>
@@ -754,6 +761,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <Range
                         {...this.composeProps('floating_ranges', true)}
                         rowsClassName='floating-ranges-rows'
+                        hiddenControls={!networkParameters.get('net_manager')}
                     />
                     <Range
                         {...this.composeProps('dns_nameservers', true)}

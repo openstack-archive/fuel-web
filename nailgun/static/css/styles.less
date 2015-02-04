@@ -1373,13 +1373,18 @@ label {cursor: default;}
       margin: 0 0 10px @network-row-width;
       .parameter-box {
         float: left;
-        margin: 0 10px 5px 0;
+        margin: 0 0 5px 0;
         input.parameter-input {
           margin-bottom: 0px;
+          &.start {
+            margin-right: 10px;
+          }
         }
         &:not(.has-error) {
           input.parameter-input {
-            margin-right: 5px;
+            &.start{
+              margin-right: 15px;
+            }
           }
         }
       }
@@ -1489,6 +1494,7 @@ label {cursor: default;}
   .has-error {
     .parameter-description {
       margin: 12px 0 0 5px;
+      float: none;
     }
   }
 }

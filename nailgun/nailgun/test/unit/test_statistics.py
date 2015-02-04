@@ -681,14 +681,17 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         # VM is added
         time_update, data = self.add_default_vm_info_and_check()
 
-        # VM power state is changed
+        # VM power state and status are changed
         vms_new = [dict(self.vms_info)]
         vms_new[0]["power_state"] = 0
+        vms_new[0]["status"] = "stopped"
         last = self.save_data_and_check_record(vms_new)
 
         time_update = last.updated_time
-        modified1 = dict(self.vms_info)
-        modified1['time'] = str(time_update)
+        modified1 = {'id': self.vms_info['id'],
+                     'power_state': self.vms_info['power_state'],
+                     'status': self.vms_info['status'],
+                     'time': str(time_update)}
         data['resource_data'].update({
             'modified': {'1': [modified1]},
             'current': vms_new
@@ -696,13 +699,29 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         self.check_data_vs_rec(data, last)
 
         # VM power state is changed back
+        vms_new1 = [dict(vms_new[0])]
+        vms_new1[0]["power_state"] = 1
+        last = self.save_data_and_check_record(vms_new1)
+
+        time_update = last.updated_time
+        modified2 = {'id': vms_new[0]['id'],
+                     'power_state': vms_new[0]['power_state'],
+                     'time': str(time_update)}
+        data['resource_data'].update({
+            'modified': {'1': [modified1, modified2]},
+            'current': vms_new1
+        })
+        self.check_data_vs_rec(data, last)
+
+        # VM status is changed back
         last = self.save_data_and_check_record([self.vms_info])
 
         time_update = last.updated_time
-        modified2 = dict(vms_new[0])
-        modified2['time'] = str(time_update)
+        modified3 = {'id': vms_new1[0]['id'],
+                     'status': vms_new1[0]['status'],
+                     'time': str(time_update)}
         data['resource_data'].update({
-            'modified': {'1': [modified1, modified2]},
+            'modified': {'1': [modified1, modified2, modified3]},
             'current': [self.vms_info]
         })
         self.check_data_vs_rec(data, last)

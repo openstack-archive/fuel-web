@@ -48,8 +48,9 @@ def _modified(time, prev, curr, collected):
     same = set(prev_dict.keys()) & set(curr_dict.keys())
     for id in same:
         if curr_dict[id] != prev_dict[id]:
-            m = prev_dict[id]
-            m['time'] = str(time)
+            m = {"id": id, "time": str(time)}
+            m.update(dict((k, v) for k, v in prev_dict[id].iteritems()
+                     if v != curr_dict[id].get(k)))
             collected.setdefault(str(id), []).append(m)
     return collected
 

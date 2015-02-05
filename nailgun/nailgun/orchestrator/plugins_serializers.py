@@ -19,6 +19,7 @@
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun.orchestrator.tasks_serializer import get_uids_for_roles
 from nailgun.orchestrator.tasks_serializer import get_uids_for_tasks
 import nailgun.orchestrator.tasks_templates as templates
@@ -36,32 +37,27 @@ class BasePluginDeploymentHooksSerializer(object):
         tasks = []
 
         for plugin in plugins:
-            puppet_tasks = filter(
-                lambda t: (t['type'] == 'puppet' and
-                           t['stage'] == stage),
-                plugin.tasks)
-            shell_tasks = filter(
-                lambda t: (t['type'] == 'shell' and
-                           t['stage'] == stage),
+            plugin_tasks = filter(
+                lambda t: (t['stage'] == stage),
                 plugin.tasks)
 
-            for task in shell_tasks:
+            for task in plugin_tasks:
                 uids = get_uids_for_roles(self.nodes, task['role'])
                 if not uids:
                     continue
-                tasks.append(self.serialize_task(
-                    plugin, task,
-                    templates.make_shell_task(
-                        uids, task, plugin.slaves_scripts_path)))
-
-            for task in puppet_tasks:
-                uids = get_uids_for_roles(self.nodes, task['role'])
-                if not uids:
-                    continue
-                tasks.append(self.serialize_task(
-                    plugin, task,
-                    templates.make_puppet_task(
-                        uids, task, plugin.slaves_scripts_path)))
+                if task['type'] == 'shell':
+                    tasks.append(self.serialize_task(
+                        plugin, task,
+                        templates.make_shell_task(
+                            uids, task, plugin.slaves_scripts_path)))
+                elif task['type'] == 'puppet':
+                    tasks.append(self.serialize_task(
+                        plugin, task,
+                        templates.make_puppet_task(
+                            uids, task, plugin.slaves_scripts_path)))
+                else:
+                    logger.warn('Task is skipped {0}, because its type is '
+                                'not supported').format(task)
 
         return tasks
 

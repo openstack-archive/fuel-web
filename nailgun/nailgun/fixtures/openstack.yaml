@@ -437,67 +437,6 @@
             description: "Name for Mongo replication set"
             weight: 30
             type: "text"
-        vcenter:
-          metadata:
-            label: "vCenter"
-            weight: 20
-            restrictions:
-              - condition: "settings:common.libvirt_type.value != 'vcenter'"
-                action: "hide"
-          host_ip:
-            value: ""
-            label: "Hostname"
-            description: "Hostname or IP Address of vCenter"
-            weight: 10
-            type: "text"
-            regex:
-              source: &ipv4_or_hostname_regex '^[a-zA-Z\d]+[-\.\da-zA-Z]*$'
-              error: 'Specify valid hostname or IPv4 address'
-          vc_user:
-            value: ""
-            label: "Username"
-            description: "vCenter admin username"
-            weight: 20
-            type: "text"
-            regex:
-              source: *non_empty_string
-              error: 'Empty username'
-          vc_password:
-            value: ""
-            label: "Password"
-            description: "vCenter admin password"
-            weight: 30
-            type: "password"
-            regex:
-              source: *non_empty_string
-              error: "Empty password"
-          cluster:
-            value: ""
-            label: "Cluster"
-            description: "vCenter cluster name. If you have multiple clusters, use comma to separate names"
-            weight: 40
-            type: "text"
-            regex:
-              source: &valid_cluster_name '^([^,\ ]+([\ ]*[^,\ ])*)(,[^,\ ]+([\ ]*[^,\ ])*)*$'
-              error: "Invalid cluster list"
-          datastore_regex:
-            value: ""
-            label: "Datastore regexp"
-            description: "The Datastore regexp setting specifies the data stores to use with Compute. For example, \"nas.*\". If you want to use all available datastores, leave this field blank"
-            weight: 50
-            type: "text"
-            regex:
-              source:  '^(\S.*\S|\S|)$'
-              error: "Invalid datastore regexp"
-          vlan_interface:
-            value: ""
-            label: "ESXi VLAN interface"
-            description: "Physical ESXi host ethernet adapter for VLAN networking (e.g. vmnic1). If empty \"vmnic0\" is used by default"
-            weight: 60
-            type: "text"
-            restrictions:
-              - condition: "cluster:net_provider != 'nova_network' or networking_parameters:net_manager != 'VlanManager'"
-                action: "hide"
         nsx_plugin:
           metadata:
             enabled: false
@@ -697,11 +636,6 @@
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
                 restrictions:
                   - "settings:common.libvirt_type.value == 'vcenter'"
-              - data: "vcenter"
-                label: "vCenter"
-                description: "Choose this type of hypervisor if you run OpenStack in a vCenter environment."
-                restrictions:
-                  - "settings:common.libvirt_type.value != 'vcenter' or cluster:net_provider == 'neutron'"
             label: "Hypervisor type"
             weight: 30
             type: "radio"
@@ -885,14 +819,6 @@
             type: "checkbox"
             restrictions:
               - "settings:storage.volumes_ceph.value == true or settings:common.libvirt_type.value == 'vcenter'"
-          volumes_vmdk:
-            value: false
-            label: "VMware vCenter for volumes (Cinder)"
-            description: "Configures Cinder to store volumes via VMware vCenter."
-            weight: 15
-            type: "checkbox"
-            restrictions:
-              - "settings:common.libvirt_type.value != 'vcenter' or settings:storage.volumes_lvm.value == true"
           iser:
             value: false
             label: "iSER protocol for volumes (Cinder)"
@@ -915,8 +841,6 @@
             description: "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing."
             weight: 30
             type: "checkbox"
-            restrictions:
-              - "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
           images_vcenter:
             value: false
             label: "VMWare vCenter/ESXi datastore for images (Glance)"
@@ -924,70 +848,8 @@
             weight: 35
             type: "checkbox"
             restrictions:
-              - "settings:common.libvirt_type.value != 'vcenter'"
+              - "settings:common.use_vcenter != true"
               - "settings:storage.images_ceph.value == true": "Only one Glance backend could be selected."
-          vc_host:
-            value: ""
-            label: "Hostname"
-            description: "Hostname or IP Address of vCenter/ESXi"
-            weight: 45
-            type: "text"
-            regex:
-              source: *ipv4_or_hostname_regex
-              error: 'Specify valid hostname or IPv4 address'
-            restrictions: &glance_vcenter_restr
-              - condition: "settings:storage.images_vcenter.value == false or settings:common.libvirt_type.value != 'vcenter'"
-                action: "hide"
-          vc_user:
-            value: ""
-            label: "Username"
-            description: "vCenter/ESXi admin username"
-            weight: 50
-            type: "text"
-            regex:
-              source: *non_empty_string
-              error: 'Empty username'
-            restrictions: *glance_vcenter_restr
-          vc_password:
-            value: ""
-            label: "Password"
-            description: "vCenter/ESXi admin password"
-            weight: 55
-            type: "password"
-            regex:
-              source: *non_empty_string
-              error: "Empty password"
-            restrictions: *glance_vcenter_restr
-          vc_datastore:
-            value: ""
-            label: "Datastore name"
-            description: "Datastore associated with the datacenter."
-            weight: 60
-            type: "text"
-            regex:
-              source: *non_empty_string
-              error: 'Empty datastore'
-            restrictions: *glance_vcenter_restr
-          vc_datacenter:
-            value: ""
-            label: "Datacenter name"
-            description: "Inventory path to a datacenter. If you want to use ESXi host as datastore, it should be \"ha-datacenter\"."
-            weight: 65
-            type: "text"
-            regex:
-              source: *non_empty_string
-              error: 'Empty datacenter'
-            restrictions: *glance_vcenter_restr
-          vc_image_dir:
-            value: "/openstack_glance"
-            label: "Datastore Images directory"
-            description: "The name of the directory where the glance images will be stored in the VMware datastore."
-            weight: 70
-            type: "text"
-            regex:
-              source: *non_empty_string
-              error: 'Empty images directory'
-            restrictions: *glance_vcenter_restr
           ephemeral_ceph:
             value: false
             label: "Ceph RBD for ephemeral volumes (Nova)"
@@ -1152,9 +1014,6 @@
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"
-          regex:
-            source: *ipv4_or_hostname_regex
-            error: "dialog.create_cluster_wizard.compute.vcenter_ip_warning"
         vc_user:
           type: "text"
           label: "dialog.create_cluster_wizard.compute.vcenter_username"
@@ -1192,9 +1051,6 @@
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
               action: "hide"
-          regex:
-            source: *valid_cluster_name
-            error: "dialog.create_cluster_wizard.compute.vcenter_cluster_warning"
       Network:
         manager:
           type: "radio"
@@ -1275,12 +1131,6 @@
                 - "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"
               bind:
                 - "settings:storage.images_ceph.value": true
-            - data: "vcenter"
-              label: "dialog.create_cluster_wizard.storage.vcenter"
-              restrictions:
-                - "Compute.hypervisor != 'vcenter'"
-              bind:
-                - "settings:storage.images_vcenter.value": true
       AdditionalServices:
         sahara:
           type: "checkbox"

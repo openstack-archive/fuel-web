@@ -44,7 +44,6 @@ class InstallationInfo(object):
         (('kernel_params', 'kernel', 'value'), 'kernel_params'),
 
         (('storage', 'volumes_lvm', 'value'), 'volumes_lvm'),
-        (('storage', 'volumes_vmdk', 'value'), 'volumes_vmdk'),
         (('storage', 'iser', 'value'), 'iser'),
         (('storage', 'volumes_ceph', 'value'), 'volumes_ceph'),
         (('storage', 'images_ceph', 'value'), 'images_ceph'),

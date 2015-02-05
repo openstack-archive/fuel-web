@@ -616,11 +616,13 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
         discardNodeChanges: function() {
             if (this.state.actionInProgress) return;
             this.setState({actionInProgress: true});
-            var data = this.props.node.get('pending_addition') ? {cluster_id: null, pending_addition: false, pending_roles: []} : {pending_deletion: false};
-            this.props.node.save(data, {patch: true, wait: true, silent: true})
+            var node = new models.Node(this.props.node.attributes),
+                nodeWillBeRemoved = node.get('pending_addition'),
+                data = nodeWillBeRemoved ? {cluster_id: null, pending_addition: false, pending_roles: []} : {pending_deletion: false};
+            node.save(data, {patch: true})
                 .done(_.bind(function() {
-                    $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).done(_.bind(function() {
-                        this.setState({actionInProgress: false});
+                    this.props.cluster.fetchRelated('nodes').done(_.bind(function() {
+                        if (!nodeWillBeRemoved) this.setState({actionInProgress: false});
                     }, this));
                     app.rootComponent.refreshNavbar();
                     app.page.removeFinishedNetworkTasks();

@@ -86,6 +86,7 @@ def oswl_statistics_save(cluster_id, resource_type, data):
                 'modified': _modified(
                     dt.time(), cur_dict, data, last_dict['modified'])
             })
+            rec.is_sent = False
             objects.OpenStackWorkloadStats.update(rec, obj_data)
         else:
             # create new record

@@ -744,3 +744,32 @@ class TestOSWLServerInfoSaving(BaseTestCase):
                 data = self.data_w_default_vm_info(time_update)
                 data['created_date'] = date_1st_rec
                 self.check_data_vs_rec(data, rec)
+
+    def test_oswl_is_sent_restored_on_changes(self):
+        cluster_id = 1
+        vm_info = {
+            "id": 1,
+            "power_state": 1,
+        }
+        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.vm,
+                             [vm_info])
+        last = OpenStackWorkloadStats.get_last_by(
+            cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
+        # Setting is_sent to True
+        OpenStackWorkloadStats.update(last, {'is_sent': True})
+        self.assertEqual(True, last.is_sent)
+
+        # Checking is_sent is not changed if data is not changed
+        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.vm,
+                             [vm_info])
+        last_no_change = OpenStackWorkloadStats.get_last_by(
+            cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertEqual(True, last_no_change.is_sent)
+
+        # Checking is_sent is changed if data is changed
+        vm_info["power_state"] += 1
+        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.vm,
+                             [vm_info])
+        last_changed = OpenStackWorkloadStats.get_last_by(
+            cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertEqual(False, last_changed.is_sent)

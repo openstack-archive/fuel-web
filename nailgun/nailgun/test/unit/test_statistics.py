@@ -29,6 +29,7 @@ from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
+from nailgun.statistics.oswl_collector import collect as oswl_collect_once
 from nailgun.statistics.oswl_saver import oswl_data_checksum
 from nailgun.statistics.oswl_saver import oswl_statistics_save
 from nailgun.statistics.statsenderd import StatsSender
@@ -502,7 +503,7 @@ class TestStatisticsSender(BaseTestCase):
             self.check_oswl_data_send_result(send_data_to_url, status, is_sent)
 
 
-class TestOWSLCollectingUtils(BaseTestCase):
+class TestOSWLCollectingUtils(BaseTestCase):
 
     def test_get_vm_info(self):
         # prepare return data for nova client mock
@@ -552,6 +553,85 @@ class TestOWSLCollectingUtils(BaseTestCase):
         ]
 
         self.assertItemsEqual(res, expected)
+
+
+class TestOSWLCollector(BaseTestCase):
+
+    vms_info = [{
+        "id": 1,
+        "status": "running",
+    }]
+
+    def collect_for_operational_cluster(self, get_info_mock):
+        cluster = self.env.create_cluster(
+            api=False,
+            status=consts.CLUSTER_STATUSES.operational
+        )
+        cls_id = cluster.id
+        get_info_mock.return_value = self.vms_info
+        oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
+        last = OpenStackWorkloadStats.get_last_by(
+            cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+        upd_time = last.updated_time
+        res_data = {
+            'added': {'1': {'time': upd_time.isoformat()}},
+            'removed': {},
+            'modified': {},
+            'current': self.vms_info}
+        self.assertEqual(last.resource_data, res_data)
+        return cls_id, res_data
+
+    def update_cluster_status_and_oswl_data(self, cls_id, status):
+        cls = Cluster.get_by_uid(cls_id)
+        Cluster.update(cls, {'status': status})
+        oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
+        return OpenStackWorkloadStats.get_last_by(
+            cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+
+    @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
+    @patch('nailgun.statistics.oswl_collector.utils.get_proxy_for_cluster')
+    @patch('nailgun.statistics.oswl_collector.utils.set_proxy')
+    @patch('nailgun.statistics.oswl_collector.utils.'
+           'get_info_from_os_resource_manager')
+    def test_clear_data_for_changed_cluster(self, get_info_mock, *_):
+        cls_id, res_data = self.collect_for_operational_cluster(get_info_mock)
+
+        last = self.update_cluster_status_and_oswl_data(
+            cls_id, consts.CLUSTER_STATUSES.error)
+        # nothing is changed while cluster is in error status
+        self.assertEqual(last.resource_data, res_data)
+
+        last = self.update_cluster_status_and_oswl_data(
+            cls_id, consts.CLUSTER_STATUSES.remove)
+        removed = dict(self.vms_info[0])
+        removed['time'] = last.updated_time.isoformat()
+        res_data.update({
+            'removed': {'1': removed},
+            'current': []})
+        # current data is cleared when cluster status is changed
+        self.assertEqual(last.resource_data, res_data)
+
+    @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
+    @patch('nailgun.statistics.oswl_collector.utils.get_proxy_for_cluster')
+    @patch('nailgun.statistics.oswl_collector.utils.set_proxy')
+    @patch('nailgun.statistics.oswl_collector.utils.'
+           'get_info_from_os_resource_manager')
+    def test_clear_data_for_removed_cluster(self, get_info_mock, *_):
+        cls_id, res_data = self.collect_for_operational_cluster(get_info_mock)
+
+        cls = Cluster.get_by_uid(cls_id)
+        Cluster.delete(cls)
+
+        oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
+        last = OpenStackWorkloadStats.get_last_by(
+            cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+        removed = dict(self.vms_info[0])
+        removed['time'] = last.updated_time.isoformat()
+        res_data.update({
+            'removed': {'1': removed},
+            'current': []})
+        # current data is cleared when cluster is deleted
+        self.assertEqual(last.resource_data, res_data)
 
 
 class TestOSWLObject(BaseTestCase):

@@ -111,12 +111,13 @@ class StatsSender(object):
                 logger.info("Action logs records saved: %s, failed: %s",
                             six.text_type(list(sent_saved_ids)),
                             six.text_type(list(failed_ids)))
-                db().query(models.ActionLog).filter(
-                    models.ActionLog.id.in_(sent_saved_ids)
-                ).update(
-                    {"is_sent": True}, synchronize_session=False
-                )
-                db().commit()
+                if sent_saved_ids:
+                    db().query(models.ActionLog).filter(
+                        models.ActionLog.id.in_(sent_saved_ids)
+                    ).update(
+                        {"is_sent": True}, synchronize_session=False
+                    )
+                    db().commit()
             else:
                 logger.error("Unexpected collector answer: %s",
                              six.text_type(resp.text))
@@ -183,12 +184,13 @@ class StatsSender(object):
                 logger.info("OSWL info records saved: %s, failed: %s",
                             six.text_type(list(sent_saved_ids)),
                             six.text_type(list(failed_ids)))
-                db().query(models.OpenStackWorkloadStats).filter(
-                    models.OpenStackWorkloadStats.id.in_(sent_saved_ids)
-                ).update(
-                    {"is_sent": True}, synchronize_session=False
-                )
-                db().commit()
+                if sent_saved_ids:
+                    db().query(models.OpenStackWorkloadStats).filter(
+                        models.OpenStackWorkloadStats.id.in_(sent_saved_ids)
+                    ).update(
+                        {"is_sent": True}, synchronize_session=False
+                    )
+                    db().commit()
             else:
                 logger.error("Unexpected collector answer: %s",
                              six.text_type(resp.text))

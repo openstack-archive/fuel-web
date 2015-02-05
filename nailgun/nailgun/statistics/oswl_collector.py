@@ -22,6 +22,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.logger import logger
 from nailgun.objects import ClusterCollection
+from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.settings import settings
 from nailgun.statistics.oswl_saver import oswl_statistics_save
 from nailgun.statistics import utils
@@ -31,6 +32,19 @@ def collect(resource_type):
     try:
         operational_clusters = ClusterCollection.filter_by(
             iterable=None, status=consts.CLUSTER_STATUSES.operational).all()
+        error_clusters = ClusterCollection.filter_by(
+            iterable=None, status=consts.CLUSTER_STATUSES.error).all()
+
+        all_envs_last_recs = \
+            OpenStackWorkloadStatsCollection.get_last_by_resource_type(
+                resource_type)
+        ready_or_error_ids = set([c.id for c in operational_clusters] +
+                                 [c.id for c in error_clusters])
+        envs_ids_to_clear = set(r.cluster_id for r in all_envs_last_recs) - \
+            ready_or_error_ids
+        # clear resource data for unavailable clusters
+        for id in envs_ids_to_clear:
+            oswl_statistics_save(id, resource_type, [])
 
         for cluster in operational_clusters:
             client_provider = utils.ClientProvider(cluster)
@@ -40,6 +54,7 @@ def collect(resource_type):
                 data = utils.get_info_from_os_resource_manager(
                     client_provider, resource_type)
                 oswl_statistics_save(cluster.id, resource_type, data)
+
         db.commit()
 
     except Exception as e:

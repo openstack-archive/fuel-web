@@ -57,3 +57,14 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
             .filter(models.OpenStackWorkloadStats.created_date <= last_date)
 
         return instance
+
+    @classmethod
+    def get_last_by_resource_type(cls, resource_type):
+        instances = db().query(models.OpenStackWorkloadStats) \
+            .order_by(models.OpenStackWorkloadStats.created_date.desc()) \
+            .filter_by(resource_type=resource_type)
+        if instances.count():
+            date = instances.first().created_date
+            return instances.filter(
+                models.OpenStackWorkloadStats.created_date == date)
+        return instances

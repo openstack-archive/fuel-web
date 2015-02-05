@@ -631,6 +631,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             networkConfiguration={this.props.networkConfiguration}
                             validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
                             disabled={this.isLocked()}
+                            netProvider={cluster.get('net_provider')}
                         />
                     </div>
                     <div className='verification-control'>
@@ -696,10 +697,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         render: function() {
             var networkParameters = this.props.networkConfiguration.get('networking_parameters'),
                 manager = networkParameters.get('net_manager'),
-                idRangePrefix = networkParameters.get('segmentation_type'),
+                idRangePrefix = networkParameters.get('segmentation_type') == 'gre' ? 'gre_id' : 'vlan',
                 ns = 'cluster_page.network_tab.networking_parameters.';
 
-            idRangePrefix = _.isUndefined(idRangePrefix) ? null : idRangePrefix == 'gre' ? 'gre_id' : 'vlan';
             return (
                 <div>
                     {manager ?
@@ -766,7 +766,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <Range
                         {...this.composeProps('floating_ranges', true)}
                         rowsClassName='floating-ranges-rows'
-                        hiddenControls={!_.isNull(idRangePrefix)}
+                        hiddenControls={this.props.netProvider == 'neutron'}
                     />
                     <Range
                         {...this.composeProps('dns_nameservers', true)}

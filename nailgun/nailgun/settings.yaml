@@ -94,6 +94,11 @@ STATS_SEND_COUNT: 100
 # OSWL data send records per request
 OSWL_SEND_COUNT: 10
 
+# OSWL data records will not be sent to collector during this period (in days)
+# set 1 for normal operation, so yesterday's and older records will be sent.
+# set 0 for testing purposes, so today's and older records will be sent.
+OSWL_COLLECT_PERIOD: 1
+
 # statistics collector ping interval (in sec.)
 COLLECTOR_PING_INTERVAL: 300
 

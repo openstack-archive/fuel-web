@@ -139,7 +139,6 @@ _task_output_white_list_template = {
                     "images_vcenter": "",
                     "ephemeral_ceph": "",
                     "vc_image_dir": "",
-                    "volumes_vmdk": "",
                     "pg_num": "",
                     "images_ceph": ""
                 },

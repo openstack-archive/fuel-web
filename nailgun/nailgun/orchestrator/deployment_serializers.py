@@ -52,15 +52,8 @@ def get_nodes_not_for_deletion(cluster):
 class NetworkDeploymentSerializer(object):
 
     @classmethod
-    def get_common_attrs(cls, cluster, attrs):
-        """Cluster network attributes."""
-        common = cls.network_provider_cluster_attrs(cluster)
-        common.update(
-            cls.network_ranges(Cluster.get_default_group(cluster).id))
-        common.update({'master_ip': settings.MASTER_IP})
-        common['nodes'] = deepcopy(attrs['nodes'])
-
-        # Addresses
+    def update_nodes_net_info(cls, cluster, nodes):
+        """Adds information about networks to each node."""
         for node in get_nodes_not_for_deletion(cluster):
             netw_data = node.network_data
             addresses = {}
@@ -73,9 +66,21 @@ class NetworkDeploymentSerializer(object):
                         netw_data,
                         net.name,
                         net.meta.get('render_addr_mask')))
+            [n.update(addresses) for n in nodes
+                if n['uid'] == str(node.uid)]
+        return nodes
 
-            [n.update(addresses) for n in common['nodes']
-             if n['uid'] == str(node.uid)]
+    @classmethod
+    def get_common_attrs(cls, cluster, attrs):
+        """Cluster network attributes."""
+        common = cls.network_provider_cluster_attrs(cluster)
+        common.update(
+            cls.network_ranges(Cluster.get_default_group(cluster).id))
+        common.update({'master_ip': settings.MASTER_IP})
+
+        common['nodes'] = deepcopy(attrs['nodes'])
+        common['nodes'] = cls.update_nodes_net_info(cluster, common['nodes'])
+
         return common
 
     @classmethod
@@ -873,10 +878,9 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         self.set_storage_parameters(cluster, attrs)
         self.set_primary_mongo(attrs['nodes'])
 
-        attrs = dict_merge(
-            attrs,
-            self.get_net_provider_serializer(cluster).get_common_attrs(cluster,
-                                                                       attrs))
+        net_serializer = self.get_net_provider_serializer(cluster)
+        net_common_attrs = net_serializer.get_common_attrs(cluster, attrs)
+        attrs = dict_merge(attrs, net_common_attrs)
 
         return attrs
 
@@ -921,7 +925,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             pg_num = 128
         attrs['storage']['pg_num'] = pg_num
 
-    def node_list(self, nodes):
+    @classmethod
+    def node_list(cls, nodes):
         """Generate nodes list. Represents
         as "nodes" parameter in facts.
         """
@@ -929,11 +934,12 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
         for node in nodes:
             for role in objects.Node.all_roles(node):
-                node_list.append(self.serialize_node_for_node_list(node, role))
+                node_list.append(cls.serialize_node_for_node_list(node, role))
 
         return node_list
 
-    def serialize_node_for_node_list(self, node, role):
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
         return {
             'uid': node.uid,
             'fqdn': node.fqdn,
@@ -1040,11 +1046,12 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
         return {'test_vm_image': image_data}
 
-    def get_net_provider_serializer(self, cluster):
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
         if cluster.net_provider == 'nova_network':
-            return self.nova_network_serializer
+            return cls.nova_network_serializer
         else:
-            return self.neutron_network_serializer
+            return cls.neutron_network_serializer
 
     def set_primary_node(self, nodes, role, primary_node_index):
         """Set primary node for role if it not set yet.
@@ -1096,12 +1103,13 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         return {'last_controller': last_controller}
 
-    def node_list(self, nodes):
+    @classmethod
+    def node_list(cls, nodes):
         """Node list
         """
         node_list = super(
             DeploymentHASerializer,
-            self
+            cls
         ).node_list(nodes)
 
         for node in node_list:
@@ -1169,10 +1177,11 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
-    def serialize_node_for_node_list(self, node, role):
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
         serialized_node = super(
             DeploymentMultinodeSerializer61,
-            self).serialize_node_for_node_list(node, role)
+            cls).serialize_node_for_node_list(node, role)
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
@@ -1188,10 +1197,11 @@ class DeploymentHASerializer61(DeploymentHASerializer):
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
-    def serialize_node_for_node_list(self, node, role):
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
         serialized_node = super(
             DeploymentHASerializer61,
-            self).serialize_node_for_node_list(node, role)
+            cls).serialize_node_for_node_list(node, role)
         serialized_node['user_node_name'] = node.name
         return serialized_node
 
@@ -1234,11 +1244,10 @@ class DeploymentHASerializer61(DeploymentHASerializer):
         return images_data
 
 
-def create_serializer(orchestrator_graph, cluster):
+def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
     :param cluster: cluster to process
-    :param orchestrator_graph: orchestrator_graph to use for serialization
     :returns: a serializer for a given cluster
     """
     serializers_map = {
@@ -1264,7 +1273,7 @@ def create_serializer(orchestrator_graph, cluster):
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
     for version, serializers in six.iteritems(serializers_map):
         if env_version.startswith(version):
-            return serializers[env_mode](orchestrator_graph)
+            return serializers[env_mode]
 
     raise errors.UnsupportedSerializer()
 
@@ -1274,7 +1283,7 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """
     objects.Cluster.set_primary_roles(cluster, nodes)
     objects.NodeCollection.prepare_for_deployment(cluster.nodes)
-    serializer = create_serializer(orchestrator_graph, cluster)
+    serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
 
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)

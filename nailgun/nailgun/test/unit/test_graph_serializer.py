@@ -128,7 +128,7 @@ class TestGraphDependencies(base.BaseTestCase):
         self.graph.add_tasks(self.tasks + self.subtasks)
         subtask_graph = self.graph.get_tasks('controller')
         topology_by_id = [item['id'] for item in subtask_graph.topology]
-        self.assertEqual(
+        self.assertItemsEqual(
             topology_by_id,
             ['setup_network', 'install_controller'])
 

@@ -1229,13 +1229,10 @@ class DeploymentHASerializer61(DeploymentHASerializer):
                 'disk_format': 'vmdk',
                 'img_path': img_path,
             })
-            glance_vmdk_properties = []
-            glance_vmdk_properties.append('--property vmware_disktype=sparse')
-            glance_vmdk_properties. \
-                append('--property vmware_adaptertype=lsilogic')
-            glance_vmdk_properties.append('--property hypervisor_type=vmware')
-            image_vmdk_data['glance_properties'] = ' '. \
-                join(glance_vmdk_properties)
+            image_vmdk_data['glance_properties'] = ' '.join([
+                '--property vmware_disktype=sparse',
+                '--property vmware_adaptertype=lsilogic',
+                '--property hypervisor_type=vmware'])
             images_data['test_vm_image'].append(image_vmdk_data)
             images_data['test_vm_image'].append(image_data['test_vm_image'])
         else:

@@ -43,6 +43,7 @@ Before use one of them please install dependencies that are required in all case
     qemu-kvm \
     qemu-utils \
     libvirt-bin \
+    libvirt-dev \
     ubuntu-vm-builder \
     bridge-utils
 

@@ -619,11 +619,14 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             var data = this.props.node.get('pending_addition') ? {cluster_id: null, pending_addition: false, pending_roles: []} : {pending_deletion: false};
             this.props.node.save(data, {patch: true, wait: true, silent: true})
                 .done(_.bind(function() {
-                    $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).done(_.bind(function() {
-                        this.setState({actionInProgress: false});
+                    var nodeWasDeleted = _.isNull(this.props.node.get('cluster'));
+                    this.props.cluster.fetchRelated('nodes').done(_.bind(function() {
+                        if (!nodeWasDeleted) this.setState({actionInProgress: false});
                     }, this));
-                    app.rootComponent.refreshNavbar();
-                    app.page.removeFinishedNetworkTasks();
+                    if (nodeWasDeleted) {
+                        app.rootComponent.refreshNavbar();
+                        app.page.removeFinishedNetworkTasks();
+                    }
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: i18n('dialog.discard_changes.cant_discard')});});
         },

@@ -57,7 +57,11 @@ def make_astute_message(task, method, respond_to, args):
         'args': args
     }
     message['args']['task_uuid'] = task.uuid
-    task.cache = message
+    if not task.cache:
+        task.cache = {}
+    persist = task.cache.get('_persist')
+    task.cache = deepcopy(message)
+    task.cache['_persist'] = persist
     return message
 
 

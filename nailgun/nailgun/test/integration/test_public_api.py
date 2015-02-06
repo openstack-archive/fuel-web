@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseAuthenticationIntegrationTest
 from nailgun.test.base import reverse
@@ -52,3 +54,15 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
+
+    @patch('nailgun.api.v1.handlers.version.utils.get_fuel_release_versions')
+    def test_500_no_html(self, handler_get):
+        exc_text = "Here goes an exception"
+        handler_get.side_effect = Exception(exc_text)
+        resp = self.app.get(
+            reverse('VersionHandler'),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(500, resp.status_code)
+        self.assertEqual(resp.body, exc_text)

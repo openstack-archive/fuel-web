@@ -734,6 +734,9 @@ class NailgunReceiver(object):
 
     @classmethod
     def verify_networks_resp(cls, **kwargs):
+        from nailgun.api.v1.handlers.network_configuration import \
+            update_cluster_after_network_verification_check
+
         logger.info(
             "RPC method verify_networks_resp received: %s" %
             jsonutils.dumps(kwargs)
@@ -774,7 +777,7 @@ class NailgunReceiver(object):
                     error_msg = 'Node(s) {0} didn\'t return data.'.format(
                         ', '.join(absent_node_names)
                     )
-                status = 'error'
+                status = consts.TASK_STATUSES.error
             else:
                 error_nodes = []
                 for node in nodes:
@@ -845,20 +848,23 @@ class NailgunReceiver(object):
 
                 if error_nodes:
                     result = error_nodes
-                    status = 'error'
+                    status = consts.TASK_STATUSES.error
         else:
             error_msg = (error_msg or
                          'verify_networks_resp: argument "nodes"'
                          ' have incorrect type')
-            status = 'error'
+            status = consts.TASK_STATUSES.error
             logger.error(error_msg)
-        if status not in ('ready', 'error'):
+        if status not in (consts.TASK_STATUSES.ready,
+                          consts.TASK_STATUSES.error):
             data = {'status': status, 'progress': progress,
                     'message': error_msg, 'result': result}
             objects.Task.update(task, data)
         else:
             objects.Task.update_verify_networks(task, status, progress,
                                                 error_msg, result)
+
+            update_cluster_after_network_verification_check(task)
 
         cls._update_action_log_entry(status, task_uuid, nodes)
 

@@ -700,6 +700,7 @@ class VerifyNetworksTaskManager(TaskManager):
             name=TASK_NAMES.check_networks,
             cluster=self.cluster
         )
+        task.cache = {'_persist': {'original_data': nets}}
 
         if len(self.cluster.nodes) < 2:
             task.status = TASK_STATUSES.error

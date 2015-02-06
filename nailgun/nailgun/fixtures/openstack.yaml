@@ -40,9 +40,6 @@
         description: "A compute node creates, manages and terminates virtual machine instances."
         limits:
           recommended: 1
-        restrictions:
-          - condition: "settings:common.libvirt_type.value == 'vcenter'"
-            message: "Computes cannot be added to environment with vCenter hypervisor"
       cinder:
         # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
         name: "Storage - Cinder"

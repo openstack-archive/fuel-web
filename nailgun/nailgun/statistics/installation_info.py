@@ -16,6 +16,9 @@
 import six
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import NeutronConfig
+from nailgun.db.sqlalchemy.models import NovaNetworkConfig
+
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
@@ -78,6 +81,21 @@ class InstallationInfo(object):
             versions[settings.FUEL_VERSION_KEY] = settings.VERSION
         return versions[settings.FUEL_VERSION_KEY]
 
+    def get_network_configuration_info(self, cluster):
+        network_config = cluster.network_config
+        result = {}
+        if isinstance(network_config, NovaNetworkConfig):
+            result['net_manager'] = network_config.net_manager
+            result['fixed_networks_vlan_start'] = \
+                network_config.fixed_networks_vlan_start
+            result['fixed_network_size'] = network_config.fixed_network_size
+            result['fixed_networks_amount'] = \
+                network_config.fixed_networks_amount
+        elif isinstance(network_config, NeutronConfig):
+            result['segmentation_type'] = network_config.segmentation_type
+            result['net_l23_provider'] = network_config.net_l23_provider
+        return result
+
     def get_clusters_info(self):
         clusters = ClusterCollection.all()
         clusters_info = []
@@ -105,6 +123,8 @@ class InstallationInfo(object):
                     cluster,
                     cluster.nodes
                 ),
+                'network_configuration': self.get_network_configuration_info(
+                    cluster)
             }
             clusters_info.append(cluster_info)
         return clusters_info

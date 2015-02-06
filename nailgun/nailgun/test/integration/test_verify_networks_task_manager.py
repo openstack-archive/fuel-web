@@ -18,9 +18,8 @@ import copy
 
 import unittest2
 
-from nailgun.consts import CLUSTER_STATUSES
-from nailgun.consts import NETWORK_INTERFACE_TYPES
-from nailgun.consts import OVS_BOND_MODES
+from nailgun.db.sqlalchemy.models import Task
+from nailgun import consts
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -54,6 +53,135 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         self.env.wait_ready(task, 30)
 
     @fake_tasks()
+    def test_network_verify_success_changes_status(self):
+        cluster = self.env.clusters[0]
+        self.assertEqual(
+            cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.not_performed
+        )
+
+        task = self.env.launch_verify_networks()
+        self.env.wait_ready(task, 30)
+
+        self.env.db.refresh(cluster)
+        self.assertEqual(
+            cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.passed
+        )
+
+    @fake_tasks()
+    def test_network_verify_success_no_status_change_for_custom_config(self):
+        from nailgun.api.v1.handlers.network_configuration import \
+            check_data_corresponds_to_cluster
+
+        cluster = self.env.clusters[0]
+        self.assertEqual(
+            cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.not_performed
+        )
+
+        resp = self.app.get(
+            reverse(
+                'NovaNetworkConfigurationHandler',
+                kwargs={'cluster_id': cluster.id}
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        nets = resp.json_body
+
+        nets['networking_parameters']['dns_nameservers'].append('8.8.8.1')
+
+        self.assertFalse(
+            check_data_corresponds_to_cluster(cluster, nets)
+        )
+
+        task = self.env.launch_verify_networks(data=nets)
+        self.env.wait_ready(task, 30)
+
+        self.env.db.refresh(cluster)
+        self.assertEqual(
+            cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.not_performed
+        )
+
+    @fake_tasks(fake_rpc=False)
+    def test_data_corresponds_to_cluster_after_idempotent_put(self, mrpc):
+        from nailgun.api.v1.handlers.network_configuration import \
+            check_data_corresponds_to_cluster
+
+        cluster = self.env.clusters[0]
+
+        nets = self.env.get_network_configuration()
+        task_json = self.env.nova_networks_put(cluster.id, nets).json_body
+        task = self.db.query(Task).filter_by(uuid=task_json['uuid']).first()
+        self.env.wait_ready(task, 10)
+
+        self.env.db.refresh(cluster)
+        self.assertTrue(
+            check_data_corresponds_to_cluster(cluster, nets)
+        )
+        self.assertEqual(mrpc.called, False)
+
+    @fake_tasks()
+    def test_network_verify_fails_changes_status(self):
+        from nailgun.api.v1.handlers.network_configuration import \
+            check_data_corresponds_to_cluster
+
+        cluster = self.env.clusters[0]
+        self.assertEqual(
+            cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.not_performed
+        )
+
+        nets = self.env.get_network_configuration()
+
+        for net in nets['networks']:
+            if net['name'] in ('storage',):
+                net['vlan_start'] = None
+
+        task_json = self.env.nova_networks_put(cluster.id, nets).json_body
+        task = self.db.query(Task).filter_by(uuid=task_json['uuid']).first()
+        self.env.wait_ready(task, 10)
+        nets = self.env.get_network_configuration()
+
+        self.env.db.refresh(cluster)
+        self.assertTrue(
+            check_data_corresponds_to_cluster(cluster, nets)
+        )
+
+        task = self.env.launch_verify_networks(nets)
+        self.env.wait_error(task, 30)
+
+        self.assertEqual(
+            cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.failed
+        )
+
+    @fake_tasks()
+    def test_network_verify_fails_no_status_change_for_custom_config(self):
+        cluster = self.env.clusters[0]
+        self.assertEqual(
+            cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.not_performed
+        )
+
+        nets = self.env.get_network_configuration()
+
+        admin_ng = self.env.network_manager.get_admin_network_group()
+
+        nets['networks'][-2]['cidr'] = admin_ng.cidr
+
+        task = self.env.launch_verify_networks(nets)
+        self.env.wait_error(task, 30)
+
+        self.env.db.refresh(cluster)
+        self.assertEqual(
+            cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.not_performed
+        )
+
+    @fake_tasks()
     def test_network_verify_compares_received_with_cached(self):
 
         resp = self.app.get(
@@ -73,15 +201,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False)
     def test_network_verify_fails_if_admin_intersection(self, mocked_rpc):
 
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
-        self.assertEqual(200, resp.status_code)
-        nets = resp.json_body
+        nets = self.env.get_network_configuration()
 
         admin_ng = self.env.network_manager.get_admin_network_group()
 
@@ -99,15 +219,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False)
     def test_network_verify_fails_if_untagged_intersection(self, mocked_rpc):
 
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
-        self.assertEqual(200, resp.status_code)
-        nets = resp.json_body
+        nets = self.env.get_network_configuration()
 
         for net in nets['networks']:
             if net['name'] in ('storage',):
@@ -130,14 +242,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         self.db.delete(self.env.nodes[0])
         self.db.commit()
 
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
-        nets = resp.json_body
+        nets = self.env.get_network_configuration()
 
         task = self.env.launch_verify_networks(nets)
         self.db.refresh(task)
@@ -150,21 +255,14 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
     def test_network_verify_when_env_not_ready(self):
         cluster_db = self.env.clusters[0]
         blocking_statuses = (
-            CLUSTER_STATUSES.deployment,
-            CLUSTER_STATUSES.update,
+            consts.CLUSTER_STATUSES.deployment,
+            consts.CLUSTER_STATUSES.update,
         )
         for status in blocking_statuses:
             cluster_db.status = status
             self.db.commit()
 
-            resp = self.app.get(
-                reverse(
-                    'NovaNetworkConfigurationHandler',
-                    kwargs={'cluster_id': self.env.clusters[0].id}
-                ),
-                headers=self.default_headers
-            )
-            nets = resp.json_body
+            nets = self.env.get_network_configuration()
 
             task = self.env.launch_verify_networks(nets)
             self.db.refresh(task)
@@ -305,7 +403,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         for node in self.env.nodes:
             data, admin_nic, other_nic, empty_nic = self.verify_nics(node)
             self.env.make_bond_via_api("ovs-bond0",
-                                       OVS_BOND_MODES.balance_slb,
+                                       consts.OVS_BOND_MODES.balance_slb,
                                        [other_nic["name"], empty_nic["name"]],
                                        node["id"])
             self.verify_bonds(node)
@@ -333,8 +431,9 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         resp = self.env.node_nics_get(node["id"])
         self.assertEqual(resp.status_code, 200)
 
-        bond = filter(lambda nic: nic["type"] == NETWORK_INTERFACE_TYPES.bond,
-                      resp.json_body)
+        bond = filter(
+            lambda nic: nic["type"] == consts.NETWORK_INTERFACE_TYPES.bond,
+            resp.json_body)
         self.assertEqual(len(bond), 1)
         self.assertEqual(bond[0]["name"], "ovs-bond0")
 

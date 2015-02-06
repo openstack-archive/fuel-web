@@ -167,7 +167,7 @@ class TestPutSameJson(base.BaseIntegrationTest):
             'NeutronNetworkConfigurationHandler', {
                 'cluster_id': self.cluster['id']
             },
-            neutron_config, 200
+            neutron_config, 202
         )
 
     def test_deployment_info(self):

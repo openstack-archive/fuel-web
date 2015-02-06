@@ -67,6 +67,12 @@ NETWORKS = Enum(
     'private'
 )
 
+NETWORK_CHECK_STATUSES = Enum(
+    'failed',
+    'not_performed',
+    'passed'
+)
+
 NOVA_NET_MANAGERS = Enum(
     'FlatDHCPManager',
     'VlanManager'

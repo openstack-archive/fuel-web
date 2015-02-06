@@ -18,6 +18,7 @@ from mock import patch
 
 from sqlalchemy.sql import not_
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
@@ -57,6 +58,39 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.nova_networks_get(self.cluster.id + 999,
                                           expect_errors=True)
         self.assertEqual(404, resp.status_code)
+
+    def test_parse_network_configuration_is_idempotent(self):
+        from nailgun.api.v1.handlers.network_configuration import \
+            parse_network_configuration
+
+        nets = self.env.nova_networks_get(self.cluster.id).json_body
+
+        self.assertDictEqual(
+            parse_network_configuration(nets),
+            parse_network_configuration(
+                parse_network_configuration(nets)
+            )
+        )
+
+    def test_change_updates_network_check_status(self):
+        Cluster.update(self.cluster, {
+            'network_check_status': consts.NETWORK_CHECK_STATUSES.passed
+        })
+        self.assertEqual(
+            self.cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.passed
+        )
+
+        new_net_manager = {
+            'networking_parameters': {'net_manager': 'VlanManager'}
+        }
+        self.env.nova_networks_put(self.cluster.id, new_net_manager)
+
+        self.db.refresh(self.cluster)
+        self.assertEqual(
+            self.cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.not_performed
+        )
 
     def test_change_net_manager(self):
         self.assertEqual(self.cluster.network_config.net_manager,
@@ -288,6 +322,26 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                              expect_errors=True)
         self.assertEqual(404, resp.status_code)
 
+    def test_change_updates_network_check_status(self):
+        Cluster.update(self.cluster, {
+            'network_check_status': consts.NETWORK_CHECK_STATUSES.passed
+        })
+        self.assertEqual(
+            self.cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.passed
+        )
+
+        new_net_manager = {
+            'networking_parameters': {'net_manager': 'VlanManager'}
+        }
+        self.env.neutron_networks_put(self.cluster.id, new_net_manager)
+
+        self.db.refresh(self.cluster)
+        self.assertEqual(
+            self.cluster.network_check_status,
+            consts.NETWORK_CHECK_STATUSES.not_performed
+        )
+
     def test_refresh_mask_on_cidr_change(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body
@@ -298,7 +352,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['cidr'] = cidr
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'ready')
 
@@ -314,7 +368,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -331,7 +385,9 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data['networks'][0]['vlan_start'] = 500  # non-used vlan id
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 202)
+        task = resp.json_body
+        self.assertEqual(task['status'], 'ready')
 
         self.db.refresh(network)
         self.assertEqual(network.vlan_start, 500)
@@ -347,7 +403,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -362,7 +418,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -383,7 +439,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             [['199.61.0.111', '199.61.0.122']]
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'ready')
 

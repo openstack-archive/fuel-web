@@ -734,6 +734,8 @@ class NailgunReceiver(object):
 
     @classmethod
     def verify_networks_resp(cls, **kwargs):
+        from nailgun.api.v1.handlers.network_configuration import check_data_corresponds_to_cluster
+
         logger.info(
             "RPC method verify_networks_resp received: %s" %
             jsonutils.dumps(kwargs)
@@ -859,6 +861,16 @@ class NailgunReceiver(object):
         else:
             objects.Task.update_verify_networks(task, status, progress,
                                                 error_msg, result)
+
+            net_data = task.cache.get('_persist', {}).get('original_data')
+            if net_data and \
+                    check_data_corresponds_to_cluster(task.cluster, net_data):
+                network_check_status = consts.NETWORK_CHECK_STATUSES.passed
+                if status == 'error':
+                    network_check_status = consts.NETWORK_CHECK_STATUSES.failed
+                cluster_data = {'network_check_status': network_check_status}
+
+                objects.Cluster.update(task.cluster, cluster_data)
 
         cls._update_action_log_entry(status, task_uuid, nodes)
 

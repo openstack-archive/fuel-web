@@ -440,9 +440,13 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         fetchData: function() {
             return this.props.cluster.task({group: 'network', status: 'running'}).fetch();
         },
+        componentDidiMount: function() {
+            this.props.networkConfiguration.isValid();
+        },
         getInitialState: function() {
             return {
-                actionInProgress: false
+                actionInProgress: false,
+                isVerificationPerformed: false
             };
         },
         isLocked: function() {
@@ -476,6 +480,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             app.page.removeFinishedNetworkTasks();
         },
         verifyNetworks: function() {
+            this.setState({isVerificationPerformed: true});
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
             app.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
@@ -552,6 +557,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             );
         },
         getVerificationErrors: function() {
+            if (this.props.cluster.get('network_check_status') == 'not_performed') return null;
             var task = this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
             // @TODO: soon response format will be changed anf this part should be rewritten
@@ -637,7 +643,8 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <div className='verification-control'>
                         <NetworkVerificationResult
                             key='network_verification'
-                            task={cluster.task({group: 'network'})}
+                            task={(cluster.get('network_check_status') == 'not_performed' && !this.hasChanges() && !this.state.isVerificationPerformed) ?
+                                null : cluster.task({group: 'network'})}
                             networks={this.props.networkConfiguration.get('networks')}
                         />
                     </div>

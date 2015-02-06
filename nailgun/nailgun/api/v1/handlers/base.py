@@ -17,6 +17,8 @@
 from datetime import datetime
 import traceback
 
+import six
+
 from decorator import decorator
 from sqlalchemy import exc as sa_exc
 import web
@@ -135,7 +137,16 @@ class BaseHandler(object):
             500: web.internalerror,
         }
 
-        exc = exc_status_map[status_code]()
+        # web.py has a poor exception design: some of them receive
+        # the `message` argument and some of them not. the only
+        # solution to set custom message is to assign message directly
+        # to the `data` attribute. though, that won't work for
+        # the `internalerror` because it tries to do magic with
+        # application context without explicit `message` argument.
+        try:
+            exc = exc_status_map[status_code](message=message)
+        except TypeError:
+            exc = exc_status_map[status_code]()
         exc.data = message
 
         headers = headers or {}
@@ -257,6 +268,11 @@ def content_json(func, cls, *args, **kwargs):
     except web.notmodified:
         raise
     except web.HTTPError as http_error:
+        http_error.data = json_resp(http_error.data)
+        raise
+    # intercepting all errors to avoid huge HTML output
+    except Exception as exc:
+        http_error = BaseHandler.http(500, six.text_type(exc))
         http_error.data = json_resp(http_error.data)
         raise
 

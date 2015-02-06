@@ -322,7 +322,9 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.find_net_by_name(nets, 'public')['ip_ranges'] = \
             [["172.16.0.2", "172.16.0.4"]]
         resp = self.env.neutron_networks_put(cluster.id, nets)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 202)
+        task = resp.json_body
+        self.assertEqual(task['status'], 'ready')
 
         self.assertRaises(
             errors.NetworkCheckError,
@@ -333,7 +335,9 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.find_net_by_name(nets, 'public')['ip_ranges'] = \
             [["172.16.0.2", "172.16.0.5"]]
         resp = self.env.neutron_networks_put(cluster.id, nets)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 202)
+        task = resp.json_body
+        self.assertEqual(task['status'], 'ready')
 
         self.assertNotRaises(
             errors.NetworkCheckError,

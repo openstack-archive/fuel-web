@@ -1220,7 +1220,7 @@ class DeploymentHASerializer61(DeploymentHASerializer):
         images_data = {}
         images_data['test_vm_image'] = []
         if attrs.get('editable', {}).get('common', {}). \
-           get('use_vcenter', {}).get('value') is True:
+           get('use_vcenter', False):
             image_vmdk_data = deepcopy(image_data['test_vm_image'])
             img_path = image_vmdk_data['img_path']. \
                 replace('x86_64-disk.img', 'i386-disk.vmdk')

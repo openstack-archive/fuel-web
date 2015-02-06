@@ -298,7 +298,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['cidr'] = cidr
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'ready')
 
@@ -314,7 +314,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -331,7 +331,9 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data['networks'][0]['vlan_start'] = 500  # non-used vlan id
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 202)
+        task = resp.json_body
+        self.assertEqual(task['status'], 'ready')
 
         self.db.refresh(network)
         self.assertEqual(network.vlan_start, 500)
@@ -347,7 +349,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -362,7 +364,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -383,7 +385,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             [['199.61.0.111', '199.61.0.122']]
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'ready')
 

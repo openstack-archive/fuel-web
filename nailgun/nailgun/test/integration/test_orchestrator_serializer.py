@@ -1770,8 +1770,8 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
     def test_generate_test_vm_image_data(self):
         cluster_db = self.db.query(Cluster).get(self.cluster['id'])
         cluster_attrs = objects.Cluster.get_attributes(cluster_db).editable
-        cluster_attrs['common'].setdefault('use_vcenter', {})
-        cluster_attrs['common']['use_vcenter']['value'] = True
+        cluster_attrs['common'].setdefault('use_vcenter', False)
+        cluster_attrs['common']['use_vcenter'] = True
 
         objects.Cluster.update_attributes(
             cluster_db, {'editable': cluster_attrs})

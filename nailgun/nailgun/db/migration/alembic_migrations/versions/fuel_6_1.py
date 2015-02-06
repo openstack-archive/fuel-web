@@ -38,6 +38,12 @@ from nailgun.utils.migration import upgrade_role_limits_6_0_to_6_1
 from nailgun.utils.migration import upgrade_role_restrictions_6_0_to_6_1
 
 
+ENUMS = (
+    'network_check_status_type',
+    'oswl_resource_type'
+)
+
+
 release_states_old = (
     'not_available',
     'downloading',
@@ -79,6 +85,17 @@ def upgrade_schema():
     op.add_column(
         'clusters',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
+    network_check_status_type = sa.Enum(
+        'failed', 'passed', 'not_performed',
+        name='network_check_status_type')
+    network_check_status_type.create(op.get_bind(), checkfirst=False)
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'network_check_status',
+            network_check_status_type,
+            nullable=False
+        ))
     op.add_column(
         'releases',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
@@ -165,7 +182,7 @@ def upgrade_schema():
 def downgrade_schema():
     # OpenStack workload statistics
     op.drop_table('oswl_stats')
-    drop_enum('oswl_resource_type')
+    map(drop_enum, ENUMS)
 
     upgrade_enum(
         "cluster_changes",          # table

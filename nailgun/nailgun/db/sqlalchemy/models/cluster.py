@@ -100,6 +100,11 @@ class Cluster(Base):
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
     deployment_tasks = Column(JSON, default=[])
+    network_check_status = Column(
+        Enum(*consts.NETWORK_CHECK_STATUSES, name='network_check_status'),
+        nullable=False,
+        default=consts.NETWORK_CHECK_STATUSES.not_performed
+    )
 
     @property
     def changes(self):

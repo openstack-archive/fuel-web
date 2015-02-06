@@ -660,35 +660,44 @@ class EnvironmentManager(object):
                 "Nothing to update - try creating cluster"
             )
 
+    @property
+    def network_urls(self):
+        provider = self.clusters[0].net_provider
+        return {
+            "nova_network": {
+                "config": "NovaNetworkConfigurationHandler",
+                "verify": "NovaNetworkConfigurationVerifyHandler"
+            },
+            "neutron": {
+                "config": "NeutronNetworkConfigurationHandler",
+                "verify": "NeutronNetworkConfigurationVerifyHandler"
+            }
+        }[provider]
+
+    def get_network_configuration(self):
+        if self.clusters:
+            resp = self.app.get(
+                reverse(
+                    self.network_urls["config"],
+                    kwargs={'cluster_id': self.clusters[0].id}
+                ),
+                headers=self.default_headers
+            )
+            self.tester.assertEqual(200, resp.status_code)
+            return resp.json_body
+        else:
+            raise NotImplementedError("Try creating cluster first")
+
     def launch_verify_networks(self, data=None):
         if self.clusters:
-            net_urls = {
-                "nova_network": {
-                    "config": "NovaNetworkConfigurationHandler",
-                    "verify": "NovaNetworkConfigurationVerifyHandler"
-                },
-                "neutron": {
-                    "config": "NeutronNetworkConfigurationHandler",
-                    "verify": "NeutronNetworkConfigurationVerifyHandler"
-                }
-            }
-            provider = self.clusters[0].net_provider
             if data:
                 nets = jsonutils.dumps(data)
             else:
-                resp = self.app.get(
-                    reverse(
-                        net_urls[provider]["config"],
-                        kwargs={'cluster_id': self.clusters[0].id}
-                    ),
-                    headers=self.default_headers
-                )
-                self.tester.assertEqual(200, resp.status_code)
-                nets = resp.body
+                nets = jsonutils.dumps(self.get_network_configuration())
 
             resp = self.app.put(
                 reverse(
-                    net_urls[provider]["verify"],
+                    self.network_urls["verify"],
                     kwargs={'cluster_id': self.clusters[0].id}),
                 nets,
                 headers=self.default_headers
@@ -1031,61 +1040,3 @@ def reverse(name, kwargs=None):
         )
     url = re.sub(r"\??\$", "", url)
     return "/api" + url
-
-
-# this method is for development and troubleshooting purposes
-def datadiff(data1, data2, branch, p=True):
-    def iterator(data1, data2):
-        if isinstance(data1, (list,)) and isinstance(data2, (list,)):
-            return xrange(max(len(data1), len(data2)))
-        elif isinstance(data1, (dict,)) and isinstance(data2, (dict,)):
-            return (set(data1.keys()) | set(data2.keys()))
-        else:
-            raise TypeError
-
-    diff = []
-    if data1 != data2:
-        try:
-            it = iterator(data1, data2)
-        except Exception:
-            return [(branch, data1, data2)]
-
-        for k in it:
-            newbranch = branch[:]
-            newbranch.append(k)
-
-            if p:
-                print("Comparing branch: %s" % newbranch)
-            try:
-                try:
-                    v1 = data1[k]
-                except (KeyError, IndexError):
-                    if p:
-                        print("data1 seems does not have key = %s" % k)
-                    diff.append((newbranch, None, data2[k]))
-                    continue
-                try:
-                    v2 = data2[k]
-                except (KeyError, IndexError):
-                    if p:
-                        print("data2 seems does not have key = %s" % k)
-                    diff.append((newbranch, data1[k], None))
-                    continue
-
-            except Exception:
-                if p:
-                    print("data1 and data2 cannot be compared on "
-                          "branch: %s" % newbranch)
-                return diff.append((newbranch, data1, data2))
-
-            else:
-                if v1 != v2:
-                    if p:
-                        print("data1 and data2 do not match "
-                              "each other on branch: %s" % newbranch)
-                        # print("data1 = %s" % data1)
-                        print("v1 = %s" % v1)
-                        # print("data2 = %s" % data2)
-                        print("v2 = %s" % v2)
-                    diff.extend(datadiff(v1, v2, newbranch))
-    return diff

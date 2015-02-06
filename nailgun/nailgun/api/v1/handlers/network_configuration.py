@@ -18,6 +18,8 @@
 Handlers dealing with network configurations
 """
 
+import copy
+import dictdiffer
 import six
 import traceback
 import web
@@ -45,9 +47,74 @@ from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 
+def parse_network_configuration(network_configuration):
+    """Normalize network configuration dict for diff comparison.
+
+    :param network_configuration:
+    :return:
+    """
+    ret = copy.deepcopy(network_configuration)
+
+    BAD_KEYS = ['management_vip', 'public_vip']
+    for key in BAD_KEYS:
+        if key in ret:
+            del ret[key]
+
+    if 'networks' in ret:
+        ret['networks'].sort(key=lambda n: n['id'])
+
+    return ret
+
+
+def serialize_network_provider(cluster):
+    """Just uses the handlers below to find appropriate serializer for network.
+
+    :param cluster:
+    :return: Serialized cluster network.
+    """
+    provider = cluster.net_provider
+
+    klass = None
+    for c in ProviderHandler.__subclasses__():
+        if c.provider == provider:
+            klass = c
+            break
+
+    if klass is None:
+        return
+
+    ret = klass.serializer.serialize_for_cluster(cluster)
+    NetworkConfigurationVerifyHandler.drop_verify_networks(ret)
+
+    return parse_network_configuration(ret)
+
+
+def check_data_corresponds_to_cluster(cluster, data):
+    """Check if sent network data corresponds to saved cluster state.
+
+    :param cluster:
+    :param data:
+    :return:
+    """
+    cluster_data = serialize_network_provider(cluster)
+
+    ret = dictdiffer.diff(
+        cluster_data,
+        parse_network_configuration(data)
+    )
+
+    has_errors = next(ret, False)
+
+    return not has_errors
+
+
 class ProviderHandler(BaseHandler):
     """Base class for network configuration handlers
     """
+
+    @classmethod
+    def parse_data(cls, data):
+        pass
 
     def check_net_provider(self, cluster):
         if cluster.net_provider != self.provider:
@@ -62,36 +129,15 @@ class ProviderHandler(BaseHandler):
             raise self.http(403, "Network configuration can't be changed "
                                  "after, or in deploy.")
 
-
-class NovaNetworkConfigurationHandler(ProviderHandler):
-    """Network configuration handler
-    """
-
-    validator = NovaNetworkConfigurationValidator
-    serializer = NovaNetworkConfigurationSerializer
-    provider = "nova_network"
-
-    @content
-    def GET(self, cluster_id):
-        """:returns: JSONized network configuration for cluster.
-        :http: * 200 (OK)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_net_provider(cluster)
-        return self.serializer.serialize_for_cluster(cluster)
-
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 202 (network checking task created)
+               * 400 (task error)
                * 404 (cluster not found in db)
         """
         data = jsonutils.loads(web.data())
-        if data.get("networks"):
-            data["networks"] = [
-                n for n in data["networks"] if n.get("name") != "fuelweb_admin"
-            ]
+        self.__class__.parse_data(data)
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
@@ -116,6 +162,10 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                 objects.Cluster.get_network_manager(
                     cluster
                 ).update(cluster, data)
+                objects.Cluster.update(cluster, {
+                    'network_check_status':
+                        consts.NETWORK_CHECK_STATUSES.not_performed
+                })
             except Exception as exc:
                 # set task status to error and update its corresponding data
                 data = {'status': consts.TASK_STATUSES.error,
@@ -124,8 +174,36 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                 objects.Task.update(task, data)
 
                 logger.error(traceback.format_exc())
+        else:
+            raise self.http(400, objects.Task.to_json(task))
 
         raise self.http(202, objects.Task.to_json(task))
+
+
+class NovaNetworkConfigurationHandler(ProviderHandler):
+    """Network configuration handler
+    """
+
+    validator = NovaNetworkConfigurationValidator
+    serializer = NovaNetworkConfigurationSerializer
+    provider = "nova_network"
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: JSONized network configuration for cluster.
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self.check_net_provider(cluster)
+        return self.serializer.serialize_for_cluster(cluster)
+
+    @classmethod
+    def parse_data(cls, data):
+        if data.get("networks"):
+            data["networks"] = [
+                n for n in data["networks"] if n.get("name") != "fuelweb_admin"
+            ]
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -140,56 +218,23 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
     def GET(self, cluster_id):
         """:returns: JSONized network configuration for cluster.
         :http: * 200 (OK)
+               * 400 (task error)
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
-    @content
-    def PUT(self, cluster_id):
-        data = jsonutils.loads(web.data())
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_net_provider(cluster)
-
-        self.check_if_network_configuration_locked(cluster)
-
-        task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
-        task = task_manager.execute(data)
-
-        if task.status != consts.TASK_STATUSES.error:
-            try:
-                if 'networks' in data:
-                    self.validator.validate_networks_update(
-                        jsonutils.dumps(data)
-                    )
-
-                if 'networking_parameters' in data:
-                    self.validator.validate_neutron_params(
-                        jsonutils.dumps(data),
-                        cluster_id=cluster_id
-                    )
-
-                objects.Cluster.get_network_manager(
-                    cluster
-                ).update(cluster, data)
-            except Exception as exc:
-                # set task status to error and update its corresponding data
-                data = {'status': 'error',
-                        'progress': 100,
-                        'message': six.text_type(exc)}
-                objects.Task.update(task, data)
-                logger.error(traceback.format_exc())
-
-        if task.status == consts.TASK_STATUSES.error:
-            raise self.http(400, objects.Task.to_json(task))
-
-        raise self.http(200, objects.Task.to_json(task))
-
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):
     """Network configuration verify handler base
     """
+
+    @classmethod
+    def drop_verify_networks(cls, data):
+        data["networks"] = [
+            n for n in data["networks"] if n.get("name") != "fuelweb_admin"
+        ]
 
     @content
     def PUT(self, cluster_id):
@@ -207,9 +252,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
     def launch_verify(self, cluster):
         data = self.validator.validate_networks_update(web.data())
 
-        data["networks"] = [
-            n for n in data["networks"] if n.get("name") != "fuelweb_admin"
-        ]
+        NetworkConfigurationVerifyHandler.drop_verify_networks(data)
 
         vlan_ids = [{
                     'name': n['name'],

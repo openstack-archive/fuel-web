@@ -604,28 +604,19 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         },
         deleteNodes: function() {
             this.setState({actionInProgress: true});
-            this.props.nodes.each(function(node) {
-                var data = !node.get('pending_addition') ? {pending_deletion: true} : {
-                        cluster_id: null,
-                        pending_addition: false,
-                        pending_roles: []
-                    };
-                node.set(data, {silent: true});
-            }, this);
-            this.props.nodes.toJSON = function() {
-                return this.map(function(node) {
-                    return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
-                });
-            };
-            this.props.nodes.sync('update', this.props.nodes)
+            var nodes = new models.Nodes(this.props.nodes.map(function(node) {
+                if (node.get('pending_addition')) return {id: node.id, cluster_id: null, pending_addition: false, pending_roles: []};
+                return {id: node.id, pending_deletion: true};
+            }));
+            Backbone.sync('update', nodes)
                 .then(_.bind(function() {
-                    return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
+                    return this.props.cluster.fetchRelated('nodes');
                 }, this))
-                .always(this.close)
-                .done(function() {
+                .done(_.bind(function() {
                     app.rootComponent.refreshNavbar();
                     app.page.removeFinishedNetworkTasks();
-                })
+                    this.close();
+                }, this))
                 .fail(_.bind(function() {
                     this.showError(i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
                 }, this));

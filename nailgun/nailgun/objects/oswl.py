@@ -57,3 +57,18 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
             .filter(models.OpenStackWorkloadStats.created_date <= last_date)
 
         return instance
+
+    @classmethod
+    def get_last_by_resource_type(cls, resource_type):
+        """Get records for given resource_type which have most recent
+        created_date (today or yesterday). Records (for some clusters)
+        which were updated earlier will not be selected.
+        """
+        instances = db().query(models.OpenStackWorkloadStats) \
+            .order_by(models.OpenStackWorkloadStats.created_date.desc()) \
+            .filter_by(resource_type=resource_type)
+        if instances.count():
+            date = instances.first().created_date
+            return instances.filter(
+                models.OpenStackWorkloadStats.created_date == date)
+        return instances

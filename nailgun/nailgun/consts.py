@@ -238,7 +238,8 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'upload_file',
     'group',
     'stage',
-    'void'
+    'void',
+    'reboot'
 )
 
 INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,

@@ -103,3 +103,11 @@ def make_generic_task(uids, task):
         'fail_on_error': task.get('fail_on_error', True),
         'parameters': task['parameters']
     }
+
+
+def make_reboot_task(uids, task):
+    return {
+        'type': 'reboot',
+        'uids': uids,
+        'parameters': {
+            'timeout': task['parameters']['timeout']}}

@@ -34,7 +34,7 @@ fi
 cloud-init-per instance set_gateway echo GATEWAY="$DEFAULT_GW" | tee -a /etc/sysconfig/network
 
 #Add static udev rules
-cloud-init-per instance udev_persistent_net2 echo {{ common.udevrules }} | tr ' ' '\n' | grep udevrules | tr '[:upper:]' '[:lower:]' | sed -e 's/udevrules=//g' -e 's/,/\n/g' | sed -e "s/^/SUBSYSTEM==\"net\",\ ACTION==\"add\",\ DRIVERS==\"?*\",\ ATTR{address}==\"/g" -e "s/_/\",\ ATTR{type}==\"1\",\ KERNEL==\"eth*\",\ NAME=\"/g" -e "s/$/\"/g" | tee /etc/udev/rules.d/70-persistent-net.rules
+cloud-init-per instance udev_persistent_net2 echo {{ common.udevrules }} | tr ' ' '\n' | tr '[:upper:]' '[:lower:]' | sed -e 's/udevrules=//g' -e 's/,/\n/g' | sed -e "s/^/SUBSYSTEM==\"net\",\ ACTION==\"add\",\ DRIVERS==\"?*\",\ ATTR{address}==\"/g" -e "s/_/\",\ ATTR{type}==\"1\",\ KERNEL==\"eth*\",\ NAME=\"/g" -e "s/$/\"/g" | tee /etc/udev/rules.d/70-persistent-net.rules
 
 cloud-init-per instance udev_persistent_net3 udevadm control --reload-rules
 cloud-init-per instance udev_persistent_net4 udevadm trigger --attr-match=subsystem=net

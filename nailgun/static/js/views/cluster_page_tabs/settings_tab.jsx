@@ -149,14 +149,11 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 this.setState({loading: false});
             }, this));
         },
-        componentWillUpdate: function() {
-            this.settings.isValid({models: this.configModels});
-        },
         componentWillUnmount: function() {
             this.loadInitialSettings();
         },
         hasChanges: function() {
-            return this.state.loading ? false : this.settings.hasChanges(this.initialAttributes, this.configModels);
+            return this.state.loading ? false : this.settings.hasChanges(this.state.initialAttributes, this.configModels);
         },
         applyChanges: function() {
             var deferred = this.settings.save(null, {patch: true, wait: true, models: this.configModels});
@@ -201,13 +198,16 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             this.setState({key: Date.now()});
         },
         loadInitialSettings: function() {
-            this.settings.set(_.cloneDeep(this.initialAttributes));
+            this.settings.set(_.cloneDeep(this.state.initialAttributes));
         },
         updateInitialAttributes: function() {
-            this.initialAttributes = _.cloneDeep(this.settings.attributes);
+            this.setState({initialAttributes: _.cloneDeep(this.settings.attributes)});
         },
         onChange: function(groupName, settingName, value) {
             this.settings.set(this.settings.makePath(groupName, settingName, settingName == 'metadata' ? 'enabled' : 'value'), value);
+            // can't pass {validate: true} option to set method
+            // cause this form of validation isn't supported in Backbone DeepModel
+            this.settings.isValid({models: this.configModels});
         },
         render: function() {
             var cluster = this.props.cluster,

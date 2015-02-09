@@ -529,21 +529,25 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,
                 isLocked = this.isLocked(),
-                hasChanges = this.hasChanges();
+                hasChanges = this.hasChanges(),
+                isVerificationDisabled = error || isLocked,
+                isCancelChangesDisabled = isLocked || !hasChanges,
+                isSaveChangesDisabled = error || isLocked || !hasChanges ||
+                    !!this.props.cluster.task({group: 'network', status: 'error'});
             return (
                 <div className='row'>
                     <div className='page-control-box'>
                         <div className='page-control-button-placeholder'>
                             <button key='verify_networks' className='btn verify-networks-btn' onClick={this.verifyNetworks}
-                                disabled={error || isLocked}>
+                                disabled={isVerificationDisabled}>
                                     {i18n('cluster_page.network_tab.verify_networks_button')}
                             </button>
                             <button key='revert_changes' className='btn btn-revert-changes' onClick={this.revertChanges}
-                                disabled={isLocked || !hasChanges}>
+                                disabled={isCancelChangesDisabled}>
                                     {i18n('common.cancel_changes_button')}
                             </button>
                             <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
-                                disabled={error || isLocked || !hasChanges}>
+                                disabled={isSaveChangesDisabled}>
                                     {i18n('common.save_settings_button')}
                             </button>
                         </div>

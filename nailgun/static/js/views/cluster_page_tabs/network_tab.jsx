@@ -552,8 +552,16 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             );
         },
         getVerificationErrors: function() {
-            var task = this.props.cluster.task({group: 'network', status: 'error'}),
-                fieldsWithVerificationErrors = [];
+            var task;
+            if (!this.hasChanges()) {
+                // if no changes only verification error should be shown
+                task = this.props.cluster.task({name: 'verify_networks'});
+            } else {
+                // if has changes any error should be shown
+                task = this.props.cluster.task({group: 'network', status: 'error'});
+            }
+            var fieldsWithVerificationErrors = [];
+
             // @TODO: soon response format will be changed anf this part should be rewritten
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(verificationError) {
@@ -637,7 +645,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <div className='verification-control'>
                         <NetworkVerificationResult
                             key='network_verification'
-                            task={cluster.task({group: 'network'})}
+                            task={!this.hasChanges() ? cluster.task({name: 'verify_networks'}) : cluster.task({group: 'network'})}
                             networks={this.props.networkConfiguration.get('networks')}
                         />
                     </div>

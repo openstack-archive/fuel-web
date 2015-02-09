@@ -172,12 +172,22 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 })),
                 limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
                     return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
-                }));
+                })),
+                networksVerificationResult = {},
+                networkVerificationTask = cluster.task({name: 'verify_networks'});
+
+            if (_.isEmpty(networkVerificationTask)) {
+                networksVerificationResult = {warning: i18n('common.verification_not_performed')};
+            } else if (networkVerificationTask.get('status') == 'error') {
+                networksVerificationResult = {error: i18n('common.verification_error')};
+            }
+
             return {
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
                 isInvalid: _.any(limitValidations, {valid: false}) || !settings.isValid({models: configModels}),
-                settingsValidationErrors: settings.validationError
+                settingsValidationErrors: settings.validationError,
+                networksVerificationResult: networksVerificationResult
             };
         },
         deployCluster: function() {
@@ -244,8 +254,20 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                                 return (<div key={'limit-warning-' + name} className='alert alert-warning'>{recommendation.message}</div>);
                             }
                         }, this))}
+                        {this.showNetworkVerificationMessage(this.state.networksVerificationResult)}
                     </div>
                 </div>
+            );
+        },
+        showNetworkVerificationMessage: function(verificationResult) {
+            if (_.isEmpty(verificationResult)) return null;
+            var classes = {
+                alert: true,
+                'alert-error': !!verificationResult.error,
+                'alert-warning': !!verificationResult.warning
+            };
+            return (
+                <div className={cx(classes)}>{_.values(verificationResult)[0]}</div>
             );
         },
         renderFooter: function() {

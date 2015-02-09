@@ -42,7 +42,9 @@
                     "min": "At least __limitValue__ __roleName__ nodes are required (__count__ selected currently).",
                     "max": "At most __limitValue__ __roleName__ nodes are allowed (__count__ selected currently).",
                     "recommended": "It is recommended to have at least __limitValue__ of __roleName__ nodes (__count__ selected currently)."
-                }
+                },
+                "verification_not_performed": "It is recommended to verify your networks settings before deploy",
+                "verification_error": "There was an error for verification of your networks settings. It is recommeded to fix this before deploy"
             },
             "node_details": {
                 "cpu": "CPU",

@@ -440,9 +440,13 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         fetchData: function() {
             return this.props.cluster.task({group: 'network', status: 'running'}).fetch();
         },
+        componentDidiMount: function() {
+            this.props.networkConfiguration.isValid();
+        },
         getInitialState: function() {
             return {
-                actionInProgress: false
+                actionInProgress: false,
+                isVerificationPerformed: false
             };
         },
         isLocked: function() {

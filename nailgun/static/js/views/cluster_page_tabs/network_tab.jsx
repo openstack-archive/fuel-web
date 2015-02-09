@@ -442,7 +442,8 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         },
         getInitialState: function() {
             return {
-                actionInProgress: false
+                actionInProgress: false,
+                isVerificationPerformed: false
             };
         },
         isLocked: function() {
@@ -476,6 +477,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             app.page.removeFinishedNetworkTasks();
         },
         verifyNetworks: function() {
+            this.setState({isVerificationPerformed: true});
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
             app.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
@@ -552,8 +554,16 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             );
         },
         getVerificationErrors: function() {
-            var task = this.props.cluster.task({group: 'network', status: 'error'}),
-                fieldsWithVerificationErrors = [];
+            var task;
+            if (!this.hasChanges() && !this.state.isVerificationPerformed) {
+                // if no changes only verification error should be shown
+                task = this.props.cluster.task({name: 'verify_networks'});
+            } else {
+                // if has changes any error should be shown
+                task = this.props.cluster.task({group: 'network', status: 'error'});
+            }
+            var fieldsWithVerificationErrors = [];
+
             // @TODO: soon response format will be changed anf this part should be rewritten
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(verificationError) {
@@ -601,7 +611,17 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         checked: manager == 'VlanManager',
                         disabled: isLocked
                     }
-                ];
+                ],
+                verificationTask;
+
+            if (!this.hasChanges() && !this.state.isVerificationPerformed) {
+                verificationTask = cluster.task({name: 'verify_networks'});
+                if (cluster.get('network_check_status') == 'not_performed') {
+                    verificationTask = null;
+                }
+            } else {
+                verificationTask = cluster.task({group: 'network'});
+            }
 
             return (
                 <div id='network-form'>
@@ -637,7 +657,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <div className='verification-control'>
                         <NetworkVerificationResult
                             key='network_verification'
-                            task={cluster.task({group: 'network'})}
+                            task={verificationTask}
                             networks={this.props.networkConfiguration.get('networks')}
                         />
                     </div>

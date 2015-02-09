@@ -535,7 +535,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <div className='page-control-box'>
                         <div className='page-control-button-placeholder'>
                             <button key='verify_networks' className='btn verify-networks-btn' onClick={this.verifyNetworks}
-                                disabled={error || isLocked}>
+                                disabled={error || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'})}>
                                     {i18n('cluster_page.network_tab.verify_networks_button')}
                             </button>
                             <button key='revert_changes' className='btn btn-revert-changes' onClick={this.revertChanges}

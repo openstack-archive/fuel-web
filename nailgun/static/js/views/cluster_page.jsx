@@ -327,11 +327,14 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
                 utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(function() {
                     this.props.revertChanges();
                     if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                    this.showDialog(dialogs.DeployChangesDialog);
+                    this.showDeployChangesDialog();
                 }, this)});
             } else {
-                this.showDialog(dialogs.DeployChangesDialog);
+                this.showDeployChangesDialog();
             }
+        },
+        showDeployChangesDialog: function() {
+            this.props.cluster.fetch().done(function() {this.showDialog(dialogs.DeployChangesDialog)}.bind(this));
         },
         render: function() {
             var cluster = this.props.cluster,

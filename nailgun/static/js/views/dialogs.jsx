@@ -22,9 +22,10 @@ define(
     'react',
     'utils',
     'models',
-    'jsx!views/controls'
+    'jsx!views/controls',
+    'jsx!component_mixins'
 ],
-function($, _, i18n, Backbone, React, utils, models, controls) {
+function($, _, i18n, Backbone, React, utils, models, controls, componentMixins) {
     'use strict';
 
     var dialogs = {},
@@ -147,7 +148,16 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
     });
 
     dialogs.DeployChangesDialog = React.createClass({
-        mixins: [dialogMixin],
+        mixins: [
+            dialogMixin,
+            // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {
+                    return props.cluster.get('tasks');
+                },
+                renderOn: 'add remove change:status'
+            })
+        ],
         getDefaultProps: function() {return {title: i18n('dialog.display_changes.title')};},
         getConfigModels: function() {
             var cluster = this.props.cluster,
@@ -173,6 +183,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
                     return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
                 }));
+
             return {
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
@@ -200,12 +211,23 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 nodes = cluster.get('nodes'),
                 roleModels = cluster.get('release').get('role_models'),
                 isNew = cluster.get('status') == 'new',
-                needsRedeployment = cluster.needsRedeployment();
-            var warningClasses = {
-                'deploy-task-notice': true,
-                'text-error': needsRedeployment || this.state.isInvalid,
-                'text-warning': isNew
-            };
+                needsRedeployment = cluster.needsRedeployment(),
+                networkVerificationTask = cluster.task({group: 'network'}),
+                networksVerificationResult,
+                warningClasses = {
+                    'deploy-task-notice': true,
+                    'text-error': needsRedeployment || this.state.isInvalid,
+                    'text-warning': isNew
+                };
+
+            if (_.isUndefined(networkVerificationTask)) {
+                networksVerificationResult = {warning: i18n(ns + 'verification_not_performed')};
+            } else if (cluster.get('network_check_status') == 'failed') {
+                networksVerificationResult = {error: i18n(ns + 'verification_failed') + networkVerificationTask.get('message')};
+            } else if (networkVerificationTask.match({status: 'running'})) {
+                networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
+            }
+
             return (
                 <div className='display-changes-dialog'>
                     {(isNew || needsRedeployment || this.state.isInvalid) &&
@@ -244,7 +266,29 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                                 return (<div key={'limit-warning-' + name} className='alert alert-warning'>{recommendation.message}</div>);
                             }
                         }, this))}
+                        {networksVerificationResult &&
+                            this.showNetworkVerificationMessage(networksVerificationResult)
+                        }
                     </div>
+                </div>
+            );
+        },
+        showNetworkVerificationMessage: function(verificationResult) {
+            var verificationWarning = verificationResult.warning,
+                verificationError = verificationResult.error;
+            if (_.isEmpty(verificationResult)) return null;
+            var classes = {
+                alert: true,
+                'alert-error': !!verificationError,
+                'alert-warning': !!verificationWarning
+            };
+            return (
+                <div className={cx(classes)}>
+                    {verificationWarning || verificationError}
+                    {' ' + i18n('dialog.display_changes.get_more_info') + ' '}
+                    <a onClick={this.close} href={'#cluster/' + this.props.cluster.id + '/network'}>
+                        {i18n('common.here_link')}
+                    </a>
                 </div>
             );
         },

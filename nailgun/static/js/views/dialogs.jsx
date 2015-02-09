@@ -172,13 +172,37 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 })),
                 limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
                     return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
-                }));
+                })),
+                networksVerificationResult = false,
+                networkVerificationTask = cluster.task({group: 'network'});
+
+            switch (cluster.get('network_check_status')) {
+                case 'not_performed':
+                    networksVerificationResult = this.getVerificationWarning();
+                    break;
+                case 'failed':
+                    if (_.isUndefined(networkVerificationTask)) {
+                        networksVerificationResult = this.getVerificationWarning();
+                    } else {
+                        networksVerificationResult = {error: i18n('dialog.display_changes.verification_failed') + networkVerificationTask.get('message')};
+                    }
+                    break;
+                case 'passed':
+                    if (_.isUndefined(networkVerificationTask)) {
+                        networksVerificationResult = this.getVerificationWarning();
+                    }
+            }
+
             return {
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
                 isInvalid: _.any(limitValidations, {valid: false}) || !settings.isValid({models: configModels}),
-                settingsValidationErrors: settings.validationError
+                settingsValidationErrors: settings.validationError,
+                networksVerificationResult: networksVerificationResult
             };
+        },
+        getVerificationWarning: function() {
+            return {warning: i18n('dialog.display_changes.verification_not_performed')};
         },
         deployCluster: function() {
             this.setState({actionInProgress: true});
@@ -244,7 +268,28 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                                 return (<div key={'limit-warning-' + name} className='alert alert-warning'>{recommendation.message}</div>);
                             }
                         }, this))}
+                        {this.showNetworkVerificationMessage()}
                     </div>
+                </div>
+            );
+        },
+        showNetworkVerificationMessage: function() {
+            var verificationResult = this.state.networksVerificationResult,
+                verificationWarning = verificationResult.warning,
+                verificationError = verificationResult.error;
+            if (_.isEmpty(verificationResult)) return null;
+            var classes = {
+                alert: true,
+                'alert-error': !!verificationError,
+                'alert-warning': !!verificationWarning
+            };
+            return (
+                <div className={cx(classes)}>
+                    {verificationWarning || verificationError}
+                    {' ' + i18n('dialog.display_changes.get_more_info') + ' '}
+                    <a onClick={this.close} href={'#cluster/' + this.props.cluster.id + '/network'}>
+                        {i18n('common.here_link')}
+                    </a>
                 </div>
             );
         },

@@ -9,7 +9,7 @@
     "grunt": "~0.4.2",
     "jslint": "~0.2.5",
     "requirejs": "~2.1.9",
-    "uglifyjs": "~2.3.6",
+    "uglify-js": "~2.4.16",
     "less": "~1.5.1",
     "grunt-jslint": "~1.1.1",
     "grunt-contrib-requirejs": "~0.4.1",

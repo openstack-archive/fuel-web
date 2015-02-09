@@ -32,7 +32,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
 
     NodeListScreen = React.createClass({
         mixins: [
-            componentMixins.pollingMixin(20),
+            componentMixins.pollingMixin(20, true),
             componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin('nodes', 'add remove change'),
             componentMixins.backboneMixin({
@@ -42,7 +42,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
         ],
         getInitialState: function() {
             return {
-                loading: true,
+                loading: this.props.mode == 'add',
                 filter: '',
                 grouping: this.props.mode == 'add' ? 'hardware' : this.props.cluster.get('grouping'),
                 selectedNodeIds: this.props.nodes.reduce(function(result, node) {
@@ -92,9 +92,8 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             if (this.props.mode == 'add') {
                 $.when(this.props.nodes.fetch(), this.props.cluster.get('settings').fetch({cache: true})).always(_.bind(function() {
                     this.setState({loading: false});
+                    this.scheduleDataFetch();
                 }, this));
-            } else {
-                this.setState({loading: false});
             }
         },
         hasChanges: function() {

@@ -172,12 +172,25 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 })),
                 limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
                     return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
-                }));
+                })),
+                networksVerificationResult = false,
+                networkVerificationTask = cluster.task({name: 'verify_networks'});
+
+            switch (cluster.get('network_check_status')) {
+                case 'not_performed':
+                    networksVerificationResult = {warning: i18n('dialog.display_changes.verification_not_performed')};
+                    break;
+                case 'failed':
+                    networksVerificationResult = {error: networkVerificationTask.message};
+                    break;
+            }
+
             return {
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
                 isInvalid: _.any(limitValidations, {valid: false}) || !settings.isValid({models: configModels}),
-                settingsValidationErrors: settings.validationError
+                settingsValidationErrors: settings.validationError,
+                networksVerificationResult: networksVerificationResult
             };
         },
         deployCluster: function() {
@@ -244,7 +257,28 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                                 return (<div key={'limit-warning-' + name} className='alert alert-warning'>{recommendation.message}</div>);
                             }
                         }, this))}
+                        {this.showNetworkVerificationMessage()}
                     </div>
+                </div>
+            );
+        },
+        showNetworkVerificationMessage: function() {
+            var verificationResult = this.state.networksVerificationResult,
+                verificationWarning = verificationResult.warning,
+                verificationError = verificationResult.error;
+            if (_.isEmpty(verificationResult)) return null;
+            var classes = {
+                alert: true,
+                'alert-error': !!verificationError,
+                'alert-warning': !!verificationWarning
+            };
+            return (
+                <div className={cx(classes)}>
+                    {verificationWarning || verificationError + ' '}
+                    {i18n('dialog.display_changes.please_refer') + ' '}
+                    <a onClick={this.close} href={'#cluster/' + this.props.cluster.id + '/network'}>
+                        {i18n('common.here_link')}
+                    </a>
                 </div>
             );
         },

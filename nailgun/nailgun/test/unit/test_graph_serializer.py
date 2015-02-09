@@ -265,6 +265,8 @@ COMPLEX_DEPENDENCIES = """
   type: stage
 - id: deploy
   type: stage
+- id: post_deployment
+  type: stage
 
 - id: pre_a
   stage: pre_deployment
@@ -312,6 +314,10 @@ COMPLEX_DEPENDENCIES = """
   type: puppet
   groups: [group_b]
   stage: deploy
+
+- id: post_a
+  stage: post_deployment
+  type: shell
 """
 
 
@@ -325,25 +331,39 @@ class TestFindGraph(base.BaseTestCase):
 
     def test_end_at_pre_deployment(self):
         """Only pre_deployment tasks, groups and stages."""
-        subgraph = self.graph.find_subgraph("pre_deployment")
+        subgraph = self.graph.find_subgraph(end="pre_deployment")
         self.assertItemsEqual(
             subgraph.nodes(),
             ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy',
-             'pre_deployment', 'group_b', 'group_a', 'group_c'])
+             'pre_deployment', 'group_b', 'group_a', 'group_c',
+             'post_deployment'])
 
     def test_end_at_task_in_pre_deployment(self):
         """Task pre_d doesnt requires pre_c, but requires pre_b."""
-        subgraph = self.graph.find_subgraph("pre_d")
+        subgraph = self.graph.find_subgraph(end="pre_d")
         self.assertItemsEqual(
             subgraph.nodes(),
             ['pre_d', 'pre_b', 'pre_a', 'deploy',
-             'pre_deployment', 'group_b', 'group_a', 'group_c'])
+             'pre_deployment', 'group_b', 'group_a', 'group_c',
+             'post_deployment'])
 
     def test_end_at_deploy(self):
         """All tasks should be included because deploy is last node
         in this graph.
+        All tasks from pre_deployment and deploy stage will be added.
+        post_a not included
         """
-        subgraph = self.graph.find_subgraph("deploy")
+        subgraph = self.graph.find_subgraph(end="deploy")
+
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy', 'post_deployment',
+             'pre_deployment', 'group_c', 'group_b', 'group_a', 'task_a',
+             'task_b', 'task_c', 'task_d'])
+
+    def test_end_at_post_deployment(self):
+        """All tasks will be included."""
+        subgraph = self.graph.find_subgraph(end="post_deployment")
         self.assertItemsEqual(
             subgraph.nodes(),
             [t['id'] for t in self.tasks])
@@ -355,23 +375,79 @@ class TestFindGraph(base.BaseTestCase):
         In current graph only task_a and task_b will be present, because
         there is link between them
         """
-        subgraph = self.graph.find_subgraph("group_c")
+        subgraph = self.graph.find_subgraph(end="group_c")
         self.assertItemsEqual(
             subgraph.nodes(),
             ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy', 'pre_deployment',
-             'group_c', 'group_b', 'group_a', 'task_a', 'task_b'])
+             'group_c', 'group_b', 'group_a', 'task_a', 'task_b',
+             'post_deployment'])
 
     def test_end_at_task_that_has_two_parents(self):
-        """Both parents should be in the graph."""
-        subgraph = self.graph.find_subgraph("task_d")
+        """Both parents should be in the graph.
+        Parents are task_b and task_c, the only absent task is post_a.
+        """
+        subgraph = self.graph.find_subgraph(end="task_d")
         self.assertItemsEqual(
             subgraph.nodes(),
-            [t['id'] for t in self.tasks])
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'post_deployment', 'deploy',
+             'pre_deployment', 'group_c', 'group_b', 'group_a', 'task_a',
+             'task_b', 'task_c', 'task_d'])
 
     def test_end_at_first_task(self):
         """Only that task will be present."""
-        subgraph = self.graph.find_subgraph("task_a")
+        subgraph = self.graph.find_subgraph(end="task_a")
         self.assertItemsEqual(
             subgraph.nodes(),
             ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy',
-             'pre_deployment', 'group_c', 'group_b', 'group_a', 'task_a'])
+             'pre_deployment', 'group_c', 'group_b', 'group_a', 'task_a',
+             'post_deployment'])
+
+    def test_start_at_task_a(self):
+        """Everything except predeployment tasks will be included."""
+        subgraph = self.graph.find_subgraph(start="task_a")
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            ['deploy', 'pre_deployment', 'group_c', 'group_b', 'group_a',
+             'task_a', 'task_b', 'task_c', 'task_d', 'post_deployment',
+             'post_a'])
+
+    def test_start_at_pre_deployment(self):
+        """Everything except pre_deployment tasks."""
+        subgraph = self.graph.find_subgraph(start="pre_deployment")
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            ['deploy', 'pre_deployment', 'group_c', 'group_b', 'group_a',
+             'task_a', 'task_b', 'task_c', 'task_d', 'post_deployment',
+             'post_a'])
+
+    def test_start_at_post_a(self):
+        """Only post_a task."""
+        subgraph = self.graph.find_subgraph(start="post_a")
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            ['deploy', 'pre_deployment', 'group_c', 'group_b', 'group_a',
+             'post_deployment', 'post_a'])
+
+    def test_start_pre_a_end_at_pre_d(self):
+        """pre_c will not be included, because this is not a dependency
+        for pre_d.
+        """
+        subgraph = self.graph.find_subgraph(start="pre_a", end="pre_d")
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            ['pre_d', 'pre_b', 'pre_a', 'deploy', 'post_deployment',
+             'pre_deployment', 'group_c', 'group_b', 'group_a'])
+
+    def test_start_pre_a_end_at_post_a(self):
+        """All tasks will be included."""
+        subgraph = self.graph.find_subgraph(start="pre_a", end="post_a")
+        self.assertItemsEqual(
+            subgraph.nodes(), [t['id'] for t in self.tasks])
+
+    def test_start_task_a_end_at_task_d(self):
+        """All tasks in deploy stage will be included."""
+        subgraph = self.graph.find_subgraph(start="task_a", end="task_d")
+        self.assertItemsEqual(
+            subgraph.nodes(),
+            ['post_deployment', 'deploy', 'pre_deployment', 'group_c',
+             'group_b', 'group_a', 'task_a', 'task_b', 'task_c', 'task_d'])

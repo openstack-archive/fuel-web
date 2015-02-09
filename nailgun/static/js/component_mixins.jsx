@@ -28,7 +28,7 @@ define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], functi
                 }
             };
         },
-        pollingMixin: function(updateInterval) {
+        pollingMixin: function(updateInterval, delayedStart) {
             updateInterval = updateInterval * 1000;
             return {
                 scheduleDataFetch: function() {
@@ -51,7 +51,11 @@ define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], functi
                     delete this.activeTimeout;
                 },
                 componentDidMount: function() {
-                    this.startPolling();
+                    if (delayedStart) {
+                        this.scheduleDataFetch();
+                    } else {
+                        this.startPolling();
+                    }
                 }
             };
         }

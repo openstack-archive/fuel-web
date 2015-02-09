@@ -530,7 +530,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             var error = this.props.networkConfiguration.validationError,
                 isLocked = this.isLocked(),
                 hasChanges = this.hasChanges(),
-                isVerificationDisabled = error || isLocked,
+                isVerificationDisabled = error || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
                 isCancelChangesDisabled = isLocked || !hasChanges,
                 isSaveChangesDisabled = error || isLocked || !hasChanges ||
                     !!this.props.cluster.task({group: 'network', status: 'error'});

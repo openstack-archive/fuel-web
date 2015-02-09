@@ -58,6 +58,14 @@
           # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914 - Prohibit possibility of adding cinder nodes to an environment with Ceph RBD
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder"
+      cinder-vmware:
+        name: "Storage - Cinder for VMware clouds"
+        description: "Cinder-VMware provides scheduling of block storage resources delivered over VMWare vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+        limits:
+          overrides:
+            - condition: "settings:storage.volumes_vmdk.value == true"
+              recommended: 1
+              message: "At least 1 Cinder-VMware node is recomended for clouds with VMware"
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."

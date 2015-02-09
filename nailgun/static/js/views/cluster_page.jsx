@@ -318,10 +318,10 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
             if (this.props.hasChanges) {
                 utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(function() {
                     this.props.revertChanges();
-                    this.showDialog(dialogs.DeployChangesDialog);
+                    $.when(this.props.cluster.fetch()).done(function() {this.showDialog(dialogs.DeployChangesDialog)}.bind(this));
                 }, this)});
             } else {
-                this.showDialog(dialogs.DeployChangesDialog);
+                $.when(this.props.cluster.fetch()).done(function() {this.showDialog(dialogs.DeployChangesDialog)}.bind(this));
             }
         },
         render: function() {

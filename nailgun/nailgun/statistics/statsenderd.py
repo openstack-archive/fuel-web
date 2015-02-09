@@ -101,16 +101,22 @@ class StatsSender(object):
                 records_resp = resp_dict["action_logs"]
                 saved_ids = set()
                 failed_ids = set()
+                skipped_ids = set()
                 for record in records_resp:
                     if record["status"] == \
                             consts.LOG_RECORD_SEND_STATUS.failed:
                         failed_ids.add(record["external_id"])
+                    elif record["status"] == \
+                            consts.LOG_RECORD_SEND_STATUS.skipped:
+                        skipped_ids.add(record["external_id"])
                     else:
                         saved_ids.add(record["external_id"])
                 sent_saved_ids = set(saved_ids) & set(ids)
-                logger.info("Action logs records saved: %s, failed: %s",
+                logger.info("Action logs records saved: %s, failed: %s, "
+                            "skipped: %s",
                             six.text_type(list(sent_saved_ids)),
-                            six.text_type(list(failed_ids)))
+                            six.text_type(list(failed_ids)),
+                            six.text_type(list(skipped_ids)))
                 if sent_saved_ids:
                     db().query(models.ActionLog).filter(
                         models.ActionLog.id.in_(sent_saved_ids)

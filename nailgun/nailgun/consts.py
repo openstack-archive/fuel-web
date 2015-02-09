@@ -210,7 +210,8 @@ LOG_RECORD_SEND_STATUS = Enum(
     'added',
     'existed',
     'failed',
-    'updated'
+    'updated',
+    'skipped'
 )
 
 NOVA_SERVICE_TYPE = Enum(

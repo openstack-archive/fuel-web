@@ -28,103 +28,8 @@ define(
 function($, _, i18n, React, utils, models, Expression, componentMixins, controls) {
     'use strict';
 
-    var dependenciesMixin = {
-        componentWillMount: function() {
-            var cluster = this.props.cluster;
-            this.settings = cluster.get('settings');
-            this.configModels = {
-                cluster: cluster,
-                settings: this.settings,
-                networking_parameters: cluster.get('networkConfiguration').get('networking_parameters'),
-                version: app.version,
-                default: this.settings
-            };
-            this.allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
-        },
-        checkRestrictions: function(action, path) {
-            return this.settings.checkRestrictions(this.configModels, action, path);
-        },
-        processRestrictions: function(path) {
-            var restrictionsCheck = this.checkRestrictions('disable', path),
-                dependentRoles = this.checkDependentRoles(path),
-                dependentSettings = this.checkDependentSettings(path),
-                messages = [];
-            if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
-            if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
-            if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
-            return {
-                result: restrictionsCheck.result || !!dependentRoles.length || !!dependentSettings.length,
-                message: messages.join(' ')
-            };
-        },
-        checkDependentRoles: function(path) {
-            var setting = this.settings.get(path);
-            if (_.contains(['text', 'password', 'hidden'], setting.type)) return false;
-            var roles = this.props.cluster.get('release').get('role_models');
-            return _.compact(_.map(this.allocatedRoles, function(roleName) {
-                var role = roles.findWhere({name: roleName});
-                if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
-                    return _.contains(restriction.condition, 'settings:' + path) && !(new Expression(restriction.condition, this.configModels).evaluate());
-                }, this)) return role.get('label');
-            }, this));
-        },
-        checkDependentSettings: function(path) {
-            var currentSetting = this.settings.get(path);
-            if (_.contains(['text', 'password', 'hidden'], currentSetting.type)) return [];
-            var getDependentRestrictions = _.bind(function(pathToCheck) {
-                return _.pluck(_.filter(this.settings.expandedRestrictions[pathToCheck], function(restriction) {
-                    return restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path);
-                }), 'condition');
-            }, this);
-            // collect dependent settings
-            var dependentSettings = {};
-            _.each(this.settings.attributes, function(group, groupName) {
-                // don't take into account hidden dependent settings
-                if (this.checkRestrictions('hide', groupName + '.metadata').result) return;
-                _.each(group, function(setting, settingName) {
-                    // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
-                    var pathToCheck = this.settings.makePath(groupName, settingName);
-                    if (_.contains(['text', 'password', 'hidden'], setting.type) || pathToCheck == path || this.checkRestrictions('hide', pathToCheck).result) return;
-                    var value = settingName == 'metadata' ? 'enabled' : 'value',
-                        dependentRestrictions;
-                    if (setting[value] == true) {
-                        dependentRestrictions = getDependentRestrictions(pathToCheck);
-                        if (dependentRestrictions.length) {
-                            dependentSettings[setting.label] = _.union(dependentSettings[setting.label], dependentRestrictions);
-                        }
-                    } else {
-                        var activeOption = _.find(setting.values, {data: setting.value});
-                        if (activeOption) {
-                            dependentRestrictions = getDependentRestrictions(this.settings.makePath(pathToCheck, activeOption.data));
-                            if (dependentRestrictions.length) {
-                                dependentSettings[setting.label] = _.union(dependentSettings[setting.label], dependentRestrictions);
-                            }
-                        }
-                    }
-                }, this);
-            }, this);
-            // evaluate dependencies
-            if (!_.isEmpty(dependentSettings)) {
-                var valueAttr = _.isUndefined(currentSetting.value) ? 'enabled' : 'value',
-                    currentValue = currentSetting[valueAttr],
-                    values = currentSetting.values ? _.without(_.pluck(currentSetting.values, 'data'), currentValue) : [!currentValue],
-                    settingsForTests = {settings: new models.Settings(_.cloneDeep(this.settings.attributes))};
-                return _.compact(_.map(dependentSettings, function(conditions, label) {
-                    return _.any(conditions, function(condition) {
-                        return _.all(values, function(value) {
-                            settingsForTests.settings.get(path)[valueAttr] = value;
-                            return (new Expression(condition, settingsForTests).evaluate());
-                        });
-                    }) ? label : null;
-                }));
-            }
-            return [];
-        }
-    };
-
     var SettingsTab = React.createClass({
         mixins: [
-            dependenciesMixin,
             componentMixins.backboneMixin('cluster', 'change:status'),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.get('settings');
@@ -137,14 +42,22 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }})
         ],
         getInitialState: function() {
+            var settings = this.props.cluster.get('settings');
             return {
+                configModels: {
+                    cluster: this.props.cluster,
+                    settings: settings,
+                    networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters'),
+                    version: app.version,
+                    default: settings
+                },
                 loading: true,
                 actionInProgress: false
             };
         },
         componentDidMount: function() {
             var cluster = this.props.cluster;
-            $.when(this.settings.fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
+            $.when(cluster.get('settings').fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
                 this.updateInitialAttributes();
                 this.setState({loading: false});
             }, this));
@@ -153,10 +66,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             this.loadInitialSettings();
         },
         hasChanges: function() {
-            return this.state.loading ? false : this.settings.hasChanges(this.state.initialAttributes, this.configModels);
+            return this.state.loading ? false : this.props.cluster.get('settings').hasChanges(this.state.initialAttributes, this.state.configModels);
         },
         applyChanges: function() {
-            var deferred = this.settings.save(null, {patch: true, wait: true, models: this.configModels});
+            var deferred = this.props.cluster.get('settings').save(null, {patch: true, wait: true, models: this.state.configModels});
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
@@ -175,7 +88,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return deferred;
         },
         loadDefaults: function() {
-            var deferred = this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'});
+            var settings = this.props.cluster.get('settings'),
+                deferred = settings.fetch({url: _.result(settings, 'url') + '/defaults'});
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
@@ -198,24 +112,27 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             this.setState({key: Date.now()});
         },
         loadInitialSettings: function() {
-            this.settings.set(_.cloneDeep(this.state.initialAttributes));
+            this.props.cluster.get('settings').set(_.cloneDeep(this.state.initialAttributes));
         },
         updateInitialAttributes: function() {
-            this.setState({initialAttributes: _.cloneDeep(this.settings.attributes)});
+            this.setState({initialAttributes: _.cloneDeep(this.props.cluster.get('settings').attributes)});
         },
         onChange: function(groupName, settingName, value) {
-            this.settings.set(this.settings.makePath(groupName, settingName, settingName == 'metadata' ? 'enabled' : 'value'), value);
+            var settings = this.props.cluster.get('settings');
+            settings.set(settings.makePath(groupName, settingName, settingName == 'metadata' ? 'enabled' : 'value'), value);
             // can't pass {validate: true} option to set method
             // cause this form of validation isn't supported in Backbone DeepModel
-            this.settings.isValid({models: this.configModels});
+            settings.isValid({models: this.state.configModels});
         },
         render: function() {
             var cluster = this.props.cluster,
-                sortedSettingGroups = _.sortBy(_.keys(this.settings.attributes), function(groupName) {
-                    return this.settings.get(groupName + '.metadata.weight');
-                }, this),
+                settings = cluster.get('settings'),
+                sortedSettingGroups = _.sortBy(_.keys(settings.attributes), function(groupName) {
+                    return settings.get(groupName + '.metadata.weight');
+                }),
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}) || !cluster.isAvailableForSettingsChanges(),
-                hasChanges = this.hasChanges();
+                hasChanges = this.hasChanges(),
+                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
             return (
                 <div key={this.state.key} className={React.addons.classSet({'openstack-settings wrapper': true, 'changes-locked': locked})}>
                     <h3>{i18n('cluster_page.settings_tab.title')}</h3>
@@ -224,18 +141,17 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                         :
                         <div>
                             {_.map(sortedSettingGroups, function(groupName) {
-                                var path = groupName + '.metadata';
-                                if (!this.checkRestrictions('hide', path).result) {
-                                    var processedRestrictions = this.processRestrictions(path);
-                                    return <SettingGroup
-                                        key={groupName}
-                                        cluster={this.props.cluster}
-                                        groupName={groupName}
-                                        onChange={_.bind(this.onChange, this, groupName)}
-                                        disabled={locked || (!!this.settings.get(path).toggleable && processedRestrictions.result)}
-                                        message={processedRestrictions.message}
-                                    />;
-                                }
+                                return <SettingGroup
+                                    key={groupName}
+                                    cluster={this.props.cluster}
+                                    groupName={groupName}
+                                    onChange={_.bind(this.onChange, this, groupName)}
+                                    allocatedRoles={allocatedRoles}
+                                    settings={settings}
+                                    makePath={settings.makePath}
+                                    locked={locked}
+                                    configModels={this.state.configModels}
+                                />;
                             }, this)}
                             <div className='row'>
                                 <div className='page-control-box'>
@@ -246,7 +162,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                         <button key='cancelChanges' className='btn btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
                                             {i18n('common.cancel_changes_button')}
                                         </button>
-                                        <button key='applyChanges' className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || this.settings.validationError}>
+                                        <button key='applyChanges' className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
                                             {i18n('common.save_settings_button')}
                                         </button>
                                     </div>
@@ -260,7 +176,88 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
     });
 
     var SettingGroup = React.createClass({
-        mixins: [dependenciesMixin],
+        checkRestrictions: function(action, path) {
+            return this.props.settings.checkRestrictions(this.props.configModels, action, path);
+        },
+        processRestrictions: function(path) {
+            var restrictionsCheck = this.checkRestrictions('disable', path),
+                dependentRoles = this.checkDependentRoles(path),
+                dependentSettings = this.checkDependentSettings(path),
+                messages = [];
+            if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
+            if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
+            if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
+            return {
+                result: restrictionsCheck.result || !!dependentRoles.length || !!dependentSettings.length,
+                message: messages.join(' ')
+            };
+        },
+        areCalсulationsPossible: function(setting) {
+            return _.contains(['checkbox', 'radio'], setting.type);
+        },
+        checkDependentRoles: function(path) {
+            var setting = this.props.settings.get(path);
+            if (!this.areCalсulationsPossible(setting)) return false;
+            var roles = this.props.cluster.get('release').get('role_models');
+            return _.compact(_.map(this.props.allocatedRoles, function(roleName) {
+                var role = roles.findWhere({name: roleName});
+                if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
+                    return _.contains(restriction.condition, 'settings:' + path) && !(new Expression(restriction.condition, this.props.configModels).evaluate());
+                }, this)) return role.get('label');
+            }, this));
+        },
+        checkDependentSettings: function(path) {
+            var currentSetting = this.props.settings.get(path);
+            if (!this.areCalсulationsPossible(currentSetting)) return [];
+            var getDependentRestrictions = _.bind(function(pathToCheck) {
+                return _.pluck(_.filter(this.props.settings.expandedRestrictions[pathToCheck], function(restriction) {
+                    return restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path);
+                }), 'condition');
+            }, this);
+            // collect dependent settings
+            var dependentSettings = {};
+            _.each(this.props.settings.attributes, function(group, groupName) {
+                // don't take into account hidden dependent settings
+                if (this.checkRestrictions('hide', groupName + '.metadata').result) return;
+                _.each(group, function(setting, settingName) {
+                    // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
+                    var pathToCheck = this.props.makePath(groupName, settingName);
+                    if (!this.areCalсulationsPossible(setting) || pathToCheck == path || this.checkRestrictions('hide', pathToCheck).result) return;
+                    var value = settingName == 'metadata' ? 'enabled' : 'value',
+                        dependentRestrictions;
+                    if (setting[value] == true) {
+                        dependentRestrictions = getDependentRestrictions(pathToCheck);
+                        if (dependentRestrictions.length) {
+                            dependentSettings[setting.label] = _.union(dependentSettings[setting.label], dependentRestrictions);
+                        }
+                    } else {
+                        var activeOption = _.find(setting.values, {data: setting.value});
+                        if (activeOption) {
+                            dependentRestrictions = getDependentRestrictions(this.props.makePath(pathToCheck, activeOption.data));
+                            if (dependentRestrictions.length) {
+                                dependentSettings[setting.label] = _.union(dependentSettings[setting.label], dependentRestrictions);
+                            }
+                        }
+                    }
+                }, this);
+            }, this);
+            // evaluate dependencies
+            if (!_.isEmpty(dependentSettings)) {
+                var valueAttribute = _.isUndefined(currentSetting.value) ? 'enabled' : 'value',
+                    currentValue = currentSetting[valueAttribute],
+                    values = currentSetting.values ? _.without(_.pluck(currentSetting.values, 'data'), currentValue) : [!currentValue],
+                    settingsForTests = {settings: new models.Settings(_.cloneDeep(this.props.settings.attributes))};
+                return _.compact(_.map(dependentSettings, function(conditions, label) {
+                    return _.any(conditions, function(condition) {
+                        return _.all(values, function(value) {
+                            settingsForTests.settings.get(path)[valueAttribute] = value;
+                            return (new Expression(condition, settingsForTests).evaluate());
+                        });
+                    }) ? label : null;
+                }));
+            }
+            return [];
+        },
         composeOptions: function(values) {
             return _.map(values, function(value, index) {
                 return (
@@ -274,12 +271,16 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return this.props.onChange(name, value);
         }, 200, {leading: true}),
         render: function() {
-            var group = this.settings.get(this.props.groupName),
+            var path = this.props.groupName + '.metadata';
+            if (this.checkRestrictions('hide', path).result) return null;
+            var group = this.props.settings.get(this.props.groupName),
                 metadata = group.metadata,
                 sortedSettings = _.chain(_.keys(group))
                     .without('metadata')
                     .sortBy(function(settingName) {return group[settingName].weight;})
-                    .value();
+                    .value(),
+                processedGroupRestrictions = this.processRestrictions(path),
+                isGroupDisabled = this.props.locked || (metadata.toggleable && processedGroupRestrictions.result);
             return (
                 <div className='fieldset-group wrapper'>
                     <legend className='openstack-settings'>
@@ -289,8 +290,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 name='metadata'
                                 defaultChecked={metadata.enabled}
                                 label={metadata.label || this.props.groupName}
-                                disabled={this.props.disabled}
-                                tooltipText={this.props.message}
+                                disabled={isGroupDisabled}
+                                tooltipText={processedGroupRestrictions.message}
                                 onChange={this.props.onChange}
                             />
                             :
@@ -300,18 +301,18 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     <div className='settings-group table-wrapper'>
                         {_.map(sortedSettings, function(settingName) {
                             var setting = group[settingName],
-                                path = this.settings.makePath(this.props.groupName, settingName);
+                                path = this.props.makePath(this.props.groupName, settingName);
                             if (!this.checkRestrictions('hide', path).result) {
-                                var error = this.settings.validationError && this.settings.validationError[path],
-                                    processedRestrictions = this.processRestrictions(path),
-                                    disabled = (metadata.toggleable && !metadata.enabled) || processedRestrictions.result;
+                                var error = this.props.settings.validationError && this.props.settings.validationError[path],
+                                    processedSettingRestrictions = this.processRestrictions(path),
+                                    isSettingDisabled = (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result;
                                 if (setting.values) {
                                     var values = _.chain(_.cloneDeep(setting.values))
                                         .map(function(value) {
-                                            var valuePath = this.settings.makePath(path, value.data),
+                                            var valuePath = this.props.makePath(path, value.data),
                                                 processedValueRestrictions = this.checkRestrictions('disable', valuePath);
                                             if (!this.checkRestrictions('hide', valuePath).result) {
-                                                value.disabled = this.props.disabled || disabled || processedValueRestrictions.result;
+                                                value.disabled = isGroupDisabled || isSettingDisabled || processedValueRestrictions.result;
                                                 value.defaultChecked = value.data == setting.value;
                                                 value.tooltipText = processedValueRestrictions.message;
                                                 return value;
@@ -325,7 +326,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                         label={setting.label}
                                         values={values}
                                         error={error}
-                                        tooltipText={processedRestrictions.message}
+                                        tooltipText={processedSettingRestrictions.message}
                                     />;
                                 }
                                 return <controls.Input
@@ -339,9 +340,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     description={setting.description}
                                     toggleable={setting.type == 'password'}
                                     error={error}
-                                    disabled={this.props.disabled || disabled}
+                                    disabled={isGroupDisabled || isSettingDisabled}
                                     wrapperClassName='tablerow-wrapper'
-                                    tooltipText={processedRestrictions.message}
+                                    tooltipText={processedSettingRestrictions.message}
                                     onChange={this.debouncedOnChange}
                                 />;
                             }

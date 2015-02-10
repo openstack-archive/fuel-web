@@ -243,7 +243,8 @@ class NetworkDeploymentSerializer(object):
         Bridge name may be None, port will not be connected to any bridge then
         It will take global provider if it is omitted here
         Port name can be in form "XX" or "XX.YY", where XX - NIC name,
-        YY - vlan id. E.g. "eth0", "eth0.1021".
+        YY - vlan id. E.g. "eth0", "eth0.1021". This will create corresponding
+        interface if name includes vlan id.
         """
         port = {
             'action': 'add-port',
@@ -273,6 +274,21 @@ class NetworkDeploymentSerializer(object):
         if parameters:
             bond.update(parameters)
         return bond
+
+    @classmethod
+    def add_patch(cls, bridges, provider=None):
+        """Add patch to schema
+        Patch connects two bridges listed in 'bridges'.
+        OVS bridge must go first in 'bridges'.
+        It will take global provider if it is omitted here
+        """
+        patch = {
+            'action': 'add-patch',
+            'bridges': bridges,
+        }
+        if provider:
+            patch['provider'] = provider
+        return patch
 
 
 class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
@@ -1064,7 +1080,169 @@ class NeutronNetworkDeploymentSerializer60(
 class NeutronNetworkDeploymentSerializer61(
     NeutronNetworkDeploymentSerializer60
 ):
-    pass
+
+    @classmethod
+    def subiface_name(cls, iface_name, net_descr):
+        if not net_descr['vlan_id']:
+            return iface_name
+        else:
+            return "{0}.{1}".format(iface_name, net_descr['vlan_id'])
+
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
+                                 prv_base_ep):
+        transformations = []
+
+        iface_types = consts.NETWORK_INTERFACE_TYPES
+        brnames = ['br-fw-admin', 'br-mgmt', 'br-storage']
+        if is_public:
+            brnames.append('br-ex')
+
+        # Add bridges for networks.
+        for brname in brnames:
+            transformations.append(cls.add_bridge(brname))
+
+        if is_public:
+            # br-floating is an OVS bridge and it's always connected with br-ex
+            transformations.append(
+                cls.add_bridge('br-floating', provider='ovs'))
+            transformations.append(cls.add_patch(
+                bridges=['br-floating', 'br-ex'],
+                provider='ovs'))
+
+        # Dance around Neutron segmentation type.
+        if node.cluster.network_config.segmentation_type == 'vlan':
+            transformations.append(
+                cls.add_bridge('br-prv', provider='ovs'))
+            if prv_base_ep:
+                transformations.append(cls.add_patch(
+                    bridges=['br-prv', prv_base_ep],
+                    provider='ovs'))
+            else:
+                transformations.append(cls.add_bridge('br-aux'))
+                transformations.append(cls.add_patch(
+                    bridges=['br-prv', 'br-aux'],
+                    provider='ovs'))
+
+        # Add ports and bonds.
+        bonded_ifaces = [x for x in node.nic_interfaces if x.bond]
+        for iface in node.interfaces:
+            if iface.type == iface_types.ether:
+                if iface in bonded_ifaces:
+                    # Don't create anything for slave NICs.
+                    continue
+                # Add ports for all networks on every unbonded NIC.
+                if iface.name in nets_by_ifaces:
+                    for net in nets_by_ifaces[iface.name]:
+                        transformations.append(cls.add_port(
+                            cls.subiface_name(iface.name, net),
+                            net['br_name']))
+            elif iface.type == iface_types.bond:
+                # Add bonds and connect untagged networks' bridges to them.
+                # There can be no more than one untagged network on each bond.
+                bond_params = {
+                    'bond_properties': nm.get_lnx_bond_properties(iface),
+                    'interface_properties': nm.get_iface_properties(iface)
+                }
+                bond_ports = []
+                if iface.name in nets_by_ifaces:
+                    for net in nets_by_ifaces[iface.name]:
+                        if net['vlan_id']:
+                            bond_ports.append(cls.add_port(
+                                cls.subiface_name(iface.name, net),
+                                net['br_name']))
+                        else:
+                            bond_params['bridge'] = net['br_name']
+                transformations.append(cls.add_bond(iface, bond_params))
+                transformations.extend(bond_ports)
+
+        return transformations
+
+    @classmethod
+    def generate_network_scheme(cls, node):
+
+        # Create a data structure and fill it with static values.
+        attrs = {
+            'version': '1.1',
+            'provider': 'lnx',
+            'interfaces': {},  # It's a list of physical interfaces.
+            'endpoints': {},
+            'roles': {
+                'management': 'br-mgmt',
+                'storage': 'br-storage',
+                'fw-admin': 'br-fw-admin',
+            },
+        }
+
+        is_public = objects.Node.should_have_public(node)
+        if is_public:
+            attrs['endpoints']['br-ex'] = {}
+            attrs['endpoints']['br-floating'] = {'IP': 'none'}
+            attrs['roles']['ex'] = 'br-ex'
+            attrs['roles']['neutron/floating'] = 'br-floating'
+
+        nm = objects.Node.get_network_manager(node)
+
+        # Populate IP and GW information to endpoints.
+        netgroup_mapping = [
+            ('storage', 'br-storage'),
+            ('management', 'br-mgmt'),
+            ('fuelweb_admin', 'br-fw-admin'),
+        ]
+        if is_public:
+            netgroup_mapping.append(('public', 'br-ex'))
+
+        netgroups = {}
+        nets_by_ifaces = defaultdict(list)
+        for ngname, brname in netgroup_mapping:
+            # Here we get a dict with network description for this particular
+            # node with its assigned IPs and device names for each network.
+            netgroup = nm.get_node_network_by_netname(node, ngname)
+            if netgroup.get('ip'):
+                attrs['endpoints'][brname] = {'IP': netgroup['ip']}
+            netgroups[ngname] = netgroup
+            nets_by_ifaces[netgroup['dev']].append({
+                'br_name': brname,
+                'vlan_id': netgroup['vlan']
+            })
+
+        # Add gateway.
+        if is_public:
+            attrs['endpoints']['br-ex']['gateway'] = \
+                netgroups['public']['gateway']
+        else:
+            attrs['endpoints']['br-fw-admin']['gateway'] = \
+                nm.get_default_gateway(node.id)
+
+        # Fill up interfaces.
+        for iface in node.nic_interfaces:
+            attrs['interfaces'][iface.name] = {}
+
+        # Dance around Neutron segmentation type.
+        prv_base_ep = None
+        if node.cluster.network_config.segmentation_type == 'vlan':
+            attrs['endpoints']['br-prv'] = {'IP': 'none'}
+            attrs['roles']['neutron/private'] = 'br-prv'
+
+            netgroup = nm.get_node_network_by_netname(node, 'private')
+            # create br-aux if there is no untagged network (endpoint) on the
+            # same interface.
+            if netgroup['dev'] in nets_by_ifaces:
+                for ep in nets_by_ifaces[netgroup['dev']]:
+                    if not ep['vlan_id']:
+                        prv_base_ep = ep['br_name']
+            if not prv_base_ep:
+                nets_by_ifaces[netgroup['dev']].append({
+                    'br_name': 'br-aux',
+                    'vlan_id': None
+                })
+        elif node.cluster.network_config.segmentation_type == 'gre':
+            attrs['roles']['neutron/mesh'] = 'br-mgmt'
+
+        attrs['transformations'] = cls.generate_transformations(
+            node, nm, nets_by_ifaces, is_public, prv_base_ep)
+
+        return attrs
 
 
 class GraphBasedSerializer(object):

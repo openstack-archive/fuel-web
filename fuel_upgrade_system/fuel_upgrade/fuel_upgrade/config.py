@@ -263,6 +263,9 @@ def config(update_path, admin_password):
     current_fuel_astute_path = '/etc/fuel/astute.yaml'
     astute = read_yaml_config(current_fuel_astute_path)
 
+    # unix pattern that is used to match deployment tasks stored in library
+    deployment_tasks_file_pattern = '*tasks.yaml'
+
     supervisor = {
         'configs_prefix': '/etc/supervisord.d/',
         'current_configs_prefix': '/etc/supervisord.d/current',

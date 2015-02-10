@@ -18,6 +18,7 @@ from copy import deepcopy
 import StringIO
 import subprocess
 import urllib2
+import yaml
 
 import mock
 from mock import patch
@@ -497,6 +498,16 @@ class TestUtils(BaseTestCase):
 
         yaml_mock.dump.assert_called_once_with(data, default_flow_style=False)
 
+    @mock.patch('fuel_upgrade.utils.yaml')
+    def test_read_from_yaml(self, yaml_mock):
+        path = '/tmp/path'
+        data = yaml.dump({'a': 'b'})
+        mock_open = self.mock_open(data)
+        with mock.patch('fuel_upgrade.utils.io.open', mock_open):
+            utils.read_from_yaml(path)
+
+        yaml_mock.load.assert_called_once_with(data)
+
     def test_generate_uuid_string(self):
         random_string = utils.generate_uuid_string()
         self.assertEqual(len(random_string), 36)
@@ -543,6 +554,13 @@ class TestUtils(BaseTestCase):
         for _ in utils.iterfiles('path/to/dir'):
             pass
         walk.assert_called_once_with('path/to/dir', topdown=True)
+
+    @mock.patch('fuel_upgrade.utils.os.walk')
+    def test_iterfiles_filter(self, walk):
+        expected_files = ['/fake/path/1', '/fake/path/2']
+        walk.return_value = [('/fake/path', '', '1'), ('/fake/path', '', '2')]
+        files = list(utils.iterfiles_filter('/fake/path', '*1'))
+        self.assertEqual(files, expected_files[:1])
 
 
 class TestGetBaseRelease(BaseTestCase):

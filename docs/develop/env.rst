@@ -115,7 +115,7 @@ your Fuel ISO build environment on Ubuntu 14.04:
     sudo gem install bundler -v 1.2.1
     sudo gem install builder
     sudo pip install xmlbuilder jinja2
-    sudo npm install -g grunt-cli
+    sudo npm install -g gulp
 
 #. If you haven't already done so, get the source code::
 

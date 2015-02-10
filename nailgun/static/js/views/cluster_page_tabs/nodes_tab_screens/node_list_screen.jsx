@@ -117,8 +117,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             }, this);
         },
         render: function() {
-            var assignedRoles = _.chain(this.props.nodes.pluck('roles')).union(this.props.nodes.pluck('pending_roles')).flatten().uniq().value(),
-                locked = !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
+            var locked = !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
             return (
                 <div>
                     {this.props.mode == 'edit' &&
@@ -151,8 +150,6 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                                 locked={locked}
                                 selectedNodeIds={this.state.selectedNodeIds}
                                 selectNodes={this.selectNodes}
-                                // FIXME: one more role limits hack
-                                roleLimitation={(this.props.cluster.get('mode') == 'multi-node' && _.contains(assignedRoles, 'controller')) || _.contains(assignedRoles, 'zabbix-server')}
                             />
                         </div>
                     }
@@ -334,11 +331,18 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
 
     RolePanel = React.createClass({
         getInitialState: function() {
-            var roles = this.props.cluster.get('release').get('roles'),
+            var settings = this.props.cluster.get('settings'),
+                roles = this.props.cluster.get('release').get('roles'),
                 selectedRoles = this.props.nodes.length ? _.filter(roles, function(role) {
                     return !this.props.nodes.any(function(node) {return !node.hasRole(role);});
                 }, this) : [];
             return {
+                configModels: {
+                    cluster: this.props.cluster,
+                    settings: settings,
+                    version: app.version,
+                    default: settings
+                },
                 selectedRoles: selectedRoles,
                 indeterminateRoles: this.props.nodes.length ? _.filter(_.difference(roles, selectedRoles), function(role) {
                     return this.props.nodes.any(function(node) {return node.hasRole(role);});
@@ -369,34 +373,40 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                 indeterminateRoles: _.without(this.state.indeterminateRoles, role)
             });
         },
+        getNodesForLimitsCheck: function() {
+            var selectedNodes = this.props.nodes.filter(function(node) {
+                    return this.props.selectedNodeIds[node.id];
+                }, this),
+                clusterNodes = this.props.cluster.get('nodes').filter(function(node) {
+                    return !_.contains(this.props.selectedNodeIds, node.id);
+                }, this);
+            return new models.Nodes(_.union(selectedNodes, clusterNodes));
+        },
         assignRoles: function() {
-            var roles = this.props.cluster.get('release').get('roles');
+            var roles = this.props.cluster.get('release').get('role_models'),
+                nodesForLimitsCheck = this.getNodesForLimitsCheck();
             this.props.nodes.each(function(node) {
-                if (this.props.selectedNodeIds[node.id]) _.each(roles, function(role) {
-                    if (!node.hasRole(role, true)) {
+                if (this.props.selectedNodeIds[node.id]) roles.each(function(role) {
+                    var roleName = role.get('name');
+                    if (!node.hasRole(roleName, true)) {
                         var nodeRoles = node.get('pending_roles');
-                        if (_.contains(this.state.selectedRoles, role)) {
-                            if (this.isRoleAvailable(role)) nodeRoles = _.union(nodeRoles, [role]);
-                        } else if (!_.contains(this.state.indeterminateRoles, role)) {
-                            nodeRoles = _.without(nodeRoles, role);
+                        if (_.contains(this.state.selectedRoles, roleName)) {
+                            if (this.checkLimits(role, nodesForLimitsCheck).valid) nodeRoles = _.union(nodeRoles, [roleName]);
+                        } else if (!_.contains(this.state.indeterminateRoles, roleName)) {
+                            nodeRoles = _.without(nodeRoles, roleName);
                         }
                         node.set({pending_roles: nodeRoles}, {assign: true});
                     }
                 }, this);
             }, this);
         },
-        isRoleAvailable: function(role) {
-            // FIXME: the following hack should be described declaratively in yaml
-            if ((role == 'controller' && this.props.cluster.get('mode') == 'multinode') || role == 'zabbix-server') {
-                return _.compact(_.values(this.props.selectedNodeIds)).length <= 1 && !this.props.cluster.get('nodes').any(function(node) {
-                    return !this.props.selectedNodeIds[node.id] && node.hasRole(role) && !node.get('pending_deletion');
-                }, this);
-            }
-            return true;
+        checkLimits: function(role, nodes) {
+            return role.checkLimits(this.state.configModels, false, ['max'], nodes);
         },
-        processRestrictions: function(role, models) {
+        processRestrictions: function(role, models, nodes) {
             var name = role.get('name'),
                 restrictionsCheck = role.checkRestrictions(models, 'disable'),
+                limitsCheck = this.checkLimits(role, nodes),
                 roles = this.props.cluster.get('release').get('role_models'),
                 conflicts = _.chain(this.state.selectedRoles)
                     .union(this.state.indeterminateRoles)
@@ -404,31 +414,24 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                     .flatten()
                     .uniq()
                     .value(),
-                isAvailable = this.isRoleAvailable(name),
                 messages = [];
-            if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
+            if (restrictionsCheck.result && restrictionsCheck.message) messages.push(restrictionsCheck.message);
+            if (!limitsCheck.valid && limitsCheck.message) messages.push(limitsCheck.message);
             if (_.contains(conflicts, name)) messages.push(i18n('cluster_page.nodes_tab.role_conflict'));
-            if (!isAvailable) messages.push(i18n('cluster_page.nodes_tab.' + name + '_restriction'));
             return {
-                result: restrictionsCheck.result || _.contains(conflicts, name) || (!isAvailable && !_.contains(this.state.selectedRoles, name)),
+                result: restrictionsCheck.result || _.contains(conflicts, name) || (!limitsCheck.valid && !_.contains(this.state.selectedRoles, name)),
                 message: messages.join(' ')
             };
         },
         render: function() {
-            var settings = this.props.cluster.get('settings'),
-                configModels = {
-                    cluster: this.props.cluster,
-                    settings: settings,
-                    version: app.version,
-                    default: settings
-                };
+            var nodesForLimitsCheck = this.getNodesForLimitsCheck();
             return (
                 <div className='role-panel'>
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
                     {this.props.cluster.get('release').get('role_models').map(function(role) {
-                        if (!role.checkRestrictions(configModels, 'hide').result) {
+                        if (!role.checkRestrictions(this.state.configModels, 'hide').result) {
                             var name = role.get('name'),
-                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, configModels) : {};
+                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.state.configModels, nodesForLimitsCheck) : {};
                             return (
                                 <controls.Input
                                     key={name}
@@ -467,7 +470,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                     ref='select-all'
                     type='checkbox'
                     checked={this.props.mode == 'edit' || (availableNodesIds.length && !_.any(availableNodesIds, function(id) {return !this.props.selectedNodeIds[id];}, this))}
-                    disabled={this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length || (this.props.roleLimitation && availableNodesIds.length > 1)}
+                    disabled={this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length}
                     label={i18n('common.select_all')}
                     wrapperClassName='span2 select-all'
                     onChange={_.bind(this.props.selectNodes, this.props, availableNodesIds)}

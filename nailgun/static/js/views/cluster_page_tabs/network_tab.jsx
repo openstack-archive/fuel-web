@@ -44,19 +44,22 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     value = convertToStringIfNaN(value);
                 }
             }
-            this.getModel().set(attribute, value);
+            this.getModel(attribute == 'floating_ranges').set(attribute, value);
             app.page.removeFinishedNetworkTasks();
             this.props.networkConfiguration.isValid();
         },
-        getModel: function() {
-            return this.props.network || this.props.networkConfiguration.get('networking_parameters');
+        getModel: function(floating) {
+            var parameters = this.props.networkConfiguration.get('networking_parameters');
+            return floating ? parameters : this.props.network || parameters;
         }
     };
 
     var NetworkInputsMixin = {
         composeProps: function(attribute, isRange, isInteger) {
             var network = this.props.network,
-                ns = 'cluster_page.network_tab.' + (network ? 'network' : 'networking_parameters') + '.',
+                isFloating = (attribute == 'floating_ranges'),
+                ns = 'cluster_page.network_tab.' + (network && !isFloating ?
+                        'network' : 'networking_parameters') + '.',
                 error = this.getError(attribute) || null;
 
             // in case of verification error we need to pass an empty string to highlight the field only
@@ -70,7 +73,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 disabled: this.props.disabled,
                 name: attribute,
                 label: i18n(ns + attribute),
-                value: this.getModel().get(attribute),
+                value: this.getModel(isFloating).get(attribute),
                 network: network,
                 networkConfiguration: this.props.networkConfiguration,
                 wrapperClassName: isRange ? 'network-attribute ' + attribute : false,
@@ -92,7 +95,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             var network = this.props.network,
                 errors;
 
-            if (network) {
+            if (network && !this.props.floating) {
                 errors = validationErrors.networks && validationErrors.networks[network.id];
                 return errors && errors[attribute] || null;
             }
@@ -202,7 +205,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         render: function() {
             var error = this.props.error || null,
                 attributeName = this.props.name,
-                attribute = this.getModel().get(attributeName),
+                attribute = this.getModel(this.props.name == 'floating_ranges').get(attributeName),
                 ranges = !_.isUndefined(this.props.autoIncreaseWith) ?
                     [attribute || '', this.props.autoIncreaseWith ? (attribute + this.props.autoIncreaseWith - 1 || '') : ''] :
                     attribute,
@@ -554,7 +557,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         getVerificationErrors: function() {
             var task = this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
-            // @TODO: soon response format will be changed anf this part should be rewritten
+            // @TODO(morale): soon response format will be changed and this part should be rewritten
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(verificationError) {
                     _.each(verificationError.ids, function(networkId) {
@@ -569,15 +572,21 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         renderNetworks: function() {
             var verificationErrors = this.getVerificationErrors();
             return this.props.networkConfiguration.get('networks').map(function(network) {
+                var props = {
+                    key: network.id,
+                    network: network,
+                    networkConfiguration: this.props.networkConfiguration,
+                    validationErrors: (this.props.networkConfiguration.validationError || {}).networks,
+                    disabled: this.isLocked(),
+                    verificationErrorField: _.pluck(_.where(verificationErrors, {network: network.id}), 'field')
+                };
+                // @FIXME(morale): this hardcode should be rewritten with proper API support
+                if (network.get('name') == 'public') {
+                    props.floating = true;
+                    props.netProvider = this.props.cluster.get('net_provider');
+                }
                 return (
-                    <Network
-                        key={network.id}
-                        network={network}
-                        networkConfiguration={this.props.networkConfiguration}
-                        validationErrors={(this.props.networkConfiguration.validationError || {}).networks}
-                        disabled={this.isLocked()}
-                        verificationErrorField={_.pluck(_.where(verificationErrors, {network: network.id}), 'field')}
-                    />
+                    <Network {...props} />
                 );
             }, this);
         },
@@ -631,7 +640,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             networkConfiguration={this.props.networkConfiguration}
                             validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
                             disabled={this.isLocked()}
-                            netProvider={cluster.get('net_provider')}
+
                         />
                     </div>
                     <div className='verification-control'>
@@ -679,6 +688,13 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         />
                         {networkConfig.use_gateway &&
                             this.renderInput('gateway')
+                        }
+                        {this.props.floating &&
+                            <Range
+                                {...this.composeProps('floating_ranges', true)}
+                                rowsClassName='floating-ranges-rows'
+                                hiddenControls={this.props.netProvider == 'neutron'}
+                            />
                         }
                     </div>
                 </div>
@@ -763,11 +779,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             </div>
                         </div>
                     }
-                    <Range
-                        {...this.composeProps('floating_ranges', true)}
-                        rowsClassName='floating-ranges-rows'
-                        hiddenControls={this.props.netProvider == 'neutron'}
-                    />
+
                     <Range
                         {...this.composeProps('dns_nameservers', true)}
                         extendable={false}

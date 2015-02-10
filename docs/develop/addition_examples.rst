@@ -61,8 +61,8 @@ fuel-web:
 
 UI components::
 
-    nailgun/static/i18n/translation.json
-    nailgun/static/js/views/cluster_page_tabs/nodes_tab_screens/node_list_screen.js
+    nailgun/static/translations/core.json
+    nailgun/static/js/views/cluster_page_tabs/nodes_tab_screens/node_list_screen.jsx
 
 Testing additions::
 

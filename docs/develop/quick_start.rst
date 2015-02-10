@@ -17,8 +17,8 @@ option to the “new environment wizard” in Fuel (example here:
 enhancement required modification to three files in the fuel-web
 repository::
 
-    fuel-web/nailgun/static/i18n/translation.json
-    fuel-web/nailgun/static/js/views/dialogs.js
+    fuel-web/nailgun/static/translations/core.json
+    fuel-web/nailgun/static/js/views/dialogs.jsx
     fuel-web/nailgun/static/templates/dialogs/create_cluster_wizard/storage.html
 
 In order to add, test and commit the code necessary to

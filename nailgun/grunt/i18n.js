@@ -10,7 +10,7 @@ module.exports = function(grunt) {
 
         function startValidationTask(param) {
             var baseLocale = 'en-US';
-            var translations = grunt.file.readJSON('static/i18n/translation.json');
+            var translations = grunt.file.readJSON('static/translations/core.json');
             var existingLocales = _.keys(translations);
             var locales = param ? param.split(',') : existingLocales;
 

@@ -80,7 +80,8 @@ TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
 CASPERJS="casperjs"
-LINTUI="grunt lint-ui"
+GULP="./node_modules/gulp/bin/gulp.js"
+LINTUI="${GULP} lint"
 
 # test options
 testrargs=
@@ -201,7 +202,7 @@ function run_tests {
   fi
 
   if [ $lint_ui_checks -eq 1 ]; then
-    echo "Starting JSHint tests..."
+    echo "Starting lint checks..."
     run_lint_ui || errors+=" lint_ui_checks"
   fi
 
@@ -292,7 +293,7 @@ function run_webui_tests {
 
   # test compression
   echo -n "Compressing UI... "
-  local output=$(grunt build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
+  local output=$(${GULP} build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
   if [ $? -ne 0 ]; then
     echo "$output"
     popd >> /dev/null

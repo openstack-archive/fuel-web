@@ -14,7 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from fnmatch import fnmatch
 import glob
+import io
 import json
 import logging
 import os
@@ -625,6 +627,18 @@ def save_as_yaml(path, data):
         f.write(astute_str)
 
 
+def read_from_yaml(path):
+    """Opens file, reads data from it and deserializes it from yaml
+
+    :param str path: path to file
+    """
+    with io.open(path, 'r', encoding='utf-8') as f:
+        data = yaml.load(f.read())
+
+    logger.debug('Read data %s from file %s', data, file)
+    return data
+
+
 def generate_uuid_string():
     """Generates uuid string
 
@@ -760,6 +774,18 @@ def sanitize(obj, keywords, mask='******'):
     # Making sure the original object remains untouched
     obj_copy = deepcopy(obj)
     return _helper(obj_copy)
+
+
+def iterfiles_filter(dir_path, file_pattern):
+    """Returns generator where each item is a path to file, that satisfies
+    file_patterns condtion
+
+    :param dir_path: path to directory, e.g /etc/puppet/
+    :param file_pattern: unix filepattern to match files
+    """
+    for file_path in iterfiles(dir_path):
+        if fnmatch(file_path, file_pattern):
+            yield file_path
 
 
 class VersionedFile(object):

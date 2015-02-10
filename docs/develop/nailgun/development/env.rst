@@ -66,7 +66,6 @@ Preparing Development Environment
     sudo chown -R `whoami`.`whoami` /var/log/nailgun
     sudo chmod -R a+w /var/log/nailgun
 
-
 Setup for Nailgun Unit Tests
 ----------------------------
 
@@ -100,6 +99,34 @@ Setup for Nailgun Unit Tests
 
     tox -r -epy26 -- -vv nailgun/test
     tox -r -epep8
+
+Running Nailgun Performance Tests
++++++++++++++++++++++++++++++++++
+
+Now you can run performance tests using -x option:
+
+::
+
+  ./run_tests.sh -x
+
+
+If -x is not specified, run_tests.sh will not run performance tests.
+
+The -n or -N option works exactly as before: it states whether
+tests should be launched or not.
+
+For example:
+
+* run_tests.sh -n -x - run both regular and performance Nailgun tests.
+
+* run_tests.sh -x - run nailgun performance tests only, do not run
+  regular Nailgun tests.
+
+* run_tests.sh -n - run regular Naigun tests only.
+
+* run_tests.sh -N - run all tests except for Nailgun regular and
+  performance tests.
+
 
 
 Setup for Web UI Tests

@@ -6,6 +6,7 @@
     "url": "https://github.com/stackforge/fuel-web.git"
   },
   "devDependencies": {
+    "async": "~0.9.0",
     "esprima-fb": "~8001.2001.0-dev-harmony-fb",
     "grunt": "~0.4.2",
     "grunt-bower-task": "~0.4.0",
@@ -22,11 +23,25 @@
     "grunt-lintspaces": "~0.6.0",
     "grunt-react": "~0.10.0",
     "grunt-text-replace": "~0.3.12",
+    "gulp": "~3.8.11",
+    "gulp-filter": "~2.0.1",
+    "gulp-jscs": "~1.4.0",
+    "gulp-jshint": "~1.9.2",
+    "gulp-less": "~2.0.1",
+    "gulp-lintspaces": "~0.2.3",
+    "gulp-react": "~2.0.0",
+    "gulp-replace": "~0.5.2",
+    "gulp-util": "~3.0.3",
     "jison": "~0.4.13",
     "jshint-stylish": "~0.4.0",
     "less": "~1.5.1",
     "lodash-node": "~2.4.1",
-    "requirejs": "~2.1.15",
-    "uglify-js": "~2.4.16"
+    "mkdirp": "~0.5.0",
+    "requirejs": "~2.1.16",
+    "rimraf": "~2.2.8",
+    "through2": "~0.6.3",
+    "tmp": "0.0.24",
+    "uglify-js": "~2.4.16",
+    "vinyl-fs": "~0.3.13"
   }
 }

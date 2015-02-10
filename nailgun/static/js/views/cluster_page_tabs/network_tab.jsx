@@ -56,7 +56,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
     var NetworkInputsMixin = {
         composeProps: function(attribute, isRange, isInteger) {
             var network = this.props.network,
-                ns = 'cluster_page.network_tab.' + (network ? 'network' : 'networking_parameters') + '.',
+                isFloatingIPRange = attribute == 'floating_ranges',
+                ns = 'cluster_page.network_tab.' + (network && !isFloatingIPRange ?
+                        'network' : 'networking_parameters') + '.',
                 error = this.getError(attribute) || null;
 
             // in case of verification error we need to pass an empty string to highlight the field only
@@ -71,7 +73,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 name: attribute,
                 label: i18n(ns + attribute),
                 value: this.getModel().get(attribute),
-                network: network,
+                network: isFloatingIPRange ? null : network,
                 networkConfiguration: this.props.networkConfiguration,
                 wrapperClassName: isRange ? 'network-attribute ' + attribute : false,
                 error: error
@@ -92,7 +94,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             var network = this.props.network,
                 errors;
 
-            if (network) {
+            if (network && attribute != 'floating_ranges') {
                 errors = validationErrors.networks && validationErrors.networks[network.id];
                 return errors && errors[attribute] || null;
             }
@@ -558,7 +560,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         getVerificationErrors: function() {
             var task = this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
-            // @TODO: soon response format will be changed anf this part should be rewritten
+            // @TODO(morale): soon response format will be changed and this part should be rewritten
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(verificationError) {
                     _.each(verificationError.ids, function(networkId) {
@@ -581,6 +583,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         validationErrors={(this.props.networkConfiguration.validationError || {}).networks}
                         disabled={this.isLocked()}
                         verificationErrorField={_.pluck(_.where(verificationErrors, {network: network.id}), 'field')}
+                        netProvider={network.get('name') == 'public' && this.props.cluster.get('net_provider')}
                     />
                 );
             }, this);
@@ -635,7 +638,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             networkConfiguration={this.props.networkConfiguration}
                             validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
                             disabled={this.isLocked()}
-                            netProvider={cluster.get('net_provider')}
+
                         />
                     </div>
                     <div className='verification-control'>
@@ -683,6 +686,13 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         />
                         {networkConfig.use_gateway &&
                             this.renderInput('gateway')
+                        }
+                        {network.get('name') == 'public' &&
+                            <Range
+                                {...this.composeProps('floating_ranges', true)}
+                                rowsClassName='floating-ranges-rows'
+                                hiddenControls={this.props.netProvider == 'neutron'}
+                            />
                         }
                     </div>
                 </div>
@@ -767,11 +777,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             </div>
                         </div>
                     }
-                    <Range
-                        {...this.composeProps('floating_ranges', true)}
-                        rowsClassName='floating-ranges-rows'
-                        hiddenControls={this.props.netProvider == 'neutron'}
-                    />
+
                     <Range
                         {...this.composeProps('dns_nameservers', true)}
                         extendable={false}

@@ -25,11 +25,11 @@ Validating translations
 To search for absent and unnecessary translation keys you can perform the following steps:
 
 #. Open terminal and cd to fuel-web/nailgun directory.
-#. Run "grunt i18n:validate" to start the validation.
+#. Run "gulp i18n:validate" to start the validation.
    If there are any mismatches, you'll see the list of mismatching keys.
 
-Grunt task "i18n:validate" has one optional argument - a comma-separated list of
+Gulp task "i18n:validate" has one optional argument - a comma-separated list of
 languages to compare with base English en-US translations. Run
-"grunt i18n:validate:zh-CN" to perform comparison only between English and
-Chinese keys. You can also run "grunt i18n:validate:zh-CN,ru-RU" to perform
-comparison between English-Chinese and English-Russian keys.
+"gulp i18n:validate --locales=zh-CN" to perform comparison only between English
+and Chinese keys. You can also run "grunt i18n:validate --locales=zh-CN,ru-RU"
+to perform comparison between English-Chinese and English-Russian keys.

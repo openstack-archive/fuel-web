@@ -79,7 +79,7 @@ define([
             this.expandedLimits = this.expandedLimits || {};
             this.expandedLimits[this.get('name')] = limits;
         },
-        checkLimits: function(models, checkLimitIsReached, limitTypes) {
+        checkLimits: function(models, checkLimitIsReached, limitTypes, nodes) {
             /*
              *  Check the 'limits' section of configuration.
              *  models -- current model to check the limits
@@ -91,6 +91,7 @@ define([
              *        - the model is valid as is (return true) -- case for checkLimitIsReached = true
              *        - there can be no more nodes added (return false) -- case for checkLimitIsReached = false
              *  limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
+             *  nodes -- node collection to check the limits, cluster nodes collection by default
             **/
 
             // Default values
@@ -115,9 +116,9 @@ define([
                 return ret;
             };
 
+            nodes = nodes || models.cluster.get('nodes');
             var checkedLimitTypes = {},
                 name = this.get('name'),
-                nodes = models.cluster.get('nodes'),
                 limits = this.expandedLimits[name] || {},
                 overrides = limits.overrides || [],
                 limitValues = {

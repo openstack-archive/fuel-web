@@ -39,7 +39,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             app.navigate('#cluster/' + this.props.cluster.get('id') + '/nodes', {trigger: true});
         },
         isLockedScreen: function() {
-            return this.props.cluster && !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
+            var cluster = this.props.cluster;
+            return cluster && (!cluster.isAvailableForSettingsChanges() || !!cluster.task({group: 'deployment', status: 'running'}));
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
@@ -560,7 +561,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                         label={ifc.get('name')}
                                         labelClassName='pull-left'
                                         onChange={this.bondingChanged}
-                                        checked={ifc.get('checked')} />
+                                        checked={ifc.get('checked')}
+                                        disabled={locked}
+                                    />
                                     :
                                     <div className='network-bond-name pull-left disabled'>{ifc.get('name')}</div>
                                 }
@@ -678,6 +681,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 labelClassName='offloading'
                                 name='disable_offloading'
                                 onChange={this.onInterfacePropertiesChange}
+                                disabled={locked}
                             />
                             <controls.Input
                                 type='number'
@@ -688,6 +692,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 onChange={this.onInterfacePropertiesChange}
                                 min={42}
                                 max={65536}
+                                disabled={locked}
                             />
                         </div>
                     </div>

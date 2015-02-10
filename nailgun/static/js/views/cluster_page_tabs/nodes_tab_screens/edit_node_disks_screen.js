@@ -120,7 +120,6 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
         initialize: function() {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
-                this.cluster.on('change:status', this.revertChanges, this);
                 this.volumes = new models.Volumes();
                 this.volumes.url = _.result(this.nodes.at(0), 'url') + '/volumes';
                 this.loading = $.when.apply($, this.nodes.map(function(node) {

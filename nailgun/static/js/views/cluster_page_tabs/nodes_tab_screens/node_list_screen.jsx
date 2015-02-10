@@ -279,7 +279,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             <button
                                 key='disks'
                                 className={cx({'btn btn-configure-disks': true, conflict: disksConflict})}
-                                disabled={this.props.locked || !this.props.nodes.length}
+                                disabled={!this.props.nodes.length}
                                 onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                             >
                                 {disksConflict && <i className='icon-attention text-error' />}
@@ -289,7 +289,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 <button
                                     key='interfaces'
                                     className={cx({'btn btn-configure-interfaces': true, conflict: interfaceConflict})}
-                                    disabled={this.props.locked || !this.props.nodes.length}
+                                    disabled={!this.props.nodes.length}
                                     onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
                                 >
                                     {interfaceConflict && <i className='icon-attention text-error' />}
@@ -299,6 +299,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 <button
                                     key='delete'
                                     className='btn btn-danger btn-delete-nodes'
+                                    disabled={this.props.locked}
                                     onClick={this.showDeleteNodesDialog}
                                 >
                                     <i className='icon-trash' />
@@ -703,7 +704,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
-                disabled = this.props.locked || !node.isSelectable() || this.state.actionInProgress,
+                isNodeSelectable = node.isSelectable(),
+                disabled = this.props.locked || !isNodeSelectable || this.state.actionInProgress,
                 roles = [this.renderRoleList('roles'), this.renderRoleList('pending_roles')];
             var status = this.calculateNodeViewStatus(),
                 statusClass = {
@@ -741,7 +743,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             type='checkbox'
                             name={node.id}
                             checked={this.props.checked}
-                            disabled={disabled}
+                            disabled={!isNodeSelectable || this.state.actionInProgress}
                             onChange={this.props.onNodeSelection}
                         />
                         <div className='node-content'>

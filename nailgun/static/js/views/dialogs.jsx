@@ -622,8 +622,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div>
                     {node.get('cluster') &&
                         <span>
-                            <button className='btn btn-edit-networks' onClick={this.goToConfigurationScreen.bind(this, 'interfaces')}>{i18n('dialog.show_node.network_configuration_button')}</button>
-                            <button className='btn btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>{i18n('dialog.show_node.disk_configuration_button')}</button>
+                            <button className='btn btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>
+                                {i18n('dialog.show_node.disk_configuration_button')}
+                            </button>
+                            <button className='btn btn-edit-networks' onClick={this.goToConfigurationScreen.bind(this, 'interfaces')}>
+                                {i18n('dialog.show_node.network_configuration_button')}
+                            </button>
                         </span>
                     }
                     <button className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>

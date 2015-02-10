@@ -7,15 +7,15 @@ managed by Bower_ (run in browser).
 Managing NPM Packages
 ---------------------
 
-NPM packages such as grunt_, bower_ and others are used in a development
+NPM packages such as gulp_, bower_ and others are used in a development
 environment only. Used NPM packages are listed in the *devDependencies* section
 of a package.json file. To install all required packages, run::
 
     npm install
 
-To use grunt_ you also need to install the grunt-cli package globally::
+To use gulp_ you also need to install the gulp package globally::
 
-    sudo npm install -g grunt-cli
+    sudo npm install -g gulp
 
 To add a new package, it is not enough just to add a new entry to a
 package.json file because npm-shrinkwrap_ is used to lock down package
@@ -44,7 +44,7 @@ Managing Bower Packages
 Bower_ is used to download libraries that run in browser. To add a new package,
 just add an entry to dependencies section of a bower.json file and run::
 
-    grunt bower
+    gulp bower
 
 to download it. The new package will be placed in the
 nailgun/static/js/libs/bower/ directory. If the package contains more than one
@@ -57,5 +57,5 @@ nailgun/static/js/libs/custom/ directory.
 
 .. _npm: https://www.npmjs.org/
 .. _bower: http://bower.io/
-.. _grunt: http://gruntjs.com/
+.. _gulp: http://gulpjs.com/
 .. _npm-shrinkwrap: https://www.npmjs.org/doc/cli/npm-shrinkwrap.html

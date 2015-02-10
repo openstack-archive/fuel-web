@@ -22,6 +22,7 @@ nailgun.log
 lock
 
 node_modules
+bower_components
 nailgun/static/js/libs/bower
 
 *.egg

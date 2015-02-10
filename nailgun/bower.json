@@ -20,36 +20,30 @@
         "backbone-deep-model": "0.10.4",
         "less": "1.5.1"
     },
-    "exportsOverride": {
+    "overrides": {
         "jquery": {
-            "js": "jquery.js"
+            "main": "jquery.js"
         },
         "react": {
-            "js": ["JSXTransformer.js", "react-with-addons.js", "react-with-addons.min.js"]
+            "main": ["JSXTransformer.js", "react-with-addons.js", "react-with-addons.min.js"]
         },
-        "requirejs": {
-            "js": "require.js"
-        },
-        "requirejs-text": {
-            "js": "text.js"
+        "requirejs-plugins": {
+            "main": "src/json.js"
         },
         "lodash": {
-            "js": "**/lodash.compat.js"
+            "main": "dist/lodash.compat.js"
         },
         "autoNumeric": {
-            "js": "autoNumeric.js"
-        },
-        "backbone.stickit": {
-            "js": "backbone.stickit.js"
+            "main": "autoNumeric.js"
         },
         "i18next": {
-            "js": "release/i18next-1.7.1.js"
+            "main": "release/i18next-1.7.1.js"
         },
         "backbone-deep-model": {
-            "js": "distribution/deep-model.js"
+            "main": "distribution/deep-model.js"
         },
         "less": {
-            "js": "dist/less-1.5.1.js"
+            "main": "dist/less-1.5.1.js"
         }
     },
     "ignore": [

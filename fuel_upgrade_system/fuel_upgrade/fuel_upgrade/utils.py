@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from fnmatch import fnmatch
 import glob
 import json
 import logging
@@ -760,6 +761,18 @@ def sanitize(obj, keywords, mask='******'):
     # Making sure the original object remains untouched
     obj_copy = deepcopy(obj)
     return _helper(obj_copy)
+
+
+def iterfiles_filter(dir_path, file_pattern):
+    """Returns generator where each item is a path to file, that satisfies
+    file_patterns condtion
+
+    :param dir_path: path to directory, e.g /etc/puppet/
+    :param file_pattern: unix filepattern to match files
+    """
+    for file_path in iterfiles(dir_path):
+        if fnmatch(file_path, file_pattern):
+            yield file_path
 
 
 class VersionedFile(object):

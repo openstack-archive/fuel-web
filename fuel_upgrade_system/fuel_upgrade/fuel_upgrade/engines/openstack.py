@@ -144,7 +144,6 @@ class OpenStackUpgrader(UpgradeEngine):
         existing_releases = self.nailgun.get_releases()
         releases = self._get_unique_releases(self.releases, existing_releases)
         self._add_base_repos_to_releases(releases, existing_releases)
-
         # upload unexisting releases
         for release in releases:
             # register new release
@@ -154,7 +153,7 @@ class OpenStackUpgrader(UpgradeEngine):
             response = self.nailgun.create_release(release)
             # save release id for futher possible rollback
             self._rollback_ids['release'].append(response['id'])
-
+            self.upload_release_deployment_tasks(response)
             # add notification abot successfull releases
             logger.debug('Add notification about new release: %s (%s)',
                          release['name'],
@@ -168,6 +167,25 @@ class OpenStackUpgrader(UpgradeEngine):
             })
             # save notification id for futher possible rollback
             self._rollback_ids['notification'].append(response['id'])
+
+    def upload_release_deployment_tasks(self, release):
+        """Performs os.walk by puppet src, matches all files with tasks
+        of given pattern and uploads this for release.
+
+        :param release: dict representation of release
+        """
+        tasks = []
+        release_puppet_path = os.path.join(
+            self.config.openstack['puppets']['dst'], release['version'])
+
+        for file_path in utils.iterfiles_filter(
+                release_puppet_path,
+                self.config.deployment_tasks_file_pattern):
+
+            with io.open(file_path, 'r', encoding='utf-8') as f:
+                tasks.extend(yaml.load(f.read()))
+
+        self.nailgun.put_deployment_tasks(release, tasks)
 
     def remove_releases(self):
         """Remove all releases that are created by current session.

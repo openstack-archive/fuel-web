@@ -129,3 +129,18 @@ class NailgunClient(object):
         :returns: :class:`requests.Session` object
         """
         return self.keystone_client.request
+
+    def put_deployment_tasks(self, release, tasks):
+        """Update deployment tasks for certain release
+
+        :param release: release as dict
+        :param tasks: deployment tasks as lists of dicts
+        """
+        r = self.request.put(
+            '{api_url}/releases/{release_id}'.format(
+                api_url=self.api_url, release_id=release['id']),
+            data=json.dumps(tasks))
+
+        if r.status_code not in (200, ):
+            r.raise_for_status()
+        return r.json()

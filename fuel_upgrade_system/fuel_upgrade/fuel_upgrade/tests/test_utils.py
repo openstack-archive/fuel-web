@@ -544,6 +544,13 @@ class TestUtils(BaseTestCase):
             pass
         walk.assert_called_once_with('path/to/dir', topdown=True)
 
+    @mock.patch('fuel_upgrade.utils.os.walk')
+    def test_iterfiles_filter(self, walk):
+        expected_files = ['/fake/path/1', '/fake/path/2']
+        walk.return_value = [('/fake/path', '', '1'), ('/fake/path', '', '2')]
+        files = list(utils.iterfiles_filter('/fake/path', '*1'))
+        self.assertEqual(files, expected_files[:1])
+
 
 class TestGetBaseRelease(BaseTestCase):
 

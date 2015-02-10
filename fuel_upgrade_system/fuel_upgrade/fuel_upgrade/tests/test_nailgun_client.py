@@ -115,3 +115,19 @@ class TestNailgunClient(base.BaseTestCase):
 
         self.assertRaises(
             requests.exceptions.HTTPError, self.nailgun.get_tasks)
+
+    def test_put_deployment_tasks(self):
+        release = {'id': '1'}
+        tasks = []
+        self.mock_request.put.return_value = self.mock_requests_response(
+            200, '[]')
+        response = self.nailgun.put_deployment_tasks(release, tasks)
+        self.assertEqual(response, tasks)
+
+        self.mock_request.put.return_value = self.mock_requests_response(
+            502, 'Bad gateway')
+
+        self.assertRaises(
+            requests.exceptions.HTTPError,
+            self.nailgun.put_deployment_tasks,
+            release, tasks)

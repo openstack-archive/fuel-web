@@ -354,6 +354,26 @@ class TestStatisticsSender(BaseTestCase):
         log_error.assert_called_once_with(
             "Sending data to collector failed: %s", "custom")
 
+    def test_skipped_action_logs(self):
+
+        class Response(object):
+            status_code = 200
+
+            def json(self):
+                return {
+                    'status': 'ok',
+                    'action_logs': [{'external_id': 1, 'status': 'skipped'}]}
+
+        sender = StatsSender()
+        commit = 'nailgun.db.sqlalchemy.DeadlockDetectingSession.commit'
+        with patch.object(sender, 'send_data_to_url',
+                          return_value=Response()):
+            with patch.object(sender, 'is_status_acceptable',
+                              return_value=True):
+                with patch(commit) as mocked_commit:
+                    sender.send_log_serialized([{'external_id': 1}], [1])
+                    self.assertEqual(0, mocked_commit.call_count)
+
     @patch('nailgun.statistics.statsenderd.time.sleep')
     def test_send_stats_once_after_dberror(self, sleep):
         def fn():

@@ -159,6 +159,35 @@ class TestInstallationInfo(BaseTestCase):
         self.assertEquals(set([n.id for n in group.nodes]),
                           set(group_info['nodes']))
 
+    def test_network_configuration(self):
+        info = InstallationInfo()
+        # Checking nova network configuration
+        self.env.create(cluster_kwargs={
+            'mode': consts.CLUSTER_MODES.ha_full,
+            'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network
+        })
+        clusters_info = info.get_clusters_info()
+        cluster_info = clusters_info[0]
+        self.assertTrue('network_configuration' in cluster_info)
+        network_config = cluster_info['network_configuration']
+
+        for field in ('fixed_network_size', 'fixed_networks_vlan_start',
+                      'fixed_networks_amount', 'net_manager'):
+            self.assertIn(field, network_config)
+
+        # Checking neutron network configuration
+        self.env.create(cluster_kwargs={
+            'mode': consts.CLUSTER_MODES.ha_full,
+            'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
+        })
+        clusters_info = info.get_clusters_info()
+        cluster_info = clusters_info[1]
+        self.assertTrue('network_configuration' in cluster_info)
+        network_config = cluster_info['network_configuration']
+
+        for field in ('segmentation_type', 'net_l23_provider'):
+            self.assertIn(field, network_config)
+
     def test_nodes_info(self):
         info = InstallationInfo()
         self.env.create(

@@ -51,14 +51,12 @@ function($, _, React, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditN
                 interfaces: EditNodeInterfacesScreen
             };
         },
-        checkScreen: function(newScreen) {
-            if (newScreen && !this.getAvailableScreens()[newScreen]) {
-                app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-            }
-        },
         changeScreen: function(newScreen, screenOptions) {
             var NewScreenComponent = this.getAvailableScreens()[newScreen];
-            if (!NewScreenComponent) return;
+            if (!NewScreenComponent) {
+                app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
+                return;
+            }
             var options = {cluster: this.props.cluster, screenOptions: screenOptions};
             return (NewScreenComponent.fetchData ? NewScreenComponent.fetchData(options) : $.Deferred().resolve())
                 .done(_.bind(function(data) {
@@ -71,16 +69,12 @@ function($, _, React, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditN
         },
         componentWillMount: function() {
             var newScreen = this.props.tabOptions[0] || 'list';
-            this.checkScreen(newScreen);
             this.changeScreen(newScreen, this.props.tabOptions.slice(1));
         },
         componentWillReceiveProps: function(newProps) {
             var newScreen = newProps.tabOptions[0] || 'list';
             // check that screen changed
-            if (newScreen != this.state.screen) {
-                this.checkScreen(newScreen);
-                this.changeScreen(newScreen, newProps.tabOptions.slice(1));
-            }
+            if (newScreen != this.state.screen) this.changeScreen(newScreen, newProps.tabOptions.slice(1));
         },
         render: function() {
             var Screen = this.getAvailableScreens()[this.state.screen];

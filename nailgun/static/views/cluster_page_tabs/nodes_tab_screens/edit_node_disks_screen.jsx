@@ -152,7 +152,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         },
         render: function() {
             var hasChanges = this.hasChanges(),
-                loadDefaultsDisabled = !!this.state.actionInProgress || this.isLockedScreen(),
+                isScreenLocked = this.isLockedScreen(),
+                loadDefaultsDisabled = !!this.state.actionInProgress || isScreenLocked,
                 revertChangesDisabled = !!this.state.actionInProgress || !hasChanges,
                 applyDisabled = !!this.state.actionInProgress || !hasChanges;
             return (
@@ -166,7 +167,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                 return (<NodeDisk
                                     disk={disk}
                                     key={index}
-                                    disabled={this.state.actionInProgress}
+                                    disabled={isScreenLocked || this.state.actionInProgress}
                                     volumes={this.props.volumes}
                                     volumesInfo={this.getVolumesInfo(disk)}
                                     diskMetaData={this.getDiskMetaData(disk)}
@@ -239,7 +240,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                         <div>{volume.get('label')}</div>
                                         <div className='volume-group-size'>{utils.showDiskSize(volumesInfo[volumeName].size, 2)}</div>
                                     </div>
-                                    {volumesInfo[volumeName].min <= 0 && this.state.collapsed &&
+                                    {!this.props.disabled && volumesInfo[volumeName].min <= 0 && this.state.collapsed &&
                                         <div className='close-btn' onClick={_.partial(this.updateDisk, volumeName, 0, true)}>&times;</div>
                                     }
                                 </div>

@@ -80,7 +80,7 @@ TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
 CASPERJS="casperjs"
-LINTUI="grunt lint-ui"
+LINTUI="gulp lint"
 
 # test options
 testrargs=
@@ -292,7 +292,7 @@ function run_webui_tests {
 
   # test compression
   echo -n "Compressing UI... "
-  local output=$(grunt build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
+  local output=$(gulp build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
   if [ $? -ne 0 ]; then
     echo "$output"
     popd >> /dev/null

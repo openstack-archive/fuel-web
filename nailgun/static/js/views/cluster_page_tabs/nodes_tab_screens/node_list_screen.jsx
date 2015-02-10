@@ -281,7 +281,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                             <button
                                 key='disks'
                                 className={cx({'btn btn-configure-disks': true, conflict: disksConflict})}
-                                disabled={this.props.locked || !this.props.nodes.length}
+                                disabled={!this.props.nodes.length}
                                 onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                             >
                                 {disksConflict && <i className='icon-attention text-error' />}
@@ -291,7 +291,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                                 <button
                                     key='interfaces'
                                     className={cx({'btn btn-configure-interfaces': true, conflict: interfaceConflict})}
-                                    disabled={this.props.locked || !this.props.nodes.length}
+                                    disabled={!this.props.nodes.length}
                                     onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
                                 >
                                     {interfaceConflict && <i className='icon-attention text-error' />}
@@ -301,6 +301,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                                 <button
                                     key='delete'
                                     className='btn btn-danger btn-delete-nodes'
+                                    disabled={this.props.locked}
                                     onClick={this.showDeleteNodesDialog}
                                 >
                                     <i className='icon-trash' />
@@ -675,7 +676,8 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
-                disabled = this.props.locked || !node.isSelectable() || this.state.actionInProgress,
+                isNodeSelectable = node.isSelectable() && !this.state.actionInProgress,
+                disabled = this.props.locked || !isNodeSelectable,
                 roles = [this.renderRoleList('roles'), this.renderRoleList('pending_roles')];
             var status = this.calculateNodeViewStatus(),
                 statusClass = {
@@ -711,7 +713,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                             type='checkbox'
                             name={node.id}
                             checked={this.props.checked}
-                            disabled={disabled}
+                            disabled={!isNodeSelectable}
                             onChange={this.props.onNodeSelection}
                         />
                         <div className='node-content'>

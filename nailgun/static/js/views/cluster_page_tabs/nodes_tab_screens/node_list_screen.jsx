@@ -367,7 +367,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         <div className='btn-group' role='group' key='configuration-buttons'>
                                             <button
                                                 className='btn btn-default btn-configure-disks'
-                                                disabled={this.props.locked || !this.props.nodes.length}
+                                                disabled={!this.props.nodes.length}
                                                 onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                                             >
                                                 {disksConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
@@ -376,7 +376,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             {!this.props.nodes.any({status: 'error'}) &&
                                                 <button
                                                     className='btn btn-default btn-configure-interfaces'
-                                                    disabled={this.props.locked || !this.props.nodes.length}
+                                                    disabled={!this.props.nodes.length}
                                                     onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
                                                 >
                                                     {interfaceConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
@@ -385,7 +385,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             }
                                         </div>,
                                         <div className='btn-group' role='group' key='role-management-buttons'>
-                                            {!!this.props.nodes.length && this.props.nodes.any({pending_deletion: false}) &&
+                                            {!!this.props.nodes.length && !this.props.locked && this.props.nodes.any({pending_deletion: false}) &&
                                                 <button
                                                     className='btn btn-danger btn-delete-nodes'
                                                     onClick={this.showDeleteNodesDialog}
@@ -403,7 +403,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                     {i18n(ns + 'edit_roles_button')}
                                                 </button>
                                             }
-                                            {!this.props.nodes.length &&
+                                            {!this.props.nodes.length && !this.props.locked &&
                                                 <button
                                                     className='btn btn-success btn-add-nodes'
                                                     onClick={_.bind(this.changeScreen, this, 'add', false)}
@@ -751,7 +751,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
-                disabled = this.props.locked || !node.isSelectable() || this.state.actionInProgress,
                 deployedRoles = node.get('roles'),
                 rolesToDisplay = deployedRoles.length ? deployedRoles : node.get('pending_roles'),
                 nodeProgess = _.max([node.get('progress'), 3]),
@@ -792,7 +791,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             type='checkbox'
                             name={node.id}
                             checked={this.props.checked}
-                            disabled={disabled}
+                            disabled={!node.isSelectable() || this.state.actionInProgress}
                             onChange={this.props.onNodeSelection}
                             wrapperClassName='check-box'
                         />

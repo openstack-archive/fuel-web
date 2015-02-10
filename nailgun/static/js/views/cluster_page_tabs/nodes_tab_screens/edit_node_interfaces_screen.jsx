@@ -602,7 +602,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                             type='checkbox'
                                             label={ifc.get('name')}
                                             onChange={this.bondingChanged}
-                                            checked={ifc.get('checked')} />
+                                            checked={ifc.get('checked')}
+                                            disabled={locked}
+                                        />
                                         : ifc.get('name')
                                     }
                                 </div>

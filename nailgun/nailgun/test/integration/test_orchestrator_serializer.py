@@ -381,7 +381,6 @@ class TestNovaFlatOrchestratorSerializer61(OrchestratorSerializerTestBase):
         objects.Cluster.set_primary_roles(self.cluster, self.cluster.nodes)
 
     def create_env(self):
-        release_kwargs = {'version': '2014.2-6.1'}
         node_args = [
             {'roles': ['controller', 'cinder'], 'pending_addition': True},
             {'roles': ['compute', 'cinder'], 'pending_addition': True},
@@ -391,7 +390,7 @@ class TestNovaFlatOrchestratorSerializer61(OrchestratorSerializerTestBase):
              'pending_addition': True}]
 
         cluster = self.env.create(
-            release_kwargs=release_kwargs,
+            release_kwargs={'version': '2014.2-6.1'},
             cluster_kwargs={
                 'mode': 'ha_compact',
                 'net_manager': 'FlatDHCPManager'},
@@ -458,6 +457,194 @@ class TestNovaFlatOrchestratorSerializer61(OrchestratorSerializerTestBase):
                      'bridge': 'br-fw-admin',
                      'name': 'eth1'}
                 ]
+            )
+
+
+class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
+
+    def create_env(self, segment_type):
+        node_args = [
+            {'roles': ['controller', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute'], 'pending_addition': True},
+            {'roles': ['mongo'], 'pending_addition': True},
+            {'roles': [], 'pending_roles': ['cinder'],
+             'pending_addition': True}]
+
+        cluster = self.env.create(
+            release_kwargs={'version': '2014.2-6.1'},
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'net_provider': 'neutron',
+                'net_segment_type': segment_type},
+            nodes_kwargs=node_args)
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        objects.Cluster.set_primary_roles(cluster_db, cluster_db.nodes)
+        self.db.flush()
+        return cluster_db
+
+    def test_vlan_schema(self):
+        cluster = self.create_env(segment_type='vlan')
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            node_db = objects.Node.get_by_uid(node['uid'])
+            is_public = objects.Node.should_have_public(node_db)
+            scheme = node['network_scheme']
+            self.assertEqual(
+                set(scheme.keys()),
+                set(['version', 'provider', 'interfaces',
+                     'endpoints', 'roles', 'transformations'])
+            )
+            self.assertEqual(scheme['version'], '1.1')
+            self.assertEqual(scheme['provider'], 'lnx')
+            self.assertEqual(
+                set(scheme['interfaces'].keys()),
+                set(['eth0', 'eth1'])
+            )
+            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-prv'])
+            role_dict = {'storage': 'br-storage',
+                         'management': 'br-mgmt',
+                         'fw-admin': 'br-fw-admin',
+                         'neutron/private': 'br-prv'}
+            if is_public:
+                br_set.update(['br-ex', 'br-floating'])
+                role_dict.update({'ex': 'br-ex',
+                                  'neutron/floating': 'br-floating'})
+            self.assertEqual(
+                set(scheme['endpoints'].keys()),
+                br_set
+            )
+            self.assertEqual(
+                scheme['roles'],
+                role_dict
+            )
+            transformations = [
+                {'action': 'add-br',
+                 'name': 'br-fw-admin'},
+                {'action': 'add-br',
+                 'name': 'br-mgmt'},
+                {'action': 'add-br',
+                 'name': 'br-storage'},
+                {'action': 'add-br',
+                 'name': 'br-ex'},
+                {'action': 'add-br',
+                 'name': 'br-floating',
+                 'provider': 'ovs'},
+                {'action': 'add-patch',
+                 'bridges': ['br-ex',
+                             'br-floating'],
+                 'provider': 'ovs'},
+                {'action': 'add-br',
+                 'name': 'br-prv',
+                 'provider': 'ovs'},
+                {'action': 'add-br',
+                 'name': 'br-aux'},
+                {'action': 'add-patch',
+                 'bridges': ['br-aux',
+                             'br-prv'],
+                 'provider': 'ovs'},
+                {'action': 'add-port',
+                 'bridge': 'br-storage',
+                 'name': 'eth0.102'},
+                {'action': 'add-port',
+                 'bridge': 'br-mgmt',
+                 'name': 'eth0.101'},
+                {'action': 'add-port',
+                 'bridge': 'br-ex',
+                 'name': 'eth0'},
+                {'action': 'add-port',
+                 'bridge': 'br-aux',
+                 'name': 'eth0'},
+                {'action': 'add-port',
+                 'bridge': 'br-fw-admin',
+                 'name': 'eth1'}
+            ]
+            if not is_public:
+                # exclude all 'br-ex' and 'br-floating' objects
+                transformations = transformations[:3] + \
+                    transformations[6:11] + transformations[12:]
+            self.assertEqual(
+                scheme['transformations'],
+                transformations
+            )
+
+    def test_gre_schema(self):
+        cluster = self.create_env(segment_type='gre')
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            node_db = objects.Node.get_by_uid(node['uid'])
+            is_public = objects.Node.should_have_public(node_db)
+            scheme = node['network_scheme']
+            self.assertEqual(
+                set(scheme.keys()),
+                set(['version', 'provider', 'interfaces',
+                     'endpoints', 'roles', 'transformations'])
+            )
+            self.assertEqual(scheme['version'], '1.1')
+            self.assertEqual(scheme['provider'], 'lnx')
+            self.assertEqual(
+                set(scheme['interfaces'].keys()),
+                set(['eth0', 'eth1'])
+            )
+            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin'])
+            role_dict = {'storage': 'br-storage',
+                         'management': 'br-mgmt',
+                         'fw-admin': 'br-fw-admin',
+                         'neutron/mesh': 'br-mgmt'}
+            if is_public:
+                br_set.update(['br-ex', 'br-floating'])
+                role_dict.update({'ex': 'br-ex',
+                                  'neutron/floating': 'br-floating'})
+            self.assertEqual(
+                set(scheme['endpoints'].keys()),
+                br_set
+            )
+            self.assertEqual(
+                scheme['roles'],
+                role_dict
+            )
+            transformations = [
+                {'action': 'add-br',
+                 'name': 'br-fw-admin'},
+                {'action': 'add-br',
+                 'name': 'br-mgmt'},
+                {'action': 'add-br',
+                 'name': 'br-storage'},
+                {'action': 'add-br',
+                 'name': 'br-ex'},
+                {'action': 'add-br',
+                 'name': 'br-floating',
+                 'provider': 'ovs'},
+                {'action': 'add-patch',
+                 'bridges': ['br-ex',
+                             'br-floating'],
+                 'provider': 'ovs'},
+                {'action': 'add-port',
+                 'bridge': 'br-storage',
+                 'name': 'eth0.102'},
+                {'action': 'add-port',
+                 'bridge': 'br-mgmt',
+                 'name': 'eth0.101'},
+                {'action': 'add-port',
+                 'bridge': 'br-ex',
+                 'name': 'eth0'},
+                {'action': 'add-port',
+                 'bridge': 'br-fw-admin',
+                 'name': 'eth1'}
+            ]
+            if not is_public:
+                # exclude all 'br-ex' and 'br-floating' objects
+                transformations = transformations[:3] + \
+                    transformations[6:8] + transformations[9:]
+            self.assertEqual(
+                scheme['transformations'],
+                transformations
             )
 
 

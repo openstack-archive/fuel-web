@@ -640,6 +640,12 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             }
             return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
         },
+        forgetNode: function(e) {
+            e.preventDefault();
+            this.props.node.destroy().then(_.bind(function(task) {
+                this.props.cluster.get('tasks').add(new models.Task(task), {parse: true});
+            }, this));
+        },
         showNodeDetails: function(e) {
             e.preventDefault();
             utils.showDialog(dialogs.ShowNodeInfoDialog, {
@@ -763,6 +769,9 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                                     <i className={iconClass} />
                                     <span>
                                         {i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
+                                        { status == 'offline' &&
+                                            <a href="#" onClick={this.forgetNode} className='node-forget-button'>forget</a>
+                                        }
                                     </span>
                                 </div>
                             </div>

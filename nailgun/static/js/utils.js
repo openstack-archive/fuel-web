@@ -235,6 +235,12 @@ define([
         ipIntRepresentation: function(ip) {
             return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
         },
+        intToIp: function(n) {
+            /*jslint bitwise: true*/
+            var octets = [n >>> 24, n >>> 16 & 0xFF, n >>> 8 & 0xFF, n & 0xFF];
+            /*jslint bitwise: false*/
+            return octets.join('.');
+        },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
             var result = true;
             if (cidr) {
@@ -246,6 +252,35 @@ define([
                 /* jshint bitwise: true */
             }
             return result;
+        },
+        composeBroadcastAddress: function(subnetAddress, netmask) {
+            /*jslint bitwise: true*/
+            var broadcastAddress = _.map(subnetAddress.split('.'), function(octet, i) {
+                return octet | (netmask.split('.')[i] ^ 255);
+            }).join('.');
+            /*jslint bitwise: false*/
+            return broadcastAddress;
+        },
+        composeSubnetAddress: function(ip, netmask) {
+            /*jslint bitwise: true*/
+            var networkAddress = this.intToIp(this.ipIntRepresentation(netmask) & this.ipIntRepresentation(ip));
+            /*jslint bitwise: false*/
+            return networkAddress;
+        },
+        cidrToIntRange: function(cidr) {
+            var ipStartInt = this.ipIntRepresentation(cidr.split('/')[0]);
+            var networkSize = Math.pow(2, 32 - cidr.split('/')[1]);
+            return [ipStartInt, ipStartInt + networkSize - 1];
+        },
+        validateIPRangesIntersection: function(range1, range2, intRepresentation) {
+            if (!intRepresentation) {
+                range1 = _.map(range1, function(ip) {return utils.ipIntRepresentation(ip);});
+                range2 = _.map(range2, function(ip) {return utils.ipIntRepresentation(ip);});
+            }
+            return range1[0] <= range2[1] && range2[0] <= range1[1];
+        },
+        validateCIDRIntersection: function(cidr1, cidr2) {
+            return this.validateIPRangesIntersection(this.cidrToIntRange(cidr1), this.cidrToIntRange(cidr2), true);
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;

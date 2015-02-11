@@ -30,7 +30,7 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
     def setUp(self):
         super(IntegrationClusterTests, self).setUp()
         self.env.create_nodes(self.NODES_NUM, api=True)
-        self.cluster = self.env.create_cluster(api=False)
+        self.cluster = self.env.create_cluster(api=True)
         controllers = 3
         created_controllers = 0
         nodes = []
@@ -38,13 +38,13 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
         for node in self.env.nodes:
             if created_controllers < controllers:
                 nodes.append({'id': node.id,
-                              'role': ['controller'],
+                              'pending_roles': ['controller'],
                               'cluster': self.cluster['id'],
                               'pending_addition': True})
                 created_controllers += 1
             else:
                 nodes.append({'id': node.id,
-                              'role': ['compute'],
+                              'pending_roles': ['compute'],
                               'cluster': self.cluster['id'],
                               'pending_addition': True})
             self.nodes_ids.append(str(node.id))
@@ -95,21 +95,20 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
         self.provision(self.cluster['id'], ids)
         self.deployment(self.cluster['id'], ids)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_rerun_stopped_deploy(self, mock_rpc):
+    @fake_tasks(godmode=True)
+    def test_rerun_stopped_deploy(self):
         cluster = self.cluster
 
         self.app.put(
             reverse(
-                'DeploySelectedNodes',
-                kwargs={'cluster_id': cluster.id}),
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers)
 
         stop_response = self.app.put(
             reverse(
                 'ClusterStopDeploymentHandler',
-                kwargs={'cluster_id': cluster.id}),
+                kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers)
 
         task = Task.get_by_uuid(stop_response.json_body['uuid'])
@@ -118,8 +117,8 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
 
         second_deploy_response = self.app.put(
             reverse(
-                'DeploySelectedNodes',
-                kwargs={'cluster_id': cluster.id}),
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers)
 
         task = Task.get_by_uuid(second_deploy_response.json_body['uuid'])

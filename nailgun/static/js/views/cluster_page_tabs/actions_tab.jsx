@@ -26,7 +26,6 @@ define(
 function(_, i18n, React, utils, models, dialogs, componentMixins) {
     'use strict';
 
-    var releases = new models.Releases();
     var ActionsTab = React.createClass({
         mixins: [
             componentMixins.backboneMixin('cluster'),
@@ -37,10 +36,20 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
                 return props.cluster.task({group: 'deployment', status: 'running'});
             }})
         ],
+        statics: {
+            fetchData: function() {
+                if (_.contains(app.version.get('feature_groups'), 'experimental')) {
+                    var releases = new models.Releases();
+                    return releases.fetch().then(function() {
+                        return {releases: releases};
+                    });
+                }
+                return {};
+            }
+        },
         render: function() {
             var cluster = this.props.cluster,
-                task = cluster.task({group: 'deployment', status: 'running'}),
-                isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
+                task = cluster.task({group: 'deployment', status: 'running'});
             return (
                 <div className='wrapper'>
                     <h3>{i18n('cluster_page.actions_tab.title')}</h3>
@@ -48,8 +57,8 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
                         <RenameEnvironmentAction cluster={cluster}/>
                         <ResetEnvironmentAction cluster={cluster} task={task} />
                         <DeleteEnvironmentAction cluster={cluster}/>
-                        {isExperimental &&
-                            <UpdateEnvironmentAction cluster={cluster} releases={releases} task={task}/>
+                        {_.contains(app.version.get('feature_groups'), 'experimental') &&
+                            <UpdateEnvironmentAction cluster={cluster} task={task} releases={this.props.releases}/>
                         }
                     </div>
                 </div>
@@ -221,7 +230,7 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
             componentMixins.backboneMixin('task')
         ],
         getInitialState: function() {
-            return {pendingReleaseId: null};
+            return {pendingReleaseId: this.getPendingReleaseId()};
         },
         getAction: function() {
             return this.props.cluster.get('status') == 'update_error' ? 'rollback' : 'update';
@@ -231,14 +240,6 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
         },
         componentWillReceiveProps: function() {
             this.setState({pendingReleaseId: this.getPendingReleaseId()});
-        },
-        componentDidMount: function() {
-            var releases = this.props.releases;
-            if (!releases.length) {
-                releases.fetch().done(_.bind(function() {
-                    this.setState({pendingReleaseId: this.getPendingReleaseId()});
-                }, this));
-            }
         },
         updateEnvironmentAction: function() {
             var cluster = this.props.cluster,
@@ -258,9 +259,7 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
             utils.showDialog(dialogs.UpdateEnvironmentDialog, {cluster: this.props.cluster, action: 'rollback'});
         },
         getPendingReleaseId: function() {
-            var release = _.find(releases.models, this.isAvailableForUpdate, this);
-            if (release) {return release.id;}
-            return null;
+            return (this.props.releases.find(this.isAvailableForUpdate, this) || {}).id;
         },
         isAvailableForUpdate: function(release) {
             var cluster = this.props.cluster,
@@ -283,7 +282,7 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
         },
         render: function() {
             var releases = this.props.releases.filter(this.isAvailableForUpdate, this),
-                pendingRelease = this.props.releases.findWhere({id: this.state.pendingReleaseId}) || null,
+                pendingRelease = this.props.releases.get(this.state.pendingReleaseId),
                 action = this.getAction(),
                 isLocked = this.isLocked(),
                 options = releases.map(function(release) {
@@ -313,7 +312,7 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
                             <button
                                 className='btn btn-success update-environment-btn'
                                 onClick={this.updateEnvironmentAction}
-                                disabled={_.isNull(this.state.pendingReleaseId) || isLocked}>
+                                disabled={_.isUndefined(this.state.pendingReleaseId) || isLocked}>
                                 {i18n('common.update_button')}
                             </button>
                         </div>

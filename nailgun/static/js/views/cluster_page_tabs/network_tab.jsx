@@ -355,18 +355,17 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 renderOn: 'add remove change:status'
             })
         ],
+        statics: {
+            fetchData: function(options) {
+                return $.when(options.cluster.get('settings').fetch({cache: true}), options.cluster.get('networkConfiguration').fetch({cache: true})).then(function() {
+                    return {};
+                });
+            }
+        },
         getInitialState: function() {
             return {
-                loading: true,
-                initialConfiguration: false
+                initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON())
             };
-        },
-        componentDidMount: function() {
-            var networkConfiguration = this.props.cluster.get('networkConfiguration');
-            $.when(this.props.cluster.get('settings').fetch({cache: true}), networkConfiguration.fetch({cache: true})).done(_.bind(function() {
-                this.updateInitialConfiguration();
-                this.setState({loading: false});
-            }, this));
         },
         componentWillUnmount: function() {
             this.loadInitialConfiguration();
@@ -397,21 +396,17 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             return (
                 <div className={cx(classes)}>
                     <h3>{i18n(ns + 'title')}</h3>
-                    {this.state.loading ?
-                        <controls.ProgressBar />
-                    :
-                        <div>
-                            <NetworkTabContent
-                                networkConfiguration={this.props.cluster.get('networkConfiguration')}
-                                initialConfiguration={this.state.initialConfiguration}
-                                tasks={this.props.cluster.get('tasks')}
-                                cluster={this.props.cluster}
-                                isLocked={isLocked}
-                                updateInitialConfiguration={this.updateInitialConfiguration}
-                                loadInitialConfiguration={this.loadInitialConfiguration}
-                            />
-                        </div>
-                    }
+                    <div>
+                        <NetworkTabContent
+                            networkConfiguration={this.props.cluster.get('networkConfiguration')}
+                            initialConfiguration={this.state.initialConfiguration}
+                            tasks={this.props.cluster.get('tasks')}
+                            cluster={this.props.cluster}
+                            isLocked={isLocked}
+                            updateInitialConfiguration={this.updateInitialConfiguration}
+                            loadInitialConfiguration={this.loadInitialConfiguration}
+                        />
+                    </div>
                 </div>
             );
         }

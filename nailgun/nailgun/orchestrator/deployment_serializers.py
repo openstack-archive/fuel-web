@@ -1026,11 +1026,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         else:
             img_dir = '/opt/vm/'
         image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
-        # Add default Glance property for Murano.
-        glance_properties = [
-            """--property murano_image_info="""
-            """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
-        ]
+
+        glance_properties = []
 
         # Alternate VMWare specific values.
         if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':

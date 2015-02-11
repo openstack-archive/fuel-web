@@ -205,6 +205,11 @@ define(
     });
 
     var VCenter = React.createClass({
+        statics: {
+            isVisible: function(cluster) {
+                return cluster.get('settings').get('common.use_vcenter').value;
+            }
+        },
         componentDidMount: function() {
             this.clusterId = this.props.cluster.id;
             this.model = this.props.cluster.get('vcenter');

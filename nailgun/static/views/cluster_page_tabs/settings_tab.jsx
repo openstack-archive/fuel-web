@@ -45,6 +45,13 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 return props.cluster.task({group: 'deployment', status: 'running'});
             }})
         ],
+        statics: {
+            fetchData: function(options) {
+                return $.when(options.cluster.get('settings').fetch({cache: true}), options.cluster.get('networkConfiguration').fetch({cache: true})).then(function() {
+                    return {};
+                });
+            }
+        },
         getInitialState: function() {
             var settings = this.props.cluster.get('settings');
             return {
@@ -57,25 +64,19 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     default: settings
                 },
                 settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
-                loading: true,
+                initialAttributes: _.cloneDeep(settings.attributes),
                 actionInProgress: false
             };
         },
         componentDidMount: function() {
-            var cluster = this.props.cluster,
-                settings = cluster.get('settings');
-            $.when(settings.fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
-                this.updateInitialAttributes();
-                this.getHiddenSettings();
-                settings.isValid({models: this.state.configModels});
-                this.setState({loading: false});
-            }, this));
+            this.getHiddenSettings();
+            this.props.cluster.get('settings').isValid({models: this.state.configModels});
         },
         componentWillUnmount: function() {
             this.loadInitialSettings();
         },
         hasChanges: function() {
-            return this.state.loading ? false : this.props.cluster.get('settings').hasChanges(this.state.initialAttributes, this.state.configModels);
+            return this.props.cluster.get('settings').hasChanges(this.state.initialAttributes, this.state.configModels);
         },
         applyChanges: function() {
             // collecting data to save
@@ -89,7 +90,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
-                    .done(this.updateInitialAttributes)
+                    .done(_.bind(function() {
+                        this.setState({initialAttributes: _.cloneDeep(settings.attributes)});
+                    }, this))
                     .always(_.bind(function() {
                         this.setState({
                             actionInProgress: false,
@@ -157,9 +160,6 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         loadInitialSettings: function() {
             this.props.cluster.get('settings').set(_.cloneDeep(this.state.initialAttributes)).isValid({models: this.state.configModels});
         },
-        updateInitialAttributes: function() {
-            this.setState({initialAttributes: _.cloneDeep(this.props.cluster.get('settings').attributes)});
-        },
         onChange: function(groupName, settingName, value) {
             var settings = this.props.cluster.get('settings'),
                 name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
@@ -184,43 +184,37 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return (
                 <div key={this.state.key} className='row'>
                     <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
-                    {this.state.loading ?
-                        <controls.ProgressBar />
-                        :
-                        <div>
-                            {_.map(sortedSettingGroups, function(groupName) {
-                                return <SettingGroup
-                                    key={groupName}
-                                    cluster={this.props.cluster}
-                                    groupName={groupName}
-                                    onChange={_.bind(this.onChange, this, groupName)}
-                                    allocatedRoles={allocatedRoles}
-                                    settings={settings}
-                                    settingsForChecks={this.state.settingsForChecks}
-                                    makePath={settings.makePath}
-                                    getValueAttribute={settings.getValueAttribute}
-                                    locked={locked}
-                                    lockedCluster={lockedCluster}
-                                    configModels={this.state.configModels}
-                                />;
-                            }, this)}
-                            <div className='col-xs-12 page-buttons content-elements'>
-                                <div className='well clearfix'>
-                                    <div className='btn-group pull-right'>
-                                        <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
-                                            {i18n('common.load_defaults_button')}
-                                        </button>
-                                        <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
-                                            {i18n('common.cancel_changes_button')}
-                                        </button>
-                                        <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
-                                            {i18n('common.save_settings_button')}
-                                        </button>
-                                    </div>
-                                </div>
+                    {_.map(sortedSettingGroups, function(groupName) {
+                        return <SettingGroup
+                            key={groupName}
+                            cluster={this.props.cluster}
+                            groupName={groupName}
+                            onChange={_.bind(this.onChange, this, groupName)}
+                            allocatedRoles={allocatedRoles}
+                            settings={settings}
+                            settingsForChecks={this.state.settingsForChecks}
+                            makePath={settings.makePath}
+                            getValueAttribute={settings.getValueAttribute}
+                            locked={locked}
+                            lockedCluster={lockedCluster}
+                            configModels={this.state.configModels}
+                        />;
+                    }, this)}
+                    <div className='col-xs-12 page-buttons content-elements'>
+                        <div className='well clearfix'>
+                            <div className='btn-group pull-right'>
+                                <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
+                                    {i18n('common.load_defaults_button')}
+                                </button>
+                                <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
+                                    {i18n('common.cancel_changes_button')}
+                                </button>
+                                <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
+                                    {i18n('common.save_settings_button')}
+                                </button>
                             </div>
                         </div>
-                    }
+                    </div>
                 </div>
             );
         }

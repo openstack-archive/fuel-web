@@ -73,9 +73,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             title: function(pageOptions) {
                 return pageOptions.cluster.get('name');
             },
+            getTabs: function() {
+                return [
+                    {url: 'nodes', tab: NodesTab},
+                    {url: 'network', tab: NetworkTab},
+                    {url: 'settings', tab: SettingsTab},
+                    {url: 'vmware', tab: vmWare.VmWareTab},
+                    {url: 'logs', tab: LogsTab},
+                    {url: 'healthcheck', tab: HealthCheckTab},
+                    {url: 'actions', tab: ActionsTab}
+                ];
+            },
             fetchData: function(id, activeTab) {
                 var cluster, promise, currentClusterId;
-                var tabOptions = _.toArray(arguments).slice(2);
+                var tab = _.find(this.getTabs(), {url: activeTab}).tab,
+                    tabOptions = _.toArray(arguments).slice(2);
                 try {
                     currentClusterId = app.page.props.cluster.id;
                 } catch (ignore) {}
@@ -83,7 +95,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 if (currentClusterId == id) {
                     // just another tab has been chosen, do not load cluster again
                     cluster = app.page.props.cluster;
-                    promise = $.Deferred().resolve();
+                    promise = tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();
                 } else {
                     cluster = new models.Cluster({id: id});
                     var settings = new models.Settings();
@@ -110,13 +122,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             var vcenter = new vmWare.vmWareModels.VCenter({id: id});
                             cluster.set({vcenter: vcenter});
                             return vcenter.fetch();
+                        })
+                        .then(function() {
+                            return tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();
                         });
                 }
-                return promise.then(function() {
+                return promise.then(function(data) {
                     return {
                         cluster: cluster,
                         activeTab: activeTab,
-                        tabOptions: tabOptions
+                        tabOptions: tabOptions,
+                        tabData: data
                     };
                 });
             }
@@ -186,36 +202,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         onBeforeunloadEvent: function() {
             if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
         },
-        getAvailableTabs: function() {
-            var tabs = [
-                {url: 'nodes', tab: NodesTab},
-                {url: 'network', tab: NetworkTab},
-                {url: 'settings', tab: SettingsTab},
-                {url: 'logs', tab: LogsTab},
-                {url: 'healthcheck', tab: HealthCheckTab},
-                {url: 'actions', tab: ActionsTab}
-            ];
-            var settings = this.props.cluster.get('settings'),
-                useVCenter = settings.get('common.use_vcenter').value,
-                index = _.findIndex(tabs, {url: 'settings'});
-            if (useVCenter) {
-                tabs.splice(index + 1, 0, {url: 'vmware', tab: vmWare.VmWareTab});
-            }
-            return tabs;
-        },
-        checkTab: function(props) {
-            props = props || this.props;
-            var availableTabs = this.getAvailableTabs();
-            if (!_.find(availableTabs, {url: props.activeTab})) {
-                app.navigate('cluster/' + props.cluster.id + '/' + availableTabs[0].url, {trigger: true, replace: true});
-                return;
-            }
-        },
-        componentWillUpdate: function(nextProps) {
-            this.checkTab(nextProps);
-        },
         componentWillMount: function() {
-            this.checkTab();
             this.props.cluster.on('change:release_id', function() {
                 var release = new models.Release({id: this.props.cluster.get('release_id')});
                 release.fetch().done(_.bind(function() {
@@ -226,11 +213,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
             $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },
+        getAvailableTabs: function(cluster) {
+            return _.filter(this.constructor.getTabs(), function(tabData) {
+                return !tabData.tab.isVisible || tabData.tab.isVisible(cluster);
+            });
+        },
         render: function() {
             var cluster = this.props.cluster,
                 release = cluster.get('release'),
-                availableTabs = this.getAvailableTabs(),
-                tabs = _.pluck(availableTabs, 'url'),
+                availableTabs = this.getAvailableTabs(cluster),
+                tabUrls = _.pluck(availableTabs, 'url'),
                 tab = _.find(availableTabs, {url: this.props.activeTab});
             if (!tab) return null;
             var Tab = tab.tab;
@@ -259,7 +251,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     }
                     <div className='tabs-box'>
                         <div className='tabs'>
-                            {tabs.map(function(url) {
+                            {tabUrls.map(function(url) {
                                 return (
                                     <a
                                         key={url}
@@ -274,7 +266,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         </div>
                     </div>
                     <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
-                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} />
+                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} {...this.props.tabData} />
                     </div>
                 </div>
             );

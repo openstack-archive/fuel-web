@@ -36,63 +36,47 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             }),
             componentMixins.backboneMixin('cluster', 'change:status')
         ],
-        getInitialState: function() {
-            var ostf = {},
-                clusterId = this.props.cluster.id;
-            ostf.testsets = new models.TestSets();
-            ostf.testsets.url = _.result(ostf.testsets, 'url') + '/' + clusterId;
-            ostf.tests = new models.Tests();
-            ostf.tests.url = _.result(ostf.tests, 'url') + '/' + clusterId;
-            ostf.testruns = new models.TestRuns();
-            ostf.testruns.url = _.result(ostf.testruns, 'url') + '/last/' + clusterId;
-            return {
-                ostf: ostf,
-                loaded: false,
-                loadingFailure: false
-            };
-        },
-        componentDidMount: function() {
-            if (!this.props.cluster.get('ostf')) {
-                $.when(
-                    this.state.ostf.testsets.fetch(),
-                    this.state.ostf.tests.fetch(),
-                    this.state.ostf.testruns.fetch()
-                )
-                .done(_.bind(function() {
-                    this.props.cluster.set({ostf: this.state.ostf});
-                    this.setState({loaded: true});
-                }, this))
-                .fail(_.bind(function() {
-                    this.setState({loadingFailure: true});
-                }, this));
-            } else {
-                this.setState({loaded: true});
+        statics: {
+            fetchData: function(options) {
+                if (!options.cluster.get('ostf')) {
+                    var ostf = {},
+                        clusterId = options.cluster.id;
+                    ostf.testsets = new models.TestSets();
+                    ostf.testsets.url = _.result(ostf.testsets, 'url') + '/' + clusterId;
+                    ostf.tests = new models.Tests();
+                    ostf.tests.url = _.result(ostf.tests, 'url') + '/' + clusterId;
+                    ostf.testruns = new models.TestRuns();
+                    ostf.testruns.url = _.result(ostf.testruns, 'url') + '/last/' + clusterId;
+                    return $.when(ostf.testsets.fetch(), ostf.tests.fetch(), ostf.testruns.fetch()).then(function() {
+                        options.cluster.set({ostf: ostf});
+                        return {};
+                    }, function() {
+                        return $.Deferred().resolve();
+                    });
+                }
+                return $.Deferred().resolve();
             }
         },
         render: function() {
-            var cluster = this.props.cluster,
-                ostf = cluster.get('ostf') || this.state.ostf;
+            var ostf = this.props.cluster.get('ostf');
             return (
                 <div className='row'>
                     <div className='title'>
                         {i18n('cluster_page.healthcheck_tab.title')}
                     </div>
                     <div className='col-xs-12 content-elements'>
-                        {this.state.loadingFailure ?
-                                <div className='alert alert-danger'>
-                                    {i18n('cluster_page.healthcheck_tab.not_available_alert')}
-                                </div>
-                        : !this.state.loaded ?
-                            <controls.ProgressBar />
-                        :
+                        {ostf ?
                             <HealthcheckTabContent
                                 ref='content'
                                 testsets={ostf.testsets}
                                 tests={ostf.tests}
                                 testruns={ostf.testruns}
-                                cluster={cluster}
-                                loaded={this.state.loaded}
+                                cluster={this.props.cluster}
                             />
+                        :
+                            <div className='alert alert-danger'>
+                                {i18n('cluster_page.healthcheck_tab.not_available_alert')}
+                            </div>
                         }
                         </div>
                 </div>
@@ -108,7 +92,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             componentMixins.pollingMixin(3)
         ],
         shouldDataBeFetched: function() {
-            return !!this.props.testruns.where({status: 'running'}).length;
+            return this.props.testruns.any({status: 'running'});
         },
         fetchData: function() {
             return this.props.testruns.fetch();
@@ -219,11 +203,10 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         },
         render: function() {
             var disabledState = this.isLocked(),
-                hasRunningTests = !!this.props.testruns.where({status: 'running'}).length,
-                shouldControlsBeShown = !disabledState && !this.state.loadingFailure;
+                hasRunningTests = !!this.props.testruns.where({status: 'running'}).length;
             return (
                 <div>
-                    {shouldControlsBeShown &&
+                    {!disabledState &&
                         <div className='healthcheck-controls row well well-sm'>
                             <div className='pull-left'>
                                 <controls.Input
@@ -231,21 +214,21 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                     name='selectAll'
                                     onChange={this.handleSelectAllClick}
                                     checked={this.getNumberOfCheckedTests() == this.props.tests.length}
-                                    disabled={disabledState || hasRunningTests}
+                                    disabled={hasRunningTests}
                                     label={i18n('common.select_all')}
                                     wrapperClassName='select-all'
                                     />
                             </div>
                             {hasRunningTests ?
                                 (<button className='btn btn-danger stop-tests-btn pull-right'
-                                    disabled={disabledState || this.state.actionInProgress}
+                                    disabled={this.state.actionInProgress}
                                     onClick={this.stopTests}
                                 >
                                     {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
                                 </button>)
                                 :
                                 (<button className='btn btn-success run-tests-btn pull-right'
-                                    disabled={disabledState || !this.getNumberOfCheckedTests() || this.state.actionInProgress}
+                                    disabled={!this.getNumberOfCheckedTests() || this.state.actionInProgress}
                                     onClick={this.runTests}
                                 >
                                     {i18n('cluster_page.healthcheck_tab.run_tests_button')}
@@ -263,7 +246,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             <HealthcheckCredentials
                                 credentials={this.state.credentials}
                                 onInputChange={this.handleInputChange}
-                                disabled={disabledState || hasRunningTests}
+                                disabled={hasRunningTests}
                                 />
                         </div>
                     }

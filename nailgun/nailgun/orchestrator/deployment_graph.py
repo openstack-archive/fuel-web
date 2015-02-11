@@ -81,28 +81,23 @@ class DeploymentGraph(nx.DiGraph):
         """Verify that graph doesnot contain any cycles in it."""
         return nx.is_directed_acyclic_graph(self)
 
-    def get_root_groups(self):
-        """Return groups that doesnt have predecessors
-
-        :returns: list of group names
-        """
-        result = []
-        for node in self.nodes():
-            if not self.predecessors(node):
-                result.append(node)
-        return result
-
     def get_next_groups(self, processed_nodes):
-        """Get nodes that have predecessors in processed_nodes list
+        """Get nodes that have predecessors in processed_nodes list.
+        All predecessors should be taken into account, not only direct
+        parents
 
         :param processed_nodes: set of nodes names
         :returns: list of nodes names
         """
         result = []
-        for role in self.nodes():
-            if (set(self.predecessors(role)) <= processed_nodes
-                    and role not in processed_nodes):
-                result.append(role)
+        for node in self.nodes():
+            if node in processed_nodes:
+                continue
+
+            predecessors = nx.dfs_predecessors(self.reverse(), node)
+            if (set(predecessors.keys()) <= processed_nodes):
+                result.append(node)
+
         return result
 
     def get_groups_subgraph(self):
@@ -334,7 +329,6 @@ class AstuteGraph(object):
         """
         priority = ps.PriorityStrategy()
         groups_subgraph = self.graph.get_groups_subgraph()
-        current_groups = groups_subgraph.get_root_groups()
 
         # get list with names ['controller', 'compute', 'cinder']
         all_groups = groups_subgraph.nodes()
@@ -342,6 +336,7 @@ class AstuteGraph(object):
 
         # if there is no nodes with some roles - mark them as success roles
         processed_groups = set(all_groups) - set(grouped_nodes.keys())
+        current_groups = groups_subgraph.get_next_groups(processed_groups)
 
         while current_groups:
             one_by_one = []

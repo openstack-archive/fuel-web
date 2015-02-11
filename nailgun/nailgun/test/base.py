@@ -24,6 +24,7 @@ import mock
 import os
 import re
 import time
+import yaml
 
 from datetime import datetime
 from functools import partial
@@ -63,6 +64,7 @@ from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
 from nailgun.openstack.common import jsonutils
+from nailgun.orchestrator import deployment_graph
 
 
 class TimeoutError(Exception):
@@ -969,6 +971,21 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
 
 class BaseUnitTest(TestCase):
     pass
+
+
+class BaseGroupsTraversal(BaseTestCase):
+
+    GROUPS = ""
+
+    def setUp(self):
+        super(BaseGroupsTraversal, self).setUp()
+        self.cluster = mock.Mock()
+        self.cluster.deployment_tasks = yaml.load(self.GROUPS)
+        self.astute = deployment_graph.AstuteGraph(self.cluster)
+        self.nodes = []
+
+    def get_node_by_role(self, role):
+        return next(n for n in self.nodes if n['role'] == role)
 
 
 def fake_tasks(fake_rpc=True,

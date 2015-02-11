@@ -52,7 +52,15 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
         statics: {
             navbarActiveElement: 'clusters',
             breadcrumbsPath: function(pageOptions) {
-                return [['home', '#'], ['environments', '#clusters'], [pageOptions.cluster.get('name'), null, true]];
+                var cluster = pageOptions.cluster,
+                    breadcrumbs = [
+                        ['home', '#'],
+                        ['environments', '#clusters'],
+                        [cluster.get('name'), '#cluster/' + cluster.get('id') + '/nodes'],
+                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, !pageOptions.tabOptions[0]]
+                    ];
+                if (pageOptions.tabOptions[0]) breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + pageOptions.tabOptions[0]), null, true]);
+                return breadcrumbs;
             },
             title: function(pageOptions) {
                 return pageOptions.cluster.get('name');

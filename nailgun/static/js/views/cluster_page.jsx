@@ -115,9 +115,10 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
                 e.preventDefault();
                 utils.showDialog(dialogs.DiscardSettingsChangesDialog, {
                     verification: this.props.cluster.tasks({group: 'network', status: 'running'}).length,
-                    cb: function() {
+                    cb: _.bind(function() {
+                        this.revertChanges();
                         app.navigate(href, {trigger: true});
-                    }
+                    }, this)
                 });
             }
         },
@@ -149,8 +150,14 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
             $(window).off('beforeunload.' + this.eventNamespace);
             $('body').off('click.' + this.eventNamespace);
         },
+        revertChanges: function() {
+            this.refs.tab.revertChanges();
+        },
+        hasChanges: function() {
+            return _.result(this.refs.tab, 'hasChanges');
+        },
         onBeforeunloadEvent: function() {
-            if (_.result(this.refs.tab, 'hasChanges')) return i18n('dialog.dismiss_settings.default_message');
+            if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
         },
         getAvailableTabs: function() {
             return [
@@ -220,8 +227,9 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
                             }, this)}
                             <DeploymentControl
                                 cluster={cluster}
-                                hasChanges={_.result(tab, 'hasChanges')}
-                                revertChanges={tab.revertChanges}
+                                hasChanges={this.hasChanges}
+                                revertChanges={this.revertChanges}
+                                activeTab={this.props.activeTab}
                             />
                         </ul>
                         <div className='tab-content'>
@@ -315,9 +323,10 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
             utils.showDialog(Dialog, {cluster: this.props.cluster});
         },
         onDeployRequest: function() {
-            if (this.props.hasChanges) {
+            if (this.props.hasChanges()) {
                 utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(function() {
                     this.props.revertChanges();
+                    if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
                     this.showDialog(dialogs.DeployChangesDialog);
                 }, this)});
             } else {

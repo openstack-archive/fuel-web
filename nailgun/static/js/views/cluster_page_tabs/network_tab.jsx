@@ -371,9 +371,13 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         componentWillUnmount: function() {
             this.loadInitialConfiguration();
         },
-        // needed here to check when switching between tabs
         hasChanges: function() {
             return !_.isEqual(this.state.initialConfiguration, this.props.cluster.get('networkConfiguration').toJSON());
+        },
+        revertChanges: function() {
+            this.loadInitialConfiguration();
+            app.page.removeFinishedNetworkTasks();
+            this.props.cluster.get('networkConfiguration').isValid();
         },
         loadInitialConfiguration: function() {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
@@ -408,7 +412,8 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                 cluster={this.props.cluster}
                                 isLocked={isLocked}
                                 updateInitialConfiguration={this.updateInitialConfiguration}
-                                loadInitialConfiguration={this.loadInitialConfiguration}
+                                revertChanges={this.revertChanges}
+                                hasChanges={this.hasChanges}
                             />
                         </div>
                     }
@@ -462,9 +467,6 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 this.props.networkConfiguration.get('networking_parameters').set({floating_ranges: removeEmptyRanges(floatingRanges)});
             }
         },
-        hasChanges: function() {
-            return !_.isEqual(this.props.initialConfiguration, this.props.networkConfiguration.toJSON());
-        },
         onManagerChange: function(name, value) {
             var networkingParams = this.props.networkConfiguration.get('networking_parameters'),
                 fixedAmount = this.props.networkConfiguration.get('networking_parameters').get('fixed_networks_amount') || 1;
@@ -503,11 +505,6 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     }, this));
                 }, this));
         },
-        revertChanges: function() {
-            this.props.loadInitialConfiguration();
-            app.page.removeFinishedNetworkTasks();
-            this.props.networkConfiguration.isValid();
-        },
         applyChanges: function() {
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
@@ -529,7 +526,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,
                 isLocked = this.isLocked(),
-                hasChanges = this.hasChanges(),
+                hasChanges = this.props.hasChanges(),
                 isVerificationDisabled = error || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
                 isCancelChangesDisabled = isLocked || !hasChanges,
                 isSaveChangesDisabled = error || isLocked || !hasChanges ||
@@ -542,7 +539,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                 disabled={isVerificationDisabled}>
                                     {i18n('cluster_page.network_tab.verify_networks_button')}
                             </button>
-                            <button key='revert_changes' className='btn btn-revert-changes' onClick={this.revertChanges}
+                            <button key='revert_changes' className='btn btn-revert-changes' onClick={this.props.revertChanges}
                                 disabled={isCancelChangesDisabled}>
                                     {i18n('common.cancel_changes_button')}
                             </button>

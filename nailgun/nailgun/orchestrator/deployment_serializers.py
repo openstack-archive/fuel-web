@@ -1026,11 +1026,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         else:
             img_dir = '/opt/vm/'
         image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
-        # Add default Glance property for Murano.
-        glance_properties = [
-            """--property murano_image_info="""
-            """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
-        ]
+
+        glance_properties = []
 
         # Alternate VMWare specific values.
         if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':
@@ -1142,10 +1139,40 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         return common_attrs
 
 
+class DeploymentMultinodeSerializer50(DeploymentMultinodeSerializer):
+
+    nova_network_serializer = NovaNetworkDeploymentSerializer
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer
+
+    def generate_test_vm_image_data(self, node):
+        image_data = super(
+            DeploymentMultinodeSerializer50,
+            self).generate_test_vm_image_data(node)
+
+        # Add default Glance property for Murano.
+        existing_properties = image_data['glance_properties']
+        murano_data = ''.join([""" --property murano_image_info='{"title":"""
+                               """ "Murano Demo","type": "cirros.demo"}' """])
+        image_data['glance_properties'] = existing_properties + murano_data
+        return image_data
+
+
 class DeploymentMultinodeSerializer51(DeploymentMultinodeSerializer):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer51
+
+    def generate_test_vm_image_data(self, node):
+        image_data = super(
+            DeploymentMultinodeSerializer51,
+            self).generate_test_vm_image_data(node)
+
+        # Add default Glance property for Murano.
+        existing_properties = image_data['glance_properties']
+        murano_data = ''.join([""" --property murano_image_info='{"title":"""
+                               """ "Murano Demo","type": "cirros.demo"}' """])
+        image_data['glance_properties'] = existing_properties + murano_data
+        return image_data
 
 
 class DeploymentHASerializer51(DeploymentHASerializer):
@@ -1249,7 +1276,7 @@ def get_serializer_for_cluster(cluster):
     """
     serializers_map = {
         '5.0': {
-            'multinode': DeploymentMultinodeSerializer,
+            'multinode': DeploymentMultinodeSerializer50,
             'ha': DeploymentHASerializer,
         },
         '5.1': {

@@ -161,10 +161,7 @@ class TestHandlers(BaseIntegrationTest):
             'img_path': '/opt/vm/cirros-x86_64-disk.img',
             'os_name': 'cirros',
             'min_ram': 64,
-            'glance_properties': (
-                """--property murano_image_info="""
-                """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
-            ),
+            'glance_properties': ()
         }
 
         critical_mapping = {
@@ -365,7 +362,8 @@ class TestHandlers(BaseIntegrationTest):
                          'storage_address',
                          'ipaddr',
                          'IP',
-                         'tasks'])
+                         'tasks',
+                         'glance_properties'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -375,7 +373,8 @@ class TestHandlers(BaseIntegrationTest):
                          'ipaddr',
                          'IP',
                          'tasks',
-                         'priority'])
+                         'priority',
+                         'glance_properties'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -551,10 +550,7 @@ class TestHandlers(BaseIntegrationTest):
             'img_path': '/opt/vm/cirros-x86_64-disk.img',
             'os_name': 'cirros',
             'min_ram': 64,
-            'glance_properties': (
-                """--property murano_image_info="""
-                """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
-            ),
+            'glance_properties': ()
         }
 
         critical_mapping = {
@@ -806,7 +802,8 @@ class TestHandlers(BaseIntegrationTest):
                          'storage_address',
                          'ipaddr',
                          'IP',
-                         'tasks'])
+                         'tasks',
+                         'glance_properties'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -816,7 +813,8 @@ class TestHandlers(BaseIntegrationTest):
                          'ipaddr',
                          'IP',
                          'tasks',
-                         'priority'])
+                         'priority',
+                         'glance_properties'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -991,10 +989,7 @@ class TestHandlers(BaseIntegrationTest):
             'img_path': '/opt/vm/cirros-x86_64-disk.img',
             'os_name': 'cirros',
             'min_ram': 64,
-            'glance_properties': (
-                """--property murano_image_info="""
-                """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
-            ),
+            'glance_properties': ()
         }
 
         critical_mapping = {
@@ -1265,7 +1260,8 @@ class TestHandlers(BaseIntegrationTest):
                          'storage_address',
                          'ipaddr',
                          'IP',
-                         'tasks'])
+                         'tasks',
+                         'glance_properties'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -1275,7 +1271,8 @@ class TestHandlers(BaseIntegrationTest):
                          'ipaddr',
                          'IP',
                          'tasks',
-                         'priority'])
+                         'priority',
+                         'glance_properties'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

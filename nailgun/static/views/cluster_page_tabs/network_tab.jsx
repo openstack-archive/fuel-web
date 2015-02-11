@@ -493,19 +493,20 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 this.setState({hideVerificationResult: false});
             })
         ],
+        statics: {
+            fetchData: function(options) {
+                return $.when(options.cluster.get('settings').fetch({cache: true}), options.cluster.get('networkConfiguration').fetch({cache: true})).then(function() {
+                    return {};
+                });
+            }
+        },
         getInitialState: function() {
             return {
-                loading: true,
-                initialConfiguration: false,
+                initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON()),
                 hideVerificationResult: false
             };
         },
         componentDidMount: function() {
-            var networkConfiguration = this.props.cluster.get('networkConfiguration');
-            $.when(this.props.cluster.get('settings').fetch({cache: true}), networkConfiguration.fetch({cache: true})).done(_.bind(function() {
-                this.updateInitialConfiguration();
-                this.setState({loading: false});
-            }, this));
             this.props.cluster.get('tasks').on('change:status change:unsaved', this.removeUnsavedNetworkVerificationTasks, this);
         },
         componentWillUnmount: function() {
@@ -553,21 +554,17 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return (
                 <div className={utils.classNames(classes)}>
                     <div className='title'>{i18n(ns + 'title')}</div>
-                    {this.state.loading ?
-                        <controls.ProgressBar />
-                    :
-                        <NetworkTabContent
-                            networkConfiguration={this.props.cluster.get('networkConfiguration')}
-                            initialConfiguration={this.state.initialConfiguration}
-                            tasks={this.props.cluster.get('tasks')}
-                            cluster={this.props.cluster}
-                            isLocked={isLocked}
-                            updateInitialConfiguration={this.updateInitialConfiguration}
-                            revertChanges={this.revertChanges}
-                            hasChanges={this.hasChanges}
-                            hideVerificationResult={this.state.hideVerificationResult}
-                        />
-                    }
+                    <NetworkTabContent
+                        networkConfiguration={this.props.cluster.get('networkConfiguration')}
+                        initialConfiguration={this.state.initialConfiguration}
+                        tasks={this.props.cluster.get('tasks')}
+                        cluster={this.props.cluster}
+                        isLocked={isLocked}
+                        updateInitialConfiguration={this.updateInitialConfiguration}
+                        revertChanges={this.revertChanges}
+                        hasChanges={this.hasChanges}
+                        hideVerificationResult={this.state.hideVerificationResult}
+                    />
                 </div>
             );
         }

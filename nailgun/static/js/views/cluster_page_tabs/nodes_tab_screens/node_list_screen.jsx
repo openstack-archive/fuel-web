@@ -42,7 +42,6 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
         ],
         getInitialState: function() {
             return {
-                loading: this.props.mode == 'add',
                 filter: '',
                 grouping: this.props.mode == 'add' ? 'hardware' : this.props.cluster.get('grouping'),
                 selectedNodeIds: this.props.nodes.reduce(function(result, node) {
@@ -56,23 +55,10 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             _.each(ids, function(id) {nodeSelection[id] = checked;});
             this.setState({selectedNodeIds: nodeSelection});
         },
-        shouldDataBeFetched: function() {
-            return !this.state.loading;
-        },
         fetchData: function() {
             return this.props.nodes.fetch();
         },
         componentWillMount: function() {
-            var clusterId = this.props.mode == 'add' ? '' : this.props.cluster.id;
-            this.props.nodes.fetch = function(options) {
-                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: clusterId}}, options));
-            };
-            if (this.props.mode == 'edit') {
-                var ids = this.props.nodes.pluck('id');
-                this.props.nodes.parse = function(response) {
-                    return _.filter(response, function(node) {return _.contains(ids, node.id);});
-                };
-            }
             this.updateInitialRoles();
             this.props.nodes.on('add remove reset', this.updateInitialRoles, this);
             // hack to prevent node roles update after node polling
@@ -87,14 +73,6 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
         },
         checkRoleAssignment: function(node, roles, options) {
             if (!options.assign) node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
-        },
-        componentDidMount: function() {
-            if (this.props.mode == 'add') {
-                $.when(this.props.nodes.fetch(), this.props.cluster.get('settings').fetch({cache: true})).always(_.bind(function() {
-                    this.setState({loading: false});
-                    this.scheduleDataFetch();
-                }, this));
-            }
         },
         hasChanges: function() {
             return this.props.nodes.any(function(node) {
@@ -136,23 +114,21 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                         filtering={this.state.filtering}
                         changeFilter={this.changeFilter}
                         clearFilter={this.clearFilter}
-                        hasChanges={!this.isMounted() || this.hasChanges()}
-                        locked={locked || this.state.loading}
+                        hasChanges={this.hasChanges()}
+                        locked={locked}
                         revertChanges={this.revertChanges}
                     />
-                    {this.state.loading ? <controls.ProgressBar /> :
-                        <div>
-                            {this.props.mode != 'list' && <RolePanel {...this.props} selectedNodeIds={this.state.selectedNodeIds} />}
-                            <NodeList {...this.props}
-                                nodes={this.props.nodes.models}
-                                grouping={this.state.grouping}
-                                filter={this.state.filter}
-                                locked={locked}
-                                selectedNodeIds={this.state.selectedNodeIds}
-                                selectNodes={this.selectNodes}
-                            />
-                        </div>
-                    }
+                    <div>
+                        {this.props.mode != 'list' && <RolePanel {...this.props} selectedNodeIds={this.state.selectedNodeIds} />}
+                        <NodeList {...this.props}
+                            nodes={this.props.nodes.models}
+                            grouping={this.state.grouping}
+                            filter={this.state.filter}
+                            locked={locked}
+                            selectedNodeIds={this.state.selectedNodeIds}
+                            selectNodes={this.selectNodes}
+                        />
+                    </div>
                 </div>
             );
         }

@@ -152,6 +152,21 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 input.setSelectionRange(startPos, endPos);
             }
         },
+        autofillRangeEnd: function(previousValues, newValues) {
+            // _.dropRight would suit perfectly here, but it is not supported in our version of lodash
+            var previousOctets = _.drop(previousValues[0].split('.').reverse()).reverse(),
+                newOctets = _.drop(newValues[0].split('.').reverse()).reverse(),
+                maxIPOctetValue = 256,
+                octetToSetValue = _.difference(newOctets, previousOctets)[0],
+                octetToSetIndex = _.indexOf(newOctets, octetToSetValue);
+
+            if (!_.isNaN(parseInt(octetToSetValue)) && octetToSetValue < maxIPOctetValue) {
+                var octetsToSet = newValues[1].split('.');
+                octetsToSet[octetToSetIndex] = octetToSetValue;
+                newValues[1] = octetsToSet.join('.');
+            }
+            return newValues[1];
+        },
         onRangeChange: function(name, newValue, attribute, rowIndex) {
             var model = this.getModel(),
                 valuesToSet = _.cloneDeep(model.get(attribute)),
@@ -163,7 +178,11 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 // if first range field
                 if (_.contains(name, 'range-start')) {
                     valuesToModify[0] = newValue;
-                    // if end field
+                    if (!this.props.integerValue) {
+                        valuesToModify[1] = this.autofillRangeEnd(this.props.extendable ?
+                            model.get(attribute)[rowIndex] : model.get(attribute), valuesToModify);
+                    }
+                // if end field
                 } else if (_.contains(name, 'range-end')) {
                     valuesToModify[1] = newValue;
                 }

@@ -18,22 +18,26 @@ define(
     'jquery',
     'underscore',
     'react',
+    'jsx!views/controls',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function($, _, React, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
 
     var ReactTransitionGroup = React.addons.TransitionGroup;
 
     var NodesTab = React.createClass({
         getInitialState: function() {
+            var screen = this.getScreen();
             return {
-                screen: this.props.tabOptions[0] || 'list',
-                screenOptions: this.props.tabOptions.slice(1)
+                loading: this.shouldScreenDataBeLoaded(screen),
+                screen: screen,
+                screenOptions: this.getScreenOptions(),
+                screenData: {}
             };
         },
         hasChanges: function() {
@@ -42,47 +46,78 @@ function($, _, React, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditN
         revertChanges: function() {
             return this.refs.screen.revertChanges();
         },
-        getAvailableScreens: function() {
+        getScreenConstructor: function(screen) {
             return {
                 list: ClusterNodesScreen,
                 add: AddNodesScreen,
                 edit: EditNodesScreen,
                 disks: EditNodeDisksScreen,
                 interfaces: EditNodeInterfacesScreen
-            };
+            }[screen];
         },
-        changeScreen: function(newScreen, screenOptions) {
-            var NewScreenComponent = this.getAvailableScreens()[newScreen];
-            if (!NewScreenComponent) {
+        checkScreenExists: function(screen) {
+            if (!this.getScreenConstructor(screen || this.state.screen)) {
                 app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                return;
+                return false;
             }
-            var options = {cluster: this.props.cluster, screenOptions: screenOptions};
-            return (NewScreenComponent.fetchData ? NewScreenComponent.fetchData(options) : $.Deferred().resolve())
+            return true;
+        },
+        loadScreenData: function(screen, screenOptions) {
+            return this.getScreenConstructor(screen || this.state.screen)
+                .fetchData({
+                    cluster: this.props.cluster,
+                    screenOptions: screenOptions || this.state.screenOptions
+                })
                 .done(_.bind(function(data) {
                     this.setState({
-                        screen: newScreen,
-                        screenOptions: screenOptions,
+                        loading: false,
                         screenData: data || {}
                     });
                 }, this));
         },
-        componentWillMount: function() {
-            var newScreen = this.props.tabOptions[0] || 'list';
-            this.changeScreen(newScreen, this.props.tabOptions.slice(1));
+        getScreen: function(props) {
+            return (props || this.props).tabOptions[0] || 'list';
+        },
+        getScreenOptions: function(props) {
+            return (props || this.props).tabOptions.slice(1);
+        },
+        shouldScreenDataBeLoaded: function(screen) {
+            return !!this.getScreenConstructor(screen).fetchData;
+        },
+        componentDidMount: function() {
+            if (this.checkScreenExists() && this.state.loading) this.loadScreenData();
         },
         componentWillReceiveProps: function(newProps) {
-            var newScreen = newProps.tabOptions[0] || 'list';
-            // check that screen changed
-            if (newScreen != this.state.screen) this.changeScreen(newScreen, newProps.tabOptions.slice(1));
+            var screen = this.getScreen(newProps);
+            if (this.state.screen != screen && this.checkScreenExists(screen)) {
+                var screenOptions = this.getScreenOptions(newProps),
+                    newState = {
+                        screen: screen,
+                        screenOptions: screenOptions,
+                        screenData: {}
+                    };
+                if (this.shouldScreenDataBeLoaded(screen)) {
+                    this.setState(_.extend(newState, {loading: true}));
+                    this.loadScreenData(screen, screenOptions);
+                } else {
+                    this.setState(newState);
+                }
+            }
         },
         render: function() {
-            var Screen = this.getAvailableScreens()[this.state.screen];
-            if (!Screen || !_.isObject(this.state.screenData)) return null;
+            var Screen = this.getScreenConstructor(this.state.screen) || {};
             return (
-                <ReactTransitionGroup component='div' className='wrapper' transitionName='screen'>
-                    <ScreenTransitionWrapper key={this.state.screen}>
-                        <Screen {...this.state.screenData}
+                <ReactTransitionGroup
+                    component='div'
+                    className='wrapper'
+                    transitionName='screen'
+                >
+                    <ScreenTransitionWrapper
+                        key={this.state.screen}
+                        loading={this.state.loading}
+                    >
+                        <Screen
+                            {...this.state.screenData}
                             ref='screen'
                             cluster={this.props.cluster}
                             screenOptions={this.state.screenOptions}
@@ -103,6 +138,13 @@ function($, _, React, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditN
             $(this.getDOMNode()).fadeOut('fast', cb);
         },
         render: function() {
+            if (this.props.loading) return (
+                <div className='row'>
+                    <div className='col-xs-12' style={{paddingTop: '40px'}}>
+                        <controls.ProgressBar />
+                    </div>
+                </div>
+            );
             return <div>{this.props.children}</div>;
         }
     });

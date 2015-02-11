@@ -49,7 +49,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     return !this.props.nodes.any(function(node) {return !node.hasRole(role);});
                 }, this) : [];
             return {
-                loading: this.props.mode == 'add',
                 filter: '',
                 grouping: this.props.mode == 'add' ? 'hardware' : cluster.get('grouping'),
                 selectedNodeIds: this.props.nodes.reduce(function(result, node) {
@@ -85,23 +84,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 indeterminateRoles: _.without(this.state.indeterminateRoles, role)
             });
         },
-        shouldDataBeFetched: function() {
-            return !this.state.loading;
-        },
         fetchData: function() {
             return this.props.nodes.fetch();
         },
         componentWillMount: function() {
-            var clusterId = this.props.mode == 'add' ? '' : this.props.cluster.id;
-            this.props.nodes.fetch = function(options) {
-                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: clusterId}}, options));
-            };
-            if (this.props.mode == 'edit') {
-                var ids = this.props.nodes.pluck('id');
-                this.props.nodes.parse = function(response) {
-                    return _.filter(response, function(node) {return _.contains(ids, node.id);});
-                };
-            }
             this.updateInitialRoles();
             this.props.nodes.on('update reset', this.updateInitialRoles, this);
             // hack to prevent node roles update after node polling
@@ -145,14 +131,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         checkRoleAssignment: function(node, roles, options) {
             if (!options.assign) node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
-        },
-        componentDidMount: function() {
-            if (this.props.mode == 'add') {
-                $.when(this.props.nodes.fetch(), this.props.cluster.get('settings').fetch({cache: true})).always(_.bind(function() {
-                    this.setState({loading: false});
-                    this.scheduleDataFetch();
-                }, this));
-            }
         },
         hasChanges: function() {
             return this.props.nodes.any(function(node) {
@@ -207,32 +185,28 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         filtering={this.state.filtering}
                         changeFilter={this.changeFilter}
                         clearFilter={this.clearFilter}
-                        hasChanges={!this.isMounted() || this.hasChanges()}
-                        locked={locked || this.state.loading}
+                        hasChanges={this.hasChanges()}
+                        locked={locked}
                         revertChanges={this.revertChanges}
                     />
-                    {this.state.loading ? <controls.ProgressBar /> :
-                        <div>
-                            {this.props.mode != 'list' &&
-                                <RolePanel
-                                    {...this.props}
-                                    {... _.pick(processedRoleData, 'processedRoleLimits')}
-                                    {... _.pick(this.state, 'selectedNodeIds', 'selectedRoles', 'indeterminateRoles')}
-                                    selectRoles={this.selectRoles}
-                                    configModels={this.state.configModels}
-                                />
-                            }
-                            <NodeList {...this.props}
-                                nodes={nodes.filter(function(node) {
-                                    return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.state.filter.toLowerCase());
-                                }, this)}
-                                {... _.pick(this.state, 'grouping', 'selectedNodeIds', 'selectedRoles')}
-                                {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
-                                locked={locked}
-                                selectNodes={this.selectNodes}
-                            />
-                        </div>
+                    {this.props.mode != 'list' &&
+                        <RolePanel
+                            {...this.props}
+                            {... _.pick(processedRoleData, 'processedRoleLimits')}
+                            {... _.pick(this.state, 'selectedNodeIds', 'selectedRoles', 'indeterminateRoles')}
+                            selectRoles={this.selectRoles}
+                            configModels={this.state.configModels}
+                        />
                     }
+                    <NodeList {...this.props}
+                        nodes={nodes.filter(function(node) {
+                            return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.state.filter.toLowerCase());
+                        }, this)}
+                        {... _.pick(this.state, 'grouping', 'selectedNodeIds', 'selectedRoles')}
+                        {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
+                        locked={locked}
+                        selectNodes={this.selectNodes}
+                    />
                 </div>
             );
         }
@@ -492,7 +466,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     name={name}
                                     label={role.get('label')}
                                     description={role.get('description')}
-                                    defaultChecked={_.contains(this.props.selectedRoles, name)}
+                                    сhecked={_.contains(this.props.selectedRoles, name)}
                                     disabled={!this.props.nodes.length || processedRestrictions.result}
                                     tooltipText={!!this.props.nodes.length && processedRestrictions.message}
                                     onChange={this.props.selectRoles}
@@ -518,6 +492,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <controls.Input
                     ref='select-all'
+                    name='select-all'
                     type='checkbox'
                     checked={checked}
                     disabled={

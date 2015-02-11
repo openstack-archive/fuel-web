@@ -831,6 +831,20 @@ label {cursor: default;}
             .node-status-container {
               line-height: 48px;
               position: relative;
+              .node-forget-button {
+                border: 1px solid @fuel-base-color;
+                padding: 4px 8px;
+                margin-left: 10px;
+                .border-radius-mixin;
+                text-transform: uppercase;
+                font-size: 9.5px;
+                display: inline;
+                color: @fuel-blue;
+                font-weight: bold;
+                &:hover {
+                  text-decoration: underline;
+                }
+              }
             }
             .progress {
               background-color: #b9bdbf;

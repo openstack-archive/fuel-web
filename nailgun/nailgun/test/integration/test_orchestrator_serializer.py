@@ -2347,6 +2347,11 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
         self.assertEqual(result['glance']['vc_user'], "admin")
         self.assertEqual(result['glance']['vc_password'], "secret")
 
+    def check_no_murano_data(self):
+        glance_properties = self.serializer.generate_test_vm_image_data(
+            self.env.nodes[0])['test_vm_image']['glance_properties']
+        self.assertNotIn('murano_image_info', glance_properties)
+
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
 
@@ -2365,6 +2370,9 @@ class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
+
+    def test_glance_properties(self):
+        self.check_no_murano_data()
 
 
 class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer61):
@@ -2460,3 +2468,6 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
+
+    def test_glance_properties(self):
+        self.check_no_murano_data()

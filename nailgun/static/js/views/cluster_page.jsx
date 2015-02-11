@@ -89,6 +89,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     var settings = new models.Settings();
                     settings.url = _.result(cluster, 'url') + '/attributes';
                     cluster.set({settings: settings});
+                    cluster.get('nodes').fetch = function(options) {
+                        return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: id}}, options));
+                    };
                     promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'))
                         .then(function() {
                             var networkConfiguration = new models.NetworkConfiguration();

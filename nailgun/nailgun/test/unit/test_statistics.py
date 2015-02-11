@@ -18,6 +18,7 @@ from mock import patch
 
 import datetime
 import requests
+import six
 import urllib3
 
 from nailgun.test.base import BaseTestCase
@@ -554,54 +555,95 @@ class TestStatisticsSender(BaseTestCase):
 
 class TestOSWLCollectingUtils(BaseTestCase):
 
-    def test_get_vm_info(self):
-        # prepare return data for nova client mock
-        server_info = {
-            "id": 1,
-            "status": "running",
-            "OS-EXT-STS:power_state": 1,
-            "created": "date_of_creation",
-            "hostId": "test_host_id",
-            "tenant_id": "test_tenant_id",
-            "image": {"id": "test_image_id"},
-            "flavor": {"id": "test_flavor_id"},
+    def test_get_oswl_info(self):
+        def mock_entity_manager(return_data):
+            ent_instance_mock = Mock()
+            ent_instance_mock.to_dict = Mock(return_value=return_data)
+
+            ent_manager_mock = Mock()
+            ent_manager_mock.list.return_value = [ent_instance_mock]
+
+            return ent_manager_mock
+
+        components_to_mock = {
+            "nova": {
+                "servers": {
+                    "id": 1,
+                    "status": "running",
+                    "OS-EXT-STS:power_state": 1,
+                    "created": "date_of_creation",
+                    "hostId": "test_host_id",
+                    "tenant_id": "test_tenant_id",
+                    "image": {"id": "test_image_id"},
+                    "flavor": {"id": "test_flavor_id"},
+                },
+                "flavors": {
+                    "id": 2,
+                    "ram": 64,
+                    "vcpus": 4,
+                    "OS-FLV-EXT-DATA:ephemeral": 1,
+                    "disk": 1,
+                }
+            }
         }
 
-        # mock nova os client
-        server_mock = Mock()
-        server_mock.to_dict = Mock(return_value=server_info)
-
-        servers_manager = Mock()
-        servers_manager.list.return_value = [server_mock]
-
-        nova_mock = Mock()
-        nova_mock.servers = servers_manager
-
-        client_provider_mock = Mock()
-        client_provider_mock.nova = nova_mock
+        expected = {
+            "servers":
+            {
+                "regard_resource": "vm",
+                "data": [
+                    {
+                        "id": 1,
+                        "status": "running",
+                        "power_state": 1,
+                        "created_at": "date_of_creation",
+                        "image_id": "test_image_id",
+                        "flavor_id": "test_flavor_id",
+                        "host_id": "test_host_id",
+                        "tenant_id": "test_tenant_id",
+                    },
+                ],
+            },
+            "flavors":
+            {
+                "regard_resource": "flavor",
+                "data": [
+                    {
+                        "id": 2,
+                        "ram": 64,
+                        "vcpus": 4,
+                        "ephemeral": 1,
+                        "disk": 1,
+                    },
+                ],
+            },
+        }
 
         get_proxy_path = ("nailgun.statistics.utils.get_proxy_for_cluster")
         set_proxy_path = ("nailgun.statistics.utils.set_proxy")
 
         with patch(get_proxy_path):
             with patch(set_proxy_path):
-                res = utils.get_info_from_os_resource_manager(
-                    client_provider_mock, "vm")
+                client_provider_mock = Mock()
 
-        expected = [
-            {
-                "id": 1,
-                "status": "running",
-                "power_state": 1,
-                "created_at": "date_of_creation",
-                "image_id": "test_image_id",
-                "flavor_id": "test_flavor_id",
-                "host_id": "test_host_id",
-                "tenant_id": "test_tenant_id",
-            },
-        ]
+                for comp_name in components_to_mock:
+                    for ent_name, ret_data in six.iteritems(
+                            components_to_mock[comp_name]):
 
-        self.assertItemsEqual(res, expected)
+                        ent_manager_mock = mock_entity_manager(ret_data)
+                        comp_mock = Mock()
+                        setattr(comp_mock, ent_name, ent_manager_mock)
+
+                        setattr(client_provider_mock,
+                                comp_name,
+                                comp_mock)
+
+                        res = utils.get_info_from_os_resource_manager(
+                            client_provider_mock,
+                            expected[ent_name]["regard_resource"])
+
+                        self.assertItemsEqual(
+                            res, expected[ent_name]["data"])
 
 
 class TestOSWLCollector(BaseTestCase):

@@ -41,6 +41,16 @@ collected_components_attrs = {
         },
         "resource_manager_path": ["nova", "servers"]
     },
+    "flavor": {
+        "attr_names": {
+            "id": ["id"],
+            "ram": ["ram"],
+            "vcpus": ["vcpus"],
+            "ephemeral": ["OS-FLV-EXT-DATA:ephemeral"],
+            "disk": ["disk"],
+        },
+        "resource_manager_path": ["nova", "flavors"]
+    },
 }
 
 

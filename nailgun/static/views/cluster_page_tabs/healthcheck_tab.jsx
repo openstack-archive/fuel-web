@@ -36,61 +36,44 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             }),
             componentMixins.backboneMixin('cluster', 'change:status')
         ],
-        getInitialState: function() {
-            var ostf = {},
-                clusterId = this.props.cluster.id;
-            ostf.testsets = new models.TestSets();
-            ostf.testsets.url = _.result(ostf.testsets, 'url') + '/' + clusterId;
-            ostf.tests = new models.Tests();
-            ostf.tests.url = _.result(ostf.tests, 'url') + '/' + clusterId;
-            ostf.testruns = new models.TestRuns();
-            ostf.testruns.url = _.result(ostf.testruns, 'url') + '/last/' + clusterId;
-            return {
-                ostf: ostf,
-                loaded: false,
-                loadingFailure: false
-            };
-        },
-        componentDidMount: function() {
-            if (!this.props.cluster.get('ostf')) {
-                $.when(
-                    this.state.ostf.testsets.fetch(),
-                    this.state.ostf.tests.fetch(),
-                    this.state.ostf.testruns.fetch()
-                )
-                .done(_.bind(function() {
-                    this.props.cluster.set({ostf: this.state.ostf});
-                    this.setState({loaded: true});
-                }, this))
-                .fail(_.bind(function() {
-                    this.setState({loadingFailure: true});
-                }, this));
-            } else {
-                this.setState({loaded: true});
+        statics: {
+            fetchData: function(options) {
+                if (!options.cluster.get('ostf')) {
+                    var ostf = {},
+                        clusterId = options.cluster.id;
+                    ostf.testsets = new models.TestSets();
+                    ostf.testsets.url = _.result(ostf.testsets, 'url') + '/' + clusterId;
+                    ostf.tests = new models.Tests();
+                    ostf.tests.url = _.result(ostf.tests, 'url') + '/' + clusterId;
+                    ostf.testruns = new models.TestRuns();
+                    ostf.testruns.url = _.result(ostf.testruns, 'url') + '/last/' + clusterId;
+                    options.cluster.set({ostf: ostf});
+                    return $.when(ostf.testsets.fetch(), ostf.tests.fetch(), ostf.testruns.fetch()).then(function() {
+                        return {};
+                    });
+                }
+                return $.Deferred().resolve();
             }
         },
         render: function() {
-            var cluster = this.props.cluster,
-                ostf = cluster.get('ostf') || this.state.ostf;
+            var ostf = !this.props.loadingFailure && this.props.cluster.get('ostf');
             return (
                 <div className='row'>
                     <div className='title'>
                         {i18n('cluster_page.healthcheck_tab.title')}
                     </div>
                     <div className='col-xs-12'>
-                        {this.state.loadingFailure ?
+                        {this.props.loadingFailure ?
                                 <div className='alert alert-danger'>
                                     {i18n('cluster_page.healthcheck_tab.not_available_alert')}
                                 </div>
-                        : !this.state.loaded ?
-                            <controls.ProgressBar />
                         :
                             <HealthcheckTabContent
                                 ref='content'
                                 testsets={ostf.testsets}
                                 tests={ostf.tests}
                                 testruns={ostf.testruns}
-                                cluster={cluster}
+                                cluster={this.props.cluster}
                                 loaded={this.state.loaded}
                             />
                         }
@@ -108,7 +91,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             componentMixins.pollingMixin(3)
         ],
         shouldDataBeFetched: function() {
-            return !!this.props.testruns.where({status: 'running'}).length;
+            return this.props.testruns.any({status: 'running'});
         },
         fetchData: function() {
             return this.props.testruns.fetch();
@@ -213,7 +196,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         render: function() {
             var disabledState = this.isLocked(),
                 hasRunningTests = !!this.props.testruns.where({status: 'running'}).length,
-                shouldControlsBeShown = !disabledState && !this.state.loadingFailure;
+                shouldControlsBeShown = !disabledState && !this.props.loadingFailure;
             return (
                 <div>
                     {shouldControlsBeShown &&

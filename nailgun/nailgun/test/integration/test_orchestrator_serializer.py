@@ -32,11 +32,15 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers import\
+    DeploymentHASerializer50
+from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer51
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer61
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer
+from nailgun.orchestrator.deployment_serializers import\
+    DeploymentMultinodeSerializer50
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer61
 from nailgun.orchestrator.deployment_serializers import\
@@ -2159,7 +2163,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
                          True)
 
 
-class BaseDeploymentSerializer61(BaseIntegrationTest):
+class BaseDeploymentSerializer(BaseIntegrationTest):
 
     node_name = 'node name'
     # Needs to be set in childs
@@ -2280,8 +2284,18 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
         self.assertEqual(result['glance']['vc_user'], "admin")
         self.assertEqual(result['glance']['vc_password'], "secret")
 
+    def check_no_murano_data(self):
+        glance_properties = self.serializer.generate_test_vm_image_data(
+            self.env.nodes[0])['test_vm_image']['glance_properties']
+        self.assertNotIn('murano_image_info', glance_properties)
 
-class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
+    def check_murano_data(self):
+        glance_properties = self.serializer.generate_test_vm_image_data(
+            self.env.nodes[0])['test_vm_image']['glance_properties']
+        self.assertIn('murano_image_info', glance_properties)
+
+
+class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
 
     def setUp(self):
         super(TestDeploymentMultinodeSerializer61, self).setUp()
@@ -2299,8 +2313,11 @@ class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
 
+    def test_glance_properties(self):
+        self.check_no_murano_data()
 
-class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer61):
+
+class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
 
     def setUp(self):
         super(TestDeploymentAttributesSerialization61, self).setUp()
@@ -2324,7 +2341,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer61):
         self.assertEqual(oswl_user['tenant'], 'services')
 
 
-class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
+class TestDeploymentHASerializer61(BaseDeploymentSerializer):
 
     def setUp(self):
         super(TestDeploymentHASerializer61, self).setUp()
@@ -2393,3 +2410,30 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
+
+    def test_glance_properties(self):
+        self.check_no_murano_data()
+
+
+class TestDeploymentHASerializer50(BaseDeploymentSerializer):
+
+    def setUp(self):
+        super(TestDeploymentHASerializer50, self).setUp()
+        self.cluster = self.create_env('ha_compact')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        self.serializer = DeploymentHASerializer50(self.cluster)
+
+    def test_glance_properties(self):
+        self.check_murano_data()
+
+
+class TestDeploymentMultinodeSerializer50(BaseDeploymentSerializer):
+
+    def setUp(self):
+        super(TestDeploymentMultinodeSerializer50, self).setUp()
+        self.cluster = self.create_env('multinode')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        self.serializer = DeploymentMultinodeSerializer50(self.cluster)
+
+    def test_glance_properties(self):
+        self.check_murano_data()

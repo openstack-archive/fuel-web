@@ -15,14 +15,21 @@
 **/
 define(
 [
+    'underscore',
     'react',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function(React, NodeListScreen) {
+function(_, React, NodeListScreen) {
     'use strict';
 
     var ClusterNodesScreen = React.createClass({
         hasChanges: false,
+        componentWillMount: function() {
+            var cluster = this.props.cluster;
+            cluster.get('nodes').fetch = function(options) {
+                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: cluster.id}}, options));
+            };
+        },
         render: function() {
             return <NodeListScreen
                 ref='screen'

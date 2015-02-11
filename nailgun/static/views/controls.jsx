@@ -94,7 +94,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                     type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
                     className: utils.classNames(classes),
                     // debounced onChange callback is supported for uncontrolled inputs
-                    onChange: this.props.value ? this.onChange : this.debouncedChange
+                    onChange: (_.isUndefined(this.props.value) && _.isUndefined(this.props.сhecked)) ? this.debouncedChange : this.onChange
                 },
                 Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,

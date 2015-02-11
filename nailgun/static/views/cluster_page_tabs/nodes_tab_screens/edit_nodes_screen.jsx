@@ -25,14 +25,24 @@ function(_, React, models, utils, NodeListScreen) {
     'use strict';
 
     var EditNodesScreen = React.createClass({
-        getInitialState: function() {
-            var serializedIds = this.props.screenOptions[0],
-                ids = serializedIds ? utils.deserializeTabOptions(serializedIds).nodes.split(',').map(function(id) {return parseInt(id, 10);}) : [];
-            return {
-                nodes: new models.Nodes(this.props.cluster.get('nodes').getByIds(ids).map(function(node) {
-                    return _.cloneDeep(node.attributes);
-                }))
-            };
+        statics: {
+            fetchData: function(options) {
+                var cluster = options.cluster,
+                    serializedIds = options.screenOptions[0],
+                    ids = serializedIds ? utils.deserializeTabOptions(serializedIds).nodes.split(',').map(function(id) {return parseInt(id, 10);}) : [],
+                    nodes = new models.Nodes(cluster.get('nodes').getByIds(ids).map(function(node) {
+                        return _.cloneDeep(node.attributes);
+                    }));
+                nodes.fetch = function(options) {
+                    return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: cluster.id}}, options));
+                };
+                nodes.parse = function() {
+                    return this.getByIds(ids);
+                };
+                return cluster.get('settings').fetch({cache: true}).then(function() {
+                    return {nodes: nodes};
+                });
+            }
         },
         hasChanges: function() {
             return _.result(this.refs.screen, 'hasChanges');
@@ -41,12 +51,7 @@ function(_, React, models, utils, NodeListScreen) {
             return this.refs.screen.revertChanges();
         },
         render: function() {
-            return <NodeListScreen
-                ref='screen'
-                mode='edit'
-                cluster={this.props.cluster}
-                nodes={this.state.nodes}
-            />;
+            return <NodeListScreen {... _.omit(this.props, 'screenOptions')} ref='screen' mode='edit' />;
         }
     });
 

@@ -73,6 +73,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             title: function(pageOptions) {
                 return pageOptions.cluster.get('name');
             },
+            getAvailableTabs: function(cluster) {
+                var tabs = [
+                    {url: 'nodes', tab: NodesTab},
+                    {url: 'network', tab: NetworkTab},
+                    {url: 'settings', tab: SettingsTab},
+                    {url: 'logs', tab: LogsTab},
+                    {url: 'healthcheck', tab: HealthCheckTab},
+                    {url: 'actions', tab: ActionsTab}
+                ];
+                if (cluster.get('settings').get('common.use_vcenter').value) {
+                    tabs.splice(_.findIndex(tabs, {url: 'settings'}) + 1, 0, {url: 'vmware', tab: vmWare.VmWareTab});
+                }
+                return tabs;
+            },
             fetchData: function(id, activeTab) {
                 var cluster, promise, currentClusterId;
                 var tabOptions = _.toArray(arguments).slice(2);
@@ -83,7 +97,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 if (currentClusterId == id) {
                     // just another tab has been chosen, do not load cluster again
                     cluster = app.page.props.cluster;
-                    promise = $.Deferred().resolve();
+                    var tab = _.find(this.getAvailableTabs(cluster), {url: activeTab}).tab;
+                    promise = tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();
                 } else {
                     cluster = new models.Cluster({id: id});
                     var settings = new models.Settings();
@@ -112,11 +127,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             return vcenter.fetch();
                         });
                 }
-                return promise.then(function() {
+                // TODO: then callback doesn't support Healthcheck tab failure
+                return promise.then(function(data) {
                     return {
                         cluster: cluster,
                         activeTab: activeTab,
-                        tabOptions: tabOptions
+                        tabOptions: tabOptions,
+                        tabData: data
                     };
                 });
             }
@@ -186,26 +203,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         onBeforeunloadEvent: function() {
             if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
         },
-        getAvailableTabs: function() {
-            var tabs = [
-                {url: 'nodes', tab: NodesTab},
-                {url: 'network', tab: NetworkTab},
-                {url: 'settings', tab: SettingsTab},
-                {url: 'logs', tab: LogsTab},
-                {url: 'healthcheck', tab: HealthCheckTab},
-                {url: 'actions', tab: ActionsTab}
-            ];
-            var settings = this.props.cluster.get('settings'),
-                useVCenter = settings.get('common.use_vcenter').value,
-                index = _.findIndex(tabs, {url: 'settings'});
-            if (useVCenter) {
-                tabs.splice(index + 1, 0, {url: 'vmware', tab: vmWare.VmWareTab});
-            }
-            return tabs;
-        },
         checkTab: function(props) {
             props = props || this.props;
-            var availableTabs = this.getAvailableTabs();
+            var availableTabs = this.constructor.getAvailableTabs(props.cluster);
             if (!_.find(availableTabs, {url: props.activeTab})) {
                 app.navigate('cluster/' + props.cluster.id + '/' + availableTabs[0].url, {trigger: true, replace: true});
                 return;
@@ -229,7 +229,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         render: function() {
             var cluster = this.props.cluster,
                 release = cluster.get('release'),
-                availableTabs = this.getAvailableTabs(),
+                availableTabs = this.constructor.getAvailableTabs(cluster),
                 tabs = _.pluck(availableTabs, 'url'),
                 tab = _.find(availableTabs, {url: this.props.activeTab});
             if (!tab) return null;
@@ -274,7 +274,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         </div>
                     </div>
                     <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
-                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} />
+                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} {...this.props.tabData} />
                     </div>
                 </div>
             );

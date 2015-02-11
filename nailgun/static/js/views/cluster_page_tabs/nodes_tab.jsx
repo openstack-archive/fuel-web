@@ -19,23 +19,21 @@ define(
     'underscore',
     'react',
     'jsx!backbone_view_wrapper',
+    'jsx!views/controls',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function($, _, React, BackboneViewWrapper, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
 
     var ReactTransitionGroup = React.addons.TransitionGroup;
 
     var NodesTab = React.createClass({
         getInitialState: function() {
-            return {
-                screen: this.props.tabOptions[0] || 'list',
-                screenOptions: this.props.tabOptions.slice(1)
-            };
+            return {loading: true};
         },
         hasChanges: function() {
             return _.result(this.refs.screen, 'hasChanges');
@@ -52,42 +50,47 @@ function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, E
                 interfaces: BackboneViewWrapper(EditNodeInterfacesScreen)
             };
         },
-        checkScreen: function(newScreen) {
-            if (newScreen && !this.getAvailableScreens()[newScreen]) {
+        loadScreen: function(props) {
+            props = props || this.props;
+            var screen = this.getScreen(props),
+                screenComponent = this.getAvailableScreens()[screen];
+            if (!screenComponent) {
                 app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
+                return;
             }
+            var options = {cluster: this.props.cluster, screenOptions: props.tabOptions.slice(1)};
+            return (screenComponent.fetchData ? screenComponent.fetchData(options) : $.Deferred().resolve()).done(_.bind(function(data) {
+                this.setState({
+                    loading: false,
+                    screen: screen,
+                    screenData: data
+                });
+            }, this));
         },
-        changeScreen: function(newScreen, screenOptions) {
-            var NewscreenComponent = this.getAvailableScreens()[newScreen];
-            if (!NewscreenComponent) return;
-            var options = {cluster: this.props.cluster, screenOptions: screenOptions};
-            return (NewscreenComponent.fetchData ? NewscreenComponent.fetchData(options) : $.Deferred().resolve())
-                .done(_.bind(function(data) {
-                    this.setState({
-                        screen: newScreen,
-                        screenOptions: screenOptions,
-                        screenData: data
-                    });
-                }, this));
+        getScreen: function(props) {
+            props = props || this.props;
+            return props.tabOptions[0] || 'list';
         },
-        componentWillMount: function() {
-            this.checkScreen(this.props.tabOptions[0]);
+        componentDidMount: function() {
+            this.loadScreen();
         },
         componentWillReceiveProps: function(newProps) {
-            var newScreen = newProps.tabOptions[0] || 'list';
-            this.checkScreen(newScreen);
-            this.changeScreen(newScreen, newProps.tabOptions.slice(1));
+            // if url was changed, load data and change screen
+            if (this.state.screen != this.getScreen(newProps)) {
+                this.setState({loading: true});
+                this.loadScreen(newProps);
+            }
         },
         render: function() {
+            if (this.state.loading) return <controls.ProgressBar />;
             var Screen = this.getAvailableScreens()[this.state.screen];
-            if (!Screen) return null;
             return (
                 <ReactTransitionGroup component='div' className='wrapper' transitionName='screen'>
                     <ScreenTransitionWrapper key={this.state.screen}>
                         <Screen {...this.state.screenData}
                             ref='screen'
                             cluster={this.props.cluster}
-                            screenOptions={this.state.screenOptions}
+                            screenOptions={this.props.tabOptions.slice(1)}
                         />
                     </ScreenTransitionWrapper>
                 </ReactTransitionGroup>

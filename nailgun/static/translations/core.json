@@ -306,6 +306,7 @@
                             "provisioned": "__os__ is installed",
                             "deploying": "Installing OpenStack"
                         },
+                        "forget": "Forget",
                         "discard_addition": "Discard Addition",
                         "discard_deletion": "Discard Deletion",
                         "view_logs": "View Logs",

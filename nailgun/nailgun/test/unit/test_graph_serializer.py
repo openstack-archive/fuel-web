@@ -260,6 +260,144 @@ class TestTasksRemoval(base.BaseTestCase):
             tasks.node.keys(), ['setup_network', 'install_controller'])
 
 
+class GroupsTraversalTest(base.BaseTestCase):
+
+    GROUPS = ""
+
+    def setUp(self):
+        super(GroupsTraversalTest, self).setUp()
+        self.cluster = mock.Mock()
+        self.cluster.deployment_tasks = yaml.load(self.GROUPS)
+        self.astute = deployment_graph.AstuteGraph(self.cluster)
+        self.nodes = []
+
+    def get_node_by_role(self, role):
+        return next(n for n in self.nodes if n['role'] == role)
+
+
+class TestParallelGroupsTraversal(GroupsTraversalTest):
+
+    GROUPS = """
+    - id: a
+      type: group
+      role: [a]
+      parameters:
+          strategy:
+             type: parallel
+    - id: b
+      type: group
+      requires: [a]
+      role: [b]
+      parameters:
+          strategy:
+             type: parallel
+    - id: c
+      type: group
+      requires: [b]
+      role: [c]
+      parameters:
+          strategy:
+             type: parallel
+    - id: d
+      type: group
+      requires: [c]
+      role: [d]
+      parameters:
+          strategy:
+             type: parallel
+    """
+
+    def test_with_all_nodes_present(self):
+        self.nodes = [{'uid': '3', 'role': 'a'},
+                      {'uid': '1', 'role': 'b'},
+                      {'uid': '2', 'role': 'c'},
+                      {'uid': '4', 'role': 'd'}]
+
+        self.astute.add_priorities(self.nodes)
+        self.assertEqual(self.get_node_by_role('a')['priority'], 100)
+        self.assertEqual(self.get_node_by_role('b')['priority'], 200)
+        self.assertEqual(self.get_node_by_role('c')['priority'], 300)
+        self.assertEqual(self.get_node_by_role('d')['priority'], 400)
+
+    def test_middle_role_is_not_present(self):
+        self.nodes = [{'uid': '3', 'role': 'a'},
+                      {'uid': '1', 'role': 'b'},
+                      {'uid': '2', 'role': 'd'}]
+        self.astute.add_priorities(self.nodes)
+        self.assertEqual(self.get_node_by_role('a')['priority'], 100)
+        self.assertEqual(self.get_node_by_role('b')['priority'], 200)
+        self.assertEqual(self.get_node_by_role('d')['priority'], 300)
+
+    def test_two_middle_roles_is_not_present(self):
+        self.nodes = [{'uid': '3', 'role': 'a'},
+                      {'uid': '2', 'role': 'd'}]
+        self.astute.add_priorities(self.nodes)
+        self.assertEqual(self.get_node_by_role('a')['priority'], 100)
+        self.assertEqual(self.get_node_by_role('d')['priority'], 200)
+
+
+class TestMixedGroupsTraversal(GroupsTraversalTest):
+
+    GROUPS = """
+    - id: a
+      type: group
+      role: [a]
+      parameters:
+          strategy:
+             type: one_by_one
+    - id: b
+      type: group
+      role: [b]
+      parameters:
+          strategy:
+             type: parallel
+    - id: c
+      type: group
+      requires: [a]
+      role: [c]
+      parameters:
+          strategy:
+             type: parallel
+    - id: d
+      type: group
+      requires: [c]
+      role: [d]
+      parameters:
+          strategy:
+             type: parallel
+    - id: e
+      type: group
+      requires: [d, c]
+      role: [e]
+      parameters:
+          strategy:
+             type: one_by_one
+    """
+
+    def test_one_by_one_will_be_earlier(self):
+        self.nodes = [{'uid': '3', 'role': 'a'},
+                      {'uid': '1', 'role': 'b'}]
+        self.astute.add_priorities(self.nodes)
+        self.assertEqual(self.get_node_by_role('a')['priority'], 100)
+        self.assertEqual(self.get_node_by_role('b')['priority'], 200)
+
+    def test_couple_missed_without_last(self):
+        self.nodes = [{'uid': '3', 'role': 'a'},
+                      {'uid': '1', 'role': 'c'},
+                      {'uid': '4', 'role': 'd'}]
+        self.astute.add_priorities(self.nodes)
+        self.assertEqual(self.get_node_by_role('a')['priority'], 100)
+        self.assertEqual(self.get_node_by_role('c')['priority'], 200)
+        self.assertEqual(self.get_node_by_role('d')['priority'], 300)
+
+    def test_only_one_by_one(self):
+        self.nodes = [{'uid': '3', 'role': 'a'},
+                      {'uid': '1', 'role': 'e'}]
+        self.astute.add_priorities(self.nodes)
+        self.assertEqual(self.get_node_by_role('a')['priority'], 100)
+        self.assertEqual(self.get_node_by_role('e')['priority'], 200)
+
+
 COMPLEX_DEPENDENCIES = """
 - id: pre_deployment
   type: stage

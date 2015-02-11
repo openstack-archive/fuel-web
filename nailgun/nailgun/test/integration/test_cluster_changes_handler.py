@@ -159,7 +159,7 @@ class TestHandlers(BaseIntegrationTest):
             'os_name': 'cirros',
             'min_ram': 64,
             'glance_properties': (
-                """--property murano_image_info="""
+                """ --property murano_image_info="""
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
             ),
         }
@@ -542,7 +542,7 @@ class TestHandlers(BaseIntegrationTest):
             'os_name': 'cirros',
             'min_ram': 64,
             'glance_properties': (
-                """--property murano_image_info="""
+                """ --property murano_image_info="""
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
             ),
         }
@@ -974,9 +974,10 @@ class TestHandlers(BaseIntegrationTest):
             'os_name': 'cirros',
             'min_ram': 64,
             'glance_properties': (
-                """--property murano_image_info="""
+                """ --property murano_image_info="""
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
             ),
+
         }
 
         critical_mapping = {

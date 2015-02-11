@@ -31,7 +31,7 @@ class TestGetSerializer(BaseUnitTest):
         cluster = mock.MagicMock(is_ha_mode=True)
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
-            ds.DeploymentHASerializer)
+            ds.DeploymentHASerializer50)
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',
@@ -40,7 +40,7 @@ class TestGetSerializer(BaseUnitTest):
         cluster = mock.MagicMock(is_ha_mode=False)
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
-            ds.DeploymentMultinodeSerializer)
+            ds.DeploymentMultinodeSerializer50)
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',

@@ -15,17 +15,26 @@
 **/
 define(
 [
+    'jquery',
     'underscore',
     'react',
     'models',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/node_list_screen'
 ],
-function(_, React, models, NodeListScreen) {
+function($, _, React, models, NodeListScreen) {
     'use strict';
 
     var AddNodesScreen = React.createClass({
-        getInitialState: function() {
-            return {nodes: new models.Nodes()};
+        statics: {
+            fetchData: function(options) {
+                var nodes = new models.Nodes();
+                nodes.fetch = function(options) {
+                    return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
+                };
+                return $.when(nodes.fetch(), options.cluster.get('settings').fetch({cache: true})).then(function() {
+                    return {nodes: nodes};
+                });
+            }
         },
         hasChanges: function() {
             return _.result(this.refs.screen, 'hasChanges');
@@ -34,12 +43,7 @@ function(_, React, models, NodeListScreen) {
             return this.refs.screen.revertChanges();
         },
         render: function() {
-            return <NodeListScreen
-                ref='screen'
-                mode='add'
-                cluster={this.props.cluster}
-                nodes={this.state.nodes}
-            />;
+            return <NodeListScreen {... _.omit(this.props, 'screenOptions')} ref='screen' mode='add' />;
         }
     });
 

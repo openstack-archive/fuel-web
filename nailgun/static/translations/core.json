@@ -236,6 +236,12 @@
                     "hardware_info": "Hardware Info",
                     "roles_and_hardware_info": "Roles and hardware info",
                     "assign_roles": "Assign Roles",
+                    "breadcrumbs": {
+                        "add" : "Add Nodes",
+                        "edit" : "Edit Roles",
+                        "disks" : "Configure Disks",
+                        "interfaces" : "Configure Interfaces"
+                    },
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",

@@ -51,6 +51,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     version: app.version,
                     default: settings
                 },
+                settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
                 loading: true,
                 actionInProgress: false
             };
@@ -118,8 +119,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             this.setState({initialAttributes: _.cloneDeep(this.props.cluster.get('settings').attributes)});
         },
         onChange: function(groupName, settingName, value) {
-            var settings = this.props.cluster.get('settings');
-            settings.set(settings.makePath(groupName, settingName, settingName == 'metadata' ? 'enabled' : 'value'), value);
+            var settings = this.props.cluster.get('settings'),
+                name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
+            this.state.settingsForChecks.set(name, value);
+            settings.set(name, value);
             // can't pass {validate: true} option to set method
             // cause this form of validation isn't supported in Backbone DeepModel
             settings.isValid({models: this.state.configModels});
@@ -148,7 +151,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     onChange={_.bind(this.onChange, this, groupName)}
                                     allocatedRoles={allocatedRoles}
                                     settings={settings}
+                                    settingsForChecks={this.state.settingsForChecks}
                                     makePath={settings.makePath}
+                                    getValueAttribute={settings.getValueAttribute}
                                     locked={locked}
                                     configModels={this.state.configModels}
                                 />;
@@ -179,10 +184,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         checkRestrictions: function(action, path) {
             return this.props.settings.checkRestrictions(this.props.configModels, action, path);
         },
-        processRestrictions: function(path) {
-            var restrictionsCheck = this.checkRestrictions('disable', path),
-                dependentRoles = this.checkDependentRoles(path),
-                dependentSettings = this.checkDependentSettings(path),
+        processRestrictions: function(groupName, settingName) {
+            var restrictionsCheck = this.checkRestrictions('disable', this.props.makePath(groupName, settingName)),
+                dependentRoles = this.checkDependentRoles(groupName, settingName),
+                dependentSettings = this.checkDependentSettings(groupName, settingName),
                 messages = [];
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
             if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
@@ -195,19 +200,39 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         areCalсulationsPossible: function(setting) {
             return _.contains(['checkbox', 'radio'], setting.type);
         },
-        checkDependentRoles: function(path) {
-            var setting = this.props.settings.get(path);
+        getValuesToCheck: function(setting, valueAttribute) {
+            return setting.values ? _.without(_.pluck(setting.values, 'data'), setting[valueAttribute]) : [!setting[valueAttribute]];
+        },
+        checkValues: function(values, path, value, condition) {
+            var result = _.all(values, function(value) {
+                this.props.settingsForChecks.set(path, value);
+                return new Expression(condition, {settings: this.props.settingsForChecks}).evaluate();
+            }, this);
+            this.props.settingsForChecks.set(path, value);
+            return result;
+        },
+        checkDependentRoles: function(groupName, settingName) {
+            var path = this.props.makePath(groupName, settingName),
+                setting = this.props.settings.get(path);
             if (!this.areCalсulationsPossible(setting)) return false;
             var roles = this.props.cluster.get('release').get('role_models');
             return _.compact(_.map(this.props.allocatedRoles, function(roleName) {
-                var role = roles.findWhere({name: roleName});
+                var role = roles.findWhere({name: roleName}),
+                    valueAttribute = this.props.getValueAttribute(settingName),
+                    pathToCheck = this.props.makePath(path, valueAttribute),
+                    valuesToCheck = this.getValuesToCheck(setting, valueAttribute);
                 if (_.any(role.expandedRestrictions.restrictions, function(restriction) {
-                    return _.contains(restriction.condition, 'settings:' + path) && !(new Expression(restriction.condition, this.props.configModels).evaluate());
+                    var condition = restriction.condition;
+                    if (_.contains(condition, 'settings:' + path) && !(new Expression(condition, this.props.configModels).evaluate())) {
+                        return this.checkValues(valuesToCheck, pathToCheck, setting[valueAttribute], condition);
+                    }
+                    return false;
                 }, this)) return role.get('label');
             }, this));
         },
-        checkDependentSettings: function(path) {
-            var currentSetting = this.props.settings.get(path);
+        checkDependentSettings: function(groupName, settingName) {
+            var path = this.props.makePath(groupName, settingName),
+                currentSetting = this.props.settings.get(path);
             if (!this.areCalсulationsPossible(currentSetting)) return [];
             var getDependentRestrictions = _.bind(function(pathToCheck) {
                 return _.pluck(_.filter(this.props.settings.expandedRestrictions[pathToCheck], function(restriction) {
@@ -218,14 +243,13 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             var dependentSettings = {};
             _.each(this.props.settings.attributes, function(group, groupName) {
                 // don't take into account hidden dependent settings
-                if (this.checkRestrictions('hide', groupName + '.metadata').result) return;
+                if (this.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) return;
                 _.each(group, function(setting, settingName) {
                     // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
                     var pathToCheck = this.props.makePath(groupName, settingName);
                     if (!this.areCalсulationsPossible(setting) || pathToCheck == path || this.checkRestrictions('hide', pathToCheck).result) return;
-                    var value = settingName == 'metadata' ? 'enabled' : 'value',
-                        dependentRestrictions;
-                    if (setting[value] == true) {
+                    var dependentRestrictions;
+                    if (setting[this.props.getValueAttribute(settingName)] == true) {
                         dependentRestrictions = getDependentRestrictions(pathToCheck);
                         if (dependentRestrictions.length) {
                             dependentSettings[setting.label] = _.union(dependentSettings[setting.label], dependentRestrictions);
@@ -243,18 +267,12 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }, this);
             // evaluate dependencies
             if (!_.isEmpty(dependentSettings)) {
-                var valueAttribute = _.isUndefined(currentSetting.value) ? 'enabled' : 'value',
-                    currentValue = currentSetting[valueAttribute],
-                    values = currentSetting.values ? _.without(_.pluck(currentSetting.values, 'data'), currentValue) : [!currentValue],
-                    settingsForTests = {settings: new models.Settings(_.cloneDeep(this.props.settings.attributes))};
+                var valueAttribute = this.props.getValueAttribute(currentSetting),
+                    pathToCheck = this.props.makePath(path, valueAttribute),
+                    valuesToCheck = this.getValuesToCheck(currentSetting, valueAttribute);
                 return _.compact(_.map(dependentSettings, function(conditions, label) {
-                    return _.any(conditions, function(condition) {
-                        return _.all(values, function(value) {
-                            settingsForTests.settings.get(path)[valueAttribute] = value;
-                            return (new Expression(condition, settingsForTests).evaluate());
-                        });
-                    }) ? label : null;
-                }));
+                    return _.any(conditions, _.bind(this.checkValues, this, valuesToCheck, pathToCheck, currentSetting[valueAttribute])) ? label : null;
+                }, this));
             }
             return [];
         },
@@ -271,15 +289,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return this.props.onChange(name, value);
         }, 200, {leading: true}),
         render: function() {
-            var path = this.props.groupName + '.metadata';
-            if (this.checkRestrictions('hide', path).result) return null;
+            if (this.checkRestrictions('hide', this.props.makePath(this.props.groupName, 'metadata')).result) return null;
             var group = this.props.settings.get(this.props.groupName),
                 metadata = group.metadata,
                 sortedSettings = _.chain(_.keys(group))
                     .without('metadata')
                     .sortBy(function(settingName) {return group[settingName].weight;})
                     .value(),
-                processedGroupRestrictions = this.processRestrictions(path),
+                processedGroupRestrictions = this.processRestrictions(this.props.groupName, 'metadata'),
                 isGroupDisabled = this.props.locked || (metadata.toggleable && processedGroupRestrictions.result);
             return (
                 <div className='fieldset-group wrapper'>
@@ -304,7 +321,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 path = this.props.makePath(this.props.groupName, settingName);
                             if (!this.checkRestrictions('hide', path).result) {
                                 var error = this.props.settings.validationError && this.props.settings.validationError[path],
-                                    processedSettingRestrictions = this.processRestrictions(path),
+                                    processedSettingRestrictions = this.processRestrictions(this.props.groupName, settingName),
                                     isSettingDisabled = (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result;
                                 if (setting.values) {
                                     var values = _.chain(_.cloneDeep(setting.values))

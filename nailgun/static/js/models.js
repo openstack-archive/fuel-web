@@ -543,6 +543,9 @@ define([
         makePath: function() {
             return _.toArray(arguments).join('.');
         },
+        getValueAttribute: function(settingName) {
+            return settingName == 'metadata' ? 'enabled' : 'value';
+        },
         hasChanges: function(initialAttributes, models) {
             return _.any(this.attributes, function(group, groupName) {
                 if (group.metadata && this.checkRestrictions(models, null, this.makePath(groupName, 'metadata')).result) return false;

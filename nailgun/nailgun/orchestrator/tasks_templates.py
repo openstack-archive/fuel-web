@@ -29,11 +29,6 @@ def make_ubuntu_repo_task(name, repo_url, uids, repo_data):
     return make_upload_task(uids, repo_data, repo_path)
 
 
-def make_versioned_ubuntu(name, repo_url, uids):
-    repo_data = 'deb {0}'.format(repo_url)
-    return make_ubuntu_repo_task(name, repo_url, uids, repo_data)
-
-
 def make_multiversion_ubuntu(name, repo_url, uids):
     repo_data = 'deb {0} /'.format(repo_url)
     return make_ubuntu_repo_task(name, repo_url, uids, repo_data)

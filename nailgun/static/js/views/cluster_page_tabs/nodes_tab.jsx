@@ -23,7 +23,7 @@ define(
     'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
 function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
@@ -49,7 +49,7 @@ function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, E
                 add: AddNodesScreen,
                 edit: EditNodesScreen,
                 disks: BackboneViewWrapper(EditNodeDisksScreen),
-                interfaces: BackboneViewWrapper(EditNodeInterfacesScreen)
+                interfaces: EditNodeInterfacesScreen
             };
         },
         checkScreen: function(newScreen) {
@@ -58,20 +58,22 @@ function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, E
             }
         },
         changeScreen: function(newScreen, screenOptions) {
-            var NewscreenComponent = this.getAvailableScreens()[newScreen];
-            if (!NewscreenComponent) return;
+            var NewScreenComponent = this.getAvailableScreens()[newScreen];
+            if (!NewScreenComponent) return;
             var options = {cluster: this.props.cluster, screenOptions: screenOptions};
-            return (NewscreenComponent.fetchData ? NewscreenComponent.fetchData(options) : $.Deferred().resolve())
+            return (NewScreenComponent.fetchData ? NewScreenComponent.fetchData(options) : $.Deferred().resolve())
                 .done(_.bind(function(data) {
                     this.setState({
                         screen: newScreen,
                         screenOptions: screenOptions,
-                        screenData: data
+                        screenData: data || {}
                     });
                 }, this));
         },
         componentWillMount: function() {
-            this.checkScreen(this.props.tabOptions[0]);
+            var newScreen = this.props.tabOptions[0] || 'list';
+            this.checkScreen(newScreen);
+            this.changeScreen(newScreen, this.props.tabOptions.slice(1));
         },
         componentWillReceiveProps: function(newProps) {
             var newScreen = newProps.tabOptions[0] || 'list';
@@ -80,7 +82,7 @@ function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, E
         },
         render: function() {
             var Screen = this.getAvailableScreens()[this.state.screen];
-            if (!Screen) return null;
+            if (!Screen || !_.isObject(this.state.screenData)) return null;
             return (
                 <ReactTransitionGroup component='div' className='wrapper' transitionName='screen'>
                     <ScreenTransitionWrapper key={this.state.screen}>

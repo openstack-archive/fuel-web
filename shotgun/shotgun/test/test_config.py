@@ -12,19 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-try:
-    from unittest.case import TestCase
-except ImportError:
-    # Runing unit-tests in production environment
-    from unittest2.case import TestCase
 from mock import patch
 import re
 import time
 
 from shotgun.config import Config
+from shotgun.test import base
 
 
-class TestConfig(TestCase):
+class TestConfig(base.BaseTestCase):
 
     def test_timestamp(self):
         t = time.localtime()

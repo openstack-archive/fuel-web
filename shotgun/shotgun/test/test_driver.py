@@ -14,11 +14,6 @@
 
 import fnmatch
 import os
-try:
-    from unittest.case import TestCase
-except ImportError:
-    # Runing unit-tests in production environment
-    from unittest2.case import TestCase
 
 from mock import call
 from mock import MagicMock
@@ -27,6 +22,7 @@ from mock import patch
 import shotgun.config
 import shotgun.driver
 import shotgun.settings
+from shotgun.test import base
 
 
 class RunOut(object):
@@ -38,7 +34,7 @@ class RunOut(object):
         return str(self.stdout)
 
 
-class TestDriver(TestCase):
+class TestDriver(base.BaseTestCase):
     def test_driver_factory(self):
         types = {
             "file": "File",
@@ -113,7 +109,7 @@ class TestDriver(TestCase):
             call('cp -r "{0}" "{1}"'.format(remote_path, target_path))])
 
 
-class TestFile(TestCase):
+class TestFile(base.BaseTestCase):
 
     @patch('shotgun.driver.Driver.get')
     def test_snapshot(self, mget):
@@ -133,8 +129,29 @@ class TestFile(TestCase):
 
         mget.assert_called_with(data["path"], target_path)
 
+    @patch('shotgun.driver.remove_matched_files')
+    @patch('shotgun.driver.Driver.get')
+    def test_dir_exclude_called(self, mget, mremove):
+        data = {
+            "type": "dir",
+            "path": "/remote_dir/",
+            "exclude": ["*test"],
+            "host": {
+                "address": "remote_host",
+            },
+        }
+        conf = MagicMock()
+        conf.target = "/target"
+        dir_driver = shotgun.driver.Dir(data, conf)
 
-class TestSubs(TestCase):
+        target_path = "/target/remote_host/remote_dir"
+        dir_driver.snapshot()
+
+        mget.assert_called_with(data["path"], target_path)
+        mremove.assert_called_with(target_path, data['exclude'])
+
+
+class TestSubs(base.BaseTestCase):
     def setUp(self):
         self.data = {
             "type": "subs",

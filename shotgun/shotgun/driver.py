@@ -26,6 +26,7 @@ import fabric.api
 
 from shotgun.utils import execute
 from shotgun.utils import is_local
+from shotgun.utils import remove_matched_files
 
 
 logger = logging.getLogger(__name__)
@@ -123,6 +124,7 @@ class File(Driver):
     def __init__(self, data, conf):
         super(File, self).__init__(data, conf)
         self.path = self.data["path"]
+        self.exclude = self.data.get('exclude', [])
         logger.debug("File to get: %s", self.path)
         self.target_path = str(os.path.join(
             self.conf.target, self.host,
@@ -137,6 +139,9 @@ class File(Driver):
         self.target_path IS /target/host.domain.tld/var/log
         """
         self.get(self.path, self.target_path)
+
+        if self.exclude:
+            remove_matched_files(self.target_path, self.exclude)
 
 
 Dir = File

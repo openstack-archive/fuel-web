@@ -701,6 +701,7 @@ DUMP:
         path: /etc/cobbler*
       - type: dir
         path: /var/log
+        exclude: ['*.gz']
 
     controller:
       hosts: []

@@ -43,6 +43,12 @@ def is_local(name):
     return False
 
 
+def iterfiles(path):
+    for root, dirnames, filenames in os.walk(path, topdown=True):
+        for filename in filenames:
+            yield os.path.join(root, filename)
+
+
 def execute(command, to_filename=None):
     logger.debug("Trying to execute command: %s", command)
     commands = [c.strip() for c in re.split(ur'\|', command)]

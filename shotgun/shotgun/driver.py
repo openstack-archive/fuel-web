@@ -26,6 +26,7 @@ import fabric.api
 
 from shotgun.utils import execute
 from shotgun.utils import is_local
+from shotgun.utils import iterfiles
 
 
 logger = logging.getLogger(__name__)
@@ -123,11 +124,20 @@ class File(Driver):
     def __init__(self, data, conf):
         super(File, self).__init__(data, conf)
         self.path = self.data["path"]
+        self.exclude = self.data.get('exclude', [])
         logger.debug("File to get: %s", self.path)
         self.target_path = str(os.path.join(
             self.conf.target, self.host,
             os.path.dirname(self.path).lstrip("/")))
         logger.debug("File to save: %s", self.target_path)
+
+    def cleanup_files(self):
+        for file_path in iterfiles(self.target_path):
+            for pattern in self.exclude:
+                if fnmatch.fnmatch(file_path, pattern):
+                    logger.debug('Deleting file %s', file_path)
+                    os.unlink(file_path)
+                    break
 
     def snapshot(self):
         """Example:
@@ -137,6 +147,9 @@ class File(Driver):
         self.target_path IS /target/host.domain.tld/var/log
         """
         self.get(self.path, self.target_path)
+
+        if self.exclude:
+            self.cleanup_files()
 
 
 Dir = File

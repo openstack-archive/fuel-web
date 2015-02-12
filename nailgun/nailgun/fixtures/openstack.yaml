@@ -62,17 +62,13 @@
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
         limits:
-          overrides:
-            - condition: "settings:storage.volumes_ceph.value == true"
-              min: "settings:storage.osd_pool_size.value"
-            - condition: "settings:storage.images_ceph.value == true"
-              min: 1
+            min: "settings:storage.osd_pool_size.value"
         restrictions:
           - condition: "settings:common.libvirt_type.value == 'vcenter' and settings:storage.images_ceph.value == false"
             message: "Ceph RBD for images should be enabled in settings."
           # NOTE: we want a disjoint condition from the one with vCenter so user will not get 2 messages at once
           #       in case when vCenter is selected and images_ceph.value is false
-          - condition: "settings:common.libvirt_type.value != 'vcenter' and settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false"
+          - condition: "settings:common.libvirt_type.value != 'vcenter' and settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false"
             message: "Ceph must be enabled in settings"
         update_once:
           - controller

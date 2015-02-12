@@ -240,8 +240,8 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'group',
     'stage',
     'void',
-    'reboot'
-    'copy_files'
+    'reboot',
+    'copy_files',
 )
 
 INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,

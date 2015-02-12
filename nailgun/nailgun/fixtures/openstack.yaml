@@ -678,6 +678,10 @@
             type: "checkbox"
             restrictions:
               - "cluster:net_provider == 'neutron'"
+          use_vcenter:
+            value: false
+            weight: 30
+            type: "hidden"
           libvirt_type:
             value: "qemu"
             values:

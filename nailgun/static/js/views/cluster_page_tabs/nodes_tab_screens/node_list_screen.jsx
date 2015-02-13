@@ -21,11 +21,12 @@ define(
     'react',
     'utils',
     'models',
+    'dispatcher',
     'jsx!views/controls',
     'jsx!views/dialogs',
     'jsx!component_mixins'
 ],
-function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
+function($, _, i18n, React, utils, models, dispatcher, controls, dialogs, componentMixins) {
     'use strict';
     var cx = React.addons.classSet,
         NodeListScreen, ManagementPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup, Node;
@@ -202,7 +203,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                 .done(_.bind(function() {
                     $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
                         this.changeScreen();
-                        app.rootComponent.refreshNavbar();
+                        dispatcher.trigger('refreshNavbar');
                         app.page.removeFinishedNetworkTasks();
                     }, this));
                 }, this))
@@ -626,7 +627,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                     this.props.cluster.fetchRelated('nodes').done(_.bind(function() {
                         if (!nodeWillBeRemoved) this.setState({actionInProgress: false});
                     }, this));
-                    app.rootComponent.refreshNavbar();
+                    dispatcher.trigger('refreshNavbar');
                     app.page.removeFinishedNetworkTasks();
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: i18n('dialog.discard_changes.cant_discard')});});

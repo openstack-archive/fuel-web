@@ -35,6 +35,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     components.Navbar = React.createClass({
         mixins: [
+            componentMixins.dispatcherMixin('refreshNavbar', 'refresh'),
             componentMixins.backboneMixin('user'),
             componentMixins.backboneMixin('version'),
             componentMixins.pollingMixin(20)
@@ -296,7 +297,10 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         }
     });
 
-    components.Breadcrumbs = React.createClass({
+    components.TitleAndBreadcrumbs = React.createClass({
+        mixins: [
+            componentMixins.dispatcherMixin('refreshTitleAndBreadcrumbs', 'refresh')
+        ],
         getInitialState: function() {
             return {path: this.getBreadcrumbsPath()};
         },
@@ -304,7 +308,13 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
             var page = this.props.Page;
             return _.isFunction(page.breadcrumbsPath) ? page.breadcrumbsPath(this.props.pageOptions) : page.breadcrumbsPath;
         },
+        updateTitle: function() {
+            var Page = this.props.Page,
+                title = _.isFunction(Page.title) ? Page.title(this.props.pageOptions) : Page.title;
+            document.title = i18n('common.title') + (title ? ' - ' + title : '');
+        },
         refresh: function() {
+            this.updateTitle();
             this.setState({path: this.getBreadcrumbsPath()});
         },
         render: function() {

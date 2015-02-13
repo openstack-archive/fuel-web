@@ -22,9 +22,10 @@ define(
     'react',
     'utils',
     'models',
+    'dispatcher',
     'jsx!views/controls'
 ],
-function($, _, i18n, Backbone, React, utils, models, controls) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
     'use strict';
 
     var dialogs = {},
@@ -111,7 +112,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                     return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
                 }, this))
                 .done(_.bind(function() {
-                    app.rootComponent.refreshNavbar();
+                    dispatcher.trigger('refreshNavbar');
                     this.close();
                 }, this))
                 .fail(this.showError);
@@ -297,7 +298,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
             this.props.cluster.destroy({wait: true})
                 .always(this.close)
                 .done(function() {
-                    app.rootComponent.refreshNavbar();
+                    dispatcher.trigger('refreshNavbar');
                     app.navigate('#clusters', {trigger: true});
                 })
                 .fail(this.showError);
@@ -613,7 +614,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                     return this.props.cluster.fetchRelated('nodes');
                 }, this))
                 .done(_.bind(function() {
-                    app.rootComponent.refreshNavbar();
+                    dispatcher.trigger('refreshNavbar');
                     app.page.removeFinishedNetworkTasks();
                     this.close();
                 }, this))

@@ -147,7 +147,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componen
                             <NodeList {...this.props}
                                 nodes={this.props.nodes.models}
                                 grouping={this.state.grouping}
-                                filter={this.state.filter}
+                                filter={this.state.filter.toLowerCase()}
                                 locked={locked}
                                 selectedNodeIds={this.state.selectedNodeIds}
                                 selectNodes={this.selectNodes}
@@ -454,7 +454,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componen
 
     SelectAllMixin = {
         componentDidUpdate: function() {
-            if (this.props.nodes.length) {
+            if (this.refs['select-all']) {
                 var input = this.refs['select-all'].getInputDOMNode();
                 input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
             }

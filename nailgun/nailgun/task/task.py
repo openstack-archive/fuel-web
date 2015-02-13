@@ -309,7 +309,8 @@ class DeletionTask(object):
 
         # check if there's a zabbix server in an environment
         # and if there is, remove hosts
-        if ZabbixManager.get_zabbix_node(task.cluster):
+        if (respond_to != 'remove_cluster_resp'
+                and ZabbixManager.get_zabbix_node(task.cluster)):
             zabbix_credentials = ZabbixManager.get_zabbix_credentials(
                 task.cluster
             )

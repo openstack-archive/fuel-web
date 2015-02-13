@@ -183,6 +183,31 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(node.status, 'discover')
         self.assertEqual(node.cluster_id, None)
 
+    @fake_tasks()
+    @patch('nailgun.task.task.ZabbixManager')
+    def test_cluster_deletion_with_zabbix_node(self, mock_zabbix_manager):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'pending_addition': True,
+                    'status': 'ready'},
+                {
+                    'roles': ['zabbix-server'],
+                    'pending_addition': True,
+                    'status': 'ready'}])
+
+        resp = self.delete(self.env.clusters[0].id)
+
+        def cluster_is_empty():
+            return self.db.query(Cluster).count() == 0
+
+        self.env.wait_for_true(cluster_is_empty, timeout=5)
+        self._wait_for_threads()
+
+        assert not mock_zabbix_manager.get_zabbix_node.called
+
     def test_cluster_deletion_delete_networks(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.db.query(Cluster).get(cluster['id'])

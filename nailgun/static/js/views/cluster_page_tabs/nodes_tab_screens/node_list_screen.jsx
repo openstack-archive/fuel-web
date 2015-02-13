@@ -118,7 +118,8 @@ function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componen
             }, this);
         },
         render: function() {
-            var locked = !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
+            var locked = !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length,
+                nodes = this.props.nodes;
             return (
                 <div>
                     {this.props.mode == 'edit' &&
@@ -127,9 +128,9 @@ function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componen
                     <ManagementPanel
                         mode={this.props.mode}
                         nodes={new models.Nodes(_.compact(_.map(this.state.selectedNodeIds, function(checked, id) {
-                            if (checked) return this.props.nodes.get(id);
-                        }, this)))}
-                        totalNodeAmount={this.props.nodes.length}
+                            if (checked) return nodes.get(id);
+                        })))}
+                        totalNodeAmount={nodes.length}
                         cluster={this.props.cluster}
                         grouping={this.state.grouping}
                         changeGrouping={this.changeGrouping}
@@ -145,9 +146,10 @@ function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componen
                         <div>
                             {this.props.mode != 'list' && <RolePanel {...this.props} selectedNodeIds={this.state.selectedNodeIds} />}
                             <NodeList {...this.props}
-                                nodes={this.props.nodes.models}
+                                nodes={nodes.filter(function(node) {
+                                    return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.state.filter.toLowerCase());
+                                }, this)}
                                 grouping={this.state.grouping}
-                                filter={this.state.filter}
                                 locked={locked}
                                 selectedNodeIds={this.state.selectedNodeIds}
                                 selectNodes={this.selectNodes}
@@ -484,16 +486,13 @@ function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componen
             return i18n(ns + 'no_nodes_in_environment');
         },
         groupNodes: function() {
-            var nodes = _.filter(this.props.nodes, function(node) {
-                    return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.props.filter);
-                }, this),
-                releaseRoles = this.props.cluster.get('release').get('role_models'),
+            var releaseRoles = this.props.cluster.get('release').get('role_models'),
                 method = _.bind(function(node) {
                     if (this.props.grouping == 'roles') return node.getRolesSummary(releaseRoles);
                     if (this.props.grouping == 'hardware') return node.getHardwareSummary();
                     return node.getRolesSummary(releaseRoles) + '; \u00A0' + node.getHardwareSummary();
                 }, this),
-                groups = _.pairs(_.groupBy(nodes, method));
+                groups = _.pairs(_.groupBy(this.props.nodes, method));
             if (this.props.grouping == 'hardware') return _.sortBy(groups, _.first);
             var preferredOrder = releaseRoles.pluck('name');
             return groups.sort(function(group1, group2) {

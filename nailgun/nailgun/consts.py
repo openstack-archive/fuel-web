@@ -128,6 +128,25 @@ OVS_BOND_MODES = Enum(
     )
 )
 
+LINUX_BOND_MODES = Enum(
+    'balance-rr',
+    'active-backup',
+    'balance-xor',
+    'broadcast',
+    '802.3ad',
+    'balance-tlb',
+    'balance-alb',
+    names=(
+        'balance_rr',
+        'active_backup',
+        'balance_xor',
+        'broadcast',
+        'l_802_3ad',
+        'balance_tlb',
+        'balance_alb',
+    )
+)
+
 TASK_STATUSES = Enum(
     'ready',
     'running',

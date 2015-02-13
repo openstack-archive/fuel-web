@@ -64,6 +64,25 @@ cluster_changes_new = (
     'vmware_attributes'
 )
 
+bond_modes_old = (
+    'active-backup',
+    'balance-slb',
+    'lacp-balance-tcp',
+)
+
+bond_modes_new = (
+    'active-backup',
+    'balance-slb',
+    'lacp-balance-tcp',
+
+    'balance-rr',
+    'balance-xor',
+    'broadcast',
+    '802.3ad',
+    'balance-tlb',
+    'balance-alb',
+)
+
 
 def upgrade():
     upgrade_schema()
@@ -159,10 +178,25 @@ def upgrade_schema():
                         index=True
                     ),
                     sa.PrimaryKeyConstraint('id'))
-    ### end Alembic commands ###
+    # Introduce linux bonds
+    upgrade_enum(
+        'node_bond_interfaces',     # table
+        'mode',                     # column
+        'bond_mode',                # ENUM name
+        bond_modes_old,             # old options
+        bond_modes_new,             # new options
+    )
 
 
 def downgrade_schema():
+    # Introduce linux bonds
+    upgrade_enum(
+        'node_bond_interfaces',     # table
+        'mode',                     # column
+        'bond_mode',                # ENUM name
+        bond_modes_new,             # new options
+        bond_modes_old,             # old options
+    )
     # OpenStack workload statistics
     op.drop_table('oswl_stats')
     drop_enum('oswl_resource_type')
@@ -187,7 +221,6 @@ def downgrade_schema():
     op.drop_column('releases', 'vmware_attributes_metadata')
     op.drop_column('clusters', 'deployment_tasks')
     op.drop_column('releases', 'deployment_tasks')
-    ### end Alembic commands ###
 
 
 def upgrade_data():

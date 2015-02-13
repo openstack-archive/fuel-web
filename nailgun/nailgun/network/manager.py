@@ -1138,7 +1138,9 @@ class NetworkManager(object):
 
     @classmethod
     def get_lnx_bond_properties(cls, bond):
-        return {}
+        return {
+            'mode': 'balance-rr'
+        }
 
     @classmethod
     def get_iface_properties(cls, iface):

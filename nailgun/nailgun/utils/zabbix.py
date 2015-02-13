@@ -49,7 +49,7 @@ class ZabbixManager(object):
         if 'error' in result:
             code = result['error']['code']
             msg = result['error']['message']
-            data = result['error']['data']
+            data = result['error'].get('data', '')
             raise errors.ZabbixRequestError(
                 "Zabbix returned error code {0}, {1}: {2}".format(
                     code, msg, data

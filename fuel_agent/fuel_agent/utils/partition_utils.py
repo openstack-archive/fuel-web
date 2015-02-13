@@ -49,6 +49,7 @@ def parse_partition_info(output):
 
 
 def info(dev):
+    utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
     output = utils.execute('parted', '-s', dev, '-m',
                            'unit', 'MiB',
                            'print', 'free',
@@ -79,6 +80,7 @@ def make_label(dev, label='gpt'):
     if label not in ('gpt', 'msdos'):
         raise errors.WrongPartitionLabelError(
             'Wrong partition label type: %s' % label)
+    utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
     out, err = utils.execute('parted', '-s', dev, 'mklabel', label,
                              check_exit_code=[0, 1])
     LOG.debug('Parted output: \n%s' % out)
@@ -107,6 +109,7 @@ def set_partition_flag(dev, num, flag, state='on'):
     if state not in ('on', 'off'):
         raise errors.WrongPartitionSchemeError(
             'Wrong partition flag state: %s' % state)
+    utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
     out, err = utils.execute('parted', '-s', dev, 'set', str(num),
                              flag, state, check_exit_code=[0, 1])
     LOG.debug('Parted output: \n%s' % out)
@@ -127,6 +130,7 @@ def set_gpt_type(dev, num, type_guid):
     # TODO(kozhukalov): check whether type_guid is valid
     LOG.debug('Setting partition GUID: dev=%s num=%s guid=%s' %
               (dev, num, type_guid))
+    utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
     utils.execute('sgdisk', '--typecode=%s:%s' % (num, type_guid),
                   dev, check_exit_code=[0])
 
@@ -150,6 +154,7 @@ def make_partition(dev, begin, end, ptype):
             'Invalid boundaries: begin and end '
             'are not inside available free space')
 
+    utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
     out, err = utils.execute(
         'parted', '-a', 'optimal', '-s', dev, 'unit', 'MiB',
         'mkpart', ptype, str(begin), str(end), check_exit_code=[0, 1])
@@ -162,6 +167,7 @@ def remove_partition(dev, num):
     if not any(x['fstype'] != 'free' and x['num'] == num
                for x in info(dev)['parts']):
         raise errors.PartitionNotFoundError('Partition %s not found' % num)
+    utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
     out, err = utils.execute('parted', '-s', dev, 'rm',
                              str(num), check_exit_code=[0, 1])
     reread_partitions(dev, out=out)
@@ -185,3 +191,4 @@ def reread_partitions(dev, out='Device or resource busy', timeout=60):
         time.sleep(2)
         out, err = utils.execute('partprobe', dev, check_exit_code=[0, 1])
         LOG.debug('Partprobe output: \n%s' % out)
+        utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])

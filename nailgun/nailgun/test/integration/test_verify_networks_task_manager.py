@@ -18,9 +18,9 @@ import copy
 
 import unittest2
 
+from nailgun.consts import BOND_MODES
 from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NETWORK_INTERFACE_TYPES
-from nailgun.consts import OVS_BOND_MODES
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -305,7 +305,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         for node in self.env.nodes:
             data, admin_nic, other_nic, empty_nic = self.verify_nics(node)
             self.env.make_bond_via_api("ovs-bond0",
-                                       OVS_BOND_MODES.balance_slb,
+                                       BOND_MODES.balance_slb,
                                        [other_nic["name"], empty_nic["name"]],
                                        node["id"])
             self.verify_bonds(node)

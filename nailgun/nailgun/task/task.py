@@ -358,7 +358,7 @@ class DeletionTask(object):
 
         # TODO(ikalnitsky): remove this, let the flow always go through Astute
         # No need to call Astute if no nodes are specified
-        if respond_to == 'remove_cluster_resp' and \
+        if task.name == consts.TASK_NAMES.cluster_deletion and \
                 not (nodes and nodes['nodes_to_delete']):
             logger.debug("No nodes specified, exiting")
             rcvr = rpc.receiver.NailgunReceiver()
@@ -374,7 +374,8 @@ class DeletionTask(object):
 
         # check if there's a Zabbix server in an environment
         # and if there is, remove hosts
-        if ZabbixManager.get_zabbix_node(task.cluster):
+        if (task.name != consts.TASK_NAMES.cluster_deletion
+                and ZabbixManager.get_zabbix_node(task.cluster)):
             zabbix_credentials = ZabbixManager.get_zabbix_credentials(
                 task.cluster
             )

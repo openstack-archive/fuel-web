@@ -21,11 +21,12 @@ define(
     'backbone',
     'react',
     'models',
+    'dispatcher',
     'utils',
     'jsx!component_mixins',
     'jsx!views/controls'
 ],
-function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) {
+function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins, controls) {
     'use strict';
 
     var cx = React.addons.classSet;
@@ -45,7 +46,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 }
             }
             this.getModel().set(attribute, value);
-            app.page.removeFinishedNetworkTasks();
+            dispatcher.trigger('networkConfigurationUpdated');
             this.props.networkConfiguration.isValid();
         },
         getModel: function() {
@@ -376,7 +377,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
-            app.page.removeFinishedNetworkTasks();
+            dispatcher.trigger('networkConfigurationUpdated');
             this.props.cluster.get('networkConfiguration').isValid();
         },
         loadInitialConfiguration: function() {
@@ -475,12 +476,12 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
             });
             this.props.networkConfiguration.isValid();
-            app.page.removeFinishedNetworkTasks();
+            dispatcher.trigger('networkConfigurationUpdated');
         },
         verifyNetworks: function() {
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
-            app.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
+            dispatcher.trigger('networkConfigurationUpdated', _.bind(this.startVerification, this));
         },
         startVerification: function() {
             var task = new models.Task(),

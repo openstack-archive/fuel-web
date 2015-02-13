@@ -21,10 +21,11 @@ define(
     'react',
     'models',
     'utils',
+    'dispatcher',
     'jsx!component_mixins',
     'views/wizard'
 ],
-function($, _, i18n, React, models, utils, componentMixins, wizard) {
+function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) {
     'use strict';
     var ClustersPage, ClusterList, Cluster;
 
@@ -105,7 +106,7 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                 request.fail(_.bind(function(response) {
                     if (response.status == 404) {
                         this.props.cluster.collection.remove(this.props.cluster);
-                        app.rootComponent.refreshNavbar();
+                        dispatcher.trigger('updateNodeStats');
                     }
                 }, this));
                 requests.push(request);
@@ -116,7 +117,7 @@ function($, _, i18n, React, models, utils, componentMixins, wizard) {
                 request.done(_.bind(function() {
                     if (deploymentTask.get('status') != 'running') {
                         this.props.cluster.fetch();
-                        app.rootComponent.refreshNavbar();
+                        dispatcher.trigger('updateNodeStats');
                     }
                 }, this));
                 requests.push(request);

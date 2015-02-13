@@ -17,11 +17,16 @@ define([
     'underscore',
     'i18n',
     'react',
-    'jsx!views/layout'
-], function(_, i18n, React, layoutComponents) {
+    'jsx!views/layout',
+    'dispatcher',
+    'jsx!component_mixins'
+], function(_, i18n, React, layoutComponents, dispatcher, componentMixins) {
     'use strict';
 
     var RootComponent = React.createClass({
+        mixins: [
+            componentMixins.dispatcherMixin('updatePageLayout', 'updateTitle')
+        ],
         getInitialState: function() {
             return {};
         },
@@ -32,22 +37,13 @@ define([
             });
             return this.refs.page;
         },
-        refreshNavbar: function() {
-            this.refs.navbar.refresh();
-        },
-        updateLayout: function() {
-            this.updateTitle();
-            if (this.refs.breadcrumbs) {
-                this.refs.breadcrumbs.refresh();
-            }
-        },
         updateTitle: function() {
             var Page = this.state.Page,
                 title = _.isFunction(Page.title) ? Page.title(this.state.pageOptions) : Page.title;
             document.title = i18n('common.title') + (title ? ' - ' + title : '');
         },
         componentDidUpdate: function() {
-            this.updateLayout();
+            dispatcher.trigger('updatePageLayout');
         },
         render: function() {
             var Page = this.state.Page;

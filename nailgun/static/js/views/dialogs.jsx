@@ -22,9 +22,10 @@ define(
     'react',
     'utils',
     'models',
+    'dispatcher',
     'jsx!views/controls'
 ],
-function($, _, i18n, Backbone, React, utils, models, controls) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
     'use strict';
 
     var dialogs = {},
@@ -111,7 +112,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                     return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'));
                 }, this))
                 .done(_.bind(function() {
-                    app.rootComponent.refreshNavbar();
+                    dispatcher.trigger('updateNodeStats');
                     this.close();
                 }, this))
                 .fail(this.showError);
@@ -182,7 +183,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         },
         deployCluster: function() {
             this.setState({actionInProgress: true});
-            app.page.removeFinishedDeploymentTasks();
+            dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
                 .always(this.close)
@@ -297,7 +298,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
             this.props.cluster.destroy({wait: true})
                 .always(this.close)
                 .done(function() {
-                    app.rootComponent.refreshNavbar();
+                    dispatcher.trigger('updateNodeStats updateNotifications');
                     app.navigate('#clusters', {trigger: true});
                 })
                 .fail(this.showError);
@@ -323,7 +324,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         getDefaultProps: function() {return {title: i18n('dialog.reset_environment.title')};},
         resetEnvironment: function() {
             this.setState({actionInProgress: true});
-            app.page.removeFinishedDeploymentTasks();
+            dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/reset', type: 'PUT'})
                 .always(this.close)
@@ -356,7 +357,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 .always(this.close)
                 .fail(this.showError)
                 .done(_.bind(function() {
-                    app.page.removeFinishedDeploymentTasks();
+                    dispatcher.trigger('deploymentTasksUpdated');
                     (new models.Task()).save({}, {url: _.result(cluster, 'url') + '/update', type: 'PUT'})
                         .done(_.bind(app.page.deploymentTaskStarted, app.page));
                 }, this));
@@ -571,7 +572,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
         proceed: function() {
             this.close();
-            app.page.removeFinishedNetworkTasks().always(_.bind(this.props.cb, this.props));
+            dispatcher.trigger('networkConfigurationUpdated', _.bind(this.props.cb, this.props));
         },
         renderBody: function() {
             var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
@@ -613,8 +614,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                     return this.props.cluster.fetchRelated('nodes');
                 }, this))
                 .done(_.bind(function() {
-                    app.rootComponent.refreshNavbar();
-                    app.page.removeFinishedNetworkTasks();
+                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
                     this.close();
                 }, this))
                 .fail(_.bind(function() {

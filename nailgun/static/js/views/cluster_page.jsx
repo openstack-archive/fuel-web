@@ -22,6 +22,7 @@ define(
     'react',
     'utils',
     'models',
+    'dispatcher',
     'jsx!component_mixins',
     'jsx!views/dialogs',
     'jsx!views/cluster_page_tabs/nodes_tab',
@@ -31,7 +32,7 @@ define(
     'jsx!views/cluster_page_tabs/actions_tab',
     'jsx!views/cluster_page_tabs/healthcheck_tab'
 ],
-function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab) {
     'use strict';
 
     var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl,
@@ -47,7 +48,9 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
                 renderOn: 'add remove change'
-            })
+            }),
+            componentMixins.dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
+            componentMixins.dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks')
         ],
         statics: {
             navbarActiveElement: 'clusters',
@@ -93,17 +96,19 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
                 });
             }
         },
-        removeFinishedNetworkTasks: function(removeSilently) {
-            return this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}), removeSilently);
+        removeFinishedNetworkTasks: function(callback) {
+            var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
+            if (callback) request.always(callback);
+            return request;
         },
-        removeFinishedDeploymentTasks: function(removeSilently) {
-            return this.removeFinishedTasks(this.props.cluster.tasks({group: 'deployment'}), removeSilently);
+        removeFinishedDeploymentTasks: function() {
+            return this.removeFinishedTasks(this.props.cluster.tasks({group: 'deployment'}));
         },
-        removeFinishedTasks: function(tasks, removeSilently) {
+        removeFinishedTasks: function(tasks) {
             var requests = [];
             _.each(tasks, function(task) {
                 if (!task.match({status: 'running'})) {
-                    if (!removeSilently) this.props.cluster.get('tasks').remove(task);
+                    this.props.cluster.get('tasks').remove(task);
                     requests.push(task.destroy({silent: true}));
                 }
             }, this);
@@ -144,7 +149,7 @@ function($, _, i18n, Backbone, React, utils, models, componentMixins, dialogs, N
             $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(_.bind(this.startPolling, this));
         },
         deploymentTaskFinished: function() {
-            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(app.rootComponent.refreshNavbar);
+            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(dispatcher.trigger('updateNotifications'));
         },
         componentWillUnmount: function() {
             $(window).off('beforeunload.' + this.eventNamespace);

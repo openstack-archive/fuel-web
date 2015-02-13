@@ -817,3 +817,24 @@ class VersionedFile(object):
         return filter(
             lambda f: file_extension(f).isdigit(),
             glob.glob(self._pattern.format('*')))
+
+
+def version_to_tuple(version):
+    """Split version and create tuple eg. 6.1 (6, 1, 0)
+
+    :returns: tuple of splited version numbers
+    """
+    splited_version = version.split('.')
+    if len(splited_version) < 3:
+        splited_version.append(0)
+    return tuple(map(int, splited_version))
+
+
+def compare_versions(from_version, to_version):
+    """Compare if first version is lower than second
+
+    :param from_version: version as a string
+    :param to_version: version as a string
+    :returns: bool from comparision
+    """
+    return version_to_tuple(from_version) < version_to_tuple(to_version)

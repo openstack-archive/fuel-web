@@ -246,7 +246,7 @@ class DeletionTask(object):
         USE_FAKE = settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
 
         # no need to call astute if there are no nodes in cluster
-        if respond_to == 'remove_cluster_resp' and \
+        if task.name == consts.TASK_NAMES.cluster_deletion and \
                 not list(task.cluster.nodes):
             rcvr = rpc.receiver.NailgunReceiver()
             rcvr.remove_cluster_resp(
@@ -285,7 +285,8 @@ class DeletionTask(object):
 
         # check if there's a zabbix server in an environment
         # and if there is, remove hosts
-        if ZabbixManager.get_zabbix_node(task.cluster):
+        if (task.name != consts.TASK_NAMES.cluster_deletion
+            and ZabbixManager.get_zabbix_node(task.cluster):
             zabbix_credentials = ZabbixManager.get_zabbix_credentials(
                 task.cluster
             )

@@ -247,7 +247,6 @@ def config(update_path, admin_password):
         current_fuel_version_path, from_version_path)
     previous_version_path = join('/etc/fuel', from_version, 'version.yaml')
 
-    astute_container_keys_path = '/var/lib/astute'
     astute_keys_path = join(working_directory, 'astute')
 
     cobbler_container_config_path = '/var/lib/cobbler/config'
@@ -382,6 +381,9 @@ def config(update_path, admin_password):
 
         'volume_puppet_manifests': [
             ('/etc/puppet', {'bind': '/etc/puppet', 'ro': True})],
+        'volume_keys': [
+            ('/var/lib/fuel/keys', {'bind': '/var/lib/fuel/keys',
+                                    'ro': False})],
     }
 
     containers = [
@@ -408,9 +410,6 @@ def config(update_path, admin_password):
         {'id': 'astute',
          'supervisor_config': True,
          'from_image': 'astute',
-         'after_container_creation_command': (
-             "bash -c 'cp -rn /tmp/upgrade/astute/ "
-             "/var/lib/astute/'"),
          'links': [
              {'id': 'rabbitmq', 'alias': 'rabbitmq'}],
          'binds': [
@@ -418,7 +417,8 @@ def config(update_path, admin_password):
              'volume_repos',
              'volume_ssh_keys',
              'volume_fuel_configs',
-             'volume_upgrade_directory']},
+             'volume_upgrade_directory',
+             'volume_keys']},
 
         {'id': 'cobbler',
          'supervisor_config': True,
@@ -460,7 +460,8 @@ def config(update_path, admin_password):
              'volume_repos',
              'volume_ssh_keys',
              'volume_dump',
-             'volume_fuel_configs']},
+             'volume_fuel_configs',
+             'volume_keys']},
 
         {'id': 'rsync',
          'supervisor_config': True,

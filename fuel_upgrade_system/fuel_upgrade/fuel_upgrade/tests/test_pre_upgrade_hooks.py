@@ -39,6 +39,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
+from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys \
+    import MoveKeysHook
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
@@ -555,3 +557,37 @@ class TestCopyOpenstackReleaseVersions(TestPreUpgradeHooksBase):
             mock_utils.copy_if_exists.call_args_list,
             [mock.call(self.hook.version_path_5_0,
                        self.hook.dst_version_path_5_0)])
+
+
+class TestMoveKeysHook(TestPreUpgradeHooksBase):
+
+    def setUp(self):
+        super(TestMoveKeysHook, self).setUp()
+
+        conf = self.fake_config
+        conf.from_version = '6.0'
+
+        self.hook = MoveKeysHook(self.upgraders, conf)
+
+    def test_is_required_returns_true(self):
+        self.hook.config.from_version = '6.0'
+        self.assertTrue(self.hook.check_if_required())
+
+        self.hook.config.from_version = '6.0.1'
+        self.assertTrue(self.hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        self.hook.config.from_version = '5.1'
+        self.assertFalse(self.hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys.utils.'
+        'file_exists', return_value=True)
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys.utils.'
+        'exec_cmd')
+    def test_run(self, cmd_exec, f_exist):
+        self.hook.run()
+
+        f_exist.assert_called_once_with(self.hook.dst_path)
+        self.assertTrue(cmd_exec.called)

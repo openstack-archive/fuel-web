@@ -68,7 +68,6 @@ class DockerUpgrader(UpgradeEngine):
         # Preapre env for upgarde
         self.save_db()
         self.save_cobbler_configs()
-        self.save_astute_keys()
 
         # NOTE(akislitsky): fix for bug
         # https://bugs.launchpad.net/fuel/+bug/1354465
@@ -214,33 +213,6 @@ class DockerUpgrader(UpgradeEngine):
                 'will be used dump from previous run: %s', exc)
 
         return True
-
-    def save_astute_keys(self):
-        """Copy any astute generated keys."""
-        container_name = self.make_container_name('astute', self.from_version)
-        utils.remove(self.config.astute_keys_path)
-        try:
-            utils.exec_cmd('docker cp {0}:{1} {2}'.format(
-                container_name,
-                self.config.astute_container_keys_path,
-                self.config.working_directory))
-        except errors.ExecutedErrorNonZeroExitCode as exc:
-            # If there was error, mostly it's because of error
-            #
-            #   Error: Could not find the file /var/lib/astute
-            #   in container fuel-core-5.0-astute
-            #
-            # It means that user didn't run deployment on his
-            # env, because this directory is created by orchestrator
-            # during the first deployment.
-            # Also it can fail if there was no running container
-            # in both case we should create empty directory to copy
-            # it in after container creation section
-            logger.debug(
-                'Cannot copy astute keys, creating empty directory '
-                '%s: %s', self.config.astute_keys_path, exc)
-            if not utils.file_exists(self.config.astute_keys_path):
-                os.mkdir(self.config.astute_keys_path)
 
     def save_cobbler_configs(self):
         """Copy config files from container

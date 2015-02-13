@@ -817,3 +817,13 @@ class VersionedFile(object):
         return filter(
             lambda f: file_extension(f).isdigit(),
             glob.glob(self._pattern.format('*')))
+
+
+def compare_versions(from_version, to_version):
+    """Compare if first version is lower than second
+
+    :param from_version: version string
+    :param to_version: version as a tuple eg. 6.1 (6, 1)
+    :returns: bool from comparision
+    """
+    return tuple(map(int, from_version.split('.'))) < to_version

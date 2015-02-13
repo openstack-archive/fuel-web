@@ -1174,7 +1174,7 @@ class NeutronNetworkDeploymentSerializer61(
                 bond = {
                     'action': 'add-bond',
                     'name': iface.name,
-                    'interfaces': [x['name'] for x in iface.slaves],
+                    'interfaces': sorted(x['name'] for x in iface.slaves),
                     'bond_properties': nm.get_lnx_bond_properties(iface),
                     'interface_properties': nm.get_iface_properties(iface)
                 }

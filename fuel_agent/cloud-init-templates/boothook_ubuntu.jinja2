@@ -29,15 +29,7 @@ fi
 if [ ! -e "/etc/network/interfaces.d/ifcfg-$ADMIN_IF" ]; then
     echo -e "auto $ADMIN_IF\niface $ADMIN_IF inet static\n\taddress {{ common.admin_ip }}\n\tnetmask {{ common.admin_mask }}" > /etc/network/interfaces.d/ifcfg-"$ADMIN_IF"
 fi
-#Add static udev rules
-cloud-init-per instance udev_persistent_net_disable_generator /bin/sh -c 'echo | tee /etc/udev/rules.d/75-persistent-net-generator.rules'
-cloud-init-per instance udev_persistent_net2 /bin/sh -c 'echo {{ common.udevrules }} | tr " " "\n" | tr "[:upper:]" "[:lower:]" | sed -e "s/udevrules=//g" -e "s/,/\n/g" | sed -e "s/^/SUBSYSTEM==\"net\",\ ACTION==\"add\",\ DRIVERS==\"?*\",\ ATTR{address}==\"/g" -e "s/_/\",\ ATTR{type}==\"1\",\ KERNEL==\"eth*\",\ NAME=\"/g" -e "s/$/\"/g" | tee /etc/udev/rules.d/70-persistent-net.rules'
 
-cloud-init-per instance udev_persistent_net3 udevadm control --reload-rules
-#NOTE(agordeev): udevadm trigger will rename NIC only if network service is stopped.
-cloud-init-per instance udev_persistent_net4 udevadm trigger --attr-match=subsystem=net
-#NOTE(agordeev): udev is so asynchronous. Always use settle.
-cloud-init-per instance udev_persistent_net_settle udevadm settle --quiet
 cloud-init-per instance udev_persistent_net5 /etc/init.d/networking start
 
 # end of udev

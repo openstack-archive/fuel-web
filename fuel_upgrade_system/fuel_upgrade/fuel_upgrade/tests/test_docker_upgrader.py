@@ -314,7 +314,7 @@ class TestDockerUpgrader(BaseTestCase):
     def test_save_astute_keys(self, utils_mock):
         self.upgrader.save_astute_keys()
         utils_mock.exec_cmd.assert_called_once_with(
-            'docker cp fuel-core-0-astute:/var/lib/astute '
+            'docker cp fuel-core-0-astute:/var/www/nailgun/keys/ '
             '/var/lib/fuel_upgrade/9999')
         utils_mock.remove.assert_called_once_with(
             '/var/lib/fuel_upgrade/9999/astute')
@@ -327,7 +327,7 @@ class TestDockerUpgrader(BaseTestCase):
             self, remove_mock, os_mock, exec_cmd_mock):
         self.upgrader.save_astute_keys()
         exec_cmd_mock.assert_called_once_with(
-            'docker cp fuel-core-0-astute:/var/lib/astute '
+            'docker cp fuel-core-0-astute:/var/www/nailgun/keys/ '
             '/var/lib/fuel_upgrade/9999')
         remove_mock.assert_called_once_with(
             '/var/lib/fuel_upgrade/9999/astute')

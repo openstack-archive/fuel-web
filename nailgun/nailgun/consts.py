@@ -118,14 +118,31 @@ NETWORK_INTERFACE_TYPES = Enum(
     'bond'
 )
 
-OVS_BOND_MODES = Enum(
+BOND_MODES = Enum(
+    # same for both OVS and linux
     'active-backup',
+    # OVS modes
     'balance-slb',
     'lacp-balance-tcp',
+    # linux modes
+    'balance-rr',
+    'balance-xor',
+    'broadcast',
+    '802.3ad',
+    'balance-tlb',
+    'balance-alb',
     names=(
         'active_backup',
+
         'balance_slb',
         'lacp_balance_tcp',
+
+        'balance_rr',
+        'balance_xor',
+        'broadcast',
+        'l_802_3ad',
+        'balance_tlb',
+        'balance_alb',
     )
 )
 

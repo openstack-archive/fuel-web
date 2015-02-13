@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.consts import BOND_MODES
 from nailgun.consts import NETWORK_INTERFACE_TYPES
-from nailgun.consts import OVS_BOND_MODES
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -81,7 +81,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -231,7 +231,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "assigned_networks": self.other_nic["assigned_networks"]
         })
         self.other_nic["assigned_networks"] = []
@@ -244,7 +244,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]}],
             "assigned_networks": self.other_nic["assigned_networks"]
@@ -259,7 +259,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -274,7 +274,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.other_nic["name"]}],
@@ -290,7 +290,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -308,7 +308,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": "some_nic"}],
@@ -324,7 +324,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -340,7 +340,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
+            "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"nic": self.empty_nic["name"]}],

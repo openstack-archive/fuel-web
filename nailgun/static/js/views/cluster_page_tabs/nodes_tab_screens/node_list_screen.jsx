@@ -454,7 +454,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componen
 
     SelectAllMixin = {
         componentDidUpdate: function() {
-            if (this.props.nodes.length) {
+            if (this.refs['select-all']) {
                 var input = this.refs['select-all'].getInputDOMNode();
                 input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
             }
@@ -485,7 +485,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componen
         },
         groupNodes: function() {
             var nodes = _.filter(this.props.nodes, function(node) {
-                    return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.props.filter);
+                    return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.props.filter.toLowerCase());
                 }, this),
                 releaseRoles = this.props.cluster.get('release').get('role_models'),
                 method = _.bind(function(node) {

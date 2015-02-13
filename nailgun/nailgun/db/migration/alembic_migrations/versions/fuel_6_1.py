@@ -66,6 +66,27 @@ cluster_changes_new = (
     'vmware_attributes'
 )
 
+bond_modes_old = (
+    'active-backup',
+    'balance-slb',
+    'lacp-balance-tcp',
+)
+
+bond_modes_new = (
+    # both
+    'active-backup',
+    # OVS
+    'balance-slb',
+    'lacp-balance-tcp',
+    # linux
+    'balance-rr',
+    'balance-xor',
+    'broadcast',
+    '802.3ad',
+    'balance-tlb',
+    'balance-alb',
+)
+
 
 node_statuses_old = (
     'ready',
@@ -204,10 +225,25 @@ def upgrade_schema():
     op.create_foreign_key(
         'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
         ['node_id'], ['id'], ondelete='CASCADE')
-    ### end Alembic commands ###
+    # Introduce linux bonds
+    upgrade_enum(
+        'node_bond_interfaces',     # table
+        'mode',                     # column
+        'bond_mode',                # ENUM name
+        bond_modes_old,             # old options
+        bond_modes_new,             # new options
+    )
 
 
 def downgrade_schema():
+    # Introduce linux bonds
+    upgrade_enum(
+        'node_bond_interfaces',     # table
+        'mode',                     # column
+        'bond_mode',                # ENUM name
+        bond_modes_new,             # new options
+        bond_modes_old,             # old options
+    )
     # OpenStack workload statistics
     op.drop_table('oswl_stats')
     drop_enum('oswl_resource_type')
@@ -254,7 +290,6 @@ def downgrade_schema():
     op.create_foreign_key(
         'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
         ['node_id'], ['id'])
-    ### end Alembic commands ###
 
 
 def upgrade_data():

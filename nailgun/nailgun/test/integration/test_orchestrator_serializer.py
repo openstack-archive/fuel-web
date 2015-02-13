@@ -106,6 +106,31 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         '''
         return copy.deepcopy(data_to_copy)
 
+    def move_network(self, node_id, net_name, from_if, to_if):
+        resp = self.app.get(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": node_id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json_body
+
+        net_from = None
+        for nic in data:
+            if nic['name'] == from_if:
+                net_from = [n for n in nic['assigned_networks']
+                            if n['name'] == net_name]
+                if net_from:
+                    nic['assigned_networks'] = \
+                        [n for n in nic['assigned_networks']
+                         if n != net_from[0]]
+        self.assertIsNotNone(net_from)
+        for nic in data:
+            if nic['name'] == to_if:
+                nic['assigned_networks'].append(net_from[0])
+
+        resp = self.env.node_nics_put(node_id, data)
+        self.assertEqual(resp.status_code, 200)
+
 
 # TODO(awoodward): multinode deprecation: probably has duplicates
 class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
@@ -525,6 +550,98 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 ]
             )
 
+    def test_flat_dhcp_with_bonds(self):
+        cluster = self.create_env(
+            manager=consts.NOVA_NET_MANAGERS.FlatDHCPManager,
+            ctrl_count=3,
+            nic_count=3
+        )
+        for node in cluster.nodes:
+            self.move_network(node.id, 'management', 'eth0', 'eth1')
+            self.env.make_bond_via_api('lnx_bond',
+                                       consts.BOND_MODES.balance_rr,
+                                       ['eth1', 'eth2'],
+                                       node.id)
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            self.assertEqual(
+                node['network_scheme']['transformations'],
+                [
+                    {'action': 'add-br',
+                     'name': 'br-fw-admin'},
+                    {'action': 'add-br',
+                     'name': 'br-storage'},
+                    {'action': 'add-br',
+                     'name': 'br-mgmt'},
+                    {'action': 'add-br',
+                     'name': 'br-ex'},
+                    {'action': 'add-port',
+                     'bridge': 'br-fw-admin',
+                     'name': 'eth0'},
+                    {'action': 'add-port',
+                     'bridge': 'br-storage',
+                     'name': 'eth0.102'},
+                    {'action': 'add-bond',
+                     'bridge': 'br-ex',
+                     'name': 'lnx_bond',
+                     'interfaces': ['eth1', 'eth2'],
+                     'bond_properties': {'mode': 'balance-rr'},
+                     'interface_properties': {}},
+                    {'action': 'add-port',
+                     'bridge': 'br-mgmt',
+                     'name': 'lnx_bond.101'},
+                    {'action': 'add-port',
+                     'name': 'eth0.103'},
+                ]
+            )
+
+    def test_vlan_with_bonds(self):
+        cluster = self.create_env(
+            manager=consts.NOVA_NET_MANAGERS.VlanManager,
+            ctrl_count=3,
+            nic_count=3
+        )
+        for node in cluster.nodes:
+            self.move_network(node.id, 'management', 'eth0', 'eth1')
+            self.env.make_bond_via_api('lnx_bond',
+                                       consts.BOND_MODES.balance_rr,
+                                       ['eth1', 'eth2'],
+                                       node.id)
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            self.assertEqual(
+                node['network_scheme']['transformations'],
+                [
+                    {'action': 'add-br',
+                     'name': 'br-fw-admin'},
+                    {'action': 'add-br',
+                     'name': 'br-storage'},
+                    {'action': 'add-br',
+                     'name': 'br-mgmt'},
+                    {'action': 'add-br',
+                     'name': 'br-ex'},
+                    {'action': 'add-port',
+                     'bridge': 'br-fw-admin',
+                     'name': 'eth0'},
+                    {'action': 'add-port',
+                     'bridge': 'br-storage',
+                     'name': 'eth0.102'},
+                    {'action': 'add-bond',
+                     'bridge': 'br-ex',
+                     'name': 'lnx_bond',
+                     'interfaces': ['eth1', 'eth2'],
+                     'bond_properties': {'mode': 'balance-rr'},
+                     'interface_properties': {}},
+                    {'action': 'add-port',
+                     'bridge': 'br-mgmt',
+                     'name': 'lnx_bond.101'},
+                ]
+            )
+
 
 class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
 
@@ -635,6 +752,61 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 transformations
             )
 
+    def test_vlan_with_bond(self):
+        cluster = self.create_env(segment_type='vlan', ctrl_count=3,
+                                  nic_count=3)
+        for node in cluster.nodes:
+            self.move_network(node.id, 'storage', 'eth0', 'eth1')
+            self.env.make_bond_via_api('lnx_bond',
+                                       consts.BOND_MODES.balance_rr,
+                                       ['eth1', 'eth2'],
+                                       node.id)
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            transformations = [
+                {'action': 'add-br',
+                 'name': 'br-fw-admin'},
+                {'action': 'add-br',
+                 'name': 'br-mgmt'},
+                {'action': 'add-br',
+                 'name': 'br-storage'},
+                {'action': 'add-br',
+                 'name': 'br-ex'},
+                {'action': 'add-br',
+                 'name': 'br-floating',
+                 'provider': 'ovs'},
+                {'action': 'add-patch',
+                 'bridges': ['br-floating', 'br-ex'],
+                 'provider': 'ovs'},
+                {'action': 'add-br',
+                 'name': 'br-prv',
+                 'provider': 'ovs'},
+                {'action': 'add-patch',
+                 'bridges': ['br-prv', 'br-fw-admin'],
+                 'provider': 'ovs'},
+                {'action': 'add-port',
+                 'bridge': 'br-mgmt',
+                 'name': 'eth0.101'},
+                {'action': 'add-port',
+                 'bridge': 'br-fw-admin',
+                 'name': 'eth0'},
+                {'action': 'add-bond',
+                 'bridge': 'br-ex',
+                 'name': 'lnx_bond',
+                 'interfaces': ['eth1', 'eth2'],
+                 'bond_properties': {'mode': 'balance-rr'},
+                 'interface_properties': {}},
+                {'action': 'add-port',
+                 'bridge': 'br-storage',
+                 'name': 'lnx_bond.102'},
+            ]
+            self.assertEqual(
+                node['network_scheme']['transformations'],
+                transformations
+            )
+
     def test_gre_schema(self):
         cluster = self.create_env(segment_type='gre')
         serializer = get_serializer_for_cluster(cluster)
@@ -705,6 +877,55 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 transformations = transformations[:3] + transformations[6:9]
             self.assertEqual(
                 scheme['transformations'],
+                transformations
+            )
+
+    def test_gre_with_bond(self):
+        cluster = self.create_env(segment_type='gre', ctrl_count=3,
+                                  nic_count=3)
+        for node in cluster.nodes:
+            self.move_network(node.id, 'storage', 'eth0', 'eth1')
+            self.env.make_bond_via_api('lnx_bond',
+                                       consts.BOND_MODES.balance_rr,
+                                       ['eth1', 'eth2'],
+                                       node.id)
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            transformations = [
+                {'action': 'add-br',
+                 'name': 'br-fw-admin'},
+                {'action': 'add-br',
+                 'name': 'br-mgmt'},
+                {'action': 'add-br',
+                 'name': 'br-storage'},
+                {'action': 'add-br',
+                 'name': 'br-ex'},
+                {'action': 'add-br',
+                 'name': 'br-floating',
+                 'provider': 'ovs'},
+                {'action': 'add-patch',
+                 'bridges': ['br-floating', 'br-ex'],
+                 'provider': 'ovs'},
+                {'action': 'add-port',
+                 'bridge': 'br-mgmt',
+                 'name': 'eth0.101'},
+                {'action': 'add-port',
+                 'bridge': 'br-fw-admin',
+                 'name': 'eth0'},
+                {'action': 'add-bond',
+                 'bridge': 'br-ex',
+                 'name': 'lnx_bond',
+                 'interfaces': ['eth1', 'eth2'],
+                 'bond_properties': {'mode': 'balance-rr'},
+                 'interface_properties': {}},
+                {'action': 'add-port',
+                 'bridge': 'br-storage',
+                 'name': 'lnx_bond.102'},
+            ]
+            self.assertEqual(
+                node['network_scheme']['transformations'],
                 transformations
             )
 
@@ -1685,13 +1906,13 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
             bonds = filter(lambda t: t['action'] == 'add-bond',
                            transforms)
             self.assertEqual(len(bonds), 1)
-            if mode == consts.OVS_BOND_MODES.lacp_balance_tcp:
+            if mode == consts.BOND_MODES.lacp_balance_tcp:
                 self.check_add_bond_msg_lacp(bonds[0])
             else:
                 self.check_add_bond_msg_non_lacp(bonds[0], mode)
 
     def test_bonds_serialization(self):
-        for mode in consts.OVS_BOND_MODES:
+        for mode in consts.BOND_MODES:
             self.check_bond_with_mode(mode)
 
 

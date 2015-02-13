@@ -224,7 +224,7 @@ class TestAttributes(BaseIntegrationTest):
 
     def _compare_generated(self, d1, d2):
         if isinstance(d1, dict) and isinstance(d2, dict):
-            for s_field, s_value in d1.iteritems():
+            for s_field, s_value in six.iteritems(d1):
                 if s_field not in d2:
                     raise KeyError()
                 self._compare_generated(s_value, d2[s_field])
@@ -300,4 +300,120 @@ class TestAttributes(BaseIntegrationTest):
         self.assertEqual(
             editable["external_ntp"]["ntp_list"]["value"],
             settings.NTP_UPSTREAM
+        )
+
+
+class TestVmwareAttributes(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestVmwareAttributes, self).setUp()
+        self.cluster = self.env.create_cluster(api=True)
+        self.cluster_db = self.env.clusters[0]
+
+    def test_vmware_attributes_creation(self):
+        resp = self.app.get(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            headers=self.default_headers
+        )
+        release = objects.Release.get_by_uid(self.cluster['release_id'])
+        self.assertEqual(200, resp.status_code)
+
+        attrs = objects.Cluster.get_vmware_attributes(self.cluster_db)
+        # TODO(apopovych): use dictdiffer 0.3.0 to compare atttributes
+        # one-by-one
+        self.assertEqual(
+            release.vmware_attributes_metadata['editable'],
+            attrs.editable
+        )
+
+    def test_vmware_attributes_update(self):
+        resp = self.app.put(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            params=jsonutils.dumps({
+                "editable": {
+                    "value": {"foo": "bar"}
+                }
+            }),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+
+        attrs = objects.Cluster.get_vmware_attributes(self.cluster_db)
+        self.assertEqual('bar', attrs.editable.get('value', {}).get('foo'))
+        attrs.editable.get('value', {}).pop('foo')
+        self.assertEqual(attrs.editable.get('value'), {})
+
+    def test_vmware_attributes_update_with_invalid_json_format(self):
+        resp = self.app.put(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            params=jsonutils.dumps({
+                "value": {"foo": "bar"}
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            "'editable' is a required property", resp.testbody)
+
+        resp = self.app.put(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            params=jsonutils.dumps({
+                "editable": {
+                    "metadata": {},
+                    "value": {"foo": "bar"}
+                }
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            "Metadata shouldn't change", resp.testbody)
+
+    def test_404_if_no_attributes(self):
+        cluster = self.env.create_cluster(api=False)
+        self.db.delete(cluster.vmware_attributes)
+        self.db.commit()
+        resp = self.app.put(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({
+                "editable": {
+                    "value": {"foo": "bar"}
+                }
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(404, resp.status_code)
+
+
+class TestVmwareAttributesDefaults(BaseIntegrationTest):
+
+    def test_get_default_vmware_attributes(self):
+        cluster = self.env.create_cluster(api=True)
+        resp = self.app.get(
+            reverse(
+                'VmwareAttributesDefaultsHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            headers=self.default_headers
+        )
+        release = objects.Release.get_by_uid(cluster['release_id'])
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            release.vmware_attributes_metadata,
+            jsonutils.loads(resp.testbody)
         )

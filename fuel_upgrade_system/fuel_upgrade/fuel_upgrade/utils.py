@@ -569,8 +569,8 @@ def compare_version(v1, v2):
     :param str v1: version 1
     :param str v2: version 2
     :returns: 0 - versions are equal
-              1 - version 1 is higher than version 2
-             -1 - version 2 is higher than version 1
+              -1 - version 1 is higher than version 2
+               1 - version 2 is higher than version 1
     """
     version1 = StrictVersion(v1)
     version2 = StrictVersion(v2)

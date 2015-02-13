@@ -363,11 +363,11 @@ class NodeBondInterface(Base):
     flags = Column(JSON, default={})
     mode = Column(
         Enum(
-            *consts.OVS_BOND_MODES,
+            *consts.BOND_MODES,
             name='bond_mode'
         ),
         nullable=False,
-        default=consts.OVS_BOND_MODES[0]
+        default=consts.BOND_MODES[0]
     )
     slaves = relationship("NodeNICInterface", backref="bond")
 

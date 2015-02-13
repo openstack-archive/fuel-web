@@ -28,7 +28,11 @@ function(_, React, models, utils, NodeListScreen) {
         getInitialState: function() {
             var serializedIds = this.props.screenOptions[0],
                 ids = serializedIds ? utils.deserializeTabOptions(serializedIds).nodes.split(',').map(function(id) {return parseInt(id, 10);}) : [];
-            return {nodes: new models.Nodes(this.props.cluster.get('nodes').filter(function(node) {return _.contains(ids, node.id);}))};
+            return {
+                nodes: new models.Nodes(this.props.cluster.get('nodes').getByIds(ids).map(function(node) {
+                    return _.cloneDeep(node.attributes);
+                }))
+            };
         },
         hasChanges: function() {
             return _.result(this.refs.screen, 'hasChanges');

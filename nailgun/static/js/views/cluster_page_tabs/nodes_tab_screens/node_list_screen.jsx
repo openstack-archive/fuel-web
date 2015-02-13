@@ -18,6 +18,7 @@ define(
     'jquery',
     'underscore',
     'i18n',
+    'backbone',
     'react',
     'utils',
     'models',
@@ -25,7 +26,7 @@ define(
     'jsx!views/dialogs',
     'jsx!component_mixins'
 ],
-function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
+function($, _, i18n, Backbone, React, utils, models, controls, dialogs, componentMixins) {
     'use strict';
     var cx = React.addons.classSet,
         NodeListScreen, ManagementPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup, Node;
@@ -184,21 +185,16 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
         },
         applyChanges: function() {
             this.setState({actionInProgress: true});
-            this.props.nodes.each(function(node) {
-                var data;
+            var nodes = new models.Nodes(this.props.nodes.map(function(node) {
+                var data = {id: node.id, pending_roles: node.get('pending_roles')};
                 if (node.get('pending_roles').length) {
-                    if (this.props.mode == 'add') data = {cluster_id: this.props.cluster.id, pending_addition: true};
+                    if (this.props.mode == 'add') return _.extend(data, {cluster_id: this.props.cluster.id, pending_addition: true});
                 } else {
-                    if (node.get('pending_addition')) data = {cluster_id: null, pending_addition: false};
+                    if (node.get('pending_addition')) return _.extend(data, {cluster_id: null, pending_addition: false});
                 }
-                node.set(data, {silent: true});
-            }, this);
-            this.props.nodes.toJSON = function() {
-                return this.map(function(node) {
-                    return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition');
-                });
-            };
-            this.props.nodes.sync('update', this.props.nodes)
+                return data;
+            }, this));
+            Backbone.sync('update', nodes)
                 .done(_.bind(function() {
                     $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
                         this.changeScreen();

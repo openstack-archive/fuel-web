@@ -33,6 +33,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
 from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_monitord_credentials \
     import AddMonitordKeystoneCredentialsHook
+from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys \
+    import MoveKeysHook
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +56,7 @@ class PreUpgradeHookManager(object):
         FixHostSystemRepoHook,
         SyncDnsHook,
         CopyOpenstackReleaseVersions,
+        MoveKeysHook,
     ]
 
     def __init__(self, upgraders, config):

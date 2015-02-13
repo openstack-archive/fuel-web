@@ -105,29 +105,6 @@ class ClusterAttributesPlugin(object):
                 return True
         return False
 
-    def process_cluster_attributes(self, cluster, cluster_attrs):
-        """Checks cluster attributes for plugin related metadata.
-        Then enable or disable plugin for cluster based on metadata
-        enabled field.
-        """
-        custom_attrs = cluster_attrs.get(self.plugin.name, {})
-
-        if custom_attrs:
-            # Skip if it's wrong plugin version
-            attr_plugin_version = custom_attrs['metadata']['plugin_version']
-            if attr_plugin_version != self.plugin.version:
-                return
-
-            enable = custom_attrs['metadata']['enabled']
-            # value is true and plugin is not enabled for this cluster
-            # that means plugin was enabled on this request
-            if enable and cluster not in self.plugin.clusters:
-                self.plugin.clusters.append(cluster)
-            # value is false and plugin is enabled for this cluster
-            # that means plugin was disabled on this request
-            elif not enable and cluster in self.plugin.clusters:
-                self.plugin.clusters.remove(cluster)
-
     def update_metadata(self, attributes):
         """Overwrights only default values in metadata.
         Plugin should be able to provide UI "native" conditions
@@ -141,7 +118,7 @@ class ClusterAttributesPlugin(object):
     def default_metadata(self):
         return {u'enabled': False, u'toggleable': True,
                 u'weight': 70, u'label': self.plugin.title,
-                'plugin_version': self.plugin.version}
+                'plugin_id': self.plugin.id}
 
     def set_cluster_tasks(self, cluster):
         """Loads plugins provided tasks from tasks config file and

@@ -203,7 +203,7 @@ class TestInstallationInfo(BaseTestCase):
             ]
         )
         self.env.make_bond_via_api(
-            'bond0', consts.OVS_BOND_MODES.active_backup,
+            'bond0', consts.BOND_MODES.active_backup,
             ['eth0', 'eth1'], node_id=self.env.nodes[0].id)
         nodes_info = info.get_nodes_info(self.env.nodes)
         self.assertEquals(len(self.env.nodes), len(nodes_info))

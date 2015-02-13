@@ -14,8 +14,8 @@
 #    under the License.
 
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.consts import BOND_MODES
 from nailgun.consts import NETWORK_INTERFACE_TYPES
-from nailgun.consts import OVS_BOND_MODES
 
 from nailgun import objects
 
@@ -154,7 +154,7 @@ class NetAssignmentValidator(BasicValidator):
                         "mode".format(node['id']),
                         log_message=True
                     )
-                if iface['mode'] not in OVS_BOND_MODES:
+                if iface['mode'] not in BOND_MODES:
                     raise errors.InvalidData(
                         "Node '{0}': bond interface '{1}' has unknown "
                         "mode '{2}'".format(

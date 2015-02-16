@@ -63,6 +63,7 @@ class NodeInterfacesSerializer(BasicSerializer):
         'name',
         'type',
         'mode',
+        'bond_properties',
         'state',
         'assigned_networks'
     )

@@ -81,6 +81,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (this.props.mode != 'list') this.props.nodes.on('change:pending_roles', this.checkRoleAssignment, this);
         },
         componentWillUnmount: function() {
+            this.stopPolling();
             this.props.nodes.off('add remove reset', this.updateInitialRoles, this);
             this.props.nodes.off('change:pending_roles', this.checkRoleAssignment, this);
         },

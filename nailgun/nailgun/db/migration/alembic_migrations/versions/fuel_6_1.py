@@ -233,9 +233,22 @@ def upgrade_schema():
         bond_modes_old,             # old options
         bond_modes_new,             # new options
     )
+    # Add bond properties
+    op.drop_column('node_bond_interfaces', 'flags')
+    op.add_column(
+        'node_bond_interfaces',
+        sa.Column('bond_properties',
+                  fields.JSON(),
+                  nullable=False,
+                  default={}))
 
 
 def downgrade_schema():
+    # Add bond properties
+    op.drop_column('node_bond_interfaces', 'bond_properties')
+    op.add_column(
+        'node_bond_interfaces',
+        sa.Column('flags', fields.JSON(), nullable=True))
     # Introduce linux bonds
     upgrade_enum(
         'node_bond_interfaces',     # table

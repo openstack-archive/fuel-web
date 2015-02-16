@@ -360,7 +360,6 @@ class NodeBondInterface(Base):
         secondary=NetworkBondAssignment.__table__,
         order_by="NetworkGroup.id")
     state = Column(String(25))
-    flags = Column(JSON, default={})
     mode = Column(
         Enum(
             *consts.BOND_MODES,
@@ -369,6 +368,7 @@ class NodeBondInterface(Base):
         nullable=False,
         default=consts.BOND_MODES.active_backup
     )
+    bond_properties = Column(JSON, default={}, nullable=False)
     slaves = relationship("NodeNICInterface", backref="bond")
 
     @property

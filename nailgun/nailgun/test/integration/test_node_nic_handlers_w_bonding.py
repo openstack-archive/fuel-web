@@ -17,6 +17,7 @@
 from oslo.serialization import jsonutils
 
 from nailgun.consts import BOND_MODES
+from nailgun.consts import BOND_XMIT_HASH_POLICY
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -102,6 +103,35 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.assertEqual(len(bonds), 1)
         self.assertEqual(bonds[0]["name"], 'ovs-bond0')
 
+    def nics_bond_create_w_properties(self, put_func):
+        self.data.append({
+            "name": 'bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "mode": BOND_MODES.l_802_3ad,
+                "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3,
+                "lacp_rate": "slow",
+                "type__": "linux"
+            },
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+
+        resp = put_func()
+        self.assertEqual(resp.status_code, 200)
+
+        resp = self.env.node_nics_get(self.env.nodes[0]["id"])
+        self.assertEqual(resp.status_code, 200)
+
+        bonds = filter(
+            lambda iface: iface["type"] == NETWORK_INTERFACE_TYPES.bond,
+            resp.json_body)
+        self.assertEqual(len(bonds), 1)
+        self.assertEqual(bonds[0]["name"], 'bond0')
+
     def nics_bond_remove(self, put_func):
         resp = self.env.node_nics_get(self.env.nodes[0]["id"])
         self.assertEqual(resp.status_code, 200)
@@ -127,6 +157,18 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         for put_func in (self.put_single, self.put_collection):
             self.get_node_nics_info()
             self.nics_bond_create(put_func)
+            self.nics_bond_remove(put_func)
+
+            resp = self.env.node_nics_get(self.env.nodes[0]["id"])
+            self.assertEqual(resp.status_code, 200)
+
+            for nic in resp.json_body:
+                self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
+
+    def test_nics_linux_bond_create_delete(self):
+        for put_func in (self.put_single, self.put_collection):
+            self.get_node_nics_info()
+            self.nics_bond_create_w_properties(put_func)
             self.nics_bond_remove(put_func)
 
             resp = self.env.node_nics_get(self.env.nodes[0]["id"])
@@ -228,9 +270,63 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.other_nic["assigned_networks"] = []
 
         self.node_nics_put_check_error(
-            "Node '{0}': each bond interface must have "
-            "mode".format(self.env.nodes[0]["id"])
-        )
+            "Node '{0}': bond interface 'ovs-bond0' doesn't have mode".format(
+                self.env.nodes[0]["id"]))
+
+    def test_nics_bond_create_failed_no_mode_in_properties(self):
+        self.data.append({
+            "name": 'bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3
+            },
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}': bond interface 'bond0' doesn't have mode".format(
+                self.env.nodes[0]["id"]))
+
+    def test_nics_bond_create_failed_unknown_mode_in_properties(self):
+        self.data.append({
+            "name": 'bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "mode": 'unknown'
+            },
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}': bond interface 'bond0' has unknown mode "
+            "'unknown'".format(self.env.nodes[0]["id"]))
+
+    def test_nics_bond_create_failed_unknown_property(self):
+        self.data.append({
+            "name": 'bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "mode": BOND_MODES.balance_xor,
+                "policy": BOND_XMIT_HASH_POLICY.layer2_3
+            },
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}', interface 'bond0': unknown bond property "
+            "'policy'".format(self.env.nodes[0]["id"]))
 
     def test_nics_bond_create_failed_no_slaves(self):
         self.data.append({

@@ -22,7 +22,7 @@ from nailgun.test.base import reverse
 
 class TestTaskHandlers(BaseTestCase):
 
-    @fake_tasks(godmode=True)
+    @fake_tasks(override_state=True, progress=100, status='ready')
     def test_task_deletion(self):
         self.env.create(
             nodes_kwargs=[

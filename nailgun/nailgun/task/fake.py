@@ -266,8 +266,7 @@ class FakeDeploymentThread(FakeAmpqThread):
         # True or False
         task_ready = self.params.get("task_ready")
 
-        # instant deployment
-        godmode = self.params.get("godmode", False)
+        override_state = self.params.get("override_state", False)
 
         kwargs = {
             'task_uuid': self.task_uuid,
@@ -275,11 +274,13 @@ class FakeDeploymentThread(FakeAmpqThread):
             'status': 'running'
         }
 
-        if godmode:
+        if override_state:
+            progress = self.params.get("progress", 0)
+            status = self.params.get("status", "running")
             for n in kwargs["nodes"]:
-                n["status"] = "ready"
-                n["progress"] = 100
-            kwargs["status"] = "ready"
+                n["status"] = status
+                n["progress"] = progress
+            kwargs["status"] = status
             yield kwargs
             raise StopIteration
 

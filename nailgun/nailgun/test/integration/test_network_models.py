@@ -34,7 +34,7 @@ class TestNetworkModels(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestNetworkModels, self).tearDown()
 
-    @fake_tasks(godmode=True)
+    @fake_tasks(override_state=True, progress=100, status='ready')
     def test_cluster_locking_after_deployment(self):
         self.env.create(
             nodes_kwargs=[

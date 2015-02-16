@@ -145,12 +145,32 @@ BOND_MODES = Enum(
     )
 )
 
+BOND_PROPERTIES = Enum(
+    'mode',
+    'xmit_hash_policy',
+    'lacp_rate'
+)
+
+BOND_XMIT_HASH_POLICY = Enum(
+    'layer2',
+    'layer2+3',
+    'layer3+4',
+    'encap2+3',
+    'encap3+4',
+    names=(
+        'layer2',
+        'layer2_3',
+        'layer3_4',
+        'encap2_3',
+        'encap3_4',
+    )
+)
+
 TASK_STATUSES = Enum(
     'ready',
     'running',
     'error'
 )
-
 
 TASK_NAMES = Enum(
     'super',

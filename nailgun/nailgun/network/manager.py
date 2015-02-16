@@ -606,6 +606,7 @@ class NetworkManager(object):
 
     @classmethod
     def _update_attrs(cls, node_data):
+        print "_update_attrs:", str(node_data)
         node_db = db().query(Node).get(node_data['id'])
         is_ether = lambda x: x['type'] == consts.NETWORK_INTERFACE_TYPES.ether
         is_bond = lambda x: x['type'] == consts.NETWORK_INTERFACE_TYPES.bond
@@ -636,9 +637,12 @@ class NetworkManager(object):
             bond_db.node_id = node_db.id
             db().add(bond_db)
             bond_db.name = bond['name']
-            bond_db.mode = bond['mode']
+            if bond.get('bond_properties', {}).get('mode'):
+                bond_db.mode = bond['bond_properties']['mode']
+            else:
+                bond_db.mode = bond['mode']
             bond_db.mac = bond.get('mac')
-            bond_db.flags = bond.get('flags', {})
+            bond_db.bond_properties = bond.get('bond_properties', {})
             db().commit()
             db().refresh(bond_db)
 
@@ -1138,9 +1142,9 @@ class NetworkManager(object):
 
     @classmethod
     def get_lnx_bond_properties(cls, bond):
-        return {
-            'mode': 'balance-rr'
-        }
+        properties = {'mode': bond.mode}
+        properties.update(bond.bond_properties)
+        return properties
 
     @classmethod
     def get_iface_properties(cls, iface):

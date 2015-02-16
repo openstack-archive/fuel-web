@@ -14,8 +14,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.consts import BOND_MODES
-from nailgun.consts import NETWORK_INTERFACE_TYPES
+from nailgun import consts
 
 from nailgun import objects
 
@@ -129,36 +128,23 @@ class NetAssignmentValidator(BasicValidator):
                         node['id']),
                     log_message=True
                 )
-            if iface['type'] not in NETWORK_INTERFACE_TYPES:
+            if iface['type'] not in consts.NETWORK_INTERFACE_TYPES:
                 raise errors.InvalidData(
                     "Node '{0}': unknown interface type".format(node['id']),
                     log_message=True
                 )
-            if iface['type'] == NETWORK_INTERFACE_TYPES.ether \
+            if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
                     and 'id' not in iface:
                 raise errors.InvalidData(
                     "Node '{0}': each HW interface must have ID".format(
                         node['id']),
                     log_message=True
                 )
-            if iface['type'] == NETWORK_INTERFACE_TYPES.bond:
+            if iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 if 'name' not in iface:
                     raise errors.InvalidData(
                         "Node '{0}': each bond interface must have "
                         "name".format(node['id']),
-                        log_message=True
-                    )
-                if 'mode' not in iface:
-                    raise errors.InvalidData(
-                        "Node '{0}': each bond interface must have "
-                        "mode".format(node['id']),
-                        log_message=True
-                    )
-                if iface['mode'] not in BOND_MODES:
-                    raise errors.InvalidData(
-                        "Node '{0}': bond interface '{1}' has unknown "
-                        "mode '{2}'".format(
-                            node['id'], iface['name'], iface['mode']),
                         log_message=True
                     )
                 if 'slaves' not in iface \
@@ -176,6 +162,33 @@ class NetAssignmentValidator(BasicValidator):
                             "must have name".format(node['id'], iface['name']),
                             log_message=True
                         )
+                bond_mode = None
+                if 'mode' in iface:
+                    bond_mode = iface['mode']
+                if 'bond_properties' in iface:
+                    for k in iface['bond_properties'].keys():
+                        if k not in consts.BOND_PROPERTIES:
+                            raise errors.InvalidData(
+                                "Node '{0}', interface '{1}': unknown bond "
+                                "property '{2}'".format(
+                                    node['id'], iface['name'], k),
+                                log_message=True
+                            )
+                    if 'mode' in iface['bond_properties']:
+                        bond_mode = iface['bond_properties']['mode']
+                if not bond_mode:
+                    raise errors.InvalidData(
+                        "Node '{0}': bond interface '{1}' doesn't have "
+                        "mode".format(node['id'], iface['name']),
+                        log_message=True
+                    )
+                if bond_mode not in consts.BOND_MODES:
+                    raise errors.InvalidData(
+                        "Node '{0}': bond interface '{1}' has unknown "
+                        "mode '{2}'".format(
+                            node['id'], iface['name'], bond_mode),
+                        log_message=True
+                    )
             if 'assigned_networks' not in iface or \
                     not isinstance(iface['assigned_networks'], list):
                 raise errors.InvalidData(
@@ -254,7 +267,7 @@ class NetAssignmentValidator(BasicValidator):
 
         bonded_eth_ids = set()
         for iface in interfaces:
-            if iface['type'] == NETWORK_INTERFACE_TYPES.ether:
+            if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
                 db_iface = filter(
                     lambda i: i.id == iface['id'],
                     db_interfaces
@@ -265,7 +278,7 @@ class NetAssignmentValidator(BasicValidator):
                         " in DB".format(node['id'], iface['id']),
                         log_message=True
                     )
-            elif iface['type'] == NETWORK_INTERFACE_TYPES.bond:
+            elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 for slave in iface['slaves']:
                     iface_id = [i.id for i in db_interfaces
                                 if i.name == slave['name']]
@@ -305,7 +318,7 @@ class NetAssignmentValidator(BasicValidator):
             )
 
         for iface in interfaces:
-            if iface['type'] == NETWORK_INTERFACE_TYPES.ether \
+            if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
                     and iface['id'] in bonded_eth_ids \
                     and len(iface['assigned_networks']) > 0:
                 raise errors.InvalidData(

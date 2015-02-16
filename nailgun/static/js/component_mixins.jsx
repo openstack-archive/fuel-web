@@ -56,6 +56,9 @@ define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], functi
                     } else {
                         this.startPolling();
                     }
+                },
+                componentWillUnmount: function() {
+                    this.stopPolling();
                 }
             };
         }

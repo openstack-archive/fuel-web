@@ -99,11 +99,14 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
     def test_rerun_stopped_deploy(self):
         cluster = self.cluster
 
-        self.app.put(
-            reverse(
-                'ClusterChangesHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            headers=self.default_headers)
+        def first_deploy(test):
+            test.app.put(
+                reverse(
+                    'ClusterChangesHandler',
+                    kwargs={'cluster_id': test.cluster['id']}),
+                headers=test.default_headers)
+
+        fake_tasks(demigodmode=True)(first_deploy)(self)
 
         stop_response = self.app.put(
             reverse(

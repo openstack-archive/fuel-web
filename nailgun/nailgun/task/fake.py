@@ -268,6 +268,7 @@ class FakeDeploymentThread(FakeAmpqThread):
 
         # instant deployment
         godmode = self.params.get("godmode", False)
+        demigodmode = self.params.get("demigodmode", False)
 
         kwargs = {
             'task_uuid': self.task_uuid,
@@ -280,6 +281,14 @@ class FakeDeploymentThread(FakeAmpqThread):
                 n["status"] = "ready"
                 n["progress"] = 100
             kwargs["status"] = "ready"
+            yield kwargs
+            raise StopIteration
+
+        if demigodmode:
+            for n in kwargs["nodes"]:
+                n["status"] = "running"
+                n["progress"] = 50
+            kwargs["status"] = "running"
             yield kwargs
             raise StopIteration
 

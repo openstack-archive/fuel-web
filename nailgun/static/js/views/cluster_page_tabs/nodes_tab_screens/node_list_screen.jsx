@@ -571,7 +571,8 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             return {
                 renaming: false,
                 actionInProgress: false,
-                eventNamespace: 'click.editnodename' + this.props.node.id
+                eventNamespace: 'click.editnodename' + this.props.node.id,
+                nodeToDelete: null
             };
         },
         componentWillUnmount: function() {
@@ -640,6 +641,13 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
             }
             return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
         },
+        forgetNode: function() {
+            this.setState({nodeToDelete: this.props.node.get('id')});
+            this.props.node.destroy().then(_.bind(function(task) {
+                    this.props.cluster.get('tasks').add(new models.Task(task), {parse: true});
+                }, this)
+            );
+        },
         showNodeDetails: function(e) {
             e.preventDefault();
             utils.showDialog(dialogs.ShowNodeInfoDialog, {
@@ -649,6 +657,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
         },
         calculateNodeViewStatus: function() {
             var node = this.props.node;
+            if (this.state.nodeToDelete == node.id && this.props.cluster.tasks({name: 'node_deletion', status: 'running'}).length) return 'forgetting';
             if (!node.get('online')) return 'offline';
             if (node.get('pending_addition')) return 'pending_addition';
             if (node.get('pending_deletion')) return 'pending_deletion';
@@ -681,6 +690,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                     offline: 'msg-offline',
                     pending_addition: 'msg-ok',
                     pending_deletion: 'msg-warning',
+                    forgetting: 'msg-warning',
                     ready: 'msg-ok',
                     provisioning: 'provisioning',
                     provisioned: 'msg-provisioned',
@@ -692,6 +702,7 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                     offline: 'icon-block',
                     pending_addition: 'icon-ok-circle-empty',
                     pending_deletion: 'icon-cancel-circle',
+                    forgetting: 'icon-cancel-circle',
                     ready: 'icon-ok',
                     provisioned: 'icon-install',
                     error: 'icon-attention',
@@ -763,6 +774,9 @@ function($, _, i18n, React, utils, models, controls, dialogs, componentMixins) {
                                     <i className={iconClass} />
                                     <span>
                                         {i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
+                                        { status == 'offline' &&
+                                            <button onClick={this.forgetNode} className='node-forget-button'>{i18n(ns + 'forget')}</button>
+                                        }
                                     </span>
                                 </div>
                             </div>

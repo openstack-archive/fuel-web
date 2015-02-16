@@ -28,7 +28,7 @@ class TestHorizonURL(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestHorizonURL, self).tearDown()
 
-    @fake_tasks(godmode=True)
+    @fake_tasks(override_state=True, progress=100, status='ready')
     def test_horizon_url_ha_mode(self):
         self.env.create(
             nodes_kwargs=[

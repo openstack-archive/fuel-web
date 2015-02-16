@@ -525,9 +525,12 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         )
         for node in cluster.nodes:
             self.env.make_bond_via_api('lnx_bond',
-                                       consts.BOND_MODES.balance_rr,
+                                       '',
                                        ['eth1', 'eth2'],
-                                       node.id)
+                                       node.id,
+                                       bond_properties={
+                                           'mode': consts.BOND_MODES.balance_rr
+                                       })
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -572,9 +575,12 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         )
         for node in cluster.nodes:
             self.env.make_bond_via_api('lnx_bond',
-                                       consts.BOND_MODES.balance_rr,
+                                       '',
                                        ['eth1', 'eth2'],
-                                       node.id)
+                                       node.id,
+                                       bond_properties={
+                                           'mode': consts.BOND_MODES.balance_rr
+                                       })
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -731,9 +737,12 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                   nic_count=3)
         for node in cluster.nodes:
             self.env.make_bond_via_api('lnx_bond',
-                                       consts.BOND_MODES.balance_rr,
+                                       '',
                                        ['eth1', 'eth2'],
-                                       node.id)
+                                       node.id,
+                                       bond_properties={
+                                           'mode': consts.BOND_MODES.balance_rr
+                                       })
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -867,10 +876,17 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         cluster = self.create_env(segment_type='gre', ctrl_count=3,
                                   nic_count=3)
         for node in cluster.nodes:
-            self.env.make_bond_via_api('lnx_bond',
-                                       consts.BOND_MODES.balance_rr,
-                                       ['eth1', 'eth2'],
-                                       node.id)
+            self.env.make_bond_via_api(
+                'lnx_bond',
+                '',
+                ['eth1', 'eth2'],
+                node.id,
+                bond_properties={
+                    'mode': consts.BOND_MODES.l_802_3ad,
+                    'xmit_hash_policy': consts.BOND_XMIT_HASH_POLICY.layer2,
+                    'lacp_rate': consts.BOND_LACP_RATES.slow,
+                    'type__': consts.BOND_TYPES.linux
+                })
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -905,7 +921,9 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                  'name': 'lnx_bond',
                  'interfaces': ['eth1',
                                 'eth2'],
-                 'bond_properties': {'mode': 'balance-rr'},
+                 'bond_properties': {'mode': '802.3ad',
+                                     'xmit_hash_policy': 'layer2',
+                                     'lacp_rate': 'slow'},
                  'interface_properties': {},
                  }
             ]

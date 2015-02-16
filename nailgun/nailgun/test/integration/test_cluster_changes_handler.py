@@ -1622,7 +1622,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
 
-    @fake_tasks(godmode=True)
+    @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_enough_osds_for_ceph(self):
         cluster = self.env.create(
             nodes_kwargs=[

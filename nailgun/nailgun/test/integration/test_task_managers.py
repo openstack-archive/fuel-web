@@ -53,7 +53,7 @@ class TestTaskManagers(BaseIntegrationTest):
     def check_node_presence(self, nodes_count):
         return self.db.query(Node).count() == nodes_count
 
-    @fake_tasks(godmode=True)
+    @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deployment_task_managers(self):
         self.env.create(
             nodes_kwargs=[
@@ -259,7 +259,7 @@ class TestTaskManagers(BaseIntegrationTest):
         # validation failed
         self.assertEqual(self.env.clusters[0].status, 'new')
 
-    @fake_tasks(godmode=True)
+    @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_redeployment_works(self):
         self.env.create(
             nodes_kwargs=[
@@ -395,7 +395,7 @@ class TestTaskManagers(BaseIntegrationTest):
         ).first()
         self.assertIsNone(task_delete)
 
-    @fake_tasks(godmode=True)
+    @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deletion_cluster_ha_3x3(self):
         self.env.create(
             cluster_kwargs={

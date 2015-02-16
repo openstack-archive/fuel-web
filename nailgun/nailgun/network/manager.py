@@ -638,7 +638,7 @@ class NetworkManager(object):
             bond_db.name = bond['name']
             bond_db.mode = bond['mode']
             bond_db.mac = bond.get('mac')
-            bond_db.flags = bond.get('flags', {})
+            bond_db.bond_properties = bond.get('bond_properties', {})
             db().commit()
             db().refresh(bond_db)
 
@@ -1138,9 +1138,9 @@ class NetworkManager(object):
 
     @classmethod
     def get_lnx_bond_properties(cls, bond):
-        return {
-            'mode': 'balance-rr'
-        }
+        properties = {'mode': bond.mode}
+        properties.update(bond.bond_properties)
+        return properties
 
     @classmethod
     def get_iface_properties(cls, iface):

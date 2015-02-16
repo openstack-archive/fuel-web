@@ -224,8 +224,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.other_nic["assigned_networks"] = []
 
         self.node_nics_put_check_error(
-            "Node '{0}': each bond interface must have "
-            "mode".format(self.env.nodes[0]["id"]))
+            "Node '{0}': bond interface 'ovs-bond0' doesn't have mode".format(
+                self.env.nodes[0]["id"]))
 
     def test_nics_bond_create_failed_no_slaves(self):
         self.data.append({

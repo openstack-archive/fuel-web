@@ -30,7 +30,7 @@ class TestResetEnvironment(BaseIntegrationTest):
         super(TestResetEnvironment, self).tearDown()
 
     @fake_tasks(
-        godmode=True,
+        override_state={"progress": 100, "status": "ready"},
         recover_nodes=False,
         ia_nodes_count=1
     )
@@ -84,7 +84,7 @@ class TestResetEnvironment(BaseIntegrationTest):
         )
 
     @fake_tasks(
-        godmode=True,
+        override_state={"progress": 100, "status": "ready"},
         recover_nodes=False,
         ia_nodes_count=1
     )

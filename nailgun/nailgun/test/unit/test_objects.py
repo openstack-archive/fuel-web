@@ -20,6 +20,7 @@ import hashlib
 import jsonschema
 import six
 import uuid
+import yaml
 
 from itertools import cycle
 from itertools import ifilter
@@ -745,3 +746,210 @@ class TestClusterObject(BaseTestCase):
         bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
+
+
+class TestAttributesObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestAttributesObject, self).setUp()
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                'api': False
+            }
+        )
+        attributes_metadata = """
+            editable:
+                access:
+                  user:
+                    value: ""
+                    type: "text"
+                    regex:
+                      source: '\S'
+                      error: "Invalid username"
+                  email:
+                    value: "admin@localhost"
+                    type: "text"
+                    regex:
+                      source: '\S'
+                      error: "Invalid email"
+                  tenant:
+                    value: ""
+                    type: "text"
+                    regex:
+                      source: '\S'
+                      error: "Invalid tenant name"
+                  password:
+                    value: "secret"
+                    type: "password"
+                    regex:
+                      source: '\S'
+                      error: "Empty password"
+        """
+        self.attributes_data = yaml.load(attributes_metadata)
+
+    def test_check_with_invalid_values(self):
+        objects.Cluster.update_attributes(
+            self.cluster, self.attributes_data)
+        attributes = objects.Cluster.get_attributes(self.cluster)
+        errs = objects.Attributes.validate(attributes)
+        self.assertItemsEqual(
+            errs,
+            ['Invalid username', 'Invalid tenant name'])
+
+    def test_check_with_valid_values(self):
+        access = self.attributes_data['editable']['access']
+        access['user']['value'] = 'admin'
+        access['tenant']['value'] = 'test'
+
+        objects.Cluster.update_attributes(
+            self.cluster, self.attributes_data)
+        attributes = objects.Cluster.get_attributes(self.cluster)
+        errs = objects.Attributes.validate(attributes)
+        self.assertListEqual(errs, [])
+
+
+class TestVmwareAttributesObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestVmwareAttributesObject, self).setUp()
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                'api': False
+            }
+        )
+        self.vm_data = self.env.read_fixtures(['vmware_attributes'])[0]
+
+    def test_check_data_with_empty_values_without_restrictions(self):
+        attributes = objects.Cluster.get_attributes(self.cluster).editable
+        attributes.get('common', {}).setdefault('use_vcenter', {})
+        attributes['common']['use_vcenter']['value'] = True
+        attributes['storage']['images_vcenter']['value'] = True
+        objects.Cluster.update_attributes(
+            self.cluster, {'editable': attributes})
+
+        empty_values = {
+            "availability_zones": [
+                {
+                    "az_name": "",
+                    "vcenter_host": "",
+                    "vcenter_username": "",
+                    "vcenter_password": "",
+                    "nova_computes": [
+                        {
+                            "vsphere_cluster": "",
+                            "service_name": "",
+                            "datastore_regex": ""
+                        }
+                    ],
+                    "cinder": {
+                        "enable": True
+                    }
+                }
+            ],
+            "network": {
+                "esxi_vlan_interface": ""
+            },
+            "glance": {
+                "vcenter_host": "",
+                "vcenter_username": "",
+                "vcenter_password": "",
+                "datacenter": "",
+                "datastore": ""
+            }
+        }
+        vmware_attributes = self.vm_data.copy()
+        # Update value with empty value
+        vmware_attributes['editable']['value'] = empty_values
+        setattr(
+            self.cluster.vmware_attributes,
+            'editable',
+            vmware_attributes['editable'])
+        self.db.flush()
+
+        errs = objects.VmwareAttributes.validate(
+            self.cluster.vmware_attributes)
+        self.assertItemsEqual(
+            errs,
+            ['Empty cluster', 'Empty host', 'Empty username',
+             'Empty password', 'Empty datacenter', 'Empty datastore'])
+
+    def test_check_data_with_invalid_values_without_restrictions(self):
+        # Disable restrictions
+        attributes = objects.Cluster.get_attributes(self.cluster).editable
+        attributes.get('common', {}).setdefault('use_vcenter', {})
+        attributes['common']['use_vcenter']['value'] = True
+        attributes['storage']['images_vcenter']['value'] = True
+        objects.Cluster.update_attributes(
+            self.cluster, {'editable': attributes})
+
+        # value data taken from fixture, datacenter and datastore
+        # for glance and one cluster of nova computes left empty
+        new_attributes = self.vm_data.copy()
+        setattr(
+            self.cluster.vmware_attributes,
+            'editable',
+            new_attributes['editable'])
+        self.db.flush()
+        errs = objects.VmwareAttributes.validate(
+            self.cluster.vmware_attributes)
+        self.assertItemsEqual(
+            errs,
+            ['Empty cluster', 'Empty datacenter', 'Empty datastore'])
+
+    def test_check_data_with_invalid_values_and_with_restrictions(self):
+        # fixture have restrictions enabled for glance that's why
+        # only 'Empty cluster' should returned
+        new_attributes = self.vm_data.copy()
+        setattr(
+            self.cluster.vmware_attributes,
+            'editable',
+            new_attributes['editable'])
+        self.db.flush()
+        errs = objects.VmwareAttributes.validate(
+            self.cluster.vmware_attributes)
+        self.assertItemsEqual(errs, ['Empty cluster'])
+
+    def test_check_data_with_valid_values_and_with_restrictions(self):
+        new_attributes = self.vm_data.copy()
+        # Set valid data for clusters
+        for i, azone in enumerate(
+                new_attributes['editable']['value']['availability_zones']):
+            for j, ncompute in enumerate(azone['nova_computes']):
+                ncompute['vsphere_cluster'] = 'cluster-{0}-{1}'.format(i, j)
+
+        setattr(
+            self.cluster.vmware_attributes,
+            'editable',
+            new_attributes['editable'])
+        self.db.flush()
+        errs = objects.VmwareAttributes.validate(
+            self.cluster.vmware_attributes)
+        self.assertItemsEqual(errs, [])
+
+    def test_check_data_with_valid_values_and_without_restrictions(self):
+        # Disable restrictions
+        attributes = objects.Cluster.get_attributes(self.cluster).editable
+        attributes.get('common', {}).setdefault('use_vcenter', {})
+        attributes['common']['use_vcenter']['value'] = True
+        attributes['storage']['images_vcenter']['value'] = True
+        objects.Cluster.update_attributes(
+            self.cluster, {'editable': attributes})
+
+        new_attributes = self.vm_data.copy()
+        # Set valid data for clusters
+        for i, azone in enumerate(
+                new_attributes['editable']['value']['availability_zones']):
+            for j, ncompute in enumerate(azone['nova_computes']):
+                ncompute['vsphere_cluster'] = 'cluster-{0}-{1}'.format(i, j)
+        # Set valid data for glance
+        glance = new_attributes['editable']['value']['glance']
+        glance['datacenter'] = 'test_datacenter'
+        glance['datastore'] = 'test_datastore'
+        setattr(
+            self.cluster.vmware_attributes,
+            'editable',
+            new_attributes['editable'])
+        self.db.flush()
+        errs = objects.VmwareAttributes.validate(
+            self.cluster.vmware_attributes)
+        self.assertItemsEqual(errs, [])

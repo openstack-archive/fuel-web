@@ -720,6 +720,8 @@ DUMP:
       objects:
       - type: file
         path: /etc/astute.yaml
+      - type: dir
+        path: /etc/hiera
       - type: file
         path: /var/log/puppet.log
       - type: file

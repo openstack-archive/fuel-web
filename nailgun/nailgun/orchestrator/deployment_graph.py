@@ -144,15 +144,6 @@ class DeploymentGraph(nx.DiGraph):
             if task['id'] not in task_ids:
                 self.make_void_task(task)
 
-    def find_stage(self, task):
-        for stage in consts.STAGES:
-            if self.has_successor(task, stage) or task == stage:
-                return stage
-
-        raise errors.InvalidData(
-            "Current task %s doesnt belong to graph"
-            " or not connected to any stages.", task)
-
     def find_subgraph(self, start=None, end=None):
         """Find subgraph by provided start and end endpoints
 
@@ -163,77 +154,23 @@ class DeploymentGraph(nx.DiGraph):
         working_graph = self
         all_tasks = set()
 
-        # groups and stages are backbone of graph
-        # that is always required for orchestration for legacy behaviour
-        # reasons, so on next few lines we need to be sure that they are
-        # always present in graph
-        for task in self.node.values():
-            if task['type'] in consts.INTERNAL_TASKS:
-                all_tasks.add(task['id'])
-
         if start:
-            working_graph = self.subgraph(
-                all_tasks | working_graph.traverse_from_start(start))
+            # simply traverse starting from root,
+            # A->B, B->C, B->D, C->E
+            all_tasks.update(nx.dfs_postorder_nodes(working_graph, start))
+            working_graph = self.subgraph(all_tasks)
+
         if end:
-            working_graph = self.subgraph(
-                all_tasks | working_graph.traverse_to_end(end))
+            # nx.dfs_postorder_nodes traverses graph from specified point
+            # to the end by following successors, here is example:
+            # A->B, C->D, B->D , and we want to traverse up to the D
+            # for this we need to reverse graph and make it
+            # B->A, D->C, D->B and use dfs_postorder
+            all_tasks.update(nx.dfs_postorder_nodes(
+                working_graph.reverse(), end))
+            working_graph = self.subgraph(all_tasks)
 
         return working_graph
-
-    def traverse_stages(self, stages):
-        """Get all tasks in stages.
-
-        :param stages: list of strings
-        :returns: set with strings
-        """
-        tasks = set()
-        for stage in stages:
-            tasks.update(nx.dfs_postorder_nodes(self.reverse(), stage))
-        return tasks
-
-    def traverse_from_start(self, start):
-        """Traverse graph from specified point to the end.
-        For stage where task is stored, we need to apply dfs_postorder
-        without reverse, so all successors will be found correctly.
-
-        Tasks from previous stages should not be added to subgraph, and
-        this is why we are skipping them.
-
-        All tasks from later stages should be included.
-        """
-        task_stage = self.find_stage(start)
-        stage_pos = consts.STAGES.index(task_stage)
-
-        # get all graph nodes connected to stages after current one
-        tasks = self.traverse_stages(consts.STAGES[stage_pos + 1:])
-
-        # simply traverse starting from root,
-        # A->B, B->C, B->D, C->E
-        tasks.update(nx.dfs_postorder_nodes(self, start))
-        return tasks
-
-    def traverse_to_end(self, end):
-        """Traverse graph from specified point to the start.
-        For stage where task is stored we need included only tasks
-        that are used up to this task.
-
-        For stages that was before task_stage - all tasks should be included.
-
-        All stages that comes after task - should be skipped.
-        """
-        task_stage = self.find_stage(end)
-        stage_pos = consts.STAGES.index(task_stage)
-
-        # get all tasks for stages before current one
-        tasks = self.traverse_stages(consts.STAGES[:stage_pos])
-
-        # nx.dfs_postorder_nodes traverses graph from specified point
-        # to the end by following successors, here is example:
-        # A->B, C->D, B->D , and we want to traverse up to the D
-        # for this we need to reverse graph and make it
-        # B->A, D->C, D->B and use dfs_postorder
-        tasks.update(nx.dfs_postorder_nodes(self.reverse(), end))
-        return tasks
 
 
 class AstuteGraph(object):
@@ -361,19 +298,24 @@ class AstuteGraph(object):
             processed_groups.update(current_groups)
             current_groups = groups_subgraph.get_next_groups(processed_groups)
 
-    def stage_tasks_serialize(self, stage, nodes):
+    def stage_tasks_serialize(self, tasks, nodes):
         """Serialize tasks for certain stage
 
         :param stage: oneof consts.STAGES
         :param nodes: list of node db objects
         """
-        tasks = self.graph.get_tasks(stage).topology
         serialized = []
         for task in tasks:
+
+            if task['type'] in consts.INTERNAL_TASKS:
+                continue
+
             serializer = self.serializers.get_stage_serializer(task)(
                 task, self.cluster, nodes)
+
             if not serializer.should_execute():
                 continue
+
             serialized.extend(serializer.serialize())
         return serialized
 
@@ -382,14 +324,17 @@ class AstuteGraph(object):
 
         :param nodes: list of node db objects
         """
-        return self.stage_tasks_serialize(consts.STAGES.post_deployment, nodes)
+        subgraph = self.graph.find_subgraph(
+            start=consts.STAGES.deploy, end=consts.STAGES.post_deployment)
+        return self.stage_tasks_serialize(subgraph.topology, nodes)
 
     def pre_tasks_serialize(self, nodes):
         """Serialize tasks for pre_deployment hook
 
         :param nodes: list of node db objects
         """
-        return self.stage_tasks_serialize(consts.STAGES.pre_deployment, nodes)
+        subgraph = self.graph.find_subgraph(end=consts.STAGES.pre_deployment)
+        return self.stage_tasks_serialize(subgraph.topology, nodes)
 
     def deploy_task_serialize(self, node):
         """Serialize tasks with necessary for orchestrator attributes

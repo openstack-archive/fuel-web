@@ -21,32 +21,38 @@ from nailgun.orchestrator.priority_serializers import PriorityStrategy
 
 
 def stage_serialize(stage, serializer,
-                    orchestrator_graph, cluster, nodes):
+                    graph_tasks, cluster, nodes):
     """Serialize tasks for given stage
 
     :param stage: oneOf consts.STAGES
     :param serialize: orchestrator.plugins.BasePluginDeploymentHooksSerializer
-    :param orchestrator_graph: instance of AstuteGraph
+    :param graph_tasks: list of tasks
     :param cluster: cluster db object
     :param nodes: list of node db objects
     """
     priority = PriorityStrategy()
-    tasks = orchestrator_graph.stage_tasks_serialize(stage, nodes)
+    tasks = []
+
+    tasks.extend(graph_tasks)
+
     plugins = serializer(cluster, nodes)
     tasks.extend(plugins.serialize())
     priority.one_by_one(tasks)
+
     return tasks
 
 
 def pre_deployment_serialize(orchestrator_graph, cluster, nodes):
+    graph_tasks = orchestrator_graph.pre_tasks_serialize(nodes)
     return stage_serialize(
         consts.STAGES.pre_deployment,
         plugins_serializers.PluginsPreDeploymentHooksSerializer,
-        orchestrator_graph, cluster, nodes)
+        graph_tasks, cluster, nodes)
 
 
 def post_deployment_serialize(orchestrator_graph, cluster, nodes):
+    graph_tasks = orchestrator_graph.post_tasks_serialize(nodes)
     return stage_serialize(
         consts.STAGES.post_deployment,
         plugins_serializers.PluginsPostDeploymentHooksSerializer,
-        orchestrator_graph, cluster, nodes)
+        graph_tasks, cluster, nodes)

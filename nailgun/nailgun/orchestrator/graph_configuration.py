@@ -17,16 +17,35 @@
 #(dshulyak) temporary, this config will be moved to fuel-library
 #until we will stabilize our api
 DEPLOYMENT_CURRENT = """
-- id: deploy
+
+- id: pre_deployment_start
   type: stage
+
 - id: pre_deployment
   type: stage
+  requires: [pre_deployment_start]
+
+- id: deploy_start
+  type: stage
+  requires: [pre_deployment]
+
+- id: deploy
+  type: stage
+  requires: [deploy_start]
+
+- id: post_deployment_start
+  type: stage
+  requires: [deploy]
+
 - id: post_deployment
   type: stage
+  requires: [post_deployment_start]
+
 - id: primary-controller
   type: group
   role: [primary-controller]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -59,6 +78,7 @@ DEPLOYMENT_CURRENT = """
   type: group
   role: [zabbix-server]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -93,12 +113,14 @@ DEPLOYMENT_CURRENT = """
   parameters:
     strategy:
       type: parallel
+
 - id: deploy_legacy
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
            zabbix-server, primary-mongo, mongo]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules
@@ -106,16 +128,34 @@ DEPLOYMENT_CURRENT = """
 """
 
 DEPLOYMENT_50 = """
-- id: deploy
+- id: pre_deployment_start
   type: stage
+
 - id: pre_deployment
   type: stage
+  requires: [pre_deployment_start]
+
+- id: deploy_start
+  type: stage
+  requires: [pre_deployment]
+
+- id: deploy
+  type: stage
+  requires: [deploy_start]
+
+- id: post_deployment_start
+  type: stage
+  requires: [deploy]
+
 - id: post_deployment
   type: stage
+  requires: [post_deployment_start]
+
 - id: primary-controller
   type: group
   role: [primary-controller]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -147,6 +187,7 @@ DEPLOYMENT_50 = """
   type: group
   role: [zabbix-server]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -174,12 +215,14 @@ DEPLOYMENT_50 = """
   parameters:
     strategy:
       type: parallel
+
 - id: deploy_legacy
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
            zabbix-server, primary-mongo, mongo]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules
@@ -187,16 +230,34 @@ DEPLOYMENT_50 = """
 """
 
 PATCHING = """
-- id: deploy
+- id: pre_deployment_start
   type: stage
+
 - id: pre_deployment
   type: stage
+  requires: [pre_deployment_start]
+
+- id: deploy_start
+  type: stage
+  requires: [pre_deployment]
+
+- id: deploy
+  type: stage
+  requires: [deploy_start]
+
+- id: post_deployment_start
+  type: stage
+  requires: [deploy]
+
 - id: post_deployment
   type: stage
+  requires: [post_deployment_start]
+
 - id: primary-controller
   type: group
   role: [primary-controller]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -228,6 +289,7 @@ PATCHING = """
   type: group
   role: [zabbix-server]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -255,12 +317,14 @@ PATCHING = """
   parameters:
     strategy:
       type: one_by_one
+
 - id: deploy_legacy
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
            zabbix-server, primary-mongo, mongo]
   required_for: [deploy]
+  requires: [deploy_start]
   parameters:
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules

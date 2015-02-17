@@ -689,6 +689,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_volumes(task)
         cls._check_public_network(task)
         cls._check_mongo_nodes(task)
+        cls._check_vmware_consistency(task)
 
     @classmethod
     def _check_nodes_are_online(cls, task):
@@ -844,6 +845,21 @@ class CheckBeforeDeploymentTask(object):
             and not components["mongo"]["value"]
                 and len(objects.Cluster.get_mongo_nodes(task.cluster)) == 0):
                     raise errors.MongoNodesCheckError
+
+    @classmethod
+    def _check_vmware_consistency(cls, task):
+        cinder_nodes = filter(
+            lambda node: 'cinder' in node.all_roles,
+            task.cluster.nodes)
+
+        if not cinder_nodes:
+            logger.info('There is no any node with "cinder" role provided')
+
+        errors_msg = objects.VmwareAttributes.validate(
+            task.cluster.vmware_attributes)
+
+        if errors_msg:
+            raise errors.CheckBeforeDeploymentError(errors_msg)
 
 
 class DumpTask(object):

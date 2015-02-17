@@ -34,7 +34,11 @@
                                 "type": "text",
                                 "description": "VSphere Cluster",
                                 "name": "vsphere_cluster",
-                                "label": "VSphere Cluster"
+                                "label": "VSphere Cluster",
+                                "regex": {
+                                    "source": "\\S",
+                                    "error": "Empty cluster"
+                                }
                             },
                             {
                                 "type": "text",
@@ -86,35 +90,61 @@
                         "type": "text",
                         "description": "VCenter host or IP",
                         "name": "vcenter_host",
-                        "label": "VCenter Host"
+                        "label": "VCenter Host",
+                        "regex": {
+                            "source": "\\S",
+                            "error": "Empty host"
+                        }
                     },
                     {
                         "type": "text",
                         "description": "vCenter username",
                         "name": "vcenter_username",
-                        "label": "vCenter username"
+                        "label": "vCenter username",
+                        "regex": {
+                            "source": "\\S",
+                            "error": "Empty username"
+                        }
                     },
                     {
                         "type": "password",
                         "description": "vCenter password",
                         "name": "vcenter_password",
-                        "label": "vCenter password"
+                        "label": "vCenter password",
+                        "regex": {
+                            "source": "\\S",
+                            "error": "Empty password"
+                        }
                     },
                     {
                         "type": "text",
                         "description": "Datacenter",
                         "name": "datacenter",
-                        "label": "Datacenter"
+                        "label": "Datacenter",
+                        "regex": {
+                            "source": "\\S",
+                            "error": "Empty datacenter"
+                        }
                     },
                     {
                         "type": "text",
                         "description": "Datastore",
                         "name": "datastore",
-                        "label": "Datastore"
+                        "label": "Datastore",
+                        "regex": {
+                            "source": "\\S",
+                            "error": "Empty datastore"
+                        }
                     }
                 ],
                 "type": "object",
-                "name": "glance"
+                "name": "glance",
+                "restrictions": [
+                    {
+                        "action": "hide",
+                        "condition": "settings:storage.images_vcenter.value == false or settings:common.use_vcenter.value == false"
+                    }
+                ]
             }
         ],
         "value": {
@@ -127,22 +157,47 @@
                     "nova_computes": [
                         {
                             "vsphere_cluster": "cluster1",
-                            "service_name": "Compute 1"
+                            "service_name": "Compute 1",
+                            "datastore_regex": ""
                         },
                         {
                             "vsphere_cluster": "cluster2",
-                            "service_name": "Compute 3"
+                            "service_name": "Compute 3",
+                            "datastore_regex": ""
                         }
                     ],
                     "cinder": {
                         "enable": true
+                    }
+                },
+                {
+                    "az_name": "Zone 2",
+                    "vcenter_host": "1.2.3.6",
+                    "vcenter_username": "user",
+                    "vcenter_password": "pass",
+                    "nova_computes": [
+                        {
+                            "vsphere_cluster": "cluster1",
+                            "service_name": "Compute 4",
+                            "datastore_regex": ""
+                        },
+                        {
+                            "vsphere_cluster": "",
+                            "service_name": "Compute 7",
+                            "datastore_regex": ""
+                        }
+                    ],
+                    "cinder": {
+                        "enable": false
                     }
                 }
             ],
             "glance": {
                 "vcenter_host": "1.2.3.4",
                 "vcenter_username": "admin",
-                "vcenter_password": "secret"
+                "vcenter_password": "secret",
+                "datacenter": "",
+                "datastore": ""
             },
             "network": {
                 "esxi_vlan_interface": "eth0"

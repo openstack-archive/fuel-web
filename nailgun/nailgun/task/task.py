@@ -688,6 +688,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_volumes(task)
         cls._check_public_network(task)
         cls._check_mongo_nodes(task)
+        cls._check_vmware_attributes(task)
 
     @classmethod
     def _check_nodes_are_online(cls, task):
@@ -816,6 +817,11 @@ class CheckBeforeDeploymentTask(object):
             if cls.__network_size(public) < nodes_count + vip_count:
                 error_message = cls.__format_network_error(public, nodes_count)
                 raise errors.NetworkCheckError(error_message)
+
+    @classmethod
+    def _check_vmware_attributes(cls, task):
+        objects.VmwareAttributes.validate(task.cluster.vmware_attributes)
+        raise Exception
 
     @classmethod
     def __network_size(cls, network):

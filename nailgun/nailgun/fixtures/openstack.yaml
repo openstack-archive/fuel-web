@@ -924,6 +924,7 @@
             restrictions:
               - "settings:common.libvirt_type.value != 'vcenter'"
               - "settings:storage.images_ceph.value == true": "Only one Glance backend could be selected."
+          # TODO(apopovych): remove this section
           vc_host:
             value: ""
             label: "Hostname"
@@ -976,6 +977,7 @@
               source: *non_empty_string
               error: 'Empty datacenter'
             restrictions: *glance_vcenter_restr
+          # End of section
           vc_image_dir:
             value: "/openstack_glance"
             label: "Datastore Images directory"
@@ -1337,6 +1339,9 @@
                     type: "text"
                     label: "VSphere Cluster"
                     description: "VSphere Cluster"
+                    restrictions:
+                      - condition: "settings:storage.images_vcenter.value == false or settings:common.use_vcenter.value == false"
+                        action: "hide"
                   -
                     name: "service_name"
                     type: "text"
@@ -1374,26 +1379,48 @@
                 type: "text"
                 label: "VCenter Host"
                 description: "VCenter host or IP"
+                regex:
+                  source: *ipv4_or_hostname_regex
+                  error: 'Specify valid hostname or IPv4 address'
+                restrictions: &glance_vcenter_restrictions
+                  - condition: "settings:storage.images_vcenter.value == false or settings:common.use_vcenter.value == false"
+                    action: "hide"
               -
                 name: "vcenter_username"
                 type: "text"
                 label: "vCenter username"
                 description: "vCenter username"
+                regex:
+                  source: *non_empty_string
+                  error: 'Empty username'
+                restrictions: *glance_vcenter_restrictions
               -
                 name: "vcenter_password"
                 type: "password"
                 label: "vCenter password"
                 description: "vCenter password"
+                regex:
+                  source: *non_empty_string
+                  error: "Empty password"
+                restrictions: *glance_vcenter_restrictions
               -
                 name: "datacenter"
                 type: "text"
                 label: "Datacenter"
                 description: "Datacenter"
+                regex:
+                  source: *non_empty_string
+                  error: 'Empty datacenter'
+                restrictions: *glance_vcenter_restrictions
               -
                 name: "datastore"
                 type: "text"
                 label: "Datastore"
                 description: "Datastore"
+                regex:
+                  source: *non_empty_string
+                  error: 'Empty datastore'
+                restrictions: *glance_vcenter_restrictions
         value:
           availability_zones:
             -

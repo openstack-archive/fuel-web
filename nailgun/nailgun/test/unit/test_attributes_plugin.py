@@ -12,10 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+import abc
 import os
 
 import mock
+import six
 import yaml
 
 from nailgun.db import db
@@ -25,11 +26,18 @@ from nailgun.settings import settings
 from nailgun.test import base
 
 
-class TestPlugin(base.BaseTestCase):
+@six.add_metaclass(abc.ABCMeta)
+class TestPluginBase(base.BaseTestCase):
+
+    # Prevent running tests in base class
+    __test__ = False
+    # Should be overridden in child
+    package_version = None
 
     def setUp(self):
-        super(TestPlugin, self).setUp()
-        self.plugin_metadata = self.env.get_default_plugin_metadata()
+        super(TestPluginBase, self).setUp()
+        self.plugin_metadata = self.env.get_default_plugin_metadata(
+            package_version=self.package_version)
         self.plugin = Plugin.create(self.plugin_metadata)
         self.env.create(
             cluster_kwargs={'mode': 'multinode'},
@@ -38,35 +46,12 @@ class TestPlugin(base.BaseTestCase):
                 'operating_system': 'Ubuntu',
                 'orchestrator_data': self.env.get_default_orchestrator_data()})
         self.cluster = self.env.clusters[0]
-        self.attr_plugin = attr_plugin.ClusterAttributesPlugin(self.plugin)
+        self.attr_plugin = attr_plugin.wrap_plugin(self.plugin)
         self.env_config = self.env.get_default_plugin_env_config()
         self.get_config = lambda *args: mock.mock_open(
             read_data=yaml.dump(self.env_config))()
 
         db().flush()
-
-    def test_primary_added_for_1_version(self):
-        # specified package version just for visibility
-        stub = 'stub'
-        self.plugin.package_version = '1.0.0'
-        self.db.flush()
-        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
-            load_conf.return_value = [{'role': ['controller']}]
-
-            tasks = self.attr_plugin._load_tasks(stub)
-            self.assertItemsEqual(
-                tasks[0]['role'], ['primary-controller', 'controller'])
-
-    def test_role_not_changed_for_2_version(self):
-        stub = 'stub'
-        self.plugin.package_version = '2.0.0'
-        self.db.flush()
-        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
-            load_conf.return_value = [{'role': ['controller']}]
-
-            tasks = self.attr_plugin._load_tasks(stub)
-            self.assertItemsEqual(
-                tasks[0]['role'], ['controller'])
 
     @mock.patch('nailgun.plugins.attr_plugin.open', create=True)
     @mock.patch('nailgun.plugins.attr_plugin.os.access')
@@ -109,7 +94,7 @@ class TestPlugin(base.BaseTestCase):
 
     def test_slaves_scripts_path(self):
         expected = settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
-            plugin_name=self.attr_plugin.full_name)
+            plugin_name=self.attr_plugin.path_name)
         self.assertEqual(expected, self.attr_plugin.slaves_scripts_path)
 
     @mock.patch('nailgun.plugins.attr_plugin.glob')
@@ -117,7 +102,7 @@ class TestPlugin(base.BaseTestCase):
         self.attr_plugin.repo_files(self.cluster)
         expected_call = os.path.join(
             settings.PLUGINS_PATH,
-            self.attr_plugin.full_name,
+            self.attr_plugin.path_name,
             'repositories/ubuntu',
             '*')
         glob_mock.glob.assert_called_once_with(expected_call)
@@ -127,16 +112,57 @@ class TestPlugin(base.BaseTestCase):
         self.attr_plugin.repo_url(self.cluster)
         repo_base = settings.PLUGINS_REPO_URL.format(
             master_ip=settings.MASTER_IP,
-            plugin_name=self.attr_plugin.full_name)
+            plugin_name=self.attr_plugin.path_name)
         murljoin.assert_called_once_with(repo_base, 'repositories/ubuntu')
 
     def test_master_scripts_path(self):
         base_url = settings.PLUGINS_SLAVES_RSYNC.format(
             master_ip=settings.MASTER_IP,
-            plugin_name=self.attr_plugin.full_name)
+            plugin_name=self.attr_plugin.path_name)
+
         expected = '{0}{1}'.format(base_url, 'deployment_scripts/')
         self.assertEqual(
             expected, self.attr_plugin.master_scripts_path(self.cluster))
+
+
+class TestPluginV1(TestPluginBase):
+
+    __test__ = True
+    package_version = '1.0.0'
+
+    def test_primary_added_for_version(self):
+        stub = 'stub'
+        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
+            load_conf.return_value = [{'role': ['controller']}]
+
+            tasks = self.attr_plugin._load_tasks(stub)
+            self.assertItemsEqual(
+                tasks[0]['role'], ['primary-controller', 'controller'])
+
+    def test_path_name(self):
+        self.assertEqual(
+            self.attr_plugin.path_name,
+            self.attr_plugin.full_name)
+
+
+class TestPluginV2(TestPluginBase):
+
+    __test__ = True
+    package_version = '2.0.0'
+
+    def test_role_not_changed_for_version(self):
+        stub = 'stub'
+        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
+            load_conf.return_value = [{'role': ['controller']}]
+
+            tasks = self.attr_plugin._load_tasks(stub)
+            self.assertItemsEqual(
+                tasks[0]['role'], ['controller'])
+
+    def test_path_name(self):
+        self.assertEqual(
+            self.attr_plugin.path_name,
+            '{0}-{1}'.format(self.plugin.name, '0.1'))
 
 
 class TestClusterCompatiblityValidation(base.BaseTestCase):
@@ -144,7 +170,7 @@ class TestClusterCompatiblityValidation(base.BaseTestCase):
     def setUp(self):
         super(TestClusterCompatiblityValidation, self).setUp()
         self.plugin = Plugin.create(self.env.get_default_plugin_metadata())
-        self.attr_plugin = attr_plugin.ClusterAttributesPlugin(self.plugin)
+        self.attr_plugin = attr_plugin.ClusterAttributesPluginV1(self.plugin)
 
     def get_cluster(self, os, mode, version):
         release = mock.Mock(operating_system=os, version=version)

@@ -629,6 +629,8 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.NodeDeletionTaskManager(cluster_id=cluster_db.id)
         task = manager_.execute(cluster_db.nodes)
+        node = cluster_db.nodes[0]
+        self.assertEqual(node.status, NODE_STATUSES.removing)
         self.db.commit()
         self.env.wait_ready(task, timeout=5)
 
@@ -652,7 +654,8 @@ class TestTaskManagers(BaseIntegrationTest):
         manager_ = manager.NodeDeletionTaskManager()
         task = manager_.execute([node])
         self.db.commit()
-        self.env.wait_ready(task, timeout=5)
+        # Nodes are removed immediately
+        self.assertEqual(task.status, TASK_STATUSES.ready)
 
         self.assertEqual(self.db.query(models.Node).count(), 0)
 

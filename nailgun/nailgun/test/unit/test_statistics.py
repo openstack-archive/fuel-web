@@ -584,8 +584,22 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "OS-FLV-EXT-DATA:ephemeral": 1,
                     "disk": 1,
                     "swap": 16,
-                }
-            }
+                },
+            },
+            "cinder": {
+                "volumes": {
+                    "id": 3,
+                    "availability_zone": "test_availability_zone",
+                    "encrypted": False,
+                    "bootable": False,
+                    "status": "available",
+                    "volume_type": "test_volume",
+                    "display_description": "This is mocked volume",
+                    "size": 1,
+                    "os-vol-host-attr:host": "test-node",
+                    "snapshot_id": None,
+                },
+            },
         }
 
         expected = {
@@ -618,6 +632,23 @@ class TestOSWLCollectingUtils(BaseTestCase):
                         "swap": 16,
                     },
                 ],
+            },
+            "volumes": {
+                "regard_resource": "volume",
+                "data": [
+                    {
+                        "id": 3,
+                        "availability_zone": "test_availability_zone",
+                        "encrypted_flag": False,
+                        "bootable_flag": False,
+                        "status": "available",
+                        "volume_type": "test_volume",
+                        "description": "This is mocked volume",
+                        "size": 1,
+                        "host": "test-node",
+                        "snapshot_id": None,
+                    }
+                ]
             },
         }
 

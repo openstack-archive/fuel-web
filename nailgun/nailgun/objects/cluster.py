@@ -18,6 +18,8 @@
 Cluster-related objects and collections
 """
 
+import re
+import six
 from sqlalchemy import or_
 import yaml
 
@@ -37,18 +39,20 @@ from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Release
+from nailgun.objects import RestrictionMixin
 
 from nailgun.plugins.manager import PluginManager
 
 from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
+from nailgun.utils import camel_to_snake_case
 from nailgun.utils import dict_merge
 from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
 
-class Attributes(NailgunObject):
+class Attributes(NailgunObject, RestrictionMixin):
     """Cluster attributes object
     """
 
@@ -106,6 +110,57 @@ class Attributes(NailgunObject):
 
             attrs.pop('additional_components')
         return attrs
+
+    @classmethod
+    def validate(cls, instance):
+        data = instance.editable
+        models = cls._get_models(instance)
+        errs = cls._check_data(models, data)
+
+        return list(errs())
+
+    @classmethod
+    def _check_data(cls, models, data):
+
+        def find_errors(data=data):
+            if isinstance(data, dict):
+                restrictions = []
+                if 'restrictions' in data:
+                    restrictions = map(
+                        cls._expand_restriction,
+                        data.get('restrictions'))
+                restr = cls.check_restrictions(models, restrictions)
+                if restr.get('result'):
+                    # TODO(apopovych): handle restriction action or message?
+                    return
+                else:
+                    attr_regex = data.get('regex', {})
+                    if attr_regex:
+                        pattern = re.compile(attr_regex.get('source'))
+                        if not pattern.match(data.get('value')):
+                            yield attr_regex.get('error')
+                    for key, value in six.iteritems(data):
+                        if key not in ['restrictions', 'regex']:
+                            for err in find_errors(value):
+                                yield err
+            elif isinstance(data, list):
+                for item in data:
+                    for err in find_errors(item):
+                        yield err
+
+        return find_errors
+
+    @classmethod
+    def _get_models(cls, instance):
+        """Get models for referencing attributes in restrictions
+        """
+        return {
+            'settings': instance.editable,
+            'default': instance.editable,
+            'cluster': instance.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': instance.cluster.network_config
+        }
 
 
 class Cluster(NailgunObject):
@@ -777,5 +832,108 @@ class ClusterCollection(NailgunCollection):
     single = Cluster
 
 
-class VmwareAttributes(NailgunObject):
+class VmwareAttributes(NailgunObject, RestrictionMixin):
     model = models.VmwareAttributes
+
+    @classmethod
+    def validate(cls, instance):
+        """Validate vmware attributes data
+        """
+        models = cls._get_models(instance)
+        metadata = instance.editable.get('metadata')
+        value = instance.editable.get('value')
+
+        errs = cls._check_data(models, metadata, value)
+
+        return list(errs())
+
+    @classmethod
+    def _check_data(cls, models, metadata, data):
+        """Check vmware attributes data
+
+        :param models:
+        :type models: dict
+        :param metadata:
+        :type metadata: list|dict
+        :param data:
+        :type data: list|dict
+        :retruns: func
+        """
+        root_key = camel_to_snake_case(cls.__name__)
+
+        def find_errors(metadata=metadata, path_key=root_key):
+            """Generator for vmware attributes errors which for each
+            attribute in 'metadata' gets relevant values from vmware
+            'value' and check them with restrictions and regexs
+            """
+            if isinstance(metadata, dict):
+                restrictions = []
+                if 'restrictions' in metadata:
+                    restrictions = map(
+                        cls._expand_restriction,
+                        metadata.get('restrictions'))
+                restr = cls.check_restrictions(models, restrictions)
+                if restr.get('result'):
+                    # TODO(apopovych): handle restriction action or message?
+                    return
+                else:
+                    for mkey, mvalue in six.iteritems(metadata):
+                        if mkey == 'name':
+                            value_path = path_key.replace(
+                                root_key, '').replace('.fields', '')
+                            values = cls._get_values(value_path, data)
+                            attr_regex = metadata.get('regex', {})
+                            if attr_regex:
+                                pattern = re.compile(attr_regex.get('source'))
+                                for value in values():
+                                    if not pattern.match(value):
+                                        yield attr_regex.get('error')
+                        for err in find_errors(
+                                mvalue, '.'.join([path_key, mkey])):
+                            yield err
+            elif isinstance(metadata, list):
+                for i, item in enumerate(metadata):
+                    current_key = item.get('name') or str(i)
+                    for err in find_errors(
+                            item, '.'.join([path_key, current_key])):
+                        yield err
+
+        return find_errors
+
+    @classmethod
+    def _get_values(cls, path, data):
+        """Generator for all values from data selected by given path
+
+        :param path: path to all releted values
+        :type path: string
+        :param data: vmware attributes value
+        :type data: list|dict
+        """
+        keys = path.split('.')
+        key = keys[-1]
+
+        def find(data=data):
+            if isinstance(data, dict):
+                for k, v in six.iteritems(data):
+                    if k == key:
+                        yield v
+                    elif k in keys:
+                        for result in find(v):
+                            yield result
+            elif isinstance(data, list):
+                for d in data:
+                    for result in find(d):
+                        yield result
+
+        return find
+
+    @classmethod
+    def _get_models(cls, instance):
+        """Get models for referencing attributes in restrictions
+        """
+        attributes = Cluster.get_attributes(instance.cluster).editable
+
+        return {
+            'settings': attributes,
+            'default': instance.editable
+        }

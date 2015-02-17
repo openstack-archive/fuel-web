@@ -96,8 +96,8 @@ class NailgunReceiver(object):
                     u"Failed to delete node '%s': node doesn't exist",
                     str(node)
                 )
-                continue
-            db().delete(node_db)
+            else:
+                db().delete(node_db)
 
         for node in inaccessible_nodes:
             # Nodes which not answered by rpc just removed from db
@@ -115,11 +115,11 @@ class NailgunReceiver(object):
                     u"Failed to delete node '%s' marked as error from Astute:"
                     " node doesn't exist", str(node)
                 )
-                continue
-            node_db.pending_deletion = False
-            node_db.status = 'error'
-            db().add(node_db)
-            node['name'] = node_db.name
+            else:
+                node_db.pending_deletion = False
+                node_db.status = 'error'
+                db().add(node_db)
+                node['name'] = node_db.name
         db().flush()
 
         success_msg = u"No nodes were removed"
@@ -139,7 +139,11 @@ class NailgunReceiver(object):
             notifier.notify("error", err_msg)
         if not error_msg:
             error_msg = ". ".join([success_msg, err_msg])
-        data = {'status': status, 'progress': progress, 'message': error_msg}
+        data = {
+            'status': status,
+            'progress': progress,
+            'message': error_msg,
+        }
         objects.Task.update(task, data)
 
         cls._update_action_log_entry(status, task_uuid, nodes)

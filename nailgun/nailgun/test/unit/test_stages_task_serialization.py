@@ -207,15 +207,27 @@ class TestHooksSerializers(BaseTaskSerializationTest):
 class TestPreTaskSerialization(BaseTaskSerializationTest):
 
     TASKS = ("""
+        - id: pre_deployment_start
+          type: stage
+
+        - id: pre_deployment
+          type: stage
+          requires: [pre_deployment_start]
+
+        - id: deploy
+          type: stage
+          requires: [pre_deployment]
+
         - id: upload_core_repos
           type: upload_file
           role: '*'
-          stage: pre_deployment
+          required_for: [pre_deployment]
+          requires: [pre_deployment_start]
 
         - id: rsync_core_puppet
           type: sync
           role: '*'
-          stage: pre_deployment
+          required_for: [pre_deployment]
           requires: [upload_core_repos]
           parameters:
             src: /etc/puppet/{OPENSTACK_VERSION}/
@@ -225,7 +237,7 @@ class TestPreTaskSerialization(BaseTaskSerializationTest):
         - id: copy_keys
           type: copy_files
           role: '*'
-          stage: pre_deployment
+          required_for: [pre_deployment]
           requires: [generate_keys]
           parameters:
             files:
@@ -237,8 +249,7 @@ class TestPreTaskSerialization(BaseTaskSerializationTest):
         - id: generate_keys
           type: shell
           role: 'master'
-          stage: pre_deployment
-          required_for: [rsync_keys]
+          requires: [pre_deployment_start]
           parameters:
             cmd: shorted_command
             timeout: 180
@@ -263,10 +274,22 @@ class TestPreTaskSerialization(BaseTaskSerializationTest):
 class TestPostTaskSerialization(BaseTaskSerializationTest):
 
     TASKS = """
+    - id: deploy
+      type: stage
+
+    - id: post_deployment_start
+      type: stage
+      requires: [deploy]
+
+    - id: post_deployment
+      type: stage
+      requires: [post_deployment_start]
+
     - id: restart_radosgw
       type: shell
       role: [controller, primary-controller]
-      stage: post_deployment
+      required_for: [post_deployment]
+      requires: [post_deployment_start]
       parameters:
         cmd: /etc/pupppet/restart_radosgw.sh
         timeout: 180
@@ -290,10 +313,17 @@ class TestPostTaskSerialization(BaseTaskSerializationTest):
 class TestConditionalTasksSerializers(BaseTaskSerializationTest):
 
     TASKS = """
+    - id: pre_deployment_start
+      type: stage
+
+    - id: pre_deployment
+      type: stage
+      requires: [pre_deployment_start]
+
     - id: generic_uid
       type: upload_file
       role: '*'
-      stage: pre_deployment
+      requires: [pre_deployment_start]
       condition: cluster:status == 'operational'
       parameters:
         cmd: /tmp/bash_script.sh
@@ -301,8 +331,8 @@ class TestConditionalTasksSerializers(BaseTaskSerializationTest):
     - id: generic_second_task
       type: sync
       role: '*'
-      stage: pre_deployment
       requires: [generic_uid]
+      required_for: [pre_deployment]
       condition: settings:enabled
       parameters:
         cmd: /tmp/bash_script.sh

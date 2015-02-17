@@ -223,7 +223,7 @@ class TestPrePostHooks(BasePluginTest):
     def setUp(self):
         super(TestPrePostHooks, self).setUp()
         resp = self.create_plugin()
-        self.plugin = attr_plugin.ClusterAttributesPlugin(
+        self.plugin = attr_plugin.wrap_plugin(
             objects.Plugin.get_by_uid(resp.json['id']))
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},

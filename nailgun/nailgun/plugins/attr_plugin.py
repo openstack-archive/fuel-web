@@ -12,18 +12,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from distutils.version import StrictVersion
+import abc
 import glob
 import os
+
+from distutils.version import StrictVersion
 from urlparse import urljoin
 
+import six
 import yaml
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
 
 
-class ClusterAttributesPlugin(object):
+@six.add_metaclass(abc.ABCMeta)
+class ClusterAttributesPluginBase(object):
     """Implements wrapper for plugin db model to provide
     logic related to configuration files.
     1. Uploading plugin provided cluster attributes
@@ -39,11 +44,17 @@ class ClusterAttributesPlugin(object):
         self.plugin = plugin
         self.plugin_path = os.path.join(
             settings.PLUGINS_PATH,
-            self.full_name)
+            self.path_name)
         self.config_file = os.path.join(
             self.plugin_path,
             self.environment_config_name)
         self.tasks = []
+
+    @abc.abstractmethod
+    def path_name(self):
+        """A name which is used to create path to
+        plugin related scripts and repositories
+        """
 
     def _load_config(self, config):
         if os.access(config, os.R_OK):
@@ -147,6 +158,11 @@ class ClusterAttributesPlugin(object):
     def full_name(self):
         return u'{0}-{1}'.format(self.plugin.name, self.plugin.version)
 
+    @property
+    def slaves_scripts_path(self):
+        return settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
+            plugin_name=self.path_name)
+
     def get_release_info(self, release):
         """Returns plugin release information which corresponds to
             a provided release.
@@ -161,16 +177,11 @@ class ClusterAttributesPlugin(object):
 
         return release_info[0]
 
-    @property
-    def slaves_scripts_path(self):
-        return settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
-            plugin_name=self.full_name)
-
     def repo_files(self, cluster):
         release_info = self.get_release_info(cluster.release)
         repo_path = os.path.join(
             settings.PLUGINS_PATH,
-            self.full_name,
+            self.path_name,
             release_info['repository_path'],
             '*')
         return glob.glob(repo_path)
@@ -179,17 +190,94 @@ class ClusterAttributesPlugin(object):
         release_info = self.get_release_info(cluster.release)
         repo_base = settings.PLUGINS_REPO_URL.format(
             master_ip=settings.MASTER_IP,
-            plugin_name=self.full_name)
+            plugin_name=self.path_name)
 
         return urljoin(repo_base, release_info['repository_path'])
 
     def master_scripts_path(self, cluster):
         release_info = self.get_release_info(cluster.release)
         # NOTE(eli): we cannot user urljoin here, because it
-        # works wrong in case, if protocol is rsync
+        # works wrong, if protocol is rsync
         base_url = settings.PLUGINS_SLAVES_RSYNC.format(
             master_ip=settings.MASTER_IP,
-            plugin_name=self.full_name)
+            plugin_name=self.path_name)
         return '{0}{1}'.format(
             base_url,
             release_info['deployment_scripts_path'])
+
+
+class ClusterAttributesPluginV1(ClusterAttributesPluginBase):
+    """Plugins attributes class for package version 1.0.0
+    """
+
+    @property
+    def path_name(self):
+        """Returns a name and full version, e.g. if there is
+        a plugin with name "plugin_name" and version is "1.0.0",
+        the method returns "plugin_name-1.0.0"
+        """
+        return self.full_name
+
+
+class ClusterAttributesPluginV2(ClusterAttributesPluginBase):
+    """Plugins attributes class for package version 2.0.0
+    """
+
+    @property
+    def path_name(self):
+        """Returns a name and major version of the plugin, e.g.
+        if there is a plugin with name "plugin_name" and version
+        is "1.0.0", the method returns "plugin_name-1.0".
+
+        It's different from previous version because in previous
+        version we did not have plugin updates, in 2.0.0 version
+        we should expect different plugin path.
+
+        See blueprint: https://blueprints.launchpad.net/fuel/+spec
+                              /plugins-security-fixes-delivery
+        """
+        return u'{0}-{1}'.format(self.plugin.name, self._major_version)
+
+    @property
+    def _major_version(self):
+        """Returns major version of plugin's version, e.g.
+        if plugin has 1.2.3 version, the method returns 1.2
+        """
+        version_tuple = StrictVersion(self.plugin.version).version
+        major = '.'.join(map(str, version_tuple[:2]))
+
+        return major
+
+
+__version_mapping = {
+    '1.0.': ClusterAttributesPluginV1,
+    '2.0.': ClusterAttributesPluginV2
+}
+
+
+def wrap_plugin(plugin):
+    """Creates plugin object with specific class version
+
+    :param plugin: plugin db object
+    :returns: cluster attribute object
+    """
+    package_version = plugin.package_version
+
+    attr_class = None
+
+    # Filter by major version
+    for version, klass in six.iteritems(__version_mapping):
+        if package_version.startswith(version):
+            attr_class = klass
+            break
+
+    if not attr_class:
+        supported_versions = ', '.join(__version_mapping.keys())
+
+        raise errors.PackageVersionIsNotCompatible(
+            'Plugin id={0} package_version={1} '
+            'is not supported by Nailgun, currently '
+            'supported versions {2}'.format(
+                plugin.id, package_version, supported_versions))
+
+    return attr_class(plugin)

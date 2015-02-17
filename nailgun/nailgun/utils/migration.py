@@ -303,3 +303,63 @@ def upgrade_role_restrictions_6_0_to_6_1(roles_meta, _new_role_restrictions):
             role_definition['restrictions'] = _new_role_restrictions[role_name]
 
     return roles_meta
+
+
+def upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection):
+    """In Fuel 6.0 we had plugin version in cluster attributes
+    to identify which plugin should be enabled or disabled.
+    In 6.1 release we have plugins updates feature, it means
+    that a single plugin can be updated/overwritten with newer
+    version. For example 1.0.0 can be replaced with 1.0.1.
+    As result we cannot rely on versions anymore, here we
+    convert version mapping to plugin ids.
+
+    See blueprint:
+    https://blueprints.launchpad.net/fuel/+spec/plugins-security-fixes-delivery
+    """
+    select_attrs = text("""SELECT id, editable FROM attributes""")
+
+    select_plugins = text(
+        """SELECT id FROM plugins
+        WHERE name = :plugin_name AND
+        version = :plugin_version""")
+
+    update_attrs = text(
+        """UPDATE attributes
+        SET editable = :editable
+        WHERE id = :id""")
+
+    attrs_list = connection.execute(select_attrs)
+    for raw_attrs in attrs_list:
+        attr_id = raw_attrs[0]
+        attrs = jsonutils.loads(raw_attrs[1])
+
+        for key, attr in six.iteritems(attrs):
+            metadata = attr.get('metadata', {})
+            plugin_version = metadata.get('plugin_version')
+            if not plugin_version:
+                continue
+
+            plugin_name = key
+
+            # If there is no plugin with such version
+            # and name, it means that something was wrong
+            # and somebody deleted the plugin from database
+            # we must not fail migration in this case
+            plugin_id = None
+
+            plugins = list(connection.execute(
+                select_plugins,
+                plugin_name=plugin_name,
+                plugin_version=plugin_version))
+
+            if plugins:
+                plugin_id = plugins[0][0]
+
+            del attr['metadata']['plugin_version']
+            attr['metadata']['plugin_id'] = plugin_id
+
+        connection.execute(
+            update_attrs,
+            editable=jsonutils.dumps(attrs),
+            id=attr_id)

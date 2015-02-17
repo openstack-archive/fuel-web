@@ -31,6 +31,8 @@ from sqlalchemy.sql import text
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
+from nailgun.utils.migration import \
+    upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping
 from nailgun.utils.migration import upgrade_attributes_metadata_6_0_to_6_1
 from nailgun.utils.migration import upgrade_enum
 from nailgun.utils.migration import upgrade_master_node_settings_6_0_to_6_1
@@ -219,6 +221,7 @@ def upgrade_data():
         )
 
     upgrade_master_node_settings(connection)
+    upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)
 
 
 def downgrade_data():

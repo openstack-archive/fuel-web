@@ -12,20 +12,55 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.plugin import PluginCollection
+import six
 
+from nailgun.logger import logger
+from nailgun.objects.plugin import Plugin
+from nailgun.objects.plugin import PluginCollection
 from nailgun.plugins.attr_plugin import ClusterAttributesPlugin
 
 
 class PluginManager(object):
 
     @classmethod
-    def process_cluster_attributes(cls, cluster, attrs, query=None):
-        if query is None:
-            query = PluginCollection.all()
-        for plugin_db in query:
-            attr_plugin = ClusterAttributesPlugin(plugin_db)
-            attr_plugin.process_cluster_attributes(cluster, attrs)
+    def process_cluster_attributes(cls, cluster, attrs):
+        """Iterates through plugins attributes, creates
+        or deletes Cluster <-> Plugins relation if plugin
+        is enabled or disabled.
+
+        :param cluster: Cluster object
+        :param attrs: dictionary with cluster attributes
+        """
+        for key, attr in six.iteritems(attrs):
+            cls._process_attr(cluster, attr)
+
+    @classmethod
+    def _process_attr(cls, cluster, attr):
+        if not isinstance(attr, dict):
+            return
+
+        metadata = attr.get('metadata', {})
+        plugin_id = metadata.get('plugin_id')
+
+        if not plugin_id:
+            return
+
+        plugin = Plugin.get_by_uid(plugin_id)
+        if not plugin:
+            logger.warning('Plugin with id "%s" is not found, skip it',
+                           plugin_id)
+            return
+
+        enabled = metadata.get('enabled', False)
+
+        # Value is true and plugin is not enabled for this cluster
+        # that means plugin was enabled on this request
+        if enabled and cluster not in plugin.clusters:
+            plugin.clusters.append(cluster)
+        # Value is false and plugin is enabled for this cluster
+        # that means plugin was disabled on this request
+        elif not enabled and cluster in plugin.clusters:
+            plugin.clusters.remove(cluster)
 
     @classmethod
     def get_plugin_attributes(cls, cluster):

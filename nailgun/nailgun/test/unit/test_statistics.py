@@ -593,7 +593,22 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "created": "some_date_of_creation",
                     "updated": "some_date_of_update"
                 },
-            }
+            },
+            "cinder": {
+                "volumes": {
+                    "id": 3,
+                    "availability_zone": "test_availability_zone",
+                    "encrypted": False,
+                    "bootable": False,
+                    "status": "available",
+                    "volume_type": "test_volume",
+                    "size": 1,
+                    "os-vol-host-attr:host": "test-node",
+                    "snapshot_id": None,
+                    "attachments": "test_attachments",
+                    "os-vol-tenant-attr:tenant_id": "test_tenant",
+                },
+            },
         }
 
         expected = {
@@ -640,7 +655,25 @@ class TestOSWLCollectingUtils(BaseTestCase):
                         "updated_at": "some_date_of_update"
                     }
                 ]
-            }
+            },
+            "volumes": {
+                "regard_resource": "volume",
+                "data": [
+                    {
+                        "id": 3,
+                        "availability_zone": "test_availability_zone",
+                        "encrypted_flag": False,
+                        "bootable_flag": False,
+                        "status": "available",
+                        "volume_type": "test_volume",
+                        "size": 1,
+                        "host": "test-node",
+                        "snapshot_id": None,
+                        "attachments": "test_attachments",
+                        "tenant_id": "test_tenant",
+                    }
+                ]
+            },
         }
 
         get_proxy_path = ("nailgun.statistics.utils.get_proxy_for_cluster")

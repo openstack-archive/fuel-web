@@ -18,6 +18,7 @@ import six
 
 from contextlib import contextmanager
 
+from cinderclient import client as cinder_client
 from novaclient import client as nova_client
 
 from nailgun import consts
@@ -63,6 +64,22 @@ collected_components_attrs = {
         },
         "resource_manager_path": ["nova", "images"]
     },
+    "volume": {
+        "attr_names": {
+            "id": ["id"],
+            "availability_zone": ["availability_zone"],
+            "encrypted_flag": ["encrypted"],
+            "bootable_flag": ["bootable"],
+            "status": ["status"],
+            "volume_type": ["volume_type"],
+            "size": ["size"],
+            "host": ["os-vol-host-attr:host"],
+            "snapshot_id": ["snapshot_id"],
+            "attachments": ["attachments"],
+            "tenant_id": ["os-vol-tenant-attr:tenant_id"],
+        },
+        "resource_manager_path": ["cinder", "volumes"]
+    },
 }
 
 
@@ -74,6 +91,7 @@ class ClientProvider(object):
     def __init__(self, cluster):
         self.cluster = cluster
         self._nova = None
+        self._cinder = None
         self._credentials = None
 
     @property
@@ -86,6 +104,16 @@ class ClientProvider(object):
             )
 
         return self._nova
+
+    @property
+    def cinder(self):
+        if self._cinder is None:
+            self._cinder = cinder_client.Client(
+                settings.OPENSTACK_API_VERSION["cinder"],
+                *self.credentials
+            )
+
+        return self._cinder
 
     @property
     def credentials(self):
@@ -142,7 +170,8 @@ def get_info_from_os_resource_manager(client_provider, resource_name):
         inst_details = {}
 
         for attr_name, attr_path in six.iteritems(resource["attr_names"]):
-            obj_dict = inst.to_dict()
+            obj_dict = \
+                inst.to_dict() if hasattr(inst, "to_dict") else inst.__dict__
             inst_details[attr_name] = _get_value_from_nested_dict(
                 obj_dict, attr_path
             )

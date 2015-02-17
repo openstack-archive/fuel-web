@@ -18,6 +18,8 @@
 Cluster-related objects and collections
 """
 
+import re
+import six
 from sqlalchemy import or_
 import yaml
 
@@ -37,6 +39,7 @@ from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Release
+from nailgun.objects import RestrictionMixin
 
 from nailgun.plugins.manager import PluginManager
 
@@ -48,7 +51,7 @@ from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
 
-class Attributes(NailgunObject):
+class Attributes(NailgunObject, RestrictionMixin):
     """Cluster attributes object
     """
 
@@ -106,6 +109,56 @@ class Attributes(NailgunObject):
 
             attrs.pop('additional_components')
         return attrs
+
+    @classmethod
+    def validate(cls, instance):
+        data = instance.editable
+        cls.process_restrictions(data)
+        models = cls._get_models(instance)
+        errs = cls._check_data(models, data)
+        for err in errs():
+            print(err)
+
+    @classmethod
+    def _check_data(cls, models, data):
+        path_key = re.sub(
+            '([a-z0-9])([A-Z])', r'\1_\2', cls.__name__).lower()
+        def find_errors(data=data, path_key=path_key):
+            if isinstance(data, dict):
+                restr = cls.check_restrictions(models, path_key)
+                if restr.get('result'):
+                    return
+                else:
+                    for key, value in six.iteritems(data):
+                        attr_regex = value.get('regex', {})
+                        if attr_regex:
+                            pattern = re.compile(attr_regex.get('source'))
+                            if not pattern.match(value.get('value')):
+                                yield attr_regex.get('error')
+                        if key not in ['restrictions', 'regex']:
+                            for err in find_errors(
+                                value, '.'.join([path_key, key])):
+                                yield err
+            elif isinstance(data, list):
+                for i, item in enumerate(data):
+                    current_key = item.get('data') or str(i)
+                    for err in find_errors(
+                        item, '.'.join([path_key, current_key])):
+                        yield err
+
+        return find_errors
+
+    @classmethod
+    def _get_models(cls, instance):
+        """Get models for referencing attributes in restrictions
+        """
+        return {
+            'settings': instance.editable,
+            'default': instance.editable,
+            'cluster': instance.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': instance.cluster.network_config
+        }
 
 
 class Cluster(NailgunObject):
@@ -770,5 +823,113 @@ class ClusterCollection(NailgunCollection):
     single = Cluster
 
 
-class VmwareAttributes(NailgunObject):
+class VmwareAttributes(NailgunObject, RestrictionMixin):
     model = models.VmwareAttributes
+
+    @classmethod
+    def validate(cls, instance):
+        """Validate vmware attributes data
+        """
+        models = cls._get_models(instance)
+        metadata = instance.editable.get('metadata')
+        value = instance.editable.get('value')
+
+        cls.process_restrictions(instance.editable)
+        errs = cls._check_data(models, metadata, value)
+        for err in errs():
+            print(err)
+
+    @classmethod
+    def _check_data(cls, models, metadata, data):
+        """Check vmware attributes data
+
+        :param models:
+        :type models: dict
+        :param metadata:
+        :type metadata: list|dict
+        :param data:
+        :type data: list|dict
+        :retruns: func
+        """
+        path_key = cls._get_metadata_path()
+        def find_errors(metadata=metadata, path_key=path_key):
+            """Generator for vmware attributes errors which for each
+            attribute in 'metadata' gets relevant values from vmware
+            'value' and check them with restrictions and regexs
+            """
+            if isinstance(metadata, dict):
+                for mkey, mvalue in six.iteritems(metadata):
+                    restr = cls.check_restrictions(models, path_key)
+                    if restr.get('result'):
+                        return
+                    else:
+                        if mkey == 'name':
+                            value_path = path_key.replace(
+                                cls._get_metadata_path() + '.', '') \
+                                .replace('.fields', '')
+                            values = cls._get_values(value_path, data)
+                            attr_regex = metadata.get('regex', {})
+                            if attr_regex:
+                                pattern = re.compile(attr_regex.get('source'))
+                                for value in values():
+                                    if not pattern.match(value):
+                                        yield attr_regex.get('error')
+                        for err in find_errors(
+                            mvalue, '.'.join([path_key, mkey])):
+                            yield err
+            elif isinstance(metadata, list):
+                for i, item in enumerate(metadata):
+                    current_key = item.get('name') or str(i)
+                    for err in find_errors(
+                        item, '.'.join([path_key, current_key])):
+                        yield err
+
+        return find_errors
+
+    @classmethod
+    def _get_values(cls, path, data):
+        """Generator for all values from data selected by given path
+
+        :param path: path to all releted values
+        :type path: string
+        :param data: vmware attributes value
+        :type data: list|dict
+        """
+        keys = path.split('.')
+        key = keys[-1]
+
+        def find(data=data):
+            if isinstance(data, dict):
+                for k, v in six.iteritems(data):
+                    if k == key:
+                        yield v
+                    elif k in keys:
+                        for result in find(v):
+                            yield result
+            elif isinstance(data, list):
+                for d in data:
+                    for result in find(d):
+                        yield result
+
+        return find
+
+    @classmethod
+    def _get_metadata_path(cls):
+        """Generate root path for vmware attributes metadata
+        """
+        return re.sub(
+            '([a-z0-9])([A-Z])', r'\1_\2',
+            cls.__name__).lower() + '.metadata'
+
+    @classmethod
+    def _get_models(cls, instance):
+        """Get models for referencing attributes in restrictions
+        """
+        attributes = Cluster.get_attributes(instance.cluster).editable
+        #attributes['common']['use_vcenter']['value'] = True
+        #attributes['storage']['images_vcenter']['value'] = True
+
+        return {
+            'settings': attributes,
+            'default': instance.editable
+        }

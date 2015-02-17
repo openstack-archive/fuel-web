@@ -842,3 +842,15 @@ class TestClusterObject(BaseTestCase):
         bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
+
+
+class TestAttributesObject(BaseTestCase):
+
+    def test_validation(self):
+        pass
+
+
+class TestVmwareAttributesObject(BaseTestCase):
+
+    def test_validation(self):
+        pass

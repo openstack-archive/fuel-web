@@ -237,6 +237,12 @@
                     "hardware_info": "Hardware Info",
                     "roles_and_hardware_info": "Roles and hardware info",
                     "assign_roles": "Assign Roles",
+                    "breadcrumbs": {
+                        "add": "Add Nodes",
+                        "edit": "Edit Roles",
+                        "disks": "Configure Disks",
+                        "interfaces": "Configure Interfaces"
+                    },
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",
@@ -318,7 +324,7 @@
                     "disk_configuration_reset_warning": "Disk configuration will be reset to default after roles change.",
                     "no_nodes_in_environment": "To add nodes to the environment, select the Add Nodes option, choose the nodes you want to allocate and assign roles to each.",
                     "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes.",
-                    "role_conflict" : "This role cannot be combined with the other roles already selected.",
+                    "role_conflict": "This role cannot be combined with the other roles already selected.",
                     "node_deletion_error": {
                         "title": "Node Deletion Error",
                         "node_deletion_warning": "Unable to delete nodes"
@@ -482,7 +488,7 @@
                 "deployment_mode": "Deployment Mode",
                 "openstack_release": "OpenStack Release",
                 "environment_status": "Status",
-                "cluster_was_modified_from_cli" : "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
+                "cluster_was_modified_from_cli": "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
                 "unavailable_release": "__name__ release is unavailable. The environment can not be deployed."
             },
             "capacity_page": {
@@ -585,7 +591,7 @@
                         "env": "Environments"
                     },
                     "create_cluster_error": {
-                        "title" : "OpenStack Environment Creation Error"
+                        "title": "OpenStack Environment Creation Error"
                     }
                 },
                 "dismiss_settings": {
@@ -601,7 +607,7 @@
                     "added_node": "Added __count__ node.",
                     "added_node_plural": "Added __count__ nodes.",
                     "deleted_node": "Deleted __count__ node.",
-                    "deleted_node_plural":  "Deleted __count__ nodes.",
+                    "deleted_node_plural": "Deleted __count__ nodes.",
                     "settings_changes": {
                         "attributes": "Changed OpenStack settings.",
                         "networks": "Changed network settings.",
@@ -1154,7 +1160,7 @@
                     "added_node": "增加__count__个节点。",
                     "added_node_plural": "增加__count__个节点。",
                     "deleted_node": "删除__count__个节点。",
-                    "deleted_node_plural":  "删除__count__个节点。",
+                    "deleted_node_plural": "删除__count__个节点。",
                     "settings_changes": {
                         "attributes": "OpenStack设置",
                         "networks": "网络设置",
@@ -1413,7 +1419,7 @@
                     "disk_configuration_reset_warning": "ディスク設定は、役割変更後のデフォルトにリセットされます。",
                     "no_nodes_in_environment": "ノードを追加するには、[追加]ノードのオプションを選択し、割り当てたいノードを選択し、役割を割り当てます。",
                     "no_nodes_in_fuel": "この操作は一つ以上の未割り当てのノードのプールが必要とします。プールに追加するには、ネットワーク（別名PXEブート）から起動するようにノードを設定します。Fuelは自動的にノードをプロビジョニングし見つけます。",
-                    "role_conflict" : "この役割は、すでに選択された他の役割と組み合わせることはできません。",
+                    "role_conflict": "この役割は、すでに選択された他の役割と組み合わせることはできません。",
                     "no_filtered_nodes_warning": "フィルタ値に一致するノードはありません。",
                     "filtered_nodes_count":"__count__ nodeの__filteredNodesCount__",
                     "filtered_nodes_count_plural": "__count__ nodesの__filteredNodesCount__"
@@ -1538,7 +1544,7 @@
                 "deployment_mode": "環境デプロイモード:",
                 "openstack_release": "OpenStack リリース:",
                 "environment_status": "環境の状況:",
-                "cluster_was_modified_from_cli" : "この環境のいくつかのデプロイパラメータは、FuleCLIから変更されてます。FuleCLIからの変更は、ブラウザから行われた設定よりも優先されます。注意して行ってください。"
+                "cluster_was_modified_from_cli": "この環境のいくつかのデプロイパラメータは、FuleCLIから変更されてます。FuleCLIからの変更は、ブラウザから行われた設定よりも優先されます。注意して行ってください。"
             },
             "capacity_page": {
                 "title": "容量監査",
@@ -1623,7 +1629,7 @@
                     "added_node": "__count__ノードを追加しました。",
                     "added_node_plural": "__count__複数ノードを追加しました。",
                     "deleted_node": "__count__ノードを削除しました。",
-                    "deleted_node_plural":  "__count__複数ノードを削除しました。",
+                    "deleted_node_plural": "__count__複数ノードを削除しました。",
                     "settings_changes": {
                         "attributes": "OpenStack 設定",
                         "networks": "ネットワーク 設定",
@@ -1876,7 +1882,7 @@
                     "disk_configuration_reset_warning": "디스크는 역할 변경후 기본값으로 재설정됩니다",
                     "no_nodes_in_environment": "환경에 노드를 추가하기 위해서는, 노드추가 옵션을 선택한다음에, 배치하기를 원하는 노드를 선택하고 각각의 역할을 할당합니다",
                     "no_nodes_in_fuel": "배치되지 않은 노드 풀은 이 작업을 위해 필요합니다. 풀에 노드를 추가하려면 네트워크(일명 PXE 부팅)로부터 부팅하도록 노드를 설정합니다. 그러면, Fuel가 자동적으로 노드를 찾아낼 수 있습니다.",
-                    "role_conflict" : "이 역할은 이미 선택된 다른 역할과 섞을 수 없습니다.",
+                    "role_conflict": "이 역할은 이미 선택된 다른 역할과 섞을 수 없습니다.",
                     "no_filtered_nodes_warning": "필터값과 일치하는 노드가 없습니다.",
                     "filtered_nodes_count":"__count__ node의__filteredNodesCount__ ",
                     "filtered_nodes_count_plural": "__count__ nodes의__filteredNodesCount__"
@@ -2020,7 +2026,7 @@
                 "deployment_mode": "환경배치 모드:",
                 "openstack_release": "OpenStack 출시:",
                 "environment_status": "환경 상태:",
-                "cluster_was_modified_from_cli" : "이 환경에 대한 몇 가지 배치 매개 변수는 Fuel CLI에서 수정되었습니다. Fuel CLI의 변경은 브라우저에서의 설정보다 우선합니다. 주의해서 진행하십시요."
+                "cluster_was_modified_from_cli": "이 환경에 대한 몇 가지 배치 매개 변수는 Fuel CLI에서 수정되었습니다. Fuel CLI의 변경은 브라우저에서의 설정보다 우선합니다. 주의해서 진행하십시요."
             },
             "capacity_page": {
                 "title": "용량 감사",
@@ -2105,7 +2111,7 @@
                     "added_node": "__count__ 노드를 추가",
                     "added_node_plural": "__count__ 노드들을 추가",
                     "deleted_node": "__count__ 노드를 삭제",
-                    "deleted_node_plural":  "__count__ 노드들을 삭제",
+                    "deleted_node_plural": "__count__ 노드들을 삭제",
                     "settings_changes": {
                         "attributes": "OpenStack 설정",
                         "networks": "네트워크 설정",

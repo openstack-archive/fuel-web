@@ -111,6 +111,7 @@ COLLECTOR_RESP_TIMEOUT: 5
 OPENSTACK_API_VERSION:
   nova: "2"
   keystone: "v2.0"
+  cinder: "1"
 
 # proxy port for OpenStack info collector
 OPENSTACK_INFO_COLLECTOR_PROXY_PORT: 8888

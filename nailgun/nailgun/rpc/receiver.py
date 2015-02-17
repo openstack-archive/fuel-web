@@ -79,6 +79,7 @@ class NailgunReceiver(object):
             node['id'] if 'id' in node else node['uid']
             for node in all_nodes
         ]
+        removed_node_ids = []
         locked_nodes = objects.NodeCollection.filter_by_list(
             None,
             'id',
@@ -94,8 +95,9 @@ class NailgunReceiver(object):
                     u"Failed to delete node '%s': node doesn't exist",
                     str(node)
                 )
-                continue
-            db().delete(node_db)
+            else:
+                removed_node_ids.append(node_db.id)
+                db().delete(node_db)
 
         for node in inaccessible_nodes:
             # Nodes which not answered by rpc just removed from db
@@ -104,6 +106,7 @@ class NailgunReceiver(object):
                 logger.warn(
                     u'Node %s not answered by RPC, removing from db',
                     node_db.human_readable_name)
+                removed_node_ids.append(node_db.id)
                 db().delete(node_db)
 
         for node in error_nodes:
@@ -113,11 +116,11 @@ class NailgunReceiver(object):
                     u"Failed to delete node '%s' marked as error from Astute:"
                     " node doesn't exist", str(node)
                 )
-                continue
-            node_db.pending_deletion = False
-            node_db.status = 'error'
-            db().add(node_db)
-            node['name'] = node_db.name
+            else:
+                node_db.pending_deletion = False
+                node_db.status = 'error'
+                db().add(node_db)
+                node['name'] = node_db.name
         db().flush()
 
         success_msg = u"No nodes were removed"
@@ -137,7 +140,14 @@ class NailgunReceiver(object):
             notifier.notify("error", err_msg)
         if not error_msg:
             error_msg = ". ".join([success_msg, err_msg])
-        data = {'status': status, 'progress': progress, 'message': error_msg}
+        data = {
+            'status': status,
+            'progress': progress,
+            'message': error_msg,
+            'result': {
+                'removed_node_ids': removed_node_ids,
+            },
+        }
         objects.Task.update(task, data)
 
         cls._update_action_log_entry(status, task_uuid, nodes)

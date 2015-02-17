@@ -912,6 +912,7 @@ class NodeDeletionTaskManager(TaskManager):
         if self.cluster_id is None:
             # DeletionTask operates on cluster's nodes.
             # Nodes that are not in cluster are simply deleted.
+            removed_node_ids = [node.id for node in nodes]
             for node in nodes:
                 db().delete(node)
             db().flush()
@@ -919,6 +920,9 @@ class NodeDeletionTaskManager(TaskManager):
             task = Task(name=consts.TASK_NAMES.node_deletion,
                         progress=100,
                         status=consts.TASK_STATUSES.ready)
+            task.result = {
+                'removed_node_ids': removed_node_ids,
+            }
             db().add(task)
             db().flush()
 

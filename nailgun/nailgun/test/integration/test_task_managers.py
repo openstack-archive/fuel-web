@@ -629,10 +629,15 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.NodeDeletionTaskManager(cluster_id=cluster_db.id)
         task = manager_.execute(cluster_db.nodes)
+        node_ids = [node.id for node in cluster_db.nodes]
         self.db.commit()
         self.env.wait_ready(task, timeout=5)
 
         self.assertEqual(self.db.query(models.Node).count(), 0)
+        self.assertItemsEqual(
+            task.result.get('removed_node_ids'),
+            node_ids
+        )
 
     @fake_tasks(recover_nodes=False)
     def test_node_deletion_task_manager_works_for_nodes_not_in_cluster(self):
@@ -646,6 +651,7 @@ class TestTaskManagers(BaseIntegrationTest):
         node = cluster_db.nodes[0]
         objects.Node.update(node, {'cluster_id': None})
         self.db.commit()
+        node_ids = [node.id]
 
         self.db.refresh(node)
         self.db.refresh(cluster_db)
@@ -655,6 +661,10 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.wait_ready(task, timeout=5)
 
         self.assertEqual(self.db.query(models.Node).count(), 0)
+        self.assertItemsEqual(
+            task.result.get('removed_node_ids'),
+            node_ids
+        )
 
     @fake_tasks(recover_nodes=False)
     def test_node_deletion_task_manager_invalid_cluster(self):

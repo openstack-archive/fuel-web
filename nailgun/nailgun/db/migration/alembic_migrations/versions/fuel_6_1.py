@@ -67,6 +67,25 @@ cluster_changes_new = (
 )
 
 
+node_statuses_old = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+)
+node_statuses_new = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'forgetting',
+)
+
+
 def upgrade():
     upgrade_schema()
     upgrade_data()
@@ -109,6 +128,14 @@ def upgrade_schema():
         "possible_changes",         # ENUM name
         cluster_changes_old,        # old options
         cluster_changes_new         # new options
+    )
+
+    upgrade_enum(
+        "nodes",                    # table
+        "status",                   # column
+        "node_status",              # ENUM name
+        node_statuses_old,          # old options
+        node_statuses_new           # new options
     )
     # OpenStack workload statistics
     op.create_table('oswl_stats',
@@ -184,6 +211,14 @@ def downgrade_schema():
         'release_state',            # ENUM name
         release_states_new,         # new options
         release_states_old,         # old options
+    )
+
+    upgrade_enum(
+        "nodes",                    # table
+        "status",                   # column
+        "node_status",              # ENUM name
+        node_statuses_old,          # old options
+        node_statuses_new           # new options
     )
 
     op.drop_table('vmware_attributes')

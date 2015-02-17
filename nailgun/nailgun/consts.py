@@ -99,7 +99,8 @@ NODE_STATUSES = Enum(
     'provisioning',
     'provisioned',
     'deploying',
-    'error'
+    'error',
+    'forgetting',
 )
 
 NODE_ERRORS = Enum(

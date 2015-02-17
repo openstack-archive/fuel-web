@@ -930,6 +930,9 @@ class NodeDeletionTaskManager(TaskManager):
         task = Task(name=consts.TASK_NAMES.node_deletion,
                     cluster=self.cluster)
         db().add(task)
+        for node in nodes:
+            objects.Node.update(node,
+                                {'status': consts.NODE_STATUSES.forgetting})
         db().flush()
 
         self._call_silently(

@@ -18,6 +18,11 @@
 Cluster-related objects and collections
 """
 
+import re
+from copy import copy
+from copy import deepcopy
+import pydash
+import six
 from sqlalchemy import or_
 import yaml
 
@@ -37,6 +42,7 @@ from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Release
+from nailgun.objects import RestrictionMixin
 
 from nailgun.plugins.manager import PluginManager
 
@@ -48,7 +54,7 @@ from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
 
-class Attributes(NailgunObject):
+class Attributes(NailgunObject, RestrictionMixin):
     """Cluster attributes object
     """
 
@@ -106,6 +112,28 @@ class Attributes(NailgunObject):
 
             attrs.pop('additional_components')
         return attrs
+
+    @classmethod
+    def validate(cls, instance):
+        cls.process_restrictions(instance.editable)
+        models = cls._get_models(instance)
+        for key, value in six.iteritems(cls.expanded_restrictions):
+            result = cls.check_restrictions(models, path=key)
+            if result:
+                return False
+
+    def _validate_data(cls):
+        pass
+
+    @classmethod
+    def _get_models(cls, instance):
+        return {
+            'settings': instance.editable,
+            'default': instance.editable,
+            'cluster': instance.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': instance.cluster.network_config
+        }
 
 
 class Cluster(NailgunObject):
@@ -770,5 +798,83 @@ class ClusterCollection(NailgunCollection):
     single = Cluster
 
 
-class VmwareAttributes(NailgunObject):
+class VmwareAttributes(NailgunObject, RestrictionMixin):
     model = models.VmwareAttributes
+
+    @classmethod
+    def validate(cls, instance):
+        #attributes = Cluster.get_attributes(instance.cluster).editable
+        # This hack only to update use_vcenter with true and will be removed
+        #attributes['common']['use_vcenter']['value'] = True
+        #Cluster.update_attributes(instance.cluster, {'editable': attributes})
+        models = cls._get_models(instance)
+        metadata = instance.editable.get('metadata')
+        value = instance.editable.get('value')
+
+        cls.process_restrictions(instance.editable)
+        for k, v in six.iteritems(cls.expanded_restrictions):
+            print(k)
+            print(v)
+        #validate_data = cls._bind_validate_data(models)
+        #validate_data(value, metadata)
+        validate_data = cls._bind_check_metadata(models, value)
+        validate_data(metadata)
+
+    @classmethod
+    def _bind_check_metadata(cls, models, data):
+        def validate_metadata(metadata, path_key=None):
+            if not path_key:
+                path_key = cls._get_metadata_path()
+
+            if isinstance(metadata, dict):
+                for key, value in six.iteritems(metadata):
+                    if key == 'name':
+                        check = cls.check_restrictions(models, path_key)
+                        if check.get('result'):
+                            print(check.get('message'))
+                        else:
+                            value_path = path_key.replace(
+                                cls._get_metadata_path() + '.', '') \
+                                .replace('.fields', '')
+                            for res in cls._get_values(value_path, data):
+                                print(res)
+                    validate_metadata(
+                        value, '.'.join([path_key, key]))
+            elif isinstance(metadata, list):
+                for i, item in enumerate(metadata):
+                    current_key = item.get('name') or str(i)
+                    validate_metadata(
+                        item, '.'.join([path_key, current_key]))
+
+        return validate_metadata
+
+    @classmethod
+    def _get_values(cls, path, data):
+        keys = path.split('.')
+        key = keys[-1]
+        if isinstance(data, dict):
+            for k, v in six.iteritems(data):
+                if k == key:
+                    yield v
+                elif k in keys:
+                    for result in cls._get_values(key, v):
+                        yield result
+        elif isinstance(data, list):
+            for d in data:
+                for result in cls._get_values(key, d):
+                    yield result
+
+    @classmethod
+    def _get_metadata_path(cls):
+        return re.sub(
+            '([a-z0-9])([A-Z])', r'\1_\2',
+            cls.__name__).lower() + '.metadata'
+
+    @classmethod
+    def _get_models(cls, instance):
+        attributes = Cluster.get_attributes(instance.cluster).editable
+
+        return {
+            'settings': attributes,
+            'default': instance.editable
+        }

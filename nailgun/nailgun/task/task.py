@@ -45,6 +45,7 @@ from nailgun.orchestrator import stages
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
+from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.zabbix import ZabbixManager
 
 
@@ -708,6 +709,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_volumes(task)
         cls._check_public_network(task)
         cls._check_mongo_nodes(task)
+        cls._check_vmware_consistency(task)
 
     @classmethod
     def _check_nodes_are_online(cls, task):
@@ -866,6 +868,33 @@ class CheckBeforeDeploymentTask(object):
                 and len(objects.Cluster.get_nodes_by_role(
                         task.cluster, 'mongo')) == 0):
                     raise errors.MongoNodesCheckError
+
+    @classmethod
+    def _check_vmware_consistency(cls, task):
+        attributes = task.cluster.attributes.editable
+        vmware_attributes = task.cluster.vmware_attributes.editable
+        cinder_nodes = filter(
+            lambda node: 'cinder' in node.all_roles,
+            task.cluster.nodes)
+
+        if not cinder_nodes:
+            logger.info('There is no any node with "cinder" role provided')
+
+        models = {
+            'settings': attributes,
+            'default': vmware_attributes,
+            'cluster': task.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': task.cluster.network_config
+        }
+
+        errors_msg = VmwareAttributesRestriction.check_data(
+            models=models,
+            metadata=vmware_attributes['metadata'],
+            data=vmware_attributes['value'])
+
+        if errors_msg:
+            raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
 
 
 class DumpTask(object):

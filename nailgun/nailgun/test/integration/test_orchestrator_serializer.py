@@ -2299,7 +2299,7 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
         result = self.serializer.serialize_node(
             self.env.nodes[0], 'controller')
 
-        self.assertEqual(len(result['vcenter']['computes']), 2)
+        self.assertEqual(len(result['vcenter']['computes']), 4)
 
         self.assertIn(
             result['vcenter']['computes'][0]['service_name'],

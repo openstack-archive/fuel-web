@@ -1036,6 +1036,21 @@ class NeutronNetworkDeploymentSerializer61(
             return "{0}.{1}".format(iface_name, net_descr['vlan_id'])
 
     @classmethod
+    def generate_routes(cls, node, attrs, nm, netgroup_mapping, netgroups):
+        other_nets = nm.get_networks_not_on_node(node)
+
+        for ngname, brname in netgroup_mapping:
+            netgroup = netgroups[ngname]
+            if netgroup.get('gateway'):
+                via = netgroup['gateway']
+                attrs['endpoints'][brname]['routes'] = []
+                for cidr in other_nets.get(ngname, []):
+                    attrs['endpoints'][brname]['routes'].append({
+                        'net': cidr,
+                        'via': via
+                    })
+
+    @classmethod
     def generate_network_scheme(cls, node):
 
         # Create a data structure and fill it with static values.
@@ -1097,7 +1112,8 @@ class NeutronNetworkDeploymentSerializer61(
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:
-            attrs['endpoints']['br-fw-admin']['gateway'] = settings.MASTER_IP
+            attrs['endpoints']['br-fw-admin']['gateway'] = \
+                nm.get_default_gateway(node.id)
 
         # Add bridges for networks.
         brnames = ['br-fw-admin', 'br-mgmt', 'br-storage']
@@ -1200,6 +1216,10 @@ class NeutronNetworkDeploymentSerializer61(
                             bond['bridge'] = net['br_name']
                             break
                 attrs['transformations'].append(bond)
+
+        if objects.NodeGroupCollection.get_by_cluster_id(
+                node.cluster.id).count() > 1:
+            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups)
 
         return attrs
 

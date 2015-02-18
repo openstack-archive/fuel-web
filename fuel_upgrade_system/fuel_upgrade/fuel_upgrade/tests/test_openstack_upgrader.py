@@ -39,6 +39,8 @@ class TestOpenStackUpgrader(BaseTestCase):
        2012.2-6.0: 2014.1.1-5.1
     '''
 
+    tasks = [{'id': 'first'}]
+
     @mock.patch(
         'fuel_upgrade.engines.openstack.glob.glob', return_value=['path'])
     def setUp(self, _):
@@ -194,34 +196,47 @@ class TestOpenStackUpgrader(BaseTestCase):
             mock.call('/var/www/nailgun/two')])
 
     @mock.patch(
+        'fuel_upgrade.utils.iterfiles_filter',
+        return_value=['/fake/path/tasks.yaml'])
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.NailgunClient.put_deployment_tasks')
+    @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.create_notification')
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.create_release')
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
         return_value=[])
-    def test_install_releases(self, _, mock_cr, mock_cn):
+    def test_install_releases(self, _, mock_cr, mock_cn, mock_pd, mock_files):
         # test one release
-        mock_cr.return_value = {'id': '1'}
+        release_response = {'id': '1', 'version': '111'}
+        mock_cr.return_value = release_response
         mock_cn.return_value = {'id': '100'}
 
-        self.upgrader.install_releases()
+        with mock.patch('fuel_upgrade.engines.openstack.utils.read_from_yaml',
+                        return_value=self.tasks):
+            self.upgrader.install_releases()
+
+        self.called_once(mock_files)
 
         self.called_once(mock_cr)
         self.called_once(mock_cn)
+        mock_pd.assert_called_with(release_response, self.tasks)
 
         for type_ in ('release', 'notification'):
             self.assertEqual(len(self.upgrader._rollback_ids[type_]), 1)
 
     @mock.patch(
+        'fuel_upgrade.engines.openstack.NailgunClient.put_deployment_tasks')
+    @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.create_notification')
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.create_release')
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
         return_value=[])
-    def test_install_releases_with_errors(self, _, mock_cr, mock_cn):
-        mock_cr.return_value = {'id': '1'}
+    def test_install_releases_with_errors(self, _, mock_cr, mock_cn, mock_pd):
+        mock_cr.return_value = {'id': '1', 'version': '111'}
         mock_cn.side_effect = requests.exceptions.HTTPError('Something wrong')
 
         self.assertRaises(

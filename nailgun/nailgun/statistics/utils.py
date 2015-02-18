@@ -52,6 +52,17 @@ collected_components_attrs = {
         },
         "resource_manager_path": ["nova", "flavors"]
     },
+    "image": {
+        "attr_names": {
+            "id": ["id"],
+            "minDisk": ["minDisk"],
+            "minRam": ["minRam"],
+            "sizeBytes": ["OS-EXT-IMG-SIZE:size"],
+            "created_at": ["created"],
+            "updated_at": ["updated"]
+        },
+        "resource_manager_path": ["nova", "images"]
+    },
 }
 
 

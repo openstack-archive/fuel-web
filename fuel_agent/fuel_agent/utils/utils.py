@@ -18,15 +18,40 @@ import os
 import re
 import shlex
 import subprocess
+import time
 
 import jinja2
+from oslo.config import cfg
+import requests
 import stevedore.driver
+import urllib3
 
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)
+
+u_opts = [
+    cfg.IntOpt(
+        'http_max_retries',
+        default=30,
+        help='Maximum retries count for http requests. 0 means infinite',
+    ),
+    cfg.FloatOpt(
+        'http_request_timeout',
+        default=1.0,
+        help='Http request timeout in seconds',
+    ),
+    cfg.FloatOpt(
+        'http_retry_delay',
+        default=2.0,
+        help='Delay in seconds before the next http request retry',
+    ),
+]
+
+CONF = cfg.CONF
+CONF.register_opts(u_opts)
 
 
 #NOTE(agordeev): signature compatible with execute from oslo
@@ -116,3 +141,34 @@ def render_and_save(tmpl_dir, tmpl_names, tmpl_data, file_name):
         raise errors.TemplateWriteError(
             'Something goes wrong while trying to save'
             'templated data to {0}'.format(file_name))
+
+
+def init_http_request(url, byte_range=0):
+    LOG.debug('Trying to initialize http request object %s, byte range: %s'
+              % (url, byte_range))
+    retry = 0
+    while True:
+        if (CONF.http_max_retries == 0) or retry <= CONF.http_max_retries:
+            try:
+                response_obj = requests.get(
+                    url, stream=True,
+                    timeout=CONF.http_request_timeout,
+                    headers={'Range': 'bytes=%s-' % byte_range})
+            except (urllib3.exceptions.DecodeError,
+                    urllib3.exceptions.ProxyError,
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout,
+                    requests.exceptions.TooManyRedirects) as e:
+                LOG.debug('Got non-critical error when accessing to %s '
+                          'on %s attempt: %s' % (url, retry + 1, e))
+            else:
+                LOG.debug('Successful http request to %s on %s retry' %
+                          (url, retry + 1))
+                break
+            retry += 1
+            time.sleep(CONF.http_retry_delay)
+        else:
+            raise errors.HttpUrlConnectionError(
+                'Exceeded maximum http request retries for %s' % url)
+    response_obj.raise_for_status()
+    return response_obj

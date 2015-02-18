@@ -584,14 +584,22 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "OS-FLV-EXT-DATA:ephemeral": 1,
                     "disk": 1,
                     "swap": 16,
-                }
+                },
+                "images": {
+                    "id": 4,
+                    "minDisk": 1,
+                    "minRam": 64,
+                    "OS-EXT-IMG-SIZE:size": 13000000,
+                    "created": "some_date_of_creation",
+                    "updated": "some_date_of_update"
+                },
             }
         }
 
         expected = {
             "servers":
             {
-                "regard_resource": "vm",
+                "regard_resource": consts.OSWL_RESOURCE_TYPES.vm,
                 "data": [
                     {
                         "id": 1,
@@ -607,7 +615,7 @@ class TestOSWLCollectingUtils(BaseTestCase):
             },
             "flavors":
             {
-                "regard_resource": "flavor",
+                "regard_resource": consts.OSWL_RESOURCE_TYPES.flavor,
                 "data": [
                     {
                         "id": 2,
@@ -619,6 +627,20 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     },
                 ],
             },
+            "images":
+            {
+                "regard_resource": consts.OSWL_RESOURCE_TYPES.image,
+                "data": [
+                    {
+                        "id": 4,
+                        "minDisk": 1,
+                        "minRam": 64,
+                        "sizeBytes": 13000000,
+                        "created_at": "some_date_of_creation",
+                        "updated_at": "some_date_of_update"
+                    }
+                ]
+            }
         }
 
         get_proxy_path = ("nailgun.statistics.utils.get_proxy_for_cluster")

@@ -16,11 +16,41 @@ import abc
 import requests
 import tarfile
 import tempfile
+import time
 import zlib
 
+from oslo.config import cfg
+
+from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
+
+au_opts = [
+    cfg.IntOpt(
+        'data_chunk_size',
+        default=1048576,
+        help='Size of data chunk to operate with images'
+    ),
+    cfg.IntOpt(
+        'http_max_retries',
+        default=30,
+        help='Maximum retries count for http requests. 0 means infinite',
+    ),
+    cfg.FloatOpt(
+        'http_request_timeout',
+        default=1.0,
+        help='Http request timeout in seconds',
+    ),
+    cfg.FloatOpt(
+        'http_retry_delay',
+        default=2.0,
+        help='Delay in seconds before the next http request retry',
+    ),
+]
+
+CONF = cfg.CONF
+CONF.register_opts(au_opts)
 
 
 class Target(object):
@@ -56,7 +86,7 @@ class LocalFile(Target):
     def next(self):
         if not self.fileobj:
             self.fileobj = open(self.filename, 'rb')
-        buffer = self.fileobj.read(1048576)
+        buffer = self.fileobj.read(CONF.data_chunk_size)
         if buffer:
             return buffer
         else:
@@ -65,14 +95,67 @@ class LocalFile(Target):
 
 
 class HttpUrl(Target):
+    def _init_connection(self, byte_range=0):
+        LOG.debug('Trying to initialize HttpURL object %s, byte range: %s'
+                  % (self.url, byte_range))
+        retry = 0
+        while True:
+            if (CONF.http_max_retries == 0) or retry <= CONF.http_max_retries:
+                try:
+                    self.response_obj = requests.get(
+                        self.url, stream=True,
+                        timeout=CONF.http_request_timeout,
+                        headers={'Range': 'bytes=%s-' % byte_range})
+                except requests.exceptions.ConnectionError as e:
+                    # DNS resolving fails
+                    # Connecting fails (eg. service isn't up)
+                    LOG.debug('Got HttpConnectionError when accessing to %s '
+                              'on %s attempt: %s' % (self.url, retry + 1, e))
+                except requests.exceptions.Timeout as e:
+                    # connection timeout, read timeout
+                    LOG.debug('Got HttpTimeoutError when accessing to %s '
+                              'on %s attempt: %s' % (self.url, retry + 1, e))
+                else:
+                    LOG.debug('Successful http request to %s on %s retry' %
+                              (self.url, retry + 1))
+                    break
+                retry += 1
+                time.sleep(CONF.http_retry_delay)
+            else:
+                raise errors.HttpUrlConnectionError(
+                    'Exceeded maximum http request retries for %s' % self.url)
+        self.response_obj.raise_for_status()
+
     def __init__(self, url):
         self.url = str(url)
+        self.response_obj = None
+        self._init_connection()
+        self.processed_bytes = 0
+        try:
+            self.length = int(self.response_obj.headers['content-length'])
+        except (ValueError, KeyError):
+            raise errors.HttpUrlInvalidContentLength(
+                'Can not get content length for %s' % self.url)
+        else:
+            LOG.debug('Expected content length %s for %s' % (self.length,
+                                                             self.url))
 
-    def __iter__(self):
-        response = requests.get(self.url, stream=True)
-        if response.status_code != 200:
-            raise Exception('Can not get %s' % self.url)
-        return iter(response.iter_content(1048576))
+    def next(self):
+        while self.processed_bytes < self.length:
+            try:
+                data = self.response_obj.raw.read(CONF.data_chunk_size)
+                if not data:
+                    raise errors.HttpUrlConnectionError(
+                        'Could not receive data: URL=%s, range=%s' %
+                        (self.url, self.processed_bytes))
+            except Exception as exc:
+                LOG.exception(exc)
+                self._init_connection(self.processed_bytes)
+                continue
+            else:
+                self.processed_bytes += len(data)
+                return data
+        raise StopIteration()
 
 
 class GunzipStream(Target):
@@ -133,7 +216,7 @@ class ForwardFileStream(Target):
                 self.chunk = None
                 self.position = position
 
-    def read(self, length=1048576):
+    def read(self, length=CONF.data_chunk_size):
         # NOTE(kozhukalov): default lenght = 1048576 is not usual behaviour,
         # but that is ok for our use case.
         if self.closed:

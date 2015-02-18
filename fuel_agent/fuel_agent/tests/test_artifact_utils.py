@@ -17,7 +17,13 @@ from oslotest import base as test_base
 import requests
 import zlib
 
+from oslo.config import cfg
+
+from fuel_agent import errors
 from fuel_agent.utils import artifact_utils as au
+
+
+CONF = cfg.CONF
 
 
 class TestTarget(test_base.BaseTestCase):
@@ -57,15 +63,58 @@ class TestLocalFile(test_base.BaseTestCase):
 
 
 class TestHttpUrl(test_base.BaseTestCase):
+    def test_httpurl_init_ok(self):
+        def _fake_init_con(self):
+            resp = mock.Mock(headers={'content-length': 123})
+            self.response_obj = resp
+        with mock.patch.object(au.HttpUrl, '_init_connection',
+                               autospec=True) as mock_init_con:
+            mock_init_con.side_effect = _fake_init_con
+            httpurl = au.HttpUrl('fake_url')
+            self.assertEqual(123, httpurl.length)
+
+    def test_httpurl_init_invalid_content_length(self):
+        def _fake_init_con(self):
+            resp = mock.Mock(headers={'content-length': 'invalid'})
+            self.response_obj = resp
+        with mock.patch.object(au.HttpUrl, '_init_connection',
+                               autospec=True) as mock_init_con:
+            mock_init_con.side_effect = _fake_init_con
+            self.assertRaises(errors.HttpUrlInvalidContentLength, au.HttpUrl,
+                              'fake_url')
+
     @mock.patch.object(requests, 'get')
-    def test_httpurl_iter(self, mock_r_get):
-        content = ['fake content #1', 'fake content #2']
-        mock_r_get.return_value.iter_content.return_value = content
-        mock_r_get.return_value.status_code = 200
+    def test_httpurl_init_connection_ok(self, mock_r_get):
+        au.HttpUrl('fake_url')
+        mock_r_get.assert_called_once_with(
+            'fake_url', stream=True, timeout=CONF.http_request_timeout,
+            headers={'Range': 'bytes=0-'})
+
+    @mock.patch('time.sleep')
+    @mock.patch.object(requests, 'get')
+    def test_httpurl_init_connection_errors(self, mock_r_get, mock_s):
+        mock_r = mock.Mock(status_code=200, headers={'content-length': 123})
+        mock_r_get.side_effect = [requests.exceptions.ConnectionError(),
+                                  requests.exceptions.Timeout(), mock_r]
         httpurl = au.HttpUrl('fake_url')
+        self.assertEqual(123, httpurl.length)
+        self.assertEqual(200, httpurl.response_obj.status_code)
+
+    @mock.patch('time.sleep')
+    @mock.patch.object(requests, 'get')
+    def test_httpurl_connection_max_retries_exceeded(self, mock_r_get, mock_s):
+        mock_r_get.side_effect = requests.exceptions.ConnectionError()
+        self.assertRaises(errors.HttpUrlConnectionError, au.HttpUrl,
+                          'fake_url')
+
+    @mock.patch.object(requests, 'get')
+    def test_httpurl_next_ok(self, mock_r_get):
+        httpurl = au.HttpUrl('fake_url')
+        content = ['fake content #1', 'fake content #2']
+        httpurl.response_obj = mock.Mock()
+        httpurl.response_obj.raw.read.side_effect = content
         for data in enumerate(httpurl):
             self.assertEqual(content[data[0]], data[1])
-        self.assertEqual('fake_url', httpurl.url)
 
 
 class TestGunzipStream(test_base.BaseTestCase):

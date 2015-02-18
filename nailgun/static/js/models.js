@@ -545,8 +545,13 @@ define([
         },
         hasChanges: function(initialAttributes, models) {
             return _.any(this.attributes, function(group, groupName) {
-                if (group.metadata && this.checkRestrictions(models, null, this.makePath(groupName, 'metadata')).result) return false;
-                return _.any(group, function(setting, settingName) {
+                var metadata = group.metadata,
+                    result = false;
+                if (metadata) {
+                    if (this.checkRestrictions(models, null, this.makePath(groupName, 'metadata')).result) return result;
+                    if (!_.isUndefined(metadata.enabled)) result = metadata.enabled != initialAttributes[groupName].metadata.enabled;
+                }
+                return result || _.any(group, function(setting, settingName) {
                     if (this.checkRestrictions(models, null, this.makePath(groupName, settingName)).result) return false;
                     return setting.value != initialAttributes[groupName][settingName].value;
                 }, this);

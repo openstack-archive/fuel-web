@@ -35,6 +35,8 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     components.Navbar = React.createClass({
         mixins: [
+            componentMixins.dispatcherMixin('updateNodeStats', 'updateNodeStats'),
+            componentMixins.dispatcherMixin('updateNotifications', 'updateNotifications'),
             componentMixins.backboneMixin('user'),
             componentMixins.backboneMixin('version'),
             componentMixins.pollingMixin(20)
@@ -55,11 +57,11 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         fetchData: function() {
             return $.when(this.props.statistics.fetch(), this.props.notifications.fetch({limit: this.props.notificationsDisplayCount}));
         },
-        refresh: function() {
-            if (this.shouldDataBeFetched()) {
-                return this.fetchData();
-            }
-            return $.Deferred().reject();
+        updateNodeStats: function() {
+            return this.props.statistics.fetch();
+        },
+        updateNotifications: function() {
+            return this.props.notifications.fetch({limit: this.props.notificationsDisplayCount});
         },
         componentDidMount: function() {
             this.props.user.on('change:authenticated', function(model, value) {
@@ -297,6 +299,9 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
     });
 
     components.Breadcrumbs = React.createClass({
+        mixins: [
+            componentMixins.dispatcherMixin('updatePageLayout', 'refresh')
+        ],
         getInitialState: function() {
             return {path: this.getBreadcrumbsPath()};
         },

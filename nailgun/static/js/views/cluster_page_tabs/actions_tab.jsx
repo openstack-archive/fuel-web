@@ -20,10 +20,11 @@ define(
     'react',
     'utils',
     'models',
+    'dispatcher',
     'jsx!views/dialogs',
     'jsx!component_mixins'
 ],
-function(_, i18n, React, utils, models, dialogs, componentMixins) {
+function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
     'use strict';
 
     var releases = new models.Releases();
@@ -93,7 +94,7 @@ function(_, i18n, React, utils, models, dialogs, componentMixins) {
                             }
                         }, this))
                         .done(function() {
-                            app.rootComponent.updateLayout();
+                            dispatcher.trigger('updatePageLayout');
                         })
                         .always(_.bind(function() {
                             this.setState({disabled: false});

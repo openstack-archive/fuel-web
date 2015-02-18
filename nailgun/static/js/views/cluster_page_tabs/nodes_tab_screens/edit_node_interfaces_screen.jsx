@@ -22,12 +22,13 @@ define(
     'i18n',
     'utils',
     'models',
+    'dispatcher',
     'jsx!views/dialogs',
     'jsx!views/controls',
     'jsx!component_mixins',
     'jquery-ui'
 ],
-function($, _, Backbone, React, i18n, utils, models, dialogs, controls, ComponentMixins) {
+function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins) {
     'use strict';
 
     var cx = React.addons.classSet,
@@ -193,7 +194,7 @@ function($, _, Backbone, React, i18n, utils, models, dialogs, controls, Componen
             }, this))
                 .done(_.bind(function() {
                     this.setState({initialInterfaces: this.interfacesToJSON(this.props.interfaces)});
-                    app.page.removeFinishedNetworkTasks();
+                    dispatcher.trigger('networkConfigurationUpdated');
                 }, this))
                 .fail(function() {
                     var errorNS = 'cluster_page.nodes_tab.configure_interfaces.configuration_error.';

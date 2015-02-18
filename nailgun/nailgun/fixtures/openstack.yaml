@@ -1141,7 +1141,7 @@
           bind:
             - "wizard:Storage.cinder": "default"
             - "wizard:Network.manager": "nova-network"
-            - "settings:common.use_vcenter.value": "true"
+            - "settings:common.use_vcenter.value"
       Network:
         manager:
           type: "radio"

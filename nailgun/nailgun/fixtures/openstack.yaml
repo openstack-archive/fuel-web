@@ -363,7 +363,7 @@
             weight: 10
             type: "text"
             regex:
-              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$).*'
+              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$)(?!.* +.*$).+'
               error: "Invalid username"
           email:
             value: "admin@localhost"
@@ -371,6 +371,9 @@
             description: "Email address for Administrator"
             weight: 40
             type: "text"
+            regex:
+              source: "^\\S+@\\S+$"
+              error: "Invalid email"
           tenant:
             value: "admin"
             label: "tenant"
@@ -386,6 +389,9 @@
             description: "Password for Administrator"
             weight: 20
             type: "password"
+            regex:
+              source: ".+"
+              error: "Invalid password"
         external_mongo:
           metadata:
             label: "External MongoDB"

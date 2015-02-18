@@ -14,10 +14,16 @@
 
 import mock
 from oslotest import base as test_base
-import requests
 import zlib
 
+from oslo.config import cfg
+
+from fuel_agent import errors
 from fuel_agent.utils import artifact_utils as au
+from fuel_agent.utils import utils
+
+
+CONF = cfg.CONF
 
 
 class TestTarget(test_base.BaseTestCase):
@@ -57,15 +63,29 @@ class TestLocalFile(test_base.BaseTestCase):
 
 
 class TestHttpUrl(test_base.BaseTestCase):
-    @mock.patch.object(requests, 'get')
-    def test_httpurl_iter(self, mock_r_get):
+    @mock.patch.object(utils, 'init_http_request')
+    def test_httpurl_init_ok(self, mock_req):
+        mock_req.return_value = mock.Mock(headers={'content-length': 123})
+        httpurl = au.HttpUrl('fake_url')
+        self.assertEqual(123, httpurl.length)
+        mock_req.assert_called_once_with('fake_url')
+
+    @mock.patch.object(utils, 'init_http_request')
+    def test_httpurl_init_invalid_content_length(self, mock_req):
+        mock_req.return_value = mock.Mock(headers={'content-length':
+                                                   'invalid'})
+        self.assertRaises(errors.HttpUrlInvalidContentLength, au.HttpUrl,
+                          'fake_url')
+
+    @mock.patch.object(utils, 'init_http_request')
+    def test_httpurl_next_ok(self, mock_req):
         content = ['fake content #1', 'fake content #2']
-        mock_r_get.return_value.iter_content.return_value = content
-        mock_r_get.return_value.status_code = 200
+        req_mock = mock.Mock(headers={'content-length': 30})
+        req_mock.raw.read.side_effect = content
+        mock_req.return_value = req_mock
         httpurl = au.HttpUrl('fake_url')
         for data in enumerate(httpurl):
             self.assertEqual(content[data[0]], data[1])
-        self.assertEqual('fake_url', httpurl.url)
 
 
 class TestGunzipStream(test_base.BaseTestCase):

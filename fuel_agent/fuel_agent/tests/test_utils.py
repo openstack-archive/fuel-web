@@ -16,10 +16,16 @@
 import testtools
 
 import mock
+from oslo.config import cfg
+import requests
 import stevedore
+import urllib3
 
 from fuel_agent import errors
 from fuel_agent.utils import utils
+
+
+CONF = cfg.CONF
 
 
 class ExecuteTestCase(testtools.TestCase):
@@ -79,3 +85,37 @@ class ExecuteTestCase(testtools.TestCase):
         utils.render_and_save('fake_dir', 'fake_tmpl_name', 'fake_data',
                               'fake_file_name')
         mock_open.assert_called_once_with('fake_file_name', 'w')
+
+    @mock.patch.object(requests, 'get')
+    def test_init_http_request_ok(self, mock_req):
+        utils.init_http_request('fake_url')
+        mock_req.assert_called_once_with(
+            'fake_url', stream=True, timeout=CONF.http_request_timeout,
+            headers={'Range': 'bytes=0-'})
+
+    @mock.patch('time.sleep')
+    @mock.patch.object(requests, 'get')
+    def test_init_http_request_non_critical_errors(self, mock_req, mock_s):
+        mock_ok = mock.Mock()
+        mock_req.side_effect = [urllib3.exceptions.DecodeError(),
+                                urllib3.exceptions.ProxyError(),
+                                requests.exceptions.ConnectionError(),
+                                requests.exceptions.Timeout(),
+                                requests.exceptions.TooManyRedirects(),
+                                mock_ok]
+        req_obj = utils.init_http_request('fake_url')
+        self.assertEqual(mock_ok, req_obj)
+
+    @mock.patch.object(requests, 'get')
+    def test_init_http_request_wrong_http_status(self, mock_req):
+        mock_fail = mock.Mock()
+        mock_fail.raise_for_status.side_effect = KeyError()
+        mock_req.return_value = mock_fail
+        self.assertRaises(KeyError, utils.init_http_request, 'fake_url')
+
+    @mock.patch('time.sleep')
+    @mock.patch.object(requests, 'get')
+    def test_init_http_request_max_retries_exceeded(self, mock_req, mock_s):
+        mock_req.side_effect = requests.exceptions.ConnectionError()
+        self.assertRaises(errors.HttpUrlConnectionError,
+                          utils.init_http_request, 'fake_url')

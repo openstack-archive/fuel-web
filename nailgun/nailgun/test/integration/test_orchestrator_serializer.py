@@ -18,8 +18,10 @@ import copy
 from operator import attrgetter
 from operator import itemgetter
 import re
+import six
 
 import mock
+from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 from oslo.serialization import jsonutils
@@ -928,6 +930,71 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 node['network_scheme']['transformations'],
                 transformations
             )
+
+    def test_gre_with_multi_groups(self):
+        cluster = self.create_env(segment_type='gre', ctrl_count=3)
+
+        resp = self.env.create_node_group()
+        group_id = resp.json_body['id']
+
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=3,
+            if_count=2,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=cluster.id,
+            group_id=group_id)
+
+        nets = self.env.neutron_networks_get(cluster.id).json_body
+        nets_w_gw = {'management': '199.99.20.0/24',
+                     'storage': '199.98.20.0/24',
+                     'fuelweb_admin': '199.97.20.0/24',
+                     'public': '199.96.20.0/24'}
+        for net in nets['networks']:
+            if net['name'] in nets_w_gw.keys():
+                if net['group_id'] == group_id:
+                    net['cidr'] = nets_w_gw[net['name']]
+                    net['ip_ranges'] = [[
+                        str(IPAddress(IPNetwork(net['cidr']).first + 2)),
+                        str(IPAddress(IPNetwork(net['cidr']).first + 253)),
+                    ]]
+                elif net['name'] == 'fuelweb_admin':
+                    default_admin_id = net['id']
+                net['gateway'] = str(
+                    IPAddress(IPNetwork(net['cidr']).first + 1))
+        resp = self.env.neutron_networks_put(cluster.id, nets)
+        self.assertEqual(resp.status_code, 200)
+
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        nm = objects.Cluster.get_network_manager(cluster)
+        for node in facts:
+            node_db = objects.Node.get_by_uid(node['uid'])
+            is_public = objects.Node.should_have_public(node_db)
+            endpoints = node['network_scheme']['endpoints']
+            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin'])
+            if is_public:
+                br_set.add('br-ex')
+                # floating network won't have routes
+                self.assertEqual(endpoints['br-floating'], {'IP': 'none'})
+                endpoints.pop('br-floating')
+            self.assertEqual(
+                set(endpoints.keys()),
+                br_set
+            )
+            # default admin network won't have routes
+            if nm.get_admin_network_group_id(node['uid']) == default_admin_id:
+                admin_props = ['IP'] if is_public else ['IP', 'gateway']
+                self.assertEqual(set(endpoints['br-fw-admin'].keys()),
+                                 set(admin_props))
+                endpoints.pop('br-fw-admin')
+            for name, descr in six.iteritems(endpoints):
+                self.assertTrue(set(['IP', 'routes']) <= set(descr.keys()))
+                self.assertEqual(len(descr['routes']), 1)
+                for route in descr['routes']:
+                    self.assertEqual(set(['net', 'via']), set(route.keys()))
 
 
 class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):

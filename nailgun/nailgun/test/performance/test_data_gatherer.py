@@ -85,3 +85,14 @@ class PerformanceDataCsvCreator(object):
                 sub[1].items() for sub in six.iteritems(data)
             ] for item in sublist
         ]
+
+class FailedTestSaver(object):
+    FAILED_TESTS_FILE_NAME = 'failed_tests.txt'
+
+    def __init__(self, reports):
+        self.failed_ids = [x.nodeid for x in reports if x.outcome != 'passed']
+
+    def save(self):
+        with open(self.FAILED_TESTS_FILE_NAME, 'w') as fail_file:
+            for r in self.failed_ids:
+                print>>fail_file, r

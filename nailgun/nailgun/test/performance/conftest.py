@@ -15,14 +15,24 @@
 
 import pytest
 
-from nailgun.test.performance import csv_generator
+from nailgun.test.performance import perf_data_gatherer
 
 
 PERFORMANCE_NAME = 'performance'
 
 
+reports = []
+
+
 def pytest_sessionfinish(session, exitstatus):
     if PERFORMANCE_NAME == pytest.config.known_args_namespace.markexpr:
-        generator = csv_generator.PerformanceDataCsvCreator()
+        generator = perf_data_gatherer.PerformanceDataCsvCreator()
         generator.read_data()
         generator.save_data()
+
+        perf_data_gatherer.save_failed_tests(reports)
+
+
+def pytest_report_teststatus(report):
+    if report.when == 'call':
+        reports.append(report)

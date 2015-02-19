@@ -15,3 +15,4 @@
 TARGET = "/tmp/snapshot"
 LASTDUMP = "/tmp/snapshot_last"
 TIMESTAMP = True
+COMPRESSION_LEVEL = 3

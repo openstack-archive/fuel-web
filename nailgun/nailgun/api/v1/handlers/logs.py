@@ -34,6 +34,7 @@ from nailgun.api.v1.handlers.base import content
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
+from nailgun.task.task import DumpTask
 
 
 logger = logging.getLogger(__name__)
@@ -384,13 +385,24 @@ class LogPackageHandler(BaseHandler):
                * 400 (failed to execute task)
         """
         try:
+            conf = jsonutils.loads(web.data()) if web.data() else None
             task_manager = DumpTaskManager()
-            task = task_manager.execute()
+            task = task_manager.execute(conf=conf)
         except Exception as exc:
             logger.warn(u'DumpTask: error while execution '
                         'dump environment task: {0}'.format(str(exc)))
             raise self.http(400, str(exc))
         raise self.http(202, objects.Task.to_json(task))
+
+
+class LogPackageDefaultConfig(BaseHandler):
+
+    @content
+    def GET(self):
+        """Generates default config for snapshot
+        :http: * 200
+        """
+        return DumpTask.conf()
 
 
 class LogSourceCollectionHandler(BaseHandler):

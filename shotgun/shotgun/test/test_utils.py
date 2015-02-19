@@ -50,3 +50,20 @@ class TestUtils(base.BaseTestCase):
         mwalk.assert_called_once_with(path, topdown=True)
         self.assertEqual(
             result, ['/root/file1', '/root/file2', '/root/sub/file3'])
+
+    @patch('shotgun.utils.execute')
+    def test_compress(self, mexecute):
+        target = '/path/target'
+        level = '-3'
+
+        utils.compress(target, level)
+
+        compress_call = mexecute.call_args_list[0]
+        rm_call = mexecute.call_args_list[1]
+
+        compress_env = compress_call[1]['env']
+        self.assertEqual(compress_env['XZ_OPT'], level)
+        self.assertEqual(
+            compress_call[0][0], 'tar cJvf /path/target.xz -C /path target')
+
+        self.assertEqual(rm_call[0][0], 'rm -r /path/target')

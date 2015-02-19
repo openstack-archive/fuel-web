@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import fnmatch
 import logging
 import os
@@ -64,10 +65,27 @@ def remove_matched_files(path, patterns):
                 break
 
 
-def execute(command, to_filename=None):
+def compress(target, level, keep_target=False):
+    """Runs compression of provided directory
+    :param target: directory to compress
+    :param level: level of compression
+    :param keep_target: bool, if True target directory wont be removed
+    """
+    env = copy.deepcopy(os.environ)
+    env['XZ_OPT'] = level
+    execute("tar cJvf {0}.xz -C {1} {2}"
+            "".format(target,
+                      os.path.dirname(target),
+                      os.path.basename(target)),
+            env=env)
+    if not keep_target:
+        execute("rm -r {0}".format(target))
+
+
+def execute(command, to_filename=None, env=None):
     logger.debug("Trying to execute command: %s", command)
     commands = [c.strip() for c in re.split(ur'\|', command)]
-    env = os.environ
+    env = env or os.environ
     env["PATH"] = "/bin:/usr/bin:/sbin:/usr/sbin"
 
     to_file = None

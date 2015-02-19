@@ -12,9 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import time
 
 from shotgun import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 class Config(object):
@@ -34,6 +38,18 @@ class Config(object):
         if self.data.get("timestamp", settings.TIMESTAMP):
             target = self._timestamp(target)
         return target
+
+    @property
+    def compression_level(self):
+        default = '-3'
+        level = self.data.get("compression_level")
+        if level is None:
+            logger.warning(
+                'Compression level is not specified,'
+                ' Default %s will be used', default)
+            return default
+
+        return '-{level}'.format(level=level)
 
     @property
     def lastdump(self):

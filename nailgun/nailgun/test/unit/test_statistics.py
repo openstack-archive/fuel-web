@@ -555,6 +555,29 @@ class TestStatisticsSender(BaseTestCase):
 
 class TestOSWLCollectingUtils(BaseTestCase):
 
+    def test_get_nested_attr(self):
+        expected_attr = Mock()
+        intermediate_attr = Mock(spec=["expected_attr"])
+        containing_obj = Mock(spec=["intermediate_attr"])
+
+        intermediate_attr.expected_attr = expected_attr
+        containing_obj.intermediate_attr = intermediate_attr
+
+        existing_attr_path = ["intermediate_attr", "expected_attr"]
+        self.assertEqual(
+            expected_attr,
+            utils._get_nested_attr(containing_obj, existing_attr_path)
+        )
+
+        missing_attrs_pathes = [
+            ["missing_attr", "expected_attr"],
+            ["intermediate_attr", "missing_attr"],
+        ]
+        for attr_path in missing_attrs_pathes:
+            self.assertIsNone(
+                utils._get_nested_attr(containing_obj, attr_path)
+            )
+
     def test_get_oswl_info(self):
         def mock_entity_manager(return_data):
             ent_instance_mock = Mock()
@@ -593,7 +616,13 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "created": "some_date_of_creation",
                     "updated": "some_date_of_update"
                 },
-            }
+            },
+            "keystone": {
+                "tenants": {
+                    "id": 5,
+                    "enabled": True,
+                }
+            },
         }
 
         expected = {
@@ -640,7 +669,17 @@ class TestOSWLCollectingUtils(BaseTestCase):
                         "updated_at": "some_date_of_update"
                     }
                 ]
-            }
+            },
+            "tenants":
+            {
+                "regard_resource": "tenant",
+                "data": [
+                    {
+                        "id": 5,
+                        "enabled_flag": True,
+                    }
+                ]
+            },
         }
 
         get_proxy_path = ("nailgun.statistics.utils.get_proxy_for_cluster")

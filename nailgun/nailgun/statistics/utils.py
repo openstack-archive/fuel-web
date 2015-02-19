@@ -18,6 +18,9 @@ import six
 
 from contextlib import contextmanager
 
+from keystoneclient import discover as keystone_discover
+from keystoneclient.v2_0 import client as keystone_client_v2
+from keystoneclient.v3 import client as keystone_client_v3
 from novaclient import client as nova_client
 
 from nailgun import consts
@@ -39,7 +42,7 @@ collected_components_attrs = {
             "flavor_id": ["flavor", "id"],
             "image_id": ["image", "id"]
         },
-        "resource_manager_path": ["nova", "servers"]
+        "resource_manager_path": [["nova", "servers"]]
     },
     "flavor": {
         "attr_names": {
@@ -50,7 +53,15 @@ collected_components_attrs = {
             "disk": ["disk"],
             "swap": ["swap"],
         },
-        "resource_manager_path": ["nova", "flavors"]
+        "resource_manager_path": [["nova", "flavors"]]
+    },
+    "tenant": {
+        "attr_names": {
+            "id": ["id"],
+            "enabled_flag": ["enabled"],
+        },
+        "resource_manager_path": [["keystone", "tenants"],
+                                  ["keystone", "projects"]]
     },
     "image": {
         "attr_names": {
@@ -61,7 +72,7 @@ collected_components_attrs = {
             "created_at": ["created"],
             "updated_at": ["updated"]
         },
-        "resource_manager_path": ["nova", "images"]
+        "resource_manager_path": [["nova", "images"]]
     },
 }
 
@@ -74,6 +85,7 @@ class ClientProvider(object):
     def __init__(self, cluster):
         self.cluster = cluster
         self._nova = None
+        self._keystone = None
         self._credentials = None
 
     @property
@@ -86,6 +98,47 @@ class ClientProvider(object):
             )
 
         return self._nova
+
+    @property
+    def keystone(self):
+        if self._keystone is None:
+            # kwargs are universal for v2 and v3 versions of
+            # keystone client that are different only in accepting
+            # of tenant/project keyword name
+            auth_kwargs = {
+                "username": self.credentials[0],
+                "password": self.credentials[1],
+                "tenant_name": self.credentials[2],
+                "project_name": self.credentials[2],
+                "auth_url": self.credentials[3]
+            }
+            self._keystone = self._get_keystone_client(auth_kwargs)
+
+        return self._keystone
+
+    def _get_keystone_client(self, auth_creds):
+        """Instantiate client based on returned from keystone
+        server version data.
+
+        :param auth_creds: credentials for authentication which also are
+        parameters for client's instance initialization
+        :returns: instance of keystone client of appropriate version
+        :raises: exception if response from server contains version other than
+        2.x and 3.x
+        """
+        discover = keystone_discover.Discover(**auth_creds)
+
+        for version_data in discover.version_data():
+            version = version_data["version"][0]
+            if version <= 2:
+                return keystone_client_v2.Client(**auth_creds)
+            elif version == 3:
+                return keystone_client_v3.Client(**auth_creds)
+
+        raise Exception("Failed to discover keystone version "
+                        "for auth_url {0}".format(
+                            auth_creds.get("auth_url"))
+                        )
 
     @property
     def credentials(self):
@@ -131,10 +184,24 @@ def _get_online_controller(cluster):
 
 def get_info_from_os_resource_manager(client_provider, resource_name):
     resource = collected_components_attrs[resource_name]
-    resource_manager = _get_nested_attr(
-        client_provider,
-        resource["resource_manager_path"]
-    )
+
+    for resource_manager_path in resource["resource_manager_path"]:
+        resource_manager = _get_nested_attr(
+            client_provider,
+            resource_manager_path
+        )
+
+        # use first found resource manager for attributes retrieving
+        if resource_manager:
+            break
+
+    else:
+        # if _get_nested_attr() returned None for all invariants
+        # of resource manager attribute path we should fail
+        # oswl retrieving for the resource
+        raise Exception("Resource manager for {0} could not be found "
+                        "by openstack client provider".format(resource_name))
+
     instances_list = resource_manager.list()
     resource_info = []
 
@@ -162,18 +229,19 @@ def _get_value_from_nested_dict(obj_dict, key_path):
 
 
 def _get_nested_attr(obj, attr_path):
-    if attr_path:
-        attr_name = attr_path[0]
-        attr_value = getattr(obj, attr_name)
-
-        nested_value = _get_nested_attr(attr_value, attr_path[1:])
-
-        if nested_value:
-            return nested_value
-        else:
-            return attr_value
-    else:
+    # prevent from error in case of empty list and
+    # None object
+    if not all([obj, attr_path]):
         return None
+
+    attr_name = attr_path[0]
+    attr_value = getattr(obj, attr_name, None)
+
+    # stop recursion as we already are on last level of attributes nesting
+    if len(attr_path) == 1:
+        return attr_value
+
+    return _get_nested_attr(attr_value, attr_path[1:])
 
 
 @contextmanager

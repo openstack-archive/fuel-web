@@ -585,7 +585,13 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "disk": 1,
                     "swap": 16,
                 }
-            }
+            },
+            "keystone": {
+                "tenants": {
+                    "id": 5,
+                    "enabled": True,
+                }
+            },
         }
 
         expected = {
@@ -618,6 +624,16 @@ class TestOSWLCollectingUtils(BaseTestCase):
                         "swap": 16,
                     },
                 ],
+            },
+            "tenants":
+            {
+                "regard_resource": "tenant",
+                "data": [
+                    {
+                        "id": 5,
+                        "enabled_flag": True,
+                    }
+                ]
             },
         }
 

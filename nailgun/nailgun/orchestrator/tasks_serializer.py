@@ -173,13 +173,20 @@ class UploadMOSRepo(GenericRolesHook):
 
         # repo_metadata stores its values by key of release
         for release, repo_url_mask in six.iteritems(repo_metadata):
-            repo_url = self.make_repo_url(repo_url_mask, context)
+
             if operating_system == consts.RELEASE_OS.centos:
+
+                repo_url = self.make_repo_url(repo_url_mask, context)
                 yield templates.make_centos_repo_task(
                     repo_name, repo_url, uids)
+
             elif operating_system == consts.RELEASE_OS.ubuntu:
-                yield templates.make_versioned_ubuntu(
-                    repo_name, repo_url, uids)
+
+                # we need to overwrite file with default sources, by default
+                # a lot of unnecessary repos
+                repo_url = 'deb ' + self.make_repo_url(repo_url_mask, context)
+                yield templates.make_upload_task(
+                    uids, repo_url, '/etc/apt/sources.list')
 
         if operating_system == consts.RELEASE_OS.centos:
             yield templates.make_yum_clean(uids)

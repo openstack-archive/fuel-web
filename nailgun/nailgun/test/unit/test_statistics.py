@@ -593,7 +593,13 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "created": "some_date_of_creation",
                     "updated": "some_date_of_update"
                 },
-            }
+            },
+            "keystone": {
+                "tenants": {
+                    "id": 5,
+                    "enabled": True,
+                }
+            },
         }
 
         expected = {
@@ -640,7 +646,17 @@ class TestOSWLCollectingUtils(BaseTestCase):
                         "updated_at": "some_date_of_update"
                     }
                 ]
-            }
+            },
+            "tenants":
+            {
+                "regard_resource": "tenant",
+                "data": [
+                    {
+                        "id": 5,
+                        "enabled_flag": True,
+                    }
+                ]
+            },
         }
 
         get_proxy_path = ("nailgun.statistics.utils.get_proxy_for_cluster")

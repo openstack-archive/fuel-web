@@ -50,7 +50,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 renderOn: 'add remove change'
             }),
             componentMixins.dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
-            componentMixins.dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks')
+            componentMixins.dispatcherMixin('removeFinishedDeploymentTasks', 'removeFinishedDeploymentTasks'),
+            componentMixins.dispatcherMixin('deploymentTaskStarted', 'deploymentTaskStarted')
         ],
         statics: {
             navbarActiveElement: 'clusters',

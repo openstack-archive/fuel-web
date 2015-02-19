@@ -183,7 +183,8 @@ class TestTasksLogging(BaseIntegrationTest):
     @patch.object(TaskHelper, 'update_action_log')
     def test_dump_task_logging(self, logger):
         resp = self.app.put(
-            reverse('LogPackageHandler'), headers=self.default_headers
+            reverse('LogPackageHandler'), headers=self.default_headers,
+            expect_errors=True
         )
         self.assertEqual(resp.status_code, 202)
 

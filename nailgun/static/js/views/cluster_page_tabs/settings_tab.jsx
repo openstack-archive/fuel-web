@@ -31,9 +31,12 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
     var SettingsTab = React.createClass({
         mixins: [
             componentMixins.backboneMixin('cluster', 'change:status'),
-            componentMixins.backboneMixin({modelOrCollection: function(props) {
-                return props.cluster.get('settings');
-            }}),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {
+                    return props.cluster.get('settings');
+                },
+                renderOn: 'change invalid'
+            }),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.get('tasks');
             }}),

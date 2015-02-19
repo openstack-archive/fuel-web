@@ -625,6 +625,7 @@ DUMP:
   target: "/var/www/nailgun/dump/fuel-snapshot"
   lastdump: "/var/www/nailgun/dump/last"
   timestamp: True
+  compression_level: "-3"
 
   dump:
     local:

@@ -25,7 +25,7 @@ define([
 ], function($, _, i18n, Backbone, utils, Expression, expressionObjects) {
     'use strict';
 
-    var models = {};
+    var models = {}, LINUX_BONDING_RELEASE = '6.1';
 
     var superMixin = {
         _super: function(method, args) {
@@ -622,7 +622,12 @@ define([
 
     models.Interface = BaseModel.extend({
         constructorName: 'Interface',
-        bondingModes: ['active-backup', 'balance-slb', 'lacp-balance-tcp'],
+        ovsBondingModes: ['active-backup', 'balance-slb', 'lacp-balance-tcp'],
+        linuxBondingModes: ['active-backup', 'balance-rr', 'balance-xor', 'broadcast', '802_3ad', 'balance-tlb', 'balance-alb'],
+        hashPolicyNeeded: ['802_3ad', 'balance-xor', 'balance-tlb', 'balance-alb'],
+        xmitHashPolicies: ['layer2', 'layer2+3', 'layer3+4', 'encap2+3', 'encap3+4'],
+        lacpRateNeeded: ['802_3ad'],
+        lacpRate: ['slow', 'fast'],
         parse: function(response) {
             response.assigned_networks = new models.InterfaceNetworks(response.assigned_networks);
             response.assigned_networks.interface = this;
@@ -653,6 +658,25 @@ define([
                 errors.push(i18n('cluster_page.nodes_tab.configure_interfaces.validation.too_many_untagged_networks'));
             }
             return errors;
+        },
+        setBondPropertyOptions: function(options) {
+            var bondProperties = this.get('bond_properties') || {};
+            this.set('bond_properties', _.extend(bondProperties, options));
+        },
+        isLacpRateAvailable: function() {
+            return _.contains(models.Interface.prototype.lacpRateNeeded, this.getBondMode());
+        },
+        isHashPolicyNeeded: function() {
+            return _.contains(this.get('name'), 'linux') && _.contains(models.Interface.prototype.hashPolicyNeeded, this.getBondMode());
+        },
+        isLinuxBond: function() {
+            return this.get('bond_properties').type__ == 'linux' ||
+                _.contains(models.Interface.prototype.linuxBondingModes, this.getBondMode()) &&
+                app.version.get('release') == LINUX_BONDING_RELEASE;
+        },
+        getBondMode: function() {
+            var ifcBondProperties = this.get('bond_properties');
+            return this.get('mode') || ifcBondProperties && ifcBondProperties.mode;
         }
     });
 
@@ -660,7 +684,8 @@ define([
         constructorName: 'Interfaces',
         model: models.Interface,
         generateBondName: function() {
-            var index, proposedName, base = 'ovs-bond';
+            var index, proposedName,
+                base = app.version.get('release') == LINUX_BONDING_RELEASE ? 'linux-bond' : 'ovs-bond';
             for (index = 0; true; index += 1) {
                 proposedName = base + index;
                 if (!this.where({name: proposedName}).length) {

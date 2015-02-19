@@ -249,10 +249,29 @@
                         "speed": "Speed",
                         "bonding_mode": "Mode",
                         "bonding_modes": {
-                            "active-backup": "Active Backup",
-                            "balance-slb": "Balance SLB",
-                            "lacp-balance-tcp": "LACP Balance TCP"
+                          "active-backup": "Active Backup",
+                          "balance-slb": "balance-slb",
+                          "lacp-balance-tcp": "LACP Balance TCP",
+                          "balance-rr": "balance-rr",
+                          "balance-xor": "balance-xor",
+                          "balance-tlb": "balance-tlb",
+                          "balance-alb": "balance-alb",
+                          "broadcast": "Broadcast",
+                          "802_3ad": "802.3ad(LACP)"
                         },
+                        "hash_policy": {
+                          "layer2": "layer2",
+                          "layer2+3": "layer2+3",
+                          "layer3+4": "layer3+4",
+                          "encap2+3": "encap2+3",
+                          "encap3+4": "encap3+4"
+                        },
+                        "lacp_rate": "LACP Rate",
+                        "lacp_rates": {
+                          "slow": "Slow",
+                          "fast": "Fast"
+                        },
+                        "bonding_policy": "Xmit Hash Policy",
                         "drag_and_drop_description": "You can drag and drop logical networks between interfaces",
                         "configuration_error": {
                             "title": "Interfaces Configuration Error",
@@ -1361,7 +1380,11 @@
                         "bonding_modes": {
                             "active-backup": "アクティブなバックアップ",
                             "balance-slb": "バランス SLB",
-                            "lacp-balance-tcp": "LACP バランス TCP"
+                            "lacp-balance-tcp": "LACP バランス TCP",
+                            "balance-rr": "バランス RR",
+                            "balance-xor": "バランス XOR",
+                            "balance-tlb": "バランス TLB",
+                            "balance-alb": "バランス ALB"
                         },
                         "drag_and_drop_description": "論理ネットワーク間のインタフェースをドラッグアンドドロップすることができます。",
                         "validation": {
@@ -1824,7 +1847,11 @@
                         "bonding_modes": {
                             "active-backup": "활성 백업",
                             "balance-slb": "균형 SLB",
-                            "lacp-balance-tcp": "LACP 균형 TCP"
+                            "lacp-balance-tcp": "LACP 균형 TCP",
+                            "balance-rr": "균형 RR",
+                            "balance-xor": "균형 XOR",
+                            "balance-tlb": "균형 TLB",
+                            "balance-alb": "균형 ALB"
                         },
                         "drag_and_drop_description": "인터페이스 사이에 논리네트워크를 드래그하고 드랍할 수 있습니다",
                         "validation": {

@@ -194,7 +194,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                              (node_db.id, settings.DNS_DOMAIN))
 
         # Check uncommon attrs
-        node_uids = sorted(set([n['uid'] for n in node_list]))
+        # Convert ids to int to have correct order in the set
+        node_uids = sorted(set([int(n['uid']) for n in node_list]))
         man_ip = [str(ip) for ip in IPRange('192.168.0.1', '192.168.0.5')]
         pub_ip = [str(ip) for ip in IPRange('172.16.0.2', '172.16.0.6')]
         sto_ip = [str(ip) for ip in IPRange('192.168.1.1', '192.168.1.5')]
@@ -205,11 +206,12 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'roles': ['mongo']},
             {'roles': ['cinder']}]
         for i in range(len(expected_list)):
-            expected_list[i]['attrs'] = {'uid': node_uids[i]}
+            expected_list[i]['attrs'] = {'uid': str(node_uids[i])}
 
         used_man_ip = []
         used_pub_ip = []
         used_sto_ip = []
+
         for expected in expected_list:
             attrs = expected['attrs']
 

@@ -86,6 +86,9 @@ default_messages = {
     "CannotMakeZabbixRequest": "Can't make a request to Zabbix",
     "ZabbixRequestError": "Zabbix request returned an error",
 
+    # Plugin errors
+    "PackageVersionIsNotCompatible": "Package version is not compatible",
+
     # unknown
     "UnknownError": "Unknown error"
 }

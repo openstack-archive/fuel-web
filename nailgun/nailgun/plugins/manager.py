@@ -17,7 +17,7 @@ import six
 from nailgun.logger import logger
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
-from nailgun.plugins.attr_plugin import ClusterAttributesPlugin
+from nailgun.plugins.attr_plugin import wrap_plugin
 
 
 class PluginManager(object):
@@ -66,7 +66,7 @@ class PluginManager(object):
     def get_plugin_attributes(cls, cluster):
         plugins_attrs = {}
         for plugin_db in PluginCollection.all_newest():
-            attr_plugin = ClusterAttributesPlugin(plugin_db)
+            attr_plugin = wrap_plugin(plugin_db)
             attrs = attr_plugin.get_plugin_attributes(cluster)
             plugins_attrs.update(attrs)
         return plugins_attrs
@@ -75,7 +75,7 @@ class PluginManager(object):
     def get_cluster_plugins_with_tasks(cls, cluster):
         attr_plugins = []
         for plugin_db in cluster.plugins:
-            attr_pl = ClusterAttributesPlugin(plugin_db)
+            attr_pl = wrap_plugin(plugin_db)
             attr_pl.set_cluster_tasks(cluster)
             attr_plugins.append(attr_pl)
         return attr_plugins

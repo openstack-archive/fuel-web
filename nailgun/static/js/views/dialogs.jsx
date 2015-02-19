@@ -187,7 +187,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
                 .always(this.close)
-                .done(_.bind(app.page.deploymentTaskStarted, app.page))
+                .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
                 .fail(this.showError);
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
@@ -269,7 +269,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/stop_deployment', type: 'PUT'})
                 .always(this.close)
-                .done(_.bind(app.page.deploymentTaskStarted, app.page))
+                .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
                 .fail(_.bind(function(response) {
                     this.showError(utils.getResponseText(response) || i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
                 }, this));
@@ -328,7 +328,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/reset', type: 'PUT'})
                 .always(this.close)
-                .done(_.bind(app.page.deploymentTaskStarted, app.page))
+                .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
                 .fail(this.showError);
         },
         renderBody: function() {
@@ -359,7 +359,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
                 .done(_.bind(function() {
                     dispatcher.trigger('deploymentTasksUpdated');
                     (new models.Task()).save({}, {url: _.result(cluster, 'url') + '/update', type: 'PUT'})
-                        .done(_.bind(app.page.deploymentTaskStarted, app.page));
+                        .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'));
                 }, this));
         },
         renderBody: function() {

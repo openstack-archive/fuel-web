@@ -50,7 +50,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 renderOn: 'add remove change'
             }),
             componentMixins.dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
-            componentMixins.dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks')
+            componentMixins.dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks'),
+            componentMixins.dispatcherMixin('deploymentTaskStarted', function() {this.refreshCluster().always(_.bind(this.startPolling, this))}),
+            componentMixins.dispatcherMixin('deploymentTaskFinished', function() {this.refreshCluster().always(_.bind(dispatcher.trigger, dispatcher, 'updateNotifications'))})
         ],
         statics: {
             navbarActiveElement: 'clusters',
@@ -143,7 +145,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             if (task) {
                 return task.fetch()
                     .done(_.bind(function() {
-                        if (!task.match({status: 'running'})) this.deploymentTaskFinished();
+                        if (!task.match({status: 'running'})) dispatcher.trigger('deploymentTaskFinished');
                     }, this))
                     .then(_.bind(function() {
                         return this.props.cluster.fetchRelated('nodes');
@@ -153,11 +155,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return task ? task.fetch() : $.Deferred().resolve();
             }
         },
-        deploymentTaskStarted: function() {
-            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(_.bind(this.startPolling, this));
-        },
-        deploymentTaskFinished: function() {
-            $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks')).always(dispatcher.trigger('updateNotifications'));
+        refreshCluster: function() {
+            return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks'));
         },
         componentWillUnmount: function() {
             $(window).off('beforeunload.' + this.eventNamespace);

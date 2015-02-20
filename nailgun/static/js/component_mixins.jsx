@@ -34,14 +34,14 @@ define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], functi
                 scheduleDataFetch: function() {
                     var shouldDataBeFetched = !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
                     if (this.isMounted() && !this.activeTimeout && shouldDataBeFetched) {
-                        this.activeTimeout = $.timeout(updateInterval).done(_.bind(this.startPolling, this));
+                        this.activeTimeout = $.timeout(updateInterval).done(this.startPolling);
                     }
                 },
                 startPolling: function(force) {
                     var shouldDataBeFetched = force || !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
                     if (shouldDataBeFetched) {
                         this.stopPolling();
-                        this.fetchData().always(_.bind(this.scheduleDataFetch, this));
+                        return this.fetchData().always(this.scheduleDataFetch);
                     }
                 },
                 stopPolling: function() {

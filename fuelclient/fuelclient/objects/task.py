@@ -95,6 +95,10 @@ class DeployTask(Task):
 class SnapshotTask(Task):
 
     @classmethod
-    def start_snapshot_task(cls):
-        dump_task = cls.connection.put_request("logs/package", {})
+    def start_snapshot_task(cls, conf):
+        dump_task = cls.connection.put_request("logs/package", conf)
         return cls(dump_task["id"])
+
+    @classmethod
+    def get_default_config(cls):
+        return cls.connection.get_request("logs/package/config/default/")

@@ -638,6 +638,7 @@
                     "ssh_console": "SSH console",
                     "network_configuration_button": "Configure Interfaces",
                     "disk_configuration_button": "Configure Disks",
+                    "default_dialog_title": "Node Information",
                     "close_button": "Close",
                     "total": "total",
                     "bytes": "bytes",

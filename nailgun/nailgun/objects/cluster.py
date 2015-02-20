@@ -761,6 +761,11 @@ class Cluster(NailgunObject):
 
         return vmware_attr
 
+    @classmethod
+    def is_vmwareable(cls, instance):
+        attributes = cls.get_attributes(instance).editable
+        return attributes.get('common', {}).get('use_vcenter', {}).get('value')
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

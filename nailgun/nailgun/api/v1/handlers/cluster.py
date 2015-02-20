@@ -266,8 +266,9 @@ class VmwareAttributesHandler(BaseHandler):
     def GET(self, cluster_id):
         """:returns: JSONized Cluster vmware attributes.
         :http: * 200 (OK)
-               * 204 (cluster has no attributes)
-               * 404 (cluster not found in db)
+               * 404 (cluster not found in db |
+                      cluster has no vmware attributes)
+               * 406 (cluster doesn't accept vmware configuration)
         """
         cluster = self.get_object_or_404(
             objects.Cluster, cluster_id,
@@ -277,8 +278,10 @@ class VmwareAttributesHandler(BaseHandler):
                 "with id '{0}' in DB.".format(cluster_id)
             )
         )
-        # TODO(apopovych): implement logic to check iif cluster have
-        # vmware enabled or not
+        if not objects.Cluster.is_vmwareable(cluster):
+            raise self.http(406, "Cluster doesn't support vmware "
+                                 "configuration")
+
         attributes = objects.Cluster.get_vmware_attributes(cluster)
         if not attributes:
             raise self.http(404, "No vmware attributes found")
@@ -289,10 +292,11 @@ class VmwareAttributesHandler(BaseHandler):
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster vmware attributes.
         :http: * 200 (OK)
-               * 204 (cluster has no vmware attributes)
                * 400 (wrong attributes data specified)
                * 403 (attriutes can't be changed)
-               * 404 (cluster not found in db)
+               * 404 (cluster not found in db |
+                      cluster has no vmware attributes)
+               * 406 (cluster doesn't accept vmware configuration)
         """
         cluster = self.get_object_or_404(
             objects.Cluster, cluster_id,
@@ -302,6 +306,9 @@ class VmwareAttributesHandler(BaseHandler):
                 "with id '{0}' in DB.".format(cluster_id)
             )
         )
+        if not objects.Cluster.is_vmwareable(cluster):
+            raise self.http(406, "Cluster doesn't support vmware "
+                                 "configuration")
 
         attributes = objects.Cluster.get_vmware_attributes(cluster)
         # TODO(apopovych): we should add support for 204 statuse code in
@@ -328,7 +335,6 @@ class VmwareAttributesDefaultsHandler(BaseHandler):
     def GET(self, cluster_id):
         """:returns: JSONized default Cluster vmware attributes.
         :http: * 200 (OK)
-               * 204 (cluster has no default vmware attributes)
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(

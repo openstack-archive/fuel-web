@@ -55,15 +55,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         statics: {
             navbarActiveElement: 'clusters',
             breadcrumbsPath: function(pageOptions) {
-                var cluster = pageOptions.cluster,
-                    breadcrumbs = [
-                        ['home', '#'],
-                        ['environments', '#clusters'],
-                        [cluster.get('name'), '#cluster/' + cluster.get('id') + '/nodes'],
-                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, !pageOptions.tabOptions[0]]
-                    ];
-                if (pageOptions.tabOptions[0]) breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + pageOptions.tabOptions[0]), null, true]);
-                return breadcrumbs;
+                return [['home', '#'], ['environments', '#clusters'], [pageOptions.cluster.get('name'), null, true]];
             },
             title: function(pageOptions) {
                 return pageOptions.cluster.get('name');
@@ -340,11 +332,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(function() {
                     this.props.revertChanges();
                     if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                    this.showDialog(dialogs.DeployChangesDialog);
+                    this.showDeployChangesDialog();
                 }, this)});
             } else {
-                this.showDialog(dialogs.DeployChangesDialog);
+                this.showDeployChangesDialog();
             }
+        },
+        showDeployChangesDialog: function() {
+            this.props.cluster.fetch().done(this.showDialog.bind(this, dialogs.DeployChangesDialog));
         },
         render: function() {
             var cluster = this.props.cluster,

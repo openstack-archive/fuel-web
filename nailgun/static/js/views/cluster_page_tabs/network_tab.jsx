@@ -46,7 +46,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 }
             }
             this.getModel().set(attribute, value);
-            dispatcher.trigger('networkConfigurationUpdated');
+            dispatcher.trigger('dirtyNetworkConfig');
             this.props.networkConfiguration.isValid();
         },
         getModel: function() {
@@ -476,7 +476,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
             });
             this.props.networkConfiguration.isValid();
-            dispatcher.trigger('networkConfigurationUpdated');
+            dispatcher.trigger('dirtyNetworkConfig');
         },
         verifyNetworks: function() {
             this.setState({actionInProgress: true});
@@ -782,6 +782,17 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
     });
 
     var NetworkVerificationResult = React.createClass({
+        mixins: [
+            componentMixins.dispatcherMixin('dirtyNetworkConfig', 'hideVerificationTasks')
+        ],
+        getInitialState: function() {
+            return {
+                isDirtyNetworkConfig: false
+            };
+        },
+        hideVerificationTasks: function() {
+            this.setState({isDirtyNetworkConfig: true});
+        },
         getConnectionStatus: function(task, isFirstConnectionLine) {
             if (!task || (task && task.match({status: 'ready'}))) return 'stop';
             if (task && task.match({status: 'error'}) && !(isFirstConnectionLine &&
@@ -789,7 +800,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return 'success';
         },
         render: function() {
-            var task = this.props.task,
+            var task = !this.state.isDirtyNetworkConfig ? this.props.task : null,
                 ns = 'cluster_page.network_tab.verify_networks.';
 
             return (

@@ -98,6 +98,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 this.setState({actionInProgress: true});
                 deferred
                     .always(_.bind(function() {
+                        settings.isValid({models: this.state.configModels});
                         this.setState({
                             actionInProgress: false,
                             key: Date.now()
@@ -116,7 +117,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             this.setState({key: Date.now()});
         },
         loadInitialSettings: function() {
-            this.props.cluster.get('settings').set(_.cloneDeep(this.state.initialAttributes));
+            this.props.cluster.get('settings').set(_.cloneDeep(this.state.initialAttributes)).isValid({models: this.state.configModels});
         },
         updateInitialAttributes: function() {
             this.setState({initialAttributes: _.cloneDeep(this.props.cluster.get('settings').attributes)});

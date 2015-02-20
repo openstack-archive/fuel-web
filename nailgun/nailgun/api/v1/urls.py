@@ -167,6 +167,11 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
     NodeUnassignmentHandler,
 
+    r'/clusters/(?P<cluster_id>\d+)/vmware_attributes/?$',
+    VmwareAttributesHandler,
+    r'/clusters/(?P<cluster_id>\d+)/vmware_attributes/defaults/?$',
+    VmwareAttributesDefaultsHandler,
+
     r'/nodegroups/?$',
     NodeGroupCollectionHandler,
     r'/nodegroups/(?P<obj_id>\d+)/?$',
@@ -236,12 +241,6 @@ urls = (
 
     r'/settings/?$',
     MasterNodeSettingsHandler,
-
-    r'/vmware/(?P<cluster_id>\d+)/settings/?$',
-    VmwareAttributesHandler,
-
-    r'/vmware/(?P<cluster_id>\d+)/settings/defaults/?$',
-    VmwareAttributesDefaultsHandler,
 )
 
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]

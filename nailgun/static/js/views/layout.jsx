@@ -171,9 +171,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
     var NotificationsPopover = React.createClass({
         mixins: [componentMixins.backboneMixin('notifications')],
         showNodeInfo: function(id) {
-            var node = new models.Node({id: id});
-            node.deferred = node.fetch();
-            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: node, title: node.get('name')});
+            utils.showDialog(dialogs.ShowNodeInfoDialog, {nodeId: id});
         },
         toggle: function(visible) {
             this.props.togglePopover(visible);

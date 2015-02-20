@@ -57,9 +57,7 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
     Notification = React.createClass({
         mixins: [componentMixins.backboneMixin('notification')],
         showNodeInfo: function(id) {
-            var node = new models.Node({id: id});
-            node.deferred = node.fetch();
-            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: node, title: node.get('name')});
+            utils.showDialog(dialogs.ShowNodeInfoDialog, {nodeId: id});
         },
         markAsRead: function() {
             var notification = this.props.notification;

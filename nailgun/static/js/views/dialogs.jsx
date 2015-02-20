@@ -71,7 +71,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
                 <div className={cx(classes)} tabIndex="-1">
                     <div className='modal-header'>
                         <button type='button' className='close' onClick={this.close}>&times;</button>
-                        <h3>{this.props.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
+                        <h3>{this.props.title || this.state.dialogTitle || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
                     </div>
                     <div className='modal-body'>
                         {this.props.error ?
@@ -393,9 +393,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
 
     dialogs.ShowNodeInfoDialog = React.createClass({
         mixins: [dialogMixin],
+        getInitialState: function() {
+            return {dialogTitle: i18n('dialog.show_node.default_dialog_title')};
+        },
         goToConfigurationScreen: function(url) {
             this.close();
-            app.navigate('#cluster/' + this.props.node.get('cluster') + '/nodes/' + url + '/' + utils.serializeTabOptions({nodes: this.props.node.id}), {trigger: true});
+            app.navigate('#cluster/' + this.state.node.get('cluster') + '/nodes/' + url + '/' + utils.serializeTabOptions({nodes: this.state.node.id}), {trigger: true});
         },
         showSummary: function(meta, group) {
             var summary = '';
@@ -447,7 +450,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
             } catch (ignore) {}
             return !_.isNumber(value) && _.isEmpty(value) ? '\u00A0' : value;
         },
-        componentDidMount: function() {
+        componentWillMount: function() {
+            var node = new models.Node({id: this.props.nodeId});
+            node.fetch().done(_.bind(function() {
+                this.setState({
+                    node: node,
+                    dialogTitle: node.get('name') || node.get('mac')
+                });
+            }, this));
+        },
+        componentDidUpdate: function() {
             $('.accordion-body')
                 .on('show', function(e) {$(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-expand').addClass('icon-collapse');})
                 .on('hide', function(e) {$(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-collapse').addClass('icon-expand');})
@@ -457,17 +469,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
             $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
         },
         renderBody: function() {
-            var node = this.props.node,
-                meta = node.get('meta'),
-                groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'],
-                groups = _.sortBy(_.keys(meta), function(group) {return _.indexOf(groupOrder, group)}),
-                sortOrder = {
-                    disks: ['name', 'model', 'size'],
-                    interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed']
-                };
+            var node = this.state.node,
+                groups = [];
+            if (node) {
+                var meta = node.get('meta'),
+                    groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'],
+                    sortOrder = {
+                        disks: ['name', 'model', 'size'],
+                        interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed']
+                    };
+                groups = _.sortBy(_.keys(meta), function(group) {return _.indexOf(groupOrder, group)});
+            }
             return (
                 <div>
-                    {(node.deferred && node.deferred.state() == 'pending') ?
+                    {!node ?
                         <controls.ProgressBar />
                         :
                         <div>
@@ -544,10 +559,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
             );
         },
         renderFooter: function() {
-            var node = this.props.node;
+            var node = this.state.node;
             return (
                 <div>
-                    {node.get('cluster') &&
+                    {node && node.get('cluster') &&
                         <span>
                             <button className='btn btn-edit-networks' onClick={this.goToConfigurationScreen.bind(this, 'interfaces')}>{i18n('dialog.show_node.network_configuration_button')}</button>
                             <button className='btn btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>{i18n('dialog.show_node.disk_configuration_button')}</button>

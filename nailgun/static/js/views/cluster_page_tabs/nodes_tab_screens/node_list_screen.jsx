@@ -640,10 +640,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         showNodeDetails: function(e) {
             e.preventDefault();
-            utils.showDialog(dialogs.ShowNodeInfoDialog, {
-                node: this.props.node,
-                title: this.props.node.get('name') || this.props.node.get('mac')
-            });
+            utils.showDialog(dialogs.ShowNodeInfoDialog, {nodeId: this.props.node.id});
         },
         calculateNodeViewStatus: function() {
             var node = this.props.node;

@@ -58,8 +58,10 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
         mixins: [componentMixins.backboneMixin('notification')],
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
-            node.deferred = node.fetch();
-            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: node, title: node.get('name')});
+            node.deferred = node.fetch()
+                .done(function() {
+                    utils.showDialog(dialogs.ShowNodeInfoDialog, {node: node, title: node.get('name')});
+                });
         },
         markAsRead: function() {
             var notification = this.props.notification;

@@ -86,7 +86,7 @@ class ReleaseAction(Action):
         full_path = '{0}/networks'.format(dir_path)
         if params.download:
             networks = release.get_networks()
-            self.serializer.write_to_file(full_path, networks)
+            self.serializer.write_to_path(full_path, networks)
             print("Networks for release {0} "
                   "downloaded into {1}.yaml".format(release.id, full_path))
         elif params.upload:

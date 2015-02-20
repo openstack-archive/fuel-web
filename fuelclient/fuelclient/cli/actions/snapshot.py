@@ -12,6 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import sys
+
+import yaml
+
 from fuelclient.cli.actions.base import Action
 import fuelclient.cli.arguments as Args
 from fuelclient.cli.formatting import download_snapshot_with_progress_bar
@@ -27,8 +31,11 @@ class SnapshotAction(Action):
         super(SnapshotAction, self).__init__()
         self.args = (
             Args.get_dir_arg("Directory to which download snapshot."),
+            Args.get_boolean_arg("conf",
+                                 help_="Provide this flag to generate conf")
         )
         self.flag_func_map = (
+            ('conf', self.get_snapshot_config),
             (None, self.get_snapshot),
         )
 
@@ -38,8 +45,17 @@ class SnapshotAction(Action):
 
             To download diagnostic snapshot to specific directory:
                 fuel snapshot --dir path/to/directory
+
+            To specify config for snapshoting
+                fuel snapshot < conf.yaml
+
         """
-        snapshot_task = SnapshotTask.start_snapshot_task()
+        if sys.stdin.isatty():
+            conf = {}
+        else:
+            conf = yaml.load(sys.stdin.read())
+
+        snapshot_task = SnapshotTask.start_snapshot_task(conf)
         self.serializer.print_to_output(
             snapshot_task.data,
             "Generating dump..."
@@ -49,3 +65,14 @@ class SnapshotAction(Action):
             snapshot_task.connection.root + snapshot_task.data["message"],
             directory=params.dir
         )
+
+    def get_snapshot_config(self, params):
+        """Download default config for snapshot
+
+                fuel snapshot --conf > dump_conf.yaml
+
+            To use json formatter
+                fuel snapshot --conf --json
+        """
+        conf = SnapshotTask.get_default_config()
+        self.serializer.write_to_file(sys.stdout, conf)

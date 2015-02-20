@@ -93,7 +93,7 @@ class Node(BaseObject):
         )
         if os.path.exists(attribute_path):
             os.remove(attribute_path)
-        return (serializer or self.serializer).write_to_file(
+        return (serializer or self.serializer).write_to_path(
             attribute_path,
             attributes
         )

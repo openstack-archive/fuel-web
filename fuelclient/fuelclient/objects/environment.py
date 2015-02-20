@@ -133,14 +133,14 @@ class Environment(BaseObject):
 
     def write_network_data(self, network_data, directory=os.curdir,
                            serializer=None):
-        return (serializer or self.serializer).write_to_file(
+        return (serializer or self.serializer).write_to_path(
             self.get_network_data_path(directory),
             network_data
         )
 
     def write_settings_data(self, settings_data, directory=os.curdir,
                             serializer=None):
-        return (serializer or self.serializer).write_to_file(
+        return (serializer or self.serializer).write_to_path(
             self.get_settings_data_path(directory),
             settings_data
         )
@@ -261,7 +261,7 @@ class Environment(BaseObject):
         os.makedirs(dir_name)
         if isinstance(facts, dict):
             engine_file_path = os.path.join(dir_name, "engine")
-            (serializer or self.serializer).write_to_file(
+            (serializer or self.serializer).write_to_path(
                 engine_file_path, facts["engine"])
             facts = facts["nodes"]
             name_template = u"{name}"
@@ -272,7 +272,7 @@ class Environment(BaseObject):
                 dir_name,
                 name_template.format(**_fact)
             )
-            (serializer or self.serializer).write_to_file(fact_path, _fact)
+            (serializer or self.serializer).write_to_path(fact_path, _fact)
         return dir_name
 
     def read_deployment_info(self, fact_type,

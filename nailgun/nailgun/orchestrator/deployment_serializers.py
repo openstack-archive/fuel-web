@@ -78,7 +78,7 @@ class VmwareDeploymentSerializerMixin(object):
                         'vc_user': zone.get('vcenter_username', ''),
                         'vc_password': zone.get('vcenter_password', ''),
                         'service_name': compute.get('service_name', ''),
-                        'vc_cluster': compute.get('vshpere_cluster', ''),
+                        'vc_cluster': compute.get('vsphere_cluster', ''),
                         'datastore_regex': compute.get('datastore_regex', '')
                     }
 

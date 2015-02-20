@@ -46,8 +46,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 }
             }
             this.getModel().set(attribute, value);
-            dispatcher.trigger('networkConfigurationUpdated');
             this.props.networkConfiguration.isValid();
+            dispatcher.trigger('networkVerificationResultToHide');
         },
         getModel: function() {
             return this.props.network || this.props.networkConfiguration.get('networking_parameters');
@@ -354,13 +354,22 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'add remove change:status'
-            })
+            }),
+            componentMixins.dispatcherMixin('networkVerificationResultToHide', 'verificationResultShouldBeHidden'),
+            componentMixins.dispatcherMixin('networkVerificationResultToShow', 'verificationResultShouldBeShown')
         ],
         getInitialState: function() {
             return {
                 loading: true,
-                initialConfiguration: false
+                initialConfiguration: false,
+                hideVerificationResult: false
             };
+        },
+        verificationResultShouldBeHidden: function() {
+            this.setState({hideVerificationResult: true});
+        },
+        verificationResultShouldBeShown: function() {
+            this.setState({hideVerificationResult: false});
         },
         componentDidMount: function() {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
@@ -377,8 +386,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
-            dispatcher.trigger('networkConfigurationUpdated');
             this.props.cluster.get('networkConfiguration').isValid();
+            if (!this.state.hideVerificationResult) {
+                dispatcher.trigger('networkConfigurationUpdated');
+            }
+            this.setState({hideVerificationResult: false});
         },
         loadInitialConfiguration: function() {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
@@ -415,6 +427,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 updateInitialConfiguration={this.updateInitialConfiguration}
                                 revertChanges={this.revertChanges}
                                 hasChanges={this.hasChanges}
+                                hideVerificationResult={this.state.hideVerificationResult}
                             />
                         </div>
                     }
@@ -476,7 +489,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
             });
             this.props.networkConfiguration.isValid();
-            dispatcher.trigger('networkConfigurationUpdated');
+            dispatcher.trigger('networkVerificationResultToHide');
         },
         verifyNetworks: function() {
             this.setState({actionInProgress: true});
@@ -492,6 +505,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 },
                 ns = 'cluster_page.network_tab.verify_networks.verification_error.';
 
+            dispatcher.trigger('networkVerificationResultToShow');
             task.save({}, options)
                 .fail(function() {
                     utils.showErrorDialog({
@@ -518,6 +532,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     }
                 }, this))
                 .fail(_.bind(function() {
+                    dispatcher.trigger('networkVerificationResultToShow');
                     this.props.cluster.fetchRelated('tasks');
                 }, this))
                 .always(_.bind(function() {
@@ -641,6 +656,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             key='network_verification'
                             task={cluster.task({group: 'network'})}
                             networks={this.props.networkConfiguration.get('networks')}
+                            hideVerificationResult={this.props.hideVerificationResult}
                         />
                     </div>
                     {this.renderButtons()}
@@ -792,6 +808,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             var task = this.props.task,
                 ns = 'cluster_page.network_tab.verify_networks.';
 
+            if (this.props.hideVerificationResult) task = null;
             return (
                 <div>
                     <div className='page-control-box'>

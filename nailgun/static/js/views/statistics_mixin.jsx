@@ -172,7 +172,7 @@ define([
                         {isMirantisIso ?
                             <p>
                                 {i18n(ns + 'privacy_policy')}
-                                <a href='https://www.mirantis.com/company/privacy-policy/' target='_blank'>{i18n(ns + 'privacy_policy_link')}</a>.
+                                <a href='https://www.mirantis.com/company/privacy-policy/' target='_blank'>{i18n('common.here_link')}</a>.
                             </p>
                         :
                             <p>

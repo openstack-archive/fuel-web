@@ -46,7 +46,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 }
             }
             this.getModel().set(attribute, value);
-            dispatcher.trigger('networkConfigurationUpdated');
             this.props.networkConfiguration.isValid();
         },
         getModel: function() {
@@ -377,7 +376,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
-            dispatcher.trigger('networkConfigurationUpdated');
+            //dispatcher.trigger('networkConfigurationUpdated');
             this.props.cluster.get('networkConfiguration').isValid();
         },
         loadInitialConfiguration: function() {
@@ -448,7 +447,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         getInitialState: function() {
             return {
-                actionInProgress: false
+                actionInProgress: false,
+                verificationPerformed: false
             };
         },
         isLocked: function() {
@@ -476,7 +476,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
             });
             this.props.networkConfiguration.isValid();
-            dispatcher.trigger('networkConfigurationUpdated');
         },
         verifyNetworks: function() {
             this.setState({actionInProgress: true});
@@ -492,6 +491,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 },
                 ns = 'cluster_page.network_tab.verify_networks.verification_error.';
 
+            this.setState({verificationPerformed: true});
             task.save({}, options)
                 .fail(function() {
                     utils.showErrorDialog({
@@ -641,6 +641,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             key='network_verification'
                             task={cluster.task({group: 'network'})}
                             networks={this.props.networkConfiguration.get('networks')}
+                            hasChanges={this.props.hasChanges()}
+                            verificationPerformed={this.state.verificationPerformed}
                         />
                     </div>
                     {this.renderButtons()}
@@ -791,6 +793,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         render: function() {
             var task = this.props.task,
                 ns = 'cluster_page.network_tab.verify_networks.';
+
+            if (task && !this.props.verificationPerformed) {
+                task = !this.props.hasChanges || task.match({status: 'running'}) ? this.props.task : null;
+            }
 
             return (
                 <div>

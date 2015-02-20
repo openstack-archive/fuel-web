@@ -23,9 +23,10 @@ define(
     'models',
     'expression',
     'jsx!component_mixins',
-    'jsx!views/controls'
+    'jsx!views/controls',
+    'jsx!views/custom_controls'
 ],
-function($, _, i18n, React, utils, models, Expression, componentMixins, controls) {
+function($, _, i18n, React, utils, models, Expression, componentMixins, controls, customControls) {
     'use strict';
 
     var SettingsTab = React.createClass({
@@ -319,8 +320,15 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     </legend>
                     <div className='settings-group table-wrapper'>
                         {_.map(sortedSettings, function(settingName) {
-                            var setting = group[settingName],
-                                path = this.props.makePath(this.props.groupName, settingName);
+                            var setting = group[settingName];
+
+                            // support of custom controls
+                            var CustomControl = customControls[setting.type];
+                            if (CustomControl) {
+                                return <CustomControl {...setting} {... _.pick(this.props, 'cluster', 'locked', 'settings')} key={setting.type} />;
+                            }
+
+                            var path = this.props.makePath(this.props.groupName, settingName);
                             if (!this.checkRestrictions('hide', path).result) {
                                 var error = this.props.settings.validationError && this.props.settings.validationError[path],
                                     processedSettingRestrictions = this.processRestrictions(this.props.groupName, settingName),

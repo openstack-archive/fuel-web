@@ -354,7 +354,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 taskProgress = task && task.get('progress') || 0,
                 infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
                 itemClass = 'deployment-control-item-box',
-                isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
+                isDeploymentImpossible =
+                    cluster.get('release').get('state') == 'unavailable' ||
+                    (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment()) ||
+                    !cluster.task({name: 'check_connectivity', status: 'ready'});
             return (
                 <div className='cluster-deploy-placeholder'>
                     {task ? (

@@ -2585,11 +2585,13 @@ legend {
     font-size: @font-size-base;
     .position(relative, @top: -6px, @left: -2px);
   }
+  .buttons {
+    margin-bottom: 15px;
+  }
   .parameter-box {
     clear: both;
     .parameter-name {
       width: 100%;
-      text-align: right;
       margin: 0 10px 0 0;
       padding: 0 10px;
       .label-wrapper {
@@ -2648,6 +2650,9 @@ legend {
 
 &.checkbox-or-radio .parameter-name { float: none; }
 .label-wrapper { margin-top: 10px; }
+.input-wrapper {
+  display: inline-block;
+}
 
 button { margin: 0 3px; }
 
@@ -3844,4 +3849,27 @@ i.btn-cluster-details {
 
 .ui-sortable-placeholder {
   display: none;
+}
+
+.repos {
+  input[type=text] {
+    width: 500px;
+  }
+  .repo-group {
+    > div {
+      float: left;
+      clear: none;
+    }
+    .repo-name input {
+      width: 100px;
+      margin: 0 16px 10px 10px;
+    }
+    .btn-link {
+      padding: 0 5px;
+    }
+    .parameter-description {
+      float: right;
+      margin-left: 0;
+    }
+  }
 }

@@ -100,7 +100,16 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     {input}
                     <span>&nbsp;</span>
                 </div>
-            ) : input;
+            ) : (
+                <div key='input-wrapper'>
+                    {input}
+                    {this.props.deleteInput &&
+                        <button className='btn btn-link btn-delete-input' onClick={this.props.deleteInput}>
+                            <i className='icon-minus-circle' />
+                        </button>
+                    }
+                </div>
+            );
         },
         renderToggleablePasswordAddon: function() {
             return this.props.toggleable ? (

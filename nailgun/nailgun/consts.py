@@ -117,8 +117,11 @@ NETWORK_INTERFACE_TYPES = Enum(
     'bond'
 )
 
+NETWORK_VIP_TYPES = Enum(
+    'vrouter',
+)
+
 BOND_MODES = Enum(
-    # same for both OVS and linux
     'active-backup',
     # OVS modes
     'balance-slb',

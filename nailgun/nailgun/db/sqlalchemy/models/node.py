@@ -328,6 +328,7 @@ class NodeNICInterface(Base):
     ip_addr = Column(String(25))
     netmask = Column(String(25))
     state = Column(String(25))
+    interface_properties = Column(JSON, default={}, nullable=False)
     parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
 
     @property
@@ -360,6 +361,7 @@ class NodeBondInterface(Base):
         secondary=NetworkBondAssignment.__table__,
         order_by="NetworkGroup.id")
     state = Column(String(25))
+    interface_properties = Column(JSON, default={}, nullable=False)
     mode = Column(
         Enum(
             *consts.BOND_MODES,

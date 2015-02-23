@@ -55,6 +55,8 @@ class NailgunReceiver(object):
         error_msg = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
+        if status in [consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error]:
+            progress = 100
 
         # locking tasks on cluster
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)

@@ -67,7 +67,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEqual(resp.status_code, 204)
+        self.assertEqual(resp.status_code, 202)
 
     def test_node_valid_metadata_gets_updated(self):
         new_metadata = self.env.default_metadata()

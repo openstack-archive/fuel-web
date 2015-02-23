@@ -33,6 +33,7 @@ class IPAddr(Base):
                                          ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     ip_addr = Column(String(25), nullable=False)
+    vip_type = Column(String(25), nullable=True)
 
     network_data = relationship("NetworkGroup")
     node_data = relationship("Node")

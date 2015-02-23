@@ -308,10 +308,12 @@
                             "pending_addition": "Pending Addition",
                             "pending_deletion": "Pending Deletion",
                             "ready": "Ready",
+                            "removing": "Removing",
                             "provisioning": "Installing __os__",
                             "provisioned": "__os__ is installed",
                             "deploying": "Installing OpenStack"
                         },
+                        "remove": "Remove",
                         "discard_addition": "Discard Addition",
                         "discard_deletion": "Discard Deletion",
                         "view_logs": "View Logs",
@@ -639,6 +641,10 @@
                     "discard_button": "Discard",
                     "alert_text": "Are you sure you want to discard these changes?",
                     "cant_discard": "Can't discard node changes"
+                },
+                "remove_node": {
+                    "default_message": "Fuel will remove this node from its database. This operation will not try to erase MBR or any data on this node. If you power on the node, it will boot bootstrap (discovery) system, and node re-appear in Fuel as new, unallocated server.",
+                    "title": "Remove Node"
                 },
                 "remove_cluster": {
                     "title": "Delete Environment",

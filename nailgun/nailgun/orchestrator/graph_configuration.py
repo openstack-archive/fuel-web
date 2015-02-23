@@ -17,16 +17,19 @@
 #(dshulyak) temporary, this config will be moved to fuel-library
 #until we will stabilize our api
 DEPLOYMENT_CURRENT = """
-- id: deploy
+
+- id: deploy_start
   type: stage
-- id: pre_deployment
+
+- id: deploy_end
   type: stage
-- id: post_deployment
-  type: stage
+  requires: [deploy_start]
+
 - id: primary-controller
   type: group
   role: [primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -34,7 +37,7 @@ DEPLOYMENT_CURRENT = """
   type: group
   role: [controller]
   requires: [primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
@@ -43,7 +46,7 @@ DEPLOYMENT_CURRENT = """
   type: group
   role: [cinder]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
@@ -51,14 +54,15 @@ DEPLOYMENT_CURRENT = """
   type: group
   role: [compute]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
 - id: zabbix-server
   type: group
   role: [zabbix-server]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -66,7 +70,7 @@ DEPLOYMENT_CURRENT = """
   type: group
   role: [mongo]
   requires: [zabbix-server]
-  required_for: [deploy, primary-controller, controller]
+  required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
       type: parallel
@@ -74,7 +78,7 @@ DEPLOYMENT_CURRENT = """
   type: group
   role: [primary-mongo]
   requires: [mongo]
-  required_for: [deploy, primary-controller, controller]
+  required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
       type: one_by_one
@@ -82,23 +86,25 @@ DEPLOYMENT_CURRENT = """
   type: group
   role: [ceph-osd]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
 - id: base-os
   type: group
   role: [base-os]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
+
 - id: deploy_legacy
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
            zabbix-server, primary-mongo, mongo]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules
@@ -106,16 +112,20 @@ DEPLOYMENT_CURRENT = """
 """
 
 DEPLOYMENT_50 = """
-- id: deploy
+
+- id: deploy_start
   type: stage
-- id: pre_deployment
+
+- id: deploy_end
   type: stage
-- id: post_deployment
-  type: stage
+  requires: [deploy_start]
+
+
 - id: primary-controller
   type: group
   role: [primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -123,7 +133,7 @@ DEPLOYMENT_50 = """
   type: group
   role: [controller]
   requires: [primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: one_by_one
@@ -131,7 +141,7 @@ DEPLOYMENT_50 = """
   type: group
   role: [cinder]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
@@ -139,14 +149,15 @@ DEPLOYMENT_50 = """
   type: group
   role: [compute]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
 - id: zabbix-server
   type: group
   role: [zabbix-server]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -154,7 +165,7 @@ DEPLOYMENT_50 = """
   type: group
   role: [mongo]
   requires: [zabbix-server]
-  required_for: [deploy, primary-controller, controller]
+  required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
       type: one_by_one
@@ -162,7 +173,7 @@ DEPLOYMENT_50 = """
   type: group
   role: [primary-mongo]
   requires: [mongo]
-  required_for: [deploy, primary-controller, controller]
+  required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
       type: one_by_one
@@ -170,16 +181,18 @@ DEPLOYMENT_50 = """
   type: group
   role: [ceph-osd]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
+
 - id: deploy_legacy
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
            zabbix-server, primary-mongo, mongo]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules
@@ -187,16 +200,19 @@ DEPLOYMENT_50 = """
 """
 
 PATCHING = """
-- id: deploy
+
+- id: deploy_start
   type: stage
-- id: pre_deployment
+
+- id: deploy_end
   type: stage
-- id: post_deployment
-  type: stage
+  requires: [deploy_start]
+
 - id: primary-controller
   type: group
   role: [primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -204,7 +220,7 @@ PATCHING = """
   type: group
   role: [controller]
   requires: [primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: one_by_one
@@ -212,7 +228,7 @@ PATCHING = """
   type: group
   role: [cinder]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: one_by_one
@@ -220,14 +236,15 @@ PATCHING = """
   type: group
   role: [compute]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: one_by_one
 - id: zabbix-server
   type: group
   role: [zabbix-server]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -235,7 +252,7 @@ PATCHING = """
   type: group
   role: [mongo]
   requires: [zabbix-server]
-  required_for: [deploy, primary-controller, controller]
+  required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
       type: one_by_one
@@ -243,7 +260,7 @@ PATCHING = """
   type: group
   role: [primary-mongo]
   requires: [mongo]
-  required_for: [deploy, primary-controller, controller]
+  required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
       type: one_by_one
@@ -251,16 +268,18 @@ PATCHING = """
   type: group
   role: [ceph-osd]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: one_by_one
+
 - id: deploy_legacy
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
            zabbix-server, primary-mongo, mongo]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules

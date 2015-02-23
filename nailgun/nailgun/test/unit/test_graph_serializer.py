@@ -26,14 +26,27 @@ from nailgun.test import base
 
 
 TASKS = """
+
+- id: pre_deployment_start
+  type: stage
+
 - id: pre_deployment
   type: stage
-- id: deploy
+  requires: [pre_deployment_start]
+
+- id: deploy_start
   type: stage
+  requires: [pre_deployment]
+
+- id: deploy_end
+  type: stage
+  requires: [deploy_start]
+
 - id: primary-controller
   type: group
   role: [primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     strategy:
       type: one_by_one
@@ -41,7 +54,7 @@ TASKS = """
   type: group
   role: [controller]
   requires: [primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
@@ -50,7 +63,7 @@ TASKS = """
   type: group
   role: [cinder]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
       type: parallel
@@ -58,7 +71,7 @@ TASKS = """
   type: group
   role: [compute]
   requires: [controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     strategy:
         type: parallel
@@ -66,7 +79,7 @@ TASKS = """
   type: group
   role: [network]
   requires: [controller]
-  required_for: [compute, deploy]
+  required_for: [compute, deploy_end]
   parameters:
     strategy:
         type: parallel
@@ -77,7 +90,7 @@ SUBTASKS = """
   type: puppet
   requires: [setup_network]
   groups: [controller, primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
   parameters:
     puppet_manifests: /etc/puppet/manifests/controller.pp
     puppet_modules: /etc/puppet/modules
@@ -85,18 +98,20 @@ SUBTASKS = """
 - id: setup_network
   type: puppet
   groups: [controller, primary-controller]
-  required_for: [deploy]
+  required_for: [deploy_end]
+  requires: [deploy_start]
   parameters:
     puppet_manifest: run_setup_network.pp
     puppet_modules: /etc/puppet
     timeout: 120
 
 - id: setup_anything
-  stage: pre_deployment
+  requires: [pre_deployment_start]
+  required_for: [pre_deployment]
   type: shell
 - id: setup_more_stuff
-  stage: pre_deployment
   type: shell
+  requires_for: [pre_deployment]
   requires: [setup_anything]
 """
 
@@ -399,62 +414,80 @@ class TestMixedGroupsTraversal(GroupsTraversalTest):
 
 
 COMPLEX_DEPENDENCIES = """
-- id: pre_deployment
-  type: stage
-- id: deploy
-  type: stage
-- id: post_deployment
+- id: pre_deployment_start
   type: stage
 
+- id: pre_deployment
+  type: stage
+  requires: [pre_deployment_start]
+
+- id: deploy_start
+  type: stage
+  requires: [pre_deployment]
+
+- id: deploy_end
+  type: stage
+  requires: [deploy_start]
+
+- id: post_deployment_start
+  type: stage
+  requires: [deploy_end]
+
+- id: post_deployment
+  type: stage
+  requires: [post_deployment_start]
+
 - id: pre_a
-  stage: pre_deployment
+  requires: [pre_deployment_start]
   type: shell
 - id: pre_b
-  stage: pre_deployment
   requires: [pre_a]
   type: shell
 - id: pre_c
-  stage: pre_deployment
-  requires: [pre_a]
+  required_for: [pre_deployment]
   type: shell
 - id: pre_d
-  stage: pre_deployment
+  required_for: [pre_deployment]
   requires: [pre_b]
   type: shell
 
 - id: group_a
   type: group
-  stage: deploy
+  requires: [deploy_start]
+  required_for: [deploy_end]
 - id: group_b
   type: group
-  stage: deploy
+  required_for: [deploy_end]
   requires: [group_a]
 - id: group_c
   type: group
-  stage: deploy
+  required_for: [deploy_end]
+  requires: [deploy_start]
 
 - id: task_a
   groups: [group_a, group_b]
-  stage: deploy
+  required_for: [deploy_end]
+  requires: [deploy_start]
   type: puppet
 - id: task_b
   requires: [task_a]
+  required_for: [deploy_end]
   type: puppet
-  stage: deploy
   groups: [group_a, group_c]
 - id: task_c
   requires: [task_a]
   type: puppet
-  stage: deploy
+  required_for: [deploy_end]
   groups: [group_a, group_b]
 - id: task_d
   requires: [task_b, task_c]
   type: puppet
   groups: [group_b]
-  stage: deploy
+  required_for: [deploy_end]
 
 - id: post_a
-  stage: post_deployment
+  requires: [post_deployment_start]
+  required_for: [post_deployment]
   type: shell
 """
 
@@ -472,18 +505,15 @@ class TestFindGraph(base.BaseTestCase):
         subgraph = self.graph.find_subgraph(end="pre_deployment")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy',
-             'pre_deployment', 'group_b', 'group_a', 'group_c',
-             'post_deployment'])
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a',
+             'pre_deployment', 'pre_deployment_start'])
 
     def test_end_at_task_in_pre_deployment(self):
         """Task pre_d doesnt requires pre_c, but requires pre_b."""
         subgraph = self.graph.find_subgraph(end="pre_d")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['pre_d', 'pre_b', 'pre_a', 'deploy',
-             'pre_deployment', 'group_b', 'group_a', 'group_c',
-             'post_deployment'])
+            ['pre_d', 'pre_b', 'pre_a', 'pre_deployment_start'])
 
     def test_end_at_deploy(self):
         """All tasks should be included because deploy is last node
@@ -491,11 +521,12 @@ class TestFindGraph(base.BaseTestCase):
         All tasks from pre_deployment and deploy stage will be added.
         post_a not included
         """
-        subgraph = self.graph.find_subgraph(end="deploy")
+        subgraph = self.graph.find_subgraph(end="deploy_end")
 
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy', 'post_deployment',
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy_end', 'deploy_start',
+             'pre_deployment_start',
              'pre_deployment', 'group_c', 'group_b', 'group_a', 'task_a',
              'task_b', 'task_c', 'task_d'])
 
@@ -516,9 +547,9 @@ class TestFindGraph(base.BaseTestCase):
         subgraph = self.graph.find_subgraph(end="group_c")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy', 'pre_deployment',
-             'group_c', 'group_b', 'group_a', 'task_a', 'task_b',
-             'post_deployment'])
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'pre_deployment',
+             'pre_deployment_start', 'deploy_start',
+             'group_c', 'task_a', 'task_b'])
 
     def test_end_at_task_that_has_two_parents(self):
         """Both parents should be in the graph.
@@ -527,25 +558,26 @@ class TestFindGraph(base.BaseTestCase):
         subgraph = self.graph.find_subgraph(end="task_d")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'post_deployment', 'deploy',
-             'pre_deployment', 'group_c', 'group_b', 'group_a', 'task_a',
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy_start',
+             'pre_deployment_start',
+             'pre_deployment', 'task_a',
              'task_b', 'task_c', 'task_d'])
 
     def test_end_at_first_task(self):
-        """Only that task will be present."""
         subgraph = self.graph.find_subgraph(end="task_a")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['pre_d', 'pre_c', 'pre_b', 'pre_a', 'deploy',
-             'pre_deployment', 'group_c', 'group_b', 'group_a', 'task_a',
-             'post_deployment'])
+            ['pre_d', 'pre_c', 'pre_b', 'pre_a',
+             'pre_deployment', 'task_a', 'pre_deployment_start',
+             'deploy_start'])
 
     def test_start_at_task_a(self):
         """Everything except predeployment tasks will be included."""
         subgraph = self.graph.find_subgraph(start="task_a")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['deploy', 'pre_deployment', 'group_c', 'group_b', 'group_a',
+            ['deploy_end', 'post_deployment_start', 'group_c', 'group_b',
+             'group_a',
              'task_a', 'task_b', 'task_c', 'task_d', 'post_deployment',
              'post_a'])
 
@@ -554,17 +586,16 @@ class TestFindGraph(base.BaseTestCase):
         subgraph = self.graph.find_subgraph(start="pre_deployment")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['deploy', 'pre_deployment', 'group_c', 'group_b', 'group_a',
+            ['deploy_end', 'pre_deployment', 'group_c', 'group_b', 'group_a',
              'task_a', 'task_b', 'task_c', 'task_d', 'post_deployment',
-             'post_a'])
+             'post_a', 'post_deployment_start', 'deploy_start'])
 
     def test_start_at_post_a(self):
         """Only post_a task."""
         subgraph = self.graph.find_subgraph(start="post_a")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['deploy', 'pre_deployment', 'group_c', 'group_b', 'group_a',
-             'post_deployment', 'post_a'])
+            ['post_deployment', 'post_a'])
 
     def test_start_pre_a_end_at_pre_d(self):
         """pre_c will not be included, because this is not a dependency
@@ -573,19 +604,19 @@ class TestFindGraph(base.BaseTestCase):
         subgraph = self.graph.find_subgraph(start="pre_a", end="pre_d")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['pre_d', 'pre_b', 'pre_a', 'deploy', 'post_deployment',
-             'pre_deployment', 'group_c', 'group_b', 'group_a'])
+            ['pre_d', 'pre_b', 'pre_a'])
 
     def test_start_pre_a_end_at_post_a(self):
-        """All tasks will be included."""
         subgraph = self.graph.find_subgraph(start="pre_a", end="post_a")
         self.assertItemsEqual(
-            subgraph.nodes(), [t['id'] for t in self.tasks])
+            subgraph.nodes(),
+            ['deploy_end', 'pre_deployment', 'group_c', 'group_b', 'group_a',
+             'task_a', 'task_b', 'task_c', 'task_d', 'post_deployment_start',
+             'post_a', 'pre_d', 'pre_b', 'pre_a', 'deploy_start'])
 
     def test_start_task_a_end_at_task_d(self):
         """All tasks in deploy stage will be included."""
         subgraph = self.graph.find_subgraph(start="task_a", end="task_d")
         self.assertItemsEqual(
             subgraph.nodes(),
-            ['post_deployment', 'deploy', 'pre_deployment', 'group_c',
-             'group_b', 'group_a', 'task_a', 'task_b', 'task_c', 'task_d'])
+            ['task_a', 'task_b', 'task_c', 'task_d'])

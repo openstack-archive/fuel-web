@@ -652,8 +652,37 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         self.db.flush()
         return cluster_db
 
+    def add_nics_properties(self, cluster):
+        nodes_list = []
+        for node in cluster.nodes:
+            resp = self.app.get(
+                reverse('NodeNICsHandler', kwargs={'node_id': node.id}),
+                headers=self.default_headers
+            )
+            self.assertEquals(200, resp.status_code)
+            interfaces = jsonutils.loads(resp.body)
+            for iface in interfaces:
+                self.assertEqual(iface['interface_properties'],
+                                 {
+                                     'mtu': None,
+                                     'disable_offloading': False
+                                 })
+                if iface['name'] == 'eth0':
+                    iface['interface_properties'] = {
+                        'mtu': 1500,
+                        'disable_offloading': True
+                    }
+            nodes_list.append({'id': node.id, 'interfaces': interfaces})
+        resp_put = self.app.put(
+            reverse('NodeCollectionNICsHandler'),
+            jsonutils.dumps(nodes_list),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp_put.status_code, 200)
+
     def test_vlan_schema(self):
         cluster = self.create_env(segment_type='vlan')
+        self.add_nics_properties(cluster)
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -669,8 +698,11 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             self.assertEqual(scheme['version'], '1.1')
             self.assertEqual(scheme['provider'], 'lnx')
             self.assertEqual(
-                set(scheme['interfaces'].keys()),
-                set(['eth0', 'eth1'])
+                scheme['interfaces'],
+                {'eth0': {'mtu': 1500,
+                          'vendor_specific': {
+                              'disable_offloading': True}},
+                 'eth1': {}}
             )
             br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-prv'])
             role_dict = {'storage': 'br-storage',
@@ -741,6 +773,9 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                        node.id,
                                        bond_properties={
                                            'mode': consts.BOND_MODES.balance_rr
+                                       },
+                                       interface_properties={
+                                           'mtu': 9000
                                        })
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
@@ -781,7 +816,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                  'name': 'lnx_bond',
                  'interfaces': ['eth1', 'eth2'],
                  'bond_properties': {'mode': 'balance-rr'},
-                 'interface_properties': {}}
+                 'interface_properties': {'mtu': 9000}}
             ]
             self.assertEqual(
                 node['network_scheme']['transformations'],
@@ -790,6 +825,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
 
     def test_gre_schema(self):
         cluster = self.create_env(segment_type='gre')
+        self.add_nics_properties(cluster)
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -805,8 +841,11 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             self.assertEqual(scheme['version'], '1.1')
             self.assertEqual(scheme['provider'], 'lnx')
             self.assertEqual(
-                set(scheme['interfaces'].keys()),
-                set(['eth0', 'eth1'])
+                scheme['interfaces'],
+                {'eth0': {'mtu': 1500,
+                          'vendor_specific': {
+                              'disable_offloading': True}},
+                 'eth1': {}}
             )
             br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin'])
             role_dict = {'storage': 'br-storage',
@@ -875,6 +914,9 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                     'xmit_hash_policy': consts.BOND_XMIT_HASH_POLICY.layer2,
                     'lacp_rate': consts.BOND_LACP_RATES.slow,
                     'type__': consts.BOND_TYPES.linux
+                },
+                interface_properties={
+                    'mtu': 9000
                 })
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
@@ -911,7 +953,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                  'bond_properties': {'mode': '802.3ad',
                                      'xmit_hash_policy': 'layer2',
                                      'lacp_rate': 'slow'},
-                 'interface_properties': {}}
+                 'interface_properties': {'mtu': 9000}}
             ]
             self.assertEqual(
                 node['network_scheme']['transformations'],

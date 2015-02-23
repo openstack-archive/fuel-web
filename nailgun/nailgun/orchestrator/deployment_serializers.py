@@ -509,7 +509,11 @@ class NovaNetworkDeploymentSerializer61(
             attrs['roles']['novanetwork/fixed'] = fixed_sub_iface
 
         for iface in node.nic_interfaces:
-            attrs['interfaces'][iface.name] = {}
+            if iface.bond:
+                attrs['interfaces'][iface.name] = {}
+            else:
+                attrs['interfaces'][iface.name] = \
+                    nm.get_iface_properties(iface)
 
         attrs['transformations'] = \
             cls.generate_transformations(node, nm, nets_by_ifaces,
@@ -1108,7 +1112,11 @@ class NeutronNetworkDeploymentSerializer61(
 
         # Fill up interfaces.
         for iface in node.nic_interfaces:
-            attrs['interfaces'][iface.name] = {}
+            if iface.bond:
+                attrs['interfaces'][iface.name] = {}
+            else:
+                attrs['interfaces'][iface.name] = \
+                    nm.get_iface_properties(iface)
 
         # Add bridges for networks.
         brnames = ['br-fw-admin', 'br-mgmt', 'br-storage']

@@ -456,9 +456,8 @@ class NovaNetworkDeploymentSerializer61(
         # Fill up ports and bonds.
         bonded_ifaces = [x for x in node.nic_interfaces if x.bond]
         for iface in node.interfaces:
-            if iface.type == iface_types.ether:
-                attrs['interfaces'][iface.name] = {}
             if iface in bonded_ifaces:
+                attrs['interfaces'][iface.name] = {}
                 # Add ports for all tagged networks on every slave NIC.
                 if iface.name in nets_by_ifaces:
                     for net in nets_by_ifaces[iface.name]:
@@ -472,6 +471,8 @@ class NovaNetworkDeploymentSerializer61(
                 continue
 
             if iface.type == iface_types.ether:
+                attrs['interfaces'][iface.name] = \
+                    nm.get_iface_properties(iface)
                 # Add ports for all networks on every unbonded NIC.
                 if iface.name in nets_by_ifaces:
                     for net in nets_by_ifaces[iface.name]:
@@ -1178,9 +1179,8 @@ class NeutronNetworkDeploymentSerializer61(
         # Fill up interfaces and bonds.
         bonded_ifaces = [x for x in node.nic_interfaces if x.bond]
         for iface in node.interfaces:
-            if iface.type == iface_types.ether:
-                attrs['interfaces'][iface.name] = {}
             if iface in bonded_ifaces:
+                attrs['interfaces'][iface.name] = {}
                 # Add ports for all tagged networks on every slave NIC.
                 if iface.name in nets_by_ifaces:
                     for net in nets_by_ifaces[iface.name]:
@@ -1194,6 +1194,8 @@ class NeutronNetworkDeploymentSerializer61(
                 continue
 
             if iface.type == iface_types.ether:
+                attrs['interfaces'][iface.name] = \
+                    nm.get_iface_properties(iface)
                 # Add ports for all networks on every unbonded NIC.
                 if iface.name in nets_by_ifaces:
                     for net in nets_by_ifaces[iface.name]:

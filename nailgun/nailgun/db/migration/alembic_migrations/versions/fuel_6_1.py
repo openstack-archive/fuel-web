@@ -162,6 +162,21 @@ def upgrade_schema():
                         index=True
                     ),
                     sa.PrimaryKeyConstraint('id'))
+
+    op.drop_constraint('node_roles_node_fkey', 'node_roles')
+    op.create_foreign_key(
+        'node_roles_node_fkey', 'node_roles', 'nodes', ['node'], ['id'],
+        ondelete='CASCADE')
+
+    op.drop_constraint('pending_node_roles_node_fkey', 'pending_node_roles')
+    op.create_foreign_key(
+        'pending_node_roles_node_fkey', 'pending_node_roles', 'nodes',
+        ['node'], ['id'], ondelete='CASCADE')
+
+    op.drop_constraint('node_attributes_node_id_fkey', 'node_attributes')
+    op.create_foreign_key(
+        'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
+        ['node_id'], ['id'], ondelete='CASCADE')
     ### end Alembic commands ###
 
 
@@ -190,6 +205,20 @@ def downgrade_schema():
     op.drop_column('releases', 'vmware_attributes_metadata')
     op.drop_column('clusters', 'deployment_tasks')
     op.drop_column('releases', 'deployment_tasks')
+
+    op.drop_constraint('node_roles_node_fkey', 'node_roles')
+    op.create_foreign_key(
+        'node_roles_node_fkey', 'node_roles', 'nodes', ['node'], ['id'])
+
+    op.drop_constraint('pending_node_roles_node_fkey', 'pending_node_roles')
+    op.create_foreign_key(
+        'pending_node_roles_node_fkey', 'pending_node_roles', 'nodes',
+        ['node'], ['id'])
+
+    op.drop_constraint('node_attributes_node_id_fkey', 'node_attributes')
+    op.create_foreign_key(
+        'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
+        ['node_id'], ['id'])
     ### end Alembic commands ###
 
 

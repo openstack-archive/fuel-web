@@ -622,6 +622,8 @@ class NetworkManager(object):
                 net_assignment.network_id = net['id']
                 net_assignment.interface_id = current_iface.id
                 db().add(net_assignment)
+            current_iface.interface_properties = \
+                iface.get('interface_properties')
         map(db().delete, bond_interfaces_db)
         db().commit()
 
@@ -636,6 +638,7 @@ class NetworkManager(object):
                 bond_db.mode = bond['mode']
             bond_db.mac = bond.get('mac')
             bond_db.bond_properties = bond.get('bond_properties', {})
+            bond_db.interface_properties = bond.get('interface_properties', {})
             db().commit()
             db().refresh(bond_db)
 
@@ -1143,4 +1146,13 @@ class NetworkManager(object):
 
     @classmethod
     def get_iface_properties(cls, iface):
-        return {}
+        print "get_iface_properties:", str(iface.interface_properties)
+        properties = {}
+        if iface.interface_properties.get('mtu'):
+            properties['mtu'] = iface.interface_properties['mtu']
+        if iface.interface_properties.get('disable_offloading'):
+            properties['vendor_specific'] = {
+                'disable_offloading':
+                iface.interface_properties['disable_offloading']
+            }
+        return properties

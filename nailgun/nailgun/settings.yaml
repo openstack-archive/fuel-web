@@ -625,6 +625,7 @@ DUMP:
   lastdump: "/var/www/nailgun/dump/last"
   timestamp: True
   compression_level: 3
+  timeout: 3600
 
   dump:
     local:

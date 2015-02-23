@@ -103,6 +103,9 @@ OSWL_SEND_COUNT: 10
 # set 0 for testing purposes, so today's and older records will be sent.
 OSWL_COLLECT_PERIOD: 1
 
+# amount of days during which oswl entries are stored in db
+OSWL_STORING_PERIOD: 14
+
 # statistics collector ping interval (in sec.)
 COLLECTOR_PING_INTERVAL: 300
 

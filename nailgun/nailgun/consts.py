@@ -262,5 +262,6 @@ OSWL_RESOURCE_TYPES = Enum(
     'security_group',
     'keystone_user',
     'flavor',
-    'cluster_stats'
+    'cluster_stats',
+    'image',
 )

@@ -139,6 +139,7 @@ def upgrade_schema():
                                 'keystone_user',
                                 'flavor',
                                 'cluster_stats',
+                                'image',
                                 name='oswl_resource_type'),
                         nullable=False,
                         index=True

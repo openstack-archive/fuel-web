@@ -561,6 +561,7 @@ class NetworkManager(object):
             'name': net.name,
             'cidr': net.cidr,
             'vlan': cls.get_network_vlan(net, node_db.cluster),
+            'additional_roles': net.additional_roles,
             'ip': ip.ip_addr + '/' + prefix,
             'netmask': str(IPNetwork(net.cidr).netmask),
             'brd': str(IPNetwork(net.cidr).broadcast),
@@ -572,7 +573,8 @@ class NetworkManager(object):
         return {'name': net.name,
                 'cidr': net.cidr,
                 'vlan': cls.get_network_vlan(net, node_db.cluster),
-                'dev': interface.name}
+                'dev': interface.name,
+                'additional_roles': net.additional_roles}
 
     @classmethod
     def _get_networks_except_admin(cls, networks):

@@ -69,7 +69,8 @@ class TestHandlers(BaseIntegrationTest):
                                     "192.168.1.254"
                                 ],
                                 "vlan_start": 102,
-                                "assign_vip": False
+                                "assign_vip": False,
+                                "assign_vrouter_vip": False,
                             },
                             {
                                 "name": "management",
@@ -80,7 +81,8 @@ class TestHandlers(BaseIntegrationTest):
                                     "10.0.255.254"
                                 ],
                                 "vlan_start": 103,
-                                "assign_vip": False
+                                "assign_vip": False,
+                                "assign_vrouter_vip": False,
                             }
                             ]
                     }
@@ -111,7 +113,8 @@ class TestHandlers(BaseIntegrationTest):
                                     "10.0.255.254"
                                 ],
                                 "vlan_start": 103,
-                                "assign_vip": False
+                                "assign_vip": False,
+                                "assign_vrouter_vip": False,
                             }
                             ]
                     }
@@ -154,7 +157,8 @@ class TestHandlers(BaseIntegrationTest):
                                     "192.168.1.254"
                                 ],
                                 "vlan_start": 102,
-                                "assign_vip": False
+                                "assign_vip": False,
+                                "assign_vrouter_vip": False,
                             },
                             {
                                 "name": "management",
@@ -165,7 +169,8 @@ class TestHandlers(BaseIntegrationTest):
                                     "10.0.255.254"
                                 ],
                                 "vlan_start": 103,
-                                "assign_vip": False
+                                "assign_vip": False,
+                                "assign_vrouter_vip": False,
                             }
                             ]
                     }
@@ -196,7 +201,8 @@ class TestHandlers(BaseIntegrationTest):
                                     "10.0.255.254"
                                 ],
                                 "vlan_start": 103,
-                                "assign_vip": False
+                                "assign_vip": False,
+                                "assign_vrouter_vip": False,
                             }
                             ]
                     }
@@ -243,7 +249,8 @@ class TestHandlers(BaseIntegrationTest):
                                     "192.168.1.254"
                                 ],
                                 "vlan_start": 102,
-                                "assign_vip": False
+                                "assign_vip": False,
+                                "assign_vrouter_vip": False,
                             },
                             {
                                 "name": "management",
@@ -254,7 +261,8 @@ class TestHandlers(BaseIntegrationTest):
                                     "10.0.255.254"
                                 ],
                                 "vlan_start": 103,
-                                "assign_vip": False
+                                "assign_vip": False,
+                                "assign_vrouter_vip": False,
                             }]
                     }
                 }

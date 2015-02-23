@@ -59,6 +59,8 @@ class NetworkGroup(Base):
     vlan_start = Column(Integer)
     cidr = Column(String(25))
     gateway = Column(String(25))
+    additional_roles = Column(JSON, server_default='[]',
+                              default=[], nullable=False)
     ip_ranges = relationship(
         "IPAddrRange",
         backref="network_group",

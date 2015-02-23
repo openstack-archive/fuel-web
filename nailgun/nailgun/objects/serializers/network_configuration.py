@@ -21,7 +21,7 @@ from nailgun.objects.serializers.base import BasicSerializer
 class NetworkConfigurationSerializer(BasicSerializer):
 
     fields = ('id', 'group_id', 'name', 'cidr',
-              'gateway', 'vlan_start', 'meta')
+              'gateway', 'vlan_start', 'meta', 'additional_roles')
 
     @classmethod
     def serialize_network_group(cls, instance, fields=None):

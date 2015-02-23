@@ -784,6 +784,34 @@ class TestOSWLObject(BaseTestCase):
                 cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         )
 
+    def test_get_ready_to_delete(self):
+        dt_now = datetime.datetime.utcnow()
+
+        for rand_cluster_id in xrange(settings.OSWL_STORING_PERIOD):
+            obj_data = {
+                'cluster_id': rand_cluster_id,
+                'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
+                'updated_time': dt_now.time(),
+                'resource_checksum': ""
+            }
+
+            t_delta = datetime.timedelta(days=rand_cluster_id)
+            # mark entries with even generated cluster ids for deletion
+            if rand_cluster_id % 2 == 0:
+                t_delta += \
+                    datetime.timedelta(days=settings.OSWL_STORING_PERIOD)
+
+            obj_data['created_date'] = dt_now.date() - t_delta
+
+            OpenStackWorkloadStats.create(obj_data)
+
+        instances_to_delete = \
+            OpenStackWorkloadStatsCollection.get_ready_to_delete().all()
+
+        self.assertTrue(
+            all([inst.cluster_id % 2 == 0 for inst in instances_to_delete])
+        )
+
 
 class TestOSWLServerInfoSaving(BaseTestCase):
 

@@ -50,6 +50,8 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
     def get_ready_to_send(cls):
         """Get entries which are ready to send but were not sent yet.
         """
+        # CAVEAT(aroma): if settings.OSWL_COLLECT_PERIOD is 0
+        # then all oswl entries will be deleted from db
         last_date = datetime.datetime.utcnow().date() - \
             datetime.timedelta(days=settings.OSWL_COLLECT_PERIOD)
         instance = db().query(models.OpenStackWorkloadStats) \
@@ -57,6 +59,17 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
             .filter(models.OpenStackWorkloadStats.created_date <= last_date)
 
         return instance
+
+    @classmethod
+    def clean_expired_entries(cls):
+        """Delete expired oswl entries from db
+        """
+        last_date = datetime.datetime.utcnow().date() - \
+            datetime.timedelta(days=settings.OSWL_STORING_PERIOD)
+        instances = db().query(models.OpenStackWorkloadStats) \
+            .filter(models.OpenStackWorkloadStats.created_date <= last_date)
+
+        return instances.delete(synchronize_session=False)
 
     @classmethod
     def get_last_by_resource_type(cls, resource_type):

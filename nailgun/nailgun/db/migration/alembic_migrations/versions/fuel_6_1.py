@@ -241,9 +241,25 @@ def upgrade_schema():
                   fields.JSON(),
                   nullable=False,
                   default={}))
+    # Add interface properties
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('interface_properties',
+                  fields.JSON(),
+                  nullable=False,
+                  default={}))
+    op.add_column(
+        'node_bond_interfaces',
+        sa.Column('interface_properties',
+                  fields.JSON(),
+                  nullable=False,
+                  default={}))
 
 
 def downgrade_schema():
+    # Add interface properties
+    op.drop_column('node_bond_interfaces', 'interface_properties')
+    op.drop_column('node_nic_interfaces', 'interface_properties')
     # Add bond properties
     op.drop_column('node_bond_interfaces', 'bond_properties')
     op.add_column(

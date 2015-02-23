@@ -585,8 +585,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
         },
         renderFooter: function() {
             var verification = !!this.props.verification,
-                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>];
-            if (!verification) buttons.push(<button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>{i18n('dialog.dismiss_settings.leave_button')}</button>);
+                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>],
+                buttonToAdd = this.props.isForgetting ?
+                    <button key='delete' className='btn btn-danger btn-delete' onClick={this.proceed}>
+                        {i18n('cluster_page.nodes_tab.node.forget')}
+                    </button> :
+                    <button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>
+                        {i18n('dialog.dismiss_settings.leave_button')}
+                    </button>;
+            if (!verification) buttons.push(buttonToAdd);
             return buttons;
         }
     });

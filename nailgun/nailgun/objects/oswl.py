@@ -59,6 +59,15 @@ class OpenStackWorkloadStatsCollection(NailgunCollection):
         return instance
 
     @classmethod
+    def get_ready_to_delete(cls):
+        last_date = datetime.datetime.utcnow().date() - \
+            datetime.timedelta(days=settings.OSWL_STORING_PERIOD)
+        instances = db().query(models.OpenStackWorkloadStats) \
+            .filter(models.OpenStackWorkloadStats.created_date <= last_date)
+
+        return instances
+
+    @classmethod
     def get_last_by_resource_type(cls, resource_type):
         """Get records for given resource_type which have most recent
         created_date (today or yesterday). Records (for some clusters)

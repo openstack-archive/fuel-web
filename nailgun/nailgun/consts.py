@@ -118,6 +118,10 @@ NETWORK_INTERFACE_TYPES = Enum(
     'bond'
 )
 
+NETWORK_VIP_TYPES = Enum(
+    'vrouter',
+)
+
 OVS_BOND_MODES = Enum(
     'active-backup',
     'balance-slb',

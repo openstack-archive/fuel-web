@@ -60,7 +60,9 @@ class TestHandlers(BaseIntegrationTest):
             'deployment_mode': 'ha_compact',
 
             'management_vip': '192.168.0.1',
+            'management_vrouter_vip': '192.168.0.2',
             'public_vip': '172.16.0.2',
+            'public_vrouter_vip': '172.16.0.3',
 
             'fixed_network_range': '10.0.0.0/16',
             'management_network_range': '192.168.0.0/24',
@@ -417,7 +419,9 @@ class TestHandlers(BaseIntegrationTest):
             'deployment_mode': 'ha_compact',
 
             'management_vip': '192.168.0.1',
+            'management_vrouter_vip': '192.168.0.2',
             'public_vip': '172.16.0.2',
+            'public_vrouter_vip': '172.16.0.3',
 
             'management_network_range': '192.168.0.0/24',
             'storage_network_range': '192.168.1.0/24',
@@ -858,7 +862,9 @@ class TestHandlers(BaseIntegrationTest):
             'deployment_mode': 'ha_compact',
 
             'management_vip': '192.168.0.1',
+            'management_vrouter_vip': '192.168.0.2',
             'public_vip': '172.16.0.2',
+            'public_vrouter_vip': '172.16.0.3',
 
             'management_network_range': '192.168.0.0/24',
             'storage_network_range': '192.168.1.0/24',
@@ -1367,13 +1373,16 @@ class TestHandlers(BaseIntegrationTest):
         n_rpc_deploy = args[1][1]['args']['deployment_info']
         self.assertEqual(len(n_rpc_deploy), 5)
         pub_ips = ['172.16.0.11', '172.16.0.12', '172.16.0.13',
-                   '172.16.0.20', '172.16.0.21']
+                   '172.16.0.20', '172.16.0.21', '172.16.0.22']
         for n in n_rpc_deploy:
+            self.assertIn('management_vrouter_vip', n)
+            self.assertIn('public_vrouter_vip', n)
             used_ips = []
             for n_common_args in n['nodes']:
-                self.assertTrue(n_common_args['public_address'] in pub_ips)
-                self.assertFalse(n_common_args['public_address'] in used_ips)
+                self.assertIn(n_common_args['public_address'], pub_ips)
+                self.assertNotIn(n_common_args['public_address'], used_ips)
                 used_ips.append(n_common_args['public_address'])
+                self.assertIn('management_vrouter_vip', n)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -1394,7 +1403,7 @@ class TestHandlers(BaseIntegrationTest):
         ).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
-        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.12'],
+        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.13'],
                                   ['172.16.0.20', '172.16.0.22']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
@@ -1409,14 +1418,14 @@ class TestHandlers(BaseIntegrationTest):
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
         self.assertEqual(len(n_rpc_deploy), 5)
-        pub_ips = ['172.16.0.11', '172.16.0.12',
+        pub_ips = ['172.16.0.11', '172.16.0.12', '172.16.0.13',
                    '172.16.0.20', '172.16.0.21', '172.16.0.22']
         for n in n_rpc_deploy:
             self.assertEqual(n['public_vip'], '172.16.0.10')
             used_ips = []
             for n_common_args in n['nodes']:
-                self.assertTrue(n_common_args['public_address'] in pub_ips)
-                self.assertFalse(n_common_args['public_address'] in used_ips)
+                self.assertIn(n_common_args['public_address'], pub_ips)
+                self.assertNotIn(n_common_args['public_address'], used_ips)
                 used_ips.append(n_common_args['public_address'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
@@ -1452,10 +1461,10 @@ class TestHandlers(BaseIntegrationTest):
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
         self.assertEqual(len(n_rpc_deploy), 2)
-        pub_ips = ['172.16.10.11', '172.16.10.12']
+        pub_ips = ['172.16.10.11', '172.16.10.12', '172.16.10.13']
         for n in n_rpc_deploy:
             for n_common_args in n['nodes']:
-                self.assertTrue(n_common_args['public_address'] in pub_ips)
+                self.assertIn(n_common_args['public_address'], pub_ips)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

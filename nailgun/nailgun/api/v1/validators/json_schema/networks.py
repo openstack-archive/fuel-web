@@ -30,6 +30,8 @@ NETWORK = {
         'configurable': {'type': 'boolean'},
         'floating_range_var': {'type': 'string'},
         'ext_net_data': {'type': 'array'},
-        'assign_vip': {'type': 'boolean'}},
+        'assign_vip': {'type': 'boolean'},
+        'assign_vrouter_vip': {'type': 'boolean'}
+    },
     'required': ['name']
 }

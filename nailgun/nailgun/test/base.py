@@ -742,7 +742,7 @@ class EnvironmentManager(object):
             )
 
     def make_bond_via_api(self, bond_name, bond_mode, nic_names, node_id=None,
-                          bond_properties=None):
+                          bond_properties=None, interface_properties=None):
         if not node_id:
             node_id = self.nodes[0]["id"]
         resp = self.app.get(
@@ -774,6 +774,8 @@ class EnvironmentManager(object):
         }
         if bond_properties:
             bond_dict["bond_properties"] = bond_properties
+        if interface_properties:
+            bond_dict["interface_properties"] = interface_properties
         data.append(bond_dict)
         resp = self.node_nics_put(node_id, data)
         self.tester.assertEqual(resp.status_code, 200)

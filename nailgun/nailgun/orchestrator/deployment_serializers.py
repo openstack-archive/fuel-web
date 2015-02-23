@@ -1355,10 +1355,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         net_manager = objects.Cluster.get_network_manager(cluster)
 
-        for ng in cluster.network_groups:
-            if ng.meta.get("assign_vip"):
-                common_attrs[ng.name + '_vip'] = net_manager.assign_vip(
-                    cluster.id, ng.name)
+        common_attrs.update(net_manager.assign_vip_for_groups(cluster.id))
 
         common_attrs['mp'] = [
             {'point': '1', 'weight': '1'},

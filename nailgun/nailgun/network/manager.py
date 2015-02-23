@@ -268,7 +268,7 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
-    def assign_vip(cls, cluster_id, network_name):
+    def assign_vip(cls, cluster_id, network_name, vip_type=None):
         """Idempotent assignment VirtualIP addresses to cluster.
         Returns VIP for given cluster and network.
 
@@ -283,7 +283,9 @@ class NetworkManager(object):
         :type  cluster_id: int
         :param network_name: Network name
         :type  network_name: str
-        :returns: None
+        :param vip_type: Type of VIP. None or 'vrouter'
+        :type  vip_type: str
+        :returns: IPAddr object with the assigned VIP
         :raises: Exception
         """
         cluster = objects.Cluster.get_by_uid(cluster_id)
@@ -301,7 +303,8 @@ class NetworkManager(object):
         admin_net_id = cls.get_admin_network_group_id()
         cluster_ips = [ne.ip_addr for ne in db().query(IPAddr).filter_by(
             network=network.id,
-            node=None
+            node=None,
+            vip_type=vip_type
         ).filter(
             not_(IPAddr.network == admin_net_id)
         ).all()]
@@ -317,11 +320,40 @@ class NetworkManager(object):
         else:
             # IP address has not been assigned, let's do it
             vip = cls.get_free_ips(network)[0]
-            ne_db = IPAddr(network=network.id, ip_addr=vip)
+            ne_db = IPAddr(network=network.id, ip_addr=vip, vip_type=vip_type)
             db().add(ne_db)
             db().flush()
 
         return vip
+
+    @classmethod
+    def assign_vip_for_groups(cls, cluster_id):
+        """Calls cls.assign_vip for all of cluster's network_groups.
+
+        :param cluster_id:
+        :type cluster_id: int
+        :return: dict with vip definitions
+        """
+
+        cluster = objects.Cluster.get_by_uid(cluster_id)
+        if not cluster:
+            raise Exception(u"Cluster id='%s' not found" % cluster_id)
+
+        result = {}
+
+        for ng in cluster.network_groups:
+            if ng.meta.get("assign_vip"):
+                result['{0}_vip'.format(ng.name)] = \
+                    cls.assign_vip(cluster.id, ng.name)
+            if ng.meta.get("assign_vrouter_vip"):
+                result[ng.name + '_vrouter_vip'] = \
+                    cls.assign_vip(
+                        cluster.id,
+                        ng.name,
+                        vip_type=consts.NETWORK_VIP_TYPES.vrouter
+                    )
+
+        return result
 
     @classmethod
     def check_ip_belongs_to_net(cls, ip_addr, network):

@@ -817,6 +817,48 @@ class TestOSWLObject(BaseTestCase):
                 cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         )
 
+    def test_clean_expired_entries(self):
+        dt_now = datetime.datetime.utcnow()
+        t_delta = datetime.timedelta(days=settings.OSWL_STORING_PERIOD)
+
+        entries_to_del_cluster_ids = (1, 2)
+        for cluster_id in entries_to_del_cluster_ids:
+            obj_kwargs = {
+                "cluster_id": 1,
+                "resource_type": consts.OSWL_RESOURCE_TYPES.volume,
+                "updated_time": dt_now.time(),
+                "created_date": dt_now.date() - t_delta,
+                "resource_checksum": ""
+            }
+
+            OpenStackWorkloadStats.create(obj_kwargs)
+
+        untouched_obj_kwargs = {
+            "cluster_id": 3,
+            "resource_type": consts.OSWL_RESOURCE_TYPES.vm,
+            "updated_time": dt_now.time(),
+            "created_date": dt_now.date(),
+            "resource_checksum": ""
+        }
+        OpenStackWorkloadStats.create(untouched_obj_kwargs)
+
+        OpenStackWorkloadStatsCollection.clean_expired_entries()
+        self.db.commit()
+
+        for cluster_id in entries_to_del_cluster_ids:
+            instance = \
+                OpenStackWorkloadStats.get_last_by(
+                    cluster_id,
+                    consts.OSWL_RESOURCE_TYPES.volume
+                )
+            self.assertIsNone(instance)
+
+        untouched_obj = OpenStackWorkloadStats.get_last_by(
+            untouched_obj_kwargs["cluster_id"],
+            consts.OSWL_RESOURCE_TYPES.vm
+        )
+        self.assertIsNotNone(untouched_obj)
+
 
 class TestOSWLServerInfoSaving(BaseTestCase):
 

@@ -22,6 +22,7 @@ from cinderclient import client as cinder_client
 from novaclient import client as nova_client
 
 from nailgun import consts
+from nailgun.db import db
 from nailgun.logger import logger
 from nailgun.network import manager
 from nailgun import objects
@@ -241,3 +242,18 @@ def set_proxy(proxy):
 
 def dithered(medium, interval=(0.9, 1.1)):
     return random.randint(int(medium * interval[0]), int(medium * interval[1]))
+
+
+def delete_expired_oswl_entries():
+    try:
+        objects.OpenStackWorkloadStatsCollection.clean_expired_entries()
+        db().commit()
+
+        logger.info("Expired OSWL entries are "
+                    "successfully cleaned from db")
+
+    except Exception as e:
+        logger.exception("Exception while cleaning oswls entries from "
+                         "db. Details: {0}".format(six.text_type(e)))
+    finally:
+        db().remove()

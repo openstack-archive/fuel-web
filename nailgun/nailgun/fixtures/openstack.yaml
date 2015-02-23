@@ -187,6 +187,7 @@
             use_gateway: false
             notation: "cidr"
             render_type: "cidr"
+            additional_roles: [{'id': 'mesh', 'net_type': 'gre'}]
             render_addr_mask: "internal"
             map_priority: 2
             configurable: true

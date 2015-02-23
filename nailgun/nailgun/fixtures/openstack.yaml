@@ -130,6 +130,7 @@
             map_priority: 1
             configurable: true
             assign_vip: true
+            assign_vrouter_vip: true
           - name: "management"
             cidr: "192.168.0.0/24"
             vlan_start: 101
@@ -140,6 +141,7 @@
             map_priority: 2
             configurable: true
             assign_vip: true
+            assign_vrouter_vip: true
           - name: "storage"
             cidr: "192.168.1.0/24"
             vlan_start: 102
@@ -150,6 +152,7 @@
             map_priority: 2
             configurable: true
             assign_vip: false
+            assign_vrouter_vip: false
           - name: "fixed"
             vlan_start: null
             use_gateway: false
@@ -160,6 +163,7 @@
             ext_net_data: ["fixed_networks_vlan_start", "fixed_networks_amount"]
             configurable: false
             assign_vip: false
+            assign_vrouter_vip: false
         config:
           net_manager: "FlatDHCPManager"
           fixed_networks_cidr: "10.0.0.0/16"
@@ -181,6 +185,7 @@
             configurable: true
             floating_range_var: "floating_ranges"
             assign_vip: true
+            assign_vrouter_vip: true
           - name: "management"
             cidr: "192.168.0.0/24"
             vlan_start: 101
@@ -191,6 +196,7 @@
             map_priority: 2
             configurable: true
             assign_vip: true
+            assign_vrouter_vip: true
           - name: "storage"
             cidr: "192.168.1.0/24"
             vlan_start: 102
@@ -201,6 +207,7 @@
             map_priority: 2
             configurable: true
             assign_vip: false
+            assign_vrouter_vip: false
           - name: "private"
             seg_type: "vlan"
             vlan_start: null
@@ -212,6 +219,7 @@
             neutron_vlan_range: true
             configurable: false
             assign_vip: false
+            assign_vrouter_vip: false
         config:
           vlan_range: [1000, 1030]
           gre_id_range: [2, 65535]

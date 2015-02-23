@@ -310,8 +310,10 @@
                             "ready": "Ready",
                             "provisioning": "Installing __os__",
                             "provisioned": "__os__ is installed",
-                            "deploying": "Installing OpenStack"
+                            "deploying": "Installing OpenStack",
+                            "forgetting": "Forgetting"
                         },
+                        "forget": "Forget",
                         "discard_addition": "Discard Addition",
                         "discard_deletion": "Discard Deletion",
                         "view_logs": "View Logs",

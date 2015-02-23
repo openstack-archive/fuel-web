@@ -618,6 +618,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
             netgroups[ngname] = netgroup
 
+            for add_role in netgroup.additional_roles:
+                role_net = add_role.get('net_type')
+                if node.cluster.network_config.segmentation_type == role_net:
+                    attrs['roles'][add_role['id']] = brname
+
         if objects.Node.should_have_public(node):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
@@ -665,8 +670,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                     'br-prv'
                 ]
             })
-        elif node.cluster.network_config.segmentation_type == 'gre':
-            attrs['roles']['mesh'] = 'br-mgmt'
 
         return attrs
 

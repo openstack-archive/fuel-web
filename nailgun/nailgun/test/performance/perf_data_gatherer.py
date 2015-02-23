@@ -85,3 +85,14 @@ class PerformanceDataCsvCreator(object):
                 sub[1].items() for sub in six.iteritems(data)
             ] for item in sublist
         ]
+
+
+def save_failed_tests(reports):
+    FAILED_TESTS_FILE_NAME = settings.LOAD_TESTS_PATHS[
+        'failed_test_file_name'
+    ]
+
+    failed_ids = [x.nodeid for x in reports if x.failed]
+
+    with open(FAILED_TESTS_FILE_NAME, 'w') as fail_file:
+        fail_file.write("\n".join(failed_ids))

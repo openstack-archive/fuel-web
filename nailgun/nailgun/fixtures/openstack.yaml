@@ -112,6 +112,20 @@
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
     networks_metadata:
+      bonding:
+        availability:
+          - linux: "settings:storage.iser.value == false and settings:neutron_mellanox.plugin.value != 'ethernet'"
+          - ovs: "false"
+        properties:
+          linux:
+            mode:
+              - values: ["balance-rr", "balance-xor", "active-backup", "broadcast", "802.3ad", "balance-tlb", "balance-alb"]
+            xmit_hash_policy:
+              - values: ["layer2", "layer2+3", "layer3+4", "encap2+3", "encap3+4"]
+                for_modes: ["802.3ad", "balance-xor", "balance-tlb", "balance-alb"]
+            lacp_rate:
+              - values: ["slow", "fast"]
+                for_modes: ["802.3ad"]
       nova_network:
         networks:
           - name: "public"

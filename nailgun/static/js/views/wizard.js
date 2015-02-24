@@ -161,7 +161,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         handleTrackedAttributeChange: function() {
             var maxIndex = this.panesModel.get('maxAvailablePaneIndex');
             var currentIndex = this.panesModel.get('activePaneIndex');
-            if (maxIndex > currentIndex) {
+            if (maxIndex > currentIndex && this.panesModel.get([this.panesConstructors[maxIndex].name]) != 'current') {
                 this.panesModel.set('maxAvailablePaneIndex', currentIndex);
                 var listOfPanesToRestoreDefaults = this.getListOfPanesToRestore(currentIndex, maxIndex);
                 this.model.restoreDefaultValues(listOfPanesToRestoreDefaults);
@@ -221,7 +221,15 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         processBind(_.values(bind)[0], value.get(_.keys(bind)[0]));
                     } else if (_.isArray(bind)) {
                         // for the case of multiple bindings
-                        _.each(bind, function(bindItem) {processBind(bindItem, value)});
+                        if (attributeConfig.type != 'checkbox' || value) {
+                            _.each(bind, function(bindItem) {
+                                if (!_.isPlainObject(bindItem)) {
+                                    processBind(bindItem, value);
+                                } else {
+                                    processBind(_.keys(bindItem)[0], _.values(bindItem)[0]);
+                                }
+                            }, this);
+                        }
                     }
                     if (attributeConfig.type == 'radio') {
                         // radiobuttons can have values with their own bindings

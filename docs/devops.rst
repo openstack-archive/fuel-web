@@ -45,6 +45,7 @@ Before use one of them please install dependencies that are required in all case
     libvirt-bin \
     libvirt-dev \
     ubuntu-vm-builder \
+    software-properties-common \
     bridge-utils
 
     sudo apt-get update && sudo apt-get upgrade -y
@@ -76,7 +77,13 @@ Devops installation from packages
     python-django-south \
     python-xmlbuilder \
     python-mock \
-    python-devops
+    python-devops \
+    python-neutronclient \
+    python-novaclient  \
+    python-cinderclient \
+    python-keystoneclient \
+    python-glanceclient \
+    python-proboscis
 
 
 .. note:: Depending on your Linux distribution some of the above packages may
@@ -200,10 +207,21 @@ Give current user permissions to use libvirt (Do not forget to log out and log b
 
 .. code-block:: bash
 
-    sudo usermod $(whoami) -a -G libvirtd,sudo
+    sudo usermod $(whoami) -a -G libvirtd
+
+
 
 Configuring Postgresql database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Create role and database
+
+.. code-block:: bash
+
+   sudo -u postgres createuser -SDRP fuel_devops  # enter password "fuel_devops"
+   sudo -u postgres createdb fuel_devops
+   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE fuel_devops to fuel_devops"
+
 
 Set local peers to be trusted by default and load fixtures
 
@@ -214,12 +232,14 @@ Set local peers to be trusted by default and load fixtures
     django-admin syncdb --settings=devops.settings
     django-admin migrate devops --settings=devops.settings
 
+
 If you install from :ref:`python packages <DevOpsPyPI>` or use :ref:`virtualenv <DevOpsPyPIvenv>`
 
 .. code-block:: bash
 
    django-admin.py syncdb --settings=devops.settings
    django-admin.py migrate devops --settings=devops.settings
+
 
 .. note:: Depending on your Linux distribution,
     `django-admin <http://django-admin-tools.readthedocs.org>`_ may refer
@@ -238,15 +258,23 @@ This option is enabled by default in the KVM kernel module
 
 .. code-block:: bash
 
-    $ cat /etc/modprobe.d/qemu-system-x86.conf
+    cat /etc/modprobe.d/qemu-system-x86.conf
     options kvm_intel nested=1
 
 In order to be sure that this feature is enabled on your system,
 please run:
 
+**For Intel CPUs**
+
 .. code-block:: bash
 
     sudo kvm-ok && cat /sys/module/kvm_intel/parameters/nested
+
+**For AMD CPUs**
+
+.. code-block:: bash
+
+    sudo kvm-ok && cat /sys/module/kvm_amd/parameters/nested
 
 The result should be:
 
@@ -257,23 +285,22 @@ The result should be:
     Y
 
 
-Environment creation via Devops + Fuel_main
+Environment creation via Devops + Fuel_QA
 -------------------------------------------
 
 1. Clone fuel main GIT repository
 
 .. code-block:: bash
 
-    git clone https://github.com/stackforge/fuel-main
-    cd fuel-main/
+    git clone https://github.com/stackforge/fuel-qa
+    cd fuel-qa/
 
 2. Install requirements
 
-If you use :ref:`virtualenv <DevOpsPyPIvenv>`
+If you **use** :ref:`virtualenv <DevOpsPyPIvenv>`
 
 .. code-block:: bash
 
-   . <path>/fuel-devops-venv/bin/activate
    pip install -r ./fuelweb_test/requirements.txt --upgrade
 
 If you **do not use** virtualenv just
@@ -316,6 +343,7 @@ Start tests by running this command
 .. code-block:: bash
 
     ./utils/jenkins/system_tests.sh -t test -w $(pwd) -j fuelweb_test -i $ISO_PATH -o --group=setup
+
 
 For more information about how tests work, read the usage information
 

@@ -363,3 +363,8 @@ def upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection):
             update_attrs,
             editable=jsonutils.dumps(attrs),
             id=attr_id)
+
+
+def upgrade_networks_metadata_to_6_1(networks_meta, _bonding_metadata):
+    networks_meta['bonding'] = _bonding_metadata
+    return networks_meta

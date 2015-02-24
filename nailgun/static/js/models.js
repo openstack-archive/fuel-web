@@ -651,6 +651,16 @@ define([
                 return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
             });
         },
+        setToInterfaceProperties: function(name, value) {
+            var ifcProperties = this.get('interface_properties');
+            // morale: here also might be needed restrictions for mtu range
+            // but hope to introduce it with declarative network config
+            if (name == 'mtu') {
+                var convertedValue = parseInt(value, 10);
+                value = _.isNaN(convertedValue) ? null : convertedValue;
+            }
+            ifcProperties[name] = value;
+        },
         validate: function(attrs) {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork', attrs.networks));

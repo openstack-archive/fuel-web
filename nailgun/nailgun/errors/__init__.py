@@ -82,6 +82,9 @@ default_messages = {
     "ParseError": "Synxtax error",
     "UnknownModel": "Unknown model",
 
+    # Tracking errors
+    "TrackingError": "Action failed",
+
     # Zabbix errors
     "CannotMakeZabbixRequest": "Can't make a request to Zabbix",
     "ZabbixRequestError": "Zabbix request returned an error",

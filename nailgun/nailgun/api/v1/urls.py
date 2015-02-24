@@ -81,7 +81,9 @@ from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodesWithTasks
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 
-from nailgun.api.v1.handlers.registration import FuelKeyHandler
+from nailgun.api.v1.handlers.registration import FuelLoginForm
+from nailgun.api.v1.handlers.registration import FuelRegistrationForm
+
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
 from nailgun.api.v1.handlers.release import ReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
@@ -218,8 +220,10 @@ urls = (
     r'/logs/sources/nodes/(?P<node_id>\d+)/?$',
     LogSourceByNodeCollectionHandler,
 
-    r'/registration/key/?$',
-    FuelKeyHandler,
+    r'/registration/?$',
+    FuelRegistrationForm,
+    r'/login/?$',
+    FuelLoginForm,
 
     r'/version/?$',
     VersionHandler,

@@ -409,6 +409,8 @@ def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
             "keystone/ostf_password": pwgen.password(),
             "keystone/nailgun_user": "nailgun",
             "keystone/nailgun_password": pwgen.password(),
+            "keystone/monitord_user": "monitord",
+            "keystone/monitord_password": pwgen.password(),
             "mcollective/user": "mcollective",
             "mcollective/password": pwgen.password(),
             "postgres/keystone_dbname": "keystone",

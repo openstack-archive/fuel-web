@@ -36,6 +36,7 @@ from nailgun.utils.migration import \
 from nailgun.utils.migration import upgrade_attributes_metadata_6_0_to_6_1
 from nailgun.utils.migration import upgrade_enum
 from nailgun.utils.migration import upgrade_master_node_settings_6_0_to_6_1
+from nailgun.utils.migration import upgrade_networks_metadata_to_6_1
 from nailgun.utils.migration import upgrade_role_limits_6_0_to_6_1
 from nailgun.utils.migration import upgrade_role_restrictions_6_0_to_6_1
 
@@ -296,11 +297,12 @@ def upgrade_data():
     connection = op.get_bind()
 
     select = text(
-        """SELECT id, roles_metadata, attributes_metadata
+        """SELECT id, roles_metadata, attributes_metadata, networks_metadata
         from releases""")
     update = text(
         """UPDATE releases
-        SET roles_metadata = :roles, attributes_metadata = :attrs
+        SET roles_metadata = :roles, attributes_metadata = :attrs,
+        networks_metadata = :networks
         WHERE id = :id""")
     r = connection.execute(select)
 
@@ -313,11 +315,14 @@ def upgrade_data():
             _new_role_restrictions)
         attributes_meta = upgrade_attributes_metadata_6_0_to_6_1(
             jsonutils.loads(release[2]))
+        networks_meta = upgrade_networks_metadata_to_6_1(
+            jsonutils.loads(release[3]), _bonding_metadata)
         connection.execute(
             update,
             id=release[0],
             roles=jsonutils.dumps(roles_meta),
-            attrs=jsonutils.dumps(attributes_meta)
+            attrs=jsonutils.dumps(attributes_meta),
+            networks=jsonutils.dumps(networks_meta),
         )
 
     upgrade_master_node_settings(connection)
@@ -461,4 +466,25 @@ _new_role_restrictions = {
             'message': "Ceph must be enabled in settings"
         }
     ]
+}
+
+
+_bonding_metadata = {
+    "availability": [
+        {"ovs": "'experimental' in version:feature_groups and "
+                "cluster:net_provider != 'neutron' and "
+                "settings:storage.iser.value == false and "
+                "settings:neutron_mellanox.plugin.value != 'ethernet'"},
+        {"linux": "false"}
+    ],
+    "properties": {
+        "ovs": {
+            "mode": [
+                {
+                    "values": ["active-backup", "balance-slb",
+                               "lacp-balance-tcp"]
+                }
+            ]
+        }
+    }
 }

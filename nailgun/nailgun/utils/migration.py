@@ -386,6 +386,20 @@ def upgrade_attributes_metadata_6_0_to_6_1(attributes_meta):
 def upgrade_master_node_settings_6_0_to_6_1(master_node_settings):
     master_node_settings['statistics']['email']['regex']['source'] = \
         '^\S+@\S+[\.][0-9a-z]+$'
+    master_node_settings['tracking'] = {
+        "email": {
+            "type": "text",
+            "value": "",
+            "label": "Mirantis Account Email",
+            "weight": 10
+        },
+        "password": {
+            "type": "password",
+            "value": "",
+            "label": "Password",
+            "weight": 20
+        }
+    }
 
     return master_node_settings
 

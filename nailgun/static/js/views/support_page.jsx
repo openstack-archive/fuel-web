@@ -40,6 +40,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
         },
         render: function() {
             var elements = [
+                <DocumentationLink key='DocumentationLink' />,
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
                 <CapacityAudit key='CapacityAudit' />,
                 <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />
@@ -71,6 +72,23 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
                     </div>
                     <hr/>
                 </div>
+            );
+        }
+    });
+
+    var DocumentationLink = React.createClass({
+        render: function() {
+            var ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ? 'mirantis' : 'community') + '_';
+            return (
+                <SupportPageElement
+                    className='img-documentation-link'
+                    title={i18n(ns + 'title')}
+                    text={i18n(ns + 'text')}
+                >
+                    <p><a className='btn' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
+                        {i18n('support_page.documentation_link')}
+                    </a></p>
+                </SupportPageElement>
             );
         }
     });
@@ -194,7 +212,10 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
                     .sortBy(function(settingName) {return settings[settingName].weight;}, this)
                     .value();
             return (
-                <SupportPageElement title={i18n('support_page.send_statistics_title')}>
+                <SupportPageElement
+                    className='img-statistics'
+                    title={i18n('support_page.send_statistics_title')}
+                >
                     {this.renderIntro()}
                     <div className='statistics-settings'>
                         {_.map(sortedSettings, this.renderInput, this)}

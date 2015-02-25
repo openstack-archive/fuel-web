@@ -725,5 +725,89 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
         }
     });
 
+    dialogs.RegistrationDialog = React.createClass({
+        mixins: [
+            dialogMixin,
+            React.addons.LinkedStateMixin
+        ],
+        getDefaultProps: function() {
+            return {
+                title: i18n('dialog.registration.title'),
+                modalClass: 'registration'
+            };
+        },
+        componentDidMount: function() {
+            var credentials = this.props.credentials;
+            credentials.fetch().done(_.bind(function() {
+                this.setState({
+                    credentials: credentials
+                });
+            }, this));
+        },
+        composeOptions: function(values) {
+            return _.map(values, function(value, index) {
+                return (
+                    <option key={index} value={value.data} disabled={value.disabled}>
+                        {value.label}
+                    </option>
+                );
+            });
+        },
+        renderBody: function() {
+            var credentials = this.state.credentials,
+                sortedFields = [];
+            if (credentials) {
+                var fields = credentials.attributes;
+                sortedFields = _.chain(_.keys(credentials.attributes))
+                    .without('metadata')
+                    .sortBy(function(inputName) {return credentials.attributes[inputName].weight;})
+                    .value();
+            }
+            return (
+                <div className='registration-form'>
+                    {credentials ?
+                        <div>
+                            <form className='form-horizontal'>
+                                {_.map(sortedFields, function(inputName) {
+                                    var input = fields[inputName];
+                                    return <controls.Input
+                                        key={inputName}
+                                        name={inputName}
+                                        type={input.type}
+                                        children={input.type == 'select' ? this.composeOptions(input.values) : null}
+                                        label={input.label}
+                                        wrapperClassName={inputName}
+                                        description={input.description}
+                                    />;
+                                }, this)}
+                            </form>
+                            <div className='terms-and-conditions'>
+                                <controls.Input
+                                    key='terms-and-conditions'
+                                    name='terms-and-conditions'
+                                    ref='terms-and-conditions'
+                                    type='checkbox'
+                                />
+                                <span>I Read and Accept </span><a href='https://software.mirantis.com/blank/terms-and-conditions/' target='_blank'>Terms & Conditions</a>
+                            </div>
+                        </div>
+                    :
+                        <controls.ProgressBar />
+                    }
+            </div>
+            );
+        },
+        renderFooter: function() {
+            return [
+                <button key='cancel' className='btn' onClick={this.close}>
+                    {i18n('common.cancel_button')}
+                </button>,
+                <button key='apply' className='btn btn-success' onClick={this.close}>
+                    {i18n('welcome_page.register.create_account')}
+                </button>
+            ];
+        }
+    });
+
     return dialogs;
 });

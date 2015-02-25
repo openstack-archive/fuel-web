@@ -666,7 +666,8 @@ class FakeCapacityLog(FakeAmpqThread):
 
 
 FAKE_THREADS = {
-    'provision': FakeProvisionThread,
+    'classic_provision': FakeProvisionThread,
+    'image_provision': FakeProvisionThread,
     'granular_deploy': FakeDeploymentThread,
     'deploy': FakeDeploymentThread,
     'remove_nodes': FakeDeletionThread,

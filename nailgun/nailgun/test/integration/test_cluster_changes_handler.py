@@ -334,7 +334,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'provision',
+            'method': 'classic_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,
@@ -344,7 +344,6 @@ class TestHandlers(BaseIntegrationTest):
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
-                        'provision_method': consts.PROVISION_METHODS.cobbler
                     },
                     'nodes': provision_nodes}}}
 
@@ -771,7 +770,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'provision',
+            'method': 'image_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,
@@ -781,7 +780,6 @@ class TestHandlers(BaseIntegrationTest):
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
-                        'provision_method': consts.PROVISION_METHODS.image
                     },
                     'nodes': provision_nodes}}}
 
@@ -1225,7 +1223,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'provision',
+            'method': 'image_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,
@@ -1235,7 +1233,6 @@ class TestHandlers(BaseIntegrationTest):
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
-                        'provision_method': consts.PROVISION_METHODS.image
                     },
                     'nodes': provision_nodes}}}
 

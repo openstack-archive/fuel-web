@@ -204,12 +204,9 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['use_gateway'] = True
         mgmt['gateway'] = '192.168.0.1'
 
-        def get_new_networks_metadata():
-            return net_meta
-
-        self.env.get_default_networks_metadata = get_new_networks_metadata
         cluster = self.env.create(
             cluster_kwargs={},
+            release_kwargs={'networks_metadata': net_meta, 'api': False},
             nodes_kwargs=[{"pending_addition": True}]
         )
 
@@ -229,12 +226,9 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['gateway'] = '192.168.0.1'
         self.assertEqual(mgmt['use_gateway'], False)
 
-        def get_new_networks_metadata():
-            return net_meta
-
-        self.env.get_default_networks_metadata = get_new_networks_metadata
         cluster = self.env.create(
             cluster_kwargs={},
+            release_kwargs={'networks_metadata': net_meta, 'api': False},
             nodes_kwargs=[{"pending_addition": True}]
         )
 
@@ -415,13 +409,10 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                       net_meta['neutron']['networks'])[0]
         mgmt['use_gateway'] = True
 
-        def get_new_networks_metadata():
-            return net_meta
-
-        self.env.get_default_networks_metadata = get_new_networks_metadata
         cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
                             'net_segment_type': 'gre'},
+            release_kwargs={'networks_metadata': net_meta, 'api': False},
             nodes_kwargs=[{"pending_addition": True}]
         )
 

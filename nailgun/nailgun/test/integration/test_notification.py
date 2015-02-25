@@ -16,11 +16,12 @@
 
 import uuid
 
+from oslo.serialization import jsonutils
+
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun import notifier
-from nailgun.openstack.common import jsonutils
 from nailgun.rpc import receiver as rcvr
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse

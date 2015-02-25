@@ -21,12 +21,12 @@ import time
 
 from mock import Mock
 from mock import patch
+from oslo.serialization import jsonutils
 
 import nailgun
 from nailgun.api.v1.handlers.logs import read_backwards
 from nailgun.db.sqlalchemy.models import Role
 from nailgun.errors import errors
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 from nailgun.task.task import DumpTask

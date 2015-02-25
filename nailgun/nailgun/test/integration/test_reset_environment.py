@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.openstack.common import jsonutils
+from oslo.serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Notification
 

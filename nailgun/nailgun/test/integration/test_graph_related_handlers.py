@@ -15,10 +15,10 @@
 #    under the License.
 
 from mock import patch
+from oslo.serialization import jsonutils
 import yaml
 
 from nailgun import objects
-from nailgun.openstack.common import jsonutils
 from nailgun.orchestrator.deployment_graph import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse

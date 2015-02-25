@@ -25,6 +25,7 @@ from itertools import cycle
 from itertools import ifilter
 
 import mock
+from oslo.serialization import jsonutils
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import BaseTestCase
@@ -37,8 +38,6 @@ from nailgun import consts
 from nailgun.db import NoCacheQuery
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import Task
-
-from nailgun.openstack.common import jsonutils
 
 from nailgun import objects
 from nailgun.settings import settings

@@ -17,14 +17,13 @@
 import six
 import functools
 
+import amqp.exceptions as amqp_exceptions
 from kombu import Connection
 from kombu import Exchange
+from oslo.serialization import jsonutils
 from kombu import Queue
 
-import amqp.exceptions as amqp_exceptions
-
 from nailgun.logger import logger
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.rpc import utils
 

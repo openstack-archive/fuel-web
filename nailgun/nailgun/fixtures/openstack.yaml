@@ -986,8 +986,8 @@
               generator: "password"
         puppet:
           # TODO(ikalnitsky): consider to use generators here for openstack version
-          manifests: "rsync://{{settings.MASTER_IP}}:/puppet/2014.2-6.1/manifests/"
-          modules: "rsync://{{settings.MASTER_IP}}:/puppet/2014.2-6.1/modules/"
+          manifests: "rsync://{settings.MASTER_IP}:/puppet/2014.2-6.1/manifests/"
+          modules: "rsync://{settings.MASTER_IP}:/puppet/2014.2-6.1/modules/"
     wizard_metadata:
       Mode:
         metadata:
@@ -1337,11 +1337,11 @@
         provision:
           image_data:
             /:
-              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/centos_65_x86_64.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_centos_65_x86_64.img.gz"
               format: "ext4"
               container: "gzip"
             /boot:
-              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/centos_65_x86_64-boot.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
 - pk: 2
@@ -1373,12 +1373,13 @@
           profile:
             generator_arg: "ubuntu_1404_x86_64"
         provision:
+          codename: "trusty"
           image_data:
             /:
-              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1404_amd64.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64.img.gz"
               format: "ext4"
               container: "gzip"
             /boot:
-              uri: "http://{{settings.MASTER_IP}}:8080/targetimages/ubuntu_1404_amd64-boot.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"

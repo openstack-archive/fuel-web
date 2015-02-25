@@ -23,9 +23,10 @@ define(
     'models',
     'expression',
     'jsx!component_mixins',
-    'jsx!views/controls'
+    'jsx!views/controls',
+    'jsx!views/custom_controls'
 ],
-function($, _, i18n, React, utils, models, Expression, componentMixins, controls) {
+function($, _, i18n, React, utils, models, Expression, componentMixins, controls, customControls) {
     'use strict';
 
     var SettingsTab = React.createClass({
@@ -52,6 +53,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     settings: settings,
                     networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters'),
                     version: app.version,
+                    release: this.props.cluster.get('release'),
                     default: settings
                 },
                 settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
@@ -329,17 +331,33 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                         {_.map(sortedSettings, function(settingName) {
                             var setting = group[settingName],
                                 path = this.props.makePath(this.props.groupName, settingName);
+
                             if (!this.checkRestrictions('hide', path).result) {
-                                var error = this.props.settings.validationError && this.props.settings.validationError[path],
+                                var error = (this.props.settings.validationError || {})[path],
                                     processedSettingRestrictions = this.processRestrictions(this.props.groupName, settingName),
-                                    isSettingDisabled = (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result;
+                                    isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result;
+
+                                // support of custom controls
+                                var CustomControl = customControls[setting.type];
+                                if (CustomControl) {
+                                    return <CustomControl
+                                        {...setting}
+                                        {... _.pick(this.props, 'cluster', 'settings', 'configModels')}
+                                        key={settingName}
+                                        path={path}
+                                        error={error}
+                                        disabled={this.props.locked || isSettingDisabled}
+                                        tooltipText={processedSettingRestrictions.message}
+                                    />;
+                                }
+
                                 if (setting.values) {
                                     var values = _.chain(_.cloneDeep(setting.values))
                                         .map(function(value) {
                                             var valuePath = this.props.makePath(path, value.data),
                                                 processedValueRestrictions = this.checkRestrictions('disable', valuePath);
                                             if (!this.checkRestrictions('hide', valuePath).result) {
-                                                value.disabled = isGroupDisabled || isSettingDisabled || processedValueRestrictions.result;
+                                                value.disabled = isSettingDisabled || processedValueRestrictions.result;
                                                 value.defaultChecked = value.data == setting.value;
                                                 value.tooltipText = processedValueRestrictions.message;
                                                 return value;
@@ -367,7 +385,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     description={setting.description}
                                     toggleable={setting.type == 'password'}
                                     error={error}
-                                    disabled={isGroupDisabled || isSettingDisabled}
+                                    disabled={isSettingDisabled}
                                     wrapperClassName='tablerow-wrapper'
                                     tooltipText={processedSettingRestrictions.message}
                                     onChange={this.debouncedOnChange}

@@ -1464,9 +1464,9 @@
           metadata:
             label: "Repositories"
             weight: 50
-            extra_priority: 15
           repos:
             type: "custom_repo_configuration"
+            extra_priority: 15
             value:
               - type: "rpm"
                 name: "MOS"
@@ -1500,9 +1500,9 @@
           metadata:
             label: "Repositories"
             weight: 50
-            extra_priority: 1050
           repos:
             type: "custom_repo_configuration"
+            extra_priority: 1050
             value:
               - type: "deb"
                 name: "MOS"

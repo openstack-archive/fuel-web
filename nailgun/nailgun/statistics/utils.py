@@ -249,6 +249,9 @@ def get_info_from_os_resource_manager(client_provider, resource_name):
 
 
 def _get_value_from_nested_dict(obj_dict, key_path):
+    if not isinstance(obj_dict, dict) or not key_path:
+        return None
+
     value = obj_dict.get(key_path[0])
 
     if isinstance(value, dict):

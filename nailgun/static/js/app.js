@@ -30,6 +30,7 @@ define(
     'jsx!views/root',
     'jsx!views/login_page',
     'jsx!views/welcome_page',
+    'jsx!views/registration_page',
     'jsx!views/cluster_page',
     'jsx!views/clusters_page',
     'jsx!views/releases_page',
@@ -45,7 +46,7 @@ define(
     'less!/static/css/styles'
 
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, RegistrationPage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -53,6 +54,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             login: 'login',
             logout: 'logout',
             welcome: 'welcome',
+            registration: 'registration',
             clusters: 'listClusters',
             'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
             releases: 'listReleases',
@@ -184,7 +186,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
                     return app.version.get('auth_required') && !app.user.get('authenticated');
                 }},
                 {url: 'welcome', condition: function() {
-                    return !app.settings.get('statistics.user_choice_saved.value');
+                    return !(app.settings.get('statistics.user_choice_saved.value') || currentUrl == 'registration');
                 }}
             ];
             _.each(specialRoutes, function(route) {
@@ -224,6 +226,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
         },
         welcome: function() {
             this.loadPage(WelcomePage);
+        },
+        registration: function() {
+            this.loadPage(RegistrationPage);
         },
         showCluster: function() {
             this.loadPage(ClusterPage, arguments).fail(_.bind(this.default, this));

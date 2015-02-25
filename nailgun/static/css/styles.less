@@ -3801,6 +3801,29 @@ i.btn-cluster-details {
   .parameter-description { margin: 12px 0 0 5px; }
 }
 
+/**  Fuel Registration page **/
+.registration-page {
+  .width-height-mixin;
+  .box-sizing-mixin;
+  padding: 40px;
+  color: #4d545b;
+  > div {
+    width: 500px;
+    background-color: @fuel-white-color;
+    margin: 0 auto;
+    padding: 30px;
+    padding-bottom: 10px;
+    .box-sizing-mixin;
+    .border-radius-mixin(10px);
+    h2 {
+      line-height: 30px;
+      .font-layout-mixin(22px, #4d545b);
+      .indent-mixin();
+      margin-bottom: 20px;
+    }
+  }
+}
+
 .statistics-settings {
   margin-bottom: 10px;
   /* overrides for reusable inputs */

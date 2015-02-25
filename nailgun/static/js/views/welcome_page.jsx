@@ -62,6 +62,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                     <div>
                         <h2 className='center'>{this.getText(ns + 'title')}</h2>
                         <RegisterTrial fuelKey={this.state.fuelKey} />
+                        <a href='/#registration'>Create Account</a>
                         {this.renderIntro()}
                         {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
                         {isMirantisIso && <div className='welcome-text-box'>{i18n(ns + 'support')}</div>}

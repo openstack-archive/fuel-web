@@ -142,12 +142,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 url: _.result(this.props.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true
             }, this)).done(_.bind(function() {
                 this.setState({actionInProgress: false});
-            }, this)).fail(_.bind(function() {
+            }, this)).fail(_.bind(function(response) {
                 var errorNS = 'cluster_page.nodes_tab.configure_interfaces.configuration_error.';
 
                 utils.showErrorDialog({
                     title: i18n(errorNS + 'title'),
-                    message: i18n(errorNS + 'load_defaults_warning')
+                    message: i18n(errorNS + 'load_defaults_warning'),
+                    response: response
                 });
                 this.goToNodeList();
             }, this));
@@ -196,12 +197,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     this.setState({initialInterfaces: this.interfacesToJSON(this.props.interfaces)});
                     dispatcher.trigger('networkConfigurationUpdated');
                 }, this))
-                .fail(function() {
+                .fail(function(response) {
                     var errorNS = 'cluster_page.nodes_tab.configure_interfaces.configuration_error.';
 
                     utils.showErrorDialog({
                         title: i18n(errorNS + 'title'),
-                        message: i18n(errorNS + 'saving_warning')
+                        message: i18n(errorNS + 'saving_warning'),
+                        response: response
                     });
                 }).always(_.bind(function() {
                     this.setState({actionInProgress: false});

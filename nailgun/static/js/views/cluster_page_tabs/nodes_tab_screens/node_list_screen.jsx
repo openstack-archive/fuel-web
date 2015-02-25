@@ -204,9 +204,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
                     }, this));
                 }, this))
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
                     this.setState({actionInProgress: false});
-                    utils.showErrorDialog({message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.saving_warning')});
+                    utils.showErrorDialog({
+                        message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.saving_warning'),
+                        response: response
+                    });
                 }, this));
         },
         startFiltering: function(name, value) {
@@ -623,7 +626,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }, this));
                     dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
                 }, this))
-                .fail(function() {utils.showErrorDialog({title: i18n('dialog.discard_changes.cant_discard')});});
+                .fail(function(response) {
+                    utils.showErrorDialog({
+                        title: i18n('dialog.discard_changes.cant_discard'),
+                        response: response
+                    });
+                });
         },
         getNodeLogsLink: function() {
             var status = this.props.node.get('status'),

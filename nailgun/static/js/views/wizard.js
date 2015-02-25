@@ -341,12 +341,12 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         if (response.status == 409) {
                             this.$('.wizard-footer button').prop('disabled', false);
                             this.panesModel.set('activePaneIndex', 0);
-                            cluster.trigger('invalid', cluster, {name: response.responseText});
+                            cluster.trigger('invalid', cluster, {name: utils.getResponseText(response)});
                         } else {
                             this.$el.modal('hide');
                             utils.showErrorDialog({
                                 title: i18n('dialog.create_cluster_wizard.create_cluster_error.title'),
-                                message: response.status == 400 ? response.responseText : undefined
+                                message: response.status == 400 ? utils.getResponseText(response) : undefined
                             });
                         }
                     }, this));
@@ -389,6 +389,12 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                     input.parent().siblings('.validation-error').text(error.message).removeClass('hide');
                     this.wizard.panesModel.set('invalid', true);
                 }, this);
+            }, this);
+            this.wizard.cluster.on('invalid', function(model, error) {
+                _.each(error, function(message, field) {
+                    this.$('*[name=' + field + ']').closest('.control-group').addClass('error').find('.help-inline').text(message);
+                }, this);
+                this.wizard.panesModel.set('invalid', true);
             }, this);
         },
         renderControls: function(config) {
@@ -622,15 +628,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             var success = true;
             var name = this.wizard.model.get('NameAndRelease.name');
             var release = this.wizard.model.get('NameAndRelease.release').id;
-            this.wizard.cluster.on('invalid', function(model, error) {
-                success = false;
-                _.each(error, function(message, field) {
-                    this.$('*[name=' + field + ']').closest('.control-group').addClass('error').find('.help-inline').text(message);
-                }, this);
-                this.wizard.panesModel.set('invalid', true);
-            }, this);
+            this.wizard.cluster.on('invalid', function() {success = false;}, this);
             if (this.wizard.collection.findWhere({name: name})) {
-                this.wizard.cluster.trigger('invalid', this.wizard.cluster, {name: i18n('dialog.create_cluster_wizard.name_release.existing_environment', {name: name})});
+                this.wizard.cluster.trigger('invalid', this.wizard.cluster,
+                    {name: i18n('dialog.create_cluster_wizard.name_release.existing_environment', {name: name})});
             }
             success = success && this.wizard.cluster.set({
                 name: name,

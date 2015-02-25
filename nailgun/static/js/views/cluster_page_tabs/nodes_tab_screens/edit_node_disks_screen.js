@@ -66,10 +66,11 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
         loadDefaults: function() {
             this.disableControls(true);
             this.disks.fetch({url: _.result(this.nodes.at(0), 'url') + '/disks/defaults/'})
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
                     utils.showErrorDialog({
                         title: i18n('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
-                        message: i18n('cluster_page.nodes_tab.configure_disks.configuration_error.load_defaults_warning')
+                        message: i18n('cluster_page.nodes_tab.configure_disks.configuration_error.load_defaults_warning'),
+                        response: response
                     });
                 }, this));
         },

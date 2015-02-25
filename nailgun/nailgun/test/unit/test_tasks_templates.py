@@ -99,3 +99,31 @@ class TestMakeTask(base.BaseTestCase):
              'uids': [1, 2, 3],
              'parameters': {
                  'timeout': 10}})
+
+    def test_make_provisioning_images_task(self):
+        result = tasks_templates.make_provisioning_images_task(
+            [1, 2, 3],
+            repos=[
+                {'name': 'repo', 'uri': 'http://some'}
+            ],
+            provision_data={
+                'codename': 'trusty',
+                'image_data': {
+                    '/mount': {
+                        'format': 'ext4',
+                        'uri': 'http://uri'
+                    }
+                }})
+
+        self.assertEqual(result, {
+            'type': 'shell',
+            'uids': [1, 2, 3],
+            'parameters': {
+                'cmd': ('generate-ibp \'{"image_data": {"/mount": {"uri": '
+                        '"http://uri", "format": "ext4"}}, "output": '
+                        '"/var/www/nailgun/targetimages", "repos": [{"name": '
+                        '"repo", "uri": "http://some"}], "codename": '
+                        '"trusty"}\''),
+                'timeout': 1200,
+                'cwd': '/',
+            }})

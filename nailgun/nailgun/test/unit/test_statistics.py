@@ -15,6 +15,7 @@
 
 from mock import Mock
 from mock import patch
+from mock import PropertyMock
 
 import datetime
 import requests
@@ -701,6 +702,82 @@ class TestOSWLCollectingUtils(BaseTestCase):
 
                         self.assertItemsEqual(
                             res, expected[ent_name]["data"])
+
+
+class TestOpenStackClientProvider(BaseTestCase):
+
+    @patch("nailgun.statistics.utils.ClientProvider.credentials",
+           new_callable=PropertyMock)
+    def test_clients_providing(self, creds_mock):
+        fake_credentials = ["fake"]
+        creds_mock.return_value = fake_credentials
+        client_provider = utils.ClientProvider(cluster=None)
+
+        nova_client_path = ("nailgun.statistics.utils."
+                            "nova_client.Client")
+        cinder_client_path = ("nailgun.statistics.utils."
+                              "cinder_client.Client")
+
+        return_value_mock = Mock()
+
+        with patch(nova_client_path,
+                   Mock(return_value=return_value_mock)) as nova_client_mock:
+
+            self.assertTrue(client_provider.nova is return_value_mock)
+
+            client_provider.nova
+
+            nova_client_mock.assert_called_once_with(
+                settings.OPENSTACK_API_VERSION["nova"],
+                *fake_credentials,
+                service_type=consts.NOVA_SERVICE_TYPE.compute
+            )
+
+        with patch(cinder_client_path,
+                   Mock(return_value=return_value_mock)) as cinder_client_mock:
+
+            self.assertTrue(client_provider.cinder is return_value_mock)
+
+            client_provider.cinder
+
+            cinder_client_mock.assert_called_once_with(
+                settings.OPENSTACK_API_VERSION["cinder"],
+                *fake_credentials
+            )
+
+    def test_get_auth_credentials(self):
+        expected_username = "test"
+        expected_password = "test"
+        expected_tenant = "test"
+        expected_auth_host = "0.0.0.0"
+        expected_auth_url = "http://{0}:{1}/{2}/".format(
+            expected_auth_host, settings.AUTH_PORT,
+            settings.OPENSTACK_API_VERSION["keystone"])
+
+        expected = (expected_username, expected_password, expected_tenant,
+                    expected_auth_url)
+
+        cluster = self.env.create_cluster(api=False)
+        updated_attributes = {
+            "editable": {
+                "access": {
+                    "user": {"value": expected_username},
+                    "password": {"value": expected_password},
+                    "tenant": {"value": expected_tenant}
+                }
+            }
+        }
+        Cluster.update_attributes(cluster, updated_attributes)
+
+        get_host_for_auth_path = ("nailgun.statistics.utils."
+                                  "_get_host_for_auth")
+
+        with patch(get_host_for_auth_path,
+                   return_value=expected_auth_host):
+            client_provider = utils.ClientProvider(cluster)
+            creds = client_provider.credentials
+
+            self.assertEqual(expected, creds)
 
 
 class TestOSWLCollector(BaseTestCase):

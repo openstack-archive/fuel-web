@@ -492,10 +492,11 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 ns = 'cluster_page.network_tab.verify_networks.verification_error.';
 
             task.save({}, options)
-                .fail(function() {
+                .fail(function(response) {
                     utils.showErrorDialog({
                         title: i18n(ns + 'title'),
-                        message: i18n(ns + 'start_verification_warning')
+                        message: i18n(ns + 'start_verification_warning'),
+                        response: response
                     });
                 })
                 .always(_.bind(function() {

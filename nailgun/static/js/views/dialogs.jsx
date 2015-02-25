@@ -55,9 +55,9 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
         close: function() {
             $(this.getDOMNode()).modal('hide');
         },
-        showError: function(message) {
+        showError: function(response, message) {
             var props = {error: true};
-            if (_.isString(message)) props.message = message;
+            props.message = utils.getResponseText(response) || message;
             this.setProps(props);
         },
         renderImportantLabel: function() {
@@ -75,7 +75,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                     <div className='modal-body'>
                         {this.props.error ?
                             <div className='text-error'>
-                                {this.props.message || i18n('dialog.error_dialog.warning')}
+                                {this.props.message || this.props.response}
                             </div>
                         : this.renderBody()}
                     </div>
@@ -270,7 +270,7 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                 .always(this.close)
                 .done(_.bind(app.page.deploymentTaskStarted, app.page))
                 .fail(_.bind(function(response) {
-                    this.showError(utils.getResponseText(response) || i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
+                    this.showError(response, i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
                 }, this));
         },
         renderBody: function() {
@@ -617,8 +617,8 @@ function($, _, i18n, Backbone, React, utils, models, controls) {
                     app.page.removeFinishedNetworkTasks();
                     this.close();
                 }, this))
-                .fail(_.bind(function() {
-                    this.showError(i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
+                .fail(_.bind(function(response) {
+                    this.showError(response, i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
                 }, this));
         }
     });

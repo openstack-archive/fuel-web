@@ -121,6 +121,8 @@ define([
         },
         showErrorDialog: function(options) {
             var dialogs = require('jsx!views/dialogs'); // avoid circular dependencies
+            options.response = options.response ? utils.getResponseText(options.response) :
+                options.message || i18n('dialog.error_dialog.warning');
             this.showDialog(dialogs.ErrorDialog, options);
         },
         showBandwidth: function(bandwidth) {
@@ -259,7 +261,16 @@ define([
             });
         },
         getResponseText: function(response) {
-            return _.contains([400, 409], response.status) ? response.responseText : '';
+            //return _.contains([400, 409], response.status) ? response.responseText : '';
+
+            if (response && response.status >= 400) {
+                if (response.status == 500) return $.t('dialog.error_dialog.warning');
+                // parsing new backend response format in responseText
+                response = response.responseText || response;
+                response = JSON.parse(response);
+                return response.message || '';
+            }
+            return '';
         },
         // Natural sorting, code taken from
         // https://github.com/javve/natural-sort

@@ -334,7 +334,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'provision',
+            'method': 'classic_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,
@@ -771,7 +771,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'provision',
+            'method': 'image_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,
@@ -1225,7 +1225,7 @@ class TestHandlers(BaseIntegrationTest):
 
         provision_msg = {
             'api_version': '1',
-            'method': 'provision',
+            'method': 'image_provision',
             'respond_to': 'provision_resp',
             'args': {
                 'task_uuid': provision_task_uuid,

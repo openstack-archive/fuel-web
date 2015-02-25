@@ -222,6 +222,25 @@ class UpdateTask(object):
 class ProvisionTask(object):
 
     @classmethod
+    def _get_provision_method(cls, cluster):
+        """Get provision method name based on cluster attributes
+
+        :param cluster: Cluster db object
+        :returns: string - an Astute callable
+        """
+        cluster_attrs = objects.Attributes.merged_attrs_values(
+            cluster.attributes)
+        provision_method = cluster_attrs.get('provision', {}).get(
+            'method', consts.PROVISION_METHODS.cobbler)
+
+        # NOTE(kozhukalov):
+        #
+        # Map provisioning method to Astute callable.
+        if provision_method == consts.PROVISION_METHODS.cobbler:
+            return 'classic_provision'
+        return 'image_provision'
+
+    @classmethod
     def message(cls, task, nodes_to_provisioning):
         logger.debug("ProvisionTask.message(task=%s)" % task.uuid)
         task = objects.Task.get_by_uid(
@@ -245,7 +264,7 @@ class ProvisionTask(object):
 
         rpc_message = make_astute_message(
             task,
-            'provision',
+            cls._get_provision_method(task.cluster),
             'provision_resp',
             {
                 'provisioning_info': serialized_cluster

@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import glob
 import os
 import string
@@ -41,28 +42,39 @@ def dict_merge(a, b):
     return result
 
 
-def traverse(cdict, generator_class):
-    new_dict = {}
-    if cdict:
-        for i, val in cdict.iteritems():
-            if isinstance(val, (str, unicode, int, float)):
-                new_dict[i] = val
-            elif isinstance(val, dict) and "generator" in val:
-                try:
-                    generator = getattr(
-                        generator_class,
-                        val["generator"]
-                    )
-                except AttributeError:
-                    logger.error("Attribute error: %s" % val["generator"])
-                    raise
-                else:
-                    new_dict[i] = generator(val.get("generator_arg"))
-            elif isinstance(val, list):
-                new_dict[i] = [traverse(v, generator_class) for v in val]
-            else:
-                new_dict[i] = traverse(val, generator_class)
-    return new_dict
+def traverse(data, generator_class, formatter_context=None):
+    """Traverse data.
+
+    :param data: an input data to be traversed
+    :param generator_class: a generator class to be used
+    :param formatter_context: a dict to be passed into .format() for strings
+    :returns: a dict with traversed data
+    """
+    rv = {}
+
+    for key, value in six.iteritems(data):
+        # if value should be generated then generate it
+        if isinstance(value, collections.Mapping) and 'generator' in value:
+            try:
+                generator = getattr(generator_class, value["generator"])
+                rv[key] = generator(value.get("generator_arg"))
+            except AttributeError:
+                logger.error("Attribute error: %s", value["generator"])
+                raise
+
+        # we want to traverse in all levels, so dive in child mappings
+        elif isinstance(value, collections.Mapping) and key != 'regex':
+            rv[key] = traverse(value, generator_class, formatter_context)
+
+        # format all strings with "formatter_context"
+        elif isinstance(value, six.string_types) and formatter_context:
+            rv[key] = value.format(**formatter_context)
+
+        # all other types should be copied "as is"
+        else:
+            rv[key] = value
+
+    return rv
 
 
 def generate_editables(editable, generator_class):
@@ -90,6 +102,7 @@ def generate_editables(editable, generator_class):
 
 
 class AttributesGenerator(object):
+
     @classmethod
     def password(cls, arg=None):
         try:

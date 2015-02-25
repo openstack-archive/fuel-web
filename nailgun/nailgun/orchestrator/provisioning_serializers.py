@@ -18,12 +18,16 @@
 
 from itertools import groupby
 
-from nailgun import consts
-from nailgun import objects
 import netaddr
+import six
 
+from nailgun import consts
+from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import objects
+from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
+from nailgun.utils import extract_env_version
 
 
 class ProvisioningSerializer(object):
@@ -228,9 +232,60 @@ class ProvisioningSerializer(object):
         return settings.PATH_TO_SSH_KEY
 
 
+class ProvisioningSerializer61(ProvisioningSerializer):
+
+    @classmethod
+    def serialize(cls, cluster, nodes, ignore_customized=False):
+        serialized_info = super(ProvisioningSerializer61, cls).serialize(
+            cluster, nodes, ignore_customized)
+
+        serialized_info['tasks'] = cls.serialize_tasks(cluster)
+        serialized_info['engine'].pop('provision_method', None)
+
+        return serialized_info
+
+    @classmethod
+    def serialize_tasks(cls, cluster):
+        tasks = []
+        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
+
+        is_build_images = all([
+            cluster.release.operating_system == consts.RELEASE_OS.ubuntu,
+            attrs['provision']['method'] == consts.PROVISION_METHODS.image])
+
+        if is_build_images:
+            tasks.append(
+                tasks_templates.make_provisioning_images_task(
+                    ['master'],
+                    attrs['repo_setup']['repos'],
+                    attrs['provision']))
+        return tasks
+
+
+def get_serializer_for_cluster(cluster):
+    """Returns a serializer depends on a given `cluster`.
+
+    :param cluster: cluster to process
+    :returns: a serializer for a given cluster
+    """
+    serializers_map = {
+        '5': ProvisioningSerializer,
+        '6.0': ProvisioningSerializer,
+        '6.1': ProvisioningSerializer61,
+    }
+
+    env_version = extract_env_version(cluster.release.version)
+    for version, serializer in six.iteritems(serializers_map):
+        if env_version.startswith(version):
+            return serializer
+
+    raise errors.UnsupportedSerializer()
+
+
 def serialize(cluster, nodes, ignore_customized=False):
     """Serialize cluster for provisioning."""
     objects.NodeCollection.prepare_for_provisioning(nodes)
+    serializer = get_serializer_for_cluster(cluster)
 
-    return ProvisioningSerializer.serialize(
+    return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)

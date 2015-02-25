@@ -407,9 +407,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 var attributeConfig = configEntry[1];
                 switch (attributeConfig.type) {
                     case 'checkbox':
+                        var conditions = _.pluck(attributeConfig.restrictions, 'condition');
                         controlsHtml += (controlTpl(_.extend(attributeConfig, {
                             pane: attribute,
                             labelClasses: configToUse.labelClasses,
+                            disabled: this.checkRestrictions(conditions) ? 'disabled' : '',
                             descriptionClasses: configToUse.descriptionClasses,
                             label: attributeConfig.label,
                             hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription ,
@@ -418,12 +420,14 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         break;
                     case 'radio':
                         _.each(attributeConfig.values, function(value) {
-                            var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
+                            var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute,
+                                conditions = _.pluck(value.restrictions, 'condition');
                             if (shouldBeAdded) {
                                 controlsHtml += (controlTpl(_.extend(attributeConfig, {
                                     value: value.data,
                                     pane: attribute,
                                     labelClasses: configToUse.labelClasses || '',
+                                    disabled: this.checkRestrictions(conditions) ? 'disabled' : '',
                                     descriptionClasses: configToUse.descriptionClasses || '',
                                     label: value.label,
                                     hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription,
@@ -478,6 +482,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             }, this);
             this.stickit(this.wizard.model);
         },
+        checkRestrictions: function(conditions) {
+            return _.any(conditions, function(condition) {
+                return utils.evaluateExpression(condition, this.wizard.configModels).value;
+            }, this);
+        },
         createRestrictionBindings: function(controlRestrictions, selectorOptions) {
             _.each(_.groupBy(controlRestrictions, 'action'), function(restrictions, action) {
                 var conditions = _.pluck(restrictions, 'condition');
@@ -494,9 +503,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                                 name: 'disabled',
                                 observe: attributesToObserve,
                                 onGet: function() {
-                                    return _.any(conditions, function(condition) {
-                                        return utils.evaluateExpression(condition, this.wizard.configModels).value;
-                                    }, this);
+                                    return this.checkRestrictions(conditions);
                                 }
                             }]
                         });
@@ -505,9 +512,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                         this.bindings[selector] = _.extend(this.bindings[selector] || {}, {
                             observe: attributesToObserve,
                             visible: function() {
-                                return !_.any(conditions, function(condition) {
-                                    return utils.evaluateExpression(condition, this.wizard.configModels).value;
-                                }, this);
+                                return !this.checkRestrictions(conditions);
                             }
                         });
                         break;

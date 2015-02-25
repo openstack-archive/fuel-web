@@ -2451,6 +2451,10 @@ input.error:focus,
   input.parameter-input {
     margin-bottom: 0px;
   }
+  .label-wrapper span { cursor: pointer; }
+  &.disabled {
+    .label-wrapper span, .parameter-name, .custom-tumbler input { cursor: not-allowed; }
+  }
 }
 
 .fieldset-group > div > .parameter-box,

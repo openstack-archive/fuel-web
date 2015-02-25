@@ -620,17 +620,17 @@ class TestDhcpCheckTask(BaseIntegrationTest):
             'task_uuid': self.task.uuid,
             'status': 'ready',
             'nodes': [{'uid': self.node1.id,
-                      'status': 'ready',
-                      'data': [{'mac': settings.ADMIN_NETWORK['mac'],
-                               'server_id': '10.20.0.157',
-                               'yiaddr': '10.20.0.133',
-                               'iface': 'eth0'}]},
+                       'status': 'ready',
+                       'data': [{'mac': settings.ADMIN_NETWORK['mac'],
+                                 'server_id': '10.20.0.157',
+                                 'yiaddr': '10.20.0.133',
+                                 'iface': 'eth0'}]},
                       {'uid': self.node2.id,
                        'status': 'ready',
                        'data': [{'mac': settings.ADMIN_NETWORK['mac'],
-                                'server_id': '10.20.0.20',
-                                'yiaddr': '10.20.0.131',
-                                'iface': 'eth0'}]}]
+                                 'server_id': '10.20.0.20',
+                                 'yiaddr': '10.20.0.131',
+                                 'iface': 'eth0'}]}]
         }
 
         self.receiver.check_dhcp_resp(**kwargs)
@@ -644,17 +644,17 @@ class TestDhcpCheckTask(BaseIntegrationTest):
             'task_uuid': self.task.uuid,
             'status': 'ready',
             'nodes': [{'uid': str(self.node1.id),
-                      'status': 'ready',
-                      'data': [{'mac': 'ee:ae:c5:e0:f5:17',
-                               'server_id': '10.20.0.157',
-                               'yiaddr': '10.20.0.133',
-                               'iface': 'eth0'}]},
+                       'status': 'ready',
+                       'data': [{'mac': 'ee:ae:c5:e0:f5:17',
+                                 'server_id': '10.20.0.157',
+                                 'yiaddr': '10.20.0.133',
+                                 'iface': 'eth0'}]},
                       {'uid': str(self.node2.id),
                        'status': 'ready',
                        'data': [{'mac': settings.ADMIN_NETWORK['mac'],
-                                'server_id': '10.20.0.20',
-                                'yiaddr': '10.20.0.131',
-                                'iface': 'eth0'}]}]
+                                 'server_id': '10.20.0.20',
+                                 'yiaddr': '10.20.0.131',
+                                 'iface': 'eth0'}]}]
         }
         self.receiver.check_dhcp_resp(**kwargs)
         self.db.flush()
@@ -1251,3 +1251,37 @@ class TestConsumer(BaseIntegrationTest):
                        self.env.clusters[0]).id).\
             all()
         self.assertNotEqual(len(nets_db), 0)
+
+    def test_provision_resp_master_uid(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False, "status": consts.NODE_STATUSES.provisioning},
+                {"api": False, "status": consts.NODE_STATUSES.provisioning},
+            ]
+        )
+        cluster = self.env.clusters[0]
+        node1, node2 = self.env.nodes
+
+        task = Task(
+            uuid=str(uuid.uuid4()),
+            name=consts.TASK_NAMES.provision,
+            cluster_id=cluster.id)
+        self.db.add(task)
+        self.db.flush()
+
+        self.receiver.provision_resp(**{
+            'task_uuid': task.uuid,
+            'nodes': [
+                {
+                    'uid': 'master',
+                    'status': 'error',
+                    'error_type': 'execute_tasks',
+                    'role': 'hook',
+                    'hook': None
+                }
+            ]})
+
+        self.assertEqual(cluster.status, consts.CLUSTER_STATUSES.error)
+        self.assertEqual(node1.status, consts.NODE_STATUSES.error)
+        self.assertEqual(node2.status, consts.NODE_STATUSES.error)

@@ -131,22 +131,26 @@ class EnvironmentManager(object):
         return cluster
 
     def create_release(self, api=False, **kwargs):
+        os = kwargs.get(
+            'operating_system', consts.RELEASE_OS.centos)
         version = kwargs.get(
             'version', '{0}-5.1'.format(randint(0, 100000000)))
-        release_data = {
+
+        # NOTE(ikalnitsky): In order to do not read each time openstack.yaml
+        # we're reading it once and then look for needed release.
+        releases = self.read_fixtures(('openstack',))
+        release_data = next((
+            r for r in releases if r['fields']['operating_system'] == os),
+            releases[0])
+        release_data = release_data['fields']
+
+        release_data.update({
             'name': u"release_name_" + version,
             'version': version,
-            'state': consts.RELEASE_STATES.available,
             'description': u"release_desc" + version,
-            'operating_system': 'CentOS',
             'roles': self.get_default_roles(),
-            'networks_metadata': self.get_default_networks_metadata(),
-            'attributes_metadata': self.get_default_attributes_metadata(),
-            'volumes_metadata': self.get_default_volumes_metadata(),
-            'roles_metadata': self.get_default_roles_metadata(),
-            'vmware_attributes_metadata':
-            self.get_default_vmware_attributes_metadata()
-        }
+        })
+
         if kwargs:
             release_data.update(kwargs)
         if api:
@@ -521,7 +525,7 @@ class EnvironmentManager(object):
         sample_plugin.update(kwargs)
         return sample_plugin
 
-    def get_default_vmware_attributes_metadata(self, **kwargs):
+    def get_default_vmware_attributes_metadata(self):
         return self.read_fixtures(
             ['openstack'])[0]['fields']['vmware_attributes_metadata']
 

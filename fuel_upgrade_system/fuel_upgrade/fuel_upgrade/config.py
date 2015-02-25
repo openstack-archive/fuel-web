@@ -382,6 +382,16 @@ def config(update_path, admin_password):
 
         'volume_puppet_manifests': [
             ('/etc/puppet', {'bind': '/etc/puppet', 'ro': True})],
+
+        'volume_postgres_data': [
+            ('/var/lib/pgsql', {'bind':
+            '/var/lib/fuel/container_data/{0}/postgres'.format(new_version),
+            'ro': False})],
+
+        'volume_cobbler_data': [
+            ('/var/lib/cobbler', {'bind':
+            '/var/lib/fuel/container_data/{0}/cobbler'.format(new_version),
+            'ro': False})],
     }
 
     containers = [
@@ -449,6 +459,7 @@ def config(update_path, admin_password):
              'volume_repos',
              'volume_ssh_keys',
              'volume_fuel_configs',
+             'volume_cobbler_data',
              'volume_upgrade_directory']},
 
         {'id': 'mcollective',
@@ -580,6 +591,7 @@ def config(update_path, admin_password):
              'volume_logs',
              'volume_repos',
              'volume_fuel_configs',
+             'volume_postgres_data',
              'volume_upgrade_directory']}]
 
     # Since we dropped fuel storage containers we should provide an

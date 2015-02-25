@@ -130,22 +130,28 @@ class EnvironmentManager(object):
         return cluster
 
     def create_release(self, api=False, **kwargs):
+        operating_system = kwargs.get(
+            'operating_system', consts.RELEASE_OS.centos)
         version = kwargs.get(
             'version', '{0}-5.1'.format(randint(0, 100000000)))
+
+        index = 1 if operating_system == consts.RELEASE_OS.ubuntu else 0
+
         release_data = {
             'name': u"release_name_" + version,
             'version': version,
             'state': consts.RELEASE_STATES.available,
             'description': u"release_desc" + version,
-            'operating_system': 'CentOS',
+            'operating_system': operating_system,
             'roles': self.get_default_roles(),
-            'networks_metadata': self.get_default_networks_metadata(),
-            'attributes_metadata': self.get_default_attributes_metadata(),
-            'volumes_metadata': self.get_default_volumes_metadata(),
-            'roles_metadata': self.get_default_roles_metadata(),
+            'networks_metadata': self.get_default_networks_metadata(index),
+            'attributes_metadata': self.get_default_attributes_metadata(index),
+            'volumes_metadata': self.get_default_volumes_metadata(index),
+            'roles_metadata': self.get_default_roles_metadata(index),
             'vmware_attributes_metadata':
-            self.get_default_vmware_attributes_metadata()
+            self.get_default_vmware_attributes_metadata(index)
         }
+
         if kwargs:
             release_data.update(kwargs)
         if api:
@@ -436,21 +442,21 @@ class EnvironmentManager(object):
     def get_default_roles(self):
         return ['controller', 'compute', 'cinder', 'ceph-osd', 'mongo']
 
-    def get_default_volumes_metadata(self):
+    def get_default_volumes_metadata(self, index=0):
         return self.read_fixtures(
-            ('openstack',))[0]['fields']['volumes_metadata']
+            ('openstack',))[index]['fields']['volumes_metadata']
 
-    def get_default_roles_metadata(self):
+    def get_default_roles_metadata(self, index=0):
         return self.read_fixtures(
-            ('openstack',))[0]['fields']['roles_metadata']
+            ('openstack',))[index]['fields']['roles_metadata']
 
-    def get_default_networks_metadata(self):
+    def get_default_networks_metadata(self, index=0):
         return self.read_fixtures(
-            ('openstack',))[0]['fields']['networks_metadata']
+            ('openstack',))[index]['fields']['networks_metadata']
 
-    def get_default_attributes_metadata(self):
+    def get_default_attributes_metadata(self, index=0):
         return self.read_fixtures(
-            ['openstack'])[0]['fields']['attributes_metadata']
+            ['openstack'])[index]['fields']['attributes_metadata']
 
     def get_default_plugin_env_config(self, **kwargs):
         return {
@@ -483,9 +489,9 @@ class EnvironmentManager(object):
         sample_plugin.update(kwargs)
         return sample_plugin
 
-    def get_default_vmware_attributes_metadata(self, **kwargs):
+    def get_default_vmware_attributes_metadata(self, index=0):
         return self.read_fixtures(
-            ['openstack'])[0]['fields']['vmware_attributes_metadata']
+            ['openstack'])[index]['fields']['vmware_attributes_metadata']
 
     def upload_fixtures(self, fxtr_names):
         for fxtr_path in self.fxtr_paths_by_names(fxtr_names):

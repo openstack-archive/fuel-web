@@ -319,34 +319,42 @@ class NailgunReceiver(object):
             lock_for_update=True
         )
 
-        # lock nodes for updating
-        q_nodes = objects.NodeCollection.filter_by_id_list(
-            None,
-            [n['uid'] for n in nodes],
-        )
-        q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
-        objects.NodeCollection.lock_for_update(q_nodes).all()
+        # if task was failed on master node then we should
+        # mark all cluster's nodes in error state
+        master = next((
+            n for n in nodes if n['uid'] == consts.MASTER_ROLE), {})
+        if master.get('status') == 'error':
+            status = 'error'
+            progress = 100
+        else:
+            q_nodes = objects.NodeCollection.filter_by_id_list(
+                None,
+                [n['uid'] for n in nodes])
+            # lock nodes for updating
+            q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+            objects.NodeCollection.lock_for_update(q_nodes).all()
 
-        for node in nodes:
-            uid = node.get('uid')
-            node_db = objects.Node.get_by_uid(node['uid'])
+            for node in nodes:
+                uid = node.get('uid')
+                node_db = objects.Node.get_by_uid(node['uid'])
 
-            if not node_db:
-                logger.warn('Node with uid "{0}" not found'.format(uid))
-                continue
+                if not node_db:
+                    logger.warn('Node with uid "{0}" not found'.format(uid))
+                    continue
 
-            if node.get('status') == 'error':
-                node_db.status = 'error'
-                node_db.progress = 100
-                node_db.error_type = 'provision'
-                node_db.error_msg = node.get('error_msg', 'Unknown error')
-            else:
-                node_db.status = node.get('status')
-                node_db.progress = node.get('progress')
+                if node.get('status') == 'error':
+                    node_db.status = 'error'
+                    node_db.progress = 100
+                    node_db.error_type = 'provision'
+                    node_db.error_msg = node.get('error_msg', 'Unknown error')
+                else:
+                    node_db.status = node.get('status')
+                    node_db.progress = node.get('progress')
 
-        db().flush()
-        if nodes and not progress:
-            progress = TaskHelper.recalculate_provisioning_task_progress(task)
+            db().flush()
+            if nodes and not progress:
+                progress = \
+                    TaskHelper.recalculate_provisioning_task_progress(task)
 
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)

@@ -82,10 +82,11 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                         this.setState({actionInProgress: false});
                         this.props.cluster.fetch();
                     }, this))
-                    .fail(function() {
+                    .fail(function(response) {
                         utils.showErrorDialog({
                             title: i18n('cluster_page.settings_tab.settings_error.title'),
-                            message: i18n('cluster_page.settings_tab.settings_error.saving_warning')
+                            message: i18n('cluster_page.settings_tab.settings_error.saving_warning'),
+                            response: response
                         });
                     });
             }
@@ -104,10 +105,11 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                             key: Date.now()
                         });
                     }, this))
-                    .fail(function() {
+                    .fail(function(response) {
                         utils.showErrorDialog({
                             title: i18n('cluster_page.settings_tab.settings_error.title'),
-                            message: i18n('cluster_page.settings_tab.settings_error.load_defaults_warning')
+                            message: i18n('cluster_page.settings_tab.settings_error.load_defaults_warning'),
+                            response: response
                         });
                     });
             }

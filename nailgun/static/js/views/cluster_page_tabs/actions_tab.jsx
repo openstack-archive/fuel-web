@@ -88,9 +88,12 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                     deferred
                         .fail(_.bind(function(response) {
                             if (response.status == 409) {
-                                this.setState({error: response.responseText});
+                                this.setState({error: utils.getResponseText(response)});
                             } else {
-                                utils.showErrorDialog({title: i18n('cluster_page.actions_tab.rename_error.title')});
+                                utils.showErrorDialog({
+                                    title: i18n('cluster_page.actions_tab.rename_error.title'),
+                                    response: response
+                                });
                             }
                         }, this))
                         .done(function() {

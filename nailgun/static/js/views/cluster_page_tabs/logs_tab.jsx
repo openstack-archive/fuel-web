@@ -93,7 +93,9 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     });
                     this.startPolling();
                 }, this))
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
+                    // @TODO: please confirm we need error dialog here
+                    utils.showErrorDialog({response: response});
                     this.setState({
                         logsEntries: undefined,
                         loading: 'fail'

@@ -2587,9 +2587,11 @@ legend {
   }
   .parameter-box {
     clear: both;
+    .input-wrapper {
+      display: inline-block;
+    }
     .parameter-name {
       width: 100%;
-      text-align: right;
       margin: 0 10px 0 0;
       padding: 0 10px;
       .label-wrapper {
@@ -3844,4 +3846,34 @@ i.btn-cluster-details {
 
 .ui-sortable-placeholder {
   display: none;
+}
+
+.repos {
+  .tablerow-wrapper {
+    position: relative;
+  }
+  input[type=text] {
+    width: 500px;
+  }
+  .buttons {
+    margin-bottom: 15px;
+  }
+  .repo-group {
+    > div {
+      float: left;
+      clear: none;
+    }
+    .repo-name input {
+      width: 100px;
+      margin: 0 16px 10px 10px;
+    }
+    .btn-link {
+      padding: 0 5px;
+    }
+    .parameter-description {
+      margin-left: 0;
+      width: 250px;
+      .position(absolute, @top: 0, @left: 690px);
+    }
+  }
 }

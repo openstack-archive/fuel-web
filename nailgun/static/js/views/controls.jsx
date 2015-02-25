@@ -46,20 +46,21 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
     controls.Input = React.createClass({
         mixins: [tooltipMixin],
         propTypes: {
-            type: React.PropTypes.string.isRequired,
+            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden']).isRequired,
             name: React.PropTypes.node,
             label: React.PropTypes.node,
             description: React.PropTypes.node,
             disabled: React.PropTypes.bool,
             inputClassName: React.PropTypes.node,
             labelClassName: React.PropTypes.node,
-            labelWrapperClassName:  React.PropTypes.node,
+            labelWrapperClassName: React.PropTypes.node,
             descriptionClassName: React.PropTypes.node,
             wrapperClassName: React.PropTypes.node,
             tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool,
             labelBeforeControl: React.PropTypes.bool,
-            onChange: React.PropTypes.func
+            onChange: React.PropTypes.func,
+            extraContent: React.PropTypes.node
         },
         getInitialState: function() {
             return {visible: false};
@@ -94,13 +95,15 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     onChange: this.onChange
                 },
                 Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
-                input = (<Tag {...this.props} {...props}>{this.props.children}</Tag>);
-            return this.isCheckboxOrRadio() ? (
-                <div key='input-wrapper' className='custom-tumbler'>
+                input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,
+                isCheckboxOrRadio = this.isCheckboxOrRadio();
+            return (
+                <div key='input-wrapper' className={cx({'input-wrapper': true, 'custom-tumbler': isCheckboxOrRadio})}>
                     {input}
-                    <span>&nbsp;</span>
+                    {isCheckboxOrRadio && <span>&nbsp;</span>}
+                    {this.props.extraContent}
                 </div>
-            ) : input;
+            );
         },
         renderToggleablePasswordAddon: function() {
             return this.props.toggleable ? (

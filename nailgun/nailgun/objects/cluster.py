@@ -64,9 +64,19 @@ class Attributes(NailgunObject):
         :returns: None
         """
         instance.generated = traverse(
-            instance.generated,
-            AttributesGenerator
+            instance.generated or {},
+            AttributesGenerator,
+            {
+                'cluster': instance.cluster,
+                'settings': settings,
+            }
         )
+
+        # TODO(ikalnitsky):
+        #
+        # Think about traversing "editable" attributes. It might be very
+        # useful to generate default values for editable attribute at
+        # cluster creation time.
 
     @classmethod
     def merged_attrs(cls, instance):

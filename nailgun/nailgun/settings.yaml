@@ -80,6 +80,9 @@ COLLECTOR_INST_INFO_URL: "https://{collector_server}/api/v1/installation_structu
 COLLECTOR_OSWL_INFO_URL: "https://{collector_server}/api/v1/oswl_stats/"
 COLLECTOR_PING_URL: "https://{collector_server}/api/v1/ping/"
 
+PROVISIONING_IMAGES_BUILD_TIMEOUT: 1200
+PROVISIONING_IMAGES_PATH: "/var/www/nailgun/targetimages"
+
 REPO_PRIORITIES:
   # Default priorities for Plugins' repos.
   #
@@ -88,6 +91,9 @@ REPO_PRIORITIES:
   plugins:
     centos: 10
     ubuntu: 1100
+
+SHELL_TASK_RETRIES: 3
+SHELL_TASK_INTERVAL: 1
 
 # statistics send interval
 STATS_SEND_INTERVAL: 3600

@@ -18,12 +18,16 @@
 
 from itertools import groupby
 
-from nailgun import consts
-from nailgun import objects
 import netaddr
+import six
 
+from nailgun import consts
 from nailgun.logger import logger
+from nailgun import objects
+from nailgun.orchestrator.priority_serializers import PriorityStrategy
+from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
+from nailgun.utils import extract_env_version
 
 
 class ProvisioningSerializer(object):
@@ -57,9 +61,6 @@ class ProvisioningSerializer(object):
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
-                'provision_method':
-                cluster_attrs.get('provision', {}).get(
-                    'method', consts.PROVISION_METHODS.cobbler)
             }}
 
     @classmethod
@@ -228,9 +229,60 @@ class ProvisioningSerializer(object):
         return settings.PATH_TO_SSH_KEY
 
 
+class ProvisioningSerializer61(ProvisioningSerializer):
+
+    @classmethod
+    def serialize(cls, cluster, nodes, ignore_customized=False):
+        serialized_info = super(ProvisioningSerializer61, cls).serialize(
+            cluster, nodes, ignore_customized)
+        serialized_info['pre_provision'] = \
+            cls.serialize_pre_provision_tasks(cluster)
+        return serialized_info
+
+    @classmethod
+    def serialize_pre_provision_tasks(cls, cluster):
+        tasks = []
+        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
+
+        is_build_images = all([
+            cluster.release.operating_system == consts.RELEASE_OS.ubuntu,
+            attrs['provision']['method'] == consts.PROVISION_METHODS.image])
+
+        if is_build_images:
+            tasks.append(
+                tasks_templates.make_provisioning_images_task(
+                    [consts.MASTER_ROLE],
+                    attrs['repo_setup']['repos'],
+                    attrs['provision']))
+
+        PriorityStrategy().one_by_one(tasks)
+        return tasks
+
+
+def get_serializer_for_cluster(cluster):
+    """Returns a serializer depends on a given `cluster`.
+
+    :param cluster: cluster to process
+    :returns: a serializer for a given cluster
+    """
+    serializers_map = {
+        '5': ProvisioningSerializer,
+        '6.0': ProvisioningSerializer,
+    }
+
+    env_version = extract_env_version(cluster.release.version)
+    for version, serializer in six.iteritems(serializers_map):
+        if env_version.startswith(version):
+            return serializer
+
+    # by default, we should return latest serializer
+    return ProvisioningSerializer61
+
+
 def serialize(cluster, nodes, ignore_customized=False):
     """Serialize cluster for provisioning."""
     objects.NodeCollection.prepare_for_provisioning(nodes)
+    serializer = get_serializer_for_cluster(cluster)
 
-    return ProvisioningSerializer.serialize(
+    return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)

@@ -46,7 +46,8 @@ class TestAttributes(BaseIntegrationTest):
         attrs = objects.Cluster.get_attributes(cluster_db)
         self._compare_generated(
             release.attributes_metadata['generated'],
-            attrs.generated
+            attrs.generated,
+            cluster_db
         )
 
     def test_500_if_no_attributes(self):
@@ -223,17 +224,19 @@ class TestAttributes(BaseIntegrationTest):
                 else:
                     self.assertEqual(orig_value, value)
 
-    def _compare_generated(self, d1, d2):
+    def _compare_generated(self, d1, d2, cluster):
         if isinstance(d1, dict) and isinstance(d2, dict):
             for s_field, s_value in six.iteritems(d1):
                 if s_field not in d2:
                     raise KeyError()
-                self._compare_generated(s_value, d2[s_field])
-        elif isinstance(d1, str) or isinstance(d1, unicode):
+                self._compare_generated(s_value, d2[s_field], cluster)
+        elif isinstance(d1, six.string_types):
             if d1 in [u"", ""]:
                 self.assertEqual(len(d2), 8)
             else:
-                self.assertEqual(d1, d2)
+                self.assertEqual(
+                    d1.format(settings=settings, cluster=cluster),
+                    d2.format(settings=settings, cluster=cluster))
 
     def _compare_editable(self, r_attrs, c_attrs):
         """Compare editable attributes omitting the check of generated values

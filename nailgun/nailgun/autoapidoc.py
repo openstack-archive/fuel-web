@@ -16,11 +16,11 @@
 
 import inspect
 
-from nailgun import objects
+from oslo.serialization import jsonutils
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.urls import urls
-from nailgun.openstack.common import jsonutils
+from nailgun import objects
 from nailgun.test.base import reverse
 
 

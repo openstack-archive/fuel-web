@@ -15,9 +15,9 @@
 #    under the License.
 
 import mock
+from oslo.serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Release
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse

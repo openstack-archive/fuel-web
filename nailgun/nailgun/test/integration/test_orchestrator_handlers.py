@@ -14,15 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+from oslo.serialization import jsonutils
+
 import nailgun
 
 from nailgun import consts
 from nailgun import objects
 
-from mock import patch
-
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse

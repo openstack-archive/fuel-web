@@ -23,11 +23,12 @@ import time
 from timeit import Timer
 from webtest import app
 
+from oslo.serialization import jsonutils
+
 from nailgun.app import build_app
 from nailgun.db import db
 from nailgun.db import flush
 from nailgun.db import syncdb
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import EnvironmentManager

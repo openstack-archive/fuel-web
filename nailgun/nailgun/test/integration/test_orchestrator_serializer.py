@@ -22,12 +22,12 @@ import re
 import mock
 from netaddr import IPNetwork
 from netaddr import IPRange
+from oslo.serialization import jsonutils
 
 from nailgun.consts import OVS_BOND_MODES
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.openstack.common import jsonutils
 
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer

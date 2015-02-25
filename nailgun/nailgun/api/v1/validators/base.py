@@ -16,8 +16,9 @@
 import jsonschema
 from jsonschema.exceptions import ValidationError
 
+from oslo.serialization import jsonutils
+
 from nailgun.errors import errors
-from nailgun.openstack.common import jsonutils
 
 
 class BasicValidator(object):

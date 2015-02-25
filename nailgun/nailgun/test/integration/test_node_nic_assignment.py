@@ -17,9 +17,10 @@
 from copy import deepcopy
 from netaddr import IPNetwork
 
+from oslo.serialization import jsonutils
+
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 

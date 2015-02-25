@@ -31,6 +31,8 @@ from itertools import izip
 from netaddr import IPNetwork
 from random import randint
 
+from oslo.serialization import jsonutils
+
 import web
 from webtest import app
 
@@ -62,7 +64,6 @@ from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
-from nailgun.openstack.common import jsonutils
 
 
 class TimeoutError(Exception):

@@ -40,12 +40,12 @@ import sys
 import traceback
 
 from oslo.config import cfg
+from oslo.serialization import jsonutils
 import six
 from six import moves
 
 from nailgun.openstack.common.gettextutils import _  # noqa
 from nailgun.openstack.common import importutils
-from nailgun.openstack.common import jsonutils
 from nailgun.openstack.common import local
 
 

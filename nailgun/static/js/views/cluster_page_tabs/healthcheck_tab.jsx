@@ -182,8 +182,8 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 .done(_.bind(function() {
                     this.startPolling(true);
                 }, this))
-                .fail(function() {
-                    utils.showErrorDialog();
+                .fail(function(response) {
+                    utils.showErrorDialog({response: response});
                 })
                 .always(_.bind(function() {
                     this.setState({actionInProgress: false});

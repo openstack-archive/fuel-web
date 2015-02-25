@@ -201,7 +201,12 @@
                 "capacity_audit_text": "To better manage your resources, you can run this report to find out what OpenStack roles have been deployed across all of your environments.",
                 "view_capacity_audit": "View Capacity Audit",
                 "send_statistics_title": "Send Statistics About Usage",
-                "save_changes": "Save Changes"
+                "save_changes": "Save Changes",
+                "documentation_link": "Go to Documentation",
+                "community_title": "Fuel Documentation",
+                "mirantis_title": "Mirantis OpenStack Documentation",
+                "community_text": "The page contains the most recent Fuel documentation. You can read it online or download in PDF.",
+                "mirantis_text": "The page contains the most recent Mirantis OpenStack documentation. You can read it online or download in PDF."
             },
             "release_page": {
                 "title": "Releases",

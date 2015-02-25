@@ -222,6 +222,30 @@ class UpdateTask(object):
 class ProvisionTask(object):
 
     @classmethod
+    def _get_provision_method(cls, cluster):
+        """Get provision method name based on cluster attributes
+
+        :param cluster: Cluster db object
+        :returns: string - classic_provision/image_provision
+        """
+        cluster_attrs = objects.Attributes.merged_attrs_values(
+            cluster.attributes)
+        provision_method = cluster_attrs.get('provision', {}).get(
+            'method', consts.PROVISION_METHODS.cobbler)
+
+        # NOTE(kozhukalov):
+        # Nailgun provision methods are mapped into Astute callables as follows:
+        #
+        # 'cobbler' => 'classic_provision'
+        # 'image' => 'image_provision'
+        #
+        # These two callables use two different provision engines.
+        if provision_method == 'cobbler':
+            return 'classic_provision'
+        else:
+            return 'image_provision'
+
+    @classmethod
     def message(cls, task, nodes_to_provisioning):
         logger.debug("ProvisionTask.message(task=%s)" % task.uuid)
         task = objects.Task.get_by_uid(
@@ -245,7 +269,7 @@ class ProvisionTask(object):
 
         rpc_message = make_astute_message(
             task,
-            'provision',
+            cls._get_provision_method(task.cluster),
             'provision_resp',
             {
                 'provisioning_info': serialized_cluster

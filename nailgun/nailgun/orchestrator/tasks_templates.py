@@ -14,6 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.serialization import jsonutils
+
+from nailgun.settings import settings
+
 
 def make_upload_task(uids, data, path):
     return {
@@ -125,3 +129,19 @@ def make_reboot_task(uids, task):
         'uids': uids,
         'parameters': {
             'timeout': task['parameters']['timeout']}}
+
+
+def make_provisioning_images_task(uids, repos, provision_data):
+    conf = {
+        'repos': repos,
+        'image_data': provision_data['image_data'],
+        'codename': provision_data['codename'],
+        'output': settings.PROVISIONING_IMAGES_PATH,
+    }
+    conf = jsonutils.dumps(conf)
+
+    return make_shell_task(uids, {
+        'parameters': {
+            'cmd': "fuel-image '{0}'".format(conf),
+            'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
+            'retries': 1}})

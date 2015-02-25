@@ -21,9 +21,11 @@ All sizes in megabytes.
 
 from copy import deepcopy
 from functools import partial
+
+from oslo.serialization import jsonutils
+
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.openstack.common import jsonutils
 
 
 def is_service(space):

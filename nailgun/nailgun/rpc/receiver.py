@@ -22,6 +22,7 @@ import os
 import six
 import traceback
 
+from oslo.serialization import jsonutils
 from sqlalchemy import or_
 
 from nailgun import consts
@@ -36,7 +37,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.logger import logger
 from nailgun.network import utils as net_utils
-from nailgun.openstack.common import jsonutils
 from nailgun.task.helpers import TaskHelper
 
 

@@ -16,8 +16,9 @@
 import functools
 import random
 
+from oslo.serialization import jsonutils
+
 from nailgun import consts
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import fake_tasks
 from nailgun.test.performance import base
 from nailgun.test.utils import random_string

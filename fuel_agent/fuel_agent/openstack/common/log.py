@@ -38,12 +38,12 @@ import sys
 import traceback
 
 from oslo.config import cfg
+from oslo.serialization import jsonutils
 import six
 from six import moves
 
 from fuel_agent.openstack.common.gettextutils import _
 from fuel_agent.openstack.common import importutils
-from fuel_agent.openstack.common import jsonutils
 from fuel_agent.openstack.common import local
 
 

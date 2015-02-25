@@ -24,14 +24,14 @@ Create Date: 2014-09-18 12:44:28.327312
 revision = '1b1d4016375d'
 down_revision = '52924111f7d8'
 
-
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.sql import text
 import uuid
 
+from alembic import op
+from oslo.serialization import jsonutils
+import sqlalchemy as sa
+from sqlalchemy.sql import text
+
 from nailgun.db.sqlalchemy.models.fields import JSON
-from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_release_attributes_51_to_60
 from nailgun.utils.migration import upgrade_release_fill_orchestrator_data

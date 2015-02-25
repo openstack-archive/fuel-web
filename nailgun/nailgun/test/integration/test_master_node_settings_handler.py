@@ -15,10 +15,10 @@
 import copy
 import uuid
 
+from oslo.serialization import jsonutils
+
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
-
-from nailgun.openstack.common import jsonutils
 
 from nailgun import objects
 

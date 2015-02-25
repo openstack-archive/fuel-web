@@ -20,10 +20,10 @@ Product registration handlers
 
 import base64
 
+from oslo.serialization import jsonutils
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 
 

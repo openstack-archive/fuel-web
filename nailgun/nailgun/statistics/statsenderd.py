@@ -15,18 +15,17 @@
 #    under the License.
 
 import requests
+import six
+import time
 import urllib3
 
-import six
-
-import time
+from oslo.serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun import objects
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.statistics.installation_info import InstallationInfo
 from nailgun.statistics.utils import dithered

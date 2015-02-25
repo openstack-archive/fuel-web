@@ -23,6 +23,7 @@ import StringIO
 import sys
 import yaml
 
+from oslo.serialization import jsonutils
 from sqlalchemy import orm
 import sqlalchemy.types
 
@@ -30,7 +31,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun import objects
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 

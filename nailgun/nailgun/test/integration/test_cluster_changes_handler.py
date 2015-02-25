@@ -18,6 +18,8 @@ from copy import deepcopy
 from mock import patch
 import netaddr
 
+from oslo.serialization import jsonutils
+
 import nailgun
 
 from nailgun import consts
@@ -26,7 +28,6 @@ from nailgun import objects
 from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks

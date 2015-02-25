@@ -25,11 +25,11 @@ revision = '37608259013'
 down_revision = '1b1d4016375d'
 
 from alembic import op
+from oslo.serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 
 from nailgun.db.sqlalchemy.models import fields
-from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import \
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping

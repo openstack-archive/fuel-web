@@ -14,12 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import mock
+from oslo.serialization import jsonutils
 import yaml
 
 from nailgun import objects
-from nailgun.openstack.common import jsonutils
 from nailgun.plugins import attr_plugin
 from nailgun.test import base
 

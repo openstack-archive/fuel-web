@@ -16,12 +16,12 @@
 
 from mock import patch
 
+from oslo.serialization import jsonutils
 from sqlalchemy.sql import not_
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 

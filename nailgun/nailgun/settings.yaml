@@ -78,6 +78,8 @@ COLLECTOR_INST_INFO_URL: "https://{collector_server}/api/v1/installation_structu
 COLLECTOR_OSWL_INFO_URL: "https://{collector_server}/api/v1/oswl_stats/"
 COLLECTOR_PING_URL: "https://{collector_server}/api/v1/ping/"
 
+PROVISIONING_IMAGES_PATH: "/var/www/nailgun/targetimages"
+
 REPO_PRIORITIES:
   # Default priorities for Plugins' repos.
   #

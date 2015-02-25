@@ -371,7 +371,20 @@
                     "dependent_role_warning": "The environment contains __roles__ node",
                     "dependent_role_warning_plural": "The environment contains __roles__ nodes",
                     "dependent_settings_warning": "__settings__ is active",
-                    "dependent_settings_warning_plural": "__settings__ are active"
+                    "dependent_settings_warning_plural": "__settings__ are active",
+                    "custom_repo_configuration": {
+                        "repo_name_placeholder": "Repo name",
+                        "repo_labels": {
+                            "MOS": "Ubuntu repo",
+                            "Fuel": "Fuel Repo"
+                        },
+                        "add_repo_button": "Add Extra Repo",
+                        "errors": {
+                            "empty_name": "Empty name",
+                            "invalid_name": "Invalid name",
+                            "invalid_repo": "Invalid repo format"
+                        }
+                    }
                 },
                 "actions_tab": {
                     "title": "Actions",

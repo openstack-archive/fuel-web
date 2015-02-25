@@ -169,6 +169,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 cluster: cluster,
                 settings: settings,
                 version: app.version,
+                release: cluster.get('release'),
                 default: settings,
                 networking_parameters: cluster.get('networkConfiguration').get('networking_parameters')
             };

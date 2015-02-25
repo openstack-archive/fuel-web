@@ -1415,6 +1415,9 @@ label {cursor: default;}
       .label-wrapper {
         max-width: @network-row-width;
       }
+      .input-wrapper {
+        float: left;
+      }
       input[type=text] {
         width: 172px;
         margin: 7px 3px 0 0;
@@ -2511,6 +2514,10 @@ input.error:focus,
   max-height: 40px;
 }
 
+.input-wrapper {
+  display: inline-block;
+}
+
 .parameter-description {
   .float-mixin;
   color: @font-color-light;
@@ -2610,7 +2617,6 @@ legend {
     clear: both;
     .parameter-name {
       width: 100%;
-      text-align: right;
       margin: 0 10px 0 0;
       padding: 0 10px;
       .label-wrapper {
@@ -3903,4 +3909,35 @@ i.btn-cluster-details {
 
 .ui-sortable-placeholder {
   display: none;
+}
+
+.repos {
+  .tablerow-wrapper {
+    position: relative;
+  }
+  input[type=text] {
+    width: 500px;
+  }
+  .buttons {
+    margin-bottom: 15px;
+    padding-left: 7px;
+  }
+  .repo-group {
+    > div {
+      float: left;
+      clear: none;
+    }
+    .repo-name input {
+      width: 100px;
+      margin: 0 16px 10px 10px;
+    }
+    .btn-link {
+      padding: 0 5px;
+    }
+    .parameter-description {
+      margin-left: 0;
+      width: 250px;
+      .position(absolute, @top: 0, @left: 690px);
+    }
+  }
 }

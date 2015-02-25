@@ -21,8 +21,9 @@ define([
     'utils',
     'expression',
     'expression/objects',
+    'jsx!views/custom_controls',
     'deepModel'
-], function($, _, i18n, Backbone, utils, Expression, expressionObjects) {
+], function($, _, i18n, Backbone, utils, Expression, expressionObjects, customControls) {
     'use strict';
 
     var models = {};
@@ -538,7 +539,17 @@ define([
                 if ((group.metadata || {}).enabled === false || checkRestrictions(this.makePath(groupName, 'metadata')).result) return;
                 _.each(group, function(setting, settingName) {
                     var path = this.makePath(groupName, settingName);
-                    if (!setting.regex || !setting.regex.source || checkRestrictions(path).result) return;
+                    if (checkRestrictions(path).result) return;
+
+                    // support of custom controls
+                    var CustomControl = customControls[setting.type];
+                    if (CustomControl) {
+                        var error = CustomControl.validate(setting);
+                        if (error) errors[path] = error;
+                        return;
+                    }
+
+                    if (!(setting.regex || {}).source) return;
                     if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
                 }, this);
             }, this);

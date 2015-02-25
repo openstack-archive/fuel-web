@@ -19,14 +19,15 @@ from mock import patch
 import os
 import tempfile
 
-from nailgun.test.base import BaseIntegrationTest
+from nailgun.test import base
 from nailgun.utils import camel_to_snake_case
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
 from nailgun.utils import get_fuel_release_versions
+from nailgun.utils import traverse
 
 
-class TestUtils(BaseIntegrationTest):
+class TestUtils(base.BaseIntegrationTest):
 
     def test_dict_merge(self):
         custom = {"coord": [10, 10],
@@ -83,3 +84,47 @@ class TestUtils(BaseIntegrationTest):
             camel_to_snake_case('TestCase') == 'test_case')
         self.assertTrue(
             camel_to_snake_case('TTestCase') == 't_test_case')
+
+
+class TestTraverse(base.BaseUnitTest):
+
+    class TestGenerator(object):
+        @classmethod
+        def test(cls, arg=None):
+            return 'testvalue'
+
+    data = {
+        'foo': {
+            'generator': 'test',
+        },
+        'bar': 'test {a} string',
+        'baz': 42,
+        'regex': {
+            'source': 'test {a} string',
+            'error': 'an {a} error'
+        }
+    }
+
+    def test_wo_formatting_context(self):
+        result = traverse(self.data, self.TestGenerator)
+
+        self.assertEqual(result, {
+            'foo': 'testvalue',
+            'bar': 'test {a} string',
+            'baz': 42,
+            'regex': {
+                'source': 'test {a} string',
+                'error': 'an {a} error'
+            }})
+
+    def test_w_formatting_context(self):
+        result = traverse(self.data, self.TestGenerator, {'a': 13})
+
+        self.assertEqual(result, {
+            'foo': 'testvalue',
+            'bar': 'test 13 string',
+            'baz': 42,
+            'regex': {
+                'source': 'test {a} string',
+                'error': 'an {a} error'
+            }})

@@ -22,37 +22,49 @@ from nailgun.objects.base import RestrictionMixin
 from nailgun.test import base
 
 
-class TestRestriction(base.BaseUnitTest):
+class TestRestriction(base.BaseTestCase):
 
     def setUp(self):
         super(TestRestriction, self).setUp()
         test_data = """
-            attributes_1:
+            attributes:
               group:
-                test_attribute_1:
-                  name: test_attribute_1
+                attribute_1:
+                  name: attribute_1
                   value: true
                   restrictions:
-                    - condition: 'settings:group.test_attribute_2.value ==
-                        true'
+                    - condition: 'settings:group.attribute_2.value == true'
                       message: 'Only one of attributes 1 and 2 allowed'
-                    - condition: 'settings:group.test_attribute_3.value ==
-                        "spam"'
+                    - condition: 'settings:group.attribute_3.value == "spam"'
                       message: 'Only one of attributes 1 and 3 allowed'
-                test_attribute_2:
-                  name: test_attribute_2
+                attribute_2:
+                  name: attribute_2
                   value: true
-                test_attribute_3:
-                  name: test_attribute_3
+                attribute_3:
+                  name: attribute_3
                   value: spam
                   restrictions:
-                    - condition: 'settings:group.test_attribute_3.value ==
-                        settings:group.test_attribute_4.value'
+                    - condition: 'settings:group.attribute_3.value ==
+                        settings:group.attribute_4.value'
                       message: 'Only one of attributes 3 and 4 allowed'
                       action: enable
-                test_attribute_4:
-                  name: test_attribute_4
+                attribute_4:
+                  name: attribute_4
                   value: spam
+                attribute_5:
+                  name: attribute_5
+                  value: 4
+            roles_meta:
+              cinder:
+                limits:
+                  min: 1
+                  overrides:
+                    - condition: 'settings:group.attribute_2.value == true'
+                      message: 'At most one role_1 node can be added'
+                      max: 1
+              controller:
+                limits:
+                  recommended: 'settings:group.attribute_5.value'
         """
         self.data = yaml.load(test_data)
 
@@ -60,7 +72,7 @@ class TestRestriction(base.BaseUnitTest):
         super(TestRestriction, self).tearDown()
 
     def test_check_restrictions(self):
-        attributes = self.data.get('attributes_1')
+        attributes = self.data.get('attributes')
 
         for gkey, gvalue in six.iteritems(attributes):
             for key, value in six.iteritems(gvalue):
@@ -73,14 +85,14 @@ class TestRestriction(base.BaseUnitTest):
                     models={'settings': attributes},
                     restrictions=restrictions)
                 # check when couple restrictions true for some item
-                if key == 'test_attribute_1':
+                if key == 'attribute_1':
                     self.assertTrue(result.get('result'))
                     self.assertEqual(
                         result.get('message'),
                         'Only one of attributes 1 and 2 allowed. ' +
                         'Only one of attributes 1 and 3 allowed')
                 # check when different values uses in restriction
-                if key == 'test_attribute_3':
+                if key == 'attribute_3':
                     self.assertTrue(result.get('result'))
                     self.assertEqual(
                         result.get('message'),
@@ -120,3 +132,25 @@ class TestRestriction(base.BaseUnitTest):
             errors.InvalidData,
             RestrictionMixin._expand_restriction,
             invalid_format)
+
+    def test_check_limits(self):
+        roles = self.data.get('roles_meta')
+        attributes = self.data.get('attributes')
+        self.env.create(
+            nodes_kwargs=[
+                {"status": "ready", "roles": ["cinder"]},
+                {"status": "ready", "roles": ["controller"]},
+            ]
+        )
+        for role, data in six.iteritems(roles):
+            result = RestrictionMixin.check_limits(
+                models={'settings': attributes},
+                nodes=self.env.nodes,
+                role=role,
+                limits=data.get('limits'))
+
+            if role == 'cinder':
+                self.assertTrue(result.get('valid'))
+
+            if role == 'controller':
+                self.assertFalse(result.get('valid'))

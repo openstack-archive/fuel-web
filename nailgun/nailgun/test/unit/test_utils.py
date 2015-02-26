@@ -21,8 +21,10 @@ import tempfile
 
 from nailgun.test import base
 from nailgun.utils import camel_to_snake_case
+from nailgun.utils import compact
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
+from nailgun.utils import flatten
 from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import traverse
 
@@ -84,6 +86,16 @@ class TestUtils(base.BaseIntegrationTest):
             camel_to_snake_case('TestCase') == 'test_case')
         self.assertTrue(
             camel_to_snake_case('TTestCase') == 't_test_case')
+
+    def test_compact(self):
+        self.assertListEqual(
+            compact([1, '', 5, False, None, False, 'test']),
+            [1, 5, 'test'])
+
+    def test_flatten(self):
+        self.assertListEqual(
+            flatten([7, 5, [3, [4, 5], 1], 2]),
+            [7, 5, 3, [4, 5], 1, 2])
 
 
 class TestTraverse(base.BaseUnitTest):

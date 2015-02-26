@@ -18,49 +18,72 @@ import six
 import yaml
 
 from nailgun.errors import errors
+from nailgun.objects.base import LimitsMixin
 from nailgun.objects.base import RestrictionMixin
 from nailgun.test import base
 
 
-class TestRestriction(base.BaseUnitTest):
+DATA = """
+    attributes:
+      group:
+        attribute_1:
+          name: attribute_1
+          value: true
+          restrictions:
+            - condition: 'settings:group.attribute_2.value == true'
+              message: 'Only one of attributes 1 and 2 allowed'
+            - condition: 'settings:group.attribute_3.value == "spam"'
+              message: 'Only one of attributes 1 and 3 allowed'
+        attribute_2:
+          name: attribute_2
+          value: true
+        attribute_3:
+          name: attribute_3
+          value: spam
+          restrictions:
+            - condition: 'settings:group.attribute_3.value ==
+                settings:group.attribute_4.value'
+              message: 'Only one of attributes 3 and 4 allowed'
+              action: enable
+        attribute_4:
+          name: attribute_4
+          value: spam
+        attribute_5:
+          name: attribute_5
+          value: 4
+    roles_meta:
+      cinder:
+        limits:
+          min: 1
+          overrides:
+            - condition: 'settings:group.attribute_2.value == true'
+              message: 'At most one role_1 node can be added'
+              max: 1
+      controller:
+        limits:
+          recommended: 'settings:group.attribute_5.value'
+      mongo:
+        limits:
+          max: 12
+          message: 'At most 12 MongoDB node should be added'
+          overrides:
+            - condition: 'settings:group.attribute_3.value == "spam"'
+              min: 4
+              message: 'At least 4 MongoDB node can be added if spam'
+            - condition: 'settings:group.attribute_3.value == "egg"'
+              recommended: 3
+              message: "At least 3 MongoDB nodes are recommended"
+"""
+
+
+class TestRestriction(base.BaseTestCase):
 
     def setUp(self):
         super(TestRestriction, self).setUp()
-        test_data = """
-            attributes_1:
-              group:
-                test_attribute_1:
-                  name: test_attribute_1
-                  value: true
-                  restrictions:
-                    - condition: 'settings:group.test_attribute_2.value ==
-                        true'
-                      message: 'Only one of attributes 1 and 2 allowed'
-                    - condition: 'settings:group.test_attribute_3.value ==
-                        "spam"'
-                      message: 'Only one of attributes 1 and 3 allowed'
-                test_attribute_2:
-                  name: test_attribute_2
-                  value: true
-                test_attribute_3:
-                  name: test_attribute_3
-                  value: spam
-                  restrictions:
-                    - condition: 'settings:group.test_attribute_3.value ==
-                        settings:group.test_attribute_4.value'
-                      message: 'Only one of attributes 3 and 4 allowed'
-                      action: enable
-                test_attribute_4:
-                  name: test_attribute_4
-                  value: spam
-        """
-        self.data = yaml.load(test_data)
-
-    def tearDown(self):
-        super(TestRestriction, self).tearDown()
+        self.data = yaml.load(DATA)
 
     def test_check_restrictions(self):
-        attributes = self.data.get('attributes_1')
+        attributes = self.data.get('attributes')
 
         for gkey, gvalue in six.iteritems(attributes):
             for key, value in six.iteritems(gvalue):
@@ -73,14 +96,14 @@ class TestRestriction(base.BaseUnitTest):
                     models={'settings': attributes},
                     restrictions=restrictions)
                 # check when couple restrictions true for some item
-                if key == 'test_attribute_1':
+                if key == 'attribute_1':
                     self.assertTrue(result.get('result'))
                     self.assertEqual(
                         result.get('message'),
                         'Only one of attributes 1 and 2 allowed. ' +
                         'Only one of attributes 1 and 3 allowed')
                 # check when different values uses in restriction
-                if key == 'test_attribute_3':
+                if key == 'attribute_3':
                     self.assertTrue(result.get('result'))
                     self.assertEqual(
                         result.get('message'),
@@ -120,3 +143,79 @@ class TestRestriction(base.BaseUnitTest):
             errors.InvalidData,
             RestrictionMixin._expand_restriction,
             invalid_format)
+
+
+class TestLimits(base.BaseTestCase):
+    def setUp(self):
+        super(TestLimits, self).setUp()
+        self.data = yaml.load(DATA)
+        self.env.create(
+            nodes_kwargs=[
+                {"status": "ready", "roles": ["cinder"]},
+                {"status": "ready", "roles": ["controller"]},
+                {"status": "ready", "roles": ["mongo"]},
+                {"status": "ready", "roles": ["mongo"]},
+            ]
+        )
+
+    def test_check_node_limits(self):
+        roles = self.data.get('roles_meta')
+        attributes = self.data.get('attributes')
+
+        for role, data in six.iteritems(roles):
+            result = LimitsMixin().check_node_limits(
+                models={'settings': attributes},
+                nodes=self.env.nodes,
+                role=role,
+                limits=data.get('limits'))
+
+            if role == 'cinder':
+                self.assertTrue(result.get('valid'))
+
+            if role == 'controller':
+                self.assertFalse(result.get('valid'))
+                self.assertEqual(
+                    result.get('messages'),
+                    'Default message')
+
+            if role == 'mongo':
+                self.assertFalse(result.get('valid'))
+                self.assertEqual(
+                    result.get('messages'),
+                    'At least 4 MongoDB node can be added if spam')
+
+    def test_check_override(self):
+        roles = self.data.get('roles_meta')
+        attributes = self.data.get('attributes')
+
+        limits = LimitsMixin()
+        # Set nodes count to 4
+        limits.count = 4
+        limits.limit_reached = True
+        limits.models = {'settings': attributes}
+        limits.nodes = self.env.nodes
+        # Set "cinder" role to working on
+        limits.role = 'cinder'
+        limits.limit_types = ['max']
+        limits.checked_limit_types = {}
+        limits.limit_values = {'max': None}
+        override_data = roles['cinder']['limits']['overrides'][0]
+
+        result = limits._check_override(override_data)
+        self.assertEqual(
+            result[0]['message'], 'At most one role_1 node can be added')
+
+    def test_get_proper_message(self):
+        limits = LimitsMixin()
+        limits.messages = [
+            {'type': 'min', 'value': '1', 'message': 'Message for min_1'},
+            {'type': 'min', 'value': '2', 'message': 'Message for min_2'},
+            {'type': 'max', 'value': '5', 'message': 'Message for max_5'},
+            {'type': 'max', 'value': '8', 'message': 'Message for max_8'}
+        ]
+
+        self.assertEqual(
+            limits._get_message('min'), 'Message for min_2')
+
+        self.assertEqual(
+            limits._get_message('max'), 'Message for max_5')

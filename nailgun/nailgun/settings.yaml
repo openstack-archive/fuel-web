@@ -90,6 +90,7 @@ OSWL_COLLECTORS_POLLING_INTERVAL:
   flavor: 300
   image: 300
   volume: 300
+  tenant: 300
 
 # Action log send records per request
 STATS_SEND_COUNT: 100

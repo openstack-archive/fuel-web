@@ -20,6 +20,7 @@ Base classes for objects and collections
 
 import collections
 
+from functools import partial
 from itertools import ifilter
 import operator
 
@@ -35,6 +36,8 @@ from nailgun.db import db
 from nailgun.db import NoCacheQuery
 from nailgun.errors import errors
 from nailgun.expression import Expression
+from nailgun.utils import compact
+from nailgun.utils import flatten
 
 from nailgun.openstack.common.db import api as db_api
 
@@ -42,6 +45,120 @@ from nailgun.openstack.common.db import api as db_api
 _BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
 
 IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
+
+
+class LimitsMixin(object):
+    """Mixin which extend nailgun objects with limits
+    processing functionality
+    """
+
+    def check_node_limits(self, models, nodes, role,
+                          limits, limit_reached=True,
+                          limit_types=['min', 'max', 'recommended']):
+        """Check nodes limits for current role
+
+        :param models: objects which represent models in restrictions
+        :type models: dict
+        :param nodes: list of nodes to check limits count for role
+        :type nodes: list
+        :param role: node role name
+        :type role: string
+        :param limits: object ith min|max|recommended values and overrides
+        :type limits: dict
+        :param limit_reached: flag to check possability adding/removing nodes
+        :type limit_reached: bool
+        :param limit_types: List of possible limit types (min|max|recommended)
+        :type limit_types: list
+        :returns: dict -- object with bool 'valid' flag and related information
+        """
+
+        self.checked_limit_types = {}
+        self.models = models
+        self.overrides = limits.get('overrides', [])
+        self.limit_reached = limit_reached
+        self.limit_types = limit_types
+        self.limit_values = {
+            'max': self._evaluate_expression(
+                limits.get('max'), self.models),
+            'min': self._evaluate_expression(
+                limits.get('min'), self.models),
+            'recommended': self._evaluate_expression(
+                limits.get('recommended'), self.models)
+        }
+        self.count = len(filter(
+            lambda node: not(node.pending_deletion) and (role in node.roles),
+            nodes))
+
+        self.messages = compact(flatten(
+            map(self._check_override, self.overrides)))
+        self.messages += compact(flatten(
+            map(self._check_limit_type, self.limit_types)))
+        self.messages = compact(flatten(
+            map(self._get_message, limit_types)))
+        self.messages = '. '.join(self.messages)
+
+        return {
+            'count': self.count,
+            'limits': self.limit_values,
+            'messages': self.messages,
+            'valid': not self.messages
+        }
+
+    def _check_limit(self, obj, limit_type):
+        if not obj.get(limit_type):
+            return
+
+        if limit_type == 'min':
+            compare = lambda a, b: a < b if self.limit_reached else a <= b
+        elif limit_type == 'max':
+            compare = lambda a, b: a > b if self.limit_reached else a >= b
+        else:
+            compare = lambda a, b: a < b
+
+        limit_value = int(
+            self._evaluate_expression(obj.get(limit_type), self.models))
+        self.limit_values[limit_type] = limit_value
+        self.checked_limit_types[limit_type] = True
+        # TODO(apopovych): write proper default message
+        if compare(self.count, limit_value):
+            return {
+                'type': limit_type,
+                'value': limit_value,
+                'message': obj.get('message', 'Default message')
+            }
+
+    def _check_override(self, override):
+        """Check overrided restriction for limit
+        """
+        expression = override.get('condition')
+        result = self._evaluate_expression(expression, self.models)
+        if result:
+            return map(partial(self._check_limit, override), self.limit_types)
+
+    def _check_limit_type(self, limit_type):
+        if self.checked_limit_types.get(limit_type):
+            return
+
+        return self._check_limit(self.limit_values, limit_type)
+
+    def _get_message(self, limit_type):
+        """Get proper message if we have more than one
+        """
+        message = sorted(filter(
+            lambda message: message.get('type') == limit_type,
+            self.messages), key=lambda message: message.get('value'))
+
+        if limit_type != 'max':
+            message = message[::-1]
+
+        if message:
+            return message[0].get('message')
+
+    def _evaluate_expression(self, expression, models):
+        """Evaluate expression if it exist
+        """
+        if expression:
+            return Expression(str(expression), models).evaluate()
 
 
 class RestrictionMixin(object):
@@ -59,7 +176,7 @@ class RestrictionMixin(object):
         :type restrictions: list
         :param action: filtering restrictions by action key
         :type action: string
-        :returns: dict -- object with 'result' as number and 'message' as dict
+        :returns: dict -- object bool 'result' and 'message' as dict
         """
         satisfied = []
 

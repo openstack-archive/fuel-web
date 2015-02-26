@@ -19,7 +19,9 @@ import string
 import six
 import yaml
 
+from collections import Iterable
 from copy import deepcopy
+from itertools import chain
 from random import choice
 
 from nailgun.logger import logger
@@ -175,3 +177,15 @@ def get_fuel_release_versions(path_mask):
 def camel_to_snake_case(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def compact(array):
+    return [x for x in array if x not in [None, '', False]]
+
+
+def flatten(array):
+    check = lambda x: x if isinstance(x, Iterable) and \
+        not isinstance(x, six.string_types) and not isinstance(x, dict) \
+        else [x]
+
+    return list(chain.from_iterable(check(x) for x in array))

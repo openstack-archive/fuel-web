@@ -20,6 +20,8 @@ Base classes for objects and collections
 
 import collections
 
+from functools import partial
+from itertools import chain
 from itertools import ifilter
 import operator
 
@@ -49,6 +51,111 @@ class RestrictionMixin(object):
     """
 
     @classmethod
+    def check_limits(cls, models, nodes, role, limits, limit_reached=True,
+                     limit_types=['min', 'max', 'recommended']):
+        """Check nodes limits for current role
+
+        :param models: objects which represent models in restrictions
+        :type models: dict
+        :param nodes: list of nodes to check limits count for role
+        :type nodes: list
+        :param role: node role name
+        :type role: string
+        :param limits: object ith min|max|recommended values and overrides
+        :type limits: dict
+        :param limit_reached: flag to check possability adding/removing nodes
+        :type limit_reached: bool
+        :param limit_types: List of possible limit types (min|max|recommended)
+        :type limit_types: list
+        :returns: dict -- object with bool 'valid' flag and related information
+        """
+        evaluate_expression = \
+            lambda e, m: Expression(str(e), m).evaluate() if e else None
+        compact = \
+            lambda l: [x for x in l if x not in [None, '', False]]
+
+        def flatten(array):
+            check = lambda x: x if isinstance(x, collections.Iterable) and \
+                not isinstance(x, six.string_types) and \
+                not isinstance(x, dict) \
+                else [x]
+
+            return list(chain.from_iterable(check(x) for x in array))
+
+        messages = []
+        checked_limit_types = {}
+        overrides = limits.get('overrides', [])
+        nodes_with_roles = filter(
+            lambda node: not(node.pending_deletion) and (role in node.roles),
+            nodes)
+
+        limit_values = {
+            'max': evaluate_expression(
+                limits.get('max'), models),
+            'min': evaluate_expression(
+                limits.get('min'), models),
+            'recommended': evaluate_expression(
+                limits.get('recommended'), models)
+        }
+        count = len(nodes_with_roles)
+
+        def check_limit(obj, limit_type):
+            if not obj.get(limit_type):
+                return
+
+            if limit_type == 'min':
+                compare = lambda a, b: a < b if limit_reached else a <= b
+            elif limit_type == 'max':
+                compare = lambda a, b: a > b if limit_reached else a >= b
+            else:
+                compare = lambda a, b: a < b
+
+            limit_value = int(evaluate_expression(obj.get(limit_type), models))
+            limit_values[limit_type] = limit_value
+            checked_limit_types[limit_type] = True
+            # TODO(apopovych): write proper default message
+            if compare(count, limit_value):
+                return {
+                    'type': limit_type,
+                    'value': limit_value,
+                    'message': obj.get('message', 'Default message')
+                }
+
+        def check_override(override):
+            expression = evaluate_expression(override.get('condition'), models)
+            if expression:
+                return map(partial(check_limit, override), limit_types)
+
+        def check_limit_type(limit_type):
+            if checked_limit_types.get(limit_type):
+                return
+
+            return check_limit(limit_values, limit_type)
+
+        def get_proper_message(limit_type):
+            message = sorted(filter(
+                lambda message: message.get('type') == limit_type,
+                messages), key=lambda message: message.get('value'))
+
+            if limit_type != 'max':
+                message = message[::-1]
+
+            if message:
+                return message[0].get('message')
+
+        messages = compact(flatten(map(check_override, overrides)))
+        messages += compact(flatten(map(check_limit_type, limit_types)))
+        messages = compact(flatten(map(get_proper_message, limit_types)))
+        messages = '. '.join(messages)
+
+        return {
+            'count': count,
+            'limits': limit_values,
+            'messages': messages,
+            'valid': not messages
+        }
+
+    @classmethod
     def check_restrictions(cls, models, restrictions, action=None):
         """Check if attribute satisfied restrictions
 
@@ -58,7 +165,7 @@ class RestrictionMixin(object):
         :type restrictions: list
         :param action: filtering restrictions by action key
         :type action: string
-        :returns: dict -- object with 'result' as number and 'message' as dict
+        :returns: dict -- object bool 'result' and 'message' as dict
         """
         satisfied = []
 

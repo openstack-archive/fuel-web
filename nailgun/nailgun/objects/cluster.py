@@ -761,6 +761,13 @@ class Cluster(NailgunObject):
 
         return vmware_attr
 
+    @classmethod
+    def is_vmware_enabled(cls, instance):
+        """Check if current cluster support vmware configuration
+        """
+        attributes = cls.get_attributes(instance).editable
+        return attributes.get('common', {}).get('use_vcenter', {}).get('value')
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

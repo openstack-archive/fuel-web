@@ -21,6 +21,7 @@ import six
 import yaml
 
 from copy import deepcopy
+from itertools import chain
 from random import choice
 
 from nailgun.logger import logger
@@ -171,5 +172,22 @@ def get_fuel_release_versions(path_mask):
 
 
 def camel_to_snake_case(name):
+    """Convert camel case format into snake case
+    """
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def compact(array):
+    """Remove all falsy items from array
+    """
+    return [x for x in array if x not in [None, '', False]]
+
+
+def flatten(array):
+    """Flattens a nested array with one nesting depth
+    """
+    # TODO: implement for nesting with any depth
+    check = lambda x: x if isinstance(x, list) else [x]
+
+    return list(chain.from_iterable(check(x) for x in array))

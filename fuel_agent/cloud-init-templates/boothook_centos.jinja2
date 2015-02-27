@@ -102,8 +102,6 @@ cloud-init-per instance nailgun_agent /bin/sh -c 'echo "flock -w 0 -o /var/lock/
 # Copying default bash settings to the root directory
 cloud-init-per instance skel_bash cp -f /etc/skel/.bash* /root/
 
-cloud-init-per instance clean_repos find /etc/yum.repos.d/. -name '*.repo' -delete
-
 # Puppet config
 cloud-init-per instance hiera_puppet mkdir -p /etc/puppet /var/lib/hiera
 cloud-init-per instance touch_puppet touch /var/lib/hiera/common.yaml /etc/puppet/hiera.yaml

@@ -51,16 +51,6 @@ write_files:
  -   content: target
      path: /etc/nailgun_systemtype
 
-
-yum_repos:
-{% for reponame, repourl in common.ks_repos.items() %}
-  {{ reponame }}:
-    baseurl: {{ repourl }}
-    enabled: true
-    gpgcheck: false
-{% endfor %}
-
-
 mcollective:
   conf:
     main_collective: mcollective

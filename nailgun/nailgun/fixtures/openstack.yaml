@@ -1135,66 +1135,15 @@
               bind:
                 - "wizard:Storage.cinder": "default"
                 - "wizard:Network.manager": "neutron-vlan"
-            - data: "vcenter"
-              label: "dialog.create_cluster_wizard.compute.vcenter"
-              description: "dialog.create_cluster_wizard.compute.vcenter_description"
-              bind:
-                - "wizard:Storage.cinder": "vcenter"
-                - "wizard:Network.manager": "nova-network"
-        host_ip:
-          type: "text"
-          label: "dialog.create_cluster_wizard.compute.vcenter_ip"
-          description: "dialog.create_cluster_wizard.compute.vcenter_ip_description"
+        vcenter:
+          type: "checkbox"
           weight: 10
+          label: "dialog.create_cluster_wizard.compute.vcenter"
+          description: "dialog.create_cluster_wizard.compute.vcenter_description"
           bind:
-            - "settings:vcenter.host_ip.value"
-            - "settings:storage.vc_host.value"
-          restrictions:
-            - condition: "Compute.hypervisor != 'vcenter'"
-              action: "hide"
-          regex:
-            source: *ipv4_or_hostname_regex
-            error: "dialog.create_cluster_wizard.compute.vcenter_ip_warning"
-        vc_user:
-          type: "text"
-          label: "dialog.create_cluster_wizard.compute.vcenter_username"
-          description: "dialog.create_cluster_wizard.compute.vcenter_username_description"
-          weight: 20
-          bind:
-            - "settings:vcenter.vc_user.value"
-            - "settings:storage.vc_user.value"
-          restrictions:
-            - condition: "Compute.hypervisor != 'vcenter'"
-              action: "hide"
-          regex:
-            source: *non_empty_string
-            error: "dialog.create_cluster_wizard.compute.vcenter_user_warning"
-        vc_password:
-          type: "password"
-          label: "dialog.create_cluster_wizard.compute.vcenter_password"
-          description: "dialog.create_cluster_wizard.compute.vcenter_password_description"
-          weight: 30
-          bind:
-            - "settings:vcenter.vc_password.value"
-            - "settings:storage.vc_password.value"
-          restrictions:
-            - condition: "Compute.hypervisor != 'vcenter'"
-              action: "hide"
-          regex:
-            source: *non_empty_string
-            error: "dialog.create_cluster_wizard.compute.vcenter_password_warning"
-        cluster:
-          type: "text"
-          label: "dialog.create_cluster_wizard.compute.vcenter_cluster"
-          description: "dialog.create_cluster_wizard.compute.vcenter_cluster_description"
-          weight: 40
-          bind: "settings:vcenter.cluster.value"
-          restrictions:
-            - condition: "Compute.hypervisor != 'vcenter'"
-              action: "hide"
-          regex:
-            source: *valid_cluster_name
-            error: "dialog.create_cluster_wizard.compute.vcenter_cluster_warning"
+            - "wizard:Storage.cinder": "default"
+            - "wizard:Network.manager": "nova-network"
+            - "settings:common.use_vcenter.value": "true"
       Network:
         manager:
           type: "radio"
@@ -1203,7 +1152,7 @@
               label: "dialog.create_cluster_wizard.network.neutr_vlan"
               description: "dialog.create_cluster_wizard.network.neutr_vlan_description"
               restrictions:
-                - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+                - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_segment_type": "vlan"
@@ -1211,7 +1160,7 @@
               label: "dialog.create_cluster_wizard.network.neutr_gre"
               description: "dialog.create_cluster_wizard.network.neutr_gre_description"
               restrictions:
-                - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+                - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_segment_type": "gre"
@@ -1241,29 +1190,16 @@
           values:
             - data: "default"
               label: "dialog.create_cluster_wizard.storage.default"
-              restrictions:
-                - "Compute.hypervisor == 'vcenter'"
               bind:
                 - "settings:storage.volumes_lvm.value": true
                 - "settings:storage.volumes_ceph.value": false
-                - "settings:storage.volumes_vmdk.value": false
             - data: "ceph"
               label: "dialog.create_cluster_wizard.storage.ceph"
               restrictions:
                 - "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"
-                - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.cinder_vcenter_alert"
               bind:
                 - "settings:storage.volumes_ceph.value": true
                 - "settings:storage.volumes_lvm.value": false
-                - "settings:storage.volumes_vmdk.value": false
-            - data: "vcenter"
-              label: "dialog.create_cluster_wizard.storage.vcenter"
-              restrictions:
-                - "Compute.hypervisor != 'vcenter'"
-              bind:
-                - "settings:storage.volumes_vmdk.value": true
-                - "settings:storage.volumes_lvm.value": false
-                - "settings:storage.volumes_ceph.value": false
         glance:
           type: "radio"
           values:
@@ -1275,12 +1211,6 @@
                 - "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"
               bind:
                 - "settings:storage.images_ceph.value": true
-            - data: "vcenter"
-              label: "dialog.create_cluster_wizard.storage.vcenter"
-              restrictions:
-                - "Compute.hypervisor != 'vcenter'"
-              bind:
-                - "settings:storage.images_vcenter.value": true
       AdditionalServices:
         sahara:
           type: "checkbox"

@@ -547,7 +547,7 @@
                         "description": "Choose the private (guest) network configuration. The choice you make here cannot be changed after you finish the wizard. More information see the ",
                         "description_link": "Mirantis OpenStack Planning Guide for Network Topology",
                         "release_alert": "Neutron is not supported in __NameAndRelease.release_name__",
-                        "hypervisor_alert": "Neutron with VLAN or GRE segmentaion is not available with __Compute.hypervisor__ as a compute option.",
+                        "hypervisor_alert": "Neutron with VLAN or GRE segmentaion is not available with __Compute.vcenter__ as a compute option.",
                         "nova_network": "Legacy Networking (nova-network)",
                         "nova_network_description": "Choose this option if you use VMware vCenter or require different subnets for public and floating IP addresses. Note that OpenStack is moving to deprecate nova-network in upcoming releases.",
                         "neutr_gre": "Neutron with GRE segmentation",
@@ -560,16 +560,12 @@
                     "storage": {
                         "title": "Storage Backends",
                         "alert": "Ceph is not supported in __NameAndRelease.release_name__",
-                        "cinder_vcenter_alert": "Ceph backend for Cinder cannot be used with vCenter.",
-                        "vmdk_alert": "VMDK driver is a default option for vCenter. Also please change a Cinder LVM option to a Cinder VMDK option in the environment settings.",
                         "default": "Default",
                         "ceph": "Ceph",
-                        "datastore": "DataStore/VMDK Driver",
                         "cinder": "Cinder",
                         "cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.",
                         "glance": "Glance",
-                        "glance_help": "By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes.",
-                        "vcenter": "VMWare vCenter/ESXi"
+                        "glance_help": "By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes."
                     },
                     "additional": {
                         "title": "Additional Services",

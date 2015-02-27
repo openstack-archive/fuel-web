@@ -39,13 +39,6 @@ write_files:
      path: /etc/nailgun-agent/config.yaml
  -   content: target
      path: /etc/nailgun_systemtype
- -   content: APT::Get::AllowUnauthenticated 1;
-     path: /etc/apt/apt.conf.d/02mirantis-allow-unsigned
-
-apt_sources:
-{% for reponame, repourl in common.ks_repos.items() %}
-  - source: deb {{ repourl }}
-{% endfor %}
 
 mcollective:
   conf:

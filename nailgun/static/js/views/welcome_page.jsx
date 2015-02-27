@@ -18,11 +18,13 @@ define(
     'underscore',
     'i18n',
     'react',
+    'utils',
     'models',
+    'jsx!views/dialogs',
     'jsx!component_mixins',
     'jsx!views/statistics_mixin'
 ],
-function(_, i18n, React, models, componentMixins, statisticsMixin) {
+function(_, i18n, React, utils, models, dialogs, componentMixins, statisticsMixin) {
     'use strict';
 
     var WelcomePage = React.createClass({
@@ -40,7 +42,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
             }
         },
         getInitialState: function() {
-            return {fuelKey: new models.FuelKey()};
+            return {isConnected: false};
         },
         onStartButtonClick: function(e) {
             this.props.settings.get('statistics').user_choice_saved.value = true;
@@ -52,31 +54,53 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                     this.props.settings.get('statistics').user_choice_saved.value = false;
                 }, this));
         },
+        connectToMirantis: function() {
+            this.setState({
+                isConnected: true
+            });
+        },
         render: function() {
             if (this.state.loading) return null;
             var ns = 'welcome_page.',
-                contacts = ['name', 'email', 'company'],
-                isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
+                isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
+                statsCollectorLink = 'https://stats.fuel-infra.org/',
+                privacyPolicyLink = 'https://www.mirantis.com/company/privacy-policy/';
             return (
                 <div className='welcome-page'>
                     <div>
                         <h2 className='center'>{this.getText(ns + 'title')}</h2>
-                        <RegisterTrial fuelKey={this.state.fuelKey} />
+                        <RegisterTrial isConnected={this.state.isConnected} connect={this.connectToMirantis}/>
+                        {isMirantisIso && this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
                         {this.renderIntro()}
-                        {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
-                        {isMirantisIso && <div className='welcome-text-box'>{i18n(ns + 'support')}</div>}
+                        {!isMirantisIso && this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
                         {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
+                        {isMirantisIso ?
+                            <p>
+                                <div className='notice'>{i18n(ns + 'privacy_policy')}</div>
+                                <div><a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a>.</div>
+                            </p>
+                        :
+                            <p>
+                                {i18n(ns + 'statistics_collector')}
+                                <a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a>.
+                            </p>
+                        }
                         <form className='form-horizontal'>
-                            {this.props.settings.get('statistics').send_user_info.value &&
-                                <div className='welcome-text-box'>{i18n(ns + 'provide_contacts')}</div>
-                            }
-                            { _.map(contacts, function(settingName) {
-                                return this.renderInput(settingName, 'welcome-form-item', 'welcome-form-box');
-                            }, this)}
                             <div className='welcome-button-box'>
-                                <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress || !!this.props.settings.validationError} onClick={this.onStartButtonClick}>
-                                    {i18n(ns + 'start_fuel')}
-                                </button>
+                                {this.state.isConnected || !isMirantisIso ?
+                                    <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress || !!this.props.settings.validationError} onClick={this.onStartButtonClick}>
+                                        {i18n(ns + 'start_fuel')}
+                                    </button>
+                                :
+                                    <div>
+                                        <button className='btn btn-large btn-unwanted' onClick={this.onStartButtonClick}>
+                                            {i18n(ns + 'connect_later')}
+                                        </button>
+                                        <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress} onClick={this.connectToMirantis}>
+                                            {i18n(ns + 'connect_now')}
+                                        </button>
+                                    </div>
+                                }
                             </div>
                         </form>
                         {isMirantisIso && <div className='welcome-text-box'>{i18n(ns + 'change_settings')}</div>}
@@ -88,26 +112,52 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
     });
 
     var RegisterTrial = React.createClass({
-        mixins: [componentMixins.backboneMixin('fuelKey')],
         shouldShowMessage: function() {
             return _.contains(app.version.get('feature_groups'), 'mirantis') && !_.contains(app.version.get('feature_groups'), 'techpreview');
         },
-        componentWillMount: function() {
-            if (this.shouldShowMessage()) {
-                this.props.fuelKey.fetch();
-            }
+        showRegistrationDialog: function() {
+            utils.showDialog(dialogs.RegistrationDialog, {
+                credentials: new models.MirantisCredentials(),
+                connect: this.props.connect
+            });
+        },
+        retrievePasswordDialog: function() {
+           utils.showDialog(dialogs.RetrievePasswordDialog);
         },
         render: function() {
             if (this.shouldShowMessage()) {
-                var ns = 'welcome_page.register_trial.',
-                    key = this.props.fuelKey.get('key');
+                var ns = 'welcome_page.register.';
                 return (
                     <div className='register-trial'>
-                        <p>{i18n(ns + 'register_installation')}</p>
-                        <p>{i18n(ns + 'register_now')}</p>
-                        <p>
-                            <a target="_blank" className="btn btn-info" href={!_.isUndefined(key) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + key : '/'}>{i18n(ns + 'link_text')}</a>
-                        </p>
+                        {this.props.isConnected ?
+                            <div className='happy-cloud'>
+                                <div className='cloud-smile'></div>
+                                <div>Thanks Eugene, you’re all set!</div>
+                            </div>
+                        :
+                            <div>
+                                <p className='register_installation'>{i18n(ns + 'register_installation')}</p>
+                                <div className='registration-form'>
+                                    <div className='control-group'>
+                                        <label className='control-label'>Email:</label>
+                                        <div className='controls'>
+                                            <input className='input-xlarge' type='text' name='username' ref='username' onChange={this.onChange} />
+                                        </div>
+                                    </div>
+                                    <div className='control-group'>
+                                        <label className='control-label'>Password:</label>
+                                        <div className='controls'>
+                                            <input className='input-xlarge' type='password' name='password' ref='password' onChange={this.onChange} />
+                                        </div>
+                                    </div>
+                                    <div className='links-container'>
+                                        <a onClick={this.showRegistrationDialog} className='create-account'>{i18n(ns + 'create_account')}</a>
+                                        <a onClick={this.retrievePasswordDialog} className='retrive-password'>{i18n(ns + 'retrive_password')}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        
                     </div>
                 );
             }

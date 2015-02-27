@@ -126,7 +126,6 @@ define([
         renderIntro: function() {
             var ns = 'statistics.',
                 isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
-                statsCollectorLink = 'https://stats.fuel-infra.org/',
                 lists = {
                     actions: [
                         'operation_type',
@@ -164,29 +163,17 @@ define([
             return (
                 <div>
                     <div className='statistics-text-box'>
-                        <p>{this.getText(ns + 'help_to_improve')}</p>
-                        <p>
-                            {i18n(ns + 'statistics_includes')}
-                            <a onClick={this.toggleItemsList}>{i18n(ns + 'click_here')}</a>.
-                        </p>
-                        {isMirantisIso ?
-                            <p>
-                                {i18n(ns + 'privacy_policy')}
-                                <a href='https://www.mirantis.com/company/privacy-policy/' target='_blank'>{i18n(ns + 'privacy_policy_link')}</a>.
-                            </p>
-                        :
-                            <p>
-                                {i18n(ns + 'statistics_collector')}
-                                <a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a>.
-                            </p>
+                        <div className={isMirantisIso ? 'notice' : ''}>{this.getText(ns + 'help_to_improve')}</div>
+                        <div>
+                            <a onClick={this.toggleItemsList}>{i18n(ns + 'learn_whats_collected')}</a>.
+                        </div>
+                        {this.state.showItems &&
+                            <div className='statistics-disclaimer-box'>
+                                <p>{i18n(ns + 'statistics_includes_full')}</p>
+                                {_.map(lists, this.renderList)}
+                            </div>
                         }
                     </div>
-                    {this.state.showItems &&
-                        <div className='statistics-disclaimer-box'>
-                            <p>{i18n(ns + 'statistics_includes_full')}</p>
-                            {_.map(lists, this.renderList)}
-                        </div>
-                    }
                 </div>
             );
         }

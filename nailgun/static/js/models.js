@@ -499,9 +499,10 @@ define([
             return false;
         },
         parse: function(response) {
-            return response[this.root];
+            return this.root ? response[this.root] : response;
         },
         toJSON: function() {
+            if (!this.root) return this._super('toJSON', arguments);
             var data = {};
             data[this.root] = this._super('toJSON', arguments);
             return data;
@@ -1005,6 +1006,12 @@ define([
         initialize: function(config) {
             this.defaults = this.parseConfig(config);
         }
+    });
+
+    models.MirantisCredentials = models.Settings.extend({
+        constructorName: 'MirantisCredentials',
+        url: '/api/registration',
+        root: ''
     });
 
     return models;

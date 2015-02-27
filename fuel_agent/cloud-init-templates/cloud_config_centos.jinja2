@@ -53,11 +53,12 @@ write_files:
 
 
 yum_repos:
-{% for reponame, repourl in common.ks_repos.items() %}
-  {{ reponame }}:
-    baseurl: {{ repourl }}
+{% for repo in common.ks_repos %}
+  {{ repo['name'] }}:
+    baseurl: {{ repo['uri'] }}
     enabled: true
     gpgcheck: false
+    priority: repo['priority']
 {% endfor %}
 
 

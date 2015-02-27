@@ -87,6 +87,9 @@ from nailgun.api.v1.handlers.release import ReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
 from nailgun.api.v1.handlers.release import ReleaseNetworksHandler
 
+from nailgun.api.v1.handlers.role import RoleCollectionHandler
+from nailgun.api.v1.handlers.role import RoleHandler
+
 from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
 
@@ -107,6 +110,12 @@ urls = (
     ReleaseNetworksHandler,
     r'/releases/(?P<obj_id>\d+)/deployment_tasks/?$',
     ReleaseDeploymentTasksHandler,
+
+
+    r'/releases/(?P<release_id>\d+)/roles/?$',
+    RoleCollectionHandler,
+    r'/releases/(?P<release_id>\d+)/roles/(?P<role_name>\w+)/?$',
+    RoleHandler,
 
     r'/clusters/?$',
     ClusterCollectionHandler,

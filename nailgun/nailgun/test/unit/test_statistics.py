@@ -557,6 +557,108 @@ class TestStatisticsSender(BaseTestCase):
 
 class TestOSWLCollectingUtils(BaseTestCase):
 
+    components_to_mock = {
+        "nova": {
+            "servers": [
+                {
+                    "id": 1,
+                    "status": "running",
+                    "OS-EXT-STS:power_state": 1,
+                    "created": "date_of_creation",
+                    "hostId": "test_host_id",
+                    "tenant_id": "test_tenant_id",
+                    "image": {"id": "test_image_id"},
+                    "flavor": {"id": "test_flavor_id"},
+                },
+            ],
+            "flavors": [
+                {
+                    "id": 2,
+                    "ram": 64,
+                    "vcpus": 4,
+                    "OS-FLV-EXT-DATA:ephemeral": 1,
+                    "disk": 1,
+                    "swap": 16,
+                },
+            ],
+            "images": [
+                {
+                    "id": 4,
+                    "minDisk": 1,
+                    "minRam": 64,
+                    "OS-EXT-IMG-SIZE:size": 13000000,
+                    "created": "some_date_of_creation",
+                    "updated": "some_date_of_update"
+                },
+            ],
+            "client": {"version": "v1.1"}
+        },
+        "cinder": {
+            "volumes": [
+                {
+                    "id": 3,
+                    "availability_zone": "test_availability_zone",
+                    "encrypted": False,
+                    "bootable": False,
+                    "status": "available",
+                    "volume_type": "test_volume",
+                    "size": 1,
+                    "os-vol-host-attr:host": "test-node",
+                    "snapshot_id": None,
+                    "attachments": "test_attachments",
+                    "os-vol-tenant-attr:tenant_id": "test_tenant",
+                },
+            ],
+            "client": {"version": "v1"}
+        },
+        "keystone": {
+            "tenants": [
+                {
+                    "id": 5,
+                    "enabled": True,
+                },
+            ],
+            "version": "v2.0"
+        },
+    }
+
+    def _prepare_client_provider_mock(self):
+        client_provider_mock = Mock()
+
+        clients_version_attr_path = {
+            "nova": ["client", "version"],
+            "cinder": ["client", "version"],
+            "keystone": ["version"]
+        }
+        setattr(client_provider_mock, "clients_version_attr_path",
+                clients_version_attr_path)
+
+        return client_provider_mock
+
+    def _update_mock_with_complex_dict(self, root_mock, attrs_dict):
+        for key, value in six.iteritems(attrs_dict):
+            attr_name = key
+            attr_value = value
+
+            if isinstance(value, dict):
+                attr_value = Mock()
+                self._update_mock_with_complex_dict(
+                    attr_value, value
+                )
+            elif isinstance(value, list):
+                attr_value = Mock()
+
+                to_return = []
+                for data in value:
+                    attr_value_element = Mock()
+                    attr_value_element.to_dict.return_value = data
+
+                    to_return.append(attr_value_element)
+
+                attr_value.list.return_value = to_return
+
+            setattr(root_mock, attr_name, attr_value)
+
     def test_get_nested_attr(self):
         expected_attr = Mock()
         intermediate_attr = Mock(spec=["expected_attr"])
@@ -581,168 +683,107 @@ class TestOSWLCollectingUtils(BaseTestCase):
             )
 
     def test_get_oswl_info(self):
-        def mock_entity_manager(return_data):
-            ent_instance_mock = Mock()
-            ent_instance_mock.to_dict = Mock(return_value=return_data)
-
-            ent_manager_mock = Mock()
-            ent_manager_mock.list.return_value = [ent_instance_mock]
-
-            return ent_manager_mock
-
-        components_to_mock = {
-            "nova": {
-                "servers": {
+        expected = {
+            "vm": [
+                {
                     "id": 1,
                     "status": "running",
-                    "OS-EXT-STS:power_state": 1,
-                    "created": "date_of_creation",
-                    "hostId": "test_host_id",
+                    "power_state": 1,
+                    "created_at": "date_of_creation",
+                    "image_id": "test_image_id",
+                    "flavor_id": "test_flavor_id",
+                    "host_id": "test_host_id",
                     "tenant_id": "test_tenant_id",
-                    "image": {"id": "test_image_id"},
-                    "flavor": {"id": "test_flavor_id"},
                 },
-                "flavors": {
+            ],
+            "flavor": [
+                {
                     "id": 2,
                     "ram": 64,
                     "vcpus": 4,
-                    "OS-FLV-EXT-DATA:ephemeral": 1,
+                    "ephemeral": 1,
                     "disk": 1,
                     "swap": 16,
                 },
-                "images": {
+            ],
+            "image": [
+                {
                     "id": 4,
                     "minDisk": 1,
                     "minRam": 64,
-                    "OS-EXT-IMG-SIZE:size": 13000000,
-                    "created": "some_date_of_creation",
-                    "updated": "some_date_of_update"
+                    "sizeBytes": 13000000,
+                    "created_at": "some_date_of_creation",
+                    "updated_at": "some_date_of_update"
                 },
-            },
-            "cinder": {
-                "volumes": {
+            ],
+            "volume": [
+                {
                     "id": 3,
                     "availability_zone": "test_availability_zone",
-                    "encrypted": False,
-                    "bootable": False,
+                    "encrypted_flag": False,
+                    "bootable_flag": False,
                     "status": "available",
                     "volume_type": "test_volume",
                     "size": 1,
-                    "os-vol-host-attr:host": "test-node",
+                    "host": "test-node",
                     "snapshot_id": None,
                     "attachments": "test_attachments",
-                    "os-vol-tenant-attr:tenant_id": "test_tenant",
+                    "tenant_id": "test_tenant",
                 },
-            },
-            "keystone": {
-                "tenants": {
+            ],
+            "tenant": [
+                {
                     "id": 5,
-                    "enabled": True,
-                }
-            },
+                    "enabled_flag": True,
+                },
+            ],
         }
 
-        expected = {
-            "servers":
-            {
-                "regard_resource": consts.OSWL_RESOURCE_TYPES.vm,
-                "data": [
-                    {
-                        "id": 1,
-                        "status": "running",
-                        "power_state": 1,
-                        "created_at": "date_of_creation",
-                        "image_id": "test_image_id",
-                        "flavor_id": "test_flavor_id",
-                        "host_id": "test_host_id",
-                        "tenant_id": "test_tenant_id",
-                    },
-                ],
-            },
-            "flavors":
-            {
-                "regard_resource": consts.OSWL_RESOURCE_TYPES.flavor,
-                "data": [
-                    {
-                        "id": 2,
-                        "ram": 64,
-                        "vcpus": 4,
-                        "ephemeral": 1,
-                        "disk": 1,
-                        "swap": 16,
-                    },
-                ],
-            },
-            "images":
-            {
-                "regard_resource": consts.OSWL_RESOURCE_TYPES.image,
-                "data": [
-                    {
-                        "id": 4,
-                        "minDisk": 1,
-                        "minRam": 64,
-                        "sizeBytes": 13000000,
-                        "created_at": "some_date_of_creation",
-                        "updated_at": "some_date_of_update"
-                    }
-                ]
-            },
-            "volumes":
-            {
-                "regard_resource": "volume",
-                "data": [
-                    {
-                        "id": 3,
-                        "availability_zone": "test_availability_zone",
-                        "encrypted_flag": False,
-                        "bootable_flag": False,
-                        "status": "available",
-                        "volume_type": "test_volume",
-                        "size": 1,
-                        "host": "test-node",
-                        "snapshot_id": None,
-                        "attachments": "test_attachments",
-                        "tenant_id": "test_tenant",
-                    }
-                ]
-            },
-            "tenants":
-            {
-                "regard_resource": "tenant",
-                "data": [
+        client_provider_mock = self._prepare_client_provider_mock()
+
+        self._update_mock_with_complex_dict(client_provider_mock,
+                                            self.components_to_mock)
+
+        for resource_name, expected_data in six.iteritems(expected):
+            actual = utils.get_info_from_os_resource_manager(
+                client_provider_mock, resource_name
+            )
+            self.assertEqual(actual, expected_data)
+
+    def test_different_api_versions_handling_for_tenants(self):
+        keystone_v2_component = {
+            "keystone": {
+                "tenants": [
                     {
                         "id": 5,
-                        "enabled_flag": True,
+                        "enabled": True,
                     },
-                ]
+                ],
+                "version": "v2.0"
             },
         }
 
-        get_proxy_path = ("nailgun.statistics.utils.get_proxy_for_cluster")
-        set_proxy_path = ("nailgun.statistics.utils.set_proxy")
+        keystone_v3_component = {
+            "keystone": {
+                "projects": [
+                    {
+                        "id": 5,
+                        "enabled": True,
+                    },
+                ],
+                "version": "v3.0"
+            },
+        }
 
-        with patch(get_proxy_path):
-            with patch(set_proxy_path):
-                client_provider_mock = Mock()
+        client_provider_mock = self._prepare_client_provider_mock()
+        self._update_mock_with_complex_dict(client_provider_mock,
+                                            keystone_v2_component)
+        client_provider_mock.keystone.tenants.list.assert_called_once()
 
-                for comp_name in components_to_mock:
-                    for ent_name, ret_data in six.iteritems(
-                            components_to_mock[comp_name]):
-
-                        ent_manager_mock = mock_entity_manager(ret_data)
-                        comp_mock = Mock()
-                        setattr(comp_mock, ent_name, ent_manager_mock)
-
-                        setattr(client_provider_mock,
-                                comp_name,
-                                comp_mock)
-
-                        res = utils.get_info_from_os_resource_manager(
-                            client_provider_mock,
-                            expected[ent_name]["regard_resource"])
-
-                        self.assertItemsEqual(
-                            res, expected[ent_name]["data"])
+        client_provider_mock = self._prepare_client_provider_mock()
+        self._update_mock_with_complex_dict(client_provider_mock,
+                                            keystone_v3_component)
+        client_provider_mock.keystone.projects.list.assert_called_once()
 
     def test_set_proxy_func(self):
         def check_proxy():

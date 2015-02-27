@@ -106,7 +106,26 @@ PROVISION_SAMPLE_DATA = {
         "mco_auto_setup": 1,
         "auth_key": "fake_auth_key",
         "authorized_keys": ["fake_authorized_key1", "fake_authorized_key2"],
-        "repo_metadata": 'repo1="repo1_url",' + "repo2='repo2_url'",
+        "repo_setup": {
+            "repos": [
+                {
+                    "name": "repo1",
+                    "type": "deb",
+                    "uri": "uri1",
+                    "suite": "suite",
+                    "section": "section",
+                    "priority": 1001
+                },
+                {
+                    "name": "repo2",
+                    "type": "deb",
+                    "uri": "uri2",
+                    "suite": "suite",
+                    "section": "section",
+                    "priority": 1001
+                }
+            ]
+        },
         "pm_data": {
             "kernel_params": "console=ttyS0,9600 console=tty0 rootdelay=90 "
                              "nomodeset",
@@ -524,8 +543,26 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual('marionette', cd_scheme.mcollective.password)
         self.assertEqual('rabbitmq', cd_scheme.mcollective.connector)
         self.assertEqual('pro_fi-le', cd_scheme.profile)
-        self.assertEqual({'repo1': 'repo1_url', 'repo2': 'repo2_url'},
-                         cd_scheme.common.ks_repos)
+        self.assertEqual(
+            [
+                {
+                    "name": "repo1",
+                    "type": "deb",
+                    "uri": "uri1",
+                    "suite": "suite",
+                    "section": "section",
+                    "priority": 1001
+                },
+                {
+                    "name": "repo2",
+                    "type": "deb",
+                    "uri": "uri2",
+                    "suite": "suite",
+                    "section": "section",
+                    "priority": 1001
+                }
+            ],
+            cd_scheme.common.ks_repos)
 
     @mock.patch.object(hu, 'list_block_devices')
     def test_partition_scheme(self, mock_lbd):

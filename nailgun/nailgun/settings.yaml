@@ -117,9 +117,9 @@ COLLECTOR_RESP_TIMEOUT: 5
 # API version of OpenStack components that is used
 # by python clients
 OPENSTACK_API_VERSION:
-  nova: "2"
+  nova: "v2.0"
   keystone: "v2.0"
-  cinder: "1"
+  cinder: "v1"
 
 # proxy port for OpenStack info collector
 OPENSTACK_INFO_COLLECTOR_PROXY_PORT: 8888

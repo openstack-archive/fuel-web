@@ -161,6 +161,42 @@ class EnvironmentManager(object):
             self.releases.append(release)
         return release
 
+    def get_role(self, release_id, role_name, expect_errors=False):
+        return self.app.get(
+            reverse(
+                'RoleHandler',
+                {'role_name': role_name, 'release_id': release_id}),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def update_role(self, release_id, role_name, data, expect_errors=False):
+        return self.app.put(
+            reverse(
+                'RoleHandler',
+                {'role_name': role_name, 'release_id': release_id}),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def delete_role(self, release_id, role_name, expect_errors=False):
+        return self.app.delete(
+            reverse(
+                'RoleHandler',
+                {'role_name': role_name, 'release_id': release_id}),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def create_role(self, release_id, data, expect_errors=False):
+        return self.app.post(
+            reverse('RoleCollectionHandler', {'release_id': release_id}),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
     def create_cluster(self, api=True, exclude=None, **kwargs):
         cluster_data = {
             'name': 'cluster-api-' + str(randint(0, 1000000)),

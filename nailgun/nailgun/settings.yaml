@@ -117,7 +117,7 @@ COLLECTOR_RESP_TIMEOUT: 5
 # API version of OpenStack components that is used
 # by python clients
 OPENSTACK_API_VERSION:
-  nova: "2"
+  nova: "1.1"
   keystone: "v2.0"
   cinder: "1"
 

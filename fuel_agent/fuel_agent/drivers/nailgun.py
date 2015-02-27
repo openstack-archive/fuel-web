@@ -321,9 +321,7 @@ class Nailgun(object):
             admin_mask=admin_interface['netmask'],
             admin_iface_name=admin_interface['name'],
             timezone=data['ks_meta'].get('timezone', 'America/Los_Angeles'),
-            ks_repos=dict(map(lambda x: x.strip('"').strip("'"),
-                              item.split('=')) for item in
-                          data['ks_meta']['repo_metadata'].split(','))
+            ks_repos=data['ks_meta']['repo_setup']['repos']
         )
 
         LOG.debug('Adding puppet parameters')

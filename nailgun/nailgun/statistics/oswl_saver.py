@@ -40,6 +40,11 @@ def _removed(time, prev, curr, collected):
         if res['id'] in removed_ids:
             collected[res['id']] = res
             collected[res['id']]['time'] = time.isoformat()
+    # If cluster was reset and resources are external for cluster,
+    # like flavors, they should be deleted from collected.
+    for curr_id in curr_ids:
+        # Integer key after JSON transformation became string.
+        collected.pop(six.text_type(curr_id), None)
     return collected
 
 

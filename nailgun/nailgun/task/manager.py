@@ -914,11 +914,13 @@ class NodeDeletionTaskManager(TaskManager):
         cluster_id = None
         if hasattr(self, 'cluster'):
             cluster_id = self.cluster.id
+            objects.TaskCollection.lock_cluster_tasks(cluster_id)
 
         logger.info("Trying to execute node deletion task with nodes %s",
                     ', '.join(str(node.id) for node in nodes))
 
         self.verify_nodes_with_cluster(nodes)
+        objects.NodeCollection.lock_nodes(nodes)
 
         if cluster_id is None:
             # DeletionTask operates on cluster's nodes.

@@ -217,7 +217,7 @@ class BaseHandler(object):
     def get_objects_list_or_404(self, obj, ids):
         """Get list of objects
 
-        :param model: model object
+        :param obj: model object
         :param ids: list of ids
 
         :http: 404 when not found

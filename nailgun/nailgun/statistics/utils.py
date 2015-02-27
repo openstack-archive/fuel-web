@@ -30,75 +30,19 @@ from nailgun.logger import logger
 from nailgun.network import manager
 from nailgun import objects
 from nailgun.settings import settings
-
-
-collected_components_attrs = {
-    "vm": {
-        "attr_names": {
-            "id": ["id"],
-            "status": ["status"],
-            "tenant_id": ["tenant_id"],
-            "host_id": ["hostId"],
-            "created_at": ["created"],
-            "power_state": ["OS-EXT-STS:power_state"],
-            "flavor_id": ["flavor", "id"],
-            "image_id": ["image", "id"]
-        },
-        "resource_manager_path": [["nova", "servers"]]
-    },
-    "flavor": {
-        "attr_names": {
-            "id": ["id"],
-            "ram": ["ram"],
-            "vcpus": ["vcpus"],
-            "ephemeral": ["OS-FLV-EXT-DATA:ephemeral"],
-            "disk": ["disk"],
-            "swap": ["swap"],
-        },
-        "resource_manager_path": [["nova", "flavors"]]
-    },
-    "tenant": {
-        "attr_names": {
-            "id": ["id"],
-            "enabled_flag": ["enabled"],
-        },
-        "resource_manager_path": [["keystone", "tenants"],
-                                  ["keystone", "projects"]]
-    },
-    "image": {
-        "attr_names": {
-            "id": ["id"],
-            "minDisk": ["minDisk"],
-            "minRam": ["minRam"],
-            "sizeBytes": ["OS-EXT-IMG-SIZE:size"],
-            "created_at": ["created"],
-            "updated_at": ["updated"]
-        },
-        "resource_manager_path": [["nova", "images"]]
-    },
-    "volume": {
-        "attr_names": {
-            "id": ["id"],
-            "availability_zone": ["availability_zone"],
-            "encrypted_flag": ["encrypted"],
-            "bootable_flag": ["bootable"],
-            "status": ["status"],
-            "volume_type": ["volume_type"],
-            "size": ["size"],
-            "host": ["os-vol-host-attr:host"],
-            "snapshot_id": ["snapshot_id"],
-            "attachments": ["attachments"],
-            "tenant_id": ["os-vol-tenant-attr:tenant_id"],
-        },
-        "resource_manager_path": [["cinder", "volumes"]]
-    },
-}
+from nailgun.statistics.oswl_resources_description import resources_description
 
 
 class ClientProvider(object):
     """Initialize clients for OpenStack components
     and expose them as attributes
     """
+
+    clients_version_attr_path = {
+        "nova": ["client", "version"],
+        "cinder": ["client", "version"],
+        "keystone": ["version"]
+    }
 
     def __init__(self, cluster):
         self.cluster = cluster
@@ -211,40 +155,48 @@ def _get_online_controller(cluster):
     )[0]
 
 
-def get_info_from_os_resource_manager(client_provider, resource_name):
-    resource = collected_components_attrs[resource_name]
-
-    for resource_manager_path in resource["resource_manager_path"]:
-        resource_manager = _get_nested_attr(
-            client_provider,
-            resource_manager_path
-        )
-
-        # use first found resource manager for attributes retrieving
-        if resource_manager:
-            break
-
-    else:
-        # if _get_nested_attr() returned None for all invariants
-        # of resource manager attribute path we should fail
-        # oswl retrieving for the resource
-        raise Exception("Resource manager for {0} could not be found "
-                        "by openstack client provider".format(resource_name))
+def _get_data_from_resource_manager(resource_manager, attr_names_mapping):
+    data = []
 
     instances_list = resource_manager.list()
-    resource_info = []
-
     for inst in instances_list:
         inst_details = {}
 
-        for attr_name, attr_path in six.iteritems(resource["attr_names"]):
+        for attr_name, attr_path in six.iteritems(attr_names_mapping):
             obj_dict = \
                 inst.to_dict() if hasattr(inst, "to_dict") else inst.__dict__
             inst_details[attr_name] = _get_value_from_nested_dict(
                 obj_dict, attr_path
             )
 
-        resource_info.append(inst_details)
+        data.append(inst_details)
+
+    return data
+
+
+def get_info_from_os_resource_manager(client_provider, resource_name):
+    resource_description = resources_description[resource_name]
+
+    client_name = resource_description["retrieved_from_component"]
+    client_inst = getattr(client_provider, client_name)
+
+    client_api_version = _get_nested_attr(
+        client_inst,
+        client_provider.clients_version_attr_path[client_name]
+    )
+
+    matched_api = \
+        resource_description["supported_api_versions"][client_api_version]
+
+    resource_manager_name = matched_api["resource_manager_name"]
+    resource_manager = getattr(client_inst, resource_manager_name)
+
+    attributes_names_mapping = matched_api["retrieved_attr_names_mapping"]
+
+    resource_info = _get_data_from_resource_manager(
+        resource_manager,
+        attributes_names_mapping
+    )
 
     return resource_info
 

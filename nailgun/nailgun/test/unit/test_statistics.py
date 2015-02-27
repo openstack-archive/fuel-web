@@ -1078,3 +1078,36 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         last_changed = OpenStackWorkloadStats.get_last_by(
             cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertEqual(False, last_changed.is_sent)
+
+    def test_flavors_not_removed_after_cluster_reset(self):
+        cluster_id = 1
+        flavor_info = {
+            'id': 1,
+            'ram': 8,
+        }
+        # Before cluster reset
+        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.flavor,
+                             [flavor_info])
+        before_reset = OpenStackWorkloadStats.get_last_by(
+            cluster_id, consts.OSWL_RESOURCE_TYPES.flavor).resource_data
+
+        # During cluster reset
+        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.flavor,
+                             [])
+        during_reset = OpenStackWorkloadStats.get_last_by(
+            cluster_id, consts.OSWL_RESOURCE_TYPES.flavor).resource_data
+
+        # After cluster reset
+        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.flavor,
+                             [flavor_info])
+        after_reset = OpenStackWorkloadStats.get_last_by(
+            cluster_id, consts.OSWL_RESOURCE_TYPES.flavor).resource_data
+
+        # Checking flavor in removed during reset
+        self.assertListEqual([], during_reset['current'])
+        self.assertTrue(six.text_type(flavor_info['id']) in
+                        during_reset['removed'])
+
+        # Checking after reset flavor is not in removed
+        self.assertDictEqual({}, after_reset['removed'])
+        self.assertListEqual(before_reset['current'], after_reset['current'])

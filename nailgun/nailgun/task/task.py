@@ -16,7 +16,6 @@
 
 from copy import deepcopy
 from distutils.version import StrictVersion
-import six
 
 import netaddr
 
@@ -347,27 +346,39 @@ class DeletionTask(object):
         :returns: Remaining (non-undeployed) nodes to delete.
         """
 
-        remaining_nodes = list(nodes_to_delete)
-
-        # locking nodes
-        nodes_dict = dict((node['id'], node) for node in nodes_to_delete)
-        nodes_db = objects.NodeCollection.filter_by_list(
+        node_names_dict = dict(
+            (node['id'], node['slave_name']) for node in nodes_to_delete)
+        objects.NodeCollection.filter_by_list(
             None,
             'id',
-            nodes_dict.keys(),
-            order_by='id'
-        ).filter(objects.Node.model.status == consts.NODE_STATUSES.discover)
-        objects.NodeCollection.lock_for_update(nodes_db).all()
+            node_names_dict.keys(),
+        ).filter(
+            objects.Node.model.status == consts.NODE_STATUSES.discover
+        ).delete(
+            synchronize_session=False
+        )
+        db.commit()
 
-        nodes_db_dict = dict((node_db.id, node_db) for node_db in nodes_db)
+        remaining_nodes_ids = set([
+            row[0] for row
+            in db().query(Node.id).filter(Node.id.in_(node_names_dict.keys()))
+        ])
 
-        for node_id, node_db in six.iteritems(nodes_db_dict):
-            node = nodes_dict[node_id]
-            logger.info("Node is not deployed yet, can't clean MBR: %s",
-                        node['slave_name'])
-            db().delete(node_db)
-            remaining_nodes.remove(node)
-        db().commit()
+        deleted_nodes_ids = set(node_names_dict).difference(
+            remaining_nodes_ids)
+
+        logger.info("Nodes are not deployed yet, can't clean MBR: %s",
+                    ', '.join([
+                        slave_name
+                        for id, slave_name
+                        in node_names_dict.iteritems()
+                        if id in deleted_nodes_ids
+                    ]))
+
+        remaining_nodes = filter(
+            lambda node: node['id'] in remaining_nodes_ids,
+            nodes_to_delete
+        )
 
         return remaining_nodes
 

@@ -83,6 +83,29 @@ resources_description = {
             },
         }
     },
+    "keystone_user": {
+        "retrieved_from_component": "keystone",
+        "supported_api_versions": {
+            "v2.0": {
+                "retrieved_attr_names_mapping": {
+                    "id": ["id"],
+                    "name": ["name"],
+                    "enabled_flag": ["enabled"],
+                    "tenant_id": ["tenantId"],
+                },
+                "resource_manager_name": "users"
+            },
+            "v3": {
+                "retrieved_attr_names_mapping": {
+                    "id": ["id"],
+                    "name": ["name"],
+                    "enabled_flag": ["enabled"],
+                    "tenant_id": ["default_project_id"],
+                },
+                "resource_manager_name": "users"
+            }
+        },
+    },
     "volume": {
         "retrieved_from_component": "cinder",
         "supported_api_versions": {

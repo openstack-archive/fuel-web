@@ -295,7 +295,9 @@
                         },
                         "validation": {
                             "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface"
-                        }
+                        },
+                        "disable_offloading": "Disable Offloading",
+                        "mtu": "MTU"
                     },
                     "configure_disks": {
                         "title": "Configure disks on __name__",

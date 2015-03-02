@@ -2798,6 +2798,35 @@ hr.slim {
     line-height: 0;
     content: "";
   }
+  .interface-properties {
+    float: left;
+    border-top: 1px dotted @fuel-base-color;
+    width: 100%;
+    .offloading, .mtu {
+      margin: 15px 20px 10px 0;
+      float: right;
+    }
+    .offloading {
+      max-width: 180px;
+      .custom-tumbler {
+        float: right;
+      }
+      &.parameter-name {
+        .label-wrapper {
+          margin: 5px 10px 0;
+        }
+      }
+    }
+    .mtu {
+      .label-wrapper {
+        min-width: 45px;
+        margin: 5px 0 10px 0;
+      }
+      input {
+        width: 100px;
+      }
+    }
+  }
 }
 
 .network-interfaces-status {

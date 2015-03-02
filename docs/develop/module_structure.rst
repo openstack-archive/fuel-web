@@ -349,3 +349,21 @@ include this class to any node where we want to see our service running.
 Declaration of parametrized class also did override default port number from 
 params file and we have three separate virtual hosts for out service. Client 
 package is also included into this class.
+
+Adding Python code to fuel-library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All Python code that is added to fuel-library must pass style checks and have
+tests written.
+
+Tests are run by `py.test` and style checks are performed by `flake8` with additional
+`hacking` checks installed.
+
+Whole test suite could is run by python_run_tests.sh_.
+
+If for some reason you need to disable style checks in given file you can add to
+the beggingin of the file line:::
+
+  # flake8: noqa
+
+.. _python_run_tests.sh: https://github.com/stackforge/fuel-library/blob/master/utils/jenkins/python_run_tests.sh

@@ -89,24 +89,23 @@ class NailgunReceiver(object):
         )
         objects.NodeCollection.lock_for_update(locked_nodes).all()
 
-        for node in nodes:
-            node_db = objects.Node.get_by_uid(node['uid'])
-            if not node_db:
-                logger.error(
-                    u"Failed to delete node '%s': node doesn't exist",
-                    str(node)
-                )
-            else:
-                db().delete(node_db)
+        db.query(Node).filter(Node.id.in_(
+            [n['id'] if 'id' in n else n['uid'] for n in nodes]
+        )).delete(synchronize_session=False)
+        db.expire_all()
 
-        for node in inaccessible_nodes:
-            # Nodes which not answered by rpc just removed from db
-            node_db = objects.Node.get_by_uid(node['uid'])
-            if node_db:
-                logger.warn(
-                    u'Node %s not answered by RPC, removing from db',
-                    node_db.human_readable_name)
-                db().delete(node_db)
+        if(len(inaccessible_nodes) > 0):
+            inaccessible_node_ids = [
+                n['id'] if 'id' in n else n['uid']
+                for n in inaccessible_nodes
+            ]
+
+            logger.warn(u'Nodes %s not answered by RPC, removing from db',
+                        inaccessible_nodes)
+
+            db.query(Node).filter(Node.id.in_(inaccessible_node_ids)).delete(
+                synchronize_session=False)
+            db.expire_all()
 
         for node in error_nodes:
             node_db = objects.Node.get_by_uid(node['uid'])

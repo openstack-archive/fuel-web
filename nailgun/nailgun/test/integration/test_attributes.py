@@ -302,6 +302,31 @@ class TestAttributes(BaseIntegrationTest):
             settings.NTP_UPSTREAM
         )
 
+    def test_workloads_collector_attributes(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[0]
+        editable = objects.Cluster.get_attributes(cluster).editable
+        self.assertEqual(
+            editable["workloads_collector"]["enabled"]["value"],
+            True
+        )
+        self.assertEqual(
+            editable["workloads_collector"]["username"]["value"],
+            "workloads_collector"
+        )
+        self.assertEqual(
+            editable["workloads_collector"]["tenant"]["value"],
+            "services"
+        )
+        self.assertEqual(
+            len(editable["workloads_collector"]["password"]["value"]),
+            8
+        )
+        self.assertEqual(
+            editable["workloads_collector"]["type"],
+            "hidden"
+        )
+
 
 class TestVmwareAttributes(BaseIntegrationTest):
 

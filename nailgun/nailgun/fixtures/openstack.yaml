@@ -388,6 +388,17 @@
             regex:
               source: &non_empty_string '\S'
               error: "Empty password"
+        workloads_collector:
+          type: "hidden"
+          enabled:
+            value: true
+          username:
+            value: "workloads_collector"
+          password:
+            value:
+              generator: "password"
+          tenant:
+            value: "services"
         external_mongo:
           metadata:
             label: "External MongoDB"

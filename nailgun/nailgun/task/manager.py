@@ -26,6 +26,7 @@ from nailgun.objects.serializers.network_configuration \
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -926,9 +927,9 @@ class NodeDeletionTaskManager(TaskManager):
         if cluster_id is None:
             # DeletionTask operates on cluster's nodes.
             # Nodes that are not in cluster are simply deleted.
-            for node in nodes:
-                db().delete(node)
-            db().flush()
+            db.query(Node).filter(Node.id.in_([n.id for n in nodes])).delete(
+                synchronize_session=False)
+            db.expire_all()
 
             task = Task(name=consts.TASK_NAMES.node_deletion,
                         progress=100,

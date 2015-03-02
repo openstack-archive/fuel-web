@@ -120,7 +120,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         interfacesPickFromJSON: function(json) {
             // Pick certain interface fields that have influence on hasChanges.
-            return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties']);
+            return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties', 'interface_properties']);
         },
         interfacesToJSON: function(interfaces, remainingNodesMode) {
             // Sometimes 'state' is sent from the API and sometimes not
@@ -191,9 +191,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     bond.set({slaves: _.invoke(slaveInterfaces, 'pick', 'name')});
                 });
 
-                // Assigning networks according to user choice
+                // Assigning networks according to user choice and interface properties
                 node.interfaces.each(function(ifc, index) {
-                    ifc.set({assigned_networks: new models.InterfaceNetworks(interfaces.at(index).get('assigned_networks').toJSON())});
+                    ifc.set({
+                        assigned_networks: new models.InterfaceNetworks(interfaces.at(index).get('assigned_networks').toJSON()),
+                        interface_properties: interfaces.at(index).get('interface_properties')
+                    });
                     if (ifc.isBond()) {
                         var bondProperties = ifc.get('bond_properties');
                         ifc.set({bond_properties: _.extend(bondProperties, {type__: ifc.isLinuxBond() ? 'linux' : 'ovs'})});
@@ -203,7 +206,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 return Backbone.sync('update', node.interfaces, {url: _.result(node, 'url') + '/interfaces'});
             }, this))
                 .done(_.bind(function() {
-                    this.setState({initialInterfaces: this.interfacesToJSON(this.props.interfaces)});
+                    this.setState({initialInterfaces: _.cloneDeep(this.interfacesToJSON(this.props.interfaces))});
                     dispatcher.trigger('networkConfigurationUpdated');
                 }, this))
                 .fail(function() {
@@ -251,7 +254,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     bond_properties: {
                         mode: bondMode
                     },
-                    bonding: this.props.interfaces.first().get('bonding')
+                    bonding: this.props.interfaces.first().get('bonding'),
+                    interface_properties: {
+                        mtu: null,
+                        disable_offloading: false
+                    }
                 });
             } else {
                 // adding interfaces to existing bond
@@ -495,6 +502,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             if (_.contains(attributeType, '.')) attributeType = attributeType.replace('.', '_');
             return i18n('cluster_page.nodes_tab.configure_interfaces.' + attributeName + '.' + attributeType);
         },
+        onInterfacePropertiesChange: function(name, value) {
+            this.props.interface.get('interface_properties')[name] = value;
+            dispatcher.trigger('updateNetworkInterface');
+        },
         render: function() {
             var configureInterfacesTransNS = 'cluster_page.nodes_tab.configure_interfaces.',
                 ifc = this.props.interface,
@@ -518,7 +529,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 assignedNetworksGrouped = [],
                 networksToAdd = [],
                 showHelpMessage = !locked && !assignedNetworks.length,
-                bondProperties = ifc.get('bond_properties');
+                bondProperties = ifc.get('bond_properties'),
+                interfaceProperties = ifc.get('interface_properties');
 
             assignedNetworks.each(function(interfaceNetwork) {
                 if (interfaceNetwork.getFullNetwork(networks).get('name') != 'floating') {
@@ -653,7 +665,28 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                             : <div className='network-help-message'>{i18n(configureInterfacesTransNS + 'drag_and_drop_description')}</div>
                             }
                         </div>
+                        <div className='interface-properties'>
+                            <controls.Input
+                                type='checkbox'
+                                label={i18n(configureInterfacesTransNS + 'disable_offloading')}
+                                checked={interfaceProperties && interfaceProperties.disable_offloading}
+                                labelClassName='offloading'
+                                name='disable_offloading'
+                                onChange={this.onInterfacePropertiesChange}
+                            />
+                            <controls.Input
+                                type='number'
+                                label={i18n(configureInterfacesTransNS + 'mtu')}
+                                value={interfaceProperties && interfaceProperties.mtu}
+                                labelClassName='mtu'
+                                name='mtu'
+                                onChange={this.onInterfacePropertiesChange}
+                                min={42}
+                                max={65536}
+                            />
+                        </div>
                     </div>
+
                     {this.props.errors &&
                         <div className='network-box-error-message common enable-selection'>
                             {this.props.errors}

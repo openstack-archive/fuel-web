@@ -618,6 +618,15 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "enabled": True,
                 },
             ],
+            "users": [
+                {
+                    "id": "test_user_id",
+                    "name": "test_user_name",
+                    "enabled": True,
+                    "tenantId": "test_tenant_id",
+                    "email": "test@mail.com",
+                }
+            ],
             "version": "v2.0"
         },
     }
@@ -735,6 +744,15 @@ class TestOSWLCollectingUtils(BaseTestCase):
                 {
                     "id": 5,
                     "enabled_flag": True,
+                },
+            ],
+            "keystone_user": [
+                {
+                    "id": "test_user_id",
+                    "name": "test_user_name",
+                    "enabled_flag": True,
+                    "tenant_id": "test_tenant_id",
+                    "email": "test@mail.com",
                 },
             ],
         }

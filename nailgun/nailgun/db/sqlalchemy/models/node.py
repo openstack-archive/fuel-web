@@ -301,6 +301,12 @@ class Node(Base):
         """
         self.name = u'Untitled ({0})'.format(self.mac[-5:])
 
+    @classmethod
+    def delete_by_ids(cls, ids):
+        db.query(Node).filter(Node.id.in_(ids)).delete(
+            synchronize_session=False)
+        db.expire_all()
+
 
 class NodeAttributes(Base):
     __tablename__ = 'node_attributes'

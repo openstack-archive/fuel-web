@@ -255,6 +255,10 @@ define([
         }
     });
 
+    models.ReleaseNetworkProperties = BaseModel.extend({
+        constructorName: 'ReleaseNetworkProperties'
+    });
+
     models.Releases = BaseCollection.extend({
         constructorName: 'Releases',
         model: models.Release,
@@ -630,7 +634,6 @@ define([
 
     models.Interface = BaseModel.extend({
         constructorName: 'Interface',
-        bondingModes: ['active-backup', 'balance-slb', 'lacp-balance-tcp'],
         parse: function(response) {
             response.assigned_networks = new models.InterfaceNetworks(response.assigned_networks);
             response.assigned_networks.interface = this;
@@ -661,6 +664,36 @@ define([
                 errors.push(i18n('cluster_page.nodes_tab.configure_interfaces.validation.too_many_untagged_networks'));
             }
             return errors;
+        },
+        updateBondProperties: function(options) {
+            var bondProperties = this.get('bond_properties') || {};
+            bondProperties = _.extend(bondProperties, options);
+            if (!this.isHashPolicyNeeded()) bondProperties = _.omit(bondProperties, 'xmit_hash_policy');
+            if (!this.isLacpRateAvailable()) bondProperties = _.omit(bondProperties, 'lacp_rate');
+            this.set('bond_properties', bondProperties);
+        },
+        isLacpRateAvailable: function() {
+            return _.contains(this.get('bonding').properties.linux.lacp_rate[0].for_modes, this.getBondMode());
+        },
+        isHashPolicyNeeded: function() {
+            return _.contains(this.get('bonding').properties.linux.xmit_hash_policy[0].for_modes, this.getBondMode());
+        },
+        isLinuxBond: function() {
+            return _.keys(this.get('bonding').properties)[0] == 'linux';
+        },
+        getBondMode: function() {
+            return this.get('mode') || (this.get('bond_properties') || {}).mode ||
+                this.get('bonding').properties.linux.mode[0].values[0];
+        },
+        getPolicies: function() {
+            return this.get('bonding').properties.linux.xmit_hash_policy[0].values;
+        },
+        getLACPRate: function() {
+            return this.get('bonding').properties.linux.lacp_rate[0].values;
+        },
+        getBondModes: function() {
+            var bondType = this.isLinuxBond() ? 'linux' : 'ovs';
+            return this.get('bonding').properties[bondType].mode[0].values;
         }
     });
 
@@ -668,7 +701,8 @@ define([
         constructorName: 'Interfaces',
         model: models.Interface,
         generateBondName: function() {
-            var index, proposedName, base = 'ovs-bond';
+            var index, proposedName,
+                base = this.first().isLinuxBond() ? 'bond' : 'ovs-bond';
             for (index = 0; true; index += 1) {
                 proposedName = base + index;
                 if (!this.where({name: proposedName}).length) {

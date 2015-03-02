@@ -638,6 +638,30 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
             return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
         },
+        removeNode: function() {
+            utils.showDialog(dialogs.RemoveNodeConfirmDialog, {
+                cb: this.removeNodeConfirmed
+            });
+        },
+        removeNodeConfirmed: function() {
+            // sync('delete') is used instead of node.destroy() because we want
+            // to keep showing the 'Removing' status until the node is truly removed
+            // Otherwise this node would disappear and might reappear again upon
+            // cluster nodes refetch with status 'Removing' which would look ugly
+            // to the end user
+            Backbone.sync('delete', this.props.node).then(_.bind(function(task) {
+                    dispatcher.trigger('networkConfigurationUpdated updateNodeStats updateNotifications');
+                    if (task.status == 'ready') {
+                        // Do not send the 'DELETE' request again, just get rid
+                        // of this node.
+                        this.props.node.trigger('destroy', this.props.node);
+                        return;
+                    }
+                    this.props.cluster.get('tasks').add(new models.Task(task), {parse: true});
+                    this.props.node.set('status', 'removing');
+                }, this)
+            );
+        },
         showNodeDetails: function(e) {
             e.preventDefault();
             utils.showDialog(dialogs.ShowNodeInfoDialog, {
@@ -647,6 +671,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         calculateNodeViewStatus: function() {
             var node = this.props.node;
+            // 'removing' status has priority over 'offline'
+            if (node.get('status') == 'removing') return 'removing';
             if (!node.get('online')) return 'offline';
             if (node.get('pending_addition')) return 'pending_addition';
             if (node.get('pending_deletion')) return 'pending_deletion';
@@ -679,6 +705,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     offline: 'msg-offline',
                     pending_addition: 'msg-ok',
                     pending_deletion: 'msg-warning',
+                    removing: 'msg-warning',
                     ready: 'msg-ok',
                     provisioning: 'provisioning',
                     provisioned: 'msg-provisioned',
@@ -690,6 +717,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     offline: 'icon-block',
                     pending_addition: 'icon-ok-circle-empty',
                     pending_deletion: 'icon-cancel-circle',
+                    removing: 'icon-cancel-circle',
                     ready: 'icon-ok',
                     provisioned: 'icon-install',
                     error: 'icon-attention',
@@ -761,6 +789,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <i className={iconClass} />
                                     <span>
                                         {i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
+                                        {status == 'offline' &&
+                                            <button onClick={this.removeNode} className='node-remove-button'>{i18n(ns + 'remove')}</button>
+                                        }
                                     </span>
                                 </div>
                             </div>

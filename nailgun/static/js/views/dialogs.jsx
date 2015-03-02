@@ -585,9 +585,38 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls) {
         },
         renderFooter: function() {
             var verification = !!this.props.verification,
-                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>];
-            if (!verification) buttons.push(<button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>{i18n('dialog.dismiss_settings.leave_button')}</button>);
+                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>],
+                buttonToAdd = <button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>
+                    {i18n('dialog.dismiss_settings.leave_button')}
+                </button>;
+            if (!verification) buttons.push(buttonToAdd);
             return buttons;
+        }
+    });
+
+    dialogs.RemoveNodeConfirmDialog = React.createClass({
+        mixins: [dialogMixin],
+        getDefaultProps: function() {return {title: i18n('dialog.remove_node.title'), defaultMessage: i18n('dialog.remove_node.default_message')};},
+        proceed: function() {
+            this.close();
+            dispatcher.trigger('networkConfigurationUpdated', this.props.cb);
+        },
+        renderBody: function() {
+            var message = this.props.defaultMessage;
+            return (
+                <div className='msg-error'>
+                    {this.renderImportantLabel()}
+                    {message}
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return [
+                <button key='stay' className='btn btn-return' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='delete' className='btn btn-danger btn-delete' onClick={this.proceed}>
+                    {i18n('cluster_page.nodes_tab.node.remove')}
+                </button>
+            ];
         }
     });
 

@@ -1783,6 +1783,30 @@ class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):
         self.check_generate_vmware_attributes_data()
 
 
+class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer61):
+
+    def setUp(self):
+        super(TestDeploymentAttributesSerialization61, self).setUp()
+        self.cluster = self.create_env('ha_compact')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        self.serializer = DeploymentHASerializer61(self.cluster)
+
+    def test_serialize_workloads_collector_user(self):
+        oswl_user = self.serializer.get_common_attrs(
+            self.env.clusters[0]
+        )['workloads_collector']
+        self.assertEqual(set(oswl_user.keys()),
+                         set(['username',
+                              'enabled',
+                              'password',
+                              'metadata',
+                              'tenant']))
+        self.assertEqual(oswl_user['username'], 'workloads_collector')
+        self.assertEqual(oswl_user['enabled'], True)
+        self.assertEqual(len(oswl_user['password']), 8)
+        self.assertEqual(oswl_user['tenant'], 'services')
+
+
 class TestDeploymentHASerializer61(BaseDeploymentSerializer61):
 
     def setUp(self):

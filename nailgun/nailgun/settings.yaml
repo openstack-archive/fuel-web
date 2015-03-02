@@ -91,6 +91,7 @@ OSWL_COLLECTORS_POLLING_INTERVAL:
   image: 300
   volume: 300
   tenant: 300
+  keystone_user: 300
 
 # Action log send records per request
 STATS_SEND_COUNT: 100

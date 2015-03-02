@@ -261,9 +261,28 @@
                         "bonding_mode": "Mode",
                         "bonding_modes": {
                             "active-backup": "Active Backup",
-                            "balance-slb": "Balance SLB",
-                            "lacp-balance-tcp": "LACP Balance TCP"
+                            "balance-slb": "balance-slb",
+                            "lacp-balance-tcp": "LACP Balance TCP",
+                            "balance-rr": "balance-rr",
+                            "balance-xor": "balance-xor",
+                            "balance-tlb": "balance-tlb",
+                            "balance-alb": "balance-alb",
+                            "broadcast": "Broadcast",
+                            "802_3ad": "802.3ad(LACP)"
                         },
+                        "hash_policy": {
+                            "layer2": "layer2",
+                            "layer2+3": "layer2+3",
+                            "layer3+4": "layer3+4",
+                            "encap2+3": "encap2+3",
+                            "encap3+4": "encap3+4"
+                        },
+                        "lacp_rate": "LACP Rate",
+                        "lacp_rates": {
+                            "slow": "Slow",
+                            "fast": "Fast"
+                        },
+                        "bonding_policy": "Xmit Hash Policy",
                         "drag_and_drop_description": "You can drag and drop logical networks between interfaces",
                         "configuration_error": {
                             "title": "Interfaces Configuration Error",

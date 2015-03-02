@@ -349,3 +349,32 @@ include this class to any node where we want to see our service running.
 Declaration of parametrized class also did override default port number from 
 params file and we have three separate virtual hosts for out service. Client 
 package is also included into this class.
+
+Adding Python code to fuel-library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All Python code that is added to fuel-library must pass style checks and have
+tests written.
+
+Whole test suite is run by python_run_tests.sh_. It uses a virtualenv in which all Python
+modules from `python-tests-requirements.txt <https://github.com/stackforge/fuel-library/blob/master/utils/jenkins/python-test-requirements.txt>`_
+are installed. If tests need any third-party library, it should be added as a requirement into this file.
+
+Before running any test for Python code, test suite runs style checks for any Python code
+found in fuel-library. Those checks are performed by `flake8` (`docs <http://flake8.readthedocs.org/en/2.3.0/>`_)
+with additional `hacking` checks installed. Those checks are a set of guidlelines for Python code.
+More information about those guidelines could be found in `hacking documentation <http://flake8.readthedocs.org/en/2.3.0/>`_
+
+If, for some reason, you need to disable style checks in given file you can add the following
+line at the beginning of the file:::
+
+  # flake8: noqa
+
+After style checks, test suite is executing Python tests by using `py.test`_ test runner.
+`py.test` is looking for Python files which names beggins with 'test\_' and looks for tests in them.
+Documentation on how to write tests could be found in
+`official Python documentation <https://docs.python.org/2/library/unittest.html>`_ and
+`py.test documentation <http://pytest.org/latest/assert.html>`_.
+
+.. _py.test: http://pytest.org
+.. _python_run_tests.sh: https://github.com/stackforge/fuel-library/blob/master/utils/jenkins/python_run_tests.sh

@@ -42,7 +42,8 @@ define(
     'routefilter',
     'bootstrap',
     'jquery-timeout',
-    'less!/static/css/styles'
+    'less!/static/css/styles',
+    'backbone-lodash-monkeypatch'
 
 ],
 function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {

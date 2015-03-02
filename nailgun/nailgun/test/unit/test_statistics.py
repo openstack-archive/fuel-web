@@ -618,6 +618,14 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "enabled": True,
                 },
             ],
+            "users": [
+                {
+                    "id": "test_user_id",
+                    "name": "test_user_name",
+                    "enabled": True,
+                    "tenantId": "test_tenant_id",
+                }
+            ],
             "version": "v2.0"
         },
     }
@@ -737,6 +745,14 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "enabled_flag": True,
                 },
             ],
+            "keystone_user": [
+                {
+                    "id": "test_user_id",
+                    "name": "test_user_name",
+                    "enabled_flag": True,
+                    "tenant_id": "test_tenant_id",
+                },
+            ],
         }
 
         client_provider_mock = self._prepare_client_provider_mock()
@@ -784,6 +800,51 @@ class TestOSWLCollectingUtils(BaseTestCase):
         self._update_mock_with_complex_dict(client_provider_mock,
                                             keystone_v3_component)
         client_provider_mock.keystone.projects.list.assert_called_once()
+
+    def test_different_api_versions_handling_for_users(self):
+        keystone_v2_component = {
+            "keystone": {
+                "users": [
+                    {
+                        "id": "test_user_id",
+                        "name": "test_user_name",
+                        "enabled": True,
+                        "tenantId": "test_tenant_id",
+                    }
+                ],
+                "version": "v2.0"
+            },
+        }
+
+        keystone_v3_component = {
+            "keystone": {
+                "users": [
+                    {
+                        "id": "test_user_id",
+                        "name": "test_user_name",
+                        "enabled": True,
+                        "default_project_id": "test_tenant_id",
+                    }
+                ],
+                "version": "v3"
+            },
+        }
+
+        client_provider_mock = self._prepare_client_provider_mock()
+        self._update_mock_with_complex_dict(client_provider_mock,
+                                            keystone_v2_component)
+        kc_v2_info = utils.get_info_from_os_resource_manager(
+            client_provider_mock, consts.OSWL_RESOURCE_TYPES.keystone_user
+        )
+
+        client_provider_mock = self._prepare_client_provider_mock()
+        self._update_mock_with_complex_dict(client_provider_mock,
+                                            keystone_v3_component)
+        kc_v3_info = utils.get_info_from_os_resource_manager(
+            client_provider_mock, consts.OSWL_RESOURCE_TYPES.keystone_user
+        )
+
+        self.assertEqual(kc_v2_info, kc_v3_info)
 
     def test_set_proxy_func(self):
         def check_proxy():

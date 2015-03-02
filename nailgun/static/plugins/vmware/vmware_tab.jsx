@@ -276,7 +276,7 @@ define(
             }, this));
         },
         componentWillUnmount: function() {
-            $(document).off('vcenter_model_update');
+            dispatcher.off('vcenter_model_update');
         },
         getInitialState: function() {
             return {model: null};

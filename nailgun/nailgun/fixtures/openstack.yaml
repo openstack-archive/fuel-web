@@ -1312,6 +1312,9 @@
           -
             name: "network"
             type: "object"
+            restrictions:
+              - condition: "cluster:net_provider != 'nova_network' or networking_parameters:net_manager != 'VlanManager'"
+                action: "hide"
             fields:
               -
                 name: "esxi_vlan_interface"

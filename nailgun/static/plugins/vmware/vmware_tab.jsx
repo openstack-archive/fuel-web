@@ -266,7 +266,8 @@ define(
 
             this.model.setModels({
                 cluster: this.props.cluster,
-                settings: this.props.cluster.get('settings')
+                settings: this.props.cluster.get('settings'),
+                networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters')
             });
 
             this.readDefaultsData();
@@ -314,7 +315,7 @@ define(
             var model = this.state.model,
                 currentJson = JSON.stringify(this.model.toJSON()),
                 editable = this.props.cluster.isAvailableForSettingsChanges(),
-                // TODO hide = this.actions.hide || {},
+                hide = this.actions.hide || {},
                 disable = this.actions.disable || {};
 
             model.isValid();
@@ -327,9 +328,9 @@ define(
                 <div className='vmware'>
                     <div className='wrapper'>
                         <h3>{i18n('vmware.title')}</h3>
-                        <AvailabilityZones collection={model.get('availability_zones')} disabled={!editable || disable.availability_zones}/>
-                        <Network model={model.get('network')} disabled={!editable || disable.network}/>
-                        <Glance model={model.get('glance')} disabled={!editable || disable.glance}/>
+                        {hide.availability_zones || <AvailabilityZones collection={model.get('availability_zones')} disabled={!editable || disable.availability_zones}/>}
+                        {hide.network || <Network model={model.get('network')} disabled={!editable || disable.network}/>}
+                        {hide.glance || <Glance model={model.get('glance')} disabled={!editable || disable.glance}/>}
                     </div>
                     <div className='page-control-box'>
                         <div className='page-control-button-placeholder'>

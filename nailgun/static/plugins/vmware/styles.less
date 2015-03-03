@@ -15,7 +15,11 @@
 
 .vmware {
   .parameter-description {
-    padding: 10px 5px !important;
+    padding: 10px 0px !important;
+  }
+
+  label {
+    padding: 0px 10px;
   }
 
   .label-wrapper {
@@ -35,6 +39,14 @@
     color: @legend-fg;
     line-height: 18px;
     .box-sizing-mixin;
+  }
+
+  .icon-attention {
+    font-size: 14px;
+    position: relative;
+    top: -6px;
+    left: -2px;
+    cursor: not-allowed;
   }
 
   .page-control-box {

@@ -26,7 +26,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
     var controls = {},
         cx = React.addons.classSet;
 
-    var tooltipMixin = {
+    var tooltipMixin = controls.tooltipMixin = {
         componentDidMount: function() {
             if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip();
         },

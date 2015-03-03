@@ -75,6 +75,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         getInputDOMNode: function() {
             return this.refs.input.getDOMNode();
         },
+        debouncedChange: _.debounce(function() {
+            return this.onChange();
+        }, 200, {leading: true}),
         onChange: function() {
             if (this.props.onChange) {
                 var input = this.getInputDOMNode();
@@ -92,7 +95,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     key: 'input',
                     type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
                     className: cx(classes),
-                    onChange: this.onChange
+                    // debounced onChange callback is supported for uncontrolled inputs
+                    onChange: this.props.value ? this.onChange : this.debouncedChange
                 },
                 Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,

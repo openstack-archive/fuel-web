@@ -204,6 +204,12 @@ def upgrade_schema():
     op.create_foreign_key(
         'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
         ['node_id'], ['id'], ondelete='CASCADE')
+
+    # Plugins migrations
+    op.add_column(
+        'plugins',
+        sa.Column('groups', fields.JSON(), nullable=False))
+
     ### end Alembic commands ###
 
 
@@ -254,6 +260,8 @@ def downgrade_schema():
     op.create_foreign_key(
         'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
         ['node_id'], ['id'])
+
+    op.drop_column('plugins', 'groups')
     ### end Alembic commands ###
 
 

@@ -272,6 +272,7 @@ function($, _, i18n, Backbone, models) {
         },
         setModels: function(models) {
             restrictionModels = models;
+            return this;
         }
     });
 

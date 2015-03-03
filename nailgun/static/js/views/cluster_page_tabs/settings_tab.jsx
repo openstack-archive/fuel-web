@@ -293,9 +293,6 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 );
             });
         },
-        debouncedOnChange: _.debounce(function(name, value) {
-            return this.props.onChange(name, value);
-        }, 200, {leading: true}),
         render: function() {
             if (this.checkRestrictions('hide', this.props.makePath(this.props.groupName, 'metadata')).result) return null;
             var group = this.props.settings.get(this.props.groupName),
@@ -384,7 +381,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     disabled={isSettingDisabled}
                                     wrapperClassName='tablerow-wrapper'
                                     tooltipText={processedSettingRestrictions.message}
-                                    onChange={this.debouncedOnChange}
+                                    onChange={this.props.onChange}
                                 />;
                             }
                         }, this)}

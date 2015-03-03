@@ -165,9 +165,10 @@ class TestInstallationInfo(BaseTestCase):
     def test_network_configuration(self):
         info = InstallationInfo()
         # Checking nova network configuration
+        nova = consts.CLUSTER_NET_PROVIDERS.nova_network
         self.env.create(cluster_kwargs={
             'mode': consts.CLUSTER_MODES.ha_full,
-            'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network
+            'net_provider': nova
         })
         clusters_info = info.get_clusters_info()
         cluster_info = clusters_info[0]
@@ -179,12 +180,16 @@ class TestInstallationInfo(BaseTestCase):
             self.assertIn(field, network_config)
 
         # Checking neutron network configuration
+        neutron = consts.CLUSTER_NET_PROVIDERS.neutron
         self.env.create(cluster_kwargs={
             'mode': consts.CLUSTER_MODES.ha_full,
-            'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
+            'net_provider': neutron
         })
         clusters_info = info.get_clusters_info()
-        cluster_info = clusters_info[1]
+        # Clusters info is unordered list, so we should find required
+        # cluster_info
+        cluster_info = filter(lambda x: x['net_provider'] == neutron,
+                              clusters_info)[0]
         self.assertTrue('network_configuration' in cluster_info)
         network_config = cluster_info['network_configuration']
 

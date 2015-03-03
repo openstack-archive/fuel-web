@@ -109,10 +109,26 @@ class InstallationInfo(object):
                 'fuel_version': cluster.fuel_version,
                 'is_customized': cluster.is_customized,
                 'network_configuration': self.get_network_configuration_info(
-                    cluster)
+                    cluster),
+                'installed_plugins': self.get_cluster_plugins_info(cluster)
             }
             clusters_info.append(cluster_info)
         return clusters_info
+
+    def get_cluster_plugins_info(self, cluster):
+        plugins_info = []
+        for plugin_inst in cluster.plugins:
+            plugin_info = {
+                "id": plugin_inst.id,
+                "name": plugin_inst.name,
+                "version": plugin_inst.version,
+                "releases": plugin_inst.releases,
+                "fuel_version": plugin_inst.fuel_version,
+                "package_version": plugin_inst.package_version,
+            }
+            plugins_info.append(plugin_info)
+
+        return plugins_info
 
     def get_attributes(self, attributes):
         result = {}

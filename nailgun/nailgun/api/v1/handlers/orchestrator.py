@@ -211,7 +211,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
                 task_manager.__class__.__name__, traceback.format_exc())
             raise self.http(400, message=six.text_type(exc))
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
     @content
     def PUT(self, cluster_id):

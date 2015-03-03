@@ -88,10 +88,10 @@ function($, _, i18n, Backbone, models) {
             _.each(metadata, function(field) {
                 var key = field.name;
                 var disableResult = this.checkRestrictions(restrictionModels, undefined, key);
-                results.disable[key] = disableResult.result;
+                results.disable[key] = disableResult;
 
                 var hideResult = this.checkRestrictions(restrictionModels, 'hide', key);
-                results.hide[key] = hideResult.result;
+                results.hide[key] = hideResult;
             }, this);
             return results;
         }
@@ -272,6 +272,7 @@ function($, _, i18n, Backbone, models) {
         },
         setModels: function(models) {
             restrictionModels = models;
+            return this;
         }
     });
 

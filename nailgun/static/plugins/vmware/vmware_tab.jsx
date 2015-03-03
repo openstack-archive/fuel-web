@@ -30,6 +30,7 @@ define(
     var cx = React.addons.classSet;
 
     var Field = React.createClass({
+        mixins: [controls.tooltipMixin],
         onChange: function(name, value) {
             this.props.model.set(name, value);
             this.setState({model: this.props.model});
@@ -70,10 +71,16 @@ define(
 
     var FieldGroup = React.createClass({
         render: function() {
+            var restrictions = this.props.model.testRestrictions();
             var metadata = _.filter(this.props.model.get('metadata'), vmwareModels.isRegularField);
             var fields = metadata.map(function(meta) {
                 return (
-                    <Field {... _.pick(this.props, 'model', 'disabled')} key={meta.name} metadata={meta}/>
+                    <Field
+                        key={meta.name}
+                        model={this.props.model}
+                        metadata={meta}
+                        disabled={this.props.disabled}
+                        disableWarning={restrictions.disable[meta.name]}/>
                 );
             }, this);
             return (
@@ -84,15 +91,19 @@ define(
         }
     });
 
-    var Cinder = React.createClass({
+    var GenericSection = React.createClass({
+        mixins: [controls.tooltipMixin],
         render: function() {
             var model = this.props.model;
             if (!model) {
                 return null;
             }
             return (
-                <div className='cinder'>
-                    <legend className='vmware'>{i18n('vmware.cinder')}</legend>
+                <div className={this.props.className}>
+                    <legend className='vmware'>
+                        {this.props.title}
+                        {this.renderTooltipIcon()}
+                    </legend>
                     <FieldGroup model={model} disabled={this.props.disabled}/>
                 </div>
             );
@@ -168,7 +179,7 @@ define(
                                     onAdd={this.addNovaCompute}
                                     onRemove={this.removeNovaCompute}
                                     isRemovable={isSingleInstance}
-                                    disabled={disabled || this.props.disabled}
+                                    disabled={disabled.result || this.props.disabled}
                                 />
                             );
                         }, this)
@@ -179,7 +190,12 @@ define(
         renderCinder: function(actions) {
             var disabled = actions.disable.cinder;
             return (
-                <Cinder model={this.props.model.get('cinder')} disabled={disabled || this.props.disabled}/>
+                <GenericSection
+                    model={this.props.model.get('cinder')}
+                    className='cinder'
+                    title={i18n('vmware.cinder')}
+                    disabled={disabled.result || this.props.disabled}
+                />
             );
         },
         render: function() {
@@ -196,13 +212,17 @@ define(
     });
 
     var AvailabilityZones = React.createClass({
+        mixins: [controls.tooltipMixin],
         render: function() {
             if (!this.props.collection) {
                 return null;
             }
             return (
                 <div className='availability-zones'>
-                    <legend className='vmware'>{i18n('vmware.availability_zones')}</legend>
+                    <legend className='vmware'>
+                        {i18n('vmware.availability_zones')}
+                        {this.renderTooltipIcon()}
+                    </legend>
                     {
                         this.props.collection.map(function(model) {
                             return <AvailabilityZone key={model.cid} model={model} disabled={this.props.disabled}/>;
@@ -213,41 +233,11 @@ define(
         }
     });
 
-    var Network = React.createClass({
-        render: function() {
-            var model = this.props.model;
-            if (!model) {
-                return null;
-            }
-            return (
-                <div className='network'>
-                    <legend className='vmware'>{i18n('vmware.network')}</legend>
-                    <FieldGroup model={model} disabled={this.props.disabled}/>
-                </div>
-            );
-        }
-    });
-
-    var Glance = React.createClass({
-        render: function() {
-            var model = this.props.model;
-            if (!model) {
-                return null;
-            }
-            return (
-                <div className='glance'>
-                    <legend className='vmware'>{i18n('vmware.glance')}</legend>
-                    <FieldGroup meta={model.get('metadata')} model={model} disabled={this.props.disabled}/>
-                </div>
-            );
-        }
-    });
-
     var VCenter = React.createClass({
         componentDidMount: function() {
             this.clusterId = this.props.cluster.id;
-            this.model = new vmwareModels.VCenter({id: this.clusterId});
-            this.model.on('sync', _.bind(function() {
+            this.model = this.props.cluster.get('vcenter');
+            this.model.on('sync', function() {
                 this.model.parseRestrictions();
                 this.actions = this.model.testRestrictions();
                 if (!this.model.loadDefaults) {
@@ -255,13 +245,13 @@ define(
                 }
                 this.model.loadDefaults = false;
                 this.setState({model: this.model});
-            }, this));
+            }, this);
             this.defaultModel = new vmwareModels.VCenter({id: this.clusterId});
-            this.defaultModel.on('sync', _.bind(function() {
+            this.defaultModel.on('sync', function() {
                 this.defaultModel.parseRestrictions();
                 this.defaultsJson = JSON.stringify(this.defaultModel.toJSON());
                 this.setState({defaultModel: this.defaultModel});
-            }, this));
+            }, this);
             this.setState({model: this.model, defaultModel: this.defaultModel});
 
             this.model.setModels({
@@ -273,10 +263,14 @@ define(
             this.readDefaultsData();
             this.readData();
             dispatcher.on('vcenter_model_update', _.bind(function() {
-                this.forceUpdate();
+                if (this.isMounted()) {
+                    this.forceUpdate();
+                }
             }, this));
         },
         componentWillUnmount: function() {
+            this.defaultModel.off('sync', null, this);
+            this.model.off('sync', null, this);
             dispatcher.off('vcenter_model_update');
         },
         getInitialState: function() {
@@ -328,9 +322,31 @@ define(
                 <div className='vmware'>
                     <div className='wrapper'>
                         <h3>{i18n('vmware.title')}</h3>
-                        {hide.availability_zones || <AvailabilityZones collection={model.get('availability_zones')} disabled={!editable || disable.availability_zones}/>}
-                        {hide.network || <Network model={model.get('network')} disabled={!editable || disable.network}/>}
-                        {hide.glance || <Glance model={model.get('glance')} disabled={!editable || disable.glance}/>}
+                        {!hide.availability_zones.result &&
+                            <AvailabilityZones
+                                collection={model.get('availability_zones')}
+                                disabled={!editable || disable.availability_zones.result}
+                                tooltipText={disable.availability_zones.message}
+                            />
+                        }
+                        {!hide.network.result &&
+                            <GenericSection
+                                model={model.get('network')}
+                                className='network'
+                                title={i18n('vmware.network')}
+                                disabled={!editable || disable.network.result}
+                                tooltipText={disable.network.message}
+                            />
+                        }
+                        {!hide.glance.result &&
+                            <GenericSection
+                                model={model.get('glance')}
+                                className='glance'
+                                title={i18n('vmware.glance')}
+                                disabled={!editable || disable.glance.result}
+                                tooltipText={disable.glance.message}
+                            />
+                        }
                     </div>
                     <div className='page-control-box'>
                         <div className='page-control-button-placeholder'>

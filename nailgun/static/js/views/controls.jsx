@@ -75,12 +75,12 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         getInputDOMNode: function() {
             return this.refs.input.getDOMNode();
         },
-        onChange: function() {
+        debouncedChange: _.debounce(function() {
             if (this.props.onChange) {
                 var input = this.getInputDOMNode();
                 return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
             }
-        },
+        }, 200, {leading: true}),
         renderInput: function() {
             var classes = {
                 'parameter-input': true,
@@ -92,7 +92,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     key: 'input',
                     type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
                     className: cx(classes),
-                    onChange: this.onChange
+                    onChange: this.debouncedChange
                 },
                 Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,

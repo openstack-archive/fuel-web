@@ -59,7 +59,7 @@ class VmwareDeploymentSerializerMixin(object):
             .get('use_vcenter', {}).get('value')
 
         if (use_vcenter and
-                role in ['controller', 'primary-controller', 'cinder-vmdk']):
+                role in ['controller', 'primary-controller', 'cinder-vmware']):
             compute_instances = []
             cinder_instances = []
 

@@ -540,7 +540,7 @@ class NovaNetworkDeploymentSerializer61(
                     'vlan_id': netgroup['vlan']
                 })
                 if netgroup.get('ip'):
-                    attrs['endpoints'][brname] = {'IP': netgroup['ip']}
+                    attrs['endpoints'][brname] = {'IP': [netgroup['ip']]}
             netgroups[ngname] = netgroup
 
         attrs['endpoints']['br-ex']['gateway'] = \
@@ -1203,7 +1203,7 @@ class NeutronNetworkDeploymentSerializer61(
             # node with its assigned IPs and device names for each network.
             netgroup = nm.get_node_network_by_netname(node, ngname)
             if netgroup.get('ip'):
-                attrs['endpoints'][brname] = {'IP': netgroup['ip']}
+                attrs['endpoints'][brname] = {'IP': [netgroup['ip']]}
             netgroups[ngname] = netgroup
             nets_by_ifaces[netgroup['dev']].append({
                 'br_name': brname,

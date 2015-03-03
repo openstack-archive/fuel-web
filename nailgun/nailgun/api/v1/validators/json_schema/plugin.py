@@ -40,6 +40,8 @@ PLUGIN_SCHEMA = {
         'description': {'type': 'string'},
         'fuel_version': {'type': 'array',
                          'items': {'type': 'string'}},
+        'groups': {'type': 'array',
+                   'items': {'type': 'string'}},
         'releases': {
             'type': 'array',
             'items': PLUGIN_RELEASE_SCHEMA}

@@ -95,7 +95,7 @@ class CapacityLogHandler(BaseHandler):
         manager = GenerateCapacityLogTaskManager()
         task = manager.execute()
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class CapacityLogCsvHandler(BaseHandler):

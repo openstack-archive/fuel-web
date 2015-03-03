@@ -62,7 +62,7 @@ class NodeHandler(SingleHandler):
         task_manager = NodeDeletionTaskManager(cluster_id=node.cluster_id)
         task = task_manager.execute([node], mclient_remove=False)
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class NodeCollectionHandler(CollectionHandler):
@@ -145,7 +145,7 @@ class NodeCollectionHandler(CollectionHandler):
         task_manager = NodeDeletionTaskManager(cluster_id=nodes[0].cluster_id)
         task = task_manager.execute(nodes)
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class NodeAgentHandler(BaseHandler):

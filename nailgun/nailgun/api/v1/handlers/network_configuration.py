@@ -125,7 +125,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
 
                 logger.error(traceback.format_exc())
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -181,10 +181,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                 objects.Task.update(task, data)
                 logger.error(traceback.format_exc())
 
-        if task.status == consts.TASK_STATUSES.error:
-            raise self.http(400, objects.Task.to_json(task))
-
-        raise self.http(200, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):
@@ -202,7 +199,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
-        raise self.http(202, self.launch_verify(cluster))
+        self.launch_verify(cluster)
 
     def launch_verify(self, cluster):
         data = self.validator.validate_networks_update(web.data())
@@ -224,7 +221,8 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
             task = task_manager.execute(data, vlan_ids)
         except errors.CantRemoveOldVerificationTask:
             raise self.http(400, "You cannot delete running task manually")
-        return objects.Task.to_json(task)
+
+        self.raise_task(task)
 
 
 class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):

@@ -531,7 +531,7 @@ define([
                     return this.checkRestrictions(models, null, path);
                 }, this);
             _.each(attrs, function(group, groupName) {
-                if (checkRestrictions(this.makePath(groupName, 'metadata')).result) return;
+                if ((group.metadata || {}).enabled === false || checkRestrictions(this.makePath(groupName, 'metadata')).result) return;
                 _.each(group, function(setting, settingName) {
                     var path = this.makePath(groupName, settingName);
                     if (!setting.regex || !setting.regex.source || checkRestrictions(path).result) return;

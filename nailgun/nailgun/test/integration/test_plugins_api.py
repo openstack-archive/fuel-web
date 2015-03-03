@@ -141,6 +141,9 @@ class TestPluginsApi(BasePluginTest):
     def test_plugin_created_on_post(self):
         resp = self.create_plugin()
         self.assertEqual(resp.status_code, 201)
+        metadata = resp.json
+        del metadata['id']
+        self.assertEqual(metadata, self.sample_plugin)
 
     def test_env_create_and_load_env_config(self):
         self.create_plugin()

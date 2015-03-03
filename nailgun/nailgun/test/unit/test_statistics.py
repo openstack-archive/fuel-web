@@ -933,8 +933,8 @@ class TestOpenStackClientProvider(BaseTestCase):
         cluster = self.env.create_cluster(api=False)
         updated_attributes = {
             "editable": {
-                "access": {
-                    "user": {"value": expected_username},
+                "workloads_collector": {
+                    "username": {"value": expected_username},
                     "password": {"value": expected_password},
                     "tenant": {"value": expected_tenant}
                 }

@@ -46,7 +46,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 }
             }
             this.getModel().set(attribute, value);
-            dispatcher.trigger('networkConfigurationUpdated');
+            dispatcher.trigger('hideNetworkVerificationResult');
             this.props.networkConfiguration.isValid();
         },
         getModel: function() {
@@ -354,12 +354,19 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     return props.cluster.get('tasks');
                 },
                 renderOn: 'add remove change:status'
+            }),
+            componentMixins.dispatcherMixin('hideNetworkVerificationResult', function() {
+                this.setState({hideVerificationResult: true});
+            }),
+            componentMixins.dispatcherMixin('networkConfigurationUpdated', function() {
+                this.setState({hideVerificationResult: false});
             })
         ],
         getInitialState: function() {
             return {
                 loading: true,
-                initialConfiguration: false
+                initialConfiguration: false,
+                hideVerificationResult: false
             };
         },
         componentDidMount: function() {
@@ -368,17 +375,30 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 this.updateInitialConfiguration();
                 this.setState({loading: false});
             }, this));
+            this.props.cluster.get('tasks').on('change:status change:unsaved', this.removeUnsavedNetworkVerificationTasks, this);
         },
         componentWillUnmount: function() {
             this.loadInitialConfiguration();
+            this.props.cluster.get('tasks').off(null, this.removeUnsavedNetworkVerificationTasks, this);
+        },
+        removeUnsavedNetworkVerificationTasks: function(task) {
+            // FIXME(vkramskikh): remove tasks which we marked as "unsaved" hacky flag
+            // immediately after completion, so they won't be taken into account when
+            // we determine cluster verification status. They need to be removed silently
+            // and kept in the collection to show verification result to the user
+            if (task.match({group: 'network', status: ['ready', 'error']}) && task.get('unsaved')) {
+                task.destroy({silent: true});
+                task.unset('id'); // hack to prevent issuing another DELETE requests after actual removal
+                this.props.cluster.get('tasks').add(task, {silent: true});
+            }
         },
         hasChanges: function() {
             return !_.isEqual(this.state.initialConfiguration, this.props.cluster.get('networkConfiguration').toJSON());
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
-            dispatcher.trigger('networkConfigurationUpdated');
             this.props.cluster.get('networkConfiguration').isValid();
+            this.setState({hideVerificationResult: false});
         },
         loadInitialConfiguration: function() {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
@@ -415,6 +435,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 updateInitialConfiguration={this.updateInitialConfiguration}
                                 revertChanges={this.revertChanges}
                                 hasChanges={this.hasChanges}
+                                hideVerificationResult={this.state.hideVerificationResult}
                             />
                         </div>
                     }
@@ -476,12 +497,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
             });
             this.props.networkConfiguration.isValid();
-            dispatcher.trigger('networkConfigurationUpdated');
+            dispatcher.trigger('hideNetworkVerificationResult');
         },
         verifyNetworks: function() {
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(this.startVerification, this));
+            dispatcher.trigger('networkConfigurationUpdated', this.startVerification);
         },
         startVerification: function() {
             var task = new models.Task(),
@@ -499,39 +520,60 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         message: i18n(ns + 'start_verification_warning')
                     });
                 })
-                .always(_.bind(function() {
-                    this.props.cluster.fetchRelated('tasks').done(_.bind(function() {
-                        this.startPolling();
-                        this.setState({actionInProgress: false});
-                    }, this));
-                }, this));
-        },
-        applyChanges: function() {
-            this.setState({actionInProgress: true});
-            this.prepareIpRanges();
-            return Backbone.sync('update', this.props.networkConfiguration)
-                .done(_.bind(function(task) {
-                    if (task && task.status != 'error') {
-                        this.props.updateInitialConfiguration();
-                    } else {
-                        this.props.cluster.fetchRelated('tasks');
-                    }
+                .then(_.bind(function() {
+                    return this.props.cluster.fetchRelated('tasks');
                 }, this))
-                .fail(_.bind(function() {
-                    this.props.cluster.fetchRelated('tasks');
+                .then(_.bind(function() {
+                    // FIXME(vkramskikh): this ugly hack is needed to distinguish
+                    // verification tasks for saved config from verification tasks
+                    // for unsaved config (which appear after clicking "Verify"
+                    // button without clicking "Save Changes" button first).
+                    // For proper implementation, this should be managed by backend
+                    this.props.cluster.get('tasks').get(task.id).set('unsaved', this.props.hasChanges());
+                    return this.startPolling();
                 }, this))
                 .always(_.bind(function() {
                     this.setState({actionInProgress: false});
                 }, this));
         },
+        applyChanges: function() {
+            this.setState({actionInProgress: true});
+            this.prepareIpRanges();
+            dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
+                return Backbone.sync('update', this.props.networkConfiguration)
+                    .then(_.bind(function(response) {
+                        if (response && response.status != 'error') {
+                            this.props.updateInitialConfiguration();
+                            return $.Deferred().resolve(response);
+                        } else {
+                            // FIXME(vkramskikh): currently there can be both
+                            // 202 and 400 responses for this handler, so we need
+                            // to handle both. This hack needs to be removed after
+                            // backend fix
+                            return $.Deferred().reject(response);
+                        }
+                    }, this), function(response) {
+                        return $.Deferred().reject(JSON.parse(response.responseText));
+                    })
+                    .then(null, _.bind(function(response) {
+                        // FIXME(vkramskikh): the same hack for check_networks task:
+                        // remove failed tasks immediately, so they won't be taken into account
+                        return this.props.cluster.fetchRelated('tasks').done(_.bind(function() {
+                            this.props.cluster.get('tasks').get(response.id).set('unsaved', response.status == 'error');
+                        }, this));
+                    }, this))
+                    .always(_.bind(function() {
+                        this.setState({actionInProgress: false});
+                    }, this));
+            }, this));
+        },
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,
                 isLocked = this.isLocked(),
                 hasChanges = this.props.hasChanges(),
-                isVerificationDisabled = error || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
+                isVerificationDisabled = error || this.state.actionInProgress || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
                 isCancelChangesDisabled = isLocked || !hasChanges,
-                isSaveChangesDisabled = error || isLocked || !hasChanges ||
-                    !!this.props.cluster.task({group: 'network', status: 'error'});
+                isSaveChangesDisabled = error || isLocked || !hasChanges;
             return (
                 <div className='row'>
                     <div className='page-control-box'>
@@ -554,7 +596,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             );
         },
         getVerificationErrors: function() {
-            var task = this.props.cluster.task({group: 'network', status: 'error'}),
+            var task = this.props.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
             // @TODO: soon response format will be changed anf this part should be rewritten
             if (task && task.get('result').length) {
@@ -641,6 +683,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             key='network_verification'
                             task={cluster.task({group: 'network'})}
                             networks={this.props.networkConfiguration.get('networks')}
+                            hideVerificationResult={this.props.hideVerificationResult}
                         />
                     </div>
                     {this.renderButtons()}
@@ -792,6 +835,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             var task = this.props.task,
                 ns = 'cluster_page.network_tab.verify_networks.';
 
+            if (this.props.hideVerificationResult) task = null;
             return (
                 <div>
                     <div className='page-control-box'>

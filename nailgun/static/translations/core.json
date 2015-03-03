@@ -617,7 +617,12 @@
                     },
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",
-                    "locked_settings_alert": "Please note that environment settings and node configuration will be locked after deployment."
+                    "locked_settings_alert": "Please note that environment settings and node configuration will be locked after deployment.",
+                    "verification_not_performed": "It is recommended to verify network settings before deployment.",
+                    "verification_in_progress": "Your network verification is in progress.",
+                    "verification_failed": "Networks verification failed with error - ",
+                    "get_more_info": "For more information please refer",
+                    "click_here_link": "here"
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",

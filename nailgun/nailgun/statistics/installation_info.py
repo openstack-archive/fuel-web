@@ -17,6 +17,7 @@ from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
+from nailgun.objects import Plugin
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -110,10 +111,18 @@ class InstallationInfo(object):
                 'fuel_version': cluster.fuel_version,
                 'is_customized': cluster.is_customized,
                 'network_configuration': self.get_network_configuration_info(
-                    cluster)
+                    cluster),
+                'installed_plugins': self.get_cluster_plugins_info(cluster)
             }
             clusters_info.append(cluster_info)
         return clusters_info
+
+    def get_cluster_plugins_info(self, cluster):
+        plugins_info = []
+        for plugin_inst in cluster.plugins:
+            plugins_info.append(Plugin.to_dict(plugin_inst))
+
+        return plugins_info
 
     def get_attributes(self, attributes):
         result = {}

@@ -40,6 +40,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
         },
         render: function() {
             var elements = [
+                <DocumentationLink key='DocumentationLink' />,
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
                 <CapacityAudit key='CapacityAudit' />,
                 <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />
@@ -75,6 +76,25 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
         }
     });
 
+    var DocumentationLink = React.createClass({
+        render: function() {
+            var ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ? 'mirantis' : 'community') + '_';
+            return (
+                <SupportPageElement
+                    className='img-documentation-link'
+                    title={i18n(ns + 'title')}
+                    text={i18n(ns + 'text')}
+                >
+                    <p>
+                        <a className='btn' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
+                            {i18n('support_page.documentation_link')}
+                        </a>
+                    </p>
+                </SupportPageElement>
+            );
+        }
+    });
+
     var RegistrationLink = React.createClass({
         mixins: [componentMixins.backboneMixin('fuelKey')],
         componentDidMount: function() {
@@ -88,9 +108,11 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
                     title={i18n('support_page.register_fuel_title')}
                     text={i18n('support_page.register_fuel_content')}
                 >
-                    <p><a className='btn registration-link' href={_.isUndefined(key) ? '/' : 'http://fuel.mirantis.com/create-subscriber/?key=' + key} target='_blank'>
-                        {i18n('support_page.register_fuel_title')}
-                    </a></p>
+                    <p>
+                        <a className='btn registration-link' href={_.isUndefined(key) ? '/' : 'http://fuel.mirantis.com/create-subscriber/?key=' + key} target='_blank'>
+                            {i18n('support_page.register_fuel_title')}
+                        </a>
+                    </p>
                 </SupportPageElement>
             );
         }
@@ -105,7 +127,11 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
                     text={i18n('support_page.contact_text')}
                 >
                     <p>{i18n('support_page.irc_text')} <strong>#fuel</strong> on <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
-                    <p><a className='btn' href='https://mirantis.zendesk.com/requests/new' target='_blank'>{i18n('support_page.contact_support')}</a></p>
+                    <p>
+                        <a className='btn' href='https://mirantis.zendesk.com/requests/new' target='_blank'>
+                            {i18n('support_page.contact_support')}
+                        </a>
+                    </p>
                 </SupportPageElement>
             );
         }
@@ -175,7 +201,11 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
                     title={i18n('support_page.capacity_audit')}
                     text={i18n('support_page.capacity_audit_text')}
                 >
-                    <p><a className='btn' href='#capacity'>{i18n('support_page.view_capacity_audit')}</a></p>
+                    <p>
+                        <a className='btn' href='#capacity'>
+                            {i18n('support_page.view_capacity_audit')}
+                        </a>
+                    </p>
                 </SupportPageElement>
             );
         }
@@ -194,7 +224,10 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
                     .sortBy(function(settingName) {return settings[settingName].weight;}, this)
                     .value();
             return (
-                <SupportPageElement title={i18n('support_page.send_statistics_title')}>
+                <SupportPageElement
+                    className='img-statistics'
+                    title={i18n('support_page.send_statistics_title')}
+                >
                     {this.renderIntro()}
                     <div className='statistics-settings'>
                         {_.map(sortedSettings, this.renderInput, this)}

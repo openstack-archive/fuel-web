@@ -2402,15 +2402,17 @@ input.error:focus,
   .btn { margin-right: 10px; }
   .img {
     display: block;
-    margin: 10px 0 0 20px !important;
+    margin: 10px 0 20px 20px !important;
     overflow: hidden;
     .width-height-mixin(@support-img-size, @support-img-size);
     background-image: url(../img/support_icons.png);
     background-repeat: no-repeat;
-    &.img-register-fuel { background-position: 0 0; }
+    &.img-statistics { background-position: 0 0; }
     &.img-contact-support { background-position: 0 -@support-img-size; }
     &.img-download-logs { background-position: 0 -(@support-img-size * 2); }
-    &.img-audit-logs {  background-position: 0 -(@support-img-size * 3); }
+    &.img-audit-logs { background-position: 0 -(@support-img-size * 3); }
+    &.img-register-fuel { background-position: 0 -(@support-img-size * 4); }
+    &.img-documentation-link { background-position: 0 -(@support-img-size * 5); }
   }
   .statistics-settings {
     .parameter-name  .label-wrapper { top: -3px; }

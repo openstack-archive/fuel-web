@@ -131,6 +131,12 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         resp = self.env.node_nics_put(node_id, data)
         self.assertEqual(resp.status_code, 200)
 
+    def check_ep_format(self, endpoint_list):
+        for ep in endpoint_list.values():
+            if ep.get('IP'):
+                self.assertTrue(
+                    ep['IP'] == 'none' or isinstance(ep['IP'], list))
+
 
 # TODO(awoodward): multinode deprecation: probably has duplicates
 class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
@@ -455,6 +461,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-ex',
                      'eth0.103'])
             )
+            self.check_ep_format(scheme['endpoints'])
             self.assertEqual(
                 scheme['roles'],
                 {'storage': 'br-storage',
@@ -516,6 +523,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-ex',
                      'eth0'])
             )
+            self.check_ep_format(scheme['endpoints'])
             self.assertEqual(
                 scheme['roles'],
                 {'storage': 'br-storage',
@@ -744,6 +752,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 set(scheme['endpoints'].keys()),
                 br_set
             )
+            self.check_ep_format(scheme['endpoints'])
             self.assertEqual(
                 scheme['roles'],
                 role_dict
@@ -888,6 +897,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 set(scheme['endpoints'].keys()),
                 br_set
             )
+            self.check_ep_format(scheme['endpoints'])
             self.assertEqual(
                 scheme['roles'],
                 role_dict

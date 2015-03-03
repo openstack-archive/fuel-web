@@ -693,7 +693,6 @@ class EnvironmentManager(object):
                 nets,
                 headers=self.default_headers
             )
-            self.tester.assertEqual(202, resp.status_code)
             task_uuid = resp.json_body['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()
         else:

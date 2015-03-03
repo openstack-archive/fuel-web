@@ -17,6 +17,7 @@
 from copy import deepcopy
 from netaddr import IPNetwork
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun.openstack.common import jsonutils
@@ -157,9 +158,9 @@ class TestNodeHandlers(BaseIntegrationTest):
                 net['vlan_start'] = None
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -194,9 +195,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             if net['name'] == 'management':
                 net['vlan_start'] = 112
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -237,7 +238,7 @@ class TestNodeHandlers(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(cluster['id'], nets)
         self.assertEqual(resp.status_code, 200)
         task = resp.json_body
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -274,7 +275,7 @@ class TestNodeHandlers(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(cluster['id'], nets)
         self.assertEqual(resp.status_code, 200)
         task = resp.json_body
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()

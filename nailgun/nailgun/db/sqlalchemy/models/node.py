@@ -43,7 +43,7 @@ class NodeRoles(Base):
     __tablename__ = 'node_roles'
     id = Column(Integer, primary_key=True)
     role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
-    node = Column(Integer, ForeignKey('nodes.id'))
+    node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     primary = Column(Boolean, default=False, nullable=False)
 
     role_obj = relationship("Role")
@@ -53,7 +53,7 @@ class PendingNodeRoles(Base):
     __tablename__ = 'pending_node_roles'
     id = Column(Integer, primary_key=True)
     role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
-    node = Column(Integer, ForeignKey('nodes.id'))
+    node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     primary = Column(Boolean, default=False, nullable=False)
 
     role_obj = relationship("Role")
@@ -305,7 +305,7 @@ class Node(Base):
 class NodeAttributes(Base):
     __tablename__ = 'node_attributes'
     id = Column(Integer, primary_key=True)
-    node_id = Column(Integer, ForeignKey('nodes.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'))
     volumes = Column(JSON, default=[])
     interfaces = Column(JSON, default={})
 

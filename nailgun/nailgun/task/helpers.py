@@ -30,7 +30,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects import ActionLog
 from nailgun.settings import settings
 from nailgun.statistics.params_white_lists import task_output_white_list
 
@@ -412,6 +411,8 @@ class TaskHelper(object):
 
     @classmethod
     def create_action_log(cls, task):
+        from nailgun.objects import ActionLog
+
         try:
             create_kwargs = cls.prepare_action_log_kwargs(task)
             return ActionLog.create(create_kwargs)
@@ -420,6 +421,8 @@ class TaskHelper(object):
 
     @classmethod
     def update_action_log(cls, task, al_instance=None):
+        from nailgun.objects import ActionLog
+
         try:
             if not al_instance:
                 al_instance = ActionLog.get_by_task_uuid(task.uuid)

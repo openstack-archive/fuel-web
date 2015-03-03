@@ -184,12 +184,28 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
                     return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
                 }));
-            return {
+            var state = {
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
                 isInvalid: _.any(limitValidations, {valid: false}) || !settings.isValid({models: configModels}),
                 settingsValidationErrors: settings.validationError
             };
+            var useVcenter = cluster.get('settings').get('common.use_vcenter.value');
+            if (useVcenter) {
+                var vcenter = cluster.get('vcenter');
+                vcenter.setModels(configModels).parseRestrictions();
+                if (!vcenter.isValid()) {
+                    var message = {
+                        text: i18n('vmware.has_errors'),
+                        linkUrl: '/#cluster/' + cluster.id + '/vmware',
+                        linkText: i18n('vmware.tab_name')
+                    };
+                    state.isInvalid = true;
+                    state.settingsValidationErrors = state.settingsValidationErrors || [];
+                    state.settingsValidationErrors.push(message);
+                }
+            }
+            return state;
         },
         deployCluster: function() {
             this.setState({actionInProgress: true});
@@ -245,8 +261,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     {!_.isNull(this.state.settingsValidationErrors) &&
                         <div className='errors'>
                             {_.map(this.state.settingsValidationErrors, function(error) {
-                                return <div className='alert alert-error'>{error}</div>;
-                            })}
+                                if (_.isString(error)) {
+                                    return <div className='alert alert-error'>{error}</div>;
+                                } else if (_.isObject(error)) {
+                                    return <div className='alert alert-error'>
+                                            {' ' + error.text + ' '}
+                                            <a href={error.linkUrl} onClick={this.close}>{error.linkText}</a>
+                                        </div>;
+                                }
+                                return null;
+                            }, this)}
                         </div>
                     }
                     <div className='amount-restrictions'>

@@ -246,8 +246,8 @@ define(
     var VCenter = React.createClass({
         componentDidMount: function() {
             this.clusterId = this.props.cluster.id;
-            this.model = new vmwareModels.VCenter({id: this.clusterId});
-            this.model.on('sync', _.bind(function() {
+            this.model = this.props.cluster.get('vcenter');
+            this.model.on('sync', function() {
                 this.model.parseRestrictions();
                 this.actions = this.model.testRestrictions();
                 if (!this.model.loadDefaults) {
@@ -255,13 +255,13 @@ define(
                 }
                 this.model.loadDefaults = false;
                 this.setState({model: this.model});
-            }, this));
+            }, this);
             this.defaultModel = new vmwareModels.VCenter({id: this.clusterId});
-            this.defaultModel.on('sync', _.bind(function() {
+            this.defaultModel.on('sync', function() {
                 this.defaultModel.parseRestrictions();
                 this.defaultsJson = JSON.stringify(this.defaultModel.toJSON());
                 this.setState({defaultModel: this.defaultModel});
-            }, this));
+            }, this);
             this.setState({model: this.model, defaultModel: this.defaultModel});
 
             this.model.setModels({
@@ -273,10 +273,14 @@ define(
             this.readDefaultsData();
             this.readData();
             dispatcher.on('vcenter_model_update', _.bind(function() {
-                this.forceUpdate();
+                if (this.isMounted()) {
+                    this.forceUpdate();
+                }
             }, this));
         },
         componentWillUnmount: function() {
+            this.defaultModel.off('sync', null, this);
+            this.model.off('sync', null, this);
             dispatcher.off('vcenter_model_update');
         },
         getInitialState: function() {
@@ -328,9 +332,9 @@ define(
                 <div className='vmware'>
                     <div className='wrapper'>
                         <h3>{i18n('vmware.title')}</h3>
-                        {hide.availability_zones || <AvailabilityZones collection={model.get('availability_zones')} disabled={!editable || disable.availability_zones}/>}
-                        {hide.network || <Network model={model.get('network')} disabled={!editable || disable.network}/>}
-                        {hide.glance || <Glance model={model.get('glance')} disabled={!editable || disable.glance}/>}
+                        {!hide.availability_zones && <AvailabilityZones collection={model.get('availability_zones')} disabled={!editable || disable.availability_zones}/>}
+                        {!hide.network && <Network model={model.get('network')} disabled={!editable || disable.network}/>}
+                        {!hide.glance && <Glance model={model.get('glance')} disabled={!editable || disable.glance}/>}
                     </div>
                     <div className='page-control-box'>
                         <div className='page-control-button-placeholder'>

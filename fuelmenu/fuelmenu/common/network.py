@@ -72,3 +72,7 @@ def range(startip, endip):
 def intersects(range1, range2):
     #Returns true if any IPs in range1 exist in range2
     return range1 & range2
+
+
+def netmaskToCidr(netmask):
+    return sum([bin(int(x)).count('1') for x in netmask.split('.')])

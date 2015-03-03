@@ -84,9 +84,13 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
-        :http: * 202 (network checking task created)
+        :http: * 200 (task successfully executed)
+               * 202 (network checking task scheduled for execution)
+               * 400 (failed to execute task)
                * 404 (cluster not found in db)
+               * 404 (cluster or nodes not found in db)
         """
+        # TODO(pkaminski): this seems to be synchronous, no task needed here
         data = jsonutils.loads(web.data())
         if data.get("networks"):
             data["networks"] = [
@@ -125,7 +129,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
 
                 logger.error(traceback.format_exc())
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -148,6 +152,14 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
     @content
     def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 202 (network checking task scheduled for execution)
+               * 400 (failed to execute task)
+               * 404 (cluster not found in db)
+               * 404 (cluster or nodes not found in db)
+        """
+        # TODO(pkaminski): this seems to be synchronous, no task needed here
         data = jsonutils.loads(web.data())
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
@@ -181,10 +193,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                 objects.Task.update(task, data)
                 logger.error(traceback.format_exc())
 
-        if task.status == consts.TASK_STATUSES.error:
-            raise self.http(400, objects.Task.to_json(task))
-
-        raise self.http(200, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):
@@ -196,13 +205,14 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         """:IMPORTANT: this method should be rewritten to be more RESTful
 
         :returns: JSONized Task object.
-        :http: * 202 (network checking task failed)
-               * 200 (network verification task started)
+        :http: * 200 (network verification task started)
+               * 202 (network checking task failed)
+               * 400 (failed to execute task)
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
-        raise self.http(202, self.launch_verify(cluster))
+        self.launch_verify(cluster)
 
     def launch_verify(self, cluster):
         data = self.validator.validate_networks_update(web.data())
@@ -224,7 +234,8 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
             task = task_manager.execute(data, vlan_ids)
         except errors.CantRemoveOldVerificationTask:
             raise self.http(400, "You cannot delete running task manually")
-        return objects.Task.to_json(task)
+
+        self.raise_task(task)
 
 
 class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):

@@ -184,12 +184,28 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
                     return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
                 }));
-            return {
+            var state = {
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
                 isInvalid: _.any(limitValidations, {valid: false}) || !settings.isValid({models: configModels}),
-                settingsValidationErrors: settings.validationError
+                settingsValidationErrors: settings.validationError,
+                vcenterError: null
             };
+            // vcenter
+            var useVcenter = settings.get('common.use_vcenter.value');
+            if (useVcenter) {
+                var vcenter = cluster.get('vcenter');
+                vcenter.setModels(configModels).parseRestrictions();
+                if (!vcenter.isValid()) {
+                    state.isInvalid = true;
+                    state.vcenterError = {
+                        text: i18n('vmware.has_errors'),
+                        linkUrl: '/#cluster/' + cluster.id + '/vmware',
+                        linkText: i18n('vmware.tab_name')
+                    };
+                }
+            }
+            return state;
         },
         deployCluster: function() {
             this.setState({actionInProgress: true});
@@ -242,11 +258,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
                     {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                    {!_.isNull(this.state.vcenterError) &&
+                        <div className='alert alert-error'>
+                            {' ' + this.state.vcenterError.text + ' '}
+                            <a href={this.state.vcenterError.linkUrl} onClick={this.close}>
+                                {this.state.vcenterError.linkText}
+                            </a>
+                        </div>
+                    }
                     {!_.isNull(this.state.settingsValidationErrors) &&
                         <div className='errors'>
                             {_.map(this.state.settingsValidationErrors, function(error) {
                                 return <div className='alert alert-error'>{error}</div>;
-                            })}
+                            }, this)}
                         </div>
                     }
                     <div className='amount-restrictions'>

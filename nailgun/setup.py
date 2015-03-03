@@ -70,6 +70,8 @@ if __name__ == "__main__":
                   'receiverd = nailgun.rpc.receiverd:run',
                   'statsenderd = nailgun.statistics.statsenderd:run',
                   'oswl_collectord = nailgun.statistics.oswl_collector:run',
+                  ('oswl_cleaner = nailgun.statistics.utils:'
+                   'delete_expired_oswl_entries'),
               ],
               'nose.plugins.0.10': [
                   'db = nailgun.test.db_plugin:DbPlugin'

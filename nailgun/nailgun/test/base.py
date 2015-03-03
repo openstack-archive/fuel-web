@@ -611,7 +611,6 @@ class EnvironmentManager(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 headers=self.default_headers)
 
-            self.tester.assertEqual(202, resp.status_code)
             return self.db.query(Task).filter_by(
                 uuid=resp.json_body['uuid']
             ).first()
@@ -620,7 +619,7 @@ class EnvironmentManager(object):
                 "Nothing to deploy - try creating cluster"
             )
 
-    def stop_deployment(self, expect_http=202):
+    def stop_deployment(self):
         if self.clusters:
             resp = self.app.put(
                 reverse(
@@ -628,9 +627,7 @@ class EnvironmentManager(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 expect_errors=True,
                 headers=self.default_headers)
-            self.tester.assertEqual(expect_http, resp.status_code)
-            if not str(expect_http).startswith("2"):
-                return resp.body
+
             return self.db.query(Task).filter_by(
                 uuid=resp.json_body['uuid']
             ).first()
@@ -733,7 +730,6 @@ class EnvironmentManager(object):
                 nets,
                 headers=self.default_headers
             )
-            self.tester.assertEqual(202, resp.status_code)
             task_uuid = resp.json_body['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()
         else:

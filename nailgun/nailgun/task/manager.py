@@ -694,6 +694,7 @@ class VerifyNetworksTaskManager(TaskManager):
         )
         verification_tasks = list(verification_tasks)
 
+        # TODO(pkaminski): this code shouldn't be required at all
         if verification_tasks:
             ver_task = verification_tasks[0]
             if ver_task.status == consts.TASK_STATUSES.running:

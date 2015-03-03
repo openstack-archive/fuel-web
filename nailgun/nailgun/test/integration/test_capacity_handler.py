@@ -19,6 +19,7 @@ from hashlib import md5
 from mock import patch
 from StringIO import StringIO
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -30,10 +31,11 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('CapacityLogHandler'),
             headers=self.default_headers)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
 
         capacity_task = self.db.query(Task).filter_by(
-            name="capacity_log"
+            name=consts.TASK_NAMES.capacity_log
         ).first()
         self.env.wait_ready(capacity_task)
 
@@ -127,7 +129,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(test_env['cluster'], 'test_name')
         self.assertEqual(test_env['nodes'], 6)
 
-    @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    @fake_tasks(override_state={"progress": 100,
+                                "status": consts.TASK_STATUSES.ready})
     def test_capacity_csv_log_with_unicode(self):
         self.env.create(
             cluster_kwargs={

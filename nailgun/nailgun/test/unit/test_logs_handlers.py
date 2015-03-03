@@ -19,9 +19,7 @@ import shutil
 import tempfile
 import time
 
-from mock import Mock
-from mock import patch
-from oslo.serialization import jsonutils
+import mock
 
 import nailgun
 from nailgun.api.v1.handlers.logs import read_backwards
@@ -43,7 +41,7 @@ class TestLogs(BaseIntegrationTest):
         self.local_log_file = os.path.join(self.log_dir, 'nailgun.log')
         regexp = (r'^(?P<date>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}):'
                   '(?P<level>\w+):(?P<text>.+)$')
-        self.patcher = patch.object(
+        self.patcher = mock.patch.object(
             settings, 'LOGS', [
                 {
                     'id': 'nailgun',
@@ -350,30 +348,30 @@ class TestLogs(BaseIntegrationTest):
                 f.write(self._format_log_entry(log_entry))
                 f.flush()
 
-    @patch.dict('nailgun.task.task.settings.DUMP',
-                {
-                    'dump': {
-                        'local': {
-                            'hosts': [],
-                            'objects': [],
-                        },
-                        'master': {
-                            'hosts': [],
-                            'objects': [{
-                                'type': 'subs',
-                                'path': '/var/log/remote',
-                                'subs': {}
-                            }],
-                        },
-                        'slave': {
-                            'hosts': [],
-                            'objects': [],
-                        }
-                    },
-                    'target': '/path/to/save',
-                    'lastdump': '/path/to/latest',
-                    'timestamp': True,
-                })
+    @mock.patch.dict('nailgun.task.task.settings.DUMP',
+                     {
+                         'dump': {
+                             'local': {
+                                 'hosts': [],
+                                 'objects': [],
+                             },
+                             'master': {
+                                 'hosts': [],
+                                 'objects': [{
+                                     'type': 'subs',
+                                     'path': '/var/log/remote',
+                                     'subs': {}
+                                 }],
+                             },
+                             'slave': {
+                                 'hosts': [],
+                                 'objects': [],
+                             }
+                         },
+                         'target': '/path/to/save',
+                         'lastdump': '/path/to/latest',
+                         'timestamp': True,
+                     })
     def test_snapshot_conf(self):
         self.env.create_node(
             status='ready',
@@ -408,9 +406,10 @@ class TestLogs(BaseIntegrationTest):
         }
         self.datadiff(DumpTask.conf(), conf)
 
-    @patch.dict('nailgun.task.task.settings.DUMP', {'lastdump': 'LASTDUMP'})
+    @mock.patch.dict('nailgun.task.task.settings.DUMP',
+                     {'lastdump': 'LASTDUMP'})
     @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock.patch('nailgun.rpc.cast')
     def test_snapshot_cast(self, mocked_rpc):
         task = self.env.create_task(name='dump')
         DumpTask.execute(task)
@@ -429,10 +428,10 @@ class TestLogs(BaseIntegrationTest):
 
     def test_snapshot_task_manager(self):
         tm = DumpTaskManager()
-        mock = Mock(return_value=None)
-        tm._call_silently = mock
+        m = mock.Mock(return_value=None)
+        tm._call_silently = m
         task = tm.execute()
-        mock.assert_called_once_with(task, DumpTask, conf=None)
+        m.assert_called_once_with(task, DumpTask, conf=None)
 
     def test_snapshot_task_manager_already_running(self):
         self.env.create_task(name="dump")
@@ -440,31 +439,31 @@ class TestLogs(BaseIntegrationTest):
         self.assertRaises(errors.DumpRunning, tm.execute)
 
     def test_log_package_handler_ok(self):
-        task = jsonutils.dumps({
+        task = {
             "status": "running",
             "name": "dump",
             "progress": 0,
             "message": None,
             "id": 1,
             "uuid": "00000000-0000-0000-0000-000000000000"
-        })
-        tm_patcher = patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
-        th_patcher = patch('nailgun.api.v1.handlers.logs.objects.Task')
+        }
+        tm_patcher = mock.patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
+        th_patcher = mock.patch('nailgun.api.v1.handlers.logs.objects.Task')
         tm_mocked = tm_patcher.start()
         th_mocked = th_patcher.start()
         tm_instance = tm_mocked.return_value
-        tm_instance.execute.return_value = task
-        th_mocked.to_json.side_effect = lambda x: x
+        tm_instance.execute.return_value = mock.Mock(**task)
+        th_mocked.to_json.side_effect = lambda x: task
         resp = self.app.put(
             reverse('LogPackageHandler'), "[]", headers=self.default_headers
         )
         tm_patcher.stop()
         th_patcher.stop()
-        self.assertEqual(task, resp.body)
         self.assertEqual(resp.status_code, 202)
+        self.assertDictEqual(task, resp.json_body)
 
     def test_log_package_handler_failed(self):
-        tm_patcher = patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
+        tm_patcher = mock.patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
         tm_mocked = tm_patcher.start()
         tm_instance = tm_mocked.return_value
 
@@ -480,7 +479,7 @@ class TestLogs(BaseIntegrationTest):
         tm_patcher.stop()
         self.assertEqual(resp.status_code, 400)
 
-    @patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
+    @mock.patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
     def test_log_package_handler_with_dump_task_manager_error(self,
                                                               dump_manager):
         """Test verifies that 400 status would be returned in case of errors

@@ -16,7 +16,9 @@
                 "cancel": "Cancel Changes",
                 "apply": "Save Changes",
                 "nova_computes": "Nova Computes",
-                "nova_compute": "Nova Compute Instance"
+                "nova_compute": "Nova Compute Instance",
+                "has_errors": "VMware settings are invalid. For more information please visit the",
+                "tab_name": "VMware tab"
             }
         }
     }

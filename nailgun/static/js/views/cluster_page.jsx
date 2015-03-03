@@ -33,7 +33,7 @@ define(
     'jsx!views/cluster_page_tabs/healthcheck_tab',
     'plugins/vmware/vmware'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, VmWareTab) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, vmWare) {
     'use strict';
 
     var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl,
@@ -96,6 +96,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                 release: new models.Release({id: cluster.get('release_id')})
                             });
                             return $.when(cluster.get('networkConfiguration').fetch(), cluster.get('release').fetch());
+                        })
+                        .then(function() {
+                            var useVcenter = cluster.get('settings').get('common.use_vcenter.value');
+                            if (!useVcenter) {
+                                return true;
+                            }
+                            var vcenter = new vmWare.vmWareModels.VCenter({id: id});
+                            cluster.set({vcenter: vcenter});
+                            return vcenter.fetch();
                         });
                 }
                 return promise.then(function() {
@@ -185,7 +194,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 useVCenter = settings.get('common.use_vcenter').value,
                 index = _.findIndex(tabs, {url: 'settings'});
             if (useVCenter) {
-                tabs.splice(index + 1, 0, {url: 'vmware', tab: VmWareTab});
+                tabs.splice(index + 1, 0, {url: 'vmware', tab: vmWare.VmWareTab});
             }
             return tabs;
         },

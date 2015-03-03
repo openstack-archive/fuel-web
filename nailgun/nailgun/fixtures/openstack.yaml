@@ -399,6 +399,26 @@
             regex:
               source: &non_empty_string '\S'
               error: "Empty password"
+        workloads_collector:
+          metadata:
+            label: "Workloads Collector User"
+            weight: 10
+            restrictions:
+              - condition: "true"
+                action: "hide"
+          enabled:
+            value: true
+            type: "hidden"
+          username:
+            value: "workloads_collector"
+            type: "text"
+          password:
+            value:
+              generator: "password"
+            type: "password"
+          tenant:
+            value: "services"
+            type: "text"
         external_mongo:
           metadata:
             label: "External MongoDB"

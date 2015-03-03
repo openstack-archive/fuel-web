@@ -269,12 +269,11 @@ class interfaces(urwid.WidgetWrap):
             else:
                 params = {"ipaddr": "dhcp"}
         else:
-            params = {"ipaddr": responses["ipaddr"],
-                      "netmask": responses["netmask"],
+            cidr = network.netmaskToCidr(responses["netmask"])
+            params = {"ipaddr": "{0}/{1}".format(responses["ipaddr"], cidr),
                       "check_by_ping": "none"}
         if len(responses["gateway"]) > 1:
             params["gateway"] = responses["gateway"]
-            params["default_gateway"] = True
         elif network.inSameSubnet(self.get_default_gateway_linux(),
                                   responses["ipaddr"], responses["netmask"]):
             #If the current gateway is in the same subnet AND the user

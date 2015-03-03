@@ -396,10 +396,8 @@ _new_role_restrictions = {
     ],
     'cinder': [
         {
-            'condition': (
-                "settings:storage.volumes_lvm.value == false and "
-                "settings:storage.volumes_vmdk.value == false"),
-            'message': "Cinder LVM or VMDK should be enabled in settings"
+            'condition': "settings:storage.volumes_lvm.value == false",
+            'message': "Cinder LVM should be enabled in settings"
         },
         # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914 - Prohibit
         #  possibility of adding cinder nodes to an environment with Ceph RBD

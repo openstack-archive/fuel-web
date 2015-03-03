@@ -26,6 +26,7 @@ import web
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.graph import GraphTasksValidator
+from nailgun import consts
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -233,6 +234,15 @@ class BaseHandler(object):
             raise self.http(404, '{0} not found'.format(obj.__name__))
 
         return list(node_query)
+
+    def raise_task(self, task):
+        if task.status in [consts.TASK_STATUSES.ready,
+                           consts.TASK_STATUSES.error]:
+            status = 200
+        else:
+            status = 202
+
+        raise self.http(status, objects.Task.to_json(task))
 
 
 def content_json(func, cls, *args, **kwargs):
@@ -551,7 +561,7 @@ class DeferredTaskHandler(BaseHandler):
             # let it be 500
             raise
 
-        raise self.http(202, self.single.to_json(task))
+        self.raise_task(task)
 
 
 class DeploymentTasksHandler(SingleHandler):

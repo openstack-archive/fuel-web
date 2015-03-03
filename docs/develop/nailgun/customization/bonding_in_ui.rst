@@ -19,7 +19,7 @@ The Puppet module L23network has support for OVS and native Linux bonding,
 so we can use it for both NovaNetwork and Neutron deployments. Only Native
 OVS bonding (Neutron only) is implemented in Nailgun now. Vlan splinters cannot
 be used on bonds now. Three modes are supported now: 'active-backup',
-'balance-slb', 'lacp-balance-tcp' (see nailgun.consts.OVS_BOND_MODES).
+'balance-slb', 'lacp-balance-tcp' (see nailgun.consts.BOND_MODES).
 
 Deployment serialization
 ------------------------
@@ -66,7 +66,7 @@ Request/response data example::
     {
       "name": "ovs-bond0", # only name is set for bond, not id
       "type": "bond",
-      "mode": "balance-slb", # see nailgun.consts.OVS_BOND_MODES for modes list
+      "mode": "balance-slb", # see nailgun.consts.BOND_MODES for modes list
       "slaves": [
         {"name": "eth1"}, # only “name” must be in slaves list
         {"name": "eth2"}],
@@ -137,6 +137,6 @@ read-only) all together.
 Relationship between them (bond:NIC ~ 1:M) is expressed in “slaves” field in
 NodeBondInterface model.
 Two more new fields in NodeBondInterface are: “flags” and “mode”.
-Bond's “mode” can accept values from nailgun.consts.OVS_BOND_MODES.
+Bond's “mode” can accept values from nailgun.consts.BOND_MODES.
 Bond's “flags” are not in use now. “type” property (read-only) indicates whether
 it is a bond or NIC (see nailgun.consts.NETWORK_INTERFACE_TYPES).

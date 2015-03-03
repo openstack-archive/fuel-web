@@ -20,6 +20,7 @@ from sqlalchemy.sql import not_
 
 from nailgun import objects
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Release
@@ -204,4 +205,4 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(resp.json_body['status'], 'ready')
+        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)

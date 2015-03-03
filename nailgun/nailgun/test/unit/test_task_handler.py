@@ -14,6 +14,7 @@
 #    under the License.
 
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import fake_tasks
@@ -22,7 +23,8 @@ from nailgun.test.base import reverse
 
 class TestTaskHandlers(BaseTestCase):
 
-    @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    @fake_tasks(override_state={"progress": 100,
+                                "status": consts.TASK_STATUSES.ready})
     def test_task_deletion(self):
         self.env.create(
             nodes_kwargs=[

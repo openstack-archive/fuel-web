@@ -16,6 +16,7 @@
 
 import imp
 import os
+import unittest2
 
 from inspect import getmembers
 from inspect import isclass
@@ -26,6 +27,8 @@ from nailgun.autoapidoc import SampleGenerator
 from nailgun.test.base import BaseIntegrationTest
 
 
+# TODO(pkaminski): Unfinished
+@unittest2.skip('TODO')
 class TestAPIDocGeneration(BaseIntegrationTest):
 
     def get_handlers_list(self):

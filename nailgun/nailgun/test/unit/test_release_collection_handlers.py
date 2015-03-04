@@ -220,11 +220,9 @@ class ReleaseCollectionSortBaseTest(BaseIntegrationTest):
 
         actual = [(r['version'], r['operating_system']) for r in resp]
 
-        self.assertEqual(actual, self.expected)
+        self.assertListEqual(actual, self.expected)
 
 
-@patch('nailgun.objects.release.settings.DEFAULT_REPO',
-       dict.fromkeys(['centos', 'ubuntu', 'arch', 'debian', 'fedora'], ''))
 class TestReleaseCollectionSortingAllCriteria(ReleaseCollectionSortBaseTest):
     releases = [
         ("2014.1-6.0", "Ubuntu"),
@@ -252,24 +250,24 @@ class TestReleaseCollectionSortingAllCriteria(ReleaseCollectionSortBaseTest):
 
     expected = [
         ("2014.3-7.0", "CentOS"),
-        ("2014.2-6.1", "CentOS"),
-        ("2014.2.2-6.0", "CentOS"),
-        ("2014.2-6.0", "Ubuntu"),
-        ("2014.2-6.0", "CentOS"),
-        ("2014.1-6.0", "Ubuntu"),
-        ("2014.2-5.1.1", "Ubuntu"),
-        ("2014.2-5.1.1", "CentOS"),
-        ("2014.1.3-5.1.1", "CentOS"),
-        ("2014.1-5.1.1", "Ubuntu"),
-        ("2013.2.1-5.1", "Ubuntu"),
-        ("2013.2.1-5.1", "CentOS"),
-        ("2013.2.1-5.1", "Debian"),
-        ("2013.2.1-5.1", "Fedora"),
-        ("2013.2-5.0", "CentOS"),
-        ("2013.2-4.0", "Ubuntu"),
         ("2014.3", "Ubuntu"),
         ("2014.3", "CentOS"),
         ("2014.3", "Arch"),
+        ("2014.2.2-6.0", "CentOS"),
+        ("2014.2-6.1", "CentOS"),
+        ("2014.2-6.0", "Ubuntu"),
+        ("2014.2-6.0", "CentOS"),
+        ("2014.2-5.1.1", "Ubuntu"),
+        ("2014.2-5.1.1", "CentOS"),
+        ("2014.1.3-5.1.1", "CentOS"),
+        ("2014.1-6.0", "Ubuntu"),
+        ("2014.1-5.1.1", "Ubuntu"),
+        ("2013.2.1-5.1", "Ubuntu"),
+        ("2013.2.1-5.1", "Fedora"),
+        ("2013.2.1-5.1", "Debian"),
+        ("2013.2.1-5.1", "CentOS"),
+        ("2013.2-5.0", "CentOS"),
+        ("2013.2-4.0", "Ubuntu"),
         ("2013.2", "Ubuntu"),
         ("2013.2", "CentOS"),
     ]
@@ -309,8 +307,6 @@ class TestReleaseCollectionSortByOpenstack(ReleaseCollectionSortBaseTest):
     ]
 
 
-@patch('nailgun.objects.release.settings.DEFAULT_REPO',
-       dict.fromkeys(['centos', 'ubuntu', 'arch', 'debian', 'fedora'], ''))
 class TestReleaseCollectionSortByOS(ReleaseCollectionSortBaseTest):
     releases = [
         ("X", "Debian"),
@@ -322,8 +318,8 @@ class TestReleaseCollectionSortByOS(ReleaseCollectionSortBaseTest):
 
     expected = [
         ("X", "Ubuntu"),
+        ("X", "Fedora"),
+        ("X", "Debian"),
         ("X", "CentOS"),
         ("X", "Arch"),
-        ("X", "Debian"),
-        ("X", "Fedora"),
     ]

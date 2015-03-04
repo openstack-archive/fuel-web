@@ -143,7 +143,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             classes[this.props.descriptionClassName] = this.props.descriptionClassName;
             return error || this.props.description ? (
                 <div key='description' className={cx(classes)}>
-                    {error ? this.props.error : this.props.description}
+                    {error ?
+                        this.props.error :
+                        this.props.description.split('\n').map(function(line, index) {
+                                return <p key={index}>{line}</p>;
+                            }
+                        )
+                    }
                 </div>
             ) : null;
         },

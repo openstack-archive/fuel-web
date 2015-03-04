@@ -585,7 +585,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
         self.db.flush()
-        self.env.wait_ready(supertask, timeout=5)
+        self.env.wait_ready(supertask, timeout=20)
 
         # same as in previous test
         self.env.wait_for_true(self.check_node_presence, args=[3])

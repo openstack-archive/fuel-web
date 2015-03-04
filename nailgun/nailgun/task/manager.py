@@ -16,11 +16,15 @@
 
 import traceback
 
+try:
+    import uwsgidecorators
+except ImportError:
+    uwsgidecorators = None
+
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
-
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
@@ -32,6 +36,15 @@ from nailgun.openstack.common import jsonutils
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper
+import nailgun.utils.decorators as decorators
+
+
+@decorators.if_module_exists_decorate_with(uwsgidecorators, 'mulefunc')
+def call_async(klass, func, cluster_id, *args):
+    logger.debug('MULE STARTING')
+    instance = klass(cluster_id=cluster_id)
+    getattr(instance, func)(*args)
+    logger.debug('MULE FINISHED')
 
 
 class TaskManager(object):
@@ -150,7 +163,6 @@ class ApplyChangesTaskManager(TaskManager):
         nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
         nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
 
-        task_messages = []
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
             db().rollback()
             raise errors.WrongNodeStatus("No changes to deploy")
@@ -159,6 +171,39 @@ class ApplyChangesTaskManager(TaskManager):
         db().commit()
         TaskHelper.create_action_log(supertask)
 
+        call_async(
+            self.__class__,
+            '_execute_async',
+            self.cluster.id,
+            supertask.id,
+            [n.id for n in nodes_to_provision],
+            [n.id for n in nodes_to_deploy],
+            [n.id for n in nodes_to_delete]
+        )
+
+        return supertask
+    
+    def _execute_async(self,
+                 supertask_id,
+                 nodes_to_provision_ids,
+                 nodes_to_deploy_ids,
+                 nodes_to_delete_ids):
+
+        logger.info(u"Execute async starting")
+
+        nodes_to_provision = objects.NodeCollection.filter_by_id_list(
+            None, nodes_to_provision_ids
+        )
+        nodes_to_deploy = objects.NodeCollection.filter_by_id_list(
+            None, nodes_to_deploy_ids
+        )
+        nodes_to_delete = objects.NodeCollection.filter_by_id_list(
+            None, nodes_to_delete_ids
+        )
+
+        supertask = db().query(Task).get(supertask_id)
+
+        task_messages = []
         # Run validation if user didn't redefine
         # provisioning and deployment information
 
@@ -168,7 +213,7 @@ class ApplyChangesTaskManager(TaskManager):
                 self.check_before_deployment(supertask)
             except errors.CheckBeforeDeploymentError:
                 db().commit()
-                return supertask
+                return
 
         task_deletion, task_provision, task_deployment = None, None, None
 
@@ -221,7 +266,7 @@ class ApplyChangesTaskManager(TaskManager):
             # if failed to generate task message for orchestrator
             # then task is already set to error
             if task_provision.status == consts.TASK_STATUSES.error:
-                return supertask
+                return
 
             task_provision.cache = provision_message
             db().commit()
@@ -255,7 +300,7 @@ class ApplyChangesTaskManager(TaskManager):
             # if failed to generate task message for orchestrator
             # then task is already set to error
             if task_deployment.status == consts.TASK_STATUSES.error:
-                return supertask
+                return
 
             task_deployment.cache = deployment_message
             db().commit()
@@ -287,7 +332,6 @@ class ApplyChangesTaskManager(TaskManager):
                 supertask.uuid
             )
         )
-        return supertask
 
     def check_before_deployment(self, supertask):
         # checking admin intersection with untagged

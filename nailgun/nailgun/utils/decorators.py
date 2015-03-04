@@ -14,10 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.db.sqlalchemy import db
-from nailgun.db.sqlalchemy import get_new_session
-from nailgun.db.sqlalchemy import dropdb
-from nailgun.db.sqlalchemy import engine
-from nailgun.db.sqlalchemy import flush
-from nailgun.db.sqlalchemy import NoCacheQuery
-from nailgun.db.sqlalchemy import syncdb
+class if_module_exists_decorate_with(object):
+    def __init__(self, module, name):
+        self.module = module
+        self.name = name
+
+    def __call__(self, func):
+        if not self.module:
+            # Return the function unchanged, not decorated.
+            return func
+        return getattr(self.module, self.name)(func)

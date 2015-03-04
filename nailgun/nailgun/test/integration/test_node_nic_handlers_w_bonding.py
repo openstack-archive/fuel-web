@@ -74,10 +74,10 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                                                  expect_errors=True)
 
     def node_nics_put_check_error(self, message):
-        for put_func in (self.put_single, self.put_collection):
-            resp = put_func()
-            self.assertEqual(resp.status_code, 400)
-            self.assertEqual(resp.json_body["message"], message)
+        # TODO(pkaminski): put_collection test?
+        resp = self.put_single()
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(resp.json_body['message'], message)
 
     def nics_bond_create(self, put_func):
         self.data.append({
@@ -154,28 +154,28 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
     def test_nics_bond_delete(self):
-        for put_func in (self.put_single, self.put_collection):
-            self.get_node_nics_info()
-            self.nics_bond_create(put_func)
-            self.nics_bond_remove(put_func)
+        # TODO(pkaminski): put_collection ?
+        self.get_node_nics_info()
+        self.nics_bond_create(self.put_single)
+        self.nics_bond_remove(self.put_single)
 
-            resp = self.env.node_nics_get(self.env.nodes[0]["id"])
-            self.assertEqual(resp.status_code, 200)
-
-            for nic in resp.json_body:
-                self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
+        resp = self.env.node_nics_get(self.env.nodes[0]["id"])
+        self.assertEquals(resp.status_code, 200)
+        data = resp.json_body
+        for nic in data:
+            self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
 
     def test_nics_linux_bond_create_delete(self):
-        for put_func in (self.put_single, self.put_collection):
-            self.get_node_nics_info()
-            self.nics_bond_create_w_properties(put_func)
-            self.nics_bond_remove(put_func)
+        # TODO(pkaminski): put_collection ?
+        self.get_node_nics_info()
+        self.nics_bond_create_w_properties(self.put_single)
+        self.nics_bond_remove(self.put_single)
 
-            resp = self.env.node_nics_get(self.env.nodes[0]["id"])
-            self.assertEqual(resp.status_code, 200)
+        resp = self.env.node_nics_get(self.env.nodes[0]["id"])
+        self.assertEqual(resp.status_code, 200)
 
-            for nic in resp.json_body:
-                self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
+        for nic in resp.json_body:
+            self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
 
     def test_nics_bond_removed_on_node_unassign(self):
         self.get_node_nics_info()

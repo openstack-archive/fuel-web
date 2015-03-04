@@ -523,3 +523,6 @@ class NailgunCollection(object):
         :returns: instance of an object (model)
         """
         return cls.single.create(data)
+
+
+NailgunObject.collection = NailgunCollection

@@ -17,21 +17,21 @@
 """
 Product info handlers
 """
+import pecan
 
-from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v2.controllers.base import BaseController
 from nailgun.settings import settings
 from nailgun import utils
 
 
-class VersionHandler(BaseHandler):
+class VersionController(BaseController):
     """Version info handler
     """
 
     release_versions = "/etc/fuel/release_versions/*.yaml"
 
-    @content
-    def GET(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
         """:returns: FUEL/FUELWeb commit SHA, release version.
         :http: * 200 (OK)
         """

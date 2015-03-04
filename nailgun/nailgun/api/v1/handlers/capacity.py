@@ -14,18 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import pecan
+
 import codecs
 import cStringIO
 import csv
 from hashlib import md5
 import tempfile
 
-import web
-
+from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun import objects
 
-from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v2.controllers.base import BaseController
 from nailgun.task.manager import GenerateCapacityLogTaskManager
 
 
@@ -69,42 +69,10 @@ class UnicodeWriter(object):
             self.writerow(row)
 
 
-class CapacityLogHandler(BaseHandler):
-    """Task single handler
-    """
+class CapacityLogCsvController(BaseController):
 
-    fields = (
-        "id",
-        "report"
-    )
-
-    @content
-    def GET(self):
-        capacity_log = objects.CapacityLog.get_latest()
-        if not capacity_log:
-            raise self.http(404)
-        return self.render(capacity_log)
-
-    @content
-    def PUT(self):
-        """Starts capacity data generation.
-
-        :returns: JSONized Task object.
-        :http: * 200 (setup task successfully executed)
-               * 202 (setup task created and started)
-               * 400 (data validation failed)
-               * 404 (cluster not found in db)
-        """
-        # TODO(pkaminski): this seems to be synchronous, no task needed here
-        manager = GenerateCapacityLogTaskManager()
-        task = manager.execute()
-
-        self.raise_task(task)
-
-
-class CapacityLogCsvHandler(BaseHandler):
-
-    def GET(self):
+    @pecan.expose(content_type='application/octet-stream')
+    def get_all(self):
         capacity_log = objects.CapacityLog.get_latest()
         if not capacity_log:
             raise self.http(404)
@@ -138,9 +106,47 @@ class CapacityLogCsvHandler(BaseHandler):
         csv_file.writerow(['Checksum', checksum])
 
         filename = 'fuel-capacity-audit.csv'
-        web.header('Content-Type', 'application/octet-stream')
-        web.header('Content-Disposition', 'attachment; filename="%s"' % (
-            filename))
-        web.header('Content-Length', f.tell())
+
+        response = pecan.response
+        response.content_disposition = 'attachment; filename="{0}"'.format(
+            filename
+        )
+        response.content_length = f.tell()
         f.seek(0)
-        return f
+        return f.read()
+
+
+class CapacityLogController(BaseController):
+    """Task single handler
+    """
+    csv = CapacityLogCsvController()
+
+    fields = (
+        "id",
+        "report"
+    )
+
+    model = CapacityLog
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
+        capacity_log = objects.CapacityLog.get_latest()
+        if not capacity_log:
+            raise self.http(404)
+        return self.render(capacity_log)
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, dummy=None):
+        """Starts capacity data generation.
+
+        :returns: JSONized Task object.
+        :http: * 200 (setup task successfully executed)
+               * 202 (setup task created and started)
+               * 400 (data validation failed)
+               * 404 (cluster not found in db)
+        """
+        # TODO(pkaminski): this seems to be synchronous, no task needed here
+        manager = GenerateCapacityLogTaskManager()
+        task = manager.execute()
+
+        self.raise_task(task)

@@ -19,9 +19,6 @@ import web
 from nailgun.api.v1.handlers.assignment import NodeAssignmentHandler
 from nailgun.api.v1.handlers.assignment import NodeUnassignmentHandler
 
-from nailgun.api.v1.handlers.capacity import CapacityLogCsvHandler
-from nailgun.api.v1.handlers.capacity import CapacityLogHandler
-
 from nailgun.api.v1.handlers.cluster import ClusterAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import ClusterAttributesHandler
 from nailgun.api.v1.handlers.cluster import ClusterChangesHandler
@@ -39,11 +36,6 @@ from nailgun.api.v1.handlers.disks import NodeDefaultsDisksHandler
 from nailgun.api.v1.handlers.disks import NodeDisksHandler
 from nailgun.api.v1.handlers.disks import NodeVolumesInformationHandler
 
-from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
-from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
-from nailgun.api.v1.handlers.logs import LogPackageHandler
-from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
-from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
@@ -69,9 +61,6 @@ from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
 from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeNICsHandler
 
-from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
-from nailgun.api.v1.handlers.notifications import NotificationHandler
-
 from nailgun.api.v1.handlers.orchestrator import DefaultDeploymentInfo
 from nailgun.api.v1.handlers.orchestrator import DefaultPostPluginsHooksInfo
 from nailgun.api.v1.handlers.orchestrator import DefaultPrePluginsHooksInfo
@@ -83,10 +72,6 @@ from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 from nailgun.api.v1.handlers.orchestrator import TaskDeployGraph
 
-from nailgun.api.v1.handlers.registration import FuelLoginForm
-from nailgun.api.v1.handlers.registration import FuelRegistrationForm
-from nailgun.api.v1.handlers.registration import FuelRestorePasswordForm
-
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
 from nailgun.api.v1.handlers.release import ReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
@@ -95,18 +80,13 @@ from nailgun.api.v1.handlers.release import ReleaseNetworksHandler
 from nailgun.api.v1.handlers.role import RoleCollectionHandler
 from nailgun.api.v1.handlers.role import RoleHandler
 
-from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
-from nailgun.api.v1.handlers.tasks import TaskHandler
-
-from nailgun.api.v1.handlers.version import VersionHandler
-
 from nailgun.api.v1.handlers.removed import RemovedIn51RedHatAccountHandler
 from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
 
 from nailgun.api.v1.handlers.master_node_settings \
     import MasterNodeSettingsHandler
 
-urls = (
+original_urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
     r'/releases/(?P<obj_id>\d+)/?$',
@@ -215,9 +195,9 @@ urls = (
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
     r'/tasks/?$',
-    TaskCollectionHandler,
+    'TaskCollectionHandler',
     r'/tasks/(?P<obj_id>\d+)/?$',
-    TaskHandler,
+    'TaskHandler',
 
     r'/plugins/(?P<obj_id>\d+)/?$',
     PluginHandler,
@@ -225,35 +205,35 @@ urls = (
     PluginCollectionHandler,
 
     r'/notifications/?$',
-    NotificationCollectionHandler,
+    'NotificationCollectionHandler',
     r'/notifications/(?P<obj_id>\d+)/?$',
-    NotificationHandler,
+    'NotificationHandler',
 
     r'/logs/?$',
-    LogEntryCollectionHandler,
+    'LogEntryCollectionHandler',
     r'/logs/package/?$',
-    LogPackageHandler,
+    'LogPackageHandler',
     r'/logs/package/config/default/?$',
-    LogPackageDefaultConfig,
+    'LogPackageDefaultConfig',
     r'/logs/sources/?$',
-    LogSourceCollectionHandler,
+    'LogSourceCollectionHandler',
     r'/logs/sources/nodes/(?P<node_id>\d+)/?$',
-    LogSourceByNodeCollectionHandler,
+    'LogSourceByNodeCollectionHandler',
 
     r'/tracking/registration/?$',
-    FuelRegistrationForm,
+    'FuelRegistrationForm',
     r'/tracking/login/?$',
-    FuelLoginForm,
+    'FuelLoginForm',
     r'/tracking/restore_password/?$',
-    FuelRestorePasswordForm,
+    'FuelRestorePasswordForm',
 
     r'/version/?$',
-    VersionHandler,
+    'VersionHandler',
 
     r'/capacity/?$',
-    CapacityLogHandler,
+    'CapacityLogHandler',
     r'/capacity/csv/?$',
-    CapacityLogCsvHandler,
+    'CapacityLogCsvHandler',
 
     r'/redhat/account/?$',
     RemovedIn51RedHatAccountHandler,
@@ -264,7 +244,7 @@ urls = (
     MasterNodeSettingsHandler,
 )
 
-urls = [i if isinstance(i, str) else i.__name__ for i in urls]
+urls = [i if isinstance(i, str) else i.__name__ for i in original_urls]
 
 _locals = locals()
 
@@ -274,7 +254,8 @@ def app():
 
 
 def public_urls():
-    return {r'/nodes/?$': ['POST'],
-            r'/nodes/agent/?$': ['PUT'],
-            r'/version/?$': ['GET'],
-            }
+    return {
+        r'/nodes/?$': ['POST'],
+        r'/nodes/agent/?$': ['PUT'],
+        r'/version/?$': ['GET'],
+    }

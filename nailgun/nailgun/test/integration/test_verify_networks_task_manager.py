@@ -418,6 +418,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
     def test_verify_networks_after_stop(self):
         self.cluster = self.env.clusters[0]
         self.env.launch_deployment()
+        # TODO(pkaminski): status 200 is wrong here (?)
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)

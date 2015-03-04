@@ -39,11 +39,11 @@ from nailgun.api.v1.handlers.disks import NodeDefaultsDisksHandler
 from nailgun.api.v1.handlers.disks import NodeDisksHandler
 from nailgun.api.v1.handlers.disks import NodeVolumesInformationHandler
 
-from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
-from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
-from nailgun.api.v1.handlers.logs import LogPackageHandler
-from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
-from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
+#from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
+#from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
+#from nailgun.api.v1.handlers.logs import LogPackageHandler
+#from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
+#from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
@@ -69,8 +69,8 @@ from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
 from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeNICsHandler
 
-from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
-from nailgun.api.v1.handlers.notifications import NotificationHandler
+#from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
+#from nailgun.api.v1.handlers.notifications import NotificationHandler
 
 from nailgun.api.v1.handlers.orchestrator import DefaultDeploymentInfo
 from nailgun.api.v1.handlers.orchestrator import DefaultPostPluginsHooksInfo
@@ -95,10 +95,10 @@ from nailgun.api.v1.handlers.release import ReleaseNetworksHandler
 from nailgun.api.v1.handlers.role import RoleCollectionHandler
 from nailgun.api.v1.handlers.role import RoleHandler
 
-from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
-from nailgun.api.v1.handlers.tasks import TaskHandler
+#from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
+#from nailgun.api.v1.handlers.tasks import TaskHandler
 
-from nailgun.api.v1.handlers.version import VersionHandler
+#from nailgun.api.v1.handlers.version import VersionHandler
 
 from nailgun.api.v1.handlers.removed import RemovedIn51RedHatAccountHandler
 from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
@@ -215,9 +215,9 @@ urls = (
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
     r'/tasks/?$',
-    TaskCollectionHandler,
+    'TaskCollectionHandler',
     r'/tasks/(?P<obj_id>\d+)/?$',
-    TaskHandler,
+    'TaskHandler',
 
     r'/plugins/(?P<obj_id>\d+)/?$',
     PluginHandler,
@@ -225,30 +225,30 @@ urls = (
     PluginCollectionHandler,
 
     r'/notifications/?$',
-    NotificationCollectionHandler,
+    'NotificationCollectionHandler',
     r'/notifications/(?P<obj_id>\d+)/?$',
-    NotificationHandler,
+    'NotificationHandler',
 
     r'/logs/?$',
-    LogEntryCollectionHandler,
+    'LogEntryCollectionHandler',
     r'/logs/package/?$',
-    LogPackageHandler,
+    'LogPackageHandler',
     r'/logs/package/config/default/?$',
-    LogPackageDefaultConfig,
+    'LogPackageDefaultConfig',
     r'/logs/sources/?$',
-    LogSourceCollectionHandler,
+    'LogSourceCollectionHandler',
     r'/logs/sources/nodes/(?P<node_id>\d+)/?$',
-    LogSourceByNodeCollectionHandler,
+    'LogSourceByNodeCollectionHandler',
 
     r'/tracking/registration/?$',
-    FuelRegistrationForm,
+    'FuelRegistrationForm',
     r'/tracking/login/?$',
-    FuelLoginForm,
+    'FuelLoginForm',
     r'/tracking/restore_password/?$',
-    FuelRestorePasswordForm,
+    'FuelRestorePasswordForm',
 
     r'/version/?$',
-    VersionHandler,
+    'VersionHandler',
 
     r'/capacity/?$',
     CapacityLogHandler,

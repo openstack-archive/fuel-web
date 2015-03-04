@@ -46,8 +46,7 @@ class TestRoleApi(base.BaseIntegrationTest):
 
         resp = self.app.get(
             base.reverse(
-                'RoleCollectionHandler',
-                {'release_id': self.release.id}),
+                'RoleCollectionHandler', [self.release.id]),
             headers=self.default_headers,
         )
 

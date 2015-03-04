@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.serialization import jsonutils
+
 from nailgun.test import base
 
 from nailgun.orchestrator import tasks_templates
@@ -136,16 +138,64 @@ class TestMakeTask(base.BaseTestCase):
                     }
                 }})
 
+        fuel_image_conf = jsonutils.dumps({
+            "image_data": {
+                "/mount": {
+                    "uri": "http://uri",
+                    "format": "ext4"
+                }
+            },
+            "output": "/var/www/nailgun/targetimages",
+            "repos": [
+                {
+                    "name": "repo",
+                    "uri": "http://some"
+                }
+            ],
+            "codename": "trusty"
+        })
         self.assertEqual(result, {
             'type': 'shell',
             'uids': [1, 2, 3],
             'parameters': {
-                'cmd': ('fuel-image \'{"image_data": {"/mount": {"uri": '
-                        '"http://uri", "format": "ext4"}}, "output": '
-                        '"/var/www/nailgun/targetimages", "repos": [{"name": '
-                        '"repo", "uri": "http://some"}], "codename": '
-                        '"trusty"}\''),
+                'cmd': "fuel-image '{0}'".format(fuel_image_conf),
                 'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
+                'retries': 1,
+                'interval': 1,
+                'cwd': '/',
+            }})
+
+    def test_make_download_debian_installer_task(self):
+        remote_kernel = ('http://some/dists/trusty/main/'
+                         'installer-amd64/current/images/'
+                         'netboot/ubuntu-installer/amd64/linux')
+        remote_initrd = ('http://some/dists/trusty/main/'
+                         'installer-amd64/current/images/'
+                         'netboot/ubuntu-installer/amd64/initrd.gz')
+        local_kernel = '/var/www/nailgun/ubuntu/x86_64/images/linux'
+        local_initrd = '/var/www/nailgun/ubuntu/x86_64/images/initrd.gz'
+
+        result = tasks_templates.make_download_debian_installer_task(
+            [1, 2, 3],
+            repos=[{'name': 'repo', 'uri': 'http://some'}],
+            installer_kernel={'remote_relative': remote_kernel,
+                              'local': local_kernel},
+            installer_initrd={'remote_relative': remote_initrd,
+                              'local': local_initrd})
+
+        self.assertEqual(result, {
+            'type': 'shell',
+            'uids': [1, 2, 3],
+            'parameters': {
+                'cmd': ('LOCAL_KERNEL_FILE={local_kernel} '
+                        'LOCAL_INITRD_FILE={local_initrd} '
+                        'download-debian-installer '
+                        '{remote_kernel} {remote_initrd}').format(
+                            local_kernel=local_kernel,
+                            local_initrd=local_initrd,
+                            remote_kernel=remote_kernel,
+                            remote_initrd=remote_initrd),
+                'timeout': 600,
                 'retries': 1,
                 'interval': 1,
                 'cwd': '/',

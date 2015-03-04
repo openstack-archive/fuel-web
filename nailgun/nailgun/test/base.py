@@ -570,6 +570,7 @@ class EnvironmentManager(object):
                     'ClusterChangesHandler',
                     kwargs={'cluster_id': self.clusters[0].id}),
                 headers=self.default_headers)
+            import pdb; pdb.set_trace()
 
             self.tester.assertEqual(202, resp.status_code)
             return self.db.query(Task).filter_by(

@@ -88,6 +88,18 @@ db = scoped_session(
 )
 
 
+def get_new_session():
+    return scoped_session(
+        sessionmaker(
+            autoflush=True,
+            autocommit=False,
+            bind=engine,
+            query_cls=query_class,
+            class_=session_class
+    )
+)
+
+
 def syncdb():
     from nailgun.db.migration import do_upgrade_head
     do_upgrade_head()

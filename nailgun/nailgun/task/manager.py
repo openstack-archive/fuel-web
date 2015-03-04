@@ -16,13 +16,18 @@
 
 import traceback
 
+try:
+    import uwsgidecorators
+except ImportError:
+    uwsgidecorators = None
+
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
-
 from nailgun import consts
 from nailgun.db import db
+from nailgun.db import get_new_session
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
@@ -32,6 +37,7 @@ from nailgun.openstack.common import jsonutils
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper
+import nailgun.utils.decorators as decorators
 
 
 class TaskManager(object):
@@ -150,7 +156,6 @@ class ApplyChangesTaskManager(TaskManager):
         nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
         nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
 
-        task_messages = []
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
             db().rollback()
             raise errors.WrongNodeStatus("No changes to deploy")
@@ -159,11 +164,38 @@ class ApplyChangesTaskManager(TaskManager):
         db().commit()
         TaskHelper.create_action_log(supertask)
 
+	self._execute(
+            supertask.id,
+            self.cluster.id,
+            [n.id for n in nodes_to_provision],
+            [n.id for n in nodes_to_deploy],
+            [n.id for n in nodes_to_delete]
+        )
+
+        return supertask
+    
+    @decorators.if_module_exists_decorate_with(uwsgidecorators, 'mulefunc')
+    def _execute(self,
+                 supertask_id,
+                 cluster_id,
+                 nodes_to_provision_ids,
+                 nodes_to_deploy_ids,
+                 nodes_to_delete_ids):
+
+        db = get_new_session()
+
+        supertask = db.query(Task).get(supertask_id)
+        cluster = db.query(Cluster).get(cluster_id)
+
+        db.commit()
+
+        import pdb; pdb.set_trace()
+        task_messages = []
         # Run validation if user didn't redefine
         # provisioning and deployment information
 
-        if (not objects.Cluster.get_provisioning_info(self.cluster) and
-                not objects.Cluster.get_deployment_info(self.cluster)):
+        if (not objects.Cluster.get_provisioning_info(cluster) and
+                not objects.Cluster.get_deployment_info(cluster)):
             try:
                 self.check_before_deployment(supertask)
             except errors.CheckBeforeDeploymentError:
@@ -277,6 +309,7 @@ class ApplyChangesTaskManager(TaskManager):
         self.cluster.status = consts.CLUSTER_STATUSES.deployment
         db().add(self.cluster)
         db().commit()
+        db.close()
 
         if task_messages:
             rpc.cast('naily', task_messages)
@@ -287,7 +320,6 @@ class ApplyChangesTaskManager(TaskManager):
                 supertask.uuid
             )
         )
-        return supertask
 
     def check_before_deployment(self, supertask):
         # checking admin intersection with untagged

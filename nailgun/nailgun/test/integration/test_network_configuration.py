@@ -481,7 +481,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
     def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):
         resp = self.env.cluster_changes_put(self.cluster['id'],
                                             expect_errors=True)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(task['progress'], 100)

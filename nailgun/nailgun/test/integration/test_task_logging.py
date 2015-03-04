@@ -157,7 +157,8 @@ class TestTasksLogging(BaseIntegrationTest):
             ]
         )
         self.env.launch_deployment()
-        self.env.stop_deployment()
+        # TODO(pkaminski): remove 200, 202 status
+        self.env.stop_deployment(expect_http=[200, 202])
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)
         self.check_task_name_and_sanitized_data(

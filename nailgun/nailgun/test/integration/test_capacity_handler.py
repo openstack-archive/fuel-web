@@ -30,7 +30,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('CapacityLogHandler'),
             headers=self.default_headers)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
 
         capacity_task = self.db.query(Task).filter_by(
             name="capacity_log"

@@ -86,6 +86,23 @@ class ExecuteTestCase(testtools.TestCase):
                               'fake_file_name')
         mock_open.assert_called_once_with('fake_file_name', 'w')
 
+    def test_calculate_md5_ok(self):
+        # calculated by 'printf %10000s | md5sum'
+        with mock.patch('six.moves.builtins.open',
+                        mock.mock_open(read_data=' ' * 10000), create=True):
+            self.assertEqual('f38898bb69bb02bccb9594dfe471c5c0',
+                             utils.calculate_md5('fake', 10000))
+            self.assertEqual('6934d9d33cd2d0c005994e7d96d2e0d9',
+                             utils.calculate_md5('fake', 1000))
+            self.assertEqual('1e68934346ee57858834a205017af8b7',
+                             utils.calculate_md5('fake', 100))
+            self.assertEqual('41b394758330c83757856aa482c79977',
+                             utils.calculate_md5('fake', 10))
+            self.assertEqual('7215ee9c7d9dc229d2921a40e899ec5f',
+                             utils.calculate_md5('fake', 1))
+            self.assertEqual('d41d8cd98f00b204e9800998ecf8427e',
+                             utils.calculate_md5('fake', 0))
+
     @mock.patch.object(requests, 'get')
     def test_init_http_request_ok(self, mock_req):
         utils.init_http_request('fake_url')

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import abc
+import os
 import tarfile
 import tempfile
 import zlib
@@ -56,6 +57,8 @@ class Target(object):
                 count += 1
             LOG.debug('Flushing file: %s' % filename)
             f.flush()
+            # ensure data to be written to disk
+            os.fsync(f.fileno())
         LOG.debug('File is written: %s' % filename)
 
 

@@ -19,7 +19,7 @@ class Image(object):
     SUPPORTED_CONTAINERS = ['raw', 'gzip']
 
     def __init__(self, uri, target_device,
-                 format, container, size=None):
+                 format, container, size=None, md5=None):
         # uri is something like
         # http://host:port/path/to/image.img or
         # file:///tmp/image.img
@@ -33,6 +33,7 @@ class Image(object):
                 'unsupported image container')
         self.container = container
         self.size = size
+        self.md5 = md5
 
 
 class ImageScheme(object):

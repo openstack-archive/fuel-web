@@ -142,3 +142,7 @@ class HttpUrlConnectionError(BaseError):
 
 class HttpUrlInvalidContentLength(BaseError):
     pass
+
+
+class ImageChecksumMismatchError(BaseError):
+    pass

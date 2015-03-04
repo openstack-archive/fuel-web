@@ -52,7 +52,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def set_cluster_changes_w_error(self, cluster_id):
         resp = self.env.cluster_changes_put(cluster_id,
                                             expect_errors=True)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(task['progress'], 100)

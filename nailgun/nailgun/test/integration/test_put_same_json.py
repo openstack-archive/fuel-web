@@ -131,7 +131,7 @@ class TestPutSameJson(base.BaseIntegrationTest):
             cluster_attributes, 200
         )
 
-    def test_nove_network_configuration(self):
+    def test_nova_network_configuration(self):
         nova_config = self.http_get(
             'NovaNetworkConfigurationHandler', {
                 'cluster_id': self.cluster.id

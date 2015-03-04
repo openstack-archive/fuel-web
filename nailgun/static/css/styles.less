@@ -1077,7 +1077,7 @@ label {cursor: default;}
     .font-layout-mixin(@font-size-base + 6, @font-weight: 800, @font-style: italic, @font-family: @font-family-win);
     margin-bottom: 6px;
   }
-  > p {
+  > p, > span {
     font-style: italic;
     > a { color: #00aeef; }
   }
@@ -1091,10 +1091,10 @@ label {cursor: default;}
   }
 }
 
-.globalalert { h4, p { color: @fuel-goldenrod; }}
-.global-error { h4, p {color: @fuel-red;}}
-.global-success { h4, p {color: @fuel-green;}}
-.global-info { h4, p {color: @fuel-gray-blue;}}
+.globalalert { h4, p, span, pre { color: @fuel-goldenrod; }}
+.global-error { h4, p, span, pre {color: @fuel-red;}}
+.global-success { h4, p, span, pre {color: @fuel-green;}}
+.global-info { h4, p, span, pre {color: @fuel-gray-blue;}}
 .global-error { p a, p a:hover { color: @fuel-dark-blue; }}
 
 // Cluster
@@ -2079,7 +2079,22 @@ label {cursor: default;}
   }
 }
 
-.deployment-result { margin-top: 5px; }
+.deployment-result {
+    margin-top: 5px;
+    button.btn-link {
+        display: block;
+        vertical-align: baseline;
+        &, &:active {
+            padding: 0;
+            margin: 0;
+        }
+    }
+    button.btn-link, a {
+        color: @fuel-gray-blue;
+        &:hover { color: @fuel-gray-blue + #111; }
+    }
+    pre { font-style: normal; }
+}
 
 .deployment-control-box {
   border-radius: 4px;

@@ -129,3 +129,23 @@ class TestMakeTask(base.BaseTestCase):
                 'retries': 1,
                 'cwd': '/',
             }})
+
+
+    def test_make_download_debian_installer_task(self):
+        kernel_uri = 'http://host.domain.tld/foo'
+        initrd_uri = 'http://host.domain.tld/bar'
+        result = tasks_templates.make_download_debian_installer_task(
+            [1, 2, 3],
+            kernel_uri=kernel_uri,
+            initrd_uri=initrd_uri)
+
+        self.assertEqual(result, {
+            'type': 'shell',
+            'uids': [1, 2, 3],
+            'parameters': {
+                'cmd': ('download_debian_installer {0} {1}'.format(
+                    kernel_uri, initrd_uri)),
+                'timeout': 600,
+                'retries': 1,
+                'cwd': '/',
+            }})

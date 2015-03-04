@@ -144,3 +144,17 @@ def make_provisioning_images_task(uids, repos, provision_data):
             'cmd': "fuel-image '{0}'".format(conf),
             'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
             'retries': 1}})
+
+
+def make_download_debian_installer(uids, kernel_uri, initrd_uri):
+    # NOTE(kozhukalov): This task is going to go away by 7.0
+    # because we going to get rid of classic way of provision.
+    # We need this because we can not re-distribute ubuntu kernel
+    # debian-installer initramfs and we are going to download them
+    # on the pre-provision stage.
+    return make_shell_task(uids, {
+        'parameters': {
+            'cmd': 'download_debian_installer {0} {1}'.format(
+                kernel_uri, initrd_uri),
+            'timeout': 10 * 60,
+            'retries': 1}})

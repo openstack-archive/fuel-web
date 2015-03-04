@@ -39,11 +39,11 @@ from nailgun.api.v1.handlers.disks import NodeDefaultsDisksHandler
 from nailgun.api.v1.handlers.disks import NodeDisksHandler
 from nailgun.api.v1.handlers.disks import NodeVolumesInformationHandler
 
-from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
-from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
-from nailgun.api.v1.handlers.logs import LogPackageHandler
-from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
-from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
+#from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
+#from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
+#from nailgun.api.v1.handlers.logs import LogPackageHandler
+#from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
+#from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
@@ -69,8 +69,8 @@ from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
 from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeNICsHandler
 
-from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
-from nailgun.api.v1.handlers.notifications import NotificationHandler
+#from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
+#from nailgun.api.v1.handlers.notifications import NotificationHandler
 
 from nailgun.api.v1.handlers.orchestrator import DefaultDeploymentInfo
 from nailgun.api.v1.handlers.orchestrator import DefaultPostPluginsHooksInfo
@@ -225,20 +225,20 @@ urls = (
     PluginCollectionHandler,
 
     r'/notifications/?$',
-    NotificationCollectionHandler,
+    'NotificationCollectionHandler',
     r'/notifications/(?P<obj_id>\d+)/?$',
-    NotificationHandler,
+    'NotificationHandler',
 
     r'/logs/?$',
-    LogEntryCollectionHandler,
+    'LogEntryCollectionHandler',
     r'/logs/package/?$',
-    LogPackageHandler,
+    'LogPackageHandler',
     r'/logs/package/config/default/?$',
-    LogPackageDefaultConfig,
+    'LogPackageDefaultConfig',
     r'/logs/sources/?$',
-    LogSourceCollectionHandler,
+    'LogSourceCollectionHandler',
     r'/logs/sources/nodes/(?P<node_id>\d+)/?$',
-    LogSourceByNodeCollectionHandler,
+    'LogSourceByNodeCollectionHandler',
 
     r'/tracking/registration/?$',
     FuelRegistrationForm,

@@ -18,22 +18,23 @@
 Product registration handlers
 """
 
-from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+import pecan
+
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v2.controllers.base import BaseController
 
 from nailgun.errors import errors
 
 from nailgun.utils.tracking import FuelTrackingManager
 
 
-class FuelRegistrationForm(BaseHandler):
+class FuelRegistrationForm(BaseController):
     """Registration form handler"""
 
     validator = BasicValidator
 
-    @content
-    def GET(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
         """Returns Fuel registration form
         :returns: JSON representation of registration form
         :http: * 200 (OK)
@@ -43,8 +44,8 @@ class FuelRegistrationForm(BaseHandler):
         except errors.TrackingError as exc:
             raise self.http(400, exc.message)
 
-    @content
-    def POST(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self):
         json_data = self.checked_data()
         try:
             return FuelTrackingManager.post_registration_form(json_data)
@@ -52,13 +53,13 @@ class FuelRegistrationForm(BaseHandler):
             raise self.http(400, exc.message)
 
 
-class FuelLoginForm(BaseHandler):
+class FuelLoginForm(BaseController):
     """Login form handler"""
 
     validator = BasicValidator
 
-    @content
-    def GET(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
         """Returns Fuel login form
         :returns: JSON representation of login form
         :http: * 200 (OK)
@@ -68,8 +69,8 @@ class FuelLoginForm(BaseHandler):
         except errors.TrackingError as exc:
             raise self.http(400, exc.message)
 
-    @content
-    def POST(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self):
         json_data = self.checked_data()
         try:
             return FuelTrackingManager.post_login_form(json_data)
@@ -77,13 +78,13 @@ class FuelLoginForm(BaseHandler):
             raise self.http(400, exc.message)
 
 
-class FuelRestorePasswordForm(BaseHandler):
+class FuelRestorePasswordForm(BaseController):
     """Restore password form handler"""
 
     validator = BasicValidator
 
-    @content
-    def GET(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
         """Returns Fuel restore password form
         :returns: JSON representation of restore password form
         :http: * 200 (OK)
@@ -93,10 +94,17 @@ class FuelRestorePasswordForm(BaseHandler):
         except errors.TrackingError as exc:
             raise self.http(400, exc.message)
 
-    @content
-    def POST(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self):
         json_data = self.checked_data()
         try:
             return FuelTrackingManager.post_restore_password_form(json_data)
         except errors.TrackingError as exc:
             raise self.http(400, exc.message)
+
+
+class TrackingController(BaseController):
+
+    login = FuelLoginForm()
+    registration = FuelRegistrationForm()
+    restore_password = FuelRestorePasswordForm()

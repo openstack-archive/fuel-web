@@ -18,19 +18,27 @@
 Handlers dealing with clusters
 """
 
+import pecan
+
 import traceback
 
-from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import DeferredTaskHandler
-from nailgun.api.v1.handlers.base import DeploymentTasksHandler
+from nailgun.api.v2.controllers.base import BaseController
+from nailgun.api.v2.controllers.base import DeferredTaskController
+from nailgun.api.v2.controllers.base import DeploymentTasksController
 
-from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import SingleHandler
+# TODO(pkaminski)
+from nailgun.api.v2.controllers.network_configuration \
+    import NetworkConfigurationController
 
 from nailgun import objects
 
-from nailgun.api.v1.handlers.base import content
-
+from nailgun.api.v1.handlers.assignment import NodeAssignmentController
+from nailgun.api.v1.handlers.assignment import NodeUnassignmentController
+from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
+from nailgun.api.v1.handlers.orchestrator import \
+    DeploySelectedNodesWithTasks
+from nailgun.api.v1.handlers.orchestrator import OrchestratorController
+from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 from nailgun.api.v1.validators.cluster import AttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterChangesValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
@@ -44,43 +52,7 @@ from nailgun.task.manager import StopDeploymentTaskManager
 from nailgun.task.manager import UpdateEnvironmentTaskManager
 
 
-class ClusterHandler(SingleHandler):
-    """Cluster single handler
-    """
-
-    single = objects.Cluster
-    validator = ClusterValidator
-
-    @content
-    def DELETE(self, obj_id):
-        """:returns: {}
-        :http: * 202 (cluster deletion process launched)
-               * 400 (failed to execute cluster deletion process)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(self.single, obj_id)
-        task_manager = ClusterDeletionManager(cluster_id=cluster.id)
-        try:
-            logger.debug('Trying to execute cluster deletion task')
-            task_manager.execute()
-        except Exception as e:
-            logger.warn('Error while execution '
-                        'cluster deletion task: %s' % str(e))
-            logger.warn(traceback.format_exc())
-            raise self.http(400, str(e))
-
-        raise self.http(202, '{}')
-
-
-class ClusterCollectionHandler(CollectionHandler):
-    """Cluster collection handler
-    """
-
-    collection = objects.ClusterCollection
-    validator = ClusterValidator
-
-
-class ClusterChangesHandler(DeferredTaskHandler):
+class ClusterChangesController(DeferredTaskController):
 
     log_message = u"Trying to start deployment at environment '{env_id}'"
     log_error = u"Error during execution of deployment " \
@@ -89,7 +61,7 @@ class ClusterChangesHandler(DeferredTaskHandler):
     validator = ClusterChangesValidator
 
 
-class ClusterStopDeploymentHandler(DeferredTaskHandler):
+class ClusterStopDeploymentController(DeferredTaskController):
 
     log_message = u"Trying to stop deployment on environment '{env_id}'"
     log_error = u"Error during execution of deployment " \
@@ -97,7 +69,7 @@ class ClusterStopDeploymentHandler(DeferredTaskHandler):
     task_manager = StopDeploymentTaskManager
 
 
-class ClusterResetHandler(DeferredTaskHandler):
+class ClusterResetController(DeferredTaskController):
 
     log_message = u"Trying to reset environment '{env_id}'"
     log_error = u"Error during execution of resetting task " \
@@ -105,7 +77,7 @@ class ClusterResetHandler(DeferredTaskHandler):
     task_manager = ResetEnvironmentTaskManager
 
 
-class ClusterUpdateHandler(DeferredTaskHandler):
+class ClusterUpdateController(DeferredTaskController):
 
     log_message = u"Trying to update environment '{env_id}'"
     log_error = u"Error during execution of update task " \
@@ -113,72 +85,18 @@ class ClusterUpdateHandler(DeferredTaskHandler):
     task_manager = UpdateEnvironmentTaskManager
 
 
-class ClusterAttributesHandler(BaseHandler):
-    """Cluster attributes handler
-    """
+class ClusterDeploymentTasksController(DeploymentTasksController):
+    """Cluster Handler for deployment graph serialization."""
 
-    fields = (
-        "editable",
-    )
+    single = objects.Cluster
 
-    validator = AttributesValidator
-
-    @content
-    def GET(self, cluster_id):
-        """:returns: JSONized Cluster attributes.
-        :http: * 200 (OK)
-               * 404 (cluster not found in db)
-               * 500 (cluster has no attributes)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        if not cluster.attributes:
-            raise self.http(500, "No attributes found!")
-
-        return objects.Cluster.get_editable_attributes(cluster)
-
-    @content
-    def PUT(self, cluster_id):
-        """:returns: JSONized Cluster attributes.
-        :http: * 200 (OK)
-               * 400 (wrong attributes data specified)
-               * 404 (cluster not found in db)
-               * 500 (cluster has no attributes)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        if not cluster.attributes:
-            raise self.http(500, "No attributes found!")
-
-        if cluster.is_locked:
-            raise self.http(403, "Environment attributes can't be changed "
-                                 "after, or in deploy.")
-
-        data = self.checked_data()
-        objects.Cluster.update_attributes(cluster, data)
-        return objects.Cluster.get_editable_attributes(cluster)
-
-    @content
-    def PATCH(self, cluster_id):
-        """:returns: JSONized Cluster attributes.
-        :http: * 200 (OK)
-               * 400 (wrong attributes data specified)
-               * 404 (cluster not found in db)
-               * 500 (cluster has no attributes)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-
-        if not cluster.attributes:
-            raise self.http(500, "No attributes found!")
-
-        if cluster.is_locked:
-            raise self.http(403, "Environment attributes can't be changed "
-                                 "after, or in deploy.")
-
-        data = self.checked_data()
-        objects.Cluster.patch_attributes(cluster, data)
-        return objects.Cluster.get_editable_attributes(cluster)
+    # HACK(pkaminski)
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self, release_id):
+        return super(ClusterDeploymentTasksController, self).post()
 
 
-class ClusterAttributesDefaultsHandler(BaseHandler):
+class ClusterAttributesDefaultsController(BaseController):
     """Cluster default attributes handler
     """
 
@@ -186,8 +104,8 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
         "editable",
     )
 
-    @content
-    def GET(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, cluster_id):
         """:returns: JSONized default Cluster attributes.
         :http: * 200 (OK)
                * 404 (cluster not found in db)
@@ -199,8 +117,8 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
             raise self.http(500, "No attributes found!")
         return {"editable": attrs}
 
-    @content
-    def PUT(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, cluster_id):
         """:returns: JSONized Cluster attributes.
         :http: * 200 (OK)
                * 400 (wrong attributes data specified)
@@ -232,12 +150,79 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
         return {"editable": cluster.attributes.editable}
 
 
-class ClusterGeneratedData(BaseHandler):
+class ClusterAttributesController(BaseController):
+    """Cluster attributes handler
+    """
+
+    fields = (
+        "editable",
+    )
+
+    defaults = ClusterAttributesDefaultsController()
+
+    validator = AttributesValidator
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, cluster_id):
+        """:returns: JSONized Cluster attributes.
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+               * 500 (cluster has no attributes)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        if not cluster.attributes:
+            raise self.http(500, "No attributes found!")
+
+        return objects.Cluster.get_editable_attributes(cluster)
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, cluster_id):
+        """:returns: JSONized Cluster attributes.
+        :http: * 200 (OK)
+               * 400 (wrong attributes data specified)
+               * 404 (cluster not found in db)
+               * 500 (cluster has no attributes)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        if not cluster.attributes:
+            raise self.http(500, "No attributes found!")
+
+        if cluster.is_locked:
+            raise self.http(403, "Environment attributes can't be changed "
+                                 "after, or in deploy.")
+
+        data = self.checked_data()
+        objects.Cluster.update_attributes(cluster, data)
+        return objects.Cluster.get_editable_attributes(cluster)
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def patch(self, cluster_id):
+        """:returns: JSONized Cluster attributes.
+        :http: * 200 (OK)
+               * 400 (wrong attributes data specified)
+               * 404 (cluster not found in db)
+               * 500 (cluster has no attributes)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+
+        if not cluster.attributes:
+            raise self.http(500, "No attributes found!")
+
+        if cluster.is_locked:
+            raise self.http(403, "Environment attributes can't be changed "
+                                 "after, or in deploy.")
+
+        data = self.checked_data()
+        objects.Cluster.patch_attributes(cluster, data)
+        return objects.Cluster.get_editable_attributes(cluster)
+
+
+class ClusterGeneratedData(BaseController):
     """Cluster generated data
     """
 
-    @content
-    def GET(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, cluster_id):
         """:returns: JSONized cluster generated data
         :http: * 200 (OK)
                * 404 (cluster not found in db)
@@ -246,15 +231,35 @@ class ClusterGeneratedData(BaseHandler):
         return cluster.attributes.generated
 
 
-class ClusterDeploymentTasksHandler(DeploymentTasksHandler):
-    """Cluster Handler for deployment graph serialization."""
+class VmwareAttributesDefaultsController(BaseController):
+    """Vmware default attributes handler
+    """
 
-    single = objects.Cluster
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, cluster_id):
+        """:returns: JSONized default Cluster vmware attributes.
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(
+            objects.Cluster, cluster_id,
+            log_404=(
+                "error",
+                "There is no cluster "
+                "with id '{0}' in DB.".format(cluster_id)
+            )
+        )
+
+        attributes = objects.Cluster.get_default_vmware_attributes(cluster)
+
+        return {"editable": attributes}
 
 
-class VmwareAttributesHandler(BaseHandler):
+class VmwareAttributesController(BaseController):
     """Vmware attributes handler
     """
+
+    defaults = VmwareAttributesDefaultsController()
 
     fields = (
         "editable",
@@ -262,8 +267,8 @@ class VmwareAttributesHandler(BaseHandler):
 
     validator = VmwareAttributesValidator
 
-    @content
-    def GET(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, cluster_id):
         """:returns: JSONized Cluster vmware attributes.
         :http: * 200 (OK)
                * 400 (cluster doesn't accept vmware configuration)
@@ -288,8 +293,8 @@ class VmwareAttributesHandler(BaseHandler):
 
         return self.render(attributes)
 
-    @content
-    def PUT(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, cluster_id):
         """:returns: JSONized Cluster vmware attributes.
         :http: * 200 (OK)
                * 400 (wrong attributes data specified |
@@ -324,25 +329,50 @@ class VmwareAttributesHandler(BaseHandler):
         return {"editable": attributes}
 
 
-class VmwareAttributesDefaultsHandler(BaseHandler):
-    """Vmware default attributes handler
+class ClusterController(BaseController):
+    """Cluster single handler
     """
 
-    @content
-    def GET(self, cluster_id):
-        """:returns: JSONized default Cluster vmware attributes.
-        :http: * 200 (OK)
+    changes = ClusterChangesController()
+    deployment_tasks = ClusterDeploymentTasksController()
+    stop_deployment = ClusterStopDeploymentController()
+    reset = ClusterResetController()
+    update = ClusterUpdateController()
+    attributes = ClusterAttributesController()
+    generated = ClusterGeneratedData()
+    network_configuration = NetworkConfigurationController()
+
+    orchestrator = OrchestratorController()
+    provision = ProvisionSelectedNodes()
+    deploy = DeploySelectedNodes()
+    deploy_tasks = DeploySelectedNodesWithTasks()
+
+    assignment = NodeAssignmentController()
+    unassignment = NodeUnassignmentController()
+
+    vmware_attributes = VmwareAttributesController()
+
+    single = objects.Cluster
+    collection = objects.ClusterCollection
+    validator = ClusterValidator
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def delete(self, obj_id):
+        """:returns: {}
+        :http: * 202 (cluster deletion process launched)
+               * 400 (failed to execute cluster deletion process)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(
-            objects.Cluster, cluster_id,
-            log_404=(
-                "error",
-                "There is no cluster "
-                "with id '{0}' in DB.".format(cluster_id)
-            )
-        )
+        cluster = self.get_object_or_404(self.single, obj_id)
+        task_manager = ClusterDeletionManager(cluster_id=cluster.id)
+        try:
+            logger.debug('Trying to execute cluster deletion task')
+            task_manager.execute()
+        except Exception as e:
+            logger.warn('Error while execution '
+                        'cluster deletion task: %s' % str(e))
+            logger.warn(traceback.format_exc())
+            raise self.http(400, unicode(e))
 
-        attributes = objects.Cluster.get_default_vmware_attributes(cluster)
-
-        return {"editable": attributes}
+        # TODO(pkaminski): self.raise_task here not hardcoded 202
+        raise self.http(202, u'{}')

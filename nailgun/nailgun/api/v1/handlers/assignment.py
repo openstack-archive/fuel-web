@@ -18,8 +18,10 @@
 Handlers dealing with nodes assignment
 """
 
-from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+import pecan
+
+from nailgun.api.v2.controllers.base import BaseController
+
 from nailgun.api.v1.validators.assignment import NodeAssignmentValidator
 from nailgun.api.v1.validators.assignment import NodeUnassignmentValidator
 
@@ -27,13 +29,13 @@ from nailgun import consts
 from nailgun import objects
 
 
-class NodeAssignmentHandler(BaseHandler):
+class NodeAssignmentController(BaseController):
     """Node assignment handler
     """
     validator = NodeAssignmentValidator
 
-    @content
-    def POST(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self, cluster_id):
         """:returns: Empty string
         :http: * 200 (nodes are successfully assigned)
                * 400 (invalid nodes data specified)
@@ -58,13 +60,13 @@ class NodeAssignmentHandler(BaseHandler):
                                        "pending_addition": True})
 
 
-class NodeUnassignmentHandler(BaseHandler):
+class NodeUnassignmentController(BaseController):
     """Node assignment handler
     """
     validator = NodeUnassignmentValidator
 
-    @content
-    def POST(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self, cluster_id):
         """:returns: Empty string
         :http: * 200 (node successfully unassigned)
                * 404 (cluster/node not found in db)

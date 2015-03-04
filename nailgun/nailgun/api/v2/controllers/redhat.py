@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,12 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(__file__))
-
-from nailgun.app import build_wsgi_app
+from nailgun.api.v2.controllers.base import BaseRemovedInController
 
 
-application = build_wsgi_app()
+class RemovedIn51RedHatAccountHandler(BaseRemovedInController):
+    fuel_version = "5.1"
+
+
+class RemovedIn51RedHatSetupHandler(BaseRemovedInController):
+    fuel_version = "5.1"
+
+
+class RedHatController(BaseRemovedInController):
+    fuel_version = "5.1"
+
+    account = RemovedIn51RedHatAccountHandler()
+    setup = RemovedIn51RedHatSetupHandler()

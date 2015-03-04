@@ -203,5 +203,5 @@ class TestHandlers(BaseIntegrationTest):
         nets = self.env.nova_networks_get(cluster['id']).json_body
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEqual(202, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         self.assertEqual(resp.json_body['status'], 'ready')

@@ -38,6 +38,7 @@ class TaskHandler(SingleHandler):
     single = objects.Task
     validator = TaskValidator
 
+    @content
     def DELETE(self, obj_id):
         """:returns: Empty string
         :http: * 204 (object successfully deleted)
@@ -51,7 +52,7 @@ class TaskHandler(SingleHandler):
         force = web.input(force=None).force not in (None, u'', u'0')
 
         try:
-            self.validator.validate_delete(obj, force)
+            self.validator.validate_delete(None, obj, force=force)
         except errors.CannotDelete as exc:
             raise self.http(400, exc.message)
 

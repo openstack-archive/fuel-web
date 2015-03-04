@@ -22,7 +22,7 @@ from nailgun.errors import errors
 class TaskValidator(BasicValidator):
 
     @classmethod
-    def validate_delete(cls, instance, force=False):
+    def validate_delete(cls, data, instance, force=False):
         if instance.status not in (
             consts.TASK_STATUSES.ready,
             consts.TASK_STATUSES.error

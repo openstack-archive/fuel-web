@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,12 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(__file__))
-
-from nailgun.app import build_wsgi_app
+from nailgun.api.v1.validators.master_node_settings \
+    import MasterNodeSettingsValidator
+from nailgun.api.v2.controllers.base import DBSingletonController
+from nailgun import objects
 
 
-application = build_wsgi_app()
+class MasterNodeSettingsController(DBSingletonController):
+
+    single = objects.MasterNodeSettings
+    validator = MasterNodeSettingsValidator
+    not_found_error = "Settings are not found in DB"

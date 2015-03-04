@@ -23,7 +23,7 @@ import time
 from timeit import Timer
 from webtest import app
 
-from nailgun.app import build_app
+from nailgun.app import build_wsgi_app
 from nailgun.db import db
 from nailgun.db import flush
 from nailgun.db import syncdb
@@ -57,7 +57,7 @@ class BaseLoadTestCase(BaseTestCase):
         if os.path.exists(settings.LOAD_TESTS_PATHS['load_tests_base']):
             shutil.rmtree(settings.LOAD_TESTS_PATHS['load_tests_base'])
         os.makedirs(settings.LOAD_TESTS_PATHS['load_tests_base'])
-        cls.app = app.TestApp(build_app(db_driver=test_db_driver).
+        cls.app = app.TestApp(build_wsgi_app(db_driver=test_db_driver).
                               wsgifunc(ProfilerMiddleware))
         syncdb()
         cls.tests_results = defaultdict(
@@ -213,7 +213,8 @@ class BaseUnitLoadTestCase(BaseLoadTestCase):
     def setUpClass(cls):
         super(BaseUnitLoadTestCase, cls).setUpClass()
         cls.app = app.TestApp(
-            build_app(db_driver=test_db_driver).wsgifunc(ProfilerMiddleware)
+            build_wsgi_app(db_driver=test_db_driver).wsgifunc(
+                ProfilerMiddleware)
         )
         syncdb()
         cls.db = db

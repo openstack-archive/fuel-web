@@ -325,7 +325,7 @@ class TestHandlers(BaseIntegrationTest):
         def get_nodes():
             resp = self.app.get(
                 reverse('NodeCollectionHandler',
-                        kwargs={'cluster_id': self.env.clusters[0].id}),
+                        qs={'cluster_id': self.env.clusters[0].id}),
                 headers=self.default_headers,
             )
             return resp.json_body
@@ -394,7 +394,7 @@ class TestHandlers(BaseIntegrationTest):
         def get_nodes():
             resp = self.app.get(
                 reverse('NodeCollectionHandler',
-                        kwargs={'cluster_id': self.env.clusters[0].id}),
+                        qs={'cluster_id': self.env.clusters[0].id}),
                 headers=self.default_headers,
             )
             return resp.json_body

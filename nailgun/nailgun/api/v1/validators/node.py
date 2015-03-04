@@ -233,7 +233,7 @@ class NodeValidator(BasicValidator):
         return d
 
     @classmethod
-    def validate_delete(cls, data, instance):
+    def validate_delete(cls, instance):
         pass
 
     @classmethod

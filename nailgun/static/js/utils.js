@@ -52,6 +52,9 @@ define([
         urlify: function(text) {
             return utils.linebreaks(text).replace(new RegExp(utils.regexes.url.source, 'g'), utils.composeLink);
         },
+        htmlEscape: function(text) {
+            return text.replace(/\&/g, '&amp;').replace(/</g, '&lt;');
+        },
         composeList: function(value) {
             return _.isUndefined(value) ? [] : _.isArray(value) ? value : [value];
         },

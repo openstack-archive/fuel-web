@@ -50,8 +50,7 @@ class TestRoleApi(BaseRoleTest):
 
         resp = self.app.get(
             base.reverse(
-                'RoleCollectionHandler',
-                {'release_id': self.release.id}),
+                'RoleCollectionHandler', {'release_id': self.release.id}),
             headers=self.default_headers,
         )
 

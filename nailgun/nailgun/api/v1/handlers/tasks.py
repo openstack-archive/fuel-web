@@ -13,13 +13,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import web
+import pecan
 
-from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import SingleHandler
-
-from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.task import TaskValidator
+from nailgun.api.v2.controllers.base import BaseController
 
 from nailgun.errors import errors
 
@@ -31,44 +28,16 @@ Handlers dealing with tasks
 """
 
 
-class TaskHandler(SingleHandler):
+class TaskController(BaseController):
     """Task single handler
     """
 
     single = objects.Task
-    validator = TaskValidator
-
-    @content
-    def DELETE(self, obj_id):
-        """:returns: Empty string
-        :http: * 204 (object successfully deleted)
-               * 404 (object not found in db)
-        """
-        obj = self.get_object_or_404(
-            self.single,
-            obj_id
-        )
-
-        force = web.input(force=None).force not in (None, u'', u'0')
-
-        try:
-            self.validator.validate_delete(None, obj, force=force)
-        except errors.CannotDelete as exc:
-            raise self.http(400, exc.message)
-
-        self.single.delete(obj)
-        raise self.http(204)
-
-
-class TaskCollectionHandler(CollectionHandler):
-    """Task collection handler
-    """
-
     collection = objects.TaskCollection
     validator = TaskValidator
 
-    @content
-    def GET(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
         """May receive cluster_id parameter to filter list
         of tasks
 
@@ -76,11 +45,34 @@ class TaskCollectionHandler(CollectionHandler):
         :http: * 200 (OK)
                * 404 (task not found in db)
         """
-        cluster_id = web.input(cluster_id=None).cluster_id
+        request = pecan.request
+        cluster_id = request.GET.get('cluster_id', None)
 
         if cluster_id is not None:
-            return self.collection.to_json(
+            return self.collection.to_list(
                 self.collection.get_by_cluster_id(cluster_id)
             )
         else:
-            return self.collection.to_json()
+            return self.collection.to_list()
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def delete(self, obj_id):
+        """:returns: Empty string
+        :http: * 204 (object successfully deleted)
+               * 404 (object not found in db)
+        """
+        request = pecan.request
+        obj = self.get_object_or_404(
+            self.single,
+            obj_id
+        )
+
+        force = request.GET.get('force', None) not in (None, u'', u'0')
+
+        try:
+            self.validator.validate_delete(obj, force=force)
+        except errors.CannotDelete as exc:
+            raise self.http(400, exc.message)
+
+        self.single.delete(obj)
+        raise self.http(204, 'No Content')

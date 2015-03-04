@@ -16,41 +16,19 @@
 """
 Handlers for removed resources
 """
-from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v2.controllers.base import BaseRemovedInController
 
 
-class BaseRemovedInHandler(BaseHandler):
-    """Removed resource base handler
-    """
-
-    @property
-    def fuel_version(self):
-        raise NotImplementedError
-
-    @content
-    def GET(self):
-        """A stub for the request. Always returns 410 with removed message.
-
-        :http: 410 (Gone)
-        :raises: webapi.Gone Exception
-        :return: Removed in Fuel version message
-        """
-        message = u"Removed in Fuel version {0}".format(self.fuel_version)
-        raise self.http(410, message)
-
-    HEAD = POST = PUT = DELETE = GET
-
-
-class RemovedIn51Handler(BaseRemovedInHandler):
-    """Removed resource handler for Fuel 5.1
-    """
+class RemovedIn51RedHatAccountHandler(BaseRemovedInController):
     fuel_version = "5.1"
 
 
-class RemovedIn51RedHatAccountHandler(RemovedIn51Handler):
-    pass
+class RemovedIn51RedHatSetupHandler(BaseRemovedInController):
+    fuel_version = "5.1"
 
 
-class RemovedIn51RedHatSetupHandler(RemovedIn51Handler):
-    pass
+class RedHatController(BaseRemovedInController):
+    fuel_version = "5.1"
+
+    account = RemovedIn51RedHatAccountHandler()
+    setup = RemovedIn51RedHatSetupHandler()

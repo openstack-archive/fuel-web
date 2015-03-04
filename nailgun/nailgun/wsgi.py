@@ -19,8 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from nailgun.app import build_app
-from nailgun.app import build_middleware
+from nailgun.app import build_wsgi_app
 
 
-application = build_middleware(build_app().wsgifunc)
+application = build_wsgi_app()

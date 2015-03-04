@@ -18,49 +18,26 @@
 Handlers dealing with releases
 """
 
-from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.handlers.base import DeploymentTasksHandler
-from nailgun.api.v1.handlers.base import SingleHandler
+import pecan
+
+from nailgun.api.v1.handlers import role
 from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
+from nailgun.api.v2.controllers.base import BaseController
+from nailgun.api.v2.controllers.base import DeploymentTasksController
 from nailgun.objects import Release
 from nailgun.objects import ReleaseCollection
 
 
-class ReleaseHandler(SingleHandler):
-    """Release single handler
-    """
-
-    single = Release
-    validator = ReleaseValidator
-
-
-class ReleaseCollectionHandler(CollectionHandler):
-    """Release collection handler
-    """
-
-    validator = ReleaseValidator
-    collection = ReleaseCollection
-
-    @content
-    def GET(self):
-        """:returns: Sorted releases' collection in JSON format
-        :http: * 200 (OK)
-        """
-        q = sorted(self.collection.all(), reverse=True)
-        return self.collection.to_json(q)
-
-
-class ReleaseNetworksHandler(SingleHandler):
+class ReleaseNetworksController(BaseController):
     """Release Handler for network metadata
     """
 
     single = Release
     validator = ReleaseNetworksValidator
 
-    @content
-    def GET(self, obj_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, obj_id):
         """Read release networks metadata
 
         :returns: Release networks metadata
@@ -71,8 +48,8 @@ class ReleaseNetworksHandler(SingleHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         return obj['networks_metadata']
 
-    @content
-    def PUT(self, obj_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, obj_id):
         """Updates release networks metadata
 
         :returns: Release networks metadata
@@ -85,14 +62,16 @@ class ReleaseNetworksHandler(SingleHandler):
         self.single.update(obj, {'networks_metadata': data})
         return obj['networks_metadata']
 
-    def POST(self, obj_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self, *args):
         """Creation of metadata disallowed
 
         :http: * 405 (method not supported)
         """
         raise self.http(405, 'Create not supported for this entity')
 
-    def DELETE(self, obj_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def delete(self, obj_id):
         """Deletion of metadata disallowed
 
         :http: * 405 (method not supported)
@@ -100,7 +79,28 @@ class ReleaseNetworksHandler(SingleHandler):
         raise self.http(405, 'Delete not supported for this entity')
 
 
-class ReleaseDeploymentTasksHandler(DeploymentTasksHandler):
+class ReleaseDeploymentTasksController(DeploymentTasksController):
     """Release Handler for deployment graph configuration."""
 
     single = Release
+
+
+class ReleaseController(BaseController):
+    """Release single handler
+    """
+
+    deployment_tasks = ReleaseDeploymentTasksController()
+    networks = ReleaseNetworksController()
+    roles = role.RoleController()
+
+    single = Release
+    collection = ReleaseCollection
+    validator = ReleaseValidator
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
+        """:returns: Collection of JSONized REST objects.
+        :http: * 200 (OK)
+        """
+        q = sorted(self.collection.all(), reverse=True)
+        return self.collection.to_list(q)

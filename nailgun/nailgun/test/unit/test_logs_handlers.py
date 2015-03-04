@@ -25,7 +25,6 @@ from oslo.serialization import jsonutils
 
 import nailgun
 from nailgun.api.v1.handlers.logs import read_backwards
-from nailgun.db.sqlalchemy.models import Role
 from nailgun.errors import errors
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
@@ -451,8 +450,10 @@ class TestLogs(BaseIntegrationTest):
             "id": 1,
             "uuid": "00000000-0000-0000-0000-000000000000"
         }
-        tm_patcher = mock.patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
-        th_patcher = mock.patch('nailgun.api.v1.handlers.logs.objects.Task')
+        tm_patcher = mock.patch(
+            'nailgun.api.v2.controllers.logs.DumpTaskManager'
+        )
+        th_patcher = mock.patch('nailgun.api.v2.controllers.base.objects.Task')
         tm_mocked = tm_patcher.start()
         th_mocked = th_patcher.start()
         tm_instance = tm_mocked.return_value
@@ -467,11 +468,13 @@ class TestLogs(BaseIntegrationTest):
         self.assertDictEqual(task, resp.json_body)
 
     def test_log_package_handler_failed(self):
-        tm_patcher = mock.patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
+        tm_patcher = mock.patch(
+            'nailgun.api.v2.controllers.logs.DumpTaskManager'
+        )
         tm_mocked = tm_patcher.start()
         tm_instance = tm_mocked.return_value
 
-        def raiser():
+        def raiser(*args, **kwargs):
             raise Exception()
 
         tm_instance.execute.side_effect = raiser
@@ -483,7 +486,7 @@ class TestLogs(BaseIntegrationTest):
         tm_patcher.stop()
         self.assertEqual(resp.status_code, 400)
 
-    @mock.patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
+    @mock.patch('nailgun.api.v2.controllers.logs.DumpTaskManager')
     def test_log_package_handler_with_dump_task_manager_error(self,
                                                               dump_manager):
         """Test verifies that 400 status would be returned in case of errors
@@ -491,7 +494,6 @@ class TestLogs(BaseIntegrationTest):
         """
 
         def dump_task_with_bad_model(*args, **kwargs):
-            self.db.add(Role())
             raise errors.DumpRunning()
 
         dump_manager().execute.side_effect = dump_task_with_bad_model

@@ -193,7 +193,8 @@ class TestPluginsApi(BasePluginTest):
         self.create_plugin()
         cluster = self.create_cluster()
         default_attributes = self.default_attributes(cluster)
-        self.assertIn(self.sample_plugin['name'], default_attributes)
+        self.assertIn(self.sample_plugin['name'],
+                      default_attributes.json_body.get('editable', {}).keys())
 
     def test_plugins_multiversioning(self):
         def create_with_version(version):

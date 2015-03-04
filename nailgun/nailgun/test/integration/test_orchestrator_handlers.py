@@ -35,6 +35,8 @@ def make_orchestrator_uri(node_ids):
 class TestOrchestratorInfoHandlers(BaseIntegrationTest):
 
     def setUp(self):
+        # TODO(pkaminski): Nodes are not created here which contradicts the
+        # for-loop logic in tests in this class
         super(TestOrchestratorInfoHandlers, self).setUp()
         self.cluster = self.env.create_cluster(api=False)
 

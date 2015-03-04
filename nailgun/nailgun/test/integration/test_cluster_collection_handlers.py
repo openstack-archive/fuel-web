@@ -34,7 +34,7 @@ class TestHandlers(BaseIntegrationTest):
     def _get_cluster_networks(self, cluster_id):
         nets = self.app.get(
             reverse('NovaNetworkConfigurationHandler',
-                    {"cluster_id": cluster_id}),
+                    kwargs={"cluster_id": cluster_id}),
             headers=self.default_headers,
         ).json_body["networks"]
         return nets

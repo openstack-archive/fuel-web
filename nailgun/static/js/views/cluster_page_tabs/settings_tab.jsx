@@ -60,9 +60,11 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             };
         },
         componentDidMount: function() {
-            var cluster = this.props.cluster;
-            $.when(cluster.get('settings').fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
+            var cluster = this.props.cluster,
+                settings = cluster.get('settings');
+            $.when(settings.fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
                 this.updateInitialAttributes();
+                settings.isValid({models: this.state.configModels});
                 this.setState({loading: false});
             }, this));
         },

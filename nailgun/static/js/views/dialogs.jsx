@@ -57,9 +57,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         close: function() {
             $(this.getDOMNode()).modal('hide');
         },
-        showError: function(message) {
+        showError: function(response, message) {
             var props = {error: true};
-            if (_.isString(message)) props.message = message;
+            props.message = utils.getResponseText(response) || message;
             this.setProps(props);
         },
         renderImportantLabel: function() {
@@ -314,7 +314,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 .always(this.close)
                 .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
                 .fail(_.bind(function(response) {
-                    this.showError(utils.getResponseText(response) || i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
+                    this.showError(response, i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
                 }, this));
         },
         renderBody: function() {
@@ -689,8 +689,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
                     this.close();
                 }, this))
-                .fail(_.bind(function() {
-                    this.showError(i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
+                .fail(_.bind(function(response) {
+                    this.showError(response, i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
                 }, this));
         }
     });

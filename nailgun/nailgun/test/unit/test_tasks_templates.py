@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.serialization import jsonutils
+
 from nailgun.test import base
 
 from nailgun.orchestrator import tasks_templates
@@ -116,16 +118,49 @@ class TestMakeTask(base.BaseTestCase):
                     }
                 }})
 
+        fuel_image_conf = jsonutils.dumps({
+            "image_data": {
+                "/mount": {
+                    "uri": "http://uri",
+                    "format": "ext4"
+                }
+            },
+            "output": "/var/www/nailgun/targetimages",
+            "repos": [
+                {
+                    "name": "repo",
+                    "uri": "http://some"
+                }
+            ],
+            "codename": "trusty"
+        })
         self.assertEqual(result, {
             'type': 'shell',
             'uids': [1, 2, 3],
             'parameters': {
-                'cmd': ('fuel-image \'{"image_data": {"/mount": {"uri": '
-                        '"http://uri", "format": "ext4"}}, "output": '
-                        '"/var/www/nailgun/targetimages", "repos": [{"name": '
-                        '"repo", "uri": "http://some"}], "codename": '
-                        '"trusty"}\''),
+                'cmd': ("fuel-image '{}'".format(fuel_image_conf)),
                 'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
+                'retries': 1,
+                'cwd': '/',
+            }})
+
+    def test_make_download_debian_installer_task(self):
+        result = tasks_templates.make_download_debian_installer_task(
+            [1, 2, 3],
+            repos=[{'name': 'repo', 'uri': 'http://some'}])
+
+        kernel_uri = 'http://some/{0}'.format(
+            settings.DEBIAN_INSTALLER_KERNEL_RELATIVE_PATH)
+        initrd_uri = 'http://some/{0}'.format(
+            settings.DEBIAN_INSTALLER_INITRD_RELATIVE_PATH)
+
+        self.assertEqual(result, {
+            'type': 'shell',
+            'uids': [1, 2, 3],
+            'parameters': {
+                'cmd': ('download_debian_installer {0} {1}'.format(
+                    kernel_uri, initrd_uri)),
+                'timeout': 600,
                 'retries': 1,
                 'cwd': '/',
             }})

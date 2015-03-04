@@ -14,25 +14,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+import pecan
+
 from nailgun.api.v1.validators import plugin
+from nailgun.api.v2.controllers.base import BaseController
 from nailgun import objects
 
 
-class PluginHandler(base.SingleHandler):
+class PluginController(BaseController):
 
-    validator = plugin.PluginValidator
     single = objects.Plugin
-
-
-class PluginCollectionHandler(base.CollectionHandler):
-
     collection = objects.PluginCollection
     validator = plugin.PluginValidator
 
-    @content
-    def POST(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self):
         """:returns: JSONized REST object.
         :http: * 201 (object successfully created)
                * 400 (invalid object data specified)
@@ -43,4 +39,4 @@ class PluginCollectionHandler(base.CollectionHandler):
             data['name'], data['version'])
         if obj:
             raise self.http(409, self.collection.single.to_json(obj))
-        return super(PluginCollectionHandler, self).POST()
+        return super(PluginController, self).post()

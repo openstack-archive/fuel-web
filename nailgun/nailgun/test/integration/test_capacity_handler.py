@@ -32,7 +32,6 @@ class TestHandlers(BaseIntegrationTest):
             reverse('CapacityLogHandler'),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json_body['status'], consts.TASK_STATUSES.ready)
 
         capacity_task = self.db.query(Task).filter_by(
             name=consts.TASK_NAMES.capacity_log

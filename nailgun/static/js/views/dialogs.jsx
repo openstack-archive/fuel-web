@@ -210,7 +210,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 roleModels = cluster.get('release').get('role_models'),
-                settingsLocked = status == 'new' || status == 'stopped',
+                settingsLocked = _.contains(['new', 'stopped'], cluster.get('status')),
                 needsRedeployment = cluster.needsRedeployment(),
                 networkVerificationTask = cluster.task({group: 'network'}),
                 networksVerificationResult,

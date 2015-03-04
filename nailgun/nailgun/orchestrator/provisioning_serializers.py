@@ -257,6 +257,20 @@ class ProvisioningSerializer61(ProvisioningSerializer):
                     attrs['repo_setup']['repos'],
                     attrs['provision']))
 
+        # NOTE(kozhukalov): This pre-provision task is going to be
+        # removed by 7.0 because we need this only for classic way of
+        # provision and only because we are not allowed to re-distribute
+        # debian-installer kernel and initrd.
+        is_download_debian_installer = all([
+            cluster.release.operating_system == consts.RELEASE_OS.ubuntu,
+            attrs['provision']['method'] == consts.PROVISION_METHODS.cobbler])
+
+        if is_download_debian_installer:
+            tasks.append(
+                tasks_templates.make_download_debian_installer(
+                    get_uids_for_roles(cluster.nodes, consts.MASTER_ROLE),
+                    attrs['repo_setup']['repos']))
+
         PriorityStrategy().one_by_one(tasks)
         return tasks
 

@@ -269,6 +269,7 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
 class DeploySelectedNodes(BaseDeploySelectedNodes):
     """Handler for deployment selected nodes."""
 
+    # TODO(pkaminski): remove it, it's a duplicate from SelectedNodesBase
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.

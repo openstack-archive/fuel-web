@@ -115,3 +115,6 @@ class Notification(NailgunObject):
 class NotificationCollection(NailgunCollection):
 
     single = Notification
+
+
+Notification.collection = NotificationCollection

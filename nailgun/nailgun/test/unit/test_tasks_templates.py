@@ -128,3 +128,23 @@ class TestMakeTask(base.BaseTestCase):
                 'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
                 'cwd': '/',
             }})
+
+    def test_make_download_debian_installer_task(self):
+        result = tasks_templates.make_download_debian_installer_task(
+            [1, 2, 3],
+            repos=[{'name': 'repo', 'uri': 'http://some'}])
+
+        kernel_uri = 'http://some/{0}'.format(
+            settings.DEBIAN_INSTALLER_KERNEL_RELATIVE_PATH)
+        initrd_uri = 'http://some/{0}'.format(
+            settings.DEBIAN_INSTALLER_INITRD_RELATIVE_PATH)
+
+        self.assertEqual(result, {
+            'type': 'shell',
+            'uids': [1, 2, 3],
+            'parameters': {
+                'cmd': ('download_debian_installer {0} {1}'.format(
+                    kernel_uri, initrd_uri)),
+                'timeout': 600,
+                'cwd': '/',
+            }})

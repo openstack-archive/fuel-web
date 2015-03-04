@@ -977,9 +977,9 @@ class TestOSWLCollector(BaseTestCase):
             cls_id, consts.OSWL_RESOURCE_TYPES.vm)
         upd_time = last.updated_time
         res_data = {
-            'added': {'1': {'time': upd_time.isoformat()}},
-            'removed': {},
-            'modified': {},
+            'added': [{'time': upd_time.isoformat(), 'id': 1}],
+            'removed': [],
+            'modified': [],
             'current': self.vms_info}
         self.assertEqual(last.resource_data, res_data)
         return cls_id, res_data
@@ -1009,7 +1009,7 @@ class TestOSWLCollector(BaseTestCase):
         removed = dict(self.vms_info[0])
         removed['time'] = last.updated_time.isoformat()
         res_data.update({
-            'removed': {'1': removed},
+            'removed': [removed],
             'current': []})
         # current data is cleared when cluster status is changed
         self.assertEqual(last.resource_data, res_data)
@@ -1031,10 +1031,56 @@ class TestOSWLCollector(BaseTestCase):
         removed = dict(self.vms_info[0])
         removed['time'] = last.updated_time.isoformat()
         res_data.update({
-            'removed': {'1': removed},
+            'removed': [removed],
             'current': []})
         # current data is cleared when cluster is deleted
         self.assertEqual(last.resource_data, res_data)
+
+    @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
+    @patch('nailgun.statistics.oswl_collector.utils.get_proxy_for_cluster')
+    @patch('nailgun.statistics.oswl_collector.utils.set_proxy')
+    @patch('nailgun.statistics.oswl_collector.utils.'
+           'get_info_from_os_resource_manager')
+    def test_removed_several_times(self, get_info_mock, *_):
+        cls_id, res_data = self.collect_for_operational_cluster(get_info_mock)
+        last = OpenStackWorkloadStats.get_last_by(
+            cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertItemsEqual(self.vms_info, last.resource_data['current'])
+
+        # reset cluster
+        get_info_mock.return_value = []
+        oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
+        last = OpenStackWorkloadStats.get_last_by(
+            cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+        removed = dict(self.vms_info[0])
+        removed['time'] = last.updated_time.isoformat()
+        removed_data = [removed]
+        # check data is not duplicated in removed on several collects
+        for _ in xrange(10):
+            oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
+        last = OpenStackWorkloadStats.get_last_by(
+            cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertEqual(removed_data, last.resource_data['removed'])
+
+        # cluster is operational
+        # checking 'removed' is don't changed
+        get_info_mock.return_value = self.vms_info
+        oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
+        last = OpenStackWorkloadStats.get_last_by(
+            cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertEqual(removed_data, last.resource_data['removed'])
+
+        # reset cluster again
+        # checking only id and time added to 'removed'
+        get_info_mock.return_value = []
+        oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
+        last = OpenStackWorkloadStats.get_last_by(
+            cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+        removed_data.append({
+            'id': removed_data[0]['id'],
+            'time': last.updated_time.isoformat()
+        })
+        self.assertListEqual(removed_data, last.resource_data['removed'])
 
 
 class TestOSWLObject(BaseTestCase):
@@ -1135,9 +1181,9 @@ class TestOSWLServerInfoSaving(BaseTestCase):
             'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
             'created_date': datetime.datetime.utcnow().date(),
 
-            'resource_data': {'added': {},
-                              'removed': {},
-                              'modified': {},
+            'resource_data': {'added': [],
+                              'removed': [],
+                              'modified': [],
                               'current': []},
             'resource_checksum': oswl_data_checksum([]),
             'is_sent': False
@@ -1146,7 +1192,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
     def data_w_default_vm_info(self, time):
         data = self.empty_data
         data['resource_data'].update({
-            'added': {'1': {'time': time.isoformat()}},
+            'added': [{'time': time.isoformat(), 'id': 1}],
             'current': [self.vms_info]
         })
         return data
@@ -1159,8 +1205,11 @@ class TestOSWLServerInfoSaving(BaseTestCase):
     def check_data_vs_rec(self, data, rec):
         data['resource_checksum'] = \
             oswl_data_checksum(data['resource_data']['current'])
-        for k, v in data.iteritems():
-            self.assertEqual(v, getattr(rec, k))
+        for k, v in six.iteritems(data):
+            if isinstance(v, (list, tuple)):
+                self.assertItemsEqual(v, getattr(rec, k))
+            else:
+                self.assertEqual(v, getattr(rec, k))
 
     def save_data_and_check_record(self, data):
         oswl_statistics_save(1, consts.OSWL_RESOURCE_TYPES.vm, data)
@@ -1201,9 +1250,31 @@ class TestOSWLServerInfoSaving(BaseTestCase):
 
         time_update2 = last.updated_time
         data['resource_data'].update({
-            'added': {'1': {'time': time_update1.isoformat()},
-                      '2': {'time': time_update2.isoformat()}},
+            'added': [{'time': time_update1.isoformat(), 'id': 1},
+                      {'time': time_update2.isoformat(), 'id': 2}],
             'current': two_vms
+        })
+        self.check_data_vs_rec(data, last)
+
+    def test_added_on_cluster_reset(self):
+        # VM with id=1 is added
+        time_update1, data = self.add_default_vm_info_and_check()
+
+        # VM with id=2 is added
+        two_vms = [self.vms_info]
+
+        self.save_data_and_check_record(two_vms)
+        # reset cluster
+        self.save_data_and_check_record([])
+        last = self.save_data_and_check_record(two_vms)
+
+        time_update2 = last.updated_time
+        time_removed2 = last.resource_data['removed'][0]['time']
+        data['resource_data'].update({
+            'added': [{'time': time_update1.isoformat(), 'id': 1},
+                      {'time': time_update2.isoformat(), 'id': 1}],
+            'current': two_vms,
+            'removed': [dict(two_vms[0], **{'time': time_removed2})]
         })
         self.check_data_vs_rec(data, last)
 
@@ -1218,7 +1289,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         removed = dict(self.vms_info)
         removed['time'] = time_update.isoformat()
         data['resource_data'].update({
-            'removed': {'1': removed},
+            'removed': [removed],
             'current': []
         })
         self.check_data_vs_rec(data, last)
@@ -1238,7 +1309,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
                      'status': self.vms_info['status'],
                      'time': time_update.isoformat()}
         data['resource_data'].update({
-            'modified': {'1': [modified1]},
+            'modified': [modified1],
             'current': vms_new
         })
         self.check_data_vs_rec(data, last)
@@ -1252,7 +1323,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         modified2 = {'power_state': vms_new[0]['power_state'],
                      'time': time_update.isoformat()}
         data['resource_data'].update({
-            'modified': {'1': [modified1, modified2]},
+            'modified': [modified1, modified2],
             'current': vms_new1
         })
         self.check_data_vs_rec(data, last)
@@ -1264,7 +1335,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         modified3 = {'status': vms_new1[0]['status'],
                      'time': time_update.isoformat()}
         data['resource_data'].update({
-            'modified': {'1': [modified1, modified2, modified3]},
+            'modified': [modified1, modified2, modified3],
             'current': [self.vms_info]
         })
         self.check_data_vs_rec(data, last)
@@ -1299,7 +1370,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
                 data = self.empty_data
                 removed = dict(self.vms_info)
                 removed['time'] = last.updated_time.isoformat()
-                data['resource_data']['removed'] = {'1': removed}
+                data['resource_data']['removed'] = [removed]
                 self.check_data_vs_rec(data, rec)
             elif rec.created_date == date_1st_rec:
                 # first record contains 'added' and empty 'removed'
@@ -1335,36 +1406,3 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         last_changed = OpenStackWorkloadStats.get_last_by(
             cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertEqual(False, last_changed.is_sent)
-
-    def test_flavors_not_removed_after_cluster_reset(self):
-        cluster_id = 1
-        flavor_info = {
-            'id': 1,
-            'ram': 8,
-        }
-        # Before cluster reset
-        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.flavor,
-                             [flavor_info])
-        before_reset = OpenStackWorkloadStats.get_last_by(
-            cluster_id, consts.OSWL_RESOURCE_TYPES.flavor).resource_data
-
-        # During cluster reset
-        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.flavor,
-                             [])
-        during_reset = OpenStackWorkloadStats.get_last_by(
-            cluster_id, consts.OSWL_RESOURCE_TYPES.flavor).resource_data
-
-        # After cluster reset
-        oswl_statistics_save(cluster_id, consts.OSWL_RESOURCE_TYPES.flavor,
-                             [flavor_info])
-        after_reset = OpenStackWorkloadStats.get_last_by(
-            cluster_id, consts.OSWL_RESOURCE_TYPES.flavor).resource_data
-
-        # Checking flavor in removed during reset
-        self.assertEqual([], during_reset['current'])
-        self.assertIn(six.text_type(flavor_info['id']),
-                      during_reset['removed'])
-
-        # Checking after reset flavor is not in removed
-        self.assertEqual({}, after_reset['removed'])
-        self.assertItemsEqual(before_reset['current'], after_reset['current'])

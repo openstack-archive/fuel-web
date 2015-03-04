@@ -45,7 +45,11 @@ class TestPutSameJson(base.BaseIntegrationTest):
             jsonutils.dumps(data),
             headers=self.default_headers
         )
-        self.assertEqual(response.status_code, expected_status)
+        # TODO(pkaminski): remove this list?
+        if isinstance(expected_status, list):
+            self.assertIn(response.status_code, expected_status)
+        else:
+            self.assertEqual(response.status_code, expected_status)
 
     def http_get(self, name, arguments):
         """Makes a GET request to a resource with `name`.
@@ -100,7 +104,8 @@ class TestPutSameJson(base.BaseIntegrationTest):
             {
                 'cluster_id': self.cluster.id
             },
-            cluster_changes, 202
+            # TODO(pkaminski): remove 200, 202 status
+            cluster_changes, [200, 202]
         )
 
     def test_cluster_attributes(self):
@@ -131,7 +136,7 @@ class TestPutSameJson(base.BaseIntegrationTest):
             cluster_attributes, 200
         )
 
-    def test_nove_network_configuration(self):
+    def test_nova_network_configuration(self):
         nova_config = self.http_get(
             'NovaNetworkConfigurationHandler', {
                 'cluster_id': self.cluster.id

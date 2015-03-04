@@ -626,8 +626,8 @@
                     "verification_not_performed": "It is recommended to verify network settings before deployment.",
                     "verification_in_progress": "Your network verification is in progress.",
                     "verification_failed": "Networks verification failed with an error - ",
-                    "get_more_info": "For more information please please visit the",
-                    "click_here_link": "Networks tab."
+                    "get_more_info": "For more information please visit the",
+                    "click_here_link": "Networks tab"
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",

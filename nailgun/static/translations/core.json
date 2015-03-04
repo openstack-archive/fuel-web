@@ -20,6 +20,8 @@
                 "rollback_button": "Rollback",
                 "retry_button": "Retry Update",
                 "apply_changes_button": "Apply Changes",
+                "show_details_button": "Show additional information",
+                "hide_details_button": "Hide additional information",
                 "not_available": "N/A",
                 "size": {
                     "byte": "byte",

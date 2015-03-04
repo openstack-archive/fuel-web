@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import graph_visualization
 from nailgun.test import base
@@ -37,9 +35,9 @@ class TestDeploymentGraphViualization(base.BaseUnitTest):
 
         dotgraph = self.get_dotgraph_with_tasks(tasks)
 
-        six.assertRegex(self, dotgraph, 'pre_deployment .*color=red.*;')
-        six.assertRegex(self, dotgraph, 'pre_deployment .*shape=rect.*;')
-        six.assertRegex(self, dotgraph, 'pre_deployment .*style=filled.*;')
+        self.assertRegexpMatches(dotgraph, 'pre_deployment .*color=red.*;')
+        self.assertRegexpMatches(dotgraph, 'pre_deployment .*shape=rect.*;')
+        self.assertRegexpMatches(dotgraph, 'pre_deployment .*style=filled.*;')
 
     def test_group_type(self):
         tasks = [
@@ -48,10 +46,11 @@ class TestDeploymentGraphViualization(base.BaseUnitTest):
 
         dotgraph = self.get_dotgraph_with_tasks(tasks)
 
-        six.assertRegex(self, dotgraph, 'controller .*color=lightskyblue.*;')
-        six.assertRegex(self, dotgraph, 'controller .*shape=box.*;')
-        six.assertRegex(self, dotgraph,
-                        'controller .*style="filled, rounded".*;')
+        self.assertRegexpMatches(dotgraph,
+                                 'controller .*color=lightskyblue.*;')
+        self.assertRegexpMatches(dotgraph, 'controller .*shape=box.*;')
+        self.assertRegexpMatches(dotgraph,
+                                 'controller .*style="filled, rounded".*;')
 
     def test_void_type(self):
         tasks = [
@@ -75,5 +74,5 @@ class TestDeploymentGraphViualization(base.BaseUnitTest):
             {'id': 'task-A'},
         ]
         dotgraph = self.get_dotgraph_with_tasks(tasks)
-        six.assertRegex(self, dotgraph, '"task-A" .*color=yellowgreen.*;')
-        six.assertRegex(self, dotgraph, '"task-A" .*style=filled.*;')
+        self.assertRegexpMatches(dotgraph, '"task-A" .*color=yellowgreen.*;')
+        self.assertRegexpMatches(dotgraph, '"task-A" .*style=filled.*;')

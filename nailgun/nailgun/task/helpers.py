@@ -19,16 +19,14 @@ import os
 import shutil
 import six
 
-import web
+import pecan
 
 from sqlalchemy import or_
 from sqlalchemy.orm import exc
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import IPAddr
-from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import Task
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
@@ -72,7 +70,7 @@ class TaskHelper(object):
 
         links = map(
             lambda i: os.path.join(prefix, i.ip_addr),
-            db().query(IPAddr.ip_addr).
+            db().query(models.IPAddr.ip_addr).
             filter_by(node=node.id).
             filter_by(network=admin_net_id).all()
         )
@@ -145,10 +143,10 @@ class TaskHelper(object):
         or check_networks error and if cluster wasn't
         deployed yet
         """
-        error_checking_tasks_count = db().query(Task).\
+        error_checking_tasks_count = db().query(models.Task).\
             filter_by(parent_id=task.id).\
             filter_by(status='error').\
-            filter(Task.name.in_(
+            filter(models.Task.name.in_(
                 ['check_before_deployment', 'check_networks'])).count()
 
         return not task.cluster.is_locked and error_checking_tasks_count
@@ -156,24 +154,25 @@ class TaskHelper(object):
     # TODO(aroma): move this method to utils module
     @classmethod
     def get_nodes_to_provisioning_error(cls, cluster):
-        q_nodes_to_error = db().query(Node).\
-            filter(Node.cluster == cluster).\
-            filter(Node.status.in_(['provisioning']))
+        q_nodes_to_error = db().query(models.Node).\
+            filter(models.Node.cluster == cluster).\
+            filter(models.Node.status.in_(['provisioning']))
 
         return q_nodes_to_error
 
     # TODO(aroma): move this method to utils module
     @classmethod
     def get_nodes_to_deployment_error(cls, cluster):
-        q_nodes_to_error = db().query(Node).\
-            filter(Node.cluster == cluster).\
-            filter(Node.status.in_(['deploying']))
+        q_nodes_to_error = db().query(models.Node).\
+            filter(models.Node.cluster == cluster).\
+            filter(models.Node.status.in_(['deploying']))
 
         return q_nodes_to_error
 
     @classmethod
     def recalculate_deployment_task_progress(cls, task):
-        cluster_nodes = db().query(Node).filter_by(cluster_id=task.cluster_id)
+        cluster_nodes = db().query(models.Node).filter_by(
+            cluster_id=task.cluster_id)
         nodes_progress = []
         nodes_progress.extend(
             cluster_nodes.filter_by(status='discover').count() * [0])
@@ -188,18 +187,19 @@ class TaskHelper(object):
         nodes_progress.extend([
             n.progress for n in
             cluster_nodes.filter(
-                Node.status.in_(['deploying', 'ready']))])
+                models.Node.status.in_(['deploying', 'ready']))])
 
         if nodes_progress:
             return int(float(sum(nodes_progress)) / len(nodes_progress))
 
     @classmethod
     def recalculate_provisioning_task_progress(cls, task):
-        cluster_nodes = db().query(Node).filter_by(cluster_id=task.cluster_id)
+        cluster_nodes = db().query(models.Node).filter_by(
+            cluster_id=task.cluster_id)
         nodes_progress = [
             n.progress for n in
             cluster_nodes.filter(
-                Node.status.in_(['provisioning', 'provisioned']))]
+                models.Node.status.in_(['provisioning', 'provisioned']))]
 
         if nodes_progress:
             return int(float(sum(nodes_progress)) / len(nodes_progress))
@@ -313,16 +313,17 @@ class TaskHelper(object):
         # if list contain at least one controller
         if cls.__has_controller_nodes(nodes):
             # retrive all controllers from cluster
-            controller_nodes = db().query(Node). \
+            controller_nodes = db().query(models.Node). \
                 filter(or_(
-                    Node.role_list.any(name='controller'),
-                    Node.pending_role_list.any(name='controller'),
-                    Node.role_list.any(name='primary-controller'),
-                    Node.pending_role_list.any(name='primary-controller')
+                    models.Node.role_list.any(name='controller'),
+                    models.Node.pending_role_list.any(name='controller'),
+                    models.Node.role_list.any(name='primary-controller'),
+                    models.Node.pending_role_list.any(
+                        name='primary-controller')
                 )). \
-                filter(Node.cluster == cluster). \
-                filter(False == Node.pending_deletion). \
-                order_by(Node.id).all()
+                filter(models.Node.cluster == cluster). \
+                filter(False == models.Node.pending_deletion). \
+                order_by(models.Node.id).all()
 
         return sorted(set(nodes + controller_nodes),
                       key=lambda node: node.id)
@@ -367,7 +368,8 @@ class TaskHelper(object):
         # actor_id passed from ConnectionMonitor middleware and is
         # needed for binding task execution event with particular
         # actor
-        actor_id = web.ctx.env.get('fuel.action.actor_id')
+        #actor_id = web.ctx.env.get('fuel.action.actor_id')
+        actor_id = pecan.request.environ.get('fuel_action.actor_id')
         create_kwargs['actor_id'] = actor_id
 
         additional_info = {
@@ -482,3 +484,11 @@ class TaskHelper(object):
         if task.status == consts.TASK_STATUSES.running:
             task.status = consts.TASK_STATUSES.ready
         cls.update_action_log(task)
+
+    @classmethod
+    def set_error(cls, task, exc):
+        from nailgun.objects import Task
+
+        task.status = consts.TASK_STATUSES.error
+        task.message = exc.message
+        Task.save(task)

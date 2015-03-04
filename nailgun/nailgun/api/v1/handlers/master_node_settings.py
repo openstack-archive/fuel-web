@@ -12,14 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1.handlers.base import DBSingletonHandler
+from nailgun.api.v2.controllers.base import DBSingletonController
+
 from nailgun.api.v1.validators.master_node_settings \
     import MasterNodeSettingsValidator
 
 from nailgun import objects
 
 
-class MasterNodeSettingsHandler(DBSingletonHandler):
+class MasterNodeSettingsController(DBSingletonController):
 
     single = objects.MasterNodeSettings
 

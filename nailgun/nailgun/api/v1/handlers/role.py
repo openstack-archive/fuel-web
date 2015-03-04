@@ -14,17 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import pecan
 
-from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v2.controllers.base import BaseController
+
 from nailgun.api.v1.validators.role import RoleValidator
 from nailgun.errors import errors
 from nailgun import objects
 
 
-class RoleHandler(base.SingleHandler):
+class RoleController(BaseController):
 
     single = objects.Role
+    collection = objects.RoleCollection
     validator = RoleValidator
 
     def get_role_or_404(self, release_id, role_name):
@@ -36,52 +38,25 @@ class RoleHandler(base.SingleHandler):
                     release=release_id, name=role_name))
         return role
 
-    @content
-    def GET(self, release_id, role_name):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, release_id):
+        """:http:
+            * 200 (OK)
+        """
+        release = self.get_object_or_404(objects.Release, release_id)
+        return self.collection.to_list(release.role_list)
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_one(self, release_id, role_name):
         """:http:
             * 200 (OK)
             * 404 (no such object found)
         """
         role = self.get_role_or_404(release_id, role_name)
-        return self.single.to_json(role)
+        return self.single.to_dict(role)
 
-    @content
-    def PUT(self, release_id, role_name):
-        """:http:
-            * 200 (OK)
-            * 404 (no such object found)
-        """
-        role = self.get_role_or_404(release_id, role_name)
-        data = self.checked_data(instance=role)
-
-        updated = self.single.update(role, data)
-        return self.single.to_json(updated)
-
-    def DELETE(self, release_id, role_name):
-        """:http:
-            * 204 (object successfully deleted)
-            * 400 (cannot delete object)
-            * 404 (no such object found)
-        """
-        role = self.get_role_or_404(release_id, role_name)
-
-        try:
-            self.validator.validate_delete(role)
-        except errors.CannotDelete as exc:
-            raise self.http(400, exc.message)
-
-        self.single.delete(role)
-        raise self.http(204)
-
-
-class RoleCollectionHandler(base.CollectionHandler):
-
-    single = objects.Role
-    collection = objects.RoleCollection
-    validator = RoleValidator
-
-    @content
-    def POST(self, release_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def post(self, release_id):
         """:http:
             * 201 (object successfully created)
             * 400 (invalid object data specified)
@@ -104,10 +79,31 @@ class RoleCollectionHandler(base.CollectionHandler):
 
         raise self.http(201, self.single.to_json(role))
 
-    @content
-    def GET(self, release_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, release_id, role_name):
         """:http:
             * 200 (OK)
+            * 404 (no such object found)
         """
-        release = self.get_object_or_404(objects.Release, release_id)
-        return self.collection.to_json(release.role_list)
+        role = self.get_role_or_404(release_id, role_name)
+        data = self.checked_data(instance=role)
+
+        updated = self.single.update(role, data)
+        return self.single.to_dict(updated)
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def delete(self, release_id, role_name):
+        """:http:
+            * 204 (object successfully deleted)
+            * 400 (cannot delete object)
+            * 404 (no such object found)
+        """
+        role = self.get_role_or_404(release_id, role_name)
+
+        try:
+            self.validator.validate_delete(role)
+        except errors.CannotDelete as exc:
+            raise self.http(400, exc.message)
+
+        self.single.delete(role)
+        raise self.http(204)

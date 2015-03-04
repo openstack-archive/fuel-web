@@ -14,13 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import pecan
+
 import traceback
 
 import six
-import web
 
-from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v2.controllers.base import BaseController
+
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.graph import GraphVisualizationValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
@@ -55,24 +56,26 @@ class NodesFilterMixin(object):
         then returns them, else returns
         default nodes.
         """
-        nodes = web.input(nodes=None).nodes
+        request = pecan.request
+        nodes = request.params.get("nodes", None)
+
         if nodes:
             node_ids = self.checked_data(data=nodes)
             return self.get_objects_list_or_404(
-                objects.NodeCollection,
+                objects.Node,
                 node_ids
             )
 
         return self.get_default_nodes(cluster) or []
 
 
-class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
+class DefaultOrchestratorInfo(NodesFilterMixin, BaseController):
     """Base class for default orchestrator data.
     Need to redefine serializer variable
     """
 
-    @content
-    def GET(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, cluster_id):
         """:returns: JSONized default data which will be passed to orchestrator
         :http: * 200 (OK)
                * 404 (cluster not found in db)
@@ -86,7 +89,7 @@ class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
         raise NotImplementedError('Override the method')
 
 
-class OrchestratorInfo(BaseHandler):
+class OrchestratorInfo(BaseController):
     """Base class for replaced data."""
 
     def get_orchestrator_info(self, cluster):
@@ -101,8 +104,8 @@ class OrchestratorInfo(BaseHandler):
         """
         raise NotImplementedError('Please Implement this method')
 
-    @content
-    def GET(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self, cluster_id):
         """:returns: JSONized data which will be passed to orchestrator
         :http: * 200 (OK)
                * 404 (cluster not found in db)
@@ -110,8 +113,8 @@ class OrchestratorInfo(BaseHandler):
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return self.get_orchestrator_info(cluster)
 
-    @content
-    def PUT(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, cluster_id):
         """:returns: JSONized data which will be passed to orchestrator
         :http: * 200 (OK)
                * 400 (wrong data specified)
@@ -125,8 +128,8 @@ class OrchestratorInfo(BaseHandler):
                      .format(cluster_id))
         return data
 
-    @content
-    def DELETE(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def delete(self, cluster_id):
         """:returns: {}
         :http: * 202 (orchestrator data deletion process launched)
                * 400 (failed to execute orchestrator data deletion process)
@@ -135,6 +138,7 @@ class OrchestratorInfo(BaseHandler):
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.update_orchestrator_info(cluster, {})
 
+        # TODO(pkaminski): Shouldn't a task be returned here?
         raise self.http(202, '{}')
 
 
@@ -181,6 +185,8 @@ class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
 
 class ProvisioningInfo(OrchestratorInfo):
 
+    defaults = DefaultProvisioningInfo()
+
     def get_orchestrator_info(self, cluster):
         return objects.Cluster.get_provisioning_info(cluster)
 
@@ -190,6 +196,8 @@ class ProvisioningInfo(OrchestratorInfo):
 
 class DeploymentInfo(OrchestratorInfo):
 
+    defaults = DefaultDeploymentInfo()
+
     def get_orchestrator_info(self, cluster):
         return objects.Cluster.get_deployment_info(cluster)
 
@@ -197,7 +205,7 @@ class DeploymentInfo(OrchestratorInfo):
         return objects.Cluster.replace_deployment_info(cluster, data)
 
 
-class SelectedNodesBase(NodesFilterMixin, BaseHandler):
+class SelectedNodesBase(NodesFilterMixin, BaseController):
     """Base class for running task manager on selected nodes."""
 
     def handle_task(self, cluster, **kwargs):
@@ -215,8 +223,8 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
 
         self.raise_task(task)
 
-    @content
-    def PUT(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
@@ -236,8 +244,8 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_provision(cluster)
 
-    @content
-    def PUT(self, cluster_id):
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
@@ -253,7 +261,8 @@ class ProvisionSelectedNodes(SelectedNodesBase):
         return self.handle_task(cluster)
 
 
-class BaseDeploySelectedNodes(SelectedNodesBase):
+class DeploySelectedNodes(SelectedNodesBase):
+    """Handler for deployment selected nodes."""
 
     task_manager = DeploymentTaskManager
 
@@ -261,65 +270,31 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
         return TaskHelper.nodes_to_deploy(cluster)
 
     def get_nodes(self, cluster):
-        nodes_to_deploy = super(
-            BaseDeploySelectedNodes, self).get_nodes(cluster)
+        nodes_to_deploy = super(DeploySelectedNodes, self).get_nodes(cluster)
         if cluster.is_ha_mode:
             return TaskHelper.nodes_to_deploy_ha(cluster, nodes_to_deploy)
         return nodes_to_deploy
 
 
-class DeploySelectedNodes(BaseDeploySelectedNodes):
-    """Handler for deployment selected nodes."""
-
-    @content
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-        :http: * 200 (task successfully executed)
-               * 202 (task scheduled for execution)
-               * 400 (data validation failed)
-               * 404 (cluster or nodes not found in db)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        return self.handle_task(cluster)
-
-
-class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
-
-    validator = NodeDeploymentValidator
-
-    @content
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-        :http: * 200 (task successfully executed)
-               * 202 (task scheduled for execution)
-               * 400 (data validation failed)
-               * 404 (cluster or nodes not found in db)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        data = self.checked_data(
-            self.validator.validate_deployment,
-            cluster=cluster)
-        return self.handle_task(cluster, deployment_tasks=data)
-
-
-class TaskDeployGraph(BaseHandler):
+class TaskDeployGraph(BaseController):
 
     validator = GraphVisualizationValidator
 
-    def GET(self, cluster_id):
+    @pecan.expose(content_type='text/vnd.graphviz')
+    def get_all(self, cluster_id):
         """:returns: DOT representation of deployment graph.
         :http: * 200 (graph returned)
                * 404 (cluster not found in db)
                * 400 (failed to get graph)
         """
-        web.header('Content-Type', 'text/vnd.graphviz', unique=True)
+        request = pecan.request
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         tasks = objects.Cluster.get_deployment_tasks(cluster)
         graph = deployment_graph.DeploymentGraph(tasks)
 
-        tasks = web.input(tasks=None).tasks
-        parents_for = web.input(parents_for=None).parents_for
+        tasks = request.GET.get('tasks', None)
+        parents_for = request.GET.get('parents_for', None)
 
         if tasks:
             tasks = self.checked_data(
@@ -339,3 +314,32 @@ class TaskDeployGraph(BaseHandler):
         dotgraph = visualization.get_dotgraph(tasks=tasks,
                                               parents_for=parents_for)
         return dotgraph.to_string()
+
+
+class DeploySelectedNodesWithTasks(DeploySelectedNodes):
+
+    deploy_graph = TaskDeployGraph()
+
+    validator = NodeDeploymentValidator
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
+               * 404 (cluster or nodes not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        data = self.checked_data(
+            self.validator.validate_deployment,
+            cluster=cluster)
+        return self.handle_task(cluster, deployment_tasks=data)
+
+
+class OrchestratorController(BaseController):
+
+    deployment = DeploymentInfo()
+    provisioning = ProvisioningInfo()
+    plugins_pre_hooks = DefaultPrePluginsHooksInfo()
+    plugins_post_hooks = DefaultPostPluginsHooksInfo()

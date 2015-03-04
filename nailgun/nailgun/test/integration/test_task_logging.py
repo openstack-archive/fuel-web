@@ -157,6 +157,7 @@ class TestTasksLogging(BaseIntegrationTest):
             ]
         )
         self.env.launch_deployment()
+        # TODO(pkaminski): remove 200, 202 status
         self.env.stop_deployment()
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)

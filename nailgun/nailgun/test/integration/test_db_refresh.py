@@ -20,17 +20,17 @@ from unittest import TestCase
 from sqlalchemy import orm
 from webtest.app import TestApp
 
-from nailgun.app import build_app
 from nailgun.db import engine
 from nailgun.db import flush
 from nailgun.db import NoCacheQuery
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.wsgi import build_wsgi_app
 
 
 class TestDBRefresh(TestCase):
 
     def setUp(self):
-        self.app = TestApp(build_app().wsgifunc())
+        self.app = TestApp(build_wsgi_app())
         self.db = orm.scoped_session(
             orm.sessionmaker(bind=engine, query_cls=NoCacheQuery)
         )()

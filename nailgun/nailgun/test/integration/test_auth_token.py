@@ -42,7 +42,8 @@ class TestAuthToken(BaseAuthenticationIntegrationTest):
                         'password': settings.FAKE_KEYSTONE_PASSWORD,
                     },
                 },
-            })
+            }),
+            headers=self.default_headers
         )
 
         self.token = resp.json['access']['token']['id'].encode('utf-8')

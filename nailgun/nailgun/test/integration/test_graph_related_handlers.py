@@ -84,7 +84,7 @@ class TestReleaseGraphHandler(BaseGraphTasksTests):
         )
         release_tasks = objects.Release.get_deployment_tasks(
             self.cluster.release)
-        self.assertEqual(resp.json, release_tasks)
+        self.assertEqual(resp.json_body, release_tasks)
 
     def test_upload_deployment_tasks(self):
         tasks = self.get_correct_tasks()
@@ -297,9 +297,8 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
     def test_use_certain_tasks(self, m_get_tasks):
         m_get_tasks.return_value = self.tasks
         resp = self.app.get(
-            reverse('TaskDeployGraph', kwargs={
-                'cluster_id': self.cluster.id,
-            }) + '?tasks=pre-A,pre-C',
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id},
+                    qs={'tasks': 'pre-A,pre-C'})
         )
         self.assertEqual(resp.content_type, self.content_type)
         self.assertIn('"pre-A" -> "pre-B"', resp.body)
@@ -308,10 +307,9 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
     def test_error_raised_on_non_existent_tasks(self, m_get_tasks):
         m_get_tasks.return_value = self.tasks
         resp = self.app.get(
-            reverse('TaskDeployGraph', kwargs={
-                'cluster_id': self.cluster.id,
-            }) + '?tasks=nonexistent',
-            expect_errors=True,
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id},
+                    qs={'tasks': 'nonexistent'}),
+            expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
         self.assertIn('Tasks nonexistent are not present in deployment graph',
@@ -320,9 +318,8 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
     def test_use_single_task(self, m_get_tasks):
         m_get_tasks.return_value = self.tasks
         resp = self.app.get(
-            reverse('TaskDeployGraph', kwargs={
-                'cluster_id': self.cluster.id,
-            }) + '?parents_for=pre-B',
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id},
+                    qs={'parents_for': 'pre-B'})
         )
         self.assertEqual(resp.content_type, self.content_type)
         self.assertIn('"pre-A" -> "pre-B"', resp.body)
@@ -332,10 +329,9 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
     def test_error_raised_on_non_existent_signle_task(self, m_get_tasks):
         m_get_tasks.return_value = self.tasks
         resp = self.app.get(
-            reverse('TaskDeployGraph', kwargs={
-                'cluster_id': self.cluster.id,
-            }) + '?parents_for=nonexistent',
-            expect_errors=True,
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id},
+                    qs={'parents_for': 'nonexistent'}),
+            expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
         self.assertIn('Task nonexistent is not present in graph', resp.body)
@@ -346,9 +342,8 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
         """
         m_get_tasks.return_value = self.tasks
         resp = self.app.get(
-            reverse('TaskDeployGraph', kwargs={
-                'cluster_id': self.cluster.id,
-            }) + '?tasks=pre-B,pre-A&parents_for=pre-C',
+            reverse('TaskDeployGraph', kwargs={'cluster_id': self.cluster.id},
+                    qs={'tasks': 'pre-B,pre-A', 'parents_for': 'pre-C'})
         )
         self.assertEqual(resp.content_type, self.content_type)
         self.assertIn('"pre-A" -> "pre-C"', resp.body)

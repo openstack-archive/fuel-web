@@ -17,37 +17,33 @@
 """
 Handlers dealing with notifications
 """
-import web
+import pecan
 
-from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.validators.notification import NotificationValidator
+from nailgun.api.v2.controllers.base import BaseController
 
 from nailgun import objects
 
-from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.validators.notification import NotificationValidator
 
-
-class NotificationHandler(SingleHandler):
-    """Notification single handler
-    """
+class NotificationController(BaseController):
 
     single = objects.Notification
-    validator = NotificationValidator
-
-
-class NotificationCollectionHandler(CollectionHandler):
-
     collection = objects.NotificationCollection
     validator = NotificationValidator
 
-    @content
-    def PUT(self):
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, *args):
         """:returns: Collection of JSONized Notification objects.
         :http: * 200 (OK)
                * 400 (invalid data specified for collection update)
         """
-        data = self.validator.validate_collection_update(web.data())
+        if len(args) == 1:
+            return super(NotificationController, self).put(args[0])
+
+        request = pecan.request
+        data = self.validator.validate_collection_update(
+            request.data
+        )
 
         notifications_updated = []
         for nd in data:

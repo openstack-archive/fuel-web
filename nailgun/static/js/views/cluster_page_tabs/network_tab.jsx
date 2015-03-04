@@ -543,25 +543,15 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
                 return Backbone.sync('update', this.props.networkConfiguration)
                     .then(_.bind(function(response) {
-                        if (response && response.status != 'error') {
+                        if (response.status != 'error') {
                             this.props.updateInitialConfiguration();
-                            return $.Deferred().resolve(response);
                         } else {
-                            // FIXME(vkramskikh): currently there can be both
-                            // 202 and 400 responses for this handler, so we need
-                            // to handle both. This hack needs to be removed after
-                            // backend fix
-                            return $.Deferred().reject(response);
+                            // FIXME(vkramskikh): the same hack for check_networks task:
+                            // remove failed tasks immediately, so they won't be taken into account
+                            return this.props.cluster.fetchRelated('tasks').done(_.bind(function() {
+                                this.props.cluster.get('tasks').get(response.id).set('unsaved', true);
+                            }, this));
                         }
-                    }, this), function(response) {
-                        return $.Deferred().reject(JSON.parse(response.responseText));
-                    })
-                    .then(null, _.bind(function(response) {
-                        // FIXME(vkramskikh): the same hack for check_networks task:
-                        // remove failed tasks immediately, so they won't be taken into account
-                        return this.props.cluster.fetchRelated('tasks').done(_.bind(function() {
-                            this.props.cluster.get('tasks').get(response.id).set('unsaved', response.status == 'error');
-                        }, this));
                     }, this))
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});

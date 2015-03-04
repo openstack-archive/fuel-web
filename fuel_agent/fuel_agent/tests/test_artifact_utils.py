@@ -34,8 +34,9 @@ class TestTarget(test_base.BaseTestCase):
     def test_target_next(self):
         self.assertRaises(StopIteration, self.tgt.next)
 
+    @mock.patch('os.fsync')
     @mock.patch.object(au.Target, '__iter__')
-    def test_target_target(self, mock_iter):
+    def test_target_target(self, mock_iter, mock_os_sync):
         mock_iter.return_value = iter(['chunk1', 'chunk2', 'chunk3'])
         m = mock.mock_open()
         with mock.patch('six.moves.builtins.open', m):

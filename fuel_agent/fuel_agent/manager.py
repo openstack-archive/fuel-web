@@ -242,11 +242,15 @@ class Manager(object):
             raise errors.WrongPartitionSchemeError(
                 'Error while trying to get configdrive device: '
                 'configdrive device not found')
+        size = os.path.getsize(CONF.config_drive_path)
+        md5 = utils.calculate_md5(CONF.config_drive_path, size)
         self.image_scheme.add_image(
             uri='file://%s' % CONF.config_drive_path,
             target_device=configdrive_device,
             format='iso9660',
-            container='raw'
+            container='raw',
+            size=size,
+            md5=md5,
         )
 
     def do_copyimage(self):
@@ -274,6 +278,22 @@ class Manager(object):
 
             LOG.debug('Launching image processing chain')
             processing.process()
+
+            if image.size and image.md5:
+                LOG.debug('Trying to compare image checksum')
+                actual_md5 = utils.calculate_md5(image.target_device,
+                                                 image.size)
+                if actual_md5 == image.md5:
+                    LOG.debug('Checksum matches successfully: md5=%s' %
+                              actual_md5)
+                else:
+                    raise errors.ImageChecksumMismatchError(
+                        'Actual checksum %s mismatches with expected %s for '
+                        'file %s' % (actual_md5, image.md5,
+                                     image.target_device))
+            else:
+                LOG.debug('Skipping image checksum comparing. '
+                          'Ether size or hash have been missed')
 
             LOG.debug('Extending image file systems')
             if image.format in ('ext2', 'ext3', 'ext4', 'xfs'):

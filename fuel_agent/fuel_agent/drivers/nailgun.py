@@ -19,6 +19,9 @@ from fuel_agent import errors
 from fuel_agent import objects
 from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import hardware_utils as hu
+from fuel_agent.utils import utils
+
+import yaml
 
 LOG = logging.getLogger(__name__)
 
@@ -351,6 +354,28 @@ class Nailgun(object):
         LOG.debug('--- Preparing image scheme ---')
         data = self.data
         image_scheme = objects.ImageScheme()
+        #FIXME(agordeev): this piece of code for fetching additional image
+        # meta data should be factored out of this particular nailgun driver
+        # into more common and absract data getter which should be able to deal
+        # with various data sources (local file, http(s), etc.) and different
+        # data formats ('blob', json, yaml, etc.).
+        # So, the manager will combine and manipulate all those multiple data
+        # getter instances.
+        # Also, the initial data source should be set to sort out chicken/egg
+        # problem. Command line option may be useful for such a case.
+        # BUG: https://bugs.launchpad.net/fuel/+bug/1430418
+        metadata_url = data['ks_meta']['image_data']['/']['uri'].\
+            split('.')[0] + '.yaml'
+        image_meta = {}
+        raw_image_meta = None
+        try:
+            raw_image_meta = yaml.load(
+                utils.init_http_request(metadata_url).text)
+        except Exception as e:
+            LOG.exception(e)
+            LOG.debug('Failed to fetch/decode image meta data')
+        if raw_image_meta:
+            [image_meta.update(img_info) for img_info in raw_image_meta]
         # We assume for every file system user may provide a separate
         # file system image. For example if partitioning scheme has
         # /, /boot, /var/lib file systems then we will try to get images
@@ -373,5 +398,7 @@ class Nailgun(object):
                 # from provision.json, but currently it is hard coded.
                 format=image_data['format'],
                 container=image_data['container'],
+                size=image_meta.get(fs.mount, {}).get('size'),
+                md5=image_meta.get(fs.mount, {}).get('md5'),
             )
         return image_scheme

@@ -184,11 +184,24 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
                     return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
                 }));
+
+            var networkVerificationTask = cluster.task({group: 'network'}),
+                networksVerificationResult,
+                ns = 'dialog.display_changes.';
+                if (_.isUndefined(networkVerificationTask)) {
+                    networksVerificationResult = {warning: i18n(ns + 'verification_not_performed')};
+                } else if (networkVerificationTask.match({status: 'error'})) {
+                    networksVerificationResult = {error: i18n(ns + 'verification_failed')};
+                } else if (networkVerificationTask.match({status: 'running'})) {
+                    networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
+                }
+
             return {
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
                 isInvalid: _.any(limitValidations, {valid: false}) || !settings.isValid({models: configModels}),
-                settingsValidationErrors: settings.validationError
+                settingsValidationErrors: settings.validationError,
+                networksVerificationResult: networksVerificationResult
             };
         },
         deployCluster: function() {
@@ -206,35 +219,23 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             </div>;
         },
         renderBody: function() {
-            var ns = 'dialog.display_changes.',
-                cluster = this.props.cluster,
+            var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 roleModels = cluster.get('release').get('role_models'),
                 settingsLocked = _.contains(['new', 'stopped'], cluster.get('status')),
                 needsRedeployment = cluster.needsRedeployment(),
-                networkVerificationTask = cluster.task({group: 'network'}),
-                networksVerificationResult,
                 warningClasses = {
                     'deploy-task-notice': true,
                     'text-error': needsRedeployment || this.state.isInvalid,
                     'text-warning': settingsLocked
                 };
-
-            if (_.isUndefined(networkVerificationTask)) {
-                networksVerificationResult = {warning: i18n(ns + 'verification_not_performed')};
-            } else if (networkVerificationTask.match({status: 'error'})) {
-                networksVerificationResult = {error: i18n(ns + 'verification_failed') + networkVerificationTask.get('message')};
-            } else if (networkVerificationTask.match({status: 'running'})) {
-                networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
-            }
-
             return (
                 <div className='display-changes-dialog'>
                     {(settingsLocked || needsRedeployment || this.state.isInvalid) &&
                         <div>
                             <div className={cx(warningClasses)}>
                                 <i className='icon-attention' />
-                                <span>{i18n(ns + (this.state.isInvalid ? 'warnings.no_deployment' :
+                                <span>{i18n('dialog.display_changes.' + (this.state.isInvalid ? 'warnings.no_deployment' :
                                     settingsLocked ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
@@ -266,37 +267,42 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                 return (<div key={'limit-warning-' + name} className='alert alert-warning'>{recommendation.message}</div>);
                             }
                         }, this))}
-                        {networksVerificationResult &&
-                            this.showNetworkVerificationMessage(networksVerificationResult)
+                        {this.state.networksVerificationResult &&
+                            this.showNetworkVerificationMessage(this.state.networksVerificationResult)
                         }
                     </div>
                 </div>
             );
         },
         showNetworkVerificationMessage: function(verificationResult) {
-            var verificationWarning = verificationResult.warning,
-                verificationError = verificationResult.error;
             if (_.isEmpty(verificationResult)) return null;
-            var classes = {
-                alert: true,
-                'alert-error': !!verificationError,
-                'alert-warning': !!verificationWarning
-            };
+            var verificationWarning = verificationResult.warning,
+                verificationError = verificationResult.error,
+                classes = {
+                    alert: true,
+                    'alert-error': !!verificationError,
+                    'alert-warning': !!verificationWarning
+                };
             return (
                 <div className={cx(classes)}>
                     {verificationWarning || verificationError}
                     {' ' + i18n('dialog.display_changes.get_more_info') + ' '}
                     <a onClick={this.close} href={'#cluster/' + this.props.cluster.id + '/network'}>
                         {i18n('dialog.display_changes.click_here_link')}
-                    </a>
+                    </a>.
                 </div>
             );
         },
         renderFooter: function() {
+            var classes = {
+                'btn start-deployment-btn': true,
+                'btn-danger': this.state.isInvalid || (this.state.networksVerificationResult || {}).error,
+                'btn-success': !this.state.isInvalid
+            };
             return ([
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
-                    className={'btn start-deployment-btn btn-' + (this.state.isInvalid ? 'danger' : 'success')}
+                    className={cx(classes)}
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
                 >{i18n('dialog.display_changes.deploy')}</button>

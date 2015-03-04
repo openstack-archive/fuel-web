@@ -146,7 +146,7 @@ class TestClusterChanges(BaseIntegrationTest):
             headers=self.default_headers
         )
         net_id = resp.json_body['networks'][0]["id"]
-        resp = self.app.put(
+        self.app.put(
             reverse(
                 'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': cluster['id']}),

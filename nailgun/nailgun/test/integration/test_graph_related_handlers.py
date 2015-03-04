@@ -84,7 +84,7 @@ class TestReleaseGraphHandler(BaseGraphTasksTests):
         )
         release_tasks = objects.Release.get_deployment_tasks(
             self.cluster.release)
-        self.assertEqual(resp.json, release_tasks)
+        self.assertEqual(resp.json_body, release_tasks)
 
     def test_upload_deployment_tasks(self):
         tasks = self.get_correct_tasks()

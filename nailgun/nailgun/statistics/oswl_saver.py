@@ -27,24 +27,28 @@ def _added(time, prev, curr, collected):
     prev_ids = set(res['id'] for res in prev)
     curr_ids = set(res['id'] for res in curr)
     added_ids = curr_ids - prev_ids
-    for id in added_ids:
-        collected[id] = {'time': time.isoformat()}
+    for id_val in added_ids:
+        collected.append({'id': id_val, 'time': time.isoformat()})
     return collected
 
 
 def _removed(time, prev, curr, collected):
     prev_ids = set(res['id'] for res in prev)
     curr_ids = set(res['id'] for res in curr)
+    collected_ids = set(res['id'] for res in collected)
     removed_ids = prev_ids - curr_ids
     for res in prev:
-        if res['id'] in removed_ids:
-            collected[res['id']] = res
-            collected[res['id']]['time'] = time.isoformat()
-    # If cluster was reset and resources are external for cluster,
-    # like flavors, they should be deleted from collected.
-    for curr_id in curr_ids:
-        # Integer key after JSON transformation became string.
-        collected.pop(six.text_type(curr_id), None)
+        id_val = res['id']
+        if id_val in removed_ids:
+            # If we already have resource collected only id with removal
+            # time will be saved. In case of set of removals current state
+            # of removed resource can be restored by data in 'removed',
+            # 'added', 'modified'
+            if id_val in collected_ids:
+                collected.append({'id': id_val, 'time': time.isoformat()})
+            else:
+                res_data = dict(res, **{'time': time.isoformat()})
+                collected.append(res_data)
     return collected
 
 
@@ -52,13 +56,14 @@ def _modified(time, prev, curr, collected):
     prev_dict = dict((res['id'], res) for res in prev)
     curr_dict = dict((res['id'], res) for res in curr)
     same = set(prev_dict.keys()) & set(curr_dict.keys())
-    for id in same:
-        if curr_dict[id] != prev_dict[id]:
+    for id_val in same:
+        if curr_dict[id_val] != prev_dict[id_val]:
             m = dict((k, v)
-                     for k, v in six.iteritems(prev_dict[id])
-                     if v != curr_dict[id].get(k))
+                     for k, v in six.iteritems(prev_dict[id_val])
+                     if v != curr_dict[id_val].get(k))
             m['time'] = time.isoformat()
-            collected.setdefault(str(id), []).append(m)
+            m['id'] = id_val
+            collected.append(m)
     return collected
 
 
@@ -104,9 +109,9 @@ def oswl_statistics_save(cluster_id, resource_type, data):
                 'created_date': dt.date()
             })
             obj_data['resource_data'].update({
-                'added': _added(dt.time(), cur_dict, data, {}),
-                'removed': _removed(dt.time(), cur_dict, data, {}),
-                'modified': _modified(dt.time(), cur_dict, data, {})
+                'added': _added(dt.time(), cur_dict, data, []),
+                'removed': _removed(dt.time(), cur_dict, data, []),
+                'modified': _modified(dt.time(), cur_dict, data, [])
             })
             objects.OpenStackWorkloadStats.create(obj_data)
     else:
@@ -117,8 +122,8 @@ def oswl_statistics_save(cluster_id, resource_type, data):
             'created_date': dt.date()
         })
         obj_data['resource_data'].update({
-            'added': _added(dt.time(), [], data, {}),
-            'removed': {},
-            'modified': {}
+            'added': _added(dt.time(), [], data, []),
+            'removed': [],
+            'modified': []
         })
         objects.OpenStackWorkloadStats.create(obj_data)

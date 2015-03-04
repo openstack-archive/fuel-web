@@ -172,8 +172,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             };
         },
         getInitialState: function() {
-            var cluster = this.props.cluster,
-                settings = cluster.get('settings'),
+            var ns = 'dialog.display_changes.',
+                cluster = this.props.cluster,
                 configModels = this.getConfigModels(),
                 validRoleModels = cluster.get('release').get('role_models').filter(function(role) {
                     return !role.checkRestrictions(configModels).result;
@@ -183,25 +183,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 })),
                 limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
                     return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
-                }));
+                })),
+                areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
 
             var networkVerificationTask = cluster.task({group: 'network'}),
-                networksVerificationResult,
-                ns = 'dialog.display_changes.';
-                if (_.isUndefined(networkVerificationTask)) {
-                    networksVerificationResult = {warning: i18n(ns + 'verification_not_performed')};
-                } else if (networkVerificationTask.match({status: 'error'})) {
-                    networksVerificationResult = {error: i18n(ns + 'verification_failed')};
-                } else if (networkVerificationTask.match({status: 'running'})) {
-                    networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
-                }
+                networksVerificationResult;
+            if (_.isUndefined(networkVerificationTask)) {
+                networksVerificationResult = {warning: i18n(ns + 'verification_not_performed')};
+            } else if (networkVerificationTask.match({status: 'error'})) {
+                networksVerificationResult = {error: i18n(ns + 'verification_failed')};
+            } else if (networkVerificationTask.match({status: 'running'})) {
+                networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
+            }
 
             return {
+                ns: ns,
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
-                isInvalid: _.any(limitValidations, {valid: false}) || !settings.isValid({models: configModels}),
-                settingsValidationErrors: settings.validationError,
-                networksVerificationResult: networksVerificationResult
+                isInvalid: _.any(limitValidations, {valid: false}) || areSettingsInvalid,
+                networksVerificationResult: networksVerificationResult,
+                areSettingsInvalid: areSettingsInvalid
             };
         },
         deployCluster: function() {
@@ -215,7 +216,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
             return !!nodes.length && <div key={dictKey} className='deploy-task-name'>
-                {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
+                {i18n(this.state.ns + dictKey, {count: nodes.length})}
             </div>;
         },
         renderBody: function() {
@@ -235,7 +236,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         <div>
                             <div className={cx(warningClasses)}>
                                 <i className='icon-attention' />
-                                <span>{i18n('dialog.display_changes.' + (this.state.isInvalid ? 'warnings.no_deployment' :
+                                <span>{i18n(this.state.ns + (this.state.isInvalid ? 'warnings.no_deployment' :
                                     settingsLocked ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
@@ -243,12 +244,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
                     {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                    {!_.isNull(this.state.settingsValidationErrors) &&
-                        <div className='errors'>
-                            {_.map(this.state.settingsValidationErrors, function(error) {
-                                return <div className='alert alert-error'>{error}</div>;
-                            })}
-                        </div>
+                    {this.state.areSettingsInvalid &&
+                        this.showInvalidSettingsMessage()
                     }
                     <div className='amount-restrictions'>
                         {roleModels.map(_.bind(function(role) {
@@ -274,6 +271,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 </div>
             );
         },
+        showInvalidSettingsMessage: function() {
+            return (
+                <div className={'alert alert-error'}>
+                    {i18n(this.state.ns + 'invalid_settings')}
+                    {' ' + i18n(this.state.ns + 'get_more_info') + ' '}
+                    <a onClick={this.close} href={'#cluster/' + this.props.cluster.id + '/settings'}>
+                        {i18n(this.state.ns + 'settings_link')}
+                    </a>.
+                </div>
+            );
+        },
         showNetworkVerificationMessage: function(verificationResult) {
             if (_.isEmpty(verificationResult)) return null;
             var verificationWarning = verificationResult.warning,
@@ -286,9 +294,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return (
                 <div className={cx(classes)}>
                     {verificationWarning || verificationError}
-                    {' ' + i18n('dialog.display_changes.get_more_info') + ' '}
+                    {' ' + i18n(this.state.ns + 'get_more_info') + ' '}
                     <a onClick={this.close} href={'#cluster/' + this.props.cluster.id + '/network'}>
-                        {i18n('dialog.display_changes.click_here_link')}
+                        {i18n(this.state.ns + 'networks_link')}
                     </a>.
                 </div>
             );
@@ -305,7 +313,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     className={cx(classes)}
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
-                >{i18n('dialog.display_changes.deploy')}</button>
+                >{i18n(this.state.ns + 'deploy')}</button>
             ]);
         }
     });

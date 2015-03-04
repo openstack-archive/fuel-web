@@ -627,7 +627,9 @@
                     "verification_in_progress": "Your network verification is in progress.",
                     "verification_failed": "Networks verification failed with an error.",
                     "get_more_info": "For more information please visit the",
-                    "click_here_link": "Networks tab"
+                    "networks_link": "Networks tab",
+                    "invalid_settings": "Environment settings are invalid.",
+                    "settings_link": "Settings tab"
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",

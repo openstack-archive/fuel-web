@@ -169,50 +169,60 @@ class TestClusterCompatiblityValidation(base.BaseTestCase):
 
     def setUp(self):
         super(TestClusterCompatiblityValidation, self).setUp()
-        self.plugin = Plugin.create(self.env.get_default_plugin_metadata())
+        self.plugin = Plugin.create(self.env.get_default_plugin_metadata(
+            releases=[{
+                'version': '2014.2-6.0',
+                'os': 'ubuntu',
+                'mode': ['ha']}]))
         self.attr_plugin = attr_plugin.ClusterAttributesPluginV1(self.plugin)
 
-    def get_cluster(self, os, mode, version):
+    def cluster_mock(self, os, mode, version):
         release = mock.Mock(operating_system=os, version=version)
         cluster = mock.Mock(mode=mode, release=release)
         return cluster
 
+    def validate_with_cluster(self, **kwargs):
+        cluster = self.cluster_mock(**kwargs)
+        return self.attr_plugin.validate_cluster_compatibility(cluster)
+
     def test_validation_ubuntu_ha(self):
-        cluster = self.get_cluster(
+        self.assertTrue(self.validate_with_cluster(
             os='Ubuntu',
             mode='ha_compact',
-            version='2014.2-6.0')
-        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
-        self.assertTrue(validated)
-
-    def test_validation_centos_multinode(self):
-        cluster = self.get_cluster(
-            os='Centos',
-            mode='multinode',
-            version='2014.2-6.0')
-        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
-        self.assertTrue(validated)
-
-    def test_not_existent_os(self):
-        cluster = self.get_cluster(
-            os='Fedora',
-            mode='multinode',
-            version='2014.2-6.0')
-        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
-        self.assertFalse(validated)
+            version='2014.2-6.0'))
 
     def test_plugin_provided_ha_compact(self):
-        cluster = self.get_cluster(
+        self.assertTrue(self.validate_with_cluster(
             os='Ubuntu',
             mode='ha_compact',
-            version='2014.2-6.0')
-        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
-        self.assertTrue(validated)
+            version='2014.2-6.0'))
 
-    def test_version_mismatch(self):
-        cluster = self.get_cluster(
+    def test_not_existent_os(self):
+        self.assertFalse(self.validate_with_cluster(
+            os='Centos',
+            mode='multinode',
+            version='2014.2-6.0'))
+
+    def test_version_fuel_mismatch(self):
+        self.assertFalse(self.validate_with_cluster(
             os='Ubuntu',
             mode='ha_compact',
-            version='2014.2.1-6.0')
-        validated = self.attr_plugin.validate_cluster_compatibility(cluster)
-        self.assertFalse(validated)
+            version='2014.2-6.1'))
+
+    def test_version_os_mismatch(self):
+        self.assertFalse(self.validate_with_cluster(
+            os='Ubuntu',
+            mode='ha_compact',
+            version='2014.3-6.1'))
+
+    def test_validation_centos_multinode(self):
+        self.assertFalse(self.validate_with_cluster(
+            os='Ubuntu',
+            mode='multinode',
+            version='2014.2-6.0'))
+
+    def test_validation_centos_multinode(self):
+        self.assertTrue(self.validate_with_cluster(
+            os='Ubuntu',
+            mode='ha_compact',
+            version='2014.2.99-6.0.99'))

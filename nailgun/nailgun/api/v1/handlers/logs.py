@@ -18,6 +18,8 @@
 Handlers dealing with logs
 """
 
+import pecan
+
 from itertools import dropwhile
 import logging
 import os
@@ -26,16 +28,13 @@ import time
 
 from oslo.serialization import jsonutils
 
-import web
-
 from nailgun import consts
 from nailgun import objects
-
-from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 from nailgun.task.task import DumpTask
+
+from nailgun.api.v2.controllers.base import BaseController
 
 
 logger = logging.getLogger(__name__)
@@ -192,12 +191,104 @@ def read_log(
     }
 
 
-class LogEntryCollectionHandler(BaseHandler):
+class LogPackageDefaultConfig(BaseController):
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
+        """Generates default config for snapshot
+        :http: * 200
+        """
+        return DumpTask.conf()
+
+
+class LogPackageConfigController(BaseController):
+    default = LogPackageDefaultConfig()
+
+
+class LogPackageController(BaseController):
+    """Log package handler
+    """
+
+    config = LogPackageConfigController()
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def put(self, dummy=None):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 400 (data validation failed)
+               * 404 (cluster not found in db)
+        """
+        request = pecan.request
+        try:
+            conf = jsonutils.loads(request.body) if request.body else None
+            task_manager = DumpTaskManager()
+            task = task_manager.execute(conf=conf)
+        except Exception as exc:
+            logger.warn(u'DumpTask: error while execution '
+                        'dump environment task: {0}'.format(str(exc)))
+            raise self.http(400, str(exc))
+
+        self.raise_task(task)
+
+
+class LogSourceByNodeController(BaseController):
+    """Log source by node collection handler
+    """
+
+    single = objects.Node
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_one(self, node_id):
+        """:returns: Collection of log sources by node (from settings)
+        :http: * 200 (OK)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(objects.Node, node_id)
+
+        def getpath(x):
+            if x.get('fake'):
+                if settings.FAKE_TASKS:
+                    return x['path']
+                else:
+                    return ''
+            else:
+                if node.status == consts.NODE_STATUSES.discover:
+                    ndir = node.ip
+                else:
+                    ndir = node.fqdn
+                return os.path.join(x['base'], ndir, x['path'])
+
+        f = lambda x: (
+            x.get('remote') and x.get('path') and x.get('base') and
+            os.access(getpath(x), os.R_OK) and os.path.isfile(getpath(x))
+        )
+        sources = filter(f, settings.LOGS)
+        return sources
+
+
+class LogSourceController(BaseController):
+    """Log source collection handler
+    """
+
+    nodes = LogSourceByNodeController()
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
+        """:returns: Collection of log sources (from settings)
+        :http: * 200 (OK)
+        """
+        return settings.LOGS
+
+
+class LogEntryController(BaseController):
     """Log entry collection handler
     """
 
-    @content
-    def GET(self):
+    package = LogPackageController()
+    sources = LogSourceController()
+
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
         """Receives following parameters:
 
         - *date_before* - get logs before this date
@@ -245,7 +336,8 @@ class LogEntryCollectionHandler(BaseHandler):
         return read_log(**data)
 
     def read_and_validate_data(self):
-        user_data = web.input()
+        request = pecan.request
+        user_data = request.GET
 
         if not user_data.get('source'):
             logger.debug("'source' must be specified")
@@ -274,7 +366,7 @@ class LogEntryCollectionHandler(BaseHandler):
             raise self.http(400, "Invalid 'to' value")
 
         fetch_older = 'fetch_older' in user_data and \
-            user_data['fetch_older'].lower() in ('1', 'true')
+                      user_data['fetch_older'].lower() in ('1', 'true')
 
         date_before = user_data.get('date_before')
         if date_before:
@@ -374,80 +466,3 @@ class LogEntryCollectionHandler(BaseHandler):
             'from_byte': from_byte,
             'to_byte': to_byte,
         }
-
-
-class LogPackageHandler(BaseHandler):
-    """Log package handler
-    """
-    @content
-    def PUT(self):
-        """:returns: JSONized Task object.
-        :http: * 200 (task successfully executed)
-               * 400 (data validation failed)
-               * 404 (cluster not found in db)
-        """
-        try:
-            conf = jsonutils.loads(web.data()) if web.data() else None
-            task_manager = DumpTaskManager()
-            task = task_manager.execute(conf=conf)
-        except Exception as exc:
-            logger.warn(u'DumpTask: error while execution '
-                        'dump environment task: {0}'.format(str(exc)))
-            raise self.http(400, str(exc))
-
-        self.raise_task(task)
-
-
-class LogPackageDefaultConfig(BaseHandler):
-
-    @content
-    def GET(self):
-        """Generates default config for snapshot
-        :http: * 200
-        """
-        return DumpTask.conf()
-
-
-class LogSourceCollectionHandler(BaseHandler):
-    """Log source collection handler
-    """
-
-    @content
-    def GET(self):
-        """:returns: Collection of log sources (from settings)
-        :http: * 200 (OK)
-        """
-        return settings.LOGS
-
-
-class LogSourceByNodeCollectionHandler(BaseHandler):
-    """Log source by node collection handler
-    """
-
-    @content
-    def GET(self, node_id):
-        """:returns: Collection of log sources by node (from settings)
-        :http: * 200 (OK)
-               * 404 (node not found in db)
-        """
-        node = self.get_object_or_404(objects.Node, node_id)
-
-        def getpath(x):
-            if x.get('fake'):
-                if settings.FAKE_TASKS:
-                    return x['path']
-                else:
-                    return ''
-            else:
-                if node.status == consts.NODE_STATUSES.discover:
-                    ndir = node.ip
-                else:
-                    ndir = node.fqdn
-                return os.path.join(x['base'], ndir, x['path'])
-
-        f = lambda x: (
-            x.get('remote') and x.get('path') and x.get('base') and
-            os.access(getpath(x), os.R_OK) and os.path.isfile(getpath(x))
-        )
-        sources = filter(f, settings.LOGS)
-        return sources

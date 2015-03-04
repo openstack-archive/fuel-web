@@ -83,6 +83,13 @@ COLLECTOR_PING_URL: "https://{collector_server}/api/v1/ping/"
 PROVISIONING_IMAGES_BUILD_TIMEOUT: 1200
 PROVISIONING_IMAGES_PATH: "/var/www/nailgun/targetimages"
 
+# NOTE(kozhukalov): This variable is to go away by 7.0
+# because we need this only for downloading
+# debian-installer kernel and initrd for classic provision.
+# These paths need to be relative (MUST NOT START FROM /).
+DEBIAN_INSTALLER_KERNEL_RELATIVE_PATH: "dists/trusty/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux"
+DEBIAN_INSTALLER_INITRD_RELATIVE_PATH: "dists/trusty/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz"
+
 REPO_PRIORITIES:
   # Default priorities for Plugins' repos.
   #

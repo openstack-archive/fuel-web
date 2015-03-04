@@ -67,8 +67,9 @@ class TestTaskHandlers(BaseTestCase):
         resp = self.app.delete(
             reverse(
                 'TaskHandler',
-                kwargs={'obj_id': task.id}
-            ) + "?force=0",
+                kwargs={'obj_id': task.id},
+                qs={'force': 0}
+            ),
             headers=self.default_headers,
             expect_errors=True
         )
@@ -76,8 +77,9 @@ class TestTaskHandlers(BaseTestCase):
         resp = self.app.delete(
             reverse(
                 'TaskHandler',
-                kwargs={'obj_id': task.id}
-            ) + "?force=1",
+                kwargs={'obj_id': task.id},
+                qs={'force': 1}
+            ),
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 204)

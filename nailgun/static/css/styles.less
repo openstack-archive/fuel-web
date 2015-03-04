@@ -2862,7 +2862,7 @@ hr.slim {
   }
 }
 
-.network-bond-mode {
+.network-bond-mode, .network-bond-policy, .network-lacp-rate {
   .font-layout-mixin(font-size-normal, @text-shadow: @text-shadow-white);
   margin: 2px 0px 0px 20px;
   > b {
@@ -2877,6 +2877,15 @@ hr.slim {
     width: 160px;
     margin-top: -4px;
     margin-bottom: 0px;
+  }
+}
+
+.network-bond-policy, .network-lacp-rate {
+  .parameter-name .label-wrapper {
+    margin-right: 15px;
+  }
+  select {
+    width: 100px;
   }
 }
 

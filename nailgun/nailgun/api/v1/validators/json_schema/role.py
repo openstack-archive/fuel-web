@@ -14,6 +14,9 @@
 #    under the License.
 
 
+from nailgun.api.v1.validators.json_schema.base_types import POSITIVE_INTEGER
+
+
 VOLUME_ALLOCATION = {
     'type': 'object',
     'description': 'Volume allocations for role',
@@ -30,6 +33,59 @@ VOLUME_ALLOCATIONS = {
     'items': VOLUME_ALLOCATION}
 
 
+CONDITION = {"type": "string"}
+
+
+FULL_RESTRICTION = {
+    "type": "object",
+    "required": ["condition"],
+    "properties": {
+        "condition": CONDITION,
+        "message": {"type": "string"},
+        "action": {"type": "string"}}}
+
+
+# restriction can be specified as one item dict, with condtion as a key
+# and value as a message
+SHORT_RESTRICTION = {
+    "type": "object",
+    "minProperties": 1,
+    "maxProperties": 1}
+
+
+RESTRICTIONS = {
+    "type": "array",
+    "minItems": 1,
+    "items": {"anyOf": [CONDITION, FULL_RESTRICTION, SHORT_RESTRICTION]}}
+
+
+OVERRIDE = {
+    "type": "object",
+    "required": ["condition"],
+    "properties": {
+        "condition": {"type": "string"},
+        "max": POSITIVE_INTEGER,
+        "recommended": POSITIVE_INTEGER,
+        "min": POSITIVE_INTEGER,
+        "message": {"type": "string"}}}
+
+
+OVERRIDES = {
+    "type": "array",
+    "minItems": 1,
+    "items": OVERRIDE}
+
+
+LIMITS = {
+    "type": "object",
+    "properties": {
+        "condition": CONDITION,
+        "max": POSITIVE_INTEGER,
+        "recommended": POSITIVE_INTEGER,
+        "min": POSITIVE_INTEGER,
+        "overrides": OVERRIDES}}
+
+
 ROLE_META_INFO = {
     "type": "object",
     "required": ["name", "description"],
@@ -39,7 +95,24 @@ ROLE_META_INFO = {
             "description": "Name that will be shown on UI"},
         "description": {
             "type": "string",
-            "description": "Short description of role functionality"}}}
+            "description": "Short description of role functionality"},
+        "conflicts": {
+            "type": "array",
+            "description": "Specify which roles conflict this one."},
+        "has_primary": {
+            "type": "boolean",
+            "description": ("During orchestration this role"
+                            " will be splitted into primary-role and role.")},
+        "update_required": {
+            "type": "array",
+            "description": ("Specified roles will be selected for deployment,"
+                            " when a current role is selected.")},
+        "update_once": {
+            "type": "array",
+            "description": ("Specified roles will be updated if current role"
+                            " added to cluster first time.")},
+        "limits": LIMITS,
+        "restrictions": RESTRICTIONS}}
 
 
 SCHEMA = {
@@ -50,6 +123,6 @@ SCHEMA = {
     "required": ['name', 'meta', 'volumes_roles_mapping'],
     "properties": {
         "id": {"type": "integer"},
-        "name": {"type": "string"},
+        "name": {"type": "string", "pattern": "^[a-zA-Z_-]+$"},
         "meta": ROLE_META_INFO,
         "volumes_roles_mapping": VOLUME_ALLOCATIONS}}

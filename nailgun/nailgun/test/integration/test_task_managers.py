@@ -478,12 +478,6 @@ class TestTaskManagers(BaseIntegrationTest):
             roles=['controller'])
 
         manager_ = manager.ApplyChangesTaskManager(cluster_id)
-        task = models.Task(name='provision', cluster_id=cluster_id)
-        self.db.add(task)
-        self.db.commit()
-        rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
-            {'uid': node_db.id, 'id': node_db.id, 'status': node_db.status}
-        ], task_uuid=task.uuid)
         manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)
@@ -509,6 +503,21 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
+
+    @fake_tasks()
+    @mock.patch('nailgun.task.manager.tasks.DeletionTask.execute')
+    def test_apply_changes_exception_caught(self, mdeletion_execute):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_deletion": True, "status": NODE_STATUSES.ready},
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        objects.Cluster.clear_pending_changes(cluster_db)
+        manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
+        mdeletion_execute.side_effect = Exception('exception')
+        task = manager_.execute()
+        self.assertEqual(task.status, TASK_STATUSES.error)
 
     @fake_tasks(recover_offline_nodes=False)
     def test_deletion_offline_node(self):

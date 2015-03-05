@@ -74,7 +74,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className={cx(classes)} tabIndex="-1">
                     <div className='modal-header'>
                         <button type='button' className='close' onClick={this.close}>&times;</button>
-                        <h3>{this.props.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
+                        <h3>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
                     </div>
                     <div className='modal-body'>
                         {this.props.error ?
@@ -451,7 +451,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
     });
 
     dialogs.ShowNodeInfoDialog = React.createClass({
-        mixins: [dialogMixin],
+        mixins: [
+            dialogMixin,
+            componentMixins.backboneMixin('node')
+        ],
+        getInitialState: function() {
+            return {title: i18n('dialog.show_node.default_dialog_title')};
+        },
         goToConfigurationScreen: function(url) {
             this.close();
             app.navigate('#cluster/' + this.props.node.get('cluster') + '/nodes/' + url + '/' + utils.serializeTabOptions({nodes: this.props.node.id}), {trigger: true});
@@ -506,8 +512,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             } catch (ignore) {}
             return !_.isNumber(value) && _.isEmpty(value) ? '\u00A0' : value;
         },
+        componentDidUpdate: function() {
+            this.assignAccordionEvents();
+            this.setDialogTitle();
+        },
         componentDidMount: function() {
-            $('.accordion-body')
+            this.assignAccordionEvents();
+            this.setDialogTitle();
+        },
+        setDialogTitle: function() {
+            var name = this.props.node && this.props.node.get('name');
+            if (name && name != this.state.title) this.setState({title: name});
+        },
+        assignAccordionEvents: function() {
+            $('.accordion-body', this.getDOMNode())
                 .on('show', function(e) {$(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-expand').addClass('icon-collapse');})
                 .on('hide', function(e) {$(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-collapse').addClass('icon-expand');})
                 .on('hidden', function(e) {e.stopPropagation();});
@@ -517,8 +535,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             var node = this.props.node,
-                meta = node.get('meta'),
-                groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'],
+                meta = node.get('meta');
+            if (!meta) return <controls.ProgressBar />;
+            var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'],
                 groups = _.sortBy(_.keys(meta), function(group) {return _.indexOf(groupOrder, group)}),
                 sortOrder = {
                     disks: ['name', 'model', 'size'],
@@ -526,79 +545,73 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 };
             return (
                 <div>
-                    {(node.deferred && node.deferred.state() == 'pending') ?
-                        <controls.ProgressBar />
-                        :
-                        <div>
-                            <div className='row-fluid'>
-                                <div className='span5'><div className='node-image-outline'></div></div>
-                                <div className='span7'>
-                                    <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
-                                    <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
-                                    <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
-                                </div>
-                            </div>
-                            <div className='accordion' id='nodeDetailsAccordion'>
-                                {_.map(groups, function(group, groupIndex) {
-                                    var groupEntries = meta[group],
-                                        subEntries = [];
-                                    if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries, 'name');
-                                    if (_.isPlainObject(groupEntries)) subEntries = _.find(_.values(groupEntries), _.isArray);
-                                    return (
-                                        <div className='accordion-group' key={group}>
-                                            <div className='accordion-heading' onClick={this.toggle.bind(this, groupIndex)}>
-                                                <div className='accordion-toggle' data-group={group}>
-                                                    <b>{i18n('node_details.' + group, {defaultValue: group})}</b>
-                                                    <span>{this.showSummary(meta, group)}</span>
-                                                    <i className='icon-expand pull-right'></i>
+                    <div className='row-fluid'>
+                        <div className='span5'><div className='node-image-outline'></div></div>
+                        <div className='span7'>
+                            <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
+                            <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
+                            <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
+                        </div>
+                    </div>
+                    <div className='accordion' id='nodeDetailsAccordion'>
+                        {_.map(groups, function(group, groupIndex) {
+                            var groupEntries = meta[group],
+                                subEntries = [];
+                            if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries, 'name');
+                            if (_.isPlainObject(groupEntries)) subEntries = _.find(_.values(groupEntries), _.isArray);
+                            return (
+                                <div className='accordion-group' key={group}>
+                                    <div className='accordion-heading' onClick={this.toggle.bind(this, groupIndex)}>
+                                        <div className='accordion-toggle' data-group={group}>
+                                            <b>{i18n('node_details.' + group, {defaultValue: group})}</b>
+                                            <span>{this.showSummary(meta, group)}</span>
+                                            <i className='icon-expand pull-right'></i>
+                                        </div>
+                                    </div>
+                                    <div className='accordion-body collapse' ref={'togglable_' + groupIndex}>
+                                        <div className='accordion-inner'>
+                                            {_.isArray(groupEntries) &&
+                                                <div>
+                                                    {_.map(groupEntries, function(entry, entryIndex) {
+                                                        return (
+                                                            <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
+                                                                {_.map(utils.sortEntryProperties(entry, sortOrder[group]), function(propertyName) {
+                                                                    return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
+                                                                }, this)}
+                                                            </div>
+                                                        );
+                                                    }, this)}
                                                 </div>
-                                            </div>
-                                            <div className='accordion-body collapse' ref={'togglable_' + groupIndex}>
-                                                <div className='accordion-inner'>
-                                                    {_.isArray(groupEntries) &&
+                                            }
+                                            {_.isPlainObject(groupEntries) &&
+                                                <div>
+                                                    {_.map(groupEntries, function(propertyValue, propertyName) {
+                                                        if (!_.isArray(propertyValue) && !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, propertyValue));
+                                                    }, this)}
+                                                    {!_.isEmpty(subEntries) &&
                                                         <div>
-                                                            {_.map(groupEntries, function(entry, entryIndex) {
+                                                            {_.map(subEntries, function(subentry, subentrysIndex) {
                                                                 return (
-                                                                    <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
-                                                                        {_.map(utils.sortEntryProperties(entry, sortOrder[group]), function(propertyName) {
-                                                                            return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
+                                                                    <div className='nested-object' key={'subentries_' + groupIndex + subentrysIndex}>
+                                                                        {_.map(utils.sortEntryProperties(subentry), function(propertyName) {
+                                                                            return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, subentry[propertyName]));
                                                                         }, this)}
                                                                     </div>
                                                                 );
                                                             }, this)}
                                                         </div>
                                                     }
-                                                    {_.isPlainObject(groupEntries) &&
-                                                        <div>
-                                                            {_.map(groupEntries, function(propertyValue, propertyName) {
-                                                                if (!_.isArray(propertyValue) && !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, propertyValue));
-                                                            }, this)}
-                                                            {!_.isEmpty(subEntries) &&
-                                                                <div>
-                                                                    {_.map(subEntries, function(subentry, subentrysIndex) {
-                                                                        return (
-                                                                            <div className='nested-object' key={'subentries_' + groupIndex + subentrysIndex}>
-                                                                                {_.map(utils.sortEntryProperties(subentry), function(propertyName) {
-                                                                                    return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, subentry[propertyName]));
-                                                                                }, this)}
-                                                                            </div>
-                                                                        );
-                                                                    }, this)}
-                                                                </div>
-                                                            }
-                                                        </div>
-                                                    }
-                                                    {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries)) &&
-                                                        <div>{groupEntries}</div>
-                                                    }
                                                 </div>
-                                            </div>
+                                            }
+                                            {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries)) &&
+                                                <div>{groupEntries}</div>
+                                            }
                                         </div>
-                                    );
-                                }, this)}
-                            </div>
-                        </div>
-                    }
+                                    </div>
+                                </div>
+                            );
+                        }, this)}
+                    </div>
                 </div>
             );
         },

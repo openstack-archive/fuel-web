@@ -23,7 +23,9 @@ import collections
 from itertools import ifilter
 import operator
 
+from oslo.serialization import jsonutils
 import six
+
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import joinedload
 
@@ -35,7 +37,6 @@ from nailgun.errors import errors
 from nailgun.expression import Expression
 
 from nailgun.openstack.common.db import api as db_api
-from nailgun.openstack.common import jsonutils
 
 
 _BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}

@@ -18,10 +18,10 @@ import csv
 from datetime import datetime
 import os
 
+from oslo.serialization import jsonutils
 import pytz
 import six
 
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 
 

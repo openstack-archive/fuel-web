@@ -14,12 +14,12 @@
 #    under the License.
 
 from mock import patch
+from oslo.serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun import objects
-from nailgun.openstack.common import jsonutils
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import reverse

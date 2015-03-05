@@ -24,6 +24,8 @@ import os
 import re
 import time
 
+from oslo.serialization import jsonutils
+
 import web
 
 from nailgun import consts
@@ -31,7 +33,6 @@ from nailgun import objects
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 

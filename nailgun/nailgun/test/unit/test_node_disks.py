@@ -18,8 +18,9 @@ from copy import deepcopy
 from mock import patch
 import string
 
+from oslo.serialization import jsonutils
+
 from nailgun.errors import errors
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse

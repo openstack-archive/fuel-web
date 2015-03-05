@@ -12,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from alembic import op
 import re
+
+from alembic import op
+from oslo.serialization import jsonutils
 import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 
-from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 
 

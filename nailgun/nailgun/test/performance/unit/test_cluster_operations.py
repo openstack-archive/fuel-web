@@ -16,9 +16,9 @@
 import functools
 import unittest2 as unittest
 
+from oslo.serialization import jsonutils
 from random import randint
 
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import fake_tasks
 from nailgun.test.performance import base
 

@@ -15,6 +15,7 @@
 #    under the License.
 
 from mock import patch
+from oslo.serialization import jsonutils
 from sqlalchemy.sql import not_
 
 from nailgun import objects
@@ -23,7 +24,6 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.network.nova_network import NovaNetworkManager
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 

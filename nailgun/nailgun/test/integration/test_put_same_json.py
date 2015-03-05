@@ -13,8 +13,8 @@
 #    under the License.
 
 from mock import patch
+from oslo.serialization import jsonutils
 
-from nailgun.openstack.common import jsonutils
 from nailgun.test import base
 
 

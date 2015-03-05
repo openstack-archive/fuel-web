@@ -17,13 +17,13 @@
 from copy import deepcopy
 
 from mock import patch
+from oslo.serialization import jsonutils
 
 import nailgun
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun import objects
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse

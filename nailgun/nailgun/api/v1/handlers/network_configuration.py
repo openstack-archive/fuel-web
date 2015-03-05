@@ -22,6 +22,8 @@ import six
 import traceback
 import web
 
+from oslo.serialization import jsonutils
+
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 
@@ -40,7 +42,6 @@ from nailgun import objects
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.openstack.common import jsonutils
 from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 

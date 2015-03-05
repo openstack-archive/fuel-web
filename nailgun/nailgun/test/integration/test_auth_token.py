@@ -16,7 +16,8 @@
 
 import copy
 
-from nailgun.openstack.common import jsonutils
+from oslo.serialization import jsonutils
+
 from nailgun.test.base import BaseAuthenticationIntegrationTest
 
 from nailgun.settings import settings

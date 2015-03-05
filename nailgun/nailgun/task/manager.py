@@ -16,6 +16,8 @@
 
 import traceback
 
+from oslo.serialization import jsonutils
+
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.objects.serializers.network_configuration \
@@ -28,7 +30,6 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
-from nailgun.openstack.common import jsonutils
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper

@@ -13,12 +13,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from uuid import uuid4
+
 from mock import patch
+from oslo.serialization import jsonutils
+
 from nailgun.db.sqlalchemy.models import Release
-from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
-from uuid import uuid4
 
 
 class TestHandlers(BaseIntegrationTest):

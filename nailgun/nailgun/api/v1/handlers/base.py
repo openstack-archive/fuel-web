@@ -15,11 +15,11 @@
 #    under the License.
 
 from datetime import datetime
+import six
 import traceback
 
-import six
-
 from decorator import decorator
+from oslo.serialization import jsonutils
 from sqlalchemy import exc as sa_exc
 import web
 
@@ -31,7 +31,6 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
-from nailgun.openstack.common import jsonutils
 from nailgun.orchestrator import deployment_graph
 from nailgun.settings import settings
 from nailgun import utils

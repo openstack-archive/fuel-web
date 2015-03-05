@@ -43,12 +43,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return {actionInProgress: false};
         },
         componentDidMount: function() {
+            app.on('route', this.close, this);
             var $el = $(this.getDOMNode());
             $el.on('hidden', this.handleHidden);
             $el.on('shown', function() {$el.find('[autofocus]:first').focus();});
             $el.modal({background: true, keyboard: true});
         },
         componentWillUnmount: function() {
+            app.off(null, null, this);
             $(this.getDOMNode()).off('shown hidden');
         },
         handleHidden: function() {
@@ -276,7 +278,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className={'alert alert-error'}>
                     {i18n(this.state.ns + 'invalid_settings')}
                     {' ' + i18n(this.state.ns + 'get_more_info') + ' '}
-                    <a onClick={this.close} href={'#cluster/' + this.props.cluster.id + '/settings'}>
+                    <a href={'#cluster/' + this.props.cluster.id + '/settings'}>
                         {i18n(this.state.ns + 'settings_link')}
                     </a>.
                 </div>
@@ -295,7 +297,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className={cx(classes)}>
                     {verificationWarning || verificationError}
                     {' ' + i18n(this.state.ns + 'get_more_info') + ' '}
-                    <a onClick={this.close} href={'#cluster/' + this.props.cluster.id + '/network'}>
+                    <a href={'#cluster/' + this.props.cluster.id + '/network'}>
                         {i18n(this.state.ns + 'networks_link')}
                     </a>.
                 </div>

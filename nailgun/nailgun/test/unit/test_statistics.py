@@ -17,11 +17,13 @@ from mock import Mock
 from mock import patch
 
 import requests
+import six
 import urllib3
 
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import plugins
 from nailgun.objects import Cluster
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
@@ -228,6 +230,46 @@ class TestInstallationInfo(BaseTestCase):
                 [{'id': i.id, 'slaves': [s.id for s in i.slaves]}
                  for i in node.bond_interfaces]
             )
+
+    def test_plugins_info(self):
+        info = InstallationInfo()
+
+        cluster = self.env.create_cluster(api=False)
+
+        plugin_kwargs = self.env.get_default_plugin_metadata()
+        plugin_obj = plugins.Plugin(**plugin_kwargs)
+
+        self.db.add(plugin_obj)
+        self.db.flush()
+
+        plugin_kwargs["id"] = plugin_obj.id
+
+        cluster_plugin_kwargs = {
+            "cluster_id": cluster.id,
+            "plugin_id": plugin_obj.id
+        }
+        cluster_plugin = plugins.ClusterPlugins(**cluster_plugin_kwargs)
+
+        self.db.add(cluster_plugin)
+        self.db.flush()
+
+        expected_attributes_names = (
+            "id",
+            "name",
+            "version",
+            "releases",
+            "fuel_version",
+            "package_version",
+        )
+
+        expected_info = dict(
+            [(key, value) for key, value in six.iteritems(plugin_kwargs)
+             if key in expected_attributes_names]
+        )
+
+        expected = [expected_info]
+        actual = info.get_cluster_plugins_info(cluster)
+        self.assertEqual(expected, actual)
 
     def test_installation_info(self):
         info = InstallationInfo()

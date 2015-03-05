@@ -23,6 +23,7 @@ requests>=1.2.3
 simplejson>=3.3.0
 six>=1.5.2
 urllib3>=1.7
+uWSGI==1.9.18.2
 web.py==0.37
 wsgilog==0.3
 wsgiref==0.1.2

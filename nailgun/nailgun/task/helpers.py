@@ -218,13 +218,13 @@ class TaskHelper(object):
     @classmethod
     def nodes_to_deploy(cls, cluster):
         nodes_to_deploy = []
-        update_required = []
-        update_once = []
-        cluster_roles = []
+        update_required = set()
+        update_once = set()
+        cluster_roles = set()
         roles_metadata = cluster.release.roles_metadata
 
         for node in cluster.nodes:
-            cluster_roles.extend(node.roles)
+            cluster_roles.update(node.roles)
 
         for node in cluster.nodes:
             if any([node.pending_addition,
@@ -232,13 +232,13 @@ class TaskHelper(object):
                     node.needs_redeploy]):
                 nodes_to_deploy.append(node)
                 for role in node.pending_role_list:
-                    update_required.extend(
+                    update_required.update(
                         roles_metadata[role.name].get('update_required', []))
                     if role.name not in cluster_roles:
-                        update_once.extend(
+                        update_once.update(
                             roles_metadata[role.name].get('update_once', []))
         cls.add_required_for_update_nodes(
-            cluster, nodes_to_deploy, set(update_required) | set(update_once))
+            cluster, nodes_to_deploy, update_required | update_once)
         if cluster.is_ha_mode:
             return cls.nodes_to_deploy_ha(cluster, nodes_to_deploy)
 

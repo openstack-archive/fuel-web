@@ -39,7 +39,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             app.navigate('#cluster/' + this.props.cluster.get('id') + '/nodes', {trigger: true});
         },
         isLockedScreen: function() {
-            return this.props.cluster && !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
+            return this.props.cluster && (!!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length ||
+                this.props.cluster.get('status') == 'operational');
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
@@ -53,10 +54,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
     EditNodeInterfacesScreen = React.createClass({
         mixins: [
             ScreenMixin,
-            ComponentMixins.backboneMixin('interfaces', 'change:checked change:slaves change:bond_properties reset sync'),
+            ComponentMixins.backboneMixin('interfaces', 'change:checked change:slaves change:bond_properties change:interface_properties reset sync'),
             ComponentMixins.backboneMixin('cluster', 'change:status change:networkConfiguration change:nodes sync'),
-            ComponentMixins.backboneMixin('nodes', 'change sync'),
-            ComponentMixins.dispatcherMixin('networkInterfaceUpdated', 'refresh')
+            ComponentMixins.backboneMixin('nodes', 'change sync')
         ],
         statics: {
             fetchData: function(options) {
@@ -92,10 +92,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     .then(_.bind(function() {
                         var interfaces = new models.Interfaces();
                         interfaces.set(_.cloneDeep(nodes.at(0).interfaces.toJSON()), {parse: true});
-                        interfaces.invoke('set', {bonding: networksMetadata.get('bonding')});
                         return {
                             interfaces: interfaces,
-                            nodes: nodes
+                            nodes: nodes,
+                            bondingData: networksMetadata.get('bonding')
                         };
                     }, this));
             }
@@ -144,8 +144,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
-            // FIXME(morale): reassign bond_properties after load defaults - now buttons state miscalculated
-            var bondProps = this.props.interfaces.first().get('bonding');
+            // FIXME(morale): needs backend fix, now interface_properties are not coming after loadDefaults
+            var bondProps = this.props.bondingData.properties;
             $.when(this.props.interfaces.fetch({
                 url: _.result(this.props.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true
             }, this)).done(_.bind(function() {
@@ -203,7 +203,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     });
                     if (ifc.isBond()) {
                         var bondProperties = ifc.get('bond_properties');
-                        ifc.set({bond_properties: _.extend(bondProperties, {type__: ifc.isLinuxBond() ? 'linux' : 'ovs'})});
+                        ifc.set({bond_properties: _.extend(bondProperties, {type__:
+                            _.keys(this.props.bondingData.properties)[0] == 'linux' ? 'linux' : 'ovs'})});
                     }
                 }, this);
 
@@ -234,36 +235,39 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return hasLockedNodes || this.isLockedScreen();
         },
         bondingAvailable: function() {
-            if (!this.props.interfaces.first().get('bonding')) {
-                return false;
-            }
-            var isInterfaceBondingAvailable = _.compact(_.map(this.props.interfaces.first().get('bonding').availability,
-                function(modeAvailabilityData) {
-                    return utils.evaluateExpression(_.values(modeAvailabilityData)[0], {
-                        settings: this.props.cluster.get('settings')
-                    }).value;
-                },
-            this)).length;
-            return !this.isLocked() && !!isInterfaceBondingAvailable;
+            var availableBondTypes = this.getAvailableBondTypes();
+            return !this.isLocked() && availableBondTypes && !!availableBondTypes.length;
+        },
+        getAvailableBondTypes: function() {
+            var modelForEvaluation = {settings: this.props.cluster.get('settings')};
+            return _.compact(_.flatten(_.map(this.props.bondingData.availability, function(modeAvailabilityData) {
+                return _.map(modeAvailabilityData, function(condition, name) {
+                    var result = utils.evaluateExpression(condition, modelForEvaluation).value;
+                    return result && name;
+                }, this);
+            }, this)))[0];
+        },
+        isLinuxBond: function() {
+            return _.contains(this.getAvailableBondTypes(), 'linux');
         },
         bondInterfaces: function() {
             this.setState({actionInProgress: true});
             var interfaces = this.props.interfaces.filter(function(ifc) {return ifc.get('checked') && !ifc.isBond();}),
                 bonds = this.props.interfaces.find(function(ifc) {return ifc.get('checked') && ifc.isBond();}),
-                firstInterface = this.props.interfaces.first();
+                bondingProperties = this.props.bondingData.properties;
+
             if (!bonds) {
                 // if no bond selected - create new one
-                var bondMode = firstInterface.getBondMode();
+                var bondMode = bondingProperties.linux.mode[0].values[0];
                 bonds = new models.Interface({
                     type: 'bond',
-                    name: this.props.interfaces.generateBondName(),
+                    name: this.props.interfaces.generateBondName(this.isLinuxBond() ? 'bond' : 'ovs-bond'),
                     mode: bondMode,
                     assigned_networks: new models.InterfaceNetworks(),
                     slaves: _.invoke(interfaces, 'pick', 'name'),
                     bond_properties: {
                         mode: bondMode
                     },
-                    bonding: firstInterface.get('bonding'),
                     interface_properties: {
                         mtu: null,
                         disable_offloading: false
@@ -301,11 +305,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 networks = networkConfiguration.get('networks');
-
             if (!this.props.interfaces) {
                 return;
             }
-
             this.props.interfaces.each(_.bind(function(ifc) {
                 validationResult = ifc.validate({
                     networkingParameters: networkingParameters,
@@ -378,6 +380,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                             errors={this.state.interfaceErrors[ifc.get('name')]}
                                             validate={this.validate}
                                             refresh={this.refresh}
+                                            bondingProperties={this.props.bondingData.properties}
+                                            isLinuxBond={this.isLinuxBond()}
                                         />;
                                     }
                                 }, this))
@@ -403,7 +407,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
     NodeInterface = React.createClass({
         mixins: [
             ComponentMixins.backboneMixin('cluster', 'change:status'),
-            ComponentMixins.backboneMixin('interface', 'change:checked change:mode'),
+            ComponentMixins.backboneMixin('interface', 'change:checked change:mode change:bond_properties change:interface_properties'),
             ComponentMixins.backboneMixin({
                 modelOrCollection: function(props) {
                     return props.interface.get('assigned_networks');
@@ -415,6 +419,33 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             bondingAvailable: React.PropTypes.bool,
             locked: React.PropTypes.bool,
             refresh: React.PropTypes.func
+        },
+        isLacpRateAvailable: function() {
+            return _.contains(this.props.bondingProperties.linux.lacp_rate[0].for_modes, this.getBondMode());
+        },
+        isHashPolicyNeeded: function() {
+            return _.contains(this.props.bondingProperties.linux.xmit_hash_policy[0].for_modes, this.getBondMode());
+        },
+        getBondMode: function() {
+            var ifc = this.props.interface;
+            return ifc.get('mode') || (ifc.get('bond_properties') || {}).mode;
+        },
+        getPolicies: function() {
+            return this.props.bondingProperties.linux.xmit_hash_policy[0].values;
+        },
+        getLACPRate: function() {
+            return this.props.bondingProperties.linux.lacp_rate[0].values;
+        },
+        getBondModes: function() {
+            var bondType = this.props.isLinuxBond ? 'linux' : 'ovs';
+            return this.props.bondingProperties[bondType].mode[0].values;
+        },
+        updateBondProperties: function(options) {
+            var bondProperties = this.props.interface.get('bond_properties') || {};
+            bondProperties = _.extend(bondProperties, options);
+            if (!this.isHashPolicyNeeded()) bondProperties = _.omit(bondProperties, 'xmit_hash_policy');
+            if (!this.isLacpRateAvailable()) bondProperties = _.omit(bondProperties, 'lacp_rate');
+            this.props.interface.set('bond_properties', bondProperties);
         },
         onModelChange: function() {
             this.props.refresh();
@@ -475,25 +506,20 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             this.props.interface.set({checked: value});
         },
         bondingModeChanged: function(name, value) {
-            var interfaceModelPrototype = models.Interface.prototype,
-                ifc = this.props.interface;
-            ifc
-                .set({mode: value})
-                .updateBondProperties({mode: value});
-            if (_.contains(interfaceModelPrototype.hashPolicyNeeded, value)) {
-                ifc.updateBondProperties({xmit_hash_policy: interfaceModelPrototype.xmitHashPolicies[0]});
+            this.props.interface.set({mode: value});
+            this.updateBondProperties({mode: value});
+            if (this.isHashPolicyNeeded()) {
+                this.updateBondProperties({xmit_hash_policy: this.getPolicies()[0]});
             }
-            if (_.contains(interfaceModelPrototype.lacpRateNeeded, value)) {
-                ifc.updateBondProperties({lacp_rate: interfaceModelPrototype.lacpRate[0]});
+            if (this.isLacpRateAvailable()) {
+                this.updateBondProperties({lacp_rate: this.getLACPRate()[0]});
             }
         },
         onPolicyChange: function(name, value) {
-            this.props.interface.updateBondProperties({xmit_hash_policy: value});
-            dispatcher.trigger('networkInterfaceUpdated');
+            this.updateBondProperties({xmit_hash_policy: value});
         },
         onLacpChange: function(name, value) {
-            this.props.interface.updateBondProperties({lacp_rate: value});
-            dispatcher.trigger('networkInterfaceUpdated');
+            this.updateBondProperties({lacp_rate: value});
         },
         bondingRemoveInterface: function(slaveName) {
             var slaves = _.reject(this.props.interface.get('slaves'), {name: slaveName});
@@ -508,8 +534,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             }, this);
         },
         onInterfacePropertiesChange: function(name, value) {
-            this.props.interface.get('interface_properties')[name] = value;
-            dispatcher.trigger('updateNetworkInterface');
+            var bondProperties = this.props.interface.get('bond_properties') || {};
+            bondProperties[name] = value;
+            this.props.interface.set({interface_properties: bondProperties});
         },
         render: function() {
             var configureInterfacesTransNS = 'cluster_page.nodes_tab.configure_interfaces.',
@@ -549,6 +576,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             if (networksToAdd.length) {
                 assignedNetworksGrouped.push(networksToAdd);
             }
+
             return (
                 <div className={cx({'physical-network-box': true, nodrag: this.props.errors})}>
                     <div className='network-box-item'>
@@ -564,7 +592,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     :
                                     <div className='network-bond-name pull-left disabled'>{ifc.get('name')}</div>
                                 }
-                                {ifc.isLacpRateAvailable() &&
+                                {this.isLacpRateAvailable() &&
                                     <div className='network-lacp-rate pull-right'>
                                         <controls.Input
                                             type='select'
@@ -572,11 +600,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                             disabled={!this.props.bondingAvailable}
                                             onChange={this.onLacpChange}
                                             label={i18n(configureInterfacesTransNS + 'lacp_rate') + ':'}
-                                            children={this.getBondingOptions(ifc.getLACPRate(), 'lacp_rates')}
+                                            children={this.getBondingOptions(this.getLACPRate(), 'lacp_rates')}
                                         />
                                     </div>
                                 }
-                                {ifc.isHashPolicyNeeded() &&
+                                {this.isHashPolicyNeeded() &&
                                     <div className='network-bond-policy pull-right'>
                                         <controls.Input
                                             type='select'
@@ -584,7 +612,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                             disabled={!this.props.bondingAvailable}
                                             onChange={this.onPolicyChange}
                                             label={i18n(configureInterfacesTransNS + 'bonding_policy') + ':'}
-                                            children={this.getBondingOptions(ifc.getPolicies(), 'hash_policy')}
+                                            children={this.getBondingOptions(this.getPolicies(), 'hash_policy')}
                                         />
                                     </div>
                                 }
@@ -593,9 +621,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                         type='select'
                                         disabled={!this.props.bondingAvailable}
                                         onChange={this.bondingModeChanged}
-                                        value={ifc.getBondMode()}
+                                        value={this.getBondMode()}
                                         label={i18n(configureInterfacesTransNS + 'bonding_mode') + ':'}
-                                        children={this.getBondingOptions(ifc.getBondModes(), 'bonding_modes')}
+                                        children={this.getBondingOptions(this.getBondModes(), 'bonding_modes')}
                                     />
                                 </div>
                                 <div className='clearfix'></div>
@@ -678,6 +706,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 labelClassName='offloading'
                                 name='disable_offloading'
                                 onChange={this.onInterfacePropertiesChange}
+                                disabled={locked}
                             />
                             <controls.Input
                                 type='number'
@@ -688,6 +717,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 onChange={this.onInterfacePropertiesChange}
                                 min={42}
                                 max={65536}
+                                disabled={locked}
                             />
                         </div>
                     </div>

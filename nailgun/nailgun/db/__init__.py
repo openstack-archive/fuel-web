@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun.db.sqlalchemy import db
+from nailgun.db.sqlalchemy import get_new_session
 from nailgun.db.sqlalchemy import dropdb
 from nailgun.db.sqlalchemy import engine
 from nailgun.db.sqlalchemy import flush

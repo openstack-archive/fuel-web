@@ -77,15 +77,18 @@ else:
     session_class = Session
 
 
-db = scoped_session(
-    sessionmaker(
-        autoflush=True,
-        autocommit=False,
-        bind=engine,
-        query_cls=query_class,
-        class_=session_class
+def get_new_session():
+    return scoped_session(
+        sessionmaker(
+            autoflush=True,
+            autocommit=False,
+            bind=engine,
+            query_cls=query_class,
+            class_=session_class
+        )
     )
-)
+
+db = get_new_session()
 
 
 def syncdb():

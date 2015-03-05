@@ -478,12 +478,6 @@ class TestTaskManagers(BaseIntegrationTest):
             roles=['controller'])
 
         manager_ = manager.ApplyChangesTaskManager(cluster_id)
-        task = models.Task(name='provision', cluster_id=cluster_id)
-        self.db.add(task)
-        self.db.commit()
-        rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
-            {'uid': node_db.id, 'id': node_db.id, 'status': node_db.status}
-        ], task_uuid=task.uuid)
         manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)

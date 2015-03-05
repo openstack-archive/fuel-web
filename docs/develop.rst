@@ -20,3 +20,4 @@ Development Documentation
    develop/puppet_tips
    develop/pxe_deployment
    develop/ostf_contributors_guide
+   develop/custom-bootstrap-node

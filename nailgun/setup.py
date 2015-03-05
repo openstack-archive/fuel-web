@@ -19,7 +19,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 name = 'nailgun'
-version = '6.0.0'
+version = '6.0.1'
 
 
 def find_requires():

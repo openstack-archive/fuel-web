@@ -28,7 +28,10 @@ resources_description = {
                     "flavor_id": ["flavor", "id"],
                     "image_id": ["image", "id"],
                 },
-                "resource_manager_name": "servers"
+                "resource_manager_name": "servers",
+                "additional_display_options": {
+                    "search_opts": {"all_tenants": 1},
+                },
             },
         },
     },
@@ -121,7 +124,10 @@ resources_description = {
                     "attachments": ["attachments"],
                     "tenant_id": ["os-vol-tenant-attr:tenant_id"],
                 },
-                "resource_manager_name": "volumes"
+                "resource_manager_name": "volumes",
+                "additional_display_options": {
+                    "search_opts": {"all_tenants": 1},
+                },
             },
         }
     },

@@ -1,10 +1,6 @@
 %define name nailgun
-%define version 6.0.0
+%define version 6.1.0
 %define release 1
-
-#FIXME(aglarendil): actually, we should have one version
-#everywhere, but we will fix it a little bit later
-%define new_version 6.1.0
 
 Summary: Nailgun package
 Name: %{name}
@@ -111,7 +107,7 @@ rm -rf $RPM_BUILD_ROOT
 %package -n nailgun-agent
 
 Summary:   Nailgun startup agent
-Version:   6.0.0
+Version:   %{version}
 Release:   1
 License:   GPLv2
 BuildRoot: %{_tmppath}/%{name}-%{version}
@@ -270,7 +266,7 @@ Fuel-agent package
 
 %package -n fencing-agent
 Summary:   Fencing agent
-Version:   6.0.0
+Version:   %{version}
 Release:   1
 License:   GPLv2
 BuildRoot: %{_tmppath}/%{name}-%{version}
@@ -288,7 +284,7 @@ Fuel fencing agent
 %package -n fuel-provisioning-scripts
 
 Summary: Fuel provisioning scripts
-Version: %{new_version}
+Version: %{version}
 Release: %{release}
 URL:     http://mirantis.com
 License: Apache

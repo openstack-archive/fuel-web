@@ -23,7 +23,7 @@ requires = [
 ]
 
 name = 'shotgun'
-version = '6.0.0'
+version = '6.0.1'
 
 
 def recursive_data_files(spec_data_files):

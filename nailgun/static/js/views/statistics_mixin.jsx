@@ -36,7 +36,7 @@ define([
             };
         },
         saveSettings: function(e) {
-            e.preventDefault();
+            if (e) e.preventDefault();
             this.props.settings.isValid({models: this.configModels});
             if (this.props.settings.validationError) {
                 this.forceUpdate();
@@ -91,11 +91,11 @@ define([
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) return i18n(key);
             return i18n(key + '_community');
         },
-        renderInput: function(settingName, labelClassName, wrapperClassName) {
+        renderInput: function(settingName, labelClassName, wrapperClassName, disabledState) {
             if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result) return null;
             var setting = this.props.settings.get(this.props.settings.makePath('statistics', settingName)),
                 error = this.getError(settingName),
-                disabled = this.checkRestrictions('metadata').result || this.checkRestrictions(settingName).result;
+                disabled = this.checkRestrictions('metadata').result || this.checkRestrictions(settingName).result || disabledState;
             return <controls.Input
                 key={settingName}
                 type={setting.type}
@@ -126,7 +126,6 @@ define([
         renderIntro: function() {
             var ns = 'statistics.',
                 isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
-                statsCollectorLink = 'https://stats.fuel-infra.org/',
                 lists = {
                     actions: [
                         'operation_type',
@@ -164,29 +163,15 @@ define([
             return (
                 <div>
                     <div className='statistics-text-box'>
-                        <p>{this.getText(ns + 'help_to_improve')}</p>
-                        <p>
-                            {i18n(ns + 'statistics_includes')}
-                            <a onClick={this.toggleItemsList}>{i18n(ns + 'click_here')}</a>.
-                        </p>
-                        {isMirantisIso ?
-                            <p>
-                                {i18n(ns + 'privacy_policy')}
-                                <a href='https://www.mirantis.com/company/privacy-policy/' target='_blank'>{i18n(ns + 'privacy_policy_link')}</a>.
-                            </p>
-                        :
-                            <p>
-                                {i18n(ns + 'statistics_collector')}
-                                <a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a>.
-                            </p>
+                        <div className={React.addons.classSet({notice: isMirantisIso})}>{this.getText(ns + 'help_to_improve')}</div>
+                        <a onClick={this.toggleItemsList}>{i18n(ns + 'learn_whats_collected')}</a>.
+                        {this.state.showItems &&
+                            <div className='statistics-disclaimer-box'>
+                                <p>{i18n(ns + 'statistics_includes_full')}</p>
+                                {_.map(lists, this.renderList)}
+                            </div>
                         }
                     </div>
-                    {this.state.showItems &&
-                        <div className='statistics-disclaimer-box'>
-                            <p>{i18n(ns + 'statistics_includes_full')}</p>
-                            {_.map(lists, this.renderList)}
-                        </div>
-                    }
                 </div>
             );
         }

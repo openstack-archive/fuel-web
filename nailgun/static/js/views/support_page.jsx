@@ -47,7 +47,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
-                    <RegistrationLink key='RegistrationLink' fuelKey={new models.FuelKey()}/>,
+                    <RegistrationLink key='RegistrationLink' settings={this.props.settings}/>,
                     <SupportContacts key='SupportContacts' />
                 );
             }
@@ -96,12 +96,32 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
     });
 
     var RegistrationLink = React.createClass({
-        mixins: [componentMixins.backboneMixin('fuelKey')],
-        componentDidMount: function() {
-            this.props.fuelKey.fetch();
-        },
+        mixins: [
+            statisticsMixin,
+            componentMixins.backboneMixin('settings')
+        ],
         render: function() {
-            var key = this.props.fuelKey.get('key');
+            if (this.state.loading) return null;
+            var settings = this.props.settings.get('statistics');
+            if (settings.email.value)
+                return (
+                    <SupportPageElement
+                        className='img-register-fuel'
+                        title={i18n('support_page.product_registered_title')}
+                        text={i18n('support_page.product_registered_content')}
+                    >
+                        <p>
+                            <div>{settings.name.value}</div>
+                            <div>{settings.email.value}</div>
+                            <div>{settings.company.value}</div>
+                        </p>
+                        <p>
+                            <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
+                                {i18n('support_page.manage_account')}
+                            </a>
+                        </p>
+                    </SupportPageElement>
+                );
             return (
                 <SupportPageElement
                     className='img-register-fuel'
@@ -109,7 +129,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
                     text={i18n('support_page.register_fuel_content')}
                 >
                     <p>
-                        <a className='btn registration-link' href={_.isUndefined(key) ? '/' : 'http://fuel.mirantis.com/create-subscriber/?key=' + key} target='_blank'>
+                        <a className='btn registration-link' target='_blank'>
                             {i18n('support_page.register_fuel_title')}
                         </a>
                     </p>
@@ -219,10 +239,8 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
         render: function() {
             if (this.state.loading) return null;
             var settings = this.props.settings.get('statistics'),
-                sortedSettings = _.chain(_.keys(settings))
-                    .without('metadata')
-                    .sortBy(function(settingName) {return settings[settingName].weight;}, this)
-                    .value();
+                sortedSettings = ['send_anonymous_statistic'];
+            if (settings.email.value) sortedSettings.push('send_user_info');
             return (
                 <SupportPageElement
                     className='img-statistics'

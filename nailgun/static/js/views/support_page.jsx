@@ -15,14 +15,16 @@
 **/
 define(
 [
+    'jquery',
     'underscore',
     'i18n',
     'react',
     'jsx!component_mixins',
     'models',
-    'jsx!views/statistics_mixin'
+    'jsx!views/statistics_mixin',
+    'jsx!views/controls'
 ],
-function(_, i18n, React, componentMixins, models, statisticsMixin) {
+function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -33,8 +35,13 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
             breadcrumbsPath: [['home', '#'], 'support'],
             fetchData: function() {
                 var tasks = new models.Tasks();
-                return tasks.fetch().then(function() {
-                    return {tasks: tasks, settings: app.settings};
+                var connectForm = new models.MirantisConnect();
+                return $.when(tasks.fetch(), connectForm.fetch()).then(function() {
+                    return {
+                        tasks: tasks,
+                        settings: app.settings,
+                        connectForm: connectForm
+                    };
                 });
             }
         },
@@ -47,7 +54,7 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
-                    <RegistrationLink key='RegistrationLink' fuelKey={new models.FuelKey()}/>,
+                    <RegistrationLink key='RegistrationLink' settings={this.props.settings} connectForm={this.props.connectForm}/>,
                     <SupportContacts key='SupportContacts' />
                 );
             }
@@ -96,23 +103,85 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
     });
 
     var RegistrationLink = React.createClass({
-        mixins: [componentMixins.backboneMixin('fuelKey')],
-        componentDidMount: function() {
-            this.props.fuelKey.fetch();
+        mixins: [
+            statisticsMixin,
+            componentMixins.backboneMixin('settings'),
+            componentMixins.backboneMixin('connectForm', 'change invalid sync')
+        ],
+        getInitialState: function() {
+            var settings = this.props.settings.get('statistics');
+            return {isConnected: !!settings.email.value};
+        },
+        onChange: function(inputName, value) {
+            var credentials = this.props.connectForm,
+                name = credentials.makePath('credentials', inputName, 'value');
+            credentials.set(name, value);
+            if (credentials.validationError) delete credentials.validationError['credentials.' + inputName];
         },
         render: function() {
-            var key = this.props.fuelKey.get('key');
+            var settings = this.props.settings.get('statistics'),
+                values = ['name', 'email', 'company'];
+            if (this.state.loading) return null;
+            if (this.state.isConnected)
+                return (
+                    <SupportPageElement
+                        className='img-register-fuel'
+                        title={i18n('support_page.product_registered_title')}
+                        text={i18n('support_page.product_registered_content')}
+                    >
+                        <p className='registeredData'>
+                            {_.map(values, function(value) {
+                                return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {settings[value].value}</span>;
+                            }, this)}
+                        </p>
+                        <p>
+                            <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
+                                {i18n('support_page.manage_account')}
+                            </a>
+                        </p>
+                    </SupportPageElement>
+                );
+            var credentials = this.props.connectForm,
+                fieldsList = credentials.attributes.credentials,
+                sortedFields = ['email', 'password'],
+                error = this.state.error;
             return (
                 <SupportPageElement
                     className='img-register-fuel'
                     title={i18n('support_page.register_fuel_title')}
                     text={i18n('support_page.register_fuel_content')}
                 >
-                    <p>
-                        <a className='btn registration-link' href={_.isUndefined(key) ? '/' : 'http://fuel.mirantis.com/create-subscriber/?key=' + key} target='_blank'>
-                            {i18n('support_page.register_fuel_title')}
-                        </a>
-                    </p>
+                    <div>
+                        {(this.state.actionInProgress || !credentials.attributes) && <controls.ProgressBar />}
+                        {error &&
+                            <div className='error'>
+                                <i className='icon-attention'></i>
+                                {error}
+                            </div>
+                        }
+                        <div className='connection_form'>
+                            {_.map(sortedFields, function(inputName) {
+                                var input = fieldsList[inputName],
+                                    path = 'credentials.' + inputName,
+                                    error = credentials.validationError && credentials.validationError[path];
+                                return <controls.Input
+                                    ref={inputName}
+                                    key={inputName}
+                                    name={inputName}
+                                    type={input.type}
+                                    label={input.label}
+                                    value={input.value}
+                                    onChange={this.onChange}
+                                    error={error}/>;
+                            }, this)}
+                        </div>
+
+                        <p>
+                            <a className='btn registration-link' onClick={this.connectToMirantis} target='_blank'>
+                                {i18n('support_page.register_fuel_title')}
+                            </a>
+                        </p>
+                    </div>
                 </SupportPageElement>
             );
         }
@@ -219,10 +288,8 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
         render: function() {
             if (this.state.loading) return null;
             var settings = this.props.settings.get('statistics'),
-                sortedSettings = _.chain(_.keys(settings))
-                    .without('metadata')
-                    .sortBy(function(settingName) {return settings[settingName].weight;}, this)
-                    .value();
+                sortedSettings = ['send_anonymous_statistic'];
+            if (settings.email.value) sortedSettings.push('send_user_info');
             return (
                 <SupportPageElement
                     className='img-statistics'

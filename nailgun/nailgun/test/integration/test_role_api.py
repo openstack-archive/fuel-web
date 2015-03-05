@@ -96,3 +96,17 @@ class TestRoleApi(base.BaseIntegrationTest):
         delete_resp = self.env.delete_role(
             self.release.id, role['name'], expect_errors=True)
         self.assertEqual(delete_resp.status_code, 400)
+
+    def test_get_role(self):
+        self.env.create_role(self.release.id, self.role_data)
+        role = self.env.get_role(self.release.id, self.role_data['name'])
+
+        self.assertEqual(role.status_code, 200)
+        self.assertEqual(role.json['name'], self.role_data['name'])
+
+    def test_create_role_with_numbers(self):
+        self.role_data['name'] = '1234'
+        resp = self.env.create_role(
+            self.release.id, self.role_data, expect_errors=True)
+
+        self.assertEqual(resp.status_code, 400)

@@ -113,7 +113,7 @@ urls = (
 
     r'/releases/(?P<release_id>\d+)/roles/?$',
     RoleCollectionHandler,
-    r'/releases/(?P<release_id>\d+)/roles/(?P<role_name>\w+)/?$',
+    r'/releases/(?P<release_id>\d+)/roles/(?P<role_name>[a-zA-Z-_]+)/?$',
     RoleHandler,
 
     r'/clusters/?$',

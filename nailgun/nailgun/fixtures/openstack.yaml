@@ -1301,7 +1301,7 @@
   extend: *base_release
   fields:
     name: "Juno on CentOS 6.5"
-    version: "2014.2-6.1"
+    version: "2014.2.2-6.1"
     can_update_from_versions: []
     operating_system: "CentOS"
     description: "This option will install the OpenStack Juno packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
@@ -1347,7 +1347,7 @@
             value:
               - type: "rpm"
                 name: "MOS"
-                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/centos/x86_64"
+                uri: "http://{{settings.MASTER_IP}}:8080/2014.2.2-6.1/centos/x86_64"
                 priority: 20
       generated:
         cobbler:
@@ -1367,7 +1367,7 @@
   extend: *base_release
   fields:
     name: "Juno on Ubuntu 14.04.1"
-    version: "2014.2-6.1"
+    version: "2014.2.2-6.1"
     can_update_from_versions: []
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Juno packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
@@ -1384,7 +1384,7 @@
             value:
               - type: "deb"
                 name: "MOS"
-                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/ubuntu/x86_64"
+                uri: "http://{{settings.MASTER_IP}}:8080/2014.2.2-6.1/ubuntu/x86_64"
                 suite: "trusty"
                 section: "main"
                 priority: 1001

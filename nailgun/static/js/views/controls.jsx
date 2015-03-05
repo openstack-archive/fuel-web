@@ -65,7 +65,6 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return {visible: false};
         },
         togglePassword: function() {
-            if (this.props.disabled) return;
             this.setState({visible: !this.state.visible});
         },
         isCheckboxOrRadio: function() {

@@ -110,11 +110,24 @@ class ClusterAttributesPluginBase(object):
             # plugin writer should be able to specify ha in release['mode']
             # and know nothing about ha_compact
             mode_compat = any(mode in cluster.mode for mode in release['mode'])
-            release_version_compat = (
-                cluster.release.version == release['version'])
+            release_version_compat = self._is_release_version_compatible(
+                cluster.release.version, release['version'])
             if all((os_compat, mode_compat, release_version_compat)):
                 return True
         return False
+
+    def _is_release_version_compatible(self, rel_version, plugin_rel_version):
+        """Checks if release version is compatible with
+        plugin version.
+
+        :param str rel_version: release version
+        :param str plugin_rel_version: plugin release version
+        :returns: True if compatible, Fals if not
+        """
+        rel_os, rel_fuel = rel_version.split('-')
+        plugin_os, plugin_rel = plugin_rel_version.split('-')
+
+        return rel_os.startswith(plugin_os) and rel_fuel.startswith(plugin_rel)
 
     def update_metadata(self, attributes):
         """Overwrights only default values in metadata.

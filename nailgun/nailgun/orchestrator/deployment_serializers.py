@@ -253,7 +253,7 @@ class NetworkDeploymentSerializer(object):
         if bridge:
             port['bridge'] = bridge
         if provider:
-            bridge['provider'] = provider
+            port['provider'] = provider
         return port
 
     @classmethod
@@ -289,6 +289,13 @@ class NetworkDeploymentSerializer(object):
         if provider:
             patch['provider'] = provider
         return patch
+
+    @classmethod
+    def subiface_name(cls, iface_name, net_descr):
+        if not net_descr['vlan_id']:
+            return iface_name
+        else:
+            return "{0}.{1}".format(iface_name, net_descr['vlan_id'])
 
 
 class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
@@ -431,13 +438,6 @@ class NovaNetworkDeploymentSerializer61(
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
         return {'network_scheme': cls.generate_network_scheme(node)}
-
-    @classmethod
-    def subiface_name(cls, iface_name, net_descr):
-        if not net_descr['vlan_id']:
-            return iface_name
-        else:
-            return "{0}.{1}".format(iface_name, net_descr['vlan_id'])
 
     @classmethod
     def generate_transformations(cls, node, nm, nets_by_ifaces,
@@ -1086,24 +1086,14 @@ class NeutronNetworkDeploymentSerializer61(
 ):
 
     @classmethod
-    def subiface_name(cls, iface_name, net_descr):
-        if not net_descr['vlan_id']:
-            return iface_name
-        else:
-            return "{0}.{1}".format(iface_name, net_descr['vlan_id'])
-
-    @classmethod
     def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
-                                 prv_base_ep):
+                                 prv_base_ep, netgroup_mapping):
         transformations = []
 
         iface_types = consts.NETWORK_INTERFACE_TYPES
-        brnames = ['br-fw-admin', 'br-mgmt', 'br-storage']
-        if is_public:
-            brnames.append('br-ex')
 
         # Add bridges for networks.
-        for brname in brnames:
+        for _, brname in netgroup_mapping:
             transformations.append(cls.add_bridge(brname))
 
         if is_public:
@@ -1189,9 +1179,9 @@ class NeutronNetworkDeploymentSerializer61(
 
         # Populate IP and GW information to endpoints.
         netgroup_mapping = [
-            ('storage', 'br-storage'),
-            ('management', 'br-mgmt'),
             ('fuelweb_admin', 'br-fw-admin'),
+            ('management', 'br-mgmt'),
+            ('storage', 'br-storage'),
         ]
         if is_public:
             netgroup_mapping.append(('public', 'br-ex'))
@@ -1248,7 +1238,8 @@ class NeutronNetworkDeploymentSerializer61(
             attrs['roles']['neutron/mesh'] = 'br-mgmt'
 
         attrs['transformations'] = cls.generate_transformations(
-            node, nm, nets_by_ifaces, is_public, prv_base_ep)
+            node, nm, nets_by_ifaces, is_public, prv_base_ep,
+            netgroup_mapping)
 
         return attrs
 

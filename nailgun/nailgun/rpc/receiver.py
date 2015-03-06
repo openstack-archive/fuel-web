@@ -94,7 +94,7 @@ class NailgunReceiver(object):
                     u"Failed to delete node '%s': node doesn't exist",
                     str(node)
                 )
-                break
+                continue
             db().delete(node_db)
 
         for node in inaccessible_nodes:
@@ -113,7 +113,7 @@ class NailgunReceiver(object):
                     u"Failed to delete node '%s' marked as error from Astute:"
                     " node doesn't exist", str(node)
                 )
-                break
+                continue
             node_db.pending_deletion = False
             node_db.status = 'error'
             db().add(node_db)

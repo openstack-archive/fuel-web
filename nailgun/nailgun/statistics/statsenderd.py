@@ -254,6 +254,7 @@ class StatsSender(object):
                 time.sleep(dithered(settings.STATS_ENABLE_CHECK_INTERVAL))
         except Exception as e:
             logger.error("Stats sender exception: %s", six.text_type(e))
+            time.sleep(dithered(settings.COLLECTOR_PING_INTERVAL))
         finally:
             db.remove()
 

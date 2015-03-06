@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import fnmatch
 import logging
 import os
 import re
@@ -41,6 +42,26 @@ def is_local(name):
     if name in ("localhost", hostname(), fqdn()):
         return True
     return False
+
+
+def iterfiles(path):
+    for root, dirnames, filenames in os.walk(path, topdown=True):
+        for filename in filenames:
+            yield os.path.join(root, filename)
+
+
+def remove_matched_files(path, patterns):
+    """Removes files that are matched by provided unix patterns
+
+    :param path: str
+    :param patterns: list with unix file patterns
+    """
+    for file_path in iterfiles(path):
+        for pattern in patterns:
+            if fnmatch.fnmatch(file_path, pattern):
+                logger.debug('Deleting file %s', file_path)
+                os.unlink(file_path)
+                break
 
 
 def execute(command, to_filename=None):

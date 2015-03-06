@@ -895,6 +895,27 @@ class TestOSWLCollectingUtils(BaseTestCase):
 
         self.assertEqual(kc_v2_info, kc_v3_info)
 
+    def test_additional_display_opts_supplied(self):
+        expected_display_options = {"search_opts": {"all_tenants": 1}}
+
+        client_provider_mock = self._prepare_client_provider_mock()
+        self._update_mock_with_complex_dict(client_provider_mock,
+                                            self.components_to_mock)
+
+        utils.get_info_from_os_resource_manager(
+            client_provider_mock, consts.OSWL_RESOURCE_TYPES.vm
+        )
+        client_provider_mock.nova.servers.list.assert_called_once_with(
+            **expected_display_options
+        )
+
+        utils.get_info_from_os_resource_manager(
+            client_provider_mock, consts.OSWL_RESOURCE_TYPES.volume
+        )
+        client_provider_mock.cinder.volumes.list.assert_called_once_with(
+            **expected_display_options
+        )
+
     def test_set_proxy_func(self):
         def check_proxy():
             with utils.set_proxy(new_proxy):

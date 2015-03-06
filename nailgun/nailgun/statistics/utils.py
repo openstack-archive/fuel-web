@@ -155,10 +155,14 @@ def _get_online_controller(cluster):
     )[0]
 
 
-def _get_data_from_resource_manager(resource_manager, attr_names_mapping):
+def _get_data_from_resource_manager(resource_manager, attr_names_mapping,
+                                    additional_display_options):
     data = []
 
-    instances_list = resource_manager.list()
+    display_options = {}
+    display_options.update(additional_display_options)
+
+    instances_list = resource_manager.list(**display_options)
     for inst in instances_list:
         inst_details = {}
 
@@ -203,9 +207,13 @@ def get_info_from_os_resource_manager(client_provider, resource_name):
 
     attributes_names_mapping = matched_api["retrieved_attr_names_mapping"]
 
+    additional_display_options = \
+        matched_api.get("additional_display_options", {})
+
     resource_info = _get_data_from_resource_manager(
         resource_manager,
-        attributes_names_mapping
+        attributes_names_mapping,
+        additional_display_options
     )
 
     return resource_info

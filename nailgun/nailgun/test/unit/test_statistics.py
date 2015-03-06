@@ -453,7 +453,12 @@ class TestStatisticsSender(BaseTestCase):
                     self.assertEqual(0, mocked_commit.call_count)
 
     @patch('nailgun.statistics.statsenderd.time.sleep')
-    def test_send_stats_once_after_dberror(self, sleep):
+    @patch('nailgun.statistics.statsenderd.dithered')
+    @patch('nailgun.db.sqlalchemy.fixman.settings.'
+           'STATS_ENABLE_CHECK_INTERVAL', 0)
+    @patch('nailgun.db.sqlalchemy.fixman.settings.'
+           'COLLECTOR_PING_INTERVAL', 1)
+    def test_send_stats_once_after_dberror(self, dithered, sleep):
         def fn():
             # try to commit wrong data
             Cluster.create(
@@ -467,19 +472,21 @@ class TestStatisticsSender(BaseTestCase):
         ss = StatsSender()
 
         ss.send_stats_once()
-        # one call was made (all went ok)
+        # one call with STATS_ENABLE_CHECK_INTERVAL was made (all went ok)
         self.assertEqual(sleep.call_count, 1)
+        dithered.assert_called_with(0)
 
         with patch.object(ss,
                           'must_send_stats',
                           fn):
             ss.send_stats_once()
-        # no more calls was made because of exception
-        self.assertEqual(sleep.call_count, 1)
+        # one more call with COLLECTOR_PING_INTERVAL value
+        self.assertEqual(sleep.call_count, 2)
+        dithered.assert_called_with(1)
 
         ss.send_stats_once()
         # one more call was made (all went ok)
-        self.assertEqual(sleep.call_count, 2)
+        self.assertEqual(sleep.call_count, 3)
 
     @patch('nailgun.statistics.statsenderd.StatsSender.send_data_to_url')
     def test_oswl_nothing_to_send(self, send_data_to_url):

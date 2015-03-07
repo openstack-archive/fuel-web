@@ -346,6 +346,7 @@ class TestHandlers(BaseIntegrationTest):
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
                     },
+                    'fault_tolerance': [],
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -360,7 +361,9 @@ class TestHandlers(BaseIntegrationTest):
                          'storage_address',
                          'ipaddr',
                          'IP',
-                         'tasks'])
+                         'tasks',
+                         'uids',
+                         'percentage'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -780,6 +783,7 @@ class TestHandlers(BaseIntegrationTest):
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
                     },
+                    'fault_tolerance': [],
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -794,7 +798,9 @@ class TestHandlers(BaseIntegrationTest):
                          'storage_address',
                          'ipaddr',
                          'IP',
-                         'tasks'])
+                         'tasks',
+                         'uids',
+                         'percentage'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -1231,6 +1237,7 @@ class TestHandlers(BaseIntegrationTest):
                         'password': settings.COBBLER_PASSWORD,
                         'master_ip': settings.MASTER_IP,
                     },
+                    'fault_tolerance': [],
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -1245,7 +1252,9 @@ class TestHandlers(BaseIntegrationTest):
                          'storage_address',
                          'ipaddr',
                          'IP',
-                         'tasks'])
+                         'tasks',
+                         'uids',
+                         'percentage'])
         self.datadiff(
             args[1][1],
             deployment_msg,

@@ -41,6 +41,13 @@
         description: "A compute node creates, manages and terminates virtual machine instances."
         limits:
           recommended: 1
+          max_computes_to_fail:
+            value: "2"
+            type: "text"
+            label: "Percent of computes allowed to fail"
+            description: "Describes how many percent of compute nodes may fail until deployment will fail."
+            weight: 90
+        fault_tolerance: "2%"
       cinder:
         # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
         name: "Storage - Cinder"

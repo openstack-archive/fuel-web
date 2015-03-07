@@ -705,6 +705,12 @@
             restrictions:
               - condition: "cluster:net_provider == 'neutron' and networking_parameters:segmentation_type == 'gre'"
                 action: "hide"
+          max_computes_to_fail:
+            value: "2"
+            type: "text"
+            label: "Percent of computes allowed to fail"
+            description: "Describes how many percent of compute nodes may fail until deployment will fail."
+            weight: 90
         public_network_assignment:
           metadata:
             weight: 50

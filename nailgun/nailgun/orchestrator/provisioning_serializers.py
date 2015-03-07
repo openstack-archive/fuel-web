@@ -25,6 +25,7 @@ from nailgun import consts
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
+from nailgun.orchestrator import fault_tolerance
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
 from nailgun.utils import extract_env_version
@@ -49,19 +50,22 @@ class ProvisioningSerializer(object):
                 serialized_nodes.extend(
                     cls.serialize_nodes(cluster_attrs, node_group))
         serialized_info = (cluster.replaced_provisioning_info or
-                           cls.serialize_cluster_info(cluster_attrs))
+                           cls.serialize_cluster_info(cluster_attrs, nodes))
         serialized_info['nodes'] = serialized_nodes
         return serialized_info
 
     @classmethod
-    def serialize_cluster_info(cls, cluster_attrs):
+    def serialize_cluster_info(cls, cluster_attrs, nodes):
         return {
             'engine': {
                 'url': settings.COBBLER_URL,
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
-            }}
+                },
+            'fault_tolerance': fault_tolerance.for_provision(
+                                    nodes, cluster_attrs)
+            }
 
     @classmethod
     def serialize_customized(self, nodes):

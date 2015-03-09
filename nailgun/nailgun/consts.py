@@ -315,3 +315,5 @@ OSWL_RESOURCE_TYPES = Enum(
     'cluster_stats',
     'image',
 )
+
+MAC_FIELD_SIZE = 23

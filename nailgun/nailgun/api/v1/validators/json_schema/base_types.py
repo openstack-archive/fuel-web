@@ -101,7 +101,8 @@ NULLABLE_NET_ADDRESS = {
 
 MAC_ADDRESS = {
     'type': 'string',
-    'pattern': '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$',
+    'pattern': ('^(([0-9A-Fa-f]{2}[:-]){7}|([0-9A-Fa-f]{2}[:-]){5})'
+                '([0-9A-Fa-f]{2})$'),
 }
 
 NULLABLE_MAC_ADDRESS = {

@@ -22,7 +22,7 @@ from nailgun.test.base import BaseUnitTest
 
 class TestNetworkUtils(BaseUnitTest):
 
-    def test_compare_two_macs(self):
+    def test_compare_two_euis(self):
         equal_macs = (
             ('00-1B-77-49-54-FD', '00-1B-77-49-54-FD'),
             ('00-1B-77-49-54-FD', '00-1b-77-49-54-fd'),
@@ -31,6 +31,13 @@ class TestNetworkUtils(BaseUnitTest):
             ('00-1B-77-49-54-FD', '001b774954fd'),
             ('00-1B-77-49-54-FD', netaddr.EUI('00-1B-77-49-54-FD')),
             ('aa:bb:cc:dd:ee:0f', 'aa:bb:cc:dd:ee:f'),
+            ('00-1B-77-49-54-FD-FA-AB', '00-1B-77-49-54-FD-FA-AB'),
+            ('00-1B-77-49-54-FD-FA-AB', '00-1b-77-49-54-fd-fa-ab'),
+            ('00-1B-77-49-54-FD-FA-AB', '00:1b:77:49:54:fd:fa:ab'),
+            ('00-1B-77-49-54-FD-FA-AB', '001b774954fdfaab'),
+            ('00-1B-77-49-54-FD-FA-AB', netaddr.EUI(
+                '00-1b-77-49-54-fd-fa-ab')),
+            ('00-1B-77-49-54-FD-FA-0B', '00-1B-77-49-54-FD-FA-B')
         )
 
         for mac1, mac2 in equal_macs:

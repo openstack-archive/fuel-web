@@ -100,7 +100,8 @@ class Node(Base):
         default=consts.NODE_STATUSES.discover
     )
     meta = Column(JSON, default={})
-    mac = Column(LowercaseString(17), nullable=False, unique=True)
+    mac = Column(
+        LowercaseString(consts.MAC_FIELD_SIZE), nullable=False, unique=True)
     ip = Column(String(15))
     fqdn = Column(String(255))
     manufacturer = Column(Unicode(50))
@@ -318,7 +319,7 @@ class NodeNICInterface(Base):
         ForeignKey('nodes.id', ondelete="CASCADE"),
         nullable=False)
     name = Column(String(128), nullable=False)
-    mac = Column(LowercaseString(17), nullable=False)
+    mac = Column(LowercaseString(consts.MAC_FIELD_SIZE), nullable=False)
     max_speed = Column(Integer)
     current_speed = Column(Integer)
     assigned_networks_list = relationship(
@@ -355,7 +356,7 @@ class NodeBondInterface(Base):
         ForeignKey('nodes.id', ondelete="CASCADE"),
         nullable=False)
     name = Column(String(32), nullable=False)
-    mac = Column(LowercaseString(17))
+    mac = Column(LowercaseString(consts.MAC_FIELD_SIZE))
     assigned_networks_list = relationship(
         "NetworkGroup",
         secondary=NetworkBondAssignment.__table__,

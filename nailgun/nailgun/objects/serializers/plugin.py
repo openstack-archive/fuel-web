@@ -28,5 +28,8 @@ class PluginSerializer(BasicSerializer):
         "releases",
         "package_version",
         "groups",
+        "authors",
+        "licenses",
+        "homepage",
         "fuel_version"
     )

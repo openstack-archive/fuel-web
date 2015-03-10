@@ -28,7 +28,7 @@ define([
 
     var models = {};
 
-    var superMixin = {
+    var superMixin = models.superMixin = {
         _super: function(method, args) {
             var object = this;
             while (object[method] === this[method]) object = object.constructor.__super__;

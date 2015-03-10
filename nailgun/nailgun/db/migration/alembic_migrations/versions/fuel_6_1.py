@@ -253,20 +253,20 @@ def upgrade_schema():
         sa.Column('bond_properties',
                   fields.JSON(),
                   nullable=False,
-                  default={}))
+                  server_default='{}'))
     # Add interface properties
     op.add_column(
         'node_nic_interfaces',
         sa.Column('interface_properties',
                   fields.JSON(),
                   nullable=False,
-                  default={}))
+                  server_default='{}'))
     op.add_column(
         'node_bond_interfaces',
         sa.Column('interface_properties',
                   fields.JSON(),
                   nullable=False,
-                  default={}))
+                  server_default='{}'))
     ### end Alembic commands ###
     move_orchestrator_data_to_attributes(connection)
     op.drop_table('release_orchestrator_data')

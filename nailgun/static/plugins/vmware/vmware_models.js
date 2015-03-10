@@ -120,11 +120,38 @@ function($, _, i18n, Backbone, models) {
     });
 
     var Cinder = BaseModel.extend({constructorName: 'Cinder'});
-    var NovaCompute = BaseModel.extend({constructorName: 'NovaCompute'});
+    var NovaCompute = BaseModel.extend({
+        constructorName: 'NovaCompute',
+        checkDuplicates: function(keys) {
+            function checkDuplicateField(keys, fieldName) {
+                /*jshint validthis:true */
+                var fieldValue = this.get(fieldName);
+                if (fieldValue.length > 0 && keys[fieldName] && keys[fieldName][fieldValue]) {
+                    this.validationError = this.validationError || {};
+                    this.validationError[fieldName] = i18n('vmware.duplicate_value');
+                }
+                keys[fieldName] = keys[fieldName] || {};
+                keys[fieldName][fieldValue] = true;
+            }
+            checkDuplicateField.call(this, keys, 'vsphere_cluster');
+            checkDuplicateField.call(this, keys, 'service_name');
+        }
+    });
 
     var NovaComputes = BaseCollection.extend({
         constructorName: 'NovaComputes',
-        model: NovaCompute
+        model: NovaCompute,
+        validate: function() {
+            BaseCollection.prototype.validate.apply(this, arguments);
+
+            var keys = {vsphere_clusters: {}, service_names: {}};
+            _.invoke(this.models, 'checkDuplicates', keys);
+
+            var errors = _.compact(this.models.map(function(model) {
+                return model.validationError;
+            }));
+            return _.isEmpty(errors) ? null : errors;
+        }
     });
 
     var AvailabilityZone = BaseModel.extend({

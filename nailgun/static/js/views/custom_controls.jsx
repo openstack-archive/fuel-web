@@ -57,10 +57,6 @@ define([
         getInitialState: function() {
             return {};
         },
-        // FIXME: need to prevent duplicating the debouncing code
-        debouncedChange: _.debounce(function(index, value) {
-            return this.changeRepos(null, index, value);
-        }, 200, {leading: true}),
         changeRepos: function(method, index, value) {
             value = $.trim(value).replace(/\s+/g, ' ');
             var repos = _.cloneDeep(this.props.value);
@@ -124,7 +120,7 @@ define([
                                 type: 'text',
                                 disabled: this.props.disabled,
                                 defaultValue: repoToString(repo),
-                                onChange: this.debouncedChange
+                                onChange: this.changeRepos.bind(this, null)
                             };
                         if (_.contains(mainRepos, repo.name)) {
                             return <controls.Input

@@ -257,6 +257,11 @@ class interfaces(urwid.WidgetWrap):
 
         self.parent.footer.set_text("Applying changes... (May take up to 20s)")
         puppetclasses = []
+
+        #If there is a gateway configured in /etc/sysconfig/network, unset it
+        expr = '^GATEWAY=.*'
+        replace.replaceInFile("/etc/sysconfig/network", expr, "")
+
         l3ifconfig = {'type': "resource",
                       'class': "l23network::l3::ifconfig",
                       'name': self.activeiface}
@@ -274,31 +279,16 @@ class interfaces(urwid.WidgetWrap):
                       "check_by_ping": "none"}
         if len(responses["gateway"]) > 1:
             params["gateway"] = responses["gateway"]
-        elif network.inSameSubnet(self.get_default_gateway_linux(),
-                                  responses["ipaddr"], responses["netmask"]):
-            #If the current gateway is in the same subnet AND the user
-            #sets the gateway to empty, unset gateway
-            expr = '^GATEWAY=.*'
-            replace.replaceInFile("/etc/sysconfig/network", expr,
-                                  "GATEWAY=")
         l3ifconfig['params'] = params
         puppetclasses.append(l3ifconfig)
         self.log.info("Puppet data: %s" % (puppetclasses))
         try:
-            #Gateway handling so DHCP will set gateway
-            if responses["bootproto"] == "dhcp":
-                expr = '^GATEWAY=.*'
-                replace.replaceInFile("/etc/sysconfig/network", expr,
-                                      "GATEWAY=")
             self.parent.refreshScreen()
             puppet.puppetApply(puppetclasses)
             ModuleHelper.getNetwork(self)
-            expr = '^GATEWAY=.*'
             gateway = self.get_default_gateway_linux()
             if gateway is None:
                 gateway = ""
-            replace.replaceInFile("/etc/sysconfig/network", expr, "GATEWAY=%s"
-                                  % gateway)
             self.fixEtcHosts()
 
         except Exception as e:

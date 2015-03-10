@@ -481,7 +481,7 @@
                         "invalid_netmask": "Invalid netmask",
                         "invalid_gateway": "Invalid gateway",
                         "invalid_amount": "Invalid amount of networks",
-                        "gateway_is_out_of_ip_range": "This Gateway address is outside of IP range",
+                        "gateway_is_out_of_ip_range": "This Gateway address is outside of network's CIDR",
                         "gateway_is_out_of_internal_ip_range": "This Gateway address is out of the internal network IP range",
                         "need_more_vlan": "The number of networks defined needs more VLAN IDs than available. Check VLAN ID Range field.",
                         "invalid_nameserver": "Invalid nameserver",

@@ -46,10 +46,7 @@ class NetworkConfigurationSerializer(BasicSerializer):
             nets
         )
         if cluster.is_ha_mode:
-            for ng in cluster.network_groups:
-                if ng.meta.get("assign_vip"):
-                    result['{0}_vip'.format(ng.name)] = \
-                        net_manager.assign_vip(cluster.id, ng.name)
+            result.update(net_manager.assign_vip_for_groups(cluster))
 
         return result
 

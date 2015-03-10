@@ -122,6 +122,15 @@ def downgrade():
 def upgrade_schema():
     connection = op.get_bind()
 
+    vrouter_enum = sa.Enum('vrouter',
+                           name='network_vip_types')
+    vrouter_enum.create(op.get_bind(), checkfirst=False)
+
+    op.add_column(
+        'ip_addrs',
+        sa.Column('vip_type', vrouter_enum, nullable=True)
+    )
+
     op.add_column(
         'clusters',
         sa.Column('deployment_tasks', fields.JSON(), nullable=True))
@@ -330,7 +339,6 @@ def downgrade_schema():
     op.drop_column('releases', 'vmware_attributes_metadata')
     op.drop_column('clusters', 'deployment_tasks')
     op.drop_column('releases', 'deployment_tasks')
-
     op.drop_constraint('node_roles_node_fkey', 'node_roles')
     op.create_foreign_key(
         'node_roles_node_fkey', 'node_roles', 'nodes', ['node'], ['id'])
@@ -344,6 +352,9 @@ def downgrade_schema():
     op.create_foreign_key(
         'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
         ['node_id'], ['id'])
+    op.drop_column('ip_addrs', 'vip_type')
+    drop_enum('network_vip_types')
+    ### end Alembic commands ###
 
     op.drop_column('plugins', 'groups')
 

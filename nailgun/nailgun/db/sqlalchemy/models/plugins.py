@@ -16,6 +16,7 @@ from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
 
 from sqlalchemy.orm import relationship
@@ -48,6 +49,9 @@ class Plugin(Base):
     releases = Column(JSON, default=[])
     fuel_version = Column(JSON, default=[])
     groups = Column(JSON, server_default='[]', nullable=False)
+    authors = Column(JSON, server_default='[]', nullable=False)
+    licenses = Column(JSON, server_default='[]', nullable=False)
+    homepage = Column(Text, server_default='', nullable=False)
     package_version = Column(String(32), nullable=False)
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,

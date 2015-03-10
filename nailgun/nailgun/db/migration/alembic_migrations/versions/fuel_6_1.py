@@ -267,7 +267,7 @@ def upgrade_schema():
                   fields.JSON(),
                   nullable=False,
                   default={}))
-    ### end Alembic commands ###
+
     move_orchestrator_data_to_attributes(connection)
     op.drop_table('release_orchestrator_data')
 
@@ -276,6 +276,18 @@ def upgrade_schema():
         'plugins',
         sa.Column(
             'groups', fields.JSON(), nullable=False, server_default='[]'))
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'authors', fields.JSON(), nullable=False, server_default='[]'))
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'licenses', fields.JSON(), nullable=False, server_default='[]'))
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'homepage', sa.Text(), nullable=False, server_default=''))
 
 
 def downgrade_schema():
@@ -354,9 +366,12 @@ def downgrade_schema():
         ['node_id'], ['id'])
     op.drop_column('ip_addrs', 'vip_type')
     drop_enum('network_vip_types')
-    ### end Alembic commands ###
 
+    # Plugins table changes
     op.drop_column('plugins', 'groups')
+    op.drop_column('plugins', 'authors')
+    op.drop_column('plugins', 'licenses')
+    op.drop_column('plugins', 'homepage')
 
 
 def upgrade_data():

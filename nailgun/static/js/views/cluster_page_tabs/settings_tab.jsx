@@ -132,9 +132,10 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             var settings = this.props.cluster.get('settings'),
                 name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
             this.state.settingsForChecks.set(name, value);
+            // FIXME: the following hacks cause we can't pass {validate: true} option to set method
+            // this form of validation isn't supported in Backbone DeepModel
+            settings.validationError = null;
             settings.set(name, value);
-            // can't pass {validate: true} option to set method
-            // cause this form of validation isn't supported in Backbone DeepModel
             settings.isValid({models: this.state.configModels});
         },
         render: function() {

@@ -858,16 +858,17 @@ class ClusterDeletionManager(TaskManager):
 
 class DumpTaskManager(TaskManager):
 
-    def execute(self):
+    def execute(self, conf=None):
         logger.info("Trying to start dump_environment task")
         self.check_running_task(consts.TASK_NAMES.dump)
 
         task = Task(name=consts.TASK_NAMES.dump)
         db().add(task)
-        db().commit()
+        db().flush()
         self._call_silently(
             task,
             tasks.DumpTask,
+            conf=conf
         )
         return task
 

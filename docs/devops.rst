@@ -14,21 +14,18 @@ via PXE, creating, snapshotting and resuming back the whole environment in
 single action, create virtual machines with multiple NICs, multiple hard drives
 and many other customizations with a few lines of code in system tests.
 
+After 6.0 release fuel-devops separate to two versions 2.5.x and 2.9.x.
+
 For sources please refer to
 `fuel-devops repository on github <https://github.com/stackforge/fuel-devops>`_.
 
 Installation
 -------------
 
-The installation procedure can be implemented in two different ways
+The installation procedure can be implemented via PyPI in Pyhton virtual environment
 (suppose you are using *Ubuntu 12.04* or *Ubuntu 14.04*):
 
-* from :ref:`deb packages <DevOpsApt>` (using apt)
-* from :ref:`python packages <DevOpsPyPI>` (using PyPI) (also in :ref:`virtualenv <DevOpsPyPIvenv>`)
-
-Each of the above approaches is described in detail below.
-
-Before use one of them please install dependencies that are required in all cases:
+Before use it please install dependencies that are required:
 
 .. code-block:: bash
 
@@ -49,82 +46,6 @@ Before use one of them please install dependencies that are required in all case
 
     sudo apt-get update && sudo apt-get upgrade -y
 
-.. _DevOpsApt:
-
-Devops installation from packages
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. Adding the repository, checking and applying latest updates
-
-.. code-block:: bash
-
-    wget -qO - http://mirror.fuel-infra.org/devops/ubuntu/Release.key | sudo apt-key add -
-    sudo add-apt-repository  "deb http://mirror.fuel-infra.org/devops/ubuntu /"
-    sudo apt-get update && sudo apt-get upgrade -y
-
-2. Installing required packages
-
-.. code-block:: bash
-
-    sudo apt-get install python-psycopg2 \
-    python-ipaddr \
-    python-libvirt \
-    python-paramiko \
-    python-django \
-    python-django-openstack \
-    python-libvirt \
-    python-django-south \
-    python-xmlbuilder \
-    python-mock \
-    python-devops
-
-
-.. note:: Depending on your Linux distribution some of the above packages may
-    not exists in your upstream repositories. In this case, please exclude
-    them from the installation list and repeat *step 2*. Missing packages will
-    be installed by python (from PyPI) during the next step
-
-.. note:: In case of *Ubuntu 12.04 LTS* we need to update pip and Django<1.7:
-
-    ::
-
-        sudo pip install pip --upgrade
-        hash -r
-        sudo pip install Django\<1.7 --upgrade
-
-3. Next, follow :ref:`DevOpsConf` section
-
-.. _DevOpsPyPI:
-
-Devops installation using `PyPI <https://pypi.python.org/pypi>`_
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The installation procedure should be implemented by following the next steps:
-
-1. Install packages needed for building python eggs
-
-.. code-block:: bash
-
-    sudo apt-get install libpq-dev \
-    libgmp-dev
-
-2. In case you are using *Ubuntu 12.04* let's update pip, otherwise you can skip this step
-
-.. code-block:: bash
-
-    sudo pip install pip --upgrade
-    hash -r
-
-3. Install *devops* package using python setup tools. Clone `fuel-devops <https://github.com/stackforge/fuel-devops>`_ and run setup.py
-
-.. code-block:: bash
-
-    git clone git://github.com/stackforge/fuel-devops.git
-    cd fuel-devops
-    sudo python ./setup.py install
-
-4. Next, follow :ref:`DevOpsConf` section
-
 .. _DevOpsPyPIvenv:
 
 Devops installation in `virtualenv <http://virtualenv.readthedocs.org/en/latest/virtualenv.html>`_
@@ -137,7 +58,7 @@ but we should also configure virtualenv
 
 .. code-block:: bash
 
-    sudo apt-get install python-virtualenv
+    sudo apt-get install python-virtualenv libpq-dev libgmp-dev
 
 2. In case you are using *Ubuntu 12.04* let's update pip and virtualenv, otherwise you can skip this step
 
@@ -154,12 +75,14 @@ but we should also configure virtualenv
 
 <path> represents the path where your Python virtualenv will be located. (e.g. ~/venv). If it is not specified, it will use the current working directory.
 
-5. Activate virtualenv and install *devops* package using python setup tools
+5. Activate virtualenv and install *devops* package using python setup tools.
 
 .. code-block:: bash
 
-    .  <path>/fuel-devops-venv/bin/activate
-    pip install git+https://github.com/stackforge/fuel-devops.git --upgrade
+    source  <path>/fuel-devops-venv/bin/activate
+    pip install git+https://github.com/stackforge/fuel-devops.git@<version> --upgrade
+
+<version> specify version of fuel-devops which you want install.
 
 setup.py in fuel-devops repository does everything required.
 
@@ -205,21 +128,18 @@ Give current user permissions to use libvirt (Do not forget to log out and log b
 Configuring Postgresql database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Set local peers to be trusted by default and load fixtures
+Set local peers to be trusted by default, create user and db and load fixtures
 
 .. code-block:: bash
 
     sudo sed -ir 's/peer/trust/' /etc/postgresql/9.*/main/pg_hba.conf
     sudo service postgresql restart
-    django-admin syncdb --settings=devops.settings
-    django-admin migrate devops --settings=devops.settings
+    sudo -u postgres createuser -P <user> # set password a same as user name
+    sudo -u postgres createdb <db> -O <user>
+    django-admin.py syncdb --settings=devops.settings
+    django-admin.py migrate devops --settings=devops.settings
 
-If you install from :ref:`python packages <DevOpsPyPI>` or use :ref:`virtualenv <DevOpsPyPIvenv>`
-
-.. code-block:: bash
-
-   django-admin.py syncdb --settings=devops.settings
-   django-admin.py migrate devops --settings=devops.settings
+<user>, <db> default user and database in 2.5.x version is 'devops', in 2.9.x is 'fuel_devops'
 
 .. note:: Depending on your Linux distribution,
     `django-admin <http://django-admin-tools.readthedocs.org>`_ may refer
@@ -257,33 +177,26 @@ The result should be:
     Y
 
 
-Environment creation via Devops + Fuel_main
--------------------------------------------
+Environment creation via Devops + Fuel_QA or Fuel_main
+-------------------------------------------------------
 
-1. Clone fuel main GIT repository
+Depending what version you want to use, you need use different repository. If you use 6.0 or earlier please use 'fuel-main' repository, for 6.1 and below 'fuel-qa'
+
+1. Clone GIT repository
 
 .. code-block:: bash
 
-    git clone https://github.com/stackforge/fuel-main
-    cd fuel-main/
+    git clone https://github.com/stackforge/fuel-qa # fuel-main for 6.0 and earlier
+    cd fuel-qa/ 
 
 2. Install requirements
 
-If you use :ref:`virtualenv <DevOpsPyPIvenv>`
-
 .. code-block:: bash
 
-   . <path>/fuel-devops-venv/bin/activate
+   source <path>/fuel-devops-venv/bin/activate
    pip install -r ./fuelweb_test/requirements.txt --upgrade
 
-If you **do not use** virtualenv just
-
-.. code-block:: bash
-
-   sudo pip install -r ./fuelweb_test/requirements.txt --upgrade
-
 3. Check :ref:`DevOpsConf` section
-
 
 4. Prepare environment
 
@@ -298,8 +211,6 @@ Next, you need to define several variables for the future environment
     export ISO_PATH=<path_to_iso>
     export NODES_COUNT=<number_nodes>
     export ENV_NAME=<name_of_env>
-
-If you use :ref:`virtualenv <DevOpsPyPIvenv>`
 
 .. code-block:: bash
 
@@ -353,3 +264,76 @@ Run tests ::
             -V $(pwd)/venv/fuelweb_test \
             -o \
             --group=create_delete_ip_n_times_nova_flat
+
+
+Upgrade from system wide devops to devops in Python virtual environment
+------------------------------------------------------------------------
+
+Bellow you can find information which help for you to migrate from old devops
+
+1. Remove system-wide fuel-devops(e.g python-devops)
+
+You must remove system-wide fuel-devops and start use separete repositories and different versions of fuel-devops, for 6.0.x(and older) and 6.1 release.
+
+Each repositories of system tests must used different python venv which placed in Jankins slave home dir:
+* ~jenkins/venv-nailgun-tests - used for 6.0.x and older releases. Contains version 2.5.x of fuel-devops
+* ~jenkins/venv-nailgun-tests-2.9 - used for 6.1 and above. Contains version 2.9.x of fuel-devops
+
+If you have any scripts which use system fuel-devops, you must fix it, and activate python vevn before you make actions with your devops environment.
+
+By default network pool is 10.108.0.0/16 for devops 2.5.x and 10.109.0.0/16 for 2.9.x. Please check other settings in devops.settings.
+
+Before using devops in Python vevn you need install system dependencies, see :ref:`Installation`
+
+2. Updating fuel-devops and python venv on CI servers
+
+For update devops you can use Jenkins jobs:
+
+.. code-block:: bash
+
+# DevOps 2.5.x
+if [ -f /home/jenkins/venv-nailgun-tests/bin/activate ]; then
+      source /home/jenkins/venv-nailgun-tests/bin/activate
+       echo "Python virtual env exist"
+      pip install -r https://raw.githubusercontent.com/stackforge/fuel-main/master/fuelweb_test/requirements.txt --upgrade
+       django-admin.py syncdb --settings=devops.settings --noinput 
+       django-admin.py migrate devops --settings=devops.settings --noinput
+    deactivate
+else
+   rm -rf /home/jenkins/venv-nailgun-tests
+     virtualenv --system-site-packages  /home/jenkins/venv-nailgun-tests
+     source /home/jenkins/venv-nailgun-tests/bin/activate
+      pip install -r https://raw.githubusercontent.com/stackforge/fuel-main/master/fuelweb_test/requirements.txt --upgrade
+       django-admin.py syncdb --settings=devops.settings --noinput 
+       django-admin.py migrate devops --settings=devops.settings --noinput
+     deactivate
+ fi
+
+# DevOps 2.9.x
+if [ -f /home/jenkins/venv-nailgun-tests-2.9/bin/activate ]; then
+   source /home/jenkins/venv-nailgun-tests-2.9/bin/activate
+    echo "Python virtual env exist"
+    pip install -r https://raw.githubusercontent.com/stackforge/fuel-qa/master/fuelweb_test/requirements.txt --upgrade
+      django-admin.py syncdb --settings=devops.settings --noinput 
+      django-admin.py migrate devops --settings=devops.settings --noinput
+   deactivate
+else
+  rm -rf /home/jenkins/venv-nailgun-tests-2.9
+   virtualenv --system-site-packages  /home/jenkins/venv-nailgun-tests-2.9
+    source /home/jenkins/venv-nailgun-tests-2.9/bin/activate
+     pip install -r https://raw.githubusercontent.com/stackforge/fuel-qa/master/fuelweb_test/requirements.txt --upgrade
+      django-admin.py syncdb --settings=devops.settings --noinput 
+      django-admin.py migrate devops --settings=devops.settings --noinput
+    deactivate
+fi
+#
+
+3. Setup new repository of system tests for 6.1 release
+
+All system tests for 6.1+ and above moved to https://github.com/stackforge/fuel-qa. 
+
+Step for upgrading 6.1 jobs:
+* make separete python virtual enviromnent, for example in ~jenkins/venv-nailgun-tests-2.9
+* install requirments of system tests from https://github.com/stackforge/fuel-qa/blob/master/fuelweb_test/requirements.txt
+* update 6.1 jobs for using new python virtual environment
+* on our CI we use VEVN_PATH environment varible for select python venv

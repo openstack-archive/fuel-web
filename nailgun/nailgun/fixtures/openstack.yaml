@@ -1384,6 +1384,7 @@
           repos:
             type: "custom_repo_configuration"
             extra_priority: 1050
+            description: "Please take into account that the first repo is Ubuntu mirror by default."
             value:
               - type: "deb"
                 name: "MOS"

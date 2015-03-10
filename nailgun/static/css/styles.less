@@ -2543,6 +2543,7 @@ input.error:focus,
   margin-top: 4px;
   &.validation-error { color: @fuel-deep-red; }
   p { margin: 0; }
+  text-align: justify;
 }
 
 .has-error {
@@ -3940,22 +3941,32 @@ i.btn-cluster-details {
     margin-bottom: 15px;
     padding-left: 7px;
   }
+  .custom-description {
+    float: none;
+    padding: 0 0 10px 10px;
+  }
   .repo-group {
     > div {
       float: left;
       clear: none;
     }
-    .repo-name input {
+    input {
+      margin: 0 0 10px 10px;
+    }
+    .repo-name input, .repo-priority input {
       width: 100px;
-      margin: 0 16px 10px 10px;
     }
     .btn-link {
       padding: 0 5px;
+      .position(relative, @top: -4px);
     }
     .parameter-description {
       margin-left: 0;
       width: 250px;
-      .position(absolute, @top: 0, @left: 690px);
+      .position(absolute, @top: 2px, @left: 700px);
     }
+  }
+  &.experimental .repo-group .parameter-description {
+    left: 810px;
   }
 }

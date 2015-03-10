@@ -262,6 +262,12 @@ def upgrade_schema():
     move_orchestrator_data_to_attributes(connection)
     op.drop_table('release_orchestrator_data')
 
+    # Plugins migrations
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'groups', fields.JSON(), nullable=False, server_default='[]'))
+
 
 def downgrade_schema():
     # Add interface properties
@@ -338,6 +344,8 @@ def downgrade_schema():
     op.create_foreign_key(
         'node_attributes_node_id_fkey', 'node_attributes', 'nodes',
         ['node_id'], ['id'])
+
+    op.drop_column('plugins', 'groups')
 
 
 def upgrade_data():

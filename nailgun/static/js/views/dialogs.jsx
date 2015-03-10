@@ -199,14 +199,31 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
             }
 
-            return {
+            var state = {
                 ns: ns,
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
                 isInvalid: _.any(limitValidations, {valid: false}) || areSettingsInvalid,
                 networksVerificationResult: networksVerificationResult,
-                areSettingsInvalid: areSettingsInvalid
+                areSettingsInvalid: areSettingsInvalid,
+                vcenterError: null
             };
+
+            // vcenter
+            var useVcenter = cluster.get('settings').get('common.use_vcenter.value');
+            if (useVcenter) {
+                var vcenter = cluster.get('vcenter');
+                vcenter.setModels(configModels).parseRestrictions();
+                if (!vcenter.isValid()) {
+                    state.isInvalid = true;
+                    state.vcenterError = {
+                        text: i18n('vmware.has_errors'),
+                        linkUrl: '/#cluster/' + cluster.id + '/vmware',
+                        linkText: i18n('vmware.tab_name')
+                    };
+                }
+            }
+            return state;
         },
         deployCluster: function() {
             this.setState({actionInProgress: true});
@@ -247,6 +264,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
                     {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                    {!_.isNull(this.state.vcenterError) &&
+                        <div className='alert alert-error'>
+                            {' ' + this.state.vcenterError.text + ' '}
+                            <a href={this.state.vcenterError.linkUrl}>
+                                {this.state.vcenterError.linkText}
+                            </a>
+                        </div>
+                    }
                     {this.state.areSettingsInvalid &&
                         this.showInvalidSettingsMessage()
                     }

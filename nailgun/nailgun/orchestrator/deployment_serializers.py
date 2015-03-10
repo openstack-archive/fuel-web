@@ -1093,6 +1093,21 @@ class NeutronNetworkDeploymentSerializer61(
             return "{0}.{1}".format(iface_name, net_descr['vlan_id'])
 
     @classmethod
+    def generate_routes(cls, node, attrs, nm, netgroup_mapping, netgroups):
+        other_nets = nm.get_networks_not_on_node(node)
+
+        for ngname, brname in netgroup_mapping:
+            netgroup = netgroups[ngname]
+            if netgroup.get('gateway'):
+                via = netgroup['gateway']
+                attrs['endpoints'][brname]['routes'] = []
+                for cidr in other_nets.get(ngname, []):
+                    attrs['endpoints'][brname]['routes'].append({
+                        'net': cidr,
+                        'via': via
+                    })
+
+    @classmethod
     def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
                                  prv_base_ep):
         transformations = []
@@ -1249,6 +1264,10 @@ class NeutronNetworkDeploymentSerializer61(
 
         attrs['transformations'] = cls.generate_transformations(
             node, nm, nets_by_ifaces, is_public, prv_base_ep)
+
+        if objects.NodeGroupCollection.get_by_cluster_id(
+                node.cluster.id).count() > 1:
+            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups)
 
         return attrs
 

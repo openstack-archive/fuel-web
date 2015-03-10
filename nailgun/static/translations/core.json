@@ -527,6 +527,8 @@
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
                 "deployment_mode": "Deployment Mode",
+                "show_details_button": "Show additional information",
+                "hide_details_button": "Hide additional information",
                 "openstack_release": "OpenStack Release",
                 "environment_status": "Status",
                 "cluster_was_modified_from_cli": "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",

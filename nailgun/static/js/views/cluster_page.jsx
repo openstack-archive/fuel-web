@@ -270,7 +270,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             componentMixins.backboneMixin('cluster', 'change:name change:status')
         ],
         render: function() {
-            var cluster =   this.props.cluster;
+            var cluster = this.props.cluster;
             return (
                 <div className='container'>
                     <div className='cluster-name-box'>
@@ -302,15 +302,24 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
     });
 
     DeploymentResult = React.createClass({
+        getInitialState: function() {
+            return {collapsed: true};
+        },
         dismissTaskResult: function() {
             var task = this.props.cluster.task({group: 'deployment'});
             if (task) task.destroy();
+        },
+        toggleCollapsed: function() {
+            this.setState({collapsed: !this.state.collapsed});
         },
         render: function() {
             var task = this.props.cluster.task({group: 'deployment', status: ['ready', 'error']});
             if (!task) return null;
             var error = task.match({status: 'error'}),
                 deploymentOrUpdate = task.match({name: ['deploy', 'update']}),
+                delimited = task.escape('message').split('\n\n'),
+                summary = delimited.shift(),
+                details = delimited.join('\n\n'),
                 classes = {
                     'alert alert-block': true,
                     'alert-error global-error': error,
@@ -324,7 +333,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         <div className={cs(classes)}>
                             <button className='close' onClick={this.dismissTaskResult}>&times;</button>
                             <h4>{i18n('common.' + (error ? 'error' : 'success'))}</h4>
-                            <p className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(task.escape('message')))}} />
+                            <span className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(summary)}} />
+                            {details &&
+                                <span>
+                                    {!this.state.collapsed &&
+                                        <pre className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(details)}} />
+                                    }
+                                    <button className='btn-link' onClick={this.toggleCollapsed}>
+                                        {i18n('cluster_page.' + (this.state.collapsed ? 'show' : 'hide') + '_details_button')}
+                                    </button>
+                                </span>
+                            }
                         </div>
                     }
                 </div>

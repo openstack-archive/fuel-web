@@ -15,8 +15,9 @@
 #    under the License.
 
 import argparse
-import json
 import logging
+
+import yaml
 
 from shotgun.logger import configure_logger
 configure_logger()
@@ -51,7 +52,7 @@ def read_config(config_path):
     :returns: dict with configuration data
     """
     with open(config_path, "r") as fo:
-        config = json.loads(fo.read())
+        config = yaml.load(fo.read())
 
     return config
 

@@ -31,16 +31,16 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
     def setUp(self):
         super(BaseIntegrationTest, self).setUp()
 
-        master_node_settings = {
+        self.master_node_settings = {
             'master_node_uid': str(uuid.uuid4()),
         }
-        master_node_settings.update(_master_node_settings)
+        self.master_node_settings.update(_master_node_settings)
 
-        objects.MasterNodeSettings.create(master_node_settings)
+        objects.MasterNodeSettings.create(self.master_node_settings)
         self.db.commit()
 
     def test_get_controller(self):
-        expected = _master_node_settings
+        expected = self.master_node_settings
 
         resp = self.app.get(
             reverse("MasterNodeSettingsHandler"),
@@ -49,7 +49,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         self.assertDictEqual(resp.json_body, expected)
 
     def test_put(self):
-        data = copy.deepcopy(_master_node_settings)
+        data = copy.deepcopy(self.master_node_settings)
 
         data['settings']['statistics']['send_user_info']['value'] = True
 
@@ -63,7 +63,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         self.assertDictEqual(resp.json_body, data)
 
     def test_patch(self):
-        data = copy.deepcopy(_master_node_settings)
+        data = copy.deepcopy(self.master_node_settings)
         user_info = data['settings']['statistics']['send_user_info']
         user_info['value'] = True
 
@@ -135,7 +135,10 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
             expect_errors=True
         )
 
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
+        settings_from_db = objects.MasterNodeSettings.get_one()
+        self.assertEqual(settings_from_db.master_node_uid,
+                         self.master_node_settings['master_node_uid'])
 
     def test_not_found_error(self):
         settings_from_db = objects.MasterNodeSettings.get_one()

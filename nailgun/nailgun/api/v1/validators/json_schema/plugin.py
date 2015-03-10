@@ -42,6 +42,11 @@ PLUGIN_SCHEMA = {
                          'items': {'type': 'string'}},
         'groups': {'type': 'array',
                    'items': {'type': 'string'}},
+        'licenses': {'type': 'array',
+                     'items': {'type': 'string'}},
+        'authors': {'type': 'array',
+                    'items': {'type': 'string'}},
+        'homepage': {'type': 'string'},
         'releases': {
             'type': 'array',
             'items': PLUGIN_RELEASE_SCHEMA}

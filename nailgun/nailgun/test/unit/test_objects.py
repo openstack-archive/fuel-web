@@ -716,12 +716,12 @@ class TestClusterObject(BaseTestCase):
                 {'roles': ['cinder']}])
 
     def test_all_controllers(self):
-        self.assertEqual(len(objects.Cluster.get_all_controllers(
-            self.env.clusters[0])), 2)
+        self.assertEqual(len(objects.Cluster.get_nodes_by_role(
+            self.env.clusters[0], 'controller')), 2)
 
     def test_get_group_id(self):
-        controllers = objects.Cluster.get_all_controllers(
-            self.env.clusters[0])
+        controllers = objects.Cluster.get_nodes_by_role(
+            self.env.clusters[0], 'controller')
         group_id = objects.Cluster.get_controllers_group_id(
             self.env.clusters[0])
         self.assertEqual(controllers[0].group_id, group_id)

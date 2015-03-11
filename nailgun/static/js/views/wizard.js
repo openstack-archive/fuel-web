@@ -136,6 +136,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             };
             this.processRestrictions();
             this.attachModelListeners();
+            this.initialWizardConfig = _.cloneDeep(this.model.toJSON());
         },
         processPaneRestrictions: function() {
             _.each(this.config, function(pane, paneName) {
@@ -199,11 +200,18 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             var success = this.processBinds('settings');
             return $.Deferred()[success ? 'resolve' : 'reject']();
         },
+        hasChanges: function(paneName) {
+            if (!this.activePane) return false;
+            paneName = paneName || this.activePane.constructorName;
+            return !_.isEqual(this.initialWizardConfig[paneName], this.model.get(paneName));
+        },
         processBinds: function(prefix, paneNameToProcess) {
             var result = true;
             var processBind = _.bind(function(path, value) {
                 if (path.slice(0, prefix.length) == prefix) {
-                    utils.parseModelPath(path, this.configModels).set(value);
+                    if (this.hasChanges()) {
+                        utils.parseModelPath(path, this.configModels).set(value);
+                    }
                 }
             }, this);
             _.each(this.config, function(paneConfig, paneName) {
@@ -298,7 +306,9 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                     } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
                         this.panesModel.set(paneName, 'available');
                     } else {
-                        this.panesModel.set(paneName, 'unavailable');
+                        if (this.hasChanges(paneName)) {
+                            this.panesModel.set(paneName, 'unavailable');
+                        }
                     }
                 }
             }, this);
@@ -396,6 +406,8 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 }, this);
                 this.wizard.panesModel.set('invalid', true);
             }, this);
+
+            if (!this.wizard.initialWizardConfig[this.constructorName]) this.wizard.initialWizardConfig = _.cloneDeep(this.wizard.model.toJSON());
         },
         renderControls: function(config) {
             var controlsHtml = '';

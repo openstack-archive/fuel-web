@@ -12,15 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fuel_agent.openstack.common import log as logging
-
-LOG = logging.getLogger(__name__)
-
 
 class BaseError(Exception):
-    def __init__(self, *args, **kwargs):
-        super(BaseException, self).__init__(*args, **kwargs)
-        LOG.error(self.message)
+    def __init__(self, message, *args, **kwargs):
+        self.message = message
+        super(BaseError, self).__init__(message, *args, **kwargs)
 
 
 class WrongPartitionSchemeError(BaseError):
@@ -103,7 +99,7 @@ class TemplateWriteError(BaseError):
     pass
 
 
-class ProcessExecutionError(Exception):
+class ProcessExecutionError(BaseError):
     def __init__(self, stdout=None, stderr=None, exit_code=None, cmd=None,
                  description=None):
         self.exit_code = exit_code

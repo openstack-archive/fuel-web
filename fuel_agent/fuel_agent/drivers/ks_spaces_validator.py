@@ -15,6 +15,9 @@
 import jsonschema
 
 from fuel_agent import errors
+from fuel_agent.openstack.common import log as logging
+
+LOG = logging.getLogger(__name__)
 
 
 KS_SPACES_SCHEMA = {
@@ -128,6 +131,7 @@ def validate(scheme):
         jsonschema.validate(scheme, KS_SPACES_SCHEMA,
                             format_checker=checker)
     except Exception as exc:
+        LOG.exception(exc)
         raise errors.WrongPartitionSchemeError(str(exc))
 
     # scheme is not valid if the number of disks is 0

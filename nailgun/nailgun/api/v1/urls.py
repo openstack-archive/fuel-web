@@ -81,6 +81,7 @@ from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodesWithTasks
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
+from nailgun.api.v1.handlers.orchestrator import TaskDeployGraph
 
 from nailgun.api.v1.handlers.registration import FuelKeyHandler
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
@@ -161,6 +162,8 @@ urls = (
     DeploySelectedNodes,
     r'/clusters/(?P<cluster_id>\d+)/deploy_tasks/?$',
     DeploySelectedNodesWithTasks,
+    r'/clusters/(?P<cluster_id>\d+)/deploy_tasks/graph.gv$',
+    TaskDeployGraph,
     r'/clusters/(?P<cluster_id>\d+)/stop_deployment/?$',
     ClusterStopDeploymentHandler,
     r'/clusters/(?P<cluster_id>\d+)/reset/?$',

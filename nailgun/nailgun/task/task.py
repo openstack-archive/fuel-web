@@ -860,17 +860,17 @@ class DumpTask(object):
         return dump_conf
 
     @classmethod
-    def execute(cls, task, conf=None):
+    def execute(cls, task):
         logger.debug("DumpTask: task={0}".format(task.uuid))
         message = make_astute_message(
             task,
             'dump_environment',
             'dump_environment_resp',
             {
-                'settings': conf or cls.conf()
+                'settings': cls.conf()
             }
         )
-        db().flush()
+        db().commit()
         rpc.cast('naily', message)
 
 

@@ -426,7 +426,7 @@ class TestLogs(BaseIntegrationTest):
         mock = Mock(return_value=None)
         tm._call_silently = mock
         task = tm.execute()
-        mock.assert_called_once_with(task, DumpTask, conf=None)
+        mock.assert_called_once_with(task, DumpTask)
 
     def test_snapshot_task_manager_already_running(self):
         self.env.create_task(name="dump")
@@ -492,24 +492,3 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers, expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
-
-    @patch('nailgun.task.task.DumpTask.conf')
-    def test_dump_conf_returned(self, mconf):
-        mconf.return_value = {'test': 'config'}
-        resp = self.app.get(
-            reverse('LogPackageDefaultConfig'),
-            headers=self.default_headers
-        )
-        self.assertEqual(resp.json, {'test': 'config'})
-
-    @patch('nailgun.task.task.rpc.cast')
-    def test_custom_conf_passed_to_execute(self, mcast):
-        custom_config = {'test': 'config'}
-
-        self.app.put(
-            reverse('LogPackageHandler'), jsonutils.dumps(custom_config),
-            headers=self.default_headers
-        )
-
-        params = mcast.call_args_list[0][0]
-        self.assertEqual(params[1]['args']['settings'], custom_config)

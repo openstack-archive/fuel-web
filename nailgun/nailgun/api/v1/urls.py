@@ -37,7 +37,6 @@ from nailgun.api.v1.handlers.disks import NodeDisksHandler
 from nailgun.api.v1.handlers.disks import NodeVolumesInformationHandler
 
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
-from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
 from nailgun.api.v1.handlers.logs import LogPackageHandler
 from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
@@ -203,8 +202,6 @@ urls = (
     LogEntryCollectionHandler,
     r'/logs/package/?$',
     LogPackageHandler,
-    r'/logs/package/config/default/?$',
-    LogPackageDefaultConfig,
     r'/logs/sources/?$',
     LogSourceCollectionHandler,
     r'/logs/sources/nodes/(?P<node_id>\d+)/?$',

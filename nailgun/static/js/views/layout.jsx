@@ -31,8 +31,6 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     var components = {};
 
-    var cx = React.addons.classSet;
-
     components.Navbar = React.createClass({
         mixins: [
             componentMixins.dispatcherMixin('updateNodeStats', 'updateNodeStats'),
@@ -43,7 +41,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         ],
         showChangePasswordDialog: function(e) {
             e.preventDefault();
-            utils.showDialog(dialogs.ChangePasswordDialog);
+            dialogs.ChangePasswordDialog.show();
         },
         togglePopover: function(visible) {
             this.setState({popoverVisible: _.isBoolean(visible) ? visible : !this.state.popoverVisible});
@@ -110,7 +108,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                                 </li>
                                 {_.map(this.props.elements, function(element) {
                                     return <li key={element.label}>
-                                        <a className={cx({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
+                                        <a className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
                                     </li>;
                                 }, this)}
                                 <li className='space'></li>
@@ -173,7 +171,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
             node.fetch();
-            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: node});
+            dialogs.ShowNodeInfoDialog.show({node: node});
         },
         toggle: function(visible) {
             this.props.togglePopover(visible);
@@ -224,7 +222,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                                 return [
                                     <li
                                         key={'notification' + notification.id}
-                                        className={cx({'enable-selection': true, new: unread, clickable: nodeId}) + ' ' + notification.get('topic')}
+                                        className={utils.classNames({'enable-selection': true, new: unread, clickable: nodeId}) + ' ' + notification.get('topic')}
                                         onClick={nodeId && _.bind(this.showNodeInfo, this, nodeId)}
                                     >
                                         <i className={{error: 'icon-attention', warning: 'icon-attention', discover: 'icon-bell'}[notification.get('topic')] || 'icon-info-circled'}></i>

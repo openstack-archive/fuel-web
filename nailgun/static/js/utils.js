@@ -343,6 +343,17 @@ define([
             if (_.isString(model1Value)) return utils.natsort(model1Value, model2Value, options);
             var result = model1Value - model2Value;
             return options.desc ? -result : result;
+        },
+        areCookiesEnabled: function() {
+            var isCookieEnabled = navigator.cookieEnabled,
+                documentCookie = document.cookie,
+                myCookie = 'myCookie';
+
+            if (_.isUndefined(isCookieEnabled) && !isCookieEnabled) {
+                documentCookie = myCookie;
+                isCookieEnabled = _.contains(documentCookie, myCookie);
+            }
+            return isCookieEnabled;
         }
     };
 

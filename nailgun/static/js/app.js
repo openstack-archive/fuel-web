@@ -65,6 +65,15 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
         initialize: function() {
             window.app = this;
 
+            if (!utils.areCookiesEnabled()) {
+                var ns = 'dialog.error_dialog.';
+                utils.showErrorDialog({
+                    title: i18n(ns + 'title'),
+                    message: i18n(ns + 'no_cookies')
+                });
+                throw ('No cookies');
+            }
+
             if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
                 $('body').addClass('safari');
             }

@@ -827,5 +827,206 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         }
     });
 
+    dialogs.RegistrationDialog = React.createClass({
+        mixins: [
+            dialogMixin,
+            componentMixins.backboneMixin('registrationForm', 'change invalid')
+        ],
+        getInitialState: function() {
+            return {
+                disabled: true,
+                loading: true
+            };
+        },
+        getDefaultProps: function() {
+            return {
+                title: i18n('dialog.registration.title'),
+                modalClass: 'registration'
+            };
+        },
+        componentDidMount: function() {
+            var registrationForm = this.props.registrationForm;
+            registrationForm.fetch({cache: true})
+                .done(_.bind(function() {
+                    this.setState({loading: false});
+                }, this))
+                .fail(_.bind(function() {
+                    registrationForm.url = 'api/tracking/registration';
+                    registrationForm.fetch()
+                        .done(_.bind(function() {
+                            this.setState({loading: false});
+                        }, this))
+                        .fail(_.bind(function(response) {
+                            this.showError(utils.getResponseText(response) || i18n('dialog.error_dialog.warning'));
+                        }, this));
+                }, this));
+        },
+        onChange: function(inputName, value) {
+            var registrationForm = this.props.registrationForm,
+                name = registrationForm.makePath('credentials', inputName, 'value');
+            if (registrationForm.validationError) delete registrationForm.validationError['credentials.' + inputName];
+            registrationForm.set(name, value);
+            this.setState({disabled: !registrationForm.attributes.credentials.agree.value});
+        },
+        composeOptions: function(values) {
+            return _.map(values, function(value, index) {
+                return (
+                    <option key={index} value={value.data} disabled={value.disabled}>
+                        {value.label}
+                    </option>
+                );
+            });
+        },
+        getAgreementLink: function(link) {
+            return (<span>{i18n('dialog.registration.i_agree')} <a href={link} target='_blank'>{i18n('dialog.registration.terms_and_conditions')}</a></span>);
+        },
+        goToWelcomeScreen: function() {
+            if (this.props.setConnected) this.props.setConnected();
+            this.close();
+        },
+        createAccount: function() {
+            var registrationForm = this.props.registrationForm;
+            if (registrationForm.isValid()) {
+                this.setState({actionInProgress: true});
+                registrationForm.save(registrationForm.attributes, {type: 'POST'})
+                    .done(_.bind(function(response) {
+                        var settings = this.props.settings,
+                            registrationData = settings.get('statistics'),
+                            connectionInfo = settings.get('tracking');
+                        _.each(response, function(value, name) {
+                            registrationData[name].value = value;
+                        });
+                        //FIXME: Change this part when backend will be ready
+                        connectionInfo.email.value = response.email;
+                        connectionInfo.password.value = 'temp';
+                        settings.save(null, {patch: true, wait: true, validate: false})
+                            .done(this.goToWelcomeScreen)
+                            .fail(_.bind(function() {
+                                this.setState({error: i18n('common.error')});
+                            }, this));
+                    }, this))
+                    .always(_.bind(function() {
+                        this.setState({actionInProgress: false});
+                    }, this))
+                    .fail(_.bind(function(response) {
+                        var error = !response.responseText || response.responseText == 'None' ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
+                        this.setState({error: error});
+                    }, this));
+            }
+        },
+        renderBody: function() {
+            var registrationForm = this.props.registrationForm;
+            if (this.state.loading) return <controls.ProgressBar />;
+            var fieldsList = registrationForm.attributes.credentials,
+                actionInProgress = this.state.actionInProgress,
+                error = this.state.error,
+                sortedFields = _.chain(_.keys(fieldsList))
+                    .without('metadata')
+                    .sortBy(function(inputName) {return fieldsList[inputName].weight;})
+                    .value();
+            return (
+                <div className='registration-form'>
+                    {actionInProgress && <controls.ProgressBar />}
+                    {error && <div className='error'>{error}</div>}
+                    <form className='form-horizontal'>
+                        {_.map(sortedFields, function(inputName) {
+                            var input = fieldsList[inputName],
+                                path = 'credentials.' + inputName,
+                                inputError = (registrationForm.validationError || {})[path];
+                            return <controls.Input
+                                ref={inputName}
+                                key={inputName}
+                                name={inputName}
+                                label={inputName != 'agree' ? input.label : this.getAgreementLink(input.description)}
+                                {... _.pick(input, 'type', 'value')}
+                                children={input.type == 'select' && this.composeOptions(input.values)}
+                                wrapperClassName={inputName}
+                                onChange={this.onChange}
+                                error={inputError}
+                                disabled={actionInProgress}
+                                description={inputName != 'agree' && input.description}
+                            />;
+                        }, this)}
+                    </form>
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return [
+                <button key='cancel' className='btn' onClick={this.close}>
+                    {i18n('common.cancel_button')}
+                </button>,
+                <button key='apply' className='btn btn-success' disabled={this.state.disabled || this.state.actionInProgress} onClick={this.createAccount}>
+                    {i18n('welcome_page.register.create_account')}
+                </button>
+            ];
+        }
+    });
+
+    dialogs.RetrievePasswordDialog = React.createClass({
+        mixins: [
+            dialogMixin
+        ],
+        getDefaultProps: function() {
+            return {
+                title: i18n('dialog.retrieve_password.title'),
+                modalClass: 'retrieve-password-form'
+            };
+        },
+        getInitialState: function() {
+            return {};
+        },
+        retrievePassword: function() {
+            this.setState({
+                sent: true
+            });
+        },
+        renderBody: function() {
+            var ns = 'dialog.retrieve_password.';
+            return (
+                <div className='retrieve-password-content'>
+                    {!this.state.sent ?
+                        <div>
+                            <div>{i18n(ns + 'submit_email')}</div>
+                            <controls.Input
+                                key='retrievePassword'
+                                name='retrievePassword'
+                                type='text'
+                                label='Mirantis Account Email'
+                            />
+                        </div>
+                    :
+                        <div>
+                            <div>{i18n(ns + '.done')}</div>
+                            <div>{i18n(ns + 'check_email')}</div>
+                        </div>
+                    }
+                </div>
+            );
+        },
+        renderFooter: function() {
+            return (
+                <div>
+                    {!this.state.sent ?
+                        <div>
+                            <button key='cancel' className='btn' onClick={this.close}>
+                                {i18n('common.cancel_button')}
+                            </button>
+                            <button key='apply' className='btn btn-success' onClick={this.retrievePassword}>
+                                {i18n('dialog.retrieve_password.send_new_password')}
+                            </button>
+                        </div>
+                    :
+                        <div>
+                            <button key='close' className='btn' onClick={this.close}>
+                                {i18n('common.close_button')}
+                            </button>
+                        </div>
+                    }
+                </div>
+            );
+        }
+    });
+
     return dialogs;
 });

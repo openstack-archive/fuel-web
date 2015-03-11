@@ -31,8 +31,6 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     var components = {};
 
-    var cx = React.addons.classSet;
-
     components.Navbar = React.createClass({
         mixins: [
             componentMixins.dispatcherMixin('updateNodeStats', 'updateNodeStats'),
@@ -43,7 +41,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         ],
         showChangePasswordDialog: function(e) {
             e.preventDefault();
-            utils.showDialog(dialogs.ChangePasswordDialog);
+            dialogs.ChangePasswordDialog.show();
         },
         togglePopover: function(visible) {
             this.setState({popoverVisible: _.isBoolean(visible) ? visible : !this.state.popoverVisible});
@@ -73,6 +71,13 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                     this.props.notifications.reset();
                 }
             }, this);
+        },
+        handleBodyClick: function(e) {
+            if (_.all([this.refs.popover, this.refs.notifications], function(component) {
+                return !$(e.target).closest(component.getDOMNode()).length;
+            })) {
+                _.defer(_.partial(this.togglePopover, false));
+            }
         },
         getDefaultProps: function() {
             return {
@@ -110,7 +115,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                                 </li>
                                 {_.map(this.props.elements, function(element) {
                                     return <li key={element.label}>
-                                        <a className={cx({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
+                                        <a className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
                                     </li>;
                                 }, this)}
                                 <li className='space'></li>
@@ -128,6 +133,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                                 notifications={this.props.notifications}
                                 displayCount={this.props.notificationsDisplayCount}
                                 togglePopover={this.togglePopover}
+                                handleBodyClick={this.handleBodyClick}
                             />
                         }
                     </div>
@@ -170,20 +176,15 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
 
     var NotificationsPopover = React.createClass({
         mixins: [componentMixins.backboneMixin('notifications')],
+        getDefaultProps: function() {
+            return {
+                eventNamespace: 'click.click-notifications'
+            };
+        },
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
             node.fetch();
-            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: node});
-        },
-        toggle: function(visible) {
-            this.props.togglePopover(visible);
-        },
-        handleBodyClick: function(e) {
-            if (_.all([this.getDOMNode(), this._owner.refs.notifications.getDOMNode()], function(el) {
-                return !$(e.target).closest(el).length;
-            })) {
-                _.defer(_.bind(this.toggle, this, false));
-            }
+            dialogs.ShowNodeInfoDialog.show({node: node});
         },
         markAsRead: function() {
             var notificationsToMark = new models.Notifications(this.props.notifications.where({status: 'unread'}));
@@ -200,13 +201,12 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         },
         componentDidMount: function() {
             this.markAsRead();
-            this.eventNamespace = 'click.click-notifications';
-            $('html').on(this.eventNamespace, _.bind(this.handleBodyClick, this));
-            Backbone.history.on('route', this.toggle, this);
+            $('html').on(this.props.eventNamespace, this.props.handleBodyClick);
+            Backbone.history.on('route', _.partial(this.props.togglePopover, false), this);
         },
         componentWillUnmount: function() {
-            $('html').off(this.eventNamespace);
-            Backbone.history.off('route', this.toggle, this);
+            $('html').off(this.props.eventNamespace);
+            Backbone.history.off('route', this.props.togglePopover, this);
         },
         getInitialState: function() {
             return {unreadNotificationsIds: []};
@@ -224,7 +224,7 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                                 return [
                                     <li
                                         key={'notification' + notification.id}
-                                        className={cx({'enable-selection': true, new: unread, clickable: nodeId}) + ' ' + notification.get('topic')}
+                                        className={utils.classNames({'enable-selection': true, new: unread, clickable: nodeId}) + ' ' + notification.get('topic')}
                                         onClick={nodeId && _.bind(this.showNodeInfo, this, nodeId)}
                                     >
                                         <i className={{error: 'icon-attention', warning: 'icon-attention', discover: 'icon-bell'}[notification.get('topic')] || 'icon-info-circled'}></i>

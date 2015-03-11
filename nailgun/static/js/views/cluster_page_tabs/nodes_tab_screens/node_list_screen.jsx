@@ -29,8 +29,7 @@ define(
 ],
 function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins) {
     'use strict';
-    var cx = React.addons.classSet,
-        NodeListScreen, ManagementPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup, Node;
+    var NodeListScreen, ManagementPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup, Node;
 
     NodeListScreen = React.createClass({
         mixins: [
@@ -184,7 +183,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.changeScreen(action, true);
         },
         showDeleteNodesDialog: function() {
-            utils.showDialog(dialogs.DeleteNodesDialog, {nodes: this.props.nodes, cluster: this.props.cluster});
+            dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster});
         },
         applyChanges: function() {
             this.setState({actionInProgress: true});
@@ -278,7 +277,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         ] : [
                             <button
                                 key='disks'
-                                className={cx({'btn btn-configure-disks': true, conflict: disksConflict})}
+                                className={utils.classNames({'btn btn-configure-disks': true, conflict: disksConflict})}
                                 disabled={this.props.locked || !this.props.nodes.length}
                                 onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                             >
@@ -288,7 +287,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             !this.props.nodes.any(function(node) {return node.get('status') == 'error';}) &&
                                 <button
                                     key='interfaces'
-                                    className={cx({'btn btn-configure-interfaces': true, conflict: interfaceConflict})}
+                                    className={utils.classNames({'btn btn-configure-interfaces': true, conflict: interfaceConflict})}
                                     disabled={this.props.locked || !this.props.nodes.length}
                                     onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
                                 >
@@ -647,7 +646,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
         },
         removeNode: function() {
-            utils.showDialog(dialogs.RemoveNodeConfirmDialog, {
+            dialogs.RemoveNodeConfirmDialog.show({
                 cb: this.removeNodeConfirmed
             });
         },
@@ -672,7 +671,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         showNodeDetails: function(e) {
             e.preventDefault();
-            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: this.props.node});
+            dialogs.ShowNodeInfoDialog.show({node: this.props.node});
         },
         calculateNodeViewStatus: function() {
             var node = this.props.node;
@@ -735,8 +734,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var nodeBoxClasses = {'node-box': true, disabled: disabled};
             nodeBoxClasses[status] = status;
             return (
-                <div className={cx({node: true, checked: this.props.checked})}>
-                    <label className={cx(nodeBoxClasses)}>
+                <div className={utils.classNames({node: true, checked: this.props.checked})}>
+                    <label className={utils.classNames(nodeBoxClasses)}>
                         <controls.Input
                             type='checkbox'
                             name={node.id}
@@ -745,7 +744,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             onChange={this.props.onNodeSelection}
                         />
                         <div className='node-content'>
-                            <div className={cx(logoClasses)} />
+                            <div className={utils.classNames(logoClasses)} />
                             <div className='node-name-roles'>
                                 <div className='name enable-selection'>
                                     {this.state.renaming ?
@@ -784,10 +783,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         </button>
                                 )}
                             </div>
-                            <div className={cx(statusClasses)}>
+                            <div className={utils.classNames(statusClasses)}>
                                 <div className='node-status-container'>
                                     {_.contains(['provisioning', 'deploying'], status) &&
-                                        <div className={cx({progress: true, 'progress-success': status == 'deploying'})}>
+                                        <div className={utils.classNames({progress: true, 'progress-success': status == 'deploying'})}>
                                             <div className='bar' style={{width: _.max([node.get('progress'), 3]) + '%'}} />
                                         </div>
                                     }

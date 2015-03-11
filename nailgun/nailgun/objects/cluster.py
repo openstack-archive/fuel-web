@@ -611,37 +611,31 @@ class Cluster(NailgunObject):
                 cls.set_primary_role(instance, nodes, role)
 
     @classmethod
-    def get_all_controllers(cls, instance):
-        roles_id = db().query(models.Role).\
-            filter_by(release_id=instance.release_id).\
-            filter_by(name='controller').first().id
-        deployed_controllers = db().query(models.Node).filter_by(
-            cluster_id=instance.id).join(models.Node.role_list, aliased=True).\
-            filter(models.Role.id == roles_id).all()
-        pending_controllers = db().query(models.Node).\
-            filter_by(cluster_id=instance.id).\
-            join(models.Node.pending_role_list, aliased=True).\
-            filter(models.Role.id == roles_id).all()
-        return deployed_controllers + pending_controllers
+    def get_nodes_by_role(cls, instance, role_name):
+        """Get nodes related to some specific role
 
-    @classmethod
-    def get_mongo_nodes(cls, instance):
-        role_name = 'mongo'
+        :param instance: cluster db object
+        :type: python object
+        :param role_name: node role name
+        :type: string
+        """
+
         role = db().query(models.Role).filter_by(
-            release_id=instance.release.id, name=role_name).first()
-        if role is None:
-            logger.warning(
-                "%s role doesn't exist", role_name)
+            release_id=instance.release_id, name=role_name).first()
+
+        if not role:
+            logger.warning("%s role doesn't exist", role_name)
             return []
-        env_nodes = db().query(models.Node).filter_by(
-            cluster_id=instance.id)
-        deployed_mongos = env_nodes.join(
+
+        nodes = db().query(models.Node).filter_by(cluster_id=instance.id)
+        deployed_nodes = nodes.join(
             models.Node.role_list, aliased=True).filter(
                 models.Role.id == role.id).all()
-        pending_mongos = env_nodes.join(
+        pending_nodes = nodes.join(
             models.Node.pending_role_list, aliased=True).filter(
                 models.Role.id == role.id).all()
-        return deployed_mongos + pending_mongos
+
+        return deployed_nodes + pending_nodes
 
     @classmethod
     def get_controllers_group_id(cls, instance):

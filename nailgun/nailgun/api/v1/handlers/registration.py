@@ -18,29 +18,85 @@
 Product registration handlers
 """
 
-import base64
-
-from oslo.serialization import jsonutils
-
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
-from nailgun.settings import settings
+from nailgun.api.v1.validators.base import BasicValidator
+
+from nailgun.errors import errors
+
+from nailgun.utils.tracking import FuelTrackingManager
 
 
-class FuelKeyHandler(BaseHandler):
-    """ Fuel key handler"""
+class FuelRegistrationForm(BaseHandler):
+    """Registration form handler"""
+
+    validator = BasicValidator
 
     @content
     def GET(self):
-        """Returns Fuel Key data
-        :returns: base64 of FUEL commit SHA, release version and Fuel UUID.
+        """Returns Fuel registration form
+        :returns: JSON representation of registration form
         :http: * 200 (OK)
         """
-        key_data = {
-            "sha": str(settings.VERSION['nailgun_sha']),
-            "release": str(settings.VERSION['release']),
-            "uuid": str(settings.FUEL_KEY)
-        }
-        signature = base64.b64encode(jsonutils.dumps(key_data))
-        key_data["signature"] = signature
-        return {"key": base64.b64encode(jsonutils.dumps(key_data))}
+        try:
+            return FuelTrackingManager.get_registration_form()
+        except errors.TrackingError as exc:
+            raise self.http(400, exc.message)
+
+    @content
+    def POST(self):
+        json_data = self.checked_data()
+        try:
+            return FuelTrackingManager.post_registration_form(json_data)
+        except errors.TrackingError as exc:
+            raise self.http(400, exc.message)
+
+
+class FuelLoginForm(BaseHandler):
+    """Login form handler"""
+
+    validator = BasicValidator
+
+    @content
+    def GET(self):
+        """Returns Fuel login form
+        :returns: JSON representation of login form
+        :http: * 200 (OK)
+        """
+        try:
+            return FuelTrackingManager.get_login_form()
+        except errors.TrackingError as exc:
+            raise self.http(400, exc.message)
+
+    @content
+    def POST(self):
+        json_data = self.checked_data()
+        try:
+            return FuelTrackingManager.post_login_form(json_data)
+        except errors.TrackingError as exc:
+            raise self.http(400, exc.message)
+
+
+class FuelRestorePasswordForm(BaseHandler):
+    """Restore password form handler"""
+
+    validator = BasicValidator
+
+    @content
+    def GET(self):
+        """Returns Fuel restore password form
+        :returns: JSON representation of restore password form
+        :http: * 200 (OK)
+        """
+        try:
+            return FuelTrackingManager.get_restore_password_form()
+        except errors.TrackingError as exc:
+            raise self.http(400, exc.message)
+
+    @content
+    def POST(self):
+        json_data = self.checked_data()
+        try:
+            return FuelTrackingManager.post_restore_password_form(json_data)
+        except errors.TrackingError as exc:
+            raise self.http(400, exc.message)

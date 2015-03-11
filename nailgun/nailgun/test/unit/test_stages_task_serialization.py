@@ -80,13 +80,19 @@ class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 5)
+        self.assertEqual(len(serialized), 11)
         self.assertEqual(serialized[0]['type'], 'shell')
         self.assertEqual(serialized[1]['type'], 'upload_file')
         self.assertEqual(serialized[2]['type'], 'upload_file')
         self.assertEqual(serialized[3]['type'], 'upload_file')
-        self.assertEqual(serialized[4]['type'], 'shell')
-        self.assertEqual(serialized[4]['parameters']['cmd'], 'apt-get update')
+        self.assertEqual(serialized[4]['type'], 'upload_file')
+        self.assertEqual(serialized[5]['type'], 'upload_file')
+        self.assertEqual(serialized[6]['type'], 'upload_file')
+        self.assertEqual(serialized[7]['type'], 'upload_file')
+        self.assertEqual(serialized[8]['type'], 'upload_file')
+        self.assertEqual(serialized[9]['type'], 'upload_file')
+        self.assertEqual(serialized[10]['type'], 'shell')
+        self.assertEqual(serialized[10]['parameters']['cmd'], 'apt-get update')
         self.assertItemsEqual(serialized[3]['uids'], self.all_uids)
 
 
@@ -283,9 +289,15 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
         self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 8)
+        self.assertEqual(len(tasks), 14)
         tasks_tests = [('shell', ['master']),
                        ('shell', sorted(self.all_uids)),
+                       ('upload_file', sorted(self.all_uids)),
+                       ('upload_file', sorted(self.all_uids)),
+                       ('upload_file', sorted(self.all_uids)),
+                       ('upload_file', sorted(self.all_uids)),
+                       ('upload_file', sorted(self.all_uids)),
+                       ('upload_file', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),

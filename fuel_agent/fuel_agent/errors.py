@@ -18,9 +18,9 @@ LOG = logging.getLogger(__name__)
 
 
 class BaseError(Exception):
-    def __init__(self, *args, **kwargs):
-        super(BaseException, self).__init__(*args, **kwargs)
-        LOG.error(self.message)
+    def __init__(self, message, *args, **kwargs):
+        self.message = message
+        super(BaseError, self).__init__(message, *args, **kwargs)
 
 
 class WrongPartitionSchemeError(BaseError):

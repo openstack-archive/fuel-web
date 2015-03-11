@@ -883,7 +883,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                         tableClassName='table table-condensed enable-selection'
                                         noStripes={true}
                                         head={_.map(['node_name', 'node_mac_address', 'node_interface', 'expected_vlan'], function(attr) {
-                                            return i18n(ns + attr);
+                                            return {label: i18n(ns + attr)};
                                         })}
                                         body={
                                             _.map(task.get('result'), function(node) {

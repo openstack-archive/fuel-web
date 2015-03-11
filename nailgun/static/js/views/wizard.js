@@ -203,7 +203,9 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             var result = true;
             var processBind = _.bind(function(path, value) {
                 if (path.slice(0, prefix.length) == prefix) {
-                    utils.parseModelPath(path, this.configModels).set(value);
+                    if (this.panesModel.get('maxAvailablePaneIndex') < this.panesModel.get('activePaneIndex')) {
+                        utils.parseModelPath(path, this.configModels).set(value);
+                    }
                 }
             }, this);
             _.each(this.config, function(paneConfig, paneName) {

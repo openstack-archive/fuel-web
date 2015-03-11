@@ -116,9 +116,11 @@ class ClientProvider(object):
     @property
     def credentials(self):
         if self._credentials is None:
-            access_data = objects.Cluster.get_creds(self.cluster)
+            access_data = objects.Cluster.get_editable_attributes(
+                self.cluster
+            )['editable']['workloads_collector']
 
-            os_user = access_data["user"]["value"]
+            os_user = access_data["username"]["value"]
             os_password = access_data["password"]["value"]
             os_tenant = access_data["tenant"]["value"]
 

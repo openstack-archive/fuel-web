@@ -38,7 +38,7 @@ class TestMongoNodes(base.BaseTestCase):
             nodes_kwargs=[{}]
         )
         cluster = self.env.clusters[0]
-        nodes = objects.Cluster.get_mongo_nodes(cluster)
+        nodes = objects.Cluster.get_nodes_by_role(cluster, 'mongo')
         self.assertEqual(len(nodes), 0)
 
     def test_get_mongo_nodes(self):
@@ -53,7 +53,7 @@ class TestMongoNodes(base.BaseTestCase):
             ]
         )
         cluster = self.env.clusters[0]
-        nodes = objects.Cluster.get_mongo_nodes(cluster)
+        nodes = objects.Cluster.get_nodes_by_role(cluster, 'mongo')
         self.assertEqual(len(nodes), 2)
 
     def test_mongo_node_with_ext_mongo(self):

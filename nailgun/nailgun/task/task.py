@@ -708,7 +708,8 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def _check_controllers_count(cls, task):
         cluster = task.cluster
-        controllers = objects.Cluster.get_all_controllers(task.cluster)
+        controllers = objects.Cluster.get_nodes_by_role(
+            task.cluster, 'controller')
         # we should make sure that cluster has at least one controller
         if len(controllers) < 1:
             raise errors.NotEnoughControllers(
@@ -838,11 +839,13 @@ class CheckBeforeDeploymentTask(object):
             task.cluster.attributes).get("additional_components", None)
         if (components and components["ceilometer"]["value"]
             and components["mongo"]["value"]
-                and len(objects.Cluster.get_mongo_nodes(task.cluster)) > 0):
+                and len(objects.Cluster.get_nodes_by_role(
+                        task.cluster, 'mongo')) > 0):
                     raise errors.ExtMongoCheckerError
         if (components and components["ceilometer"]["value"]
             and not components["mongo"]["value"]
-                and len(objects.Cluster.get_mongo_nodes(task.cluster)) == 0):
+                and len(objects.Cluster.get_nodes_by_role(
+                        task.cluster, 'mongo')) == 0):
                     raise errors.MongoNodesCheckError
 
 

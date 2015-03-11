@@ -71,6 +71,10 @@ defining IPs for hosts and instance public addresses",
                                                 "tooltip": "Used for defining \
 IPs for hosts and instance public addresses",
                                                 "value": "10.0.0.254"},
+                "ADMIN_NETWORK/dhcp_gateway": {"label": "DHCP Gateway",
+                                               "tooltip": "Default gateway \
+to advertise via DHCP to nodes",
+                                               "value": "10.0.0.2"},
                 "dynamic_label": {"label": "DHCP pool for node discovery:",
                                   "tooltip": "",
                                   "value": "label"},
@@ -191,6 +195,18 @@ interface first.")
                     errors.append("Invalid IP address for DHCP Pool Start")
                 try:
                     if netaddr.valid_ipv4(responses[
+                            "ADMIN_NETWORK/dhcp_gateway"]):
+                        dhcp_end = netaddr.IPAddress(
+                            responses["ADMIN_NETWORK/dhcp_gateway"])
+                        if not dhcp_end:
+                            raise BadIPException("Not a valid IP address")
+                    else:
+                        raise BadIPException("Not a valid IP address")
+                except Exception:
+                    errors.append("Invalid IP address for DHCP Gateway")
+
+                try:
+                    if netaddr.valid_ipv4(responses[
                             "ADMIN_NETWORK/dhcp_pool_end"]):
                         dhcp_end = netaddr.IPAddress(
                             responses["ADMIN_NETWORK/dhcp_pool_end"])
@@ -224,6 +240,11 @@ interface first.")
                                         mgmt_if_ipaddr, netmask) is False:
                     errors.append("DHCP Pool end does not match management "
                                   "network.")
+                if network.inSameSubnet(responses[
+                                        "ADMIN_NETWORK/dhcp_gateway"],
+                                        mgmt_if_ipaddr, netmask) is False:
+                    errors.append("DHCP Gateway does not match management"
+                                  " network.")
 
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
@@ -281,9 +302,9 @@ interface first.")
                 newsettings[setting] = responses[setting]
         ## Generic settings end ##
 
-        ## Need to calculate and netmask
-        newsettings['ADMIN_NETWORK']['netmask'] = self.netsettings[newsettings
-                   ['ADMIN_NETWORK']['interface']]["netmask"]
+        newsettings['ADMIN_NETWORK']['netmask'] = \
+            self.netsettings[newsettings['ADMIN_NETWORK']
+                             ['interface']]["netmask"]
 
         Settings().write(newsettings,
                          defaultsfile=self.parent.defaultsettingsfile,
@@ -389,6 +410,9 @@ interface first.")
                 self.edits[index].set_edit_text(dynamic_start)
             elif key == "ADMIN_NETWORK/dhcp_pool_end":
                 self.edits[index].set_edit_text(dynamic_end)
+            elif key == "ADMIN_NETWORK/dhcp_gateway":
+                self.edits[index].set_edit_text(self.netsettings[
+                    self.activeiface]['addr'])
 
     def refresh(self):
         self.getNetwork()

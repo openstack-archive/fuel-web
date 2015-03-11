@@ -404,11 +404,9 @@ label {cursor: default;}
 }
 
 .register-trial {
-  border: 1px solid @fuel-grey-light;
-  .border-radius-mixin(8px);
   padding: 8px 10px 4px 10px;
   text-align: center;
-  margin-bottom: 20px;
+  margin: 0px -30px 20px -30px;
   background-color: #f0f4f4;
 }
 
@@ -1911,6 +1909,25 @@ label {cursor: default;}
   &.active,
   &:active {
     .btn-active-state-mixin(#007cba, #d9d9d9);
+    .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+  }
+  &.disabled, &[disabled], &[disabled]:hover {
+    .btn-state-disabled-mixin;
+  }
+}
+
+.btn-unwanted {
+  .btn-mixin(@fuel-white-color, @fuel-dark-red, 0 1px 2px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.25), #999999, #B8B8B8, #A2A2A2);
+  &:hover {
+    background: linear-gradient(to top, #A2A2A2, #A2A2A2) repeat scroll 0 0 rgba(0, 0, 0, 0);
+    border: 1px solid #999999;
+    text-decoration: none;
+    color: #efefef;
+    .box-shadow-mixin-two(0 1px 1px rgba(0,0,0,.1), inset 0 0 0 1px rgba(255,255,255,.15));
+  }
+  &.active,
+  &:active {
+    .btn-active-state-mixin(#999999, #d9d9d9);
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
   &.disabled, &[disabled], &[disabled]:hover {
@@ -3818,23 +3835,82 @@ i.btn-cluster-details {
   padding: 40px;
   color: #4d545b;
   > div {
-    width: 800px;
+    width: 700px;
     background-color: @fuel-white-color;
     margin: 0 auto;
     padding: 30px;
     padding-bottom: 10px;
     .box-sizing-mixin;
     .border-radius-mixin(10px);
+    > div {
+      text-align: center;
+    }
     h2 {
       line-height: 40px;
       .font-layout-mixin(36px, #4d545b);
       .indent-mixin();
       margin-bottom: 20px;
     }
+    .notice {color: @fuel-base-color;}
+    .happy-cloud {
+      padding: 30px;
+      div {
+        margin-top: 20px;
+        .font-layout-mixin(@font-size-big-2, #00AC51);
+      }
+      .cloud-smile {
+        .width-height-mixin(146px, 108px);
+        background-image: url(../img/cloud-smile.png);
+        background-repeat: no-repeat;
+        margin: 0 auto;
+      }
+    }
+    .register_installation {margin: 15px 0;}
+    .error {
+        color: @fuel-deep-red;
+        font-style: italic;
+        margin: 10px 0;
+      }
+    .connection_form {
+      width: 285px;
+      margin: 0 auto;
+      text-align: left;
+      .parameter-box {
+        width: 100%;
+        vertical-align: top;
+        display: inline-block;
+        padding-right: 10px;
+        .label-wrapper {
+          margin-top: 0px;
+          span {font-weight: normal;}
+        }
+        .input-wrapper {display: block;}
+        .parameter-name {
+          width: 100%;
+          margin-top: 2px;
+          input {width: 95%;}
+        }
+        .parameter-description {
+          float: right;
+          font-style: italic;
+          margin-top: 3px;
+        }
+      }
+      .links-container {
+        min-height: 20px;
+        margin: 15px 0 15px;
+      }
+      .create-account, .retrive-password {
+        display: block;
+        float: left;
+        cursor: pointer;
+      }
+      .retrive-password {float: right;}
+    }
     .welcome-checkbox-box {
       text-align: center;
-      margin-bottom: 5px;
-      padding-top: 4px;
+      margin-bottom: 10px;
+      padding-top: 10px;
       div {
         display: inline-block;
         margin: 0 auto;
@@ -3881,7 +3957,64 @@ i.btn-cluster-details {
       }
     }
   }
-  .parameter-description { margin: 12px 0 0 5px; }
+  .parameter-description {
+    margin: 0 0 0 5px;
+  }
+}
+
+/**  Fuel Registration form **/
+.registration-form {
+  margin-left: 20px;
+  h2 {
+    line-height: 30px;
+    .font-layout-mixin(22px, #4d545b);
+    .indent-mixin();
+    margin-bottom: 20px;
+  }
+  .error {
+    color: @fuel-deep-red;
+    font-style: italic;
+    margin: 10px 0;
+  }
+  .parameter-box {
+    width: 100%;
+    vertical-align: top;
+    display: inline-block;
+    padding-right: 10px;
+    .label-wrapper {margin-top: 0px;}
+    .label-wrapper span {text-transform: capitalize;}
+    .input-wrapper {display: block;}
+    .parameter-name {
+      width: 100%;
+      margin-top: 2px;
+      input {width: 92%;}
+    }
+    &.first_name, &.last_name, &.company, &.phone, &.country, &.region {
+      width: 47%;
+      input {width: 90%;}
+      select {width: 97%;}
+    }
+    &.agree {
+      display: block;
+      width: auto;
+      margin: 15px 0 0 100px;
+      .label-wrapper {margin-top: 6px}
+    }
+  }
+  .parameter-description { font-style: italic; }
+}
+
+.retrieve-password-content {
+  padding-bottom: 20px;
+  .parameter-box {
+    width: 100%;
+    .parameter-name {
+      width: 100%;
+      .label-wrapper {padding: 7px 0;}
+      .input-wrapper {display: block;}
+      input {width: 95%;}
+    }
+  }
 }
 
 .statistics-settings {
@@ -3918,11 +4051,45 @@ i.btn-cluster-details {
   padding: 20px;
   margin-bottom: 16px;
   line-height: 16px;
+  text-align: left;
   .width-height-mixin(100%, 300px);
   .font-layout-mixin(14px, #5b636b, lighter);
   .box-sizing-mixin;
   p { margin-bottom: 10px; }
   ul { margin-bottom: 20px; }
+}
+
+.support-page {
+  .connection_form {
+    text-align: left;
+    .parameter-box {
+      vertical-align: top;
+      display: block;
+      width: 220px;
+      float: left;
+      padding-right: 10px;
+      margin-bottom: 20px;
+      .label-wrapper {
+        margin-top: 0px;
+        span {font-weight: normal;}
+      }
+      .parameter-name {
+        width: 100%;
+        margin-top: 2px;
+      }
+      .parameter-description {
+        font-style: italic;
+        margin-top: 3px;
+      }
+    }
+  }
+  p {clear: left;}
+  .registeredData > span {display: block;}
+  .error {
+    color: @fuel-deep-red;
+    font-style: italic;
+    margin: 10px 0;
+  }
 }
 
 .ui-sortable-placeholder {

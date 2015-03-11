@@ -507,6 +507,7 @@ define([
             return response[this.root];
         },
         toJSON: function() {
+            if (!this.root) return this._super('toJSON', arguments);
             var data = {};
             data[this.root] = this._super('toJSON', arguments);
             return data;
@@ -1050,6 +1051,35 @@ define([
         initialize: function(config) {
             this.defaults = this.parseConfig(config);
         }
+    });
+
+    models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).extend({
+        constructorName: 'MirantisCredentials',
+        url: 'http://dev_ware.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration1',
+        validate: function(attrs) {
+            var errors = {};
+            _.each(attrs, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    var path = this.makePath(groupName, settingName);
+                    if (!setting.regex || !setting.regex.source) return;
+                    if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
+                }, this);
+            }, this);
+            return _.isEmpty(errors) ? null : errors;
+        },
+        makePath: function() {
+            return _.toArray(arguments).join('.');
+        }
+    });
+
+    models.MirantisLoginForm = models.MirantisCredentials.extend({
+        constructorName: 'MirantisLoginForm',
+        url: 'api/tracking/login'
+    });
+
+    models.MirantisRegistrationForm = models.MirantisCredentials.extend({
+        constructorName: 'MirantisRegistrationForm',
+        url: 'http://dev_ware.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration1'
     });
 
     return models;

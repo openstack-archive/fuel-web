@@ -19,4 +19,5 @@ class MasterNodeSettingsSerializer(BasicSerializer):
 
     fields = (
         'settings',
+        'master_node_uid',
     )

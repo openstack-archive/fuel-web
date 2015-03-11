@@ -14,7 +14,7 @@
 
 from nailgun.api.v1.validators.base import BasicValidator
 
-from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun.objects import MasterNodeSettings
 
 
@@ -25,9 +25,9 @@ class MasterNodeSettingsValidator(BasicValidator):
         data = cls.validate_json(data)
 
         if data.get("master_node_uid"):
-            raise errors.InvalidData(
-                "Changing of master node uid is not allowed",
-                log_message=True
+            logger.warn(
+                "Changing of master node uid is not allowed. "
+                "It will be ignored",
             )
 
         cls.validate_schema(data, schema=MasterNodeSettings.schema)

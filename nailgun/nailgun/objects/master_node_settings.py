@@ -58,3 +58,18 @@ class MasterNodeSettings(NailgunObject):
                 "Object '{0}' is not found in DB".format(cls.__name__)
             )
         return res
+
+    @classmethod
+    def update(cls, instance, data):
+        """Update MasterNodeSettings object instance with specified parameters
+        in DB. master_node_uid cannot be changed so it's ignored.
+
+        :param instance: MasterNodeSettings instance
+        :param data: dictionary of key-value pairs as object fields
+        :returns: MasterNodeSettings instance
+        """
+        # master_node_uid cannot be changed
+        data.pop("master_node_uid", None)
+
+        super(MasterNodeSettings, cls).update(instance, data)
+        return instance

@@ -20,11 +20,10 @@
  * Based on https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
 **/
 
-define(['jquery', 'underscore', 'react'], function($, _, React) {
+define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) {
     'use strict';
 
-    var controls = {},
-        cx = React.addons.classSet;
+    var controls = {};
 
     var tooltipMixin = controls.tooltipMixin = {
         componentDidMount: function() {
@@ -94,7 +93,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     ref: 'input',
                     key: 'input',
                     type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
-                    className: cx(classes),
+                    className: utils.classNames(classes),
                     // debounced onChange callback is supported for uncontrolled inputs
                     onChange: this.props.value ? this.onChange : this.debouncedChange
                 },
@@ -103,7 +102,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 inputWrapperClasses = {'input-wrapper': this.props.type != 'hidden', 'custom-tumbler': isCheckboxOrRadio};
             return (
-                <div key='input-wrapper' className={cx(inputWrapperClasses)}>
+                <div key='input-wrapper' className={utils.classNames(inputWrapperClasses)}>
                     {input}
                     {isCheckboxOrRadio && <span>&nbsp;</span>}
                     {this.props.extraContent}
@@ -129,7 +128,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             labelClasses[this.props.labelClassName] = this.props.labelClassName;
             labelWrapperClasses[this.props.labelWrapperClassName] = this.props.labelWrapperClassName;
             var labelElement = (
-                    <div className={cx(labelWrapperClasses)}>
+                    <div className={utils.classNames(labelWrapperClasses)}>
                         <span>{this.props.label}</span>
                         {this.renderTooltipIcon()}
                     </div>
@@ -137,7 +136,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 labelBefore = (!this.isCheckboxOrRadio() || this.props.labelBeforeControl) ? labelElement : null,
                 labelAfter = (this.isCheckboxOrRadio() && !this.props.labelBeforeControl) ? labelElement : null;
             return this.props.label ? (
-                <label key='label' className={cx(labelClasses)} htmlFor={this.props.id}>
+                <label key='label' className={utils.classNames(labelClasses)} htmlFor={this.props.id}>
                     {labelBefore}
                     {children}
                     {labelAfter}
@@ -150,7 +149,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 classes = {'parameter-description': true};
             classes[this.props.descriptionClassName] = this.props.descriptionClassName;
             return error || this.props.description ? (
-                <div key='description' className={cx(classes)}>
+                <div key='description' className={utils.classNames(classes)}>
                     {error ?
                         this.props.error :
                         this.props.description.split('\n').map(function(line, index) {
@@ -171,7 +170,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     disabled: this.props.disabled
                 };
             classes[this.props.wrapperClassName] = this.props.wrapperClassName;
-            return (<div className={cx(classes)}>{children}</div>);
+            return (<div className={utils.classNames(classes)}>{children}</div>);
         },
         render: function() {
             return this.renderWrapper([
@@ -199,7 +198,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className='radio-group'>
                     {this.props.label &&
-                        <label className={cx(labelClasses)}>
+                        <label className={utils.classNames(labelClasses)}>
                             {this.props.label}
                             {this.renderTooltipIcon()}
                             <hr />
@@ -245,13 +244,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             var tableClasses = {'table table-bordered': true, 'table-striped': !this.props.noStripes};
             tableClasses[this.props.tableClassName] = this.props.tableClassName;
             return (
-                <table className={cx(tableClasses)}>
+                <table className={utils.classNames(tableClasses)}>
                     <thead>
                         <tr>
                             {_.map(this.props.head, function(column, index) {
                                 var classes = {};
                                 classes[column.className] = column.className;
-                                return <th key={index} className={cx(classes)}>{column.label}</th>;
+                                return <th key={index} className={utils.classNames(classes)}>{column.label}</th>;
                             })}
                         </tr>
                     </thead>

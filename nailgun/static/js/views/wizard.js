@@ -136,6 +136,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             };
             this.processRestrictions();
             this.attachModelListeners();
+            this.previousWizardConfig = _.cloneDeep(this.model.toJSON());
+            this.model.on('change', this.updatePreviousAttributes, this);
+        },
+        updatePreviousAttributes: function() {
+            this.previousWizardConfig = _.cloneDeep(this.model._previousAttributes);
         },
         processPaneRestrictions: function() {
             _.each(this.config, function(pane, paneName) {
@@ -164,6 +169,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             if (maxIndex > currentIndex && this.panesModel.get([this.panesConstructors[maxIndex].name]) != 'current') {
                 this.panesModel.set('maxAvailablePaneIndex', currentIndex);
                 var listOfPanesToRestoreDefaults = this.getListOfPanesToRestore(currentIndex, maxIndex);
+                this.previousWizardConfig = _.cloneDeep(this.model.toJSON());
                 this.model.restoreDefaultValues(listOfPanesToRestoreDefaults);
             }
         },
@@ -199,7 +205,13 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             var success = this.processBinds('settings');
             return $.Deferred()[success ? 'resolve' : 'reject']();
         },
+        hasChanges: function(paneName) {
+            if (!this.activePane) return false;
+            paneName = paneName || this.activePane.constructorName;
+            return !_.isEqual(this.previousWizardConfig[paneName], this.model.get(paneName));
+        },
         processBinds: function(prefix, paneNameToProcess) {
+            if (!this.hasChanges()) return false;
             var result = true;
             var processBind = _.bind(function(path, value) {
                 if (path.slice(0, prefix.length) == prefix) {
@@ -291,14 +303,18 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         },
         updatePanesStatuses: function() {
             _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
-                var paneName = PaneConstructor.prototype.constructorName;
+                var paneName = PaneConstructor.prototype.constructorName,
+                    maxAvailablePaneIndex = this.panesModel.get('maxAvailablePaneIndex'),
+                    activePaneIndex = this.panesModel.get('activePaneIndex');
                 if (this.panesModel.get(paneName) != 'hidden') {
-                    if (paneIndex == this.panesModel.get('activePaneIndex')) {
+                    if (paneIndex == activePaneIndex) {
                         this.panesModel.set(paneName, 'current');
-                    } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
+                    } else if (paneIndex <= maxAvailablePaneIndex) {
                         this.panesModel.set(paneName, 'available');
                     } else {
-                        this.panesModel.set(paneName, 'unavailable');
+                        if (this.hasChanges(paneName) || paneIndex > maxAvailablePaneIndex) {
+                            this.panesModel.set(paneName, 'unavailable');
+                        }
                     }
                 }
             }, this);
@@ -396,6 +412,8 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 }, this);
                 this.wizard.panesModel.set('invalid', true);
             }, this);
+
+            if (!this.wizard.previousWizardConfig[this.constructorName]) this.wizard.previousWizardConfig = _.cloneDeep(this.wizard.model.toJSON());
         },
         renderControls: function(config) {
             var controlsHtml = '';

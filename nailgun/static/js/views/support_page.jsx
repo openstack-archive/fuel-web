@@ -15,14 +15,16 @@
 **/
 define(
 [
+    'jquery',
     'underscore',
     'i18n',
     'react',
     'jsx!component_mixins',
     'models',
-    'jsx!views/statistics_mixin'
+    'jsx!views/statistics_mixin',
+    'jsx!views/controls'
 ],
-function(_, i18n, React, componentMixins, models, statisticsMixin) {
+function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -42,14 +44,16 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
             var elements = [
                 <DocumentationLink key='DocumentationLink' />,
                 <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
-                <CapacityAudit key='CapacityAudit' />,
-                <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />
+                <CapacityAudit key='CapacityAudit' />
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
-                    <RegistrationLink key='RegistrationLink' fuelKey={new models.FuelKey()}/>,
+                    <RegistrationInfo key='RegistrationInfo' settings={this.props.settings}/>,
+                    <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />,
                     <SupportContacts key='SupportContacts' />
                 );
+            } else {
+                elements.push(<StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />);
             }
             return (
                 <div>
@@ -95,24 +99,89 @@ function(_, i18n, React, componentMixins, models, statisticsMixin) {
         }
     });
 
-    var RegistrationLink = React.createClass({
-        mixins: [componentMixins.backboneMixin('fuelKey')],
-        componentDidMount: function() {
-            this.props.fuelKey.fetch();
+    var RegistrationInfo = React.createClass({
+        mixins: [
+            statisticsMixin,
+            componentMixins.backboneMixin('settings', 'change invalid')
+        ],
+        isConnected: function() {
+            //FIXME: to do a better checking of connected state when backend will be finished
+            return !!this.props.settings.get('tracking').email.value;
+        },
+        getInitialState: function() {
+            return {isConnected: this.isConnected()};
+        },
+        onChange: function(inputName, value) {
+            var settings = this.props.settings,
+                name = settings.makePath('tracking', inputName, 'value');
+            if (settings.validationError) delete settings.validationError['tracking.' + inputName];
+            settings.set(name, value);
         },
         render: function() {
-            var key = this.props.fuelKey.get('key');
+            var registrationInfo = this.props.settings.get('statistics'),
+                values = ['name', 'email', 'company'];
+            if (this.state.loading) return null;
+            if (this.state.isConnected)
+                return (
+                    <SupportPageElement
+                        className='img-register-fuel'
+                        title={i18n('support_page.product_registered_title')}
+                        text={i18n('support_page.product_registered_content')}
+                    >
+                        <p className='registeredData'>
+                            {_.map(values, function(value) {
+                                return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {registrationInfo[value].value}</span>;
+                            }, this)}
+                        </p>
+                        <p>
+                            <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
+                                {i18n('support_page.manage_account')}
+                            </a>
+                        </p>
+                    </SupportPageElement>
+                );
+            var settings = this.props.settings,
+                loginForm = this.props.settings.get('tracking'),
+                sortedFields = _.chain(_.keys(loginForm))
+                    .without('metadata')
+                    .sortBy(function(inputName) {return loginForm[inputName].weight;})
+                    .value(),
+                error = this.state.error;
             return (
                 <SupportPageElement
                     className='img-register-fuel'
                     title={i18n('support_page.register_fuel_title')}
                     text={i18n('support_page.register_fuel_content')}
                 >
-                    <p>
-                        <a className='btn registration-link' href={_.isUndefined(key) ? '/' : 'http://fuel.mirantis.com/create-subscriber/?key=' + key} target='_blank'>
-                            {i18n('support_page.register_fuel_title')}
-                        </a>
-                    </p>
+                    <div>
+                        {this.state.actionInProgress && <controls.ProgressBar />}
+                        {error &&
+                            <div className='error'>
+                                <i className='icon-attention'></i>
+                                {error}
+                            </div>
+                        }
+                        <div className='connection_form'>
+                            {_.map(sortedFields, function(inputName) {
+                                var input = loginForm[inputName],
+                                    path = 'tracking.' + inputName,
+                                    error = (settings.validationError || {})[path];
+                                return <controls.Input
+                                    ref={inputName}
+                                    key={inputName}
+                                    name={inputName}
+                                    {... _.pick(input, 'type', 'label', 'value')}
+                                    onChange={this.onChange}
+                                    error={error}/>;
+                            }, this)}
+                        </div>
+
+                        <p>
+                            <a className='btn registration-link' onClick={this.connectToMirantis} target='_blank'>
+                                {i18n('support_page.register_fuel_title')}
+                            </a>
+                        </p>
+                    </div>
                 </SupportPageElement>
             );
         }

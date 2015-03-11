@@ -670,51 +670,25 @@ define([
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork', attrs.networks));
             var untaggedNetworks = networks.filter(function(network) { return _.isNull(network.getVlanRange(attrs.networkingParameters)); });
+            var ns = 'cluster_page.nodes_tab.configure_interfaces.validation.';
             // public and floating networks are allowed to be assigned to the same interface
             var maxUntaggedNetworksCount = networks.where({name: 'public'}).length && networks.where({name: 'floating'}).length ? 2 : 1;
             if (untaggedNetworks.length > maxUntaggedNetworksCount) {
-                errors.push(i18n('cluster_page.nodes_tab.configure_interfaces.validation.too_many_untagged_networks'));
+                errors.push(i18n(ns + 'too_many_untagged_networks'));
+            }
+            var mtuValue = this.get('interface_properties').mtu;
+            if (mtuValue && (mtuValue < 42 || mtuValue > 65536)) {
+                errors.push(i18n(ns + 'invalid_mtu'));
             }
             return errors;
-        },
-        updateBondProperties: function(options) {
-            var bondProperties = this.get('bond_properties') || {};
-            bondProperties = _.extend(bondProperties, options);
-            if (!this.isHashPolicyNeeded()) bondProperties = _.omit(bondProperties, 'xmit_hash_policy');
-            if (!this.isLacpRateAvailable()) bondProperties = _.omit(bondProperties, 'lacp_rate');
-            this.set('bond_properties', bondProperties);
-        },
-        isLacpRateAvailable: function() {
-            return _.contains(this.get('bonding').properties.linux.lacp_rate[0].for_modes, this.getBondMode());
-        },
-        isHashPolicyNeeded: function() {
-            return _.contains(this.get('bonding').properties.linux.xmit_hash_policy[0].for_modes, this.getBondMode());
-        },
-        isLinuxBond: function() {
-            return _.keys(this.get('bonding').properties)[0] == 'linux';
-        },
-        getBondMode: function() {
-            return this.get('mode') || (this.get('bond_properties') || {}).mode ||
-                this.get('bonding').properties.linux.mode[0].values[0];
-        },
-        getPolicies: function() {
-            return this.get('bonding').properties.linux.xmit_hash_policy[0].values;
-        },
-        getLACPRate: function() {
-            return this.get('bonding').properties.linux.lacp_rate[0].values;
-        },
-        getBondModes: function() {
-            var bondType = this.isLinuxBond() ? 'linux' : 'ovs';
-            return this.get('bonding').properties[bondType].mode[0].values;
         }
     });
 
     models.Interfaces = BaseCollection.extend({
         constructorName: 'Interfaces',
         model: models.Interface,
-        generateBondName: function() {
-            var index, proposedName,
-                base = this.first().isLinuxBond() ? 'bond' : 'ovs-bond';
+        generateBondName: function(base) {
+            var index, proposedName;
             for (index = 0; true; index += 1) {
                 proposedName = base + index;
                 if (!this.where({name: proposedName}).length) {

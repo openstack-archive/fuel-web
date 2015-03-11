@@ -299,7 +299,8 @@
                             "load_error": "Some nodes failed to load"
                         },
                         "validation": {
-                            "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface"
+                            "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface",
+                            "invalid_mtu": "Invalid MTU value"
                         },
                         "disable_offloading": "Disable Offloading",
                         "mtu": "MTU"

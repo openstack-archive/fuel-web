@@ -20,7 +20,7 @@
     "grunt-jison": "~1.2.1",
     "grunt-jscs": "~1.2.0",
     "grunt-lintspaces": "~0.6.0",
-    "grunt-react": "~0.10.0",
+    "grunt-react": "~0.12.0",
     "grunt-text-replace": "~0.3.12",
     "jison": "~0.4.13",
     "jshint-stylish": "~0.4.0",

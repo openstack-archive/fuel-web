@@ -29,8 +29,7 @@ define(
 function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, componentMixins) {
     'use strict';
 
-    var dialogs = {},
-        cx = React.addons.classSet;
+    var dialogs = {};
 
     var dialogMixin = {
         propTypes: {
@@ -38,6 +37,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             message: React.PropTypes.node,
             modalClass: React.PropTypes.node,
             error: React.PropTypes.bool
+        },
+        statics: {
+            show: function(options) {
+                return utils.universalMount(this, options, $('#modal-container'));
+            }
         },
         getInitialState: function() {
             return {actionInProgress: false};
@@ -71,7 +75,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var classes = {'modal fade': true};
             classes[this.props.modalClass] = this.props.modalClass;
             return (
-                <div className={cx(classes)} tabIndex="-1">
+                <div className={utils.classNames(classes)} tabIndex="-1">
                     <div className='modal-header'>
                         <button type='button' className='close' onClick={this.close}>&times;</button>
                         <h3>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
@@ -254,7 +258,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className='display-changes-dialog'>
                     {(settingsLocked || needsRedeployment || this.state.isInvalid) &&
                         <div>
-                            <div className={cx(warningClasses)}>
+                            <div className={utils.classNames(warningClasses)}>
                                 <i className='icon-attention' />
                                 <span>{i18n(this.state.ns + (this.state.isInvalid ? 'warnings.no_deployment' :
                                     settingsLocked ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
@@ -320,7 +324,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     'alert-warning': !!verificationWarning
                 };
             return (
-                <div className={cx(classes)}>
+                <div className={utils.classNames(classes)}>
                     {verificationWarning || verificationError}
                     {' ' + i18n(this.state.ns + 'get_more_info') + ' '}
                     <a href={'#cluster/' + this.props.cluster.id + '/network'}>
@@ -338,7 +342,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return ([
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
-                    className={cx(classes)}
+                    className={utils.classNames(classes)}
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
                 >{i18n(this.state.ns + 'deploy')}</button>
@@ -464,7 +468,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             var action = this.props.action,
-                classes = React.addons.classSet({
+                classes = utils.classNames({
                     'btn update-environment-btn': true,
                     'btn-success': action == 'update',
                     'btn-danger': action != 'update'

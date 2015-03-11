@@ -20,10 +20,11 @@ define([
     'underscore',
     'i18n',
     'backbone',
+    'classnames',
     'expression',
     'expression/objects',
     'react'
-], function(require, $, _, i18n, Backbone, Expression, expressionObjects, React) {
+], function(require, $, _, i18n, Backbone, classNames, Expression, expressionObjects, React) {
     'use strict';
 
     var utils = {
@@ -55,6 +56,7 @@ define([
         composeList: function(value) {
             return _.isUndefined(value) ? [] : _.isArray(value) ? value : [value];
         },
+        classNames: classNames,
         parseModelPath: function(path, models) {
             var modelPath = new expressionObjects.ModelPath(path);
             modelPath.setModel(models);
@@ -116,14 +118,11 @@ define([
                 React.unmountComponentAtNode(view._mountNode || view.getDOMNode().parentNode);
             }
         },
-        showDialog: function(Dialog, options) {
-            return utils.universalMount(Dialog, options, $('#modal-container'));
-        },
         showErrorDialog: function(options) {
             var dialogs = require('jsx!views/dialogs'); // avoid circular dependencies
             options.response = options.response ? utils.getResponseText(options.response) :
                 options.message || i18n('dialog.error_dialog.warning');
-            this.showDialog(dialogs.ErrorDialog, options);
+            dialogs.ErrorDialog.show(options);
         },
         showBandwidth: function(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);

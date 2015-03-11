@@ -734,7 +734,8 @@
                 },
                 "error_dialog": {
                     "title": "Error",
-                    "warning": "A server error has occured. Please contact the administrators."
+                    "warning": "A server error has occured. Please contact the administrators.",
+                    "no_cookies": "Cookies must be allowed. Your browser is currently set to block cookies. Your browser must allow cookies before you can use Fuel."
                 },
                 "change_password": {
                     "title": "Change Password",

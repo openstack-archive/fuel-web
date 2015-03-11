@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <noscript>
+      <style type="text/css">
+        .pagecontainer {display:none;}
+      </style>
+      <div class="noscriptmsg">
+        You don't have javascript enabled.  Good luck with that.
+      </div>
+    </noscript>
     <meta charset="utf-8">
     <title></title>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
@@ -11,7 +19,45 @@
     <meta http-equiv="expires" content="0" />
     <meta http-equiv="pragma" content="no-cache" />
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
-    <script data-main="/static/js/main.js?_=__COMMIT_SHA__" src="/static/js/libs/bower/requirejs/js/require.js"></script>
+    <script src="/static/js/libs/bower/requirejs/js/require.js"></script>
+    <script>
+      var isCookieEnabled = navigator.cookieEnabled,
+              documentCookie = document.cookie,
+              myCookie = 'myCookie';
+
+      if (typeof navigator.cookieEnabled == 'undefined' && !isCookieEnabled) {
+        documentCookie = myCookie;
+        isCookieEnabled = documentCookie.indexOf(myCookie) != -1;
+      }
+
+      if (!isCookieEnabled) {
+        // FIXME: better markup needed or load styles
+        document.addEventListener('DOMContentLoaded', function(event) {
+          var modalContainer = document.getElementById('modal-container'),
+            mcStyle = modalContainer.style;
+          modalContainer.textContent = 'No cookies';
+          mcStyle.color = '#b94a48';
+          mcStyle.backgroundColor = '#f2dede';
+          mcStyle.borderColor = '#eed3d7';
+
+        });
+        throw ('No cookies');
+      } else {
+        //>>excludeStart("compressed", pragmas.compressed);
+        requirejs.config({
+          urlArgs: '_=' + (new Date()).getTime()
+        });
+        require(['/static/js/config.js'], function(config) {
+            requirejs.config({baseUrl: 'static'});
+            //>>excludeStart("compressed", pragmas.compressed);
+            requirejs.config(config);
+            //>>excludeEnd("compressed");
+            require(['/static/js/app.js'], function(app) {
+              app.initialize();
+            });
+          });
+      }
+    </script>
   </head>
   <body>
     <div id="main-container">

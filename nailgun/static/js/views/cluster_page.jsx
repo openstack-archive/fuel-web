@@ -36,8 +36,7 @@ define(
 function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, vmWare) {
     'use strict';
 
-    var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl,
-        cs = React.addons.classSet;
+    var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl;
 
     ClusterPage = React.createClass({
         mixins: [
@@ -138,7 +137,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             var href = $(e.currentTarget).attr('href');
             if (Backbone.history.getHash() != href.substr(1) && this.hasChanges()) {
                 e.preventDefault();
-                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {
+                dialogs.DiscardSettingsChangesDialog.show({
                     verification: this.props.cluster.tasks({group: 'network', status: 'running'}).length,
                     cb: _.bind(function() {
                         this.revertChanges();
@@ -247,7 +246,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     <div className='whitebox'>
                         <ul className='nav nav-tabs cluster-tabs'>
                             {tabs.map(function(url) {
-                                return <li key={url} className={cs({active: this.props.activeTab == url})}>
+                                return <li key={url} className={utils.classNames({active: this.props.activeTab == url})}>
                                     <a href={'#cluster/' + cluster.id + '/' + url}>
                                         <b className={'tab-' + url + '-normal'} />
                                         <div className='tab-title'>{i18n('cluster_page.tabs.' + url)}</div>
@@ -263,7 +262,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         </ul>
                         <div className='tab-content'>
                             {tabs.map(function(url) {
-                                return <div key={url} className={cs({'tab-pane': true, active: this.props.activeTab == url})} id={'tab-' + url}>
+                                return <div key={url} className={utils.classNames({'tab-pane': true, active: this.props.activeTab == url})} id={'tab-' + url}>
                                     {this.props.activeTab == url && tab}
                                 </div>;
                             }, this)}
@@ -339,7 +338,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             return (
                 <div className='deployment-result'>
                     {task &&
-                        <div className={cs(classes)}>
+                        <div className={utils.classNames(classes)}>
                             <button className='close' onClick={this.dismissTaskResult}>&times;</button>
                             <h4>{i18n('common.' + (error ? 'error' : 'success'))}</h4>
                             <span className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(summary)}} />
@@ -368,11 +367,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             })
         ],
         showDialog: function(Dialog) {
-            utils.showDialog(Dialog, {cluster: this.props.cluster});
+            Dialog.show({cluster: this.props.cluster});
         },
         onDeployRequest: function() {
             if (this.props.hasChanges()) {
-                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(function() {
+                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(function() {
                     this.props.revertChanges();
                     if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
                     this.showDialog(dialogs.DeployChangesDialog);

@@ -21,13 +21,12 @@ define(
     'i18n',
     'underscore',
     'dispatcher',
+    'utils',
     'jsx!views/controls',
     'jsx!component_mixins',
     'plugins/vmware/vmware_models'
-], function(React, $, i18n, _, dispatcher, controls, componentMixins, vmwareModels) {
+], function(React, $, i18n, _, dispatcher, utils, controls, componentMixins, vmwareModels) {
     'use strict';
-
-    var cx = React.addons.classSet;
 
     var Field = React.createClass({
         mixins: [controls.tooltipMixin],
@@ -41,7 +40,7 @@ define(
                 options = this.props.options || [],
                 errors = this.props.model.validationError,
                 errorText = errors ? errors[metadata.name] : null;
-            var classes = cx({
+            var classes = utils.classNames({
                 'settings-group table-wrapper parameter-box': true,
                 password: metadata.type == 'password',
                 'has-error': !!errorText
@@ -54,7 +53,7 @@ define(
                         value={this.props.model.get(metadata.name)}
                         checked={this.props.model.get(metadata.name)}
                         description={errorText || metadata.description}
-                        descriptionClassName={cx({'validation-error': errorText})}
+                        descriptionClassName={utils.classNames({'validation-error': errorText})}
                         toggleable={metadata.type == 'password'}
                         wrapperClassName='tablerow-wrapper'
                         onChange={this.onChange}
@@ -116,7 +115,7 @@ define(
             if (!model) {
                 return null;
             }
-            var removeButtonClasses = cx({'btn btn-link': true, hide: this.props.isRemovable});
+            var removeButtonClasses = utils.classNames({'btn btn-link': true, hide: this.props.isRemovable});
             return (
                 <div className='nova-compute'>
                     <h4>

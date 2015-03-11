@@ -308,7 +308,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                     toggleable={name == 'password'}
                                     description={i18n('cluster_page.healthcheck_tab.' + name + '_description')}
                                     labelClassName='openstack-sub-title'
-                                    descriptionClassName={React.addons.classSet({'healthcheck-password': name == 'password'})}
+                                    descriptionClassName={utils.classNames({'healthcheck-password': name == 'password'})}
                                     disabled={this.props.disabled}
                                 />);
                             }, this)}

@@ -141,14 +141,14 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
             return _.contains(app.version.get('feature_groups'), 'mirantis') && !_.contains(app.version.get('feature_groups'), 'techpreview');
         },
         showRegistrationDialog: function() {
-            utils.showDialog(dialogs.RegistrationDialog, {
+            dialogs.RegistrationDialog.show({
                 registrationForm: new models.MirantisRegistrationForm(),
                 setConnected: this.props.setConnected,
                 settings: this.props.settings
             });
         },
         showRetrievePasswordDialog: function() {
-            utils.showDialog(dialogs.RetrievePasswordDialog);
+            dialogs.RetrievePasswordDialog.show();
         },
         render: function() {
             var settings = this.props.settings,

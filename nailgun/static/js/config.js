@@ -32,6 +32,7 @@ define(function() {
             underscore: 'js/libs/bower/lodash/js/lodash.compat',
             backbone: 'js/libs/bower/backbone/backbone',
             'backbone-lodash-monkeypatch': 'js/libs/custom/backbone-lodash-monkeypatch',
+            classnames: 'js/libs/bower/classnames/index',
             react: 'js/libs/bower/react/js/react-with-addons',
             JSXTransformer: 'js/libs/bower/react/js/JSXTransformer',
             jsx: 'js/libs/bower/jsx-requirejs-plugin/jsx',
@@ -71,6 +72,9 @@ define(function() {
             coccyx: {
                 deps: ['backbone', 'underscore'],
                 exports: 'Coccyx'
+            },
+            classnames: {
+                exports: 'classNames'
             },
             bootstrap: {
                 deps: ['jquery']

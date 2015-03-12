@@ -372,11 +372,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         onDeployRequest: function() {
             if (this.props.hasChanges()) {
-                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(function() {
-                    this.props.revertChanges();
-                    if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                    this.showDialog(dialogs.DeployChangesDialog);
-                }, this)});
+                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {
+                    cb: _.bind(function() {
+                        this.props.revertChanges();
+                        if (this.props.activeTab == 'nodes') {
+                            app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
+                        }
+                        this.showDialog(dialogs.DeployChangesDialog);
+                    }, this)
+                });
             } else {
                 this.showDialog(dialogs.DeployChangesDialog);
             }
@@ -391,7 +395,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 itemClass = 'deployment-control-item-box',
                 isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
             return (
-                <div className='cluster-deploy-placeholder'>
+                <div ref='deploy' className='cluster-deploy-placeholder'>
                     {task ? (
                         <div className={'pull-right deployment-progress-box ' + taskName}>
                             {!infiniteTask &&

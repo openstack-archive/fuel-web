@@ -41,7 +41,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
-            componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'removeDeletedLabelsFromActiveSortersAndFilters')
+            componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'removeDeletedLabelsFromActiveSortersAndFilters'),
+            componentMixins.unsavedChangesMixin()
         ],
         getInitialState: function() {
             var cluster = this.props.cluster,
@@ -625,7 +626,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showDeleteNodesDialog: function() {
             dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster});
         },
+        isSavingPossible: function() {
+            return !this.state.actionInProgress && this.props.hasChanges;
+        },
         applyChanges: function() {
+            if (!this.isSavingPossible()) return $.Deferred().reject();
+
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
                 var data = {id: node.id, pending_roles: node.get('pending_roles')};
@@ -862,7 +868,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </button>
                                     <button
                                         className='btn btn-success btn-apply'
-                                        disabled={this.state.actionInProgress || !this.props.hasChanges}
+                                        disabled={!this.isSavingPossible()}
                                         onClick={this.applyChanges}
                                     >
                                         {i18n('common.apply_changes_button')}

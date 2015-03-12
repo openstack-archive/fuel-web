@@ -45,7 +45,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }}),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.task({group: 'deployment', status: 'running'});
-            }})
+            }}),
+            componentMixins.unsavedChangesMixin
         ],
         statics: {
             fetchData: function(options) {
@@ -85,6 +86,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return this.props.cluster.get('settings').hasChanges(this.state.initialAttributes, this.state.configModels);
         },
         applyChanges: function() {
+            if (!this.isSavingPossible()) return $.Deferred().reject();
+
             // collecting data to save
             var settings = this.props.cluster.get('settings'),
                 dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes : _.pick(settings.attributes, function(group) {
@@ -183,6 +186,12 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         onSubtabClick: function(groupName) {
             this.setState({activeGroupName: groupName});
         },
+        isSavingPossible: function() {
+            var cluster = this.props.cluster,
+                settings = cluster.get('settings'),
+                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'});
+            return !locked && this.hasChanges() && _.isNull(settings.validationError);
+        },
         render: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
@@ -244,7 +253,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
                                     {i18n('common.cancel_changes_button')}
                                 </button>
-                                <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
+                                <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={!this.isSavingPossible()}>
                                     {i18n('common.save_settings_button')}
                                 </button>
                             </div>

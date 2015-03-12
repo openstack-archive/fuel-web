@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbone'], function($, _, Backbone, dispatcher, React) {
+define(['jquery', 'underscore', 'backbone', 'utils', 'i18n', 'dispatcher', 'react', 'react.backbone'], function($, _, Backbone, utils, i18n, dispatcher, React) {
     'use strict';
 
     return {
@@ -27,6 +27,36 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
                     dispatcher.off(null, null, this);
                 }
             };
+        },
+        unsavedChangesMixin: {
+            onBeforeunloadEvent: function() {
+                if (this.hasChanges()) return _.result(this, 'getStayMessage') || i18n('dialog.dismiss_settings.default_message');
+            },
+            componentWillMount: function() {
+                this.eventName = _.uniqueId('unsavedchanges');
+                $(window).on('beforeunload.' + this.eventName, this.onBeforeunloadEvent);
+                $('body').on('click.' + this.eventName, 'a[href^=#]:not(.no-leave-check)', this.onLeave);
+            },
+            componentWillUnmount: function() {
+                $(window).off('beforeunload.' + this.eventName);
+                $('body').off('click.' + this.eventName);
+            },
+            onLeave: function(e) {
+                var href = $(e.currentTarget).attr('href');
+                if (Backbone.history.getHash() != href.substr(1) && _.result(this, 'hasChanges')) {
+                    e.preventDefault();
+
+                    var dialogs = require('jsx!views/dialogs');
+                    dialogs.DiscardSettingsChangesDialog
+                        .show({
+                            reasonToStay: _.result(this, 'getStayMessage'),
+                            applyChanges: this.applyChanges,
+                            revertChanges: this.revertChanges
+                        }).done(function() {
+                            app.navigate(href, {trigger: true});
+                        });
+                }
+            }
         },
         pollingMixin: function(updateInterval, delayedStart) {
             updateInterval = updateInterval * 1000;
@@ -101,7 +131,9 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             },
             showDiscardChangesDialog: function() {
                 var dialogs = require('jsx!views/dialogs');
-                dialogs.DiscardSettingsChangesDialog.show({cb: this.goToNodeList});
+                dialogs.DiscardSettingsChangesDialog
+                    .show(_.pick(this, 'applyChanges', 'revertChanges'))
+                    .done(this.goToNodeList);
             },
             returnToNodeList: function() {
                 if (this.hasChanges()) {

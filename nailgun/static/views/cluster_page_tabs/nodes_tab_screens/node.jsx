@@ -223,7 +223,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     name={this.props.node.id}
                     checked={this.props.checked}
                     disabled={this.props.locked || !this.props.node.isSelectable() || this.props.mode == 'edit'}
-                    onChange={this.props.mode != 'edit' && this.props.onNodeSelection}
+                    onChange={this.props.mode != 'edit' ? this.props.onNodeSelection : _.noop}
                     wrapperClassName='pull-left'
                 />
             );

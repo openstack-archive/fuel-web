@@ -827,10 +827,11 @@
                 "dismiss_settings": {
                     "title": "Confirm",
                     "important": "Important",
-                    "stay_button": "Stay on page",
-                    "leave_button": "Leave page and discard changes",
-                    "default_message": "You have unsaved changes on this page. Do you want to discard your changes and leave the page?",
-                    "verify_message": "Network verification is in progress. You should save changes or stay on the tab."
+                    "stay_button": "Cancel",
+                    "leave_button": "Discard Changes",
+                    "apply_and_proceed_button": "Save and Proceed",
+                    "default_message": "You have unsaved changes on this page. Please press Cancel to stay on the page, Discard Changes to proceed without data saving or Save and Proceed to save data and proceed",
+                    "verify_message": "Network verification is in progress"
                 },
                 "display_changes": {
                     "title": "Deploy Changes",

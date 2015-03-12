@@ -33,7 +33,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             ComponentMixins.nodeConfigurationScreenMixin,
             ComponentMixins.backboneMixin('cluster', 'change:status change:nodes sync'),
             ComponentMixins.backboneMixin('nodes', 'change sync'),
-            ComponentMixins.backboneMixin('disks', 'reset change')
+            ComponentMixins.backboneMixin('disks', 'reset change'),
+            ComponentMixins.unsavedChangesMixin
         ],
         statics: {
             fetchData: function(options) {
@@ -89,6 +90,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             this.props.disks.reset(_.cloneDeep(this.state.initialDisks), {parse: true});
         },
         applyChanges: function() {
+            if (!this.isSavingPossible()) return $.Deferred().reject();
+
             this.setState({actionInProgress: true});
             return $.when.apply($, this.props.nodes.map(function(node) {
                     node.disks.each(function(disk, index) {
@@ -148,12 +151,14 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         getVolumeWidth: function(disk, size) {
             return disk.get('size') ? utils.floor(size / disk.get('size') * 100, 2) : 0;
         },
+        isSavingPossible: function() {
+            return !this.state.actionInProgress && this.hasChanges();
+        },
         render: function() {
             var hasChanges = this.hasChanges(),
                 locked = this.isLocked(),
                 loadDefaultsDisabled = !!this.state.actionInProgress,
-                revertChangesDisabled = !!this.state.actionInProgress || !hasChanges,
-                applyDisabled = !!this.state.actionInProgress || !hasChanges;
+                revertChangesDisabled = !!this.state.actionInProgress || !hasChanges;
             return (
                 <div className='edit-node-disks-screen'>
                     <div className='row'>
@@ -175,13 +180,13 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                         <div className='col-xs-12 page-buttons content-elements'>
                             <div className='well clearfix'>
                                 <div className='btn-group'>
-                                    <button onClick={this.returnToNodeList} className='btn btn-default btn-return'>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>
+                                    <button onClick={this.returnToNodeList} className='btn btn-default'>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>
                                 </div>
                                 {!locked &&
                                     <div className='btn-group pull-right'>
                                         <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={loadDefaultsDisabled}>{i18n('common.load_defaults_button')}</button>
                                         <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={revertChangesDisabled}>{i18n('common.cancel_changes_button')}</button>
-                                        <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={applyDisabled}>{i18n('common.apply_button')}</button>
+                                        <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!this.isSavingPossible()}>{i18n('common.apply_button')}</button>
                                     </div>
                                 }
                             </div>

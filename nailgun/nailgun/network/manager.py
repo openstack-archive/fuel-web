@@ -1151,7 +1151,7 @@ class NetworkManager(object):
     @classmethod
     def get_default_gateway(cls, node_id):
         return cls.get_admin_network_group(node_id).gateway \
-                or settings.MASTER_IP
+            or settings.MASTER_IP
 
     @classmethod
     def get_networks_not_on_node(cls, node):

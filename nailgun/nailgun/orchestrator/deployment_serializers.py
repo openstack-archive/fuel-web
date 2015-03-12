@@ -1229,6 +1229,10 @@ class NeutronNetworkDeploymentSerializer61(
         if is_public:
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
+        elif node.cluster.is_ha_mode:
+            attrs['endpoints']['br-mgmt']['gateway'] = \
+                nm.assign_vip_for_groups(node.cluster)[
+                    'management_vrouter_vip']
         else:
             attrs['endpoints']['br-fw-admin']['gateway'] = \
                 nm.get_default_gateway(node.id)

@@ -359,7 +359,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 this.setState({hideVerificationResult: true});
             }),
             componentMixins.dispatcherMixin('networkConfigurationUpdated', function() {
-                this.setState({hideVerificationResult: false});
+                if (this.isMounted()) {
+                    this.setState({hideVerificationResult: false});
+                }
             })
         ],
         getInitialState: function() {
@@ -459,7 +461,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 },
                 renderOn: 'change reset'
             }),
-            componentMixins.pollingMixin(3)
+            componentMixins.pollingMixin(3),
+            componentMixins.respondToApplyRequestMixin('applyChanges', 'isSaveChangesDisabled')
         ],
         shouldDataBeFetched: function() {
             return !!this.props.cluster.task({group: 'network', status: 'running'});
@@ -540,41 +543,52 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         applyChanges: function() {
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
-                return Backbone.sync('update', this.props.networkConfiguration)
+            var result = $.Deferred(),
+                sync = _.bind(function() {
+                    Backbone.sync('update', this.props.networkConfiguration)
                     .then(_.bind(function(response) {
-                        if (response && response.status != 'error') {
-                            this.props.updateInitialConfiguration();
-                            return $.Deferred().resolve(response);
-                        } else {
-                            // FIXME(vkramskikh): currently there can be both
-                            // 202 and 400 responses for this handler, so we need
-                            // to handle both. This hack needs to be removed after
-                            // backend fix
-                            return $.Deferred().reject(response);
-                        }
-                    }, this), function(response) {
-                        return $.Deferred().reject(JSON.parse(response.responseText));
-                    })
+                            if (response && response.status != 'error') {
+                                this.props.updateInitialConfiguration();
+                                return result.resolve(response);
+                            } else {
+                                // FIXME(vkramskikh): currently there can be both
+                                // 202 and 400 responses for this handler, so we need
+                                // to handle both. This hack needs to be removed after
+                                // backend fix
+                                return result.reject(response);
+                            }
+                        }, this),
+                        function(response) {
+                            return result.reject(JSON.parse(response.responseText));
+                        })
                     .then(null, _.bind(function(response) {
-                        // FIXME(vkramskikh): the same hack for check_networks task:
-                        // remove failed tasks immediately, so they won't be taken into account
-                        return this.props.cluster.fetchRelated('tasks').done(_.bind(function() {
-                            this.props.cluster.get('tasks').get(response.id).set('unsaved', response.status == 'error');
-                        }, this));
-                    }, this))
+                            // FIXME(vkramskikh): the same hack for check_networks task:
+                            // remove failed tasks immediately, so they won't be taken into account
+                            result.promise(this.props.cluster.fetchRelated('tasks').done(_.bind(function() {
+                                this.props.cluster.get('tasks').get(response.id).set('unsaved', response.status == 'error');
+                            }, this)));
+                        }, this))
                     .always(_.bind(function() {
-                        this.setState({actionInProgress: false});
-                    }, this));
-            }, this));
+                            if (this.isMounted()) {
+                                this.setState({actionInProgress: false});
+                            }
+                        }, this));
+                    },
+                    this);
+            dispatcher.trigger('networkConfigurationUpdated', sync);
+            return result;
+        },
+        isSaveChangesDisabled: function() {
+            return this.props.networkConfiguration.validationError ||
+                this.isLocked() ||
+                !this.props.hasChanges();
         },
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,
                 isLocked = this.isLocked(),
                 hasChanges = this.props.hasChanges(),
                 isVerificationDisabled = error || this.state.actionInProgress || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
-                isCancelChangesDisabled = isLocked || !hasChanges,
-                isSaveChangesDisabled = error || isLocked || !hasChanges;
+                isCancelChangesDisabled = isLocked || !hasChanges;
             return (
                 <div className='row'>
                     <div className='page-control-box'>
@@ -588,7 +602,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                     {i18n('common.cancel_changes_button')}
                             </button>
                             <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
-                                disabled={isSaveChangesDisabled}>
+                                disabled={this.isSaveChangesDisabled()}>
                                     {i18n('common.save_settings_button')}
                             </button>
                         </div>
@@ -599,7 +613,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         getVerificationErrors: function() {
             var task = this.props.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
-            // @TODO: soon response format will be changed anf this part should be rewritten
+            // @TODO: soon response format will be changed and this part should be rewritten
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(verificationError) {
                     _.each(verificationError.ids, function(networkId) {

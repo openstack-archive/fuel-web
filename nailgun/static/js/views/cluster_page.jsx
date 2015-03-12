@@ -372,11 +372,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         onDeployRequest: function() {
             if (this.props.hasChanges()) {
-                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(function() {
-                    this.props.revertChanges();
-                    if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                    this.showDialog(dialogs.DeployChangesDialog);
-                }, this)});
+                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {
+                    cb: _.bind(function() {
+                        this.props.revertChanges();
+                        if (this.props.activeTab == 'nodes') {
+                            app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
+                        }
+                        this.showDialog(dialogs.DeployChangesDialog);
+                    }, this)
+                });
             } else {
                 this.showDialog(dialogs.DeployChangesDialog);
             }

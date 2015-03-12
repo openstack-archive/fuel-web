@@ -825,11 +825,49 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
     });
 
     dialogs.DiscardSettingsChangesDialog = React.createClass({
-        mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
+        mixins: [
+            dialogMixin,
+            componentMixins.dispatcherMixin('applyMethodsProvided', 'registerApplyMethods')
+        ],
+        getDefaultProps: function() {
+            return {
+                title: i18n('dialog.dismiss_settings.title'),
+                defaultMessage: i18n('dialog.dismiss_settings.default_message')
+            };
+        },
+        getInitialState: function() {
+            return {
+                applyMethod: null,
+                hasValidationErrors: false
+            };
+        },
+        componentDidMount: function() {
+            this.setState(this.getInitialState());
+            dispatcher.trigger('giveMeApplyMethod');
+        },
+        registerApplyMethods: function(applyMethod, hasValidationErrors) {
+            this.setState({
+                applyMethod: applyMethod,
+                hasValidationErrors: _.isBoolean(hasValidationErrors) ? hasValidationErrors : false
+            });
+        },
         proceed: function() {
-            this.close();
             dispatcher.trigger('networkConfigurationUpdated', _.bind(this.props.cb, this.props));
+        },
+        closeAndProceed: function() {
+            this.close();
+            this.proceed();
+        },
+        save: function() {
+            if (this.state.applyMethod && !this.state.hasValidationErrors) {
+                this.close();
+                var applicationResult = this.state.applyMethod(false);
+                if (applicationResult) {
+                    applicationResult.done(this.proceed);
+                } else {
+                    this.proceed();
+                }
+            }
         },
         renderBody: function() {
             var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
@@ -841,16 +879,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             );
         },
         renderFooter: function() {
-            var buttons = [
-                <button key='stay' className='btn btn-default btn-stay' onClick={this.close}>
-                    {i18n('dialog.dismiss_settings.stay_button')}
-                </button>
-            ];
-            if (!this.props.verification) buttons.push(
-                <button key='leave' className='btn btn-danger' onClick={this.proceed}>
+            var verification = !!this.props.verification,
+                buttons = [
+                    <button key='stay' className='btn btn-default' onClick={this.close}>
+                        {i18n('dialog.dismiss_settings.stay_button')}
+                    </button>
+                ];
+            if (!verification) {
+                buttons.push(<button key='leave' className='btn btn-danger proceed-btn' onClick={this.closeAndProceed}>
                     {i18n('dialog.dismiss_settings.leave_button')}
-                </button>
-            );
+                </button>);
+            }
+            if (this.state.applyMethod) {
+                buttons.push(<button key='save' className='btn btn-success' onClick={this.save} disabled={this.state.hasValidationErrors}>
+                    {i18n('dialog.dismiss_settings.apply_and_proceed_button')}
+                </button>);
+            }
             return buttons;
         }
     });

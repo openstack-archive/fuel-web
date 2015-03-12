@@ -45,7 +45,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }}),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.task({group: 'deployment', status: 'running'});
-            }})
+            }}),
+            componentMixins.respondToApplyRequestMixin('applyChanges', 'hasValidationErrors')
         ],
         statics: {
             fetchData: function(options) {
@@ -182,6 +183,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         onSubtabClick: function(groupName) {
             this.setState({activeGroupName: groupName});
+        },
+        hasValidationErrors: function() {
+            var cluster = this.props.cluster,
+                settings = cluster.get('settings'),
+                locked = this.state.actionInProgress ||
+                    !!cluster.task({group: 'deployment', status: 'running'}) ||
+                    !cluster.isAvailableForSettingsChanges();
+            return locked || !this.hasChanges() || !!settings.validationError;
         },
         render: function() {
             var cluster = this.props.cluster,

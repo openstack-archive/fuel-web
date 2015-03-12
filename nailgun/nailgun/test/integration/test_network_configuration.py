@@ -447,11 +447,11 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 
         self.assertEqual(
             resp['management_vip'],
-            self.net_manager.assign_vip(self.cluster.id, 'management'))
+            self.net_manager.assign_vip(self.cluster, 'management'))
 
         self.assertEqual(
             resp['public_vip'],
-            self.net_manager.assign_vip(self.cluster.id, 'public'))
+            self.net_manager.assign_vip(self.cluster, 'public'))
 
 
 class TestAdminNetworkConfiguration(BaseIntegrationTest):

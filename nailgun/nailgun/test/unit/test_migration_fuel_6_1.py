@@ -15,11 +15,13 @@
 
 from oslo.serialization import jsonutils
 import sqlalchemy as sa
+import unittest2 as unittest
 
 from nailgun.db import db
 from nailgun.test import base
 
 
+@unittest.skip('Skip migration test -- bug 1431381')
 class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
 
     prepare_revision = '1b1d4016375d'

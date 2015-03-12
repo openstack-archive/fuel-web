@@ -357,6 +357,11 @@ define([
             var result = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-master/' + link :
                 'https://docs.fuel-infra.org/openstack/fuel/fuel-' + release + '/' + link;
             return result;
+        },
+        callMethodChecked: function(methodName, context) {
+            if (_.isFunction(context[methodName])) {
+                return context[methodName]();
+            }
         }
 };
 

@@ -44,7 +44,7 @@ casper.then(function() {
     this.click('.cluster-tab.active + .cluster-tab');
     this.test.assertSelectorAppears('.dismiss-settings-dialog', 'Dismiss changes dialog appears if there are changes and user is going to leave the tab');
     this.then(function() {
-        this.click('.btn-stay');
+        this.click('.modal-footer .btn-default');
     });
     this.test.assertSelectorDisappears('.dismiss-settings-dialog', 'Dismiss changes dialog was closed');
     this.then(function() {

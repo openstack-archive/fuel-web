@@ -332,6 +332,7 @@ class VmwareAttributesDefaultsHandler(BaseHandler):
     def GET(self, cluster_id):
         """:returns: JSONized default Cluster vmware attributes.
         :http: * 200 (OK)
+               * 400 (cluster doesn't accept vmware configuration)
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(
@@ -342,6 +343,9 @@ class VmwareAttributesDefaultsHandler(BaseHandler):
                 "with id '{0}' in DB.".format(cluster_id)
             )
         )
+        if not objects.Cluster.is_vmware_enabled(cluster):
+            raise self.http(400, "Cluster doesn't support vmware "
+                                 "configuration")
 
         attributes = objects.Cluster.get_default_vmware_attributes(cluster)
 

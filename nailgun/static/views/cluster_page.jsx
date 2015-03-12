@@ -160,19 +160,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }, this);
             return $.when.apply($, requests);
         },
-        onTabLeave: function(e) {
-            var href = $(e.currentTarget).attr('href');
-            if (Backbone.history.getHash() != href.substr(1) && this.hasChanges()) {
-                e.preventDefault();
-                dialogs.DiscardSettingsChangesDialog.show({
-                    verification: this.props.cluster.tasks({group: 'network', status: 'running'}).length,
-                    cb: _.bind(function() {
-                        this.revertChanges();
-                        app.navigate(href, {trigger: true});
-                    }, this)
-                });
-            }
-        },
         shouldDataBeFetched: function() {
             return this.props.cluster.task({group: ['deployment', 'network'], status: 'running'});
         },
@@ -194,19 +181,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         refreshCluster: function() {
             return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks'));
         },
-        componentWillUnmount: function() {
-            $(window).off('beforeunload.' + this.eventNamespace);
-            $('body').off('click.' + this.eventNamespace);
-        },
-        revertChanges: function() {
-            this.refs.tab.revertChanges();
-        },
-        hasChanges: function() {
-            return _.result(this.refs.tab, 'hasChanges');
-        },
-        onBeforeunloadEvent: function() {
-            if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
-        },
         componentWillMount: function() {
             this.props.cluster.on('change:release_id', function() {
                 var release = new models.Release({id: this.props.cluster.get('release_id')});
@@ -214,9 +188,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     this.props.cluster.set({release: release});
                 }, this));
             }, this);
-            this.eventNamespace = 'unsavedchanges' + this.props.activeTab;
-            $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
-            $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },
         getAvailableTabs: function(cluster) {
             return _.filter(this.constructor.getTabs(), function(tabData) {

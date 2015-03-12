@@ -40,12 +40,6 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                 screenData: {}
             };
         },
-        hasChanges: function() {
-            return _.result(this.refs.screen, 'hasChanges');
-        },
-        revertChanges: function() {
-            return this.refs.screen.revertChanges();
-        },
         getScreenConstructor: function(screen) {
             return {
                 list: ClusterNodesScreen,

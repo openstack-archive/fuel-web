@@ -598,6 +598,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     });
 
     ManagementPanel = React.createClass({
+        mixins: [componentMixins.unsavedChangesMixin],
         getInitialState: function() {
             return {
                 actionInProgress: false,
@@ -625,7 +626,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showDeleteNodesDialog: function() {
             dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster});
         },
+        hasChanges: function() {
+            return this.props.hasChanges;
+        },
+        isSavingPossible: function() {
+            return !this.state.actionInProgress && this.hasChanges();
+        },
+        revertChanges: function() {
+            return this.props.revertChanges();
+        },
         applyChanges: function() {
+            if (!this.isSavingPossible()) return $.Deferred().reject();
+
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
                 var data = {id: node.id, pending_roles: node.get('pending_roles')};
@@ -636,10 +648,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }
                 return data;
             }, this));
-            Backbone.sync('update', nodes)
+            return Backbone.sync('update', nodes)
                 .done(_.bind(function() {
                     $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
-                        this.changeScreen();
                         if (this.props.mode == 'add') {
                             dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
                         }
@@ -652,6 +663,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         response: response
                     });
                 }, this));
+        },
+        applyAndRedirect: function() {
+            this.applyChanges().done(this.changeScreen);
         },
         searchNodes: function(name, value) {
             this.setState({isSearchButtonVisible: !!value});
@@ -862,8 +876,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </button>
                                     <button
                                         className='btn btn-success btn-apply'
-                                        disabled={this.state.actionInProgress || !this.props.hasChanges}
-                                        onClick={this.applyChanges}
+                                        disabled={!this.isSavingPossible()}
+                                        onClick={this.applyAndRedirect}
                                     >
                                         {i18n('common.apply_changes_button')}
                                     </button>
@@ -1099,6 +1113,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     });
 
     NodeLabelsPanel = React.createClass({
+        mixins: [componentMixins.unsavedChangesMixin],
         getInitialState: function() {
             var labels = _.map(this.props.labels, function(label) {
                     var labelValues = this.props.nodes.getLabelValues(label),
@@ -1174,7 +1189,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
             return null;
         },
-        applyLabelChanges: function() {
+        isSavingPossible: function() {
+            return !this.state.actionInProgress && this.hasChanges() && _.all(_.pluck(this.state.labels, 'error'), _.isNull);
+        },
+        revertChanges: function() {
+            return this.props.toggleLabelsPanel();
+        },
+        applyChanges: function() {
+            if (!this.isSavingPossible()) return $.Deferred().reject();
+
             this.setState({actionInProgress: true});
 
             var nodes = new models.Nodes(
@@ -1211,7 +1234,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }, this)
             );
 
-            Backbone.sync('update', nodes)
+            return Backbone.sync('update', nodes)
                 .done(_.bind(function() {
                     this.props.screenNodes.fetch().always(_.bind(function() {
                         dispatcher.trigger('labelsConfigurationUpdated');
@@ -1295,15 +1318,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 <div className='btn-group' role='group'>
                                     <button
                                         className='btn btn-default'
-                                        onClick={this.props.toggleLabelsPanel}
+                                        onClick={this.revertChanges}
                                         disabled={this.state.actionInProgress}
                                     >
                                         {i18n('common.cancel_button')}
                                     </button>
                                     <button
                                         className='btn btn-success'
-                                        onClick={this.applyLabelChanges}
-                                        disabled={this.state.actionInProgress || !this.hasChanges() || !_.all(_.pluck(this.state.labels, 'error'), _.isNull)}
+                                        onClick={this.applyChanges}
+                                        disabled={!this.isSavingPossible()}
                                     >
                                         {i18n('common.apply_button')}
                                     </button>

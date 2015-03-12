@@ -47,12 +47,6 @@ function($, _, React, models, utils, ComponentMixins, NodeListScreen) {
                 });
             }
         },
-        hasChanges: function() {
-            return _.result(this.refs.screen, 'hasChanges');
-        },
-        revertChanges: function() {
-            return this.refs.screen.revertChanges();
-        },
         render: function() {
             return <NodeListScreen {... _.omit(this.props, 'screenOptions')} ref='screen' mode='edit' />;
         }

@@ -52,15 +52,16 @@ def get_nodes_not_for_deletion(cluster):
 
 class VmwareDeploymentSerializerMixin(object):
 
-    def generate_vmware_data(self, role, node):
+    def generate_vmware_data(self, node):
         """Extend serialize data with vmware attributes
         """
         vmware_data = {}
+        allowed_roles = ['controller', 'primary-controller', 'cinder-vmware']
+        all_roles = objects.Node.all_roles(node)
         use_vcenter = node.cluster.attributes.editable.get('common', {}) \
             .get('use_vcenter', {}).get('value')
 
-        if (use_vcenter and
-                role in ['controller', 'primary-controller', 'cinder-vmware']):
+        if (use_vcenter and any(role in allowed_roles for role in all_roles)):
             compute_instances = []
             cinder_instances = []
 
@@ -1643,7 +1644,7 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
         serialized_node = super(
             DeploymentMultinodeSerializer61, self).serialize_node(node, role)
         serialized_node['user_node_name'] = node.name
-        serialized_node.update(self.generate_vmware_data(role, node))
+        serialized_node.update(self.generate_vmware_data(node))
 
         return serialized_node
 
@@ -1666,7 +1667,7 @@ class DeploymentHASerializer61(DeploymentHASerializer,
         serialized_node = super(
             DeploymentHASerializer61, self).serialize_node(node, role)
         serialized_node['user_node_name'] = node.name
-        serialized_node.update(self.generate_vmware_data(role, node))
+        serialized_node.update(self.generate_vmware_data(node))
 
         return serialized_node
 

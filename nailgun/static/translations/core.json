@@ -645,6 +645,7 @@
                     "important": "Important",
                     "stay_button": "Stay on page",
                     "leave_button": "Leave page and discard changes",
+                    "apply_and_proceed_button": "Save and proceed",
                     "default_message": "You have unsaved changes on this page. Do you want to discard your changes and leave the page?",
                     "verify_message": "Network verification is in progress. You should save changes or stay on the tab."
                 },

@@ -43,7 +43,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }}),
             componentMixins.backboneMixin({modelOrCollection: function(props) {
                 return props.cluster.task({group: 'deployment', status: 'running'});
-            }})
+            }}),
+            componentMixins.respondToApplyRequestMixin('applyChanges', 'hasValidationErrors')
         ],
         getInitialState: function() {
             var settings = this.props.cluster.get('settings');
@@ -140,6 +141,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             settings.validationError = null;
             settings.set(name, value);
             settings.isValid({models: this.state.configModels});
+        },
+        hasValidationErrors: function() {
+            var cluster = this.props.cluster,
+                settings = cluster.get('settings'),
+                locked = this.state.actionInProgress ||
+                    !!cluster.task({group: 'deployment', status: 'running'}) ||
+                    !cluster.isAvailableForSettingsChanges();
+            return locked || !this.hasChanges() || !!settings.validationError;
         },
         render: function() {
             var cluster = this.props.cluster,

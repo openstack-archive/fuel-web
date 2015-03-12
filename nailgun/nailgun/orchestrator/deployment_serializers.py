@@ -253,7 +253,7 @@ class NetworkDeploymentSerializer(object):
         if bridge:
             port['bridge'] = bridge
         if provider:
-            bridge['provider'] = provider
+            port['provider'] = provider
         return port
 
     @classmethod
@@ -451,22 +451,25 @@ class NovaNetworkDeploymentSerializer61(
             transformations.append(cls.add_bridge(brname))
 
         # fill up ports and bonds
-        bonded_ifaces = [x for x in node.nic_interfaces if x.bond]
         for iface in node.interfaces:
             if iface.type == iface_types.ether:
-                if iface in bonded_ifaces:
-                    # don't create anything for slave NICs
-                    continue
                 # add ports for all networks on every unbonded NIC
-                if iface.name in nets_by_ifaces:
+                if not iface.bond and iface.name in nets_by_ifaces:
+                    tagged = []
                     for net in nets_by_ifaces[iface.name]:
                         sub_iface = cls.subiface_name(iface.name, net)
-                        transformations.append(
-                            cls.add_port(sub_iface, net['br_name']))
+                        # Interface must go prior to subinterfaces.
+                        if not net['vlan_id']:
+                            transformations.append(
+                                cls.add_port(sub_iface, net['br_name']))
+                        else:
+                            tagged.append(
+                                cls.add_port(sub_iface, net['br_name']))
                         # we should avoid adding the port twice in case of
                         # VlanManager
                         if fixed_sub_iface == sub_iface:
                             fixed_sub_iface = None
+                    transformations.extend(tagged)
             elif iface.type == iface_types.bond:
                 # Add bonds and connect untagged networks' bridges to them.
                 # There can be no more than one untagged network on each bond.
@@ -1144,18 +1147,21 @@ class NeutronNetworkDeploymentSerializer61(
                     provider='ovs'))
 
         # Add ports and bonds.
-        bonded_ifaces = [x for x in node.nic_interfaces if x.bond]
         for iface in node.interfaces:
             if iface.type == iface_types.ether:
-                if iface in bonded_ifaces:
-                    # Don't create anything for slave NICs.
-                    continue
                 # Add ports for all networks on every unbonded NIC.
-                if iface.name in nets_by_ifaces:
+                if not iface.bond and iface.name in nets_by_ifaces:
+                    tagged = []
                     for net in nets_by_ifaces[iface.name]:
-                        transformations.append(cls.add_port(
-                            cls.subiface_name(iface.name, net),
-                            net['br_name']))
+                        # Interface must go prior to subinterfaces.
+                        sub_iface = cls.subiface_name(iface.name, net)
+                        if not net['vlan_id']:
+                            transformations.append(cls.add_port(
+                                sub_iface, net['br_name']))
+                        else:
+                            tagged.append(cls.add_port(
+                                sub_iface, net['br_name']))
+                    transformations.extend(tagged)
             elif iface.type == iface_types.bond:
                 # Add bonds and connect untagged networks' bridges to them.
                 # There can be no more than one untagged network on each bond.

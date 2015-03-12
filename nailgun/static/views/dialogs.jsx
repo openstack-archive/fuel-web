@@ -46,7 +46,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         statics: {
             show: function(options) {
-                return utils.universalMount(this, options, $('#modal-container'));
+                utils.universalMount(this, options, $('#modal-container'));
+                this.result = $.Deferred();
+                return this.result;
             }
         },
         getInitialState: function() {
@@ -814,14 +816,34 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
     });
 
     dialogs.DiscardSettingsChangesDialog = React.createClass({
-        mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
-        proceed: function() {
+        mixins: [
+            dialogMixin
+        ],
+        getDefaultProps: function() {
+            return {
+                title: i18n('dialog.dismiss_settings.title')
+            };
+        },
+        callComponentMethod: function(methodName) {
+            $.when(_.result(this.props.component, methodName))
+                .always(this.close)
+                .done(this.constructor.result.resolve);
+        },
+        discard: function() {
+            this.callComponentMethod('revertChanges');
+        },
+        save: function() {
+            this.callComponentMethod('applyChanges');
+        },
+        cancel: function() {
             this.close();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(this.props.cb, this.props));
+            this.constructor.result.reject();
+        },
+        haveReasonToStay: function() {
+            return _.isString(this.props.reasonToStay);
         },
         renderBody: function() {
-            var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
+            var message = this.haveReasonToStay() ? this.props.reasonToStay : i18n('dialog.dismiss_settings.default_message');
             return (
                 <div className='text-danger dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
@@ -831,15 +853,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             var buttons = [
-                <button key='stay' className='btn btn-default btn-stay' onClick={this.close}>
-                    {i18n('dialog.dismiss_settings.stay_button')}
-                </button>
-            ];
-            if (!this.props.verification) buttons.push(
-                <button key='leave' className='btn btn-danger' onClick={this.proceed}>
-                    {i18n('dialog.dismiss_settings.leave_button')}
-                </button>
-            );
+                    <button key='stay' className='btn btn-default' onClick={this.cancel}>
+                        {i18n('dialog.dismiss_settings.stay_button')}
+                    </button>,
+                    <button key='leave' className='btn btn-danger proceed-btn' onClick={this.discard} disabled={this.haveReasonToStay()}>
+                        {i18n('dialog.dismiss_settings.leave_button')}
+                    </button>,
+                    <button key='save' className='btn btn-success' onClick={this.save}>
+                        {i18n('dialog.dismiss_settings.apply_and_proceed_button')}
+                    </button>
+                ];
             return buttons;
         }
     });

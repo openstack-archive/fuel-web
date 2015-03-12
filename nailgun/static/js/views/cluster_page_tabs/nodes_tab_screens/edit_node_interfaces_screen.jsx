@@ -46,7 +46,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(this.goToNodeList, this)});
+                dialogs.DiscardSettingsChangesDialog.show({
+                    cb: _.bind(this.goToNodeList, this),
+                    applyMethod: this.applyMethod
+                });
             } else {
                 this.goToNodeList();
             }
@@ -144,6 +147,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return !_.isEqual(this.state.initialInterfaces, this.interfacesToJSON(this.props.interfaces)) ||
                 this.hasChangesInRemainingNodes();
         },
+        hasErrors: function() {
+            return _.chain(this.state.interfaceErrors).values().some().value();
+        },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
             $.when(this.props.interfaces.fetch({
@@ -225,6 +231,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 }).always(_.bind(function() {
                     this.setState({actionInProgress: false});
                 }, this));
+        },
+        applyMethod: function() {
+            return !this.applyDisabled() && _.bind(this.applyChanges, this);
         },
         isLocked: function() {
             var hasLockedNodes = this.props.nodes.any(function(node) {
@@ -319,6 +328,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         refresh: function() {
             this.forceUpdate();
         },
+        applyDisabled: function() {
+            return this.hasErrors() || this.state.actionInProgress || !this.hasChanges();
+        },
         render: function() {
             var configureInterfacesTransNS = 'cluster_page.nodes_tab.configure_interfaces.',
                 nodes = this.props.nodes,
@@ -333,12 +345,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 bondingPossible = creatingNewBond || addingInterfacesToExistingBond,
                 unbondingPossible = !checkedInterfaces.length && !!checkedBonds.length,
                 hasChanges = this.hasChanges(),
-                hasErrors = _.chain(this.state.interfaceErrors).values().some().value(),
                 slaveInterfaceNames = _.pluck(_.flatten(_.filter(interfaces.pluck('slaves'))), 'name'),
                 returnEnabled = !this.state.actionInProgress,
                 loadDefaultsEnabled = !this.state.actionInProgress && !locked,
                 revertChangesEnabled = !this.state.actionInProgress && hasChanges,
-                applyEnabled = !hasErrors && !this.state.actionInProgress && hasChanges,
                 hasMultipleNodes = nodes.length > 1;
 
             if (hasMultipleNodes) {
@@ -400,7 +410,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                             <div className='page-control-button-placeholder'>
                                 <button className='btn btn-defaults' onClick={this.loadDefaults} disabled={!loadDefaultsEnabled}>{i18n('common.load_defaults_button')}</button>
                                 <button className='btn btn-revert-changes' onClick={this.revertChanges} disabled={!revertChangesEnabled}>{i18n('common.cancel_changes_button')}</button>
-                                <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!applyEnabled}>{i18n('common.apply_button')}</button>
+                                <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={this.applyDisabled()}>{i18n('common.apply_button')}</button>
                             </div>
                         </div>
                     </div>

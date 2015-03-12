@@ -37,11 +37,29 @@ function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, E
                 screenOptions: this.props.tabOptions.slice(1)
             };
         },
+        screenMethod: function(method) {
+            try {
+                // FIXME(nbogdanov): As edit_node_disks_screen is wrapped into
+                // BackboneViewWrapper its methods are referenced differently.
+                // Will be fixed as soon as edit_node_disks_screen gets
+                // rewritten with React
+                var component = this.refs.screen[method] ?
+                    this.refs.screen :
+                    this.refs.screen.refs.wrapper.state.view;
+                return _.bind(component[method], component)();
+            } catch (ex) {
+                if (ex instanceof TypeError) return null;
+                throw ex;
+            }
+        },
         hasChanges: function() {
-            return _.result(this.refs.screen, 'hasChanges');
+            return this.screenMethod('hasChanges');
         },
         revertChanges: function() {
-            return this.refs.screen.revertChanges();
+            return this.screenMethod('revertChanges');
+        },
+        applyMethod: function() {
+            return this.screenMethod('applyMethod');
         },
         getAvailableScreens: function() {
             return {

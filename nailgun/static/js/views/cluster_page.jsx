@@ -145,7 +145,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     cb: _.bind(function() {
                         this.revertChanges();
                         app.navigate(href, {trigger: true});
-                    }, this)
+                    }, this),
+                    applyMethod: this.applyMethod
                 });
             }
         },
@@ -173,6 +174,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         componentWillUnmount: function() {
             $(window).off('beforeunload.' + this.eventNamespace);
             $('body').off('click.' + this.eventNamespace);
+        },
+        applyMethod: function() {
+            return this.refs.tab.applyMethod();
         },
         revertChanges: function() {
             this.refs.tab.revertChanges();
@@ -260,6 +264,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                 cluster={cluster}
                                 hasChanges={this.hasChanges}
                                 revertChanges={this.revertChanges}
+                                applyMethod={this.applyMethod}
                                 activeTab={this.props.activeTab}
                             />
                         </ul>
@@ -372,11 +377,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         onDeployRequest: function() {
             if (this.props.hasChanges()) {
-                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(function() {
-                    this.props.revertChanges();
-                    if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                    this.showDialog(dialogs.DeployChangesDialog);
-                }, this)});
+                dialogs.DiscardSettingsChangesDialog.show({
+                    cb: _.bind(
+                        function() {
+                            this.props.revertChanges();
+                            if (this.props.activeTab == 'nodes') {
+                                app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
+                            }
+                            this.showDialog(dialogs.DeployChangesDialog);
+                        }, this),
+                    applyMethod: this.props.applyMethod
+                });
             } else {
                 this.showDialog(dialogs.DeployChangesDialog);
             }

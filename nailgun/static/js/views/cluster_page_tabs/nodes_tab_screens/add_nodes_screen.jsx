@@ -33,6 +33,9 @@ function(_, React, models, NodeListScreen) {
         revertChanges: function() {
             return this.refs.screen.revertChanges();
         },
+        applyMethod: function() {
+            return this.refs.screen.applyMethod();
+        },
         render: function() {
             return <NodeListScreen
                 ref='screen'

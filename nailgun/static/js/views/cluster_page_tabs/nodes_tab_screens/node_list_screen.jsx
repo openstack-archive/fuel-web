@@ -102,6 +102,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return !_.isEqual(node.get('pending_roles'), this.initialRoles[node.id]);
             }, this);
         },
+        applyMethod: function() {
+            return this.refs.panel.applyMethod();
+        },
         changeFilter: _.debounce(function(value) {
             this.setState({filter: value});
         }, 200),
@@ -126,6 +129,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         <div className='alert'>{i18n('cluster_page.nodes_tab.disk_configuration_reset_warning')}</div>
                     }
                     <ManagementPanel
+                        ref='panel'
                         mode={this.props.mode}
                         nodes={new models.Nodes(_.compact(_.map(this.state.selectedNodeIds, function(checked, id) {
                             if (checked) return nodes.get(id);
@@ -185,7 +189,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showDeleteNodesDialog: function() {
             dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster});
         },
-        applyChanges: function() {
+        applyChanges: function(redirect) {
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
                 var data = {id: node.id, pending_roles: node.get('pending_roles')};
@@ -196,10 +200,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }
                 return data;
             }, this));
-            Backbone.sync('update', nodes)
+            return Backbone.sync('update', nodes)
                 .done(_.bind(function() {
-                    $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
-                        this.changeScreen();
+                    $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).
+                    always(_.bind(function() {
+                        if (redirect !== false) this.changeScreen();
                         dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
                     }, this));
                 }, this))
@@ -210,6 +215,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         response: response
                     });
                 }, this));
+        },
+        applyMethod: function() {
+            return _.bind(this.applyChanges, this);
         },
         startFiltering: function(name, value) {
             this.setState({isFilterButtonVisible: !!value});

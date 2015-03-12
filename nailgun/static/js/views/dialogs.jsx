@@ -691,11 +691,42 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
     });
 
     dialogs.DiscardSettingsChangesDialog = React.createClass({
-        mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
+        mixins: [
+            dialogMixin
+        ],
+        getDefaultProps: function() {
+            return {
+                title: i18n('dialog.dismiss_settings.title'),
+                defaultMessage: i18n('dialog.dismiss_settings.default_message')
+            };
+        },
+        getInitialState: function() {
+            return {
+                applyMethod: null,
+                hasValidationErrors: false
+            };
+        },
+        componentDidMount: function() {
+            this.setState(this.getInitialState());
+            dispatcher.trigger('giveMeApplyMethod');
+        },
         proceed: function() {
-            this.close();
             dispatcher.trigger('networkConfigurationUpdated', _.bind(this.props.cb, this.props));
+        },
+        closeAndProceed: function() {
+            this.close();
+            this.proceed();
+        },
+        save: function() {
+            if (this.props.applyMethod) {
+                this.close();
+                var applicationResult = this.props.applyMethod()(false);
+                if (applicationResult) {
+                    applicationResult.done(this.proceed);
+                } else {
+                    this.proceed();
+                }
+            }
         },
         renderBody: function() {
             var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
@@ -708,11 +739,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         },
         renderFooter: function() {
             var verification = !!this.props.verification,
-                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>],
-                buttonToAdd = <button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>
+                applyMethod = this.props.applyMethod(),
+                buttons = [
+                    <button key='stay' className='btn btn-return' onClick={this.close}>
+                        {i18n('dialog.dismiss_settings.stay_button')}
+                    </button>
+                ];
+            if (!verification) {
+                buttons.push(<button key='leave' className='btn btn-danger proceed-btn' onClick={this.closeAndProceed}>
                     {i18n('dialog.dismiss_settings.leave_button')}
-                </button>;
-            if (!verification) buttons.push(buttonToAdd);
+                </button>);
+            }
+            if (!_.isNull(applyMethod)) {
+                buttons.push(<button key='save' className='btn btn-success' onClick={this.save} disabled={!applyMethod}>
+                    {i18n('dialog.dismiss_settings.apply_and_proceed_button')}
+                </button>);
+            }
             return buttons;
         }
     });

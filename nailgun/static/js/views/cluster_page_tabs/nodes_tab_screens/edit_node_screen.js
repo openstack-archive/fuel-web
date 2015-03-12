@@ -33,7 +33,10 @@ function(_, utils, models, dialogs, Screen) {
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(this.goToNodeList, this)});
+                dialogs.DiscardSettingsChangesDialog.show({
+                    cb: _.bind(this.goToNodeList, this),
+                    applyMethod: _.bind(this.applyMethod, this)
+                });
             } else {
                 this.goToNodeList();
             }

@@ -718,6 +718,16 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         )
         self.assertEqual(resp_put.status_code, 200)
 
+    def check_gateways(self, node, scheme, is_public):
+        nm = objects.Node.get_network_manager(node)
+        if is_public:
+            gw = nm.get_node_network_by_netname(node, 'public')['gateway']
+            self.assertEqual(scheme['endpoints']['br-ex']['gateway'], gw)
+        else:
+            gw = nm.assign_vips_for_net_groups(node.cluster)[
+                'management_vrouter_vip']
+            self.assertEqual(scheme['endpoints']['br-mgmt']['gateway'], gw)
+
     def test_vlan_schema(self):
         cluster = self.create_env(segment_type='vlan')
         self.add_nics_properties(cluster)
@@ -756,6 +766,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 br_set
             )
             self.check_ep_format(scheme['endpoints'])
+            self.check_gateways(node_db, scheme, is_public)
             self.assertEqual(
                 scheme['roles'],
                 role_dict
@@ -901,6 +912,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 br_set
             )
             self.check_ep_format(scheme['endpoints'])
+            self.check_gateways(node_db, scheme, is_public)
             self.assertEqual(
                 scheme['roles'],
                 role_dict

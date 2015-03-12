@@ -268,8 +268,8 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
-    def assign_vip(cls, cluster_id, network_name, vip_type=None):
-        """Idempotent assignment VirtualIP addresses to cluster.
+    def assign_vip(cls, cluster, network_name, vip_type=None):
+        """Idempotent assignment of VirtualIP addresses to cluster.
         Returns VIP for given cluster and network.
 
         It's required for HA deployment to have IP address
@@ -279,59 +279,47 @@ class NetworkManager(object):
         If one of the nodes is the node from other cluster,
         this func will fail.
 
-        :param cluster_id: Cluster database ID.
-        :type  cluster_id: int
+        :param cluster: Cluster instance
+        :type  cluster: Cluster model
         :param network_name: Network name
         :type  network_name: str
         :param vip_type: Type of VIP. None or 'vrouter'
         :type  vip_type: str
-        :returns: IPAddr object with the assigned VIP
+        :returns: assigned VIP (string)
         :raises: Exception
         """
-        cluster = objects.Cluster.get_by_uid(cluster_id)
-        if not cluster:
-            raise Exception(u"Cluster id='%s' not found" % cluster_id)
-
         group_id = objects.Cluster.get_controllers_group_id(cluster)
-
         network = db().query(NetworkGroup).\
             filter_by(name=network_name, group_id=group_id).first()
 
         if not network:
             raise Exception(u"Network '%s' for cluster_id=%s not found." %
-                            (network_name, cluster_id))
-        admin_net_id = cls.get_admin_network_group_id()
-        cluster_ips = [ne.ip_addr for ne in db().query(IPAddr).filter_by(
+                            (network_name, cluster.id))
+
+        cluster_vip = db().query(IPAddr).filter_by(
             network=network.id,
             node=None,
             vip_type=vip_type
-        ).filter(
-            not_(IPAddr.network == admin_net_id)
-        ).all()]
-        # check if any of used_ips in required cidr: network.cidr
-        ips_belongs_to_net = False
-        for ip in cluster_ips:
-            if cls.check_ip_belongs_to_net(ip, network):
-                ips_belongs_to_net = True
-                break
+        ).first()
+        # check if cluster_vip is in required cidr: network.cidr
+        if cluster_vip and cls.check_ip_belongs_to_net(cluster_vip.ip_addr,
+                                                       network):
+            return cluster_vip.ip_addr
 
-        if ips_belongs_to_net:
-            vip = cluster_ips[0]
-        else:
-            # IP address has not been assigned, let's do it
-            vip = cls.get_free_ips(network)[0]
-            ne_db = IPAddr(network=network.id, ip_addr=vip, vip_type=vip_type)
-            db().add(ne_db)
-            db().flush()
+        # IP address has not been assigned, let's do it
+        vip = cls.get_free_ips(network)[0]
+        ne_db = IPAddr(network=network.id, ip_addr=vip, vip_type=vip_type)
+        db().add(ne_db)
+        db().flush()
 
         return vip
 
     @classmethod
-    def assign_vip_for_groups(cls, cluster):
+    def assign_vips_for_net_groups(cls, cluster):
         """Calls cls.assign_vip for all of cluster's network_groups.
 
-        :param cluster_id:
-        :type cluster_id: int
+        :param cluster: Cluster instance
+        :type  cluster: Cluster model
         :return: dict with vip definitions
         """
 
@@ -340,11 +328,11 @@ class NetworkManager(object):
         for ng in cluster.network_groups:
             if ng.meta.get("assign_vip"):
                 result['{0}_vip'.format(ng.name)] = \
-                    cls.assign_vip(cluster.id, ng.name)
+                    cls.assign_vip(cluster, ng.name)
             if ng.meta.get("assign_vrouter_vip"):
                 result['{0}_vrouter_vip'.format(ng.name)] = \
                     cls.assign_vip(
-                        cluster.id,
+                        cluster,
                         ng.name,
                         vip_type=consts.NETWORK_VIP_TYPES.vrouter
                     )
@@ -1155,7 +1143,7 @@ class NetworkManager(object):
     @classmethod
     def get_default_gateway(cls, node_id):
         return cls.get_admin_network_group(node_id).gateway \
-                or settings.MASTER_IP
+            or settings.MASTER_IP
 
     @classmethod
     def get_networks_not_on_node(cls, node):

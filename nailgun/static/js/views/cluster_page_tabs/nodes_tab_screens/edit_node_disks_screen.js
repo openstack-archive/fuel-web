@@ -21,13 +21,14 @@ define(
     'backbone',
     'utils',
     'models',
+    'dispatcher',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_screen',
     'text!templates/cluster/edit_node_disks.html',
     'text!templates/cluster/node_disk.html',
     'text!templates/cluster/volume_style.html',
     'jquery-autoNumeric'
 ],
-function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate) {
+function($, _, i18n, Backbone, utils, models, dispatcher, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate) {
     'use strict';
     var EditNodeDisksScreen, NodeDisk;
 
@@ -51,6 +52,9 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
             var result = false;
             this.disks.each(function(disk) {result = result || disk.validationError || _.some(disk.get('volumes').models, 'validationError');}, this);
             return result;
+        },
+        hasErrors: function() {
+            return !!this.hasValidationErrors();
         },
         isLocked: function() {
             var nodesAvailableForChanges = this.nodes.filter(function(node) {
@@ -140,6 +144,17 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
                 this.goToNodeList();
             }
             this.initButtons();
+            // FIXME(nbogdanov): Workaround for providing Discard Changes dialog
+            // with applyChanges method.
+            // Rewritten to React should be replaced by the mixin below:
+            // ComponentMixins.respondToApplyRequestMixin('applyChanges', 'hasValidationErrors')
+            dispatcher.on('giveMeApplyMethod', _.bind(function() {
+                dispatcher.trigger('applyMethodsProvided', _.bind(this.applyChanges, this), this.hasErrors());
+            }, this));
+        },
+        // FIXME(nbogdanov): The same as above. When React-ed should be removed
+        beforeTearDown: function() {
+            dispatcher.off('giveMeApplyMethod');
         },
         getDiskMetaData: function(disk) {
             var result;

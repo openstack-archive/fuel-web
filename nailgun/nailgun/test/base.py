@@ -1128,10 +1128,23 @@ class BaseAlembicMigrationTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(BaseAlembicMigrationTest, cls).setUpClass()
+
+        # NOTE(ikalnitsky):
+        # Looks like one of previous tests keep some connection alive, so
+        # we have some lock on nodes table. Then, we're trying to remove
+        # all tables but unable to do it because of this lock. As workaround,
+        # we can close previous transaction manually.
+        db.close()
+
         dropdb()
         alembic.command.upgrade(ALEMBIC_CONFIG, cls.prepare_revision)
         cls.prepare()
         alembic.command.upgrade(ALEMBIC_CONFIG, cls.test_revision)
+
+    def tearDown(self):
+        db.remove()
+        super(BaseAlembicMigrationTest, self).tearDown()
 
     @abc.abstractproperty
     def prepare_revision(self):

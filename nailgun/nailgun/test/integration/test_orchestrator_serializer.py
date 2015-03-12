@@ -2347,6 +2347,8 @@ class BaseDeploymentSerializer61(BaseIntegrationTest):
         self.assertEqual(result['glance']['vc_host'], "1.2.3.4")
         self.assertEqual(result['glance']['vc_user'], "admin")
         self.assertEqual(result['glance']['vc_password'], "secret")
+        self.assertEqual(result['glance']['vc_datacenter'], "test_datacenter")
+        self.assertEqual(result['glance']['vc_datastore'], "test_datastore")
 
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer61):

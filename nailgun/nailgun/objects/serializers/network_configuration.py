@@ -32,7 +32,7 @@ class NetworkConfigurationSerializer(BasicSerializer):
         data_dict["ip_ranges"] = [
             [ir.first, ir.last] for ir in instance.ip_ranges
         ]
-        data_dict.setdefault("gateway", "")
+#        data_dict.setdefault("gateway", "")
         return data_dict
 
     @classmethod

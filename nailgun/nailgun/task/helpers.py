@@ -425,12 +425,24 @@ class TaskHelper(object):
 
         try:
             if not al_instance:
-                al_instance = ActionLog.get_by_task_uuid(task.uuid)
+                al_instance = ActionLog.get_by_kwargs(task_uuid=task.uuid,
+                                                      action_name=task.name)
+            # this is needed as status for check_networks task is not set to
+            # "ready" in case of success (it is left in status "running") so
+            # we do it here manually, there is no such issue with "error"
+            # status though.
+            set_to_ready_cond = (
+                task.name == consts.TASK_NAMES.check_networks
+                and task.status == consts.TASK_STATUSES.running
+            )
+            task_status = consts.TASK_STATUSES.ready if set_to_ready_cond \
+                else task.status
+
             if al_instance:
                 update_data = {
                     "end_timestamp": datetime.datetime.utcnow(),
                     "additional_info": {
-                        "ended_with_status": task.status,
+                        "ended_with_status": task_status,
                         "message": "",
                         "output": cls.sanitize_task_output(task.cache,
                                                            al_instance)

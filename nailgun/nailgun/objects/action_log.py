@@ -65,12 +65,11 @@ class ActionLog(NailgunObject):
         overrides already present keys of additional_info attribute
         of instance if this attribute is present in data argument
 
-        Arguments:
-        instance - instance of ActionLog class that is processed
-        data - dictionary containing keyword arguments for entity to be
+        :param instance: instance of ActionLog class that is processed
+        :param data: dictionary containing keyword arguments for entity to be
         updated
 
-        return - returned by parent class method value
+        :return: returned by parent class method value
         """
 
         if data.get('additional_info'):
@@ -81,16 +80,13 @@ class ActionLog(NailgunObject):
         return super(ActionLog, cls).update(instance, data)
 
     @classmethod
-    def get_by_task_uuid(cls, task_uuid):
-        """Get action_log entry by task_uuid.
+    def get_by_kwargs(cls, **kwargs):
+        """Get action_log entry by set of attributes values.
 
-        Arguments:
-        task_uuid - uuid of task, using which row is retrieved
-
-        return - matching instance of action_log entity
+        :return: - matching instance of action_log entity
         """
         instance = db().query(models.ActionLog)\
-            .filter_by(task_uuid=task_uuid)\
+            .filter_by(**kwargs)\
             .first()
 
         return instance

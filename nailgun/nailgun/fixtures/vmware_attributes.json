@@ -142,7 +142,9 @@
             "glance": {
                 "vcenter_host": "1.2.3.4",
                 "vcenter_username": "admin",
-                "vcenter_password": "secret"
+                "vcenter_password": "secret",
+                "datacenter": "test_datacenter",
+                "datastore": "test_datastore"
             },
             "network": {
                 "esxi_vlan_interface": "eth0"

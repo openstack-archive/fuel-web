@@ -850,7 +850,7 @@ class TestConsumer(BaseIntegrationTest):
 
             action_log_kwargs = {
                 'action_group': 'test_cluster_changes',
-                'action_name': 'test_provision_action',
+                'action_name': kwargs["task_name"],
                 'action_type': consts.ACTION_TYPES.nailgun_task,
                 'additional_info': {},
                 'is_sent': False,

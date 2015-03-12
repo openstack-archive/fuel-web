@@ -23,12 +23,13 @@ define(
     'utils',
     'models',
     'dispatcher',
+    'jsx!views/dialogs',
     'jsx!views/controls',
     'jsx!component_mixins',
     'react-dnd',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
 ],
-function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins, DND, OffloadingModes) {
+function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins, DND, OffloadingModes) {
     'use strict';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.';
@@ -38,7 +39,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             ComponentMixins.nodeConfigurationScreenMixin,
             ComponentMixins.backboneMixin('interfaces', 'change reset update'),
             ComponentMixins.backboneMixin('cluster'),
-            ComponentMixins.backboneMixin('nodes', 'change reset update')
+            ComponentMixins.backboneMixin('nodes', 'change reset update'),
+            ComponentMixins.unsavedChangesMixin
         ],
         statics: {
             fetchData: function(options) {
@@ -134,6 +136,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             this.props.interfaces.reset(_.cloneDeep(this.state.initialInterfaces), {parse: true});
         },
         applyChanges: function() {
+            if (!this.isSavingPossible()) return $.Deferred().reject();
+
             var nodes = this.props.nodes,
                 interfaces = this.props.interfaces,
                 bonds = interfaces.filter(function(ifc) {return ifc.isBond();});
@@ -382,6 +386,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             // warn if not all speeds are the same or there are interfaces with unknown speed
             return _.uniq(speeds).length > 1 || !_.compact(speeds).length;
         },
+        isSavingPossible: function() {
+            return !_.chain(this.state.interfaceErrors).values().some().value() && !this.state.actionInProgress && this.hasChanges();
+        },
         render: function() {
             var nodes = this.props.nodes,
                 nodeNames = nodes.pluck('name'),
@@ -396,12 +403,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 bondingPossible = creatingNewBond || addingInterfacesToExistingBond,
                 unbondingPossible = !checkedInterfaces.length && !!checkedBonds.length,
                 hasChanges = this.hasChanges(),
-                hasErrors = _.chain(this.state.interfaceErrors).values().some().value(),
                 slaveInterfaceNames = _.pluck(_.flatten(_.filter(interfaces.pluck('slaves'))), 'name'),
                 returnEnabled = !this.state.actionInProgress,
                 loadDefaultsEnabled = !this.state.actionInProgress,
                 revertChangesEnabled = !this.state.actionInProgress && hasChanges,
-                applyEnabled = !hasErrors && !this.state.actionInProgress && hasChanges,
                 invalidSpeedsForBonding = bondingPossible && this.validateSpeedsForBonding(checkedBonds.concat(checkedInterfaces)) || interfaces.any(function(ifc) {
                     return ifc.isBond() && this.validateSpeedsForBonding([ifc]);
                 }, this);
@@ -484,7 +489,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group'>
-                                <button className='btn btn-default btn-return' onClick={this.returnToNodeList} disabled={!returnEnabled}>
+                                <button className='btn btn-default' onClick={this.returnToNodeList} disabled={!returnEnabled}>
                                     {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
                                 </button>
                             </div>
@@ -496,7 +501,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!revertChangesEnabled}>
                                         {i18n('common.cancel_changes_button')}
                                     </button>
-                                    <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!applyEnabled}>
+                                    <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!this.isSavingPossible()}>
                                         {i18n('common.apply_button')}
                                     </button>
                                 </div>

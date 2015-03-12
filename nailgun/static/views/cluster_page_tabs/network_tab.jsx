@@ -585,7 +585,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 },
                 renderOn: 'change reset'
             }),
-            componentMixins.pollingMixin(3)
+            componentMixins.pollingMixin(3),
+            componentMixins.applyChangesMixin()
         ],
         shouldDataBeFetched: function() {
             return !!this.props.cluster.task({group: 'network', status: 'running'});
@@ -664,8 +665,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 }, this));
         },
         applyChanges: function() {
-            this.setState({actionInProgress: true});
-            this.prepareIpRanges();
+            if (!this.isSavingPossible()) return $.Deferred().reject();
+
             dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
                 return Backbone.sync('update', this.props.networkConfiguration)
                     .then(_.bind(function(response) {
@@ -682,15 +683,19 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this));
-            }, this));
+                }, this));
+        },
+        isSavingPossible: function() {
+            return _.isNull(this.props.networkConfiguration.validationError) &&
+                !this.isLocked() &&
+                this.props.hasChanges();
         },
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,
                 isLocked = this.isLocked(),
                 hasChanges = this.props.hasChanges(),
                 isVerificationDisabled = error || this.state.actionInProgress || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
-                isCancelChangesDisabled = isLocked || !hasChanges,
-                isSaveChangesDisabled = error || isLocked || !hasChanges;
+                isCancelChangesDisabled = isLocked || !hasChanges;
             return (
                 <div className='col-xs-12 page-buttons content-elements'>
                     <div className='well clearfix'>
@@ -704,8 +709,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 {i18n('common.cancel_changes_button')}
                             </button>
                             <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
-                                    disabled={isSaveChangesDisabled}>
-                                {i18n('common.save_settings_button')}
+                                disabled={!this.isSavingPossible()}>
+                                    {i18n('common.save_settings_button')}
                             </button>
                         </div>
                     </div>

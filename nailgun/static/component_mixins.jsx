@@ -28,6 +28,22 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
                 }
             };
         },
+        applyChangesMixin: function(applyMethod) {
+            return {
+                componentDidMount: function() {
+                    dispatcher.on(
+                        'applyChanges',
+                        _.bind(function() {
+                            $.when(this[applyMethod || 'applyChanges'].call(this)).
+                                done(function() {dispatcher.trigger('changesApplied')});
+                        }, this),
+                    this);
+                },
+                componentWillUnmount: function() {
+                    dispatcher.off('applyChanges', null, this);
+                }
+            };
+        },
         pollingMixin: function(updateInterval, delayedStart) {
             updateInterval = updateInterval * 1000;
             return {

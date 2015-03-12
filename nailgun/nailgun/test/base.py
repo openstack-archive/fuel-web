@@ -1128,10 +1128,15 @@ class BaseAlembicMigrationTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(BaseAlembicMigrationTest, cls).setUpClass()
         dropdb()
         alembic.command.upgrade(ALEMBIC_CONFIG, cls.prepare_revision)
         cls.prepare()
         alembic.command.upgrade(ALEMBIC_CONFIG, cls.test_revision)
+
+    def tearDown(self):
+        db.remove()
+        super(BaseAlembicMigrationTest, self).tearDown()
 
     @abc.abstractproperty
     def prepare_revision(self):

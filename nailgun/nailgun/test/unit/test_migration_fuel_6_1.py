@@ -15,6 +15,7 @@
 
 from oslo.serialization import jsonutils
 import sqlalchemy as sa
+import unittest2 as unittest
 
 from nailgun.db import db
 from nailgun.test import base

@@ -41,7 +41,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
                 renderOn: 'update change:status'
             }),
-            componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'removeDeletedLabelsFromActiveSortersAndFilters')
+            componentMixins.dispatcherMixin('labelsConfigurationUpdated', 'removeDeletedLabelsFromActiveSortersAndFilters'),
+            componentMixins.applyChangesMixin()
         ],
         getInitialState: function() {
             var cluster = this.props.cluster,
@@ -614,6 +615,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             dialogs.DeleteNodesDialog.show({nodes: this.props.nodes, cluster: this.props.cluster});
         },
         applyChanges: function() {
+            if (this.state.actionInProgress || !this.props.hasChanges) return $.Deferred().reject();
+
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
                 var data = {id: node.id, pending_roles: node.get('pending_roles')};

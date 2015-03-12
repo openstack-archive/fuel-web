@@ -583,7 +583,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 },
                 renderOn: 'change reset'
             }),
-            componentMixins.pollingMixin(3)
+            componentMixins.pollingMixin(3),
+            componentMixins.unsavedChangesMixin
         ],
         shouldDataBeFetched: function() {
             return !!this.props.cluster.task({group: 'network', status: 'running'});
@@ -654,41 +655,64 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     // for unsaved config (which appear after clicking "Verify"
                     // button without clicking "Save Changes" button first).
                     // For proper implementation, this should be managed by backend
-                    this.props.cluster.get('tasks').get(task.id).set('unsaved', this.props.hasChanges());
+                    this.props.cluster.get('tasks').get(task.id).set('unsaved', this.hasChanges());
                     return this.startPolling();
                 }, this))
                 .always(_.bind(function() {
                     this.setState({actionInProgress: false});
                 }, this));
         },
+        getStayMessage: function() {
+            return this.props.cluster.task({group: 'network', status: 'running'}) && i18n('dialog.dismiss_settings.verify_message');
+        },
+        hasChanges: function() {
+            return this.props.hasChanges();
+        },
+        revertChanges: function() {
+            return this.props.revertChanges();
+        },
         applyChanges: function() {
+            if (!this.isSavingPossible()) return $.Deferred().reject();
+
             this.setState({actionInProgress: true});
             this.prepareIpRanges();
+
+            var result = $.Deferred();
             dispatcher.trigger('networkConfigurationUpdated', _.bind(function() {
                 return Backbone.sync('update', this.props.networkConfiguration)
                     .then(_.bind(function(response) {
                         if (response.status != 'error') {
                             this.props.updateInitialConfiguration();
+                            result.resolve(response);
                         } else {
                             // FIXME(vkramskikh): the same hack for check_networks task:
                             // remove failed tasks immediately, so they won't be taken into account
-                            return this.props.cluster.fetchRelated('tasks').done(_.bind(function() {
-                                this.props.cluster.get('tasks').get(response.id).set('unsaved', true);
-                            }, this));
+                            this.props.cluster.fetchRelated('tasks')
+                                .done(_.bind(function() {
+                                    this.props.cluster.get('tasks')
+                                        .get(response.id)
+                                        .set('unsaved', true);
+                                    result.reject();
+                                }, this));
                         }
                     }, this))
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this));
-            }, this));
+                }, this)
+            );
+            return result;
+        },
+        isSavingPossible: function() {
+            return _.isNull(this.props.networkConfiguration.validationError) &&
+                !this.isLocked() &&
+                this.hasChanges();
         },
         renderButtons: function() {
             var error = this.props.networkConfiguration.validationError,
                 isLocked = this.isLocked(),
-                hasChanges = this.props.hasChanges(),
                 isVerificationDisabled = error || this.state.actionInProgress || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
-                isCancelChangesDisabled = isLocked || !hasChanges,
-                isSaveChangesDisabled = error || isLocked || !hasChanges;
+                isCancelChangesDisabled = isLocked || !this.hasChanges();
             return (
                 <div className='col-xs-12 page-buttons content-elements'>
                     <div className='well clearfix'>
@@ -702,8 +726,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 {i18n('common.cancel_changes_button')}
                             </button>
                             <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
-                                    disabled={isSaveChangesDisabled}>
-                                {i18n('common.save_settings_button')}
+                                disabled={!this.isSavingPossible()}>
+                                    {i18n('common.save_settings_button')}
                             </button>
                         </div>
                     </div>

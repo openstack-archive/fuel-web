@@ -54,15 +54,17 @@ class NodeHandler(SingleHandler):
         """Deletes a node from DB and from Cobbler.
 
         :return: JSON-ed deletion task
-        :http: * 202 (nodes are successfully scheduled for deletion)
-               * 404 (invalid node id specified)
+        :http: * 200 (node has been succesfully deleted)
+               * 202 (node is successfully scheduled for deletion)
+               * 400 (data validation failed)
+               * 404 (node not found in db)
         """
 
         node = self.get_object_or_404(self.single, obj_id)
         task_manager = NodeDeletionTaskManager(cluster_id=node.cluster_id)
         task = task_manager.execute([node], mclient_remove=False)
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class NodeCollectionHandler(CollectionHandler):
@@ -100,7 +102,7 @@ class NodeCollectionHandler(CollectionHandler):
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
         :http: * 200 (nodes are successfully updated)
-               * 400 (invalid nodes data specified)
+               * 400 (data validation failed)
         """
         data = self.checked_data(
             self.validator.validate_collection_update
@@ -130,8 +132,10 @@ class NodeCollectionHandler(CollectionHandler):
         Takes (JSONed) list of node ids to delete.
 
         :return: JSON-ed deletion task
-        :http: * 202 (nodes are successfully scheduled for deletion)
-               * 400 (invalid nodes data specified)
+        :http: * 200 (nodes have been succesfully deleted)
+               * 202 (nodes are successfully scheduled for deletion)
+               * 400 (data validation failed)
+               * 404 (nodes not found in db)
         """
         # TODO(pkaminski): web.py does not support parsing of array arguments
         # in the queryset so we specify the input as comma-separated list
@@ -145,7 +149,7 @@ class NodeCollectionHandler(CollectionHandler):
         task_manager = NodeDeletionTaskManager(cluster_id=nodes[0].cluster_id)
         task = task_manager.execute(nodes)
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class NodeAgentHandler(BaseHandler):
@@ -158,7 +162,7 @@ class NodeAgentHandler(BaseHandler):
         """:returns: node id.
         :http: * 200 (node are successfully updated)
                * 304 (node data not changed since last request)
-               * 400 (invalid nodes data specified)
+               * 400 (data validation failed)
                * 404 (node not found)
         """
         nd = self.checked_data(
@@ -209,7 +213,7 @@ class NodeNICsHandler(BaseHandler):
     def PUT(self, node_id):
         """:returns: Collection of JSONized Node objects.
         :http: * 200 (nodes are successfully updated)
-               * 400 (invalid nodes data specified)
+               * 400 (data validation failed)
         """
         interfaces_data = self.checked_data(
             self.validator.validate_structure_and_data, node_id=node_id)
@@ -236,7 +240,7 @@ class NodeCollectionNICsHandler(BaseHandler):
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
         :http: * 200 (nodes are successfully updated)
-               * 400 (invalid nodes data specified)
+               * 400 (data validation failed)
         """
         data = self.checked_data(
             self.validator.validate_collection_structure_and_data)

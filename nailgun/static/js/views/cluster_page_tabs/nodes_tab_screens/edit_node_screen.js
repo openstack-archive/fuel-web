@@ -33,7 +33,10 @@ function(_, utils, models, dialogs, Screen) {
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(this.goToNodeList, this)});
+                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {
+                    cb: _.bind(this.goToNodeList, this),
+                    applyMethod: this.getApplyMethod()
+                });
             } else {
                 this.goToNodeList();
             }
@@ -42,6 +45,9 @@ function(_, utils, models, dialogs, Screen) {
             _.defaults(this, options);
             var nodeIds = utils.deserializeTabOptions(this.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);});
             this.nodes = new models.Nodes(this.cluster.get('nodes').getByIds(nodeIds));
+        },
+        getApplyMethod: function() {
+            return _.bind(this.applyChanges, this);
         }
     });
 

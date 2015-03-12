@@ -134,6 +134,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }, this);
             return $.when.apply($, requests);
         },
+        getApplyMethod: function() {
+            return this.refs.tab.getApplyMethod();
+        },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');
             if (Backbone.history.getHash() != href.substr(1) && this.hasChanges()) {
@@ -143,7 +146,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     cb: _.bind(function() {
                         this.revertChanges();
                         app.navigate(href, {trigger: true});
-                    }, this)
+                    }, this),
+                    applyMethod: this.getApplyMethod()
                 });
             }
         },
@@ -259,6 +263,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                 hasChanges={this.hasChanges}
                                 revertChanges={this.revertChanges}
                                 activeTab={this.props.activeTab}
+                                getApplyMethod={this.getApplyMethod}
                             />
                         </ul>
                         <div className='tab-content'>
@@ -372,11 +377,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         onDeployRequest: function() {
             if (this.props.hasChanges()) {
-                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(function() {
-                    this.props.revertChanges();
-                    if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-                    this.showDialog(dialogs.DeployChangesDialog);
-                }, this)});
+                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {
+                    cb: _.bind(function() {
+                        this.props.revertChanges();
+                        if (this.props.activeTab == 'nodes') {
+                            app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
+                        }
+                        this.showDialog(dialogs.DeployChangesDialog);
+                    }, this),
+                    applyMethod: this.props.getApplyMethod()
+                });
             } else {
                 this.showDialog(dialogs.DeployChangesDialog);
             }
@@ -391,7 +401,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 itemClass = 'deployment-control-item-box',
                 isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
             return (
-                <div className='cluster-deploy-placeholder'>
+                <div ref='deploy' className='cluster-deploy-placeholder'>
                     {task ? (
                         <div className={'pull-right deployment-progress-box ' + taskName}>
                             {!infiniteTask &&

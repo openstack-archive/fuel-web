@@ -47,7 +47,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(this.goToNodeList, this)});
+                utils.showDialog(
+                    dialogs.DiscardSettingsChangesDialog,
+                    {
+                        cb: _.bind(this.goToNodeList, this),
+                        applyMethod: this.getApplyMethod()
+                    });
             } else {
                 this.goToNodeList();
             }
@@ -145,6 +150,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return !_.isEqual(this.state.initialInterfaces, this.interfacesToJSON(this.props.interfaces)) ||
                 this.hasChangesInRemainingNodes();
         },
+        hasErrors: function() {
+            return _.chain(this.state.interfaceErrors).values().some().value();
+        },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
             // FIXME(morale): needs backend fix, now interface_properties are not coming after loadDefaults
@@ -229,6 +237,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 }).always(_.bind(function() {
                     this.setState({actionInProgress: false});
                 }, this));
+        },
+        getApplyMethod: function() {
+            return !this.hasErrors() && !this.state.actionInProgress && this.hasChanges() ?
+                _.bind(this.applyChanges, this) : null;
         },
         isLocked: function() {
             var hasLockedNodes = this.props.nodes.any(function(node) {
@@ -339,12 +351,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 bondingPossible = creatingNewBond || addingInterfacesToExistingBond,
                 unbondingPossible = !checkedInterfaces.length && !!checkedBonds.length,
                 hasChanges = this.hasChanges(),
-                hasErrors = _.chain(this.state.interfaceErrors).values().some().value(),
                 slaveInterfaceNames = _.pluck(_.flatten(_.filter(interfaces.pluck('slaves'))), 'name'),
                 returnEnabled = !this.state.actionInProgress,
                 loadDefaultsEnabled = !this.state.actionInProgress && !locked,
                 revertChangesEnabled = !this.state.actionInProgress && hasChanges,
-                applyEnabled = !hasErrors && !this.state.actionInProgress && hasChanges;
+                applyEnabled = !this.hasErrors() && !this.state.actionInProgress && hasChanges;
 
             return (
                 <div className='edit-node-networks-screen' style={{display: 'block'}} ref='nodeNetworksScreen'>

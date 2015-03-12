@@ -163,6 +163,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     });
 
     ManagementPanel = React.createClass({
+        mixins: [
+            componentMixins.respondToApplyRequestMixin('applyChanges')
+        ],
         getInitialState: function() {
             return {
                 isFilterButtonVisible: !!this.props.filter,
@@ -186,7 +189,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showDeleteNodesDialog: function() {
             utils.showDialog(dialogs.DeleteNodesDialog, {nodes: this.props.nodes, cluster: this.props.cluster});
         },
-        applyChanges: function() {
+        applyChanges: function(redirect) {
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
                 var data = {id: node.id, pending_roles: node.get('pending_roles')};
@@ -197,10 +200,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }
                 return data;
             }, this));
-            Backbone.sync('update', nodes)
+            return Backbone.sync('update', nodes)
                 .done(_.bind(function() {
-                    $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(_.bind(function() {
-                        this.changeScreen();
+                    $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).
+                    always(_.bind(function() {
+                        if (redirect !== false) this.changeScreen();
                         dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
                     }, this));
                 }, this))

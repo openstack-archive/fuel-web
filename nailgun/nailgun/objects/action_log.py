@@ -81,7 +81,7 @@ class ActionLog(NailgunObject):
         return super(ActionLog, cls).update(instance, data)
 
     @classmethod
-    def get_by_task_uuid(cls, task_uuid):
+    def get_by_kwargs(cls, **kwargs):
         """Get action_log entry by task_uuid.
 
         Arguments:
@@ -90,7 +90,7 @@ class ActionLog(NailgunObject):
         return - matching instance of action_log entity
         """
         instance = db().query(models.ActionLog)\
-            .filter_by(task_uuid=task_uuid)\
+            .filter_by(**kwargs)\
             .first()
 
         return instance

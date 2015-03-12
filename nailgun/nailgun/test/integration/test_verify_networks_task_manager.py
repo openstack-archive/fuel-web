@@ -18,9 +18,7 @@ import copy
 
 import unittest2
 
-from nailgun.consts import BOND_MODES
-from nailgun.consts import CLUSTER_STATUSES
-from nailgun.consts import NETWORK_INTERFACE_TYPES
+from nailgun import consts
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -141,7 +139,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         task = self.env.launch_verify_networks(nets)
         self.db.refresh(task)
-        self.assertEqual(task.status, "error")
+        self.assertEqual(task.status, consts.TASK_STATUSES.error)
         error_msg = 'At least two nodes are required to be in ' \
                     'the environment for network verification.'
         self.assertEqual(task.message, error_msg)
@@ -150,8 +148,8 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
     def test_network_verify_when_env_not_ready(self):
         cluster_db = self.env.clusters[0]
         blocking_statuses = (
-            CLUSTER_STATUSES.deployment,
-            CLUSTER_STATUSES.update,
+            consts.CLUSTER_STATUSES.deployment,
+            consts.CLUSTER_STATUSES.update,
         )
         for status in blocking_statuses:
             cluster_db.status = status
@@ -169,7 +167,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             task = self.env.launch_verify_networks(nets)
             self.db.refresh(task)
 
-            self.assertEqual(task.status, "error")
+            self.assertEqual(task.status, consts.TASK_STATUSES.error)
             error_msg = (
                 "Environment is not ready to run network verification "
                 "because it is in '{0}' state.".format(status)
@@ -190,7 +188,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         self.env.create_task(
             name="verify_networks",
-            status="running",
+            status=consts.TASK_STATUSES.running,
             cluster_id=self.env.clusters[0].id
         )
 
@@ -250,7 +248,7 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
             "name": "eth2",
             "current_speed": None}])
         self.env.create(
-            cluster_kwargs={'status': 'operational',
+            cluster_kwargs={'status': consts.CLUSTER_STATUSES.operational,
                             'net_provider': 'neutron',
                             'net_segment_type': 'vlan'},
             nodes_kwargs=[
@@ -264,10 +262,11 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
         )
         self.cluster = self.env.clusters[0]
 
+    @unittest2.skip('Fails randomly, bug #1427658')
     @fake_tasks()
     def test_network_verification_neutron_with_vlan_segmentation(self):
         task = self.env.launch_verify_networks()
-        self.assertEqual(task.status, 'running')
+        self.assertEqual(task.status, consts.TASK_STATUSES.running)
         self.env.wait_ready(task, 30)
 
 
@@ -305,7 +304,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         for node in self.env.nodes:
             data, admin_nic, other_nic, empty_nic = self.verify_nics(node)
             self.env.make_bond_via_api("ovs-bond0",
-                                       BOND_MODES.balance_slb,
+                                       consts.BOND_MODES.balance_slb,
                                        [other_nic["name"], empty_nic["name"]],
                                        node["id"])
             self.verify_bonds(node)
@@ -333,7 +332,8 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         resp = self.env.node_nics_get(node["id"])
         self.assertEqual(resp.status_code, 200)
 
-        bond = filter(lambda nic: nic["type"] == NETWORK_INTERFACE_TYPES.bond,
+        bond = filter(lambda nic: nic["type"] ==
+                      consts.NETWORK_INTERFACE_TYPES.bond,
                       resp.json_body)
         self.assertEqual(len(bond), 1)
         self.assertEqual(bond[0]["name"], "ovs-bond0")
@@ -422,7 +422,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         self.env.launch_deployment()
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
-        self.assertEqual(self.cluster.status, "stopped")
+        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
         verify_task = self.env.launch_verify_networks()
         self.env.wait_ready(verify_task, 60)
 
@@ -446,7 +446,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
 
         # check private VLAN range for nodes in Verify parameters
         task = self.env.launch_verify_networks()
-        self.assertEqual(task.status, 'running')
+        self.assertEqual(task.status, consts.TASK_STATUSES.running)
         for node in task.cache['args']['nodes']:
             for net in node['networks']:
                 if net['iface'] == priv_nics[node['uid']]:

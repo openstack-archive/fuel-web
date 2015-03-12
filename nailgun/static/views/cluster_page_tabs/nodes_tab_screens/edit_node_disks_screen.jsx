@@ -33,7 +33,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             ComponentMixins.nodeConfigurationScreenMixin,
             ComponentMixins.backboneMixin('cluster', 'change:status change:nodes sync'),
             ComponentMixins.backboneMixin('nodes', 'change sync'),
-            ComponentMixins.backboneMixin('disks', 'reset change')
+            ComponentMixins.backboneMixin('disks', 'reset change'),
+            ComponentMixins.unsavedChangesMixin()
         ],
         statics: {
             fetchData: function(options) {
@@ -71,6 +72,15 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
         hasChanges: function() {
             return !_.isEqual(_.pluck(this.props.disks.toJSON(), 'volumes'), _.pluck(this.state.initialDisks, 'volumes'));
         },
+        hasValidationErrors: function() {
+            var result = false;
+            this.props.disks.each(function(disk) {
+                result = result || disk.validationError || _.some(disk.get('volumes').models, 'validationError');}, this);
+            return result;
+        },
+        hasErrors: function() {
+            return !!this.hasValidationErrors();
+        },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
             this.props.disks.fetch({url: _.result(this.props.nodes.at(0), 'url') + '/disks/defaults/'})
@@ -89,6 +99,8 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
             this.props.disks.reset(_.cloneDeep(this.state.initialDisks), {parse: true});
         },
         applyChanges: function() {
+            if (this.hasErrors()) return $.Deferred().reject();
+
             this.setState({actionInProgress: true});
             return $.when.apply($, this.props.nodes.map(function(node) {
                     node.disks.each(function(disk, index) {
@@ -175,7 +187,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                         <div className='col-xs-12 page-buttons content-elements'>
                             <div className='well clearfix'>
                                 <div className='btn-group'>
-                                    <button onClick={this.returnToNodeList} className='btn btn-default btn-return'>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>
+                                    <button onClick={this.returnToNodeList} className='btn btn-default'>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>
                                 </div>
                                 <div className='btn-group pull-right'>
                                     <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={loadDefaultsDisabled}>{i18n('common.load_defaults_button')}</button>

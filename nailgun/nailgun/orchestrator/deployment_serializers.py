@@ -1230,8 +1230,10 @@ class NeutronNetworkDeploymentSerializer61(
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:
-            attrs['endpoints']['br-fw-admin']['gateway'] = \
-                nm.get_default_gateway(node.id)
+            # only HA mode is supported in 6.1 so we have VIPs always
+            attrs['endpoints']['br-mgmt']['gateway'] = \
+                nm.assign_vips_for_net_groups(node.cluster)[
+                    'management_vrouter_vip']
 
         # Fill up interfaces.
         for iface in node.nic_interfaces:
@@ -1591,7 +1593,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         net_manager = objects.Cluster.get_network_manager(cluster)
 
-        common_attrs.update(net_manager.assign_vip_for_groups(cluster))
+        common_attrs.update(net_manager.assign_vips_for_net_groups(cluster))
 
         common_attrs['mp'] = [
             {'point': '1', 'weight': '1'},

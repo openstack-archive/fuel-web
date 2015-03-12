@@ -379,16 +379,17 @@
                     "dependent_settings_warning": "__settings__ is active",
                     "dependent_settings_warning_plural": "__settings__ are active",
                     "custom_repo_configuration": {
-                        "repo_name_placeholder": "Repo name",
-                        "repo_labels": {
-                            "MOS": "Ubuntu repo",
-                            "Fuel": "Fuel Repo"
-                        },
                         "add_repo_button": "Add Extra Repo",
+                        "labels": {
+                            "name": "Name",
+                            "uri": "URI",
+                            "priority": "Priority"
+                        },
                         "errors": {
                             "empty_name": "Empty name",
                             "invalid_name": "Invalid name",
-                            "invalid_repo": "Invalid repo format"
+                            "invalid_repo": "Invalid repo format",
+                            "invalid_priority": "Invalid priority"
                         }
                     }
                 },

@@ -47,7 +47,10 @@ define([
                         error.name = i18n(ns + 'invalid_name');
                     }
                     if (!value || !value.match(repoRegexp)) {
-                        error.repo = i18n(ns + 'invalid_repo');
+                        error.uri = i18n(ns + 'invalid_repo');
+                    }
+                    if (_.isNaN(repo.priority) || !_.isNumber(repo.priority)) {
+                        error.priority = i18n(ns + 'invalid_priority');
                     }
                     return _.isEmpty(error) ? null : error;
                 }, this);
@@ -78,6 +81,9 @@ define([
                 case 'change_name':
                     repos[index].name = value;
                     break;
+                case 'change_priority':
+                    repos[index].priority = parseInt(value, 10);
+                    break;
                 default:
                     var repo = repos[index],
                         match = value.match(repoRegexp);
@@ -105,32 +111,27 @@ define([
             );
         },
         render: function() {
-            var mainRepos = ['MOS', 'Fuel'];
-            this.props.value.sort(function(a, b) {
-                return _.indexOf(mainRepos, a) - _.indexOf(mainRepos, b);
-            });
+            var ns = 'cluster_page.settings_tab.custom_repo_configuration.',
+                isExperimental = _.contains(app.version.get('feature_groups'), 'experimental'),
+                classes = {
+                    'table-wrapper repos': true,
+                    experimental: isExperimental
+                };
 
-            var ns = 'cluster_page.settings_tab.custom_repo_configuration.';
             return (
-                <div className='table-wrapper repos' key={this.state.key}>
+                <div className={React.addons.classSet(classes)} key={this.state.key}>
+                    {this.props.description &&
+                        <div className='custom-description parameter-description'>
+                            {this.props.description}
+                        </div>
+                    }
                     {this.props.value.map(function(repo, index) {
                         var error = (this.props.error || {})[index],
                             props = {
                                 name: index,
                                 type: 'text',
-                                disabled: this.props.disabled,
-                                defaultValue: repoToString(repo),
-                                onChange: this.changeRepos.bind(this, null)
+                                disabled: this.props.disabled
                             };
-                        if (_.contains(mainRepos, repo.name)) {
-                            return <controls.Input
-                                {...props}
-                                key={'repo-' + index}
-                                label={i18n(ns + 'repo_labels.' + repo.name)}
-                                error={error && error.repo}
-                                wrapperClassName='tablerow-wrapper'
-                            />;
-                        }
                         return (
                             <div className='tablerow-wrapper repo-group' key={'repo-' + index}>
                                 <controls.Input
@@ -139,13 +140,27 @@ define([
                                     error={error && error.name}
                                     wrapperClassName='repo-name'
                                     onChange={this.changeRepos.bind(this, 'change_name')}
-                                    placeholder={i18n(ns + 'repo_name_placeholder')}
+                                    label={index == 0 && i18n(ns + 'labels.name')}
                                 />
                                 <controls.Input
                                     {...props}
-                                    error={error && (error.name ? null : error.repo)}
-                                    extraContent={this.renderDeleteButton(index)}
+                                    defaultValue={repoToString(repo)}
+                                    error={error && (error.uri ? error.name ? '' : error.uri : null)}
+                                    onChange={this.changeRepos.bind(this, null)}
+                                    extraContent={!isExperimental && index > 0 && this.renderDeleteButton(index)}
+                                    label={index == 0 && i18n(ns + 'labels.uri')}
                                 />
+                                {isExperimental &&
+                                    <controls.Input
+                                        {...props}
+                                        defaultValue={repo.priority}
+                                        error={error && (error.priority ? (error.name || error.uri) ? '' : error.priority : null)}
+                                        wrapperClassName='repo-priority'
+                                        onChange={this.changeRepos.bind(this, 'change_priority')}
+                                        extraContent={index > 0 && this.renderDeleteButton(index)}
+                                        label={index == 0 && i18n(ns + 'labels.priority')}
+                                    />
+                                }
                             </div>
                         );
                     }, this)}

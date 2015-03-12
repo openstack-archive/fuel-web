@@ -1384,6 +1384,7 @@
           repos:
             type: "custom_repo_configuration"
             extra_priority: 1050
+            description: "Please note, the first repo will be considered as Ubuntu mirror and that fact will be used during provisioning procedure."
             value:
               - type: "deb"
                 name: "MOS"

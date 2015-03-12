@@ -28,6 +28,25 @@ define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], functi
                 }
             };
         },
+        respondToApplyRequestMixin: function(applyMethod, hasValidationErrors) {
+            return {
+                componentDidMount: function() {
+                    dispatcher.on(
+                        'giveMeApplyMethod',
+                        _.bind(function() {
+                            dispatcher.trigger(
+                                'applyMethodsProvided',
+                                _.bind(this[applyMethod], this),
+                                hasValidationErrors ? _.bind(this[hasValidationErrors], this)() : false
+                            );
+                        }, this),
+                    this);
+                },
+                componentWillUnmount: function() {
+                    dispatcher.off('giveMeApplyMethod', null, this);
+                }
+            };
+        },
         pollingMixin: function(updateInterval, delayedStart) {
             updateInterval = updateInterval * 1000;
             return {

@@ -42,6 +42,10 @@ class TestDBRefresh(TestCase):
         }
         flush()
 
+    def tearDown(self):
+        self.db.close()
+        self.db2.close()
+
     def test_session_update(self):
         node = Node()
         node.mac = u"ASDFGHJKLMNOPR"

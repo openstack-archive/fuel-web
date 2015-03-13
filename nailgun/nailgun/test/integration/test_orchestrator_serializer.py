@@ -1562,7 +1562,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertEqual(roles_w_public_count, 6 if assign else 2)
 
             # Check uncommon attrs
-            node_uids = sorted(set([n['uid'] for n in node_list]))
+            node_uids = sorted(set([int(n['uid']) for n in node_list]))
             man_ip = [str(ip) for ip in IPRange('192.168.0.1', '192.168.0.4')]
             pub_ip = [str(ip) for ip in IPRange('172.16.0.2', '172.16.0.5')]
             sto_ip = [str(ip) for ip in IPRange('192.168.1.1', '192.168.1.4')]

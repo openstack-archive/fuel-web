@@ -568,7 +568,7 @@
             weight: 90
         neutron_mellanox:
           metadata:
-            toggleable: false
+            toggleable: true
             enabled: true
             label: "Mellanox Neutron components"
             weight: 50
@@ -739,6 +739,8 @@
           metadata:
             label: "Syslog"
             weight: 50
+            toggleable: true
+            enabled: false
           syslog_transport:
             value: "tcp"
             values:
@@ -757,6 +759,9 @@
             description: "Remote syslog hostname"
             weight: 10
             type: "text"
+            regex:
+              source: &ipv4_or_hostname_regex '^[a-zA-Z\d]+[-\.\da-zA-Z]*$'
+              error: "Invalid hostname"
           syslog_port:
             value: "514"
             label: "Port"
@@ -1150,7 +1155,7 @@
                 label: "vCenter host"
                 description: "vCenter host or IP"
                 regex:
-                  source: &ipv4_or_hostname_regex '^[a-zA-Z\d]+[-\.\da-zA-Z]*$'
+                  source: *ipv4_or_hostname_regex
                   error: "Invalid vCenter host"
               -
                 name: "vcenter_username"

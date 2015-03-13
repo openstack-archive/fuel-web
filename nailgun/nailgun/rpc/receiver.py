@@ -535,18 +535,24 @@ class NailgunReceiver(object):
         ).get_zabbix_url(task.cluster)
 
         if zabbix_url:
-            zabbix_suffix = " Access Zabbix dashboard at {0}".format(
-                zabbix_url
-            )
-            message += zabbix_suffix
+            message = "{0} Access Zabbix dashboard at {1}".format(
+                message, zabbix_url)
 
-        notifier.notify(
-            "done",
-            message,
-            task.cluster_id
-        )
+        plugins_msg = cls._make_plugins_success_message(task.cluster.plugins)
+        if plugins_msg:
+            message = '{0}\n\n{1}'.format(message, plugins_msg)
+
+        notifier.notify("done", message, task.cluster_id)
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
+
+    @classmethod
+    def _make_plugins_success_message(cls, plugins):
+        """Makes plugins installation message
+        """
+        msg = 'Plugin {0} is deployed. {1}'
+        return '\n'.join(
+            map(lambda p: msg.format(p.name, p.description), plugins))
 
     @classmethod
     def stop_deployment_resp(cls, **kwargs):

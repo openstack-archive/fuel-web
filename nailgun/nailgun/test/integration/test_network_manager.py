@@ -132,13 +132,13 @@ class TestNetworkManager(BaseIntegrationTest):
         )
 
     def test_assign_vip_is_idempotent(self):
-        cluster = self.env.create_cluster(api=True)
+        self.env.create_cluster(api=True)
         vip = self.env.network_manager.assign_vip(
-            cluster['id'],
+            self.env.clusters[0],
             "management"
         )
         vip2 = self.env.network_manager.assign_vip(
-            cluster['id'],
+            self.env.clusters[0],
             "management"
         )
         self.assertEqual(vip, vip2)

@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 
 def make_upload_task(uids, data, path):
     return {
@@ -32,15 +34,24 @@ def make_ubuntu_sources_task(uids, repo):
 
 
 def make_ubuntu_preferences_task(uids, repo):
-    # NOTE(kozhukalov): maybe here we need to have more robust preferences
-    # template because in general it allows us to set priorities for
-    # releases, codenames, origins, etc. (see man apt_preferences)
-    preferences_content = '\n'.join([
+    # TODO(ikalnitsky):
+    # Research how to add host condition to the current pinning.
+
+    condition = ['n={0}'.format(repo['suite'])]
+    for section in repo['section'].split():
+        condition.append('c={0}'.format(section))
+
+    preferences_content = [
         'Package: *',
-        'Pin: release a={suite}',
-        'Pin-Priority: {priority}']).format(**repo)
-    preferences_path = '/etc/apt/preferences.d/{name}'.format(
-        name=repo['name'])
+        'Pin: release {condition}',
+        'Pin-Priority: {priority}',
+    ]
+
+    preferences_content = '\n'.join(preferences_content).format(
+        condition=','.join(condition),
+        priority=repo['priority'])
+    preferences_path = os.path.join('/etc/apt/preferences.d', repo['name'])
+
     return make_upload_task(uids, preferences_content, preferences_path)
 
 

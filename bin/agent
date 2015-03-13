@@ -457,6 +457,7 @@ class NodeAgent
 
   def _master_ip_and_mac
     @os[:network][:interfaces].each do |_, intinfo|
+      next unless intinfo.has_key?(:addresses)
       intinfo[:addresses].each do |k, v|
         # Here we need to check family because IPAddr.new with bad
         # data works very slow on some environments

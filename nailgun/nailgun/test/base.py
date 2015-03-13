@@ -508,6 +508,9 @@ class EnvironmentManager(object):
             'description': 'Enable to use plugin X for Neutron',
             'fuel_version': ['6.0'],
             'groups': [],
+            'licenses': ['License 1'],
+            'authors': ['Author1'],
+            'homepage': 'http://some-plugin-url.com/',
             'releases': [
                 {'repository_path': 'repositories/ubuntu',
                  'version': '2014.2-6.0', 'os': 'ubuntu',

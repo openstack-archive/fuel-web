@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from six.moves.urllib.parse import urlparse
+
 
 def make_upload_task(uids, data, path):
     return {
@@ -32,15 +34,22 @@ def make_ubuntu_sources_task(uids, repo):
 
 
 def make_ubuntu_preferences_task(uids, repo):
-    # NOTE(kozhukalov): maybe here we need to have more robust preferences
-    # template because in general it allows us to set priorities for
-    # releases, codenames, origins, etc. (see man apt_preferences)
-    preferences_content = '\n'.join([
+    preferences_content = [
         'Package: *',
-        'Pin: release a={suite}',
-        'Pin-Priority: {priority}']).format(**repo)
-    preferences_path = '/etc/apt/preferences.d/{name}'.format(
-        name=repo['name'])
+        'Pin: origin {host}',
+        'Pin: release n={suite}',
+    ]
+
+    for section in repo['section'].split(' '):
+        if section:
+            preferences_content.append('Pin: release c={0}'.format(section))
+
+    preferences_content.append('Pin-Priority: {priority}')
+
+    preferences_content = '\n'.join(preferences_content).format(
+        host=urlparse(repo['uri']).netloc, **repo)
+    preferences_path = '/etc/apt/preferences.d/{name}'.format(**repo)
+
     return make_upload_task(uids, preferences_content, preferences_path)
 
 

@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import hashlib
 import locale
 import math
 import os
@@ -47,6 +48,11 @@ u_opts = [
         'http_retry_delay',
         default=2.0,
         help='Delay in seconds before the next http request retry',
+    ),
+    cfg.IntOpt(
+        'read_chunk_size',
+        default=1048576,
+        help='Block size of data to read for calculating checksum',
     ),
 ]
 
@@ -141,6 +147,25 @@ def render_and_save(tmpl_dir, tmpl_names, tmpl_data, file_name):
         raise errors.TemplateWriteError(
             'Something goes wrong while trying to save'
             'templated data to {0}'.format(file_name))
+
+
+def calculate_md5(filename, size):
+    hash = hashlib.md5()
+    processed = 0
+    with open(filename, "rb") as f:
+        while processed < size:
+            block = f.read(CONF.read_chunk_size)
+            if block:
+                block_len = len(block)
+                if processed + block_len < size:
+                    hash.update(block)
+                    processed += block_len
+                else:
+                    hash.update(block[:size - processed])
+                    break
+            else:
+                break
+    return hash.hexdigest()
 
 
 def init_http_request(url, byte_range=0):

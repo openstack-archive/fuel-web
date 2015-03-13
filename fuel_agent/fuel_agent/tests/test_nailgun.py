@@ -15,10 +15,13 @@
 import mock
 from oslotest import base as test_base
 
+import yaml
+
 from fuel_agent.drivers import nailgun
 from fuel_agent import errors
 from fuel_agent.objects import image
 from fuel_agent.utils import hardware_utils as hu
+from fuel_agent.utils import utils
 
 
 CEPH_JOURNAL = {
@@ -576,8 +579,10 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual(1, len(p_scheme.mds))
         self.assertEqual(3, len(p_scheme.parteds))
 
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(hu, 'list_block_devices')
-    def test_image_scheme(self, mock_lbd):
+    def test_image_scheme(self, mock_lbd, mock_http_req, mock_yaml):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
         p_scheme = self.drv.partition_scheme()
         i_scheme = self.drv.image_scheme(p_scheme)
@@ -601,6 +606,40 @@ class TestNailgun(test_base.BaseTestCase):
                              expected_images[i].format)
             self.assertEqual(img.container,
                              expected_images[i].container)
+            self.assertIsNone(img.size)
+            self.assertIsNone(img.md5)
+
+    @mock.patch.object(utils, 'init_http_request')
+    @mock.patch.object(hu, 'list_block_devices')
+    def test_image_scheme_with_checksums(self, mock_lbd, mock_http_req):
+        fake_image_meta = [{'/': {'md5': 'fakeroot', 'size': 1}}]
+        prop_mock = mock.PropertyMock(return_value=yaml.dump(fake_image_meta))
+        type(mock_http_req.return_value).text = prop_mock
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        p_scheme = self.drv.partition_scheme()
+        i_scheme = self.drv.image_scheme(p_scheme)
+        expected_images = []
+        for fs in p_scheme.fss:
+            if fs.mount not in PROVISION_SAMPLE_DATA['ks_meta']['image_data']:
+                continue
+            i_data = PROVISION_SAMPLE_DATA['ks_meta']['image_data'][fs.mount]
+            expected_images.append(image.Image(
+                uri=i_data['uri'],
+                target_device=fs.device,
+                format=i_data['format'],
+                container=i_data['container'],
+            ))
+        expected_images = sorted(expected_images, key=lambda x: x.uri)
+        for i, img in enumerate(sorted(i_scheme.images, key=lambda x: x.uri)):
+            self.assertEqual(img.uri, expected_images[i].uri)
+            self.assertEqual(img.target_device,
+                             expected_images[i].target_device)
+            self.assertEqual(img.format,
+                             expected_images[i].format)
+            self.assertEqual(img.container,
+                             expected_images[i].container)
+            self.assertEqual(img.size, fake_image_meta[0]['/']['size'])
+            self.assertEqual(img.md5, fake_image_meta[0]['/']['md5'])
 
     def test_getlabel(self):
         self.assertEqual('', self.drv._getlabel(None))

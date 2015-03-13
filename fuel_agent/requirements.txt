@@ -10,3 +10,4 @@ Jinja2
 stevedore>=0.15
 requests>=1.2.3
 urllib3>=1.7
+PyYAML==3.10

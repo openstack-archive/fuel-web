@@ -765,6 +765,9 @@
             description: "Remote syslog hostname"
             weight: 10
             type: "text"
+            regex:
+              source: *non_empty_string
+              error: "Empty username"
           syslog_port:
             value: "514"
             label: "Port"

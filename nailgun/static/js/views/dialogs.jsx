@@ -567,7 +567,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 groups = _.sortBy(_.keys(meta), function(group) {return _.indexOf(groupOrder, group)}),
                 sortOrder = {
                     disks: ['name', 'model', 'size'],
-                    interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed']
+                    interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
                 };
             return (
                 <div>

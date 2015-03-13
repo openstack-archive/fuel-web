@@ -43,6 +43,8 @@ single_schema = {
                             "mac": base_types.MAC_ADDRESS,
                             "state": {"type": "string"},
                             "name": {"type": "string"},
+                            "driver": {"type": "string"},
+                            "bus_info": {"type": "string"},
                         }
                     }
                 },

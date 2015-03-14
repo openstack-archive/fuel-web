@@ -17,6 +17,7 @@
 from nailgun.test import base
 
 from nailgun.orchestrator import tasks_templates
+from nailgun.settings import settings
 
 
 class TestMakeTask(base.BaseTestCase):
@@ -119,3 +120,33 @@ class TestMakeTask(base.BaseTestCase):
              'uids': [1, 2, 3],
              'parameters': {
                  'timeout': 10}})
+
+    def test_make_provisioning_images_task(self):
+        result = tasks_templates.make_provisioning_images_task(
+            [1, 2, 3],
+            repos=[
+                {'name': 'repo', 'uri': 'http://some'}
+            ],
+            provision_data={
+                'codename': 'trusty',
+                'image_data': {
+                    '/mount': {
+                        'format': 'ext4',
+                        'uri': 'http://uri'
+                    }
+                }})
+
+        self.assertEqual(result, {
+            'type': 'shell',
+            'uids': [1, 2, 3],
+            'parameters': {
+                'cmd': ('fuel-image \'{"image_data": {"/mount": {"uri": '
+                        '"http://uri", "format": "ext4"}}, "output": '
+                        '"/var/www/nailgun/targetimages", "repos": [{"name": '
+                        '"repo", "uri": "http://some"}], "codename": '
+                        '"trusty"}\''),
+                'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
+                'retries': 1,
+                'interval': 1,
+                'cwd': '/',
+            }})

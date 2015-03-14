@@ -319,11 +319,24 @@ class NailgunReceiver(object):
             lock_for_update=True
         )
 
+        # if task was failed on master node then we should
+        # mark all cluster's nodes in error state
+        master = next((
+            n for n in nodes if n['uid'] == consts.MASTER_ROLE), {})
+
+        # we should remove master node from the nodes since it requires
+        # special handling and won't work with old code
+        if master:
+            nodes.pop(nodes.index(master))
+
+        if master.get('status') == 'error':
+            status = 'error'
+            progress = 100
+
         # lock nodes for updating
         q_nodes = objects.NodeCollection.filter_by_id_list(
             None,
-            [n['uid'] for n in nodes],
-        )
+            [n['uid'] for n in nodes])
         q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
         objects.NodeCollection.lock_for_update(q_nodes).all()
 

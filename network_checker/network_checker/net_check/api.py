@@ -473,7 +473,12 @@ class Listener(Actor):
         for listener in listeners:
             # terminate and flush pipes
             listener.terminate()
-            listener.communicate()
+            out, err = listener.communicate()
+
+            if err and listener.returncode:
+                self.logger.error('Listerner: %s', err)
+            elif err:
+                self.logger.warning('Listener: %s', err)
 
         self.logger.debug('Start reading dumped information.')
         self.read_packets()

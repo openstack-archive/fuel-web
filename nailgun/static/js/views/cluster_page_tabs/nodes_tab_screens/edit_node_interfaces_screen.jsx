@@ -533,10 +533,17 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 var convertedValue = parseInt(value, 10);
                 return _.isNaN(convertedValue) ? null : convertedValue;
             }
-            if (name == 'mtu') {
-                value = convertToNullIfNaN(value);
+            switch (name) {
+                case 'mtu':
+                    value = convertToNullIfNaN(value);
+                    break;
+                // FIXME(morale): this should be fixed on backend by changing the response format
+                case 'disable_offloading':
+                    value = !value;
+                    break;
             }
             var interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
+
             interfaceProperties[name] = value;
             this.props.interface.set('interface_properties', interfaceProperties);
         },
@@ -702,8 +709,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         <div className='interface-properties'>
                             <controls.Input
                                 type='checkbox'
-                                label={i18n(configureInterfacesTransNS + 'disable_offloading')}
-                                checked={interfaceProperties.disable_offloading}
+                                label={i18n(configureInterfacesTransNS + 'offloading')}
+                                checked={!interfaceProperties.disable_offloading}
                                 labelClassName='offloading'
                                 name='disable_offloading'
                                 onChange={this.onInterfacePropertiesChange}
@@ -716,7 +723,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 labelClassName='mtu'
                                 name='mtu'
                                 onChange={this.onInterfacePropertiesChange}
-
                                 disabled={locked}
                             />
                         </div>

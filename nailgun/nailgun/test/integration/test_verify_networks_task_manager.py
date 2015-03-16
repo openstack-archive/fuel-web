@@ -267,7 +267,6 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
     @fake_tasks()
     def test_network_verification_neutron_with_vlan_segmentation(self):
         task = self.env.launch_verify_networks()
-        self.assertEqual(task.status, 'running')
         self.env.wait_ready(task, 30)
 
 

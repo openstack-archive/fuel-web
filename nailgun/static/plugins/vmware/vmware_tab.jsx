@@ -34,7 +34,7 @@ define(
         onChange: function(name, value) {
             this.props.model.set(name, value);
             this.setState({model: this.props.model});
-            _.defer(function() {dispatcher.trigger('vcenter_model_update'); });
+            dispatcher.trigger('vcenter_model_update');
         },
         render: function() {
             var metadata = this.props.metadata,
@@ -202,7 +202,7 @@ define(
             var restrictActions = this.props.model.testRestrictions();
 
             return (
-                <div>
+                <div className="availability-zone">
                     {this.renderFields(restrictActions)}
                     {this.renderComputes(restrictActions)}
                     {this.renderCinder(restrictActions)}

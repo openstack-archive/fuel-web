@@ -533,8 +533,14 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 var convertedValue = parseInt(value, 10);
                 return _.isNaN(convertedValue) ? null : convertedValue;
             }
-            if (name == 'mtu') {
-                value = convertToNullIfNaN(value);
+            switch (name) {
+                case 'mtu':
+                    value = convertToNullIfNaN(value);
+                    break;
+                // FIXME(morale): this should be fixed on backend by changing the response format
+                case 'disable_offloading':
+                    value = !value;
+                    break;
             }
             var interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
             interfaceProperties[name] = value;
@@ -703,7 +709,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                             <controls.Input
                                 type='checkbox'
                                 label={i18n(configureInterfacesTransNS + 'disable_offloading')}
-                                checked={interfaceProperties.disable_offloading}
+                                checked={!interfaceProperties.disable_offloading}
                                 labelClassName='offloading'
                                 name='disable_offloading'
                                 onChange={this.onInterfacePropertiesChange}
@@ -716,7 +722,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 labelClassName='mtu'
                                 name='mtu'
                                 onChange={this.onInterfacePropertiesChange}
-
                                 disabled={locked}
                             />
                         </div>

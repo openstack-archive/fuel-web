@@ -537,7 +537,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 value = convertToNullIfNaN(value);
             }
             var interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
-            interfaceProperties[name] = value;
+            // FIXME(morale): this should be fixed on backend by changing the response format
+            interfaceProperties[name] = !value;
             this.props.interface.set('interface_properties', interfaceProperties);
         },
         render: function() {
@@ -702,8 +703,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         <div className='interface-properties'>
                             <controls.Input
                                 type='checkbox'
-                                label={i18n(configureInterfacesTransNS + 'disable_offloading')}
-                                checked={interfaceProperties.disable_offloading}
+                                label={i18n(configureInterfacesTransNS + 'offloading')}
+                                checked={!interfaceProperties.disable_offloading}
                                 labelClassName='offloading'
                                 name='disable_offloading'
                                 onChange={this.onInterfacePropertiesChange}
@@ -716,7 +717,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                 labelClassName='mtu'
                                 name='mtu'
                                 onChange={this.onInterfacePropertiesChange}
-
                                 disabled={locked}
                             />
                         </div>

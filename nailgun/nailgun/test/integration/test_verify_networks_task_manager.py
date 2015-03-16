@@ -262,11 +262,9 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
         )
         self.cluster = self.env.clusters[0]
 
-    @unittest2.skip('Fails randomly, bug #1427658')
     @fake_tasks()
     def test_network_verification_neutron_with_vlan_segmentation(self):
         task = self.env.launch_verify_networks()
-        self.assertEqual(task.status, consts.TASK_STATUSES.running)
         self.env.wait_ready(task, 30)
 
 

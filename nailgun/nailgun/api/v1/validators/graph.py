@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from tasks_validator import graph as d_graph
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import tasks
@@ -27,7 +29,7 @@ class GraphTasksValidator(BasicValidator):
     def validate_update(cls, data, instance):
         parsed = cls.validate(data)
         cls.validate_schema(parsed, tasks.TASKS_SCHEMA)
-        graph = deployment_graph.DeploymentGraph()
+        graph = d_graph.DeploymentGraph()
         graph.add_tasks(parsed)
         if not graph.is_acyclic():
             raise errors.InvalidData(
@@ -48,7 +50,7 @@ class TaskDeploymentValidator(BasicValidator):
         cls.validate_schema(tasks, base_types.STRINGS_ARRAY)
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(cluster)
-        graph = deployment_graph.DeploymentGraph()
+        graph = d_graph.DeploymentGraph()
         graph.add_tasks(deployment_tasks)
 
         non_existent_tasks = set(tasks) - set(graph.nodes())

@@ -18,6 +18,7 @@ from collections import defaultdict
 from itertools import groupby
 
 import mock
+from tasks_validator import graph as d_graph
 import yaml
 
 from nailgun.orchestrator import deployment_graph
@@ -122,7 +123,7 @@ class TestGraphDependencies(base.BaseTestCase):
         super(TestGraphDependencies, self).setUp()
         self.tasks = yaml.load(TASKS)
         self.subtasks = yaml.load(SUBTASKS)
-        self.graph = deployment_graph.DeploymentGraph()
+        self.graph = d_graph.DeploymentGraph()
 
     def test_build_deployment_graph(self):
         self.graph.add_tasks(self.tasks)
@@ -497,7 +498,7 @@ class TestFindGraph(base.BaseTestCase):
     def setUp(self):
         super(TestFindGraph, self).setUp()
         self.tasks = yaml.load(COMPLEX_DEPENDENCIES)
-        self.graph = deployment_graph.DeploymentGraph()
+        self.graph = d_graph.DeploymentGraph()
         self.graph.add_tasks(self.tasks)
 
     def test_end_at_pre_deployment(self):

@@ -16,10 +16,10 @@
 
 import mock
 from oslo.serialization import jsonutils
+from tasks_validator import graph as d_graph
 import yaml
 
 from nailgun import objects
-from nailgun.orchestrator.deployment_graph import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -215,7 +215,7 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
 class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
 
     def assert_passed_correctly(self, url, **kwargs):
-        with mock.patch.object(DeploymentGraph,
+        with mock.patch.object(d_graph.DeploymentGraph,
                                'find_subgraph') as mfind_subgraph:
             resp = self.app.get(
                 url,

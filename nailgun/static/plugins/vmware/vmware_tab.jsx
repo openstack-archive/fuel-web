@@ -34,7 +34,7 @@ define(
         onChange: function(name, value) {
             this.props.model.set(name, value);
             this.setState({model: this.props.model});
-            _.defer(function() {dispatcher.trigger('vcenter_model_update'); });
+            dispatcher.trigger('vcenter_model_update');
         },
         render: function() {
             var metadata = this.props.metadata,

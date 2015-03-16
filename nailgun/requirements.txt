@@ -34,3 +34,4 @@ python-cinderclient>=1.0.7
 networkx>=1.8
 pydot-ng>=1.0.0
 ordereddict>=1.1
+fuel-tasks-validator==6.1.0

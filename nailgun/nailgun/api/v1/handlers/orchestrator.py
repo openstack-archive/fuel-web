@@ -17,6 +17,7 @@
 import traceback
 
 import six
+from tasks_validator import graph as d_graph
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
@@ -316,7 +317,8 @@ class TaskDeployGraph(BaseHandler):
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         tasks = objects.Cluster.get_deployment_tasks(cluster)
-        graph = deployment_graph.DeploymentGraph(tasks)
+        graph = d_graph.DeploymentGraph()
+        graph.add_tasks(tasks)
 
         tasks = web.input(tasks=None).tasks
         parents_for = web.input(parents_for=None).parents_for

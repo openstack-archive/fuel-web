@@ -15,6 +15,7 @@
 #    under the License.
 
 import six
+from tasks_validator import graph as d_graph
 
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import graph_visualization
@@ -24,7 +25,7 @@ from nailgun.test import base
 class TestDeploymentGraphViualization(base.BaseUnitTest):
 
     def get_dotgraph_with_tasks(self, tasks):
-        graph = deployment_graph.DeploymentGraph()
+        graph = d_graph.DeploymentGraph()
         graph.add_tasks(tasks)
         visualization = graph_visualization.GraphVisualization(graph)
         dotgraph = visualization.get_dotgraph()

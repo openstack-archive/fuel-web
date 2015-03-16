@@ -16,10 +16,10 @@
 
 import mock
 from oslo.serialization import jsonutils
+from tasks_validator import graph as d_graph
 import yaml
 
 from nailgun import objects
-from nailgun.orchestrator.deployment_graph import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -33,6 +33,8 @@ class BaseGraphTasksTests(BaseIntegrationTest):
 
     def get_correct_tasks(self):
         yaml_tasks = """
+        - id: deploy
+          type: stage
         - id: primary-controller
           type: group
           role: [primary-controller]
@@ -93,6 +95,7 @@ class TestReleaseGraphHandler(BaseGraphTasksTests):
                     kwargs={'obj_id': self.cluster.release_id}),
             params=jsonutils.dumps(tasks),
             headers=self.default_headers,
+            expect_errors=True
         )
         release_tasks = objects.Release.get_deployment_tasks(
             self.cluster.release)
@@ -215,7 +218,7 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
 class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
 
     def assert_passed_correctly(self, url, **kwargs):
-        with mock.patch.object(DeploymentGraph,
+        with mock.patch.object(d_graph.DeploymentGraph,
                                'find_subgraph') as mfind_subgraph:
             resp = self.app.get(
                 url,

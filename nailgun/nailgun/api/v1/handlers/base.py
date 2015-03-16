@@ -21,6 +21,7 @@ import traceback
 from decorator import decorator
 from oslo.serialization import jsonutils
 from sqlalchemy import exc as sa_exc
+from tasks_validator import graph as d_graph
 import web
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
@@ -32,7 +33,6 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
-from nailgun.orchestrator import deployment_graph
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -163,7 +163,6 @@ class BaseHandler(object):
         try:
             data = kwargs.pop('data', web.data())
             method = validate_method or cls.validator.validate
-
             valid_data = method(data, **kwargs)
         except (
             errors.InvalidInterfacesInfo,
@@ -580,7 +579,8 @@ class DeploymentTasksHandler(SingleHandler):
         start = web.input(start=None).start
         tasks = self.single.get_deployment_tasks(obj)
         if end or start:
-            graph = deployment_graph.DeploymentGraph(tasks)
+            graph = d_graph.DeploymentGraph()
+            graph.add_tasks(tasks)
             return graph.find_subgraph(end=end, start=start).node.values()
         return tasks
 
@@ -592,7 +592,6 @@ class DeploymentTasksHandler(SingleHandler):
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-
         data = self.checked_data(
             self.validator.validate_update,
             instance=obj

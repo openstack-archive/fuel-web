@@ -13,6 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from tasks_validator import graph as d_graph
+from tasks_validator import validator
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import tasks
@@ -24,14 +27,27 @@ from nailgun.orchestrator import deployment_graph
 class GraphTasksValidator(BasicValidator):
 
     @classmethod
+    def validate_schema(cls, data, _schema=None):
+        try:
+            valid_tasks = validator.TasksValidator(data, "last")
+            valid_tasks.validate_schema()
+        except Exception as exc:
+            # We need to cast a given exception to the string since it's the
+            # only way to print readable validation error. Unfortunately,
+            # jsonschema has no base class for exceptions, so we don't know
+            # about internal attributes with error description.
+            raise errors.InvalidData(str(exc))
+
+    @classmethod
     def validate_update(cls, data, instance):
         parsed = cls.validate(data)
-        cls.validate_schema(parsed, tasks.TASKS_SCHEMA)
-        graph = deployment_graph.DeploymentGraph()
-        graph.add_tasks(parsed)
-        if not graph.is_acyclic():
+        cls.validate_schema(parsed)
+        valid_tasks = validator.TasksValidator(parsed, "last")
+        try:
+            valid_tasks.validate_graph()
+        except ValueError as exc:
             raise errors.InvalidData(
-                "Tasks can not be processed because it contains cycles in it.")
+                "Tasks can not be processed because: %s" % exc)
         return parsed
 
 
@@ -48,7 +64,7 @@ class TaskDeploymentValidator(BasicValidator):
         cls.validate_schema(tasks, base_types.STRINGS_ARRAY)
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(cluster)
-        graph = deployment_graph.DeploymentGraph()
+        graph = d_graph.DeploymentGraph()
         graph.add_tasks(deployment_tasks)
 
         non_existent_tasks = set(tasks) - set(graph.nodes())

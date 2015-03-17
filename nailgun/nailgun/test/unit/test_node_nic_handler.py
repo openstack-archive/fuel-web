@@ -164,6 +164,9 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(resp_nic['max_speed'], nic['max_speed'])
             for conn in ('assigned_networks', ):
                 self.assertEqual(resp_nic[conn], [])
+            self.assertEqual(resp_nic['interface_properties'],
+                             {'disable_offloading': True,
+                              'mtu': None})
 
     def test_nic_mac_swap(self):
         mac_eth0 = '00:11:22:dd:ee:ff'

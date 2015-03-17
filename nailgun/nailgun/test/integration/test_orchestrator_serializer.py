@@ -26,6 +26,7 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 from oslo.serialization import jsonutils
+import yaml
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
@@ -703,12 +704,12 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 self.assertEqual(iface['interface_properties'],
                                  {
                                      'mtu': None,
-                                     'disable_offloading': False
+                                     'disable_offloading': True
                                  })
                 if iface['name'] == 'eth0':
                     iface['interface_properties'] = {
                         'mtu': 1500,
-                        'disable_offloading': True
+                        'disable_offloading': False
                     }
             nodes_list.append({'id': node.id, 'interfaces': interfaces})
         resp_put = self.app.put(
@@ -747,10 +748,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             self.assertEqual(scheme['provider'], 'lnx')
             self.assertEqual(
                 scheme['interfaces'],
-                {'eth0': {'mtu': 1500,
-                          'vendor_specific': {
-                              'disable_offloading': True}},
-                 'eth1': {}}
+                {'eth0': {'mtu': 1500},
+                 'eth1': {'vendor_specific': {'disable_offloading': True}}}
             )
             br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-prv'])
             role_dict = {'storage': 'br-storage',
@@ -893,10 +892,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             self.assertEqual(scheme['provider'], 'lnx')
             self.assertEqual(
                 scheme['interfaces'],
-                {'eth0': {'mtu': 1500,
-                          'vendor_specific': {
-                              'disable_offloading': True}},
-                 'eth1': {}}
+                {'eth0': {'mtu': 1500},
+                 'eth1': {'vendor_specific': {'disable_offloading': True}}}
             )
             br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin'])
             role_dict = {'storage': 'br-storage',
@@ -1741,6 +1738,50 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertIn('gateway', ep['br-storage'])
             self.assertIn('gateway', ep['br-mgmt'])
 
+
+class TestVlanSplinters(OrchestratorSerializerTestBase):
+
+    @property
+    def vlan_splinters_meta(self):
+        meta = """
+        vlan_splinters:
+          metadata:
+            toggleable: true
+            enabled: false
+            label: "VLAN Splinters"
+            weight: 50
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
+          vswitch:
+            value: "disabled"
+            label: "Open VSwitch VLAN Splinters feature"
+            weight: 55
+            type: "radio"
+            values:
+              - data: "soft"
+                label: "Enable OVS VLAN splinters soft trunks workaround"
+                description: "Configure OVS to use VLAN splinters workaround
+                  with soft trunk detection. This may resolve issues that
+                  might be encountered when using VLAN tags with OVS and
+                  Neutron on Kernels <3.3 (CentOS)"
+              - data: "hard"
+                label: "Enable OVS VLAN splinters hard trunks workaround"
+                description: "Configure OVS to use VLAN splinters workaround
+                  with hard trunk allocation. Offers similar effect as soft
+                  trunks workaround, but forces each trunk to be predefined.
+                  This may work better than soft trunks especially if you
+                  still see network problems using soft trunks"
+              - data: "kernel_lt"
+                label: "EXPERIMENTAL: Use Fedora longterm kernel"
+                description: "Install the Fedora 3.10 longterm kernel instead
+                  of the default 2.6.32 kernel. This should remove any need
+                  for VLAN Splinters workarounds as the 3.10 kernel has better
+                  support for OVS VLANs. This kernel may not work with all
+                  hardware platforms, use caution."
+        """
+        return yaml.load(meta)
+
     def _create_cluster_for_vlan_splinters(self, segment_type='gre'):
         meta = {
             'interfaces': [
@@ -1752,6 +1793,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             ]
         }
         cluster = self.env.create(
+            release_kwargs={
+                'editable_attributes': self.vlan_splinters_meta
+            },
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': segment_type

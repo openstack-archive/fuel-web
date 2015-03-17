@@ -14,7 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import mock
+
+from nailgun import consts
 from nailgun.test import base
 
 from nailgun.orchestrator.plugins_serializers import \
@@ -89,3 +92,63 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
             'uids': [1, 2]}
 
         self.assertEqual(result, [expecting_format])
+
+
+@mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_roles',
+            return_value=[1, 2])
+class TestTasksDeploymentOrder(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestTasksDeploymentOrder, self).setUp()
+        cluster_mock = mock.Mock()
+        self.cluster = cluster_mock
+        self.nodes = [
+            {'id': 1, 'role': 'controller'},
+            {'id': 2, 'role': 'compute'}]
+        self.hook = BasePluginDeploymentHooksSerializer(
+            self.nodes,
+            self.cluster)
+
+    def make_plugin_mock_with_stages(self, plugin_name, stages):
+        common_attrs = {
+            'type': 'shell',
+            'role': '*',
+            'parameters': {'cmd': 'cmd', 'timeout': 100}}
+
+        tasks = []
+        for stage in stages:
+            task = copy.deepcopy(common_attrs)
+            task['stage'] = stage
+            task['parameters']['cmd'] = stage
+            tasks.append(task)
+
+        plugin = mock.Mock()
+        plugin.tasks = tasks
+        plugin.name = plugin_name
+
+        return plugin
+
+    def test_sorts_plugins_by_numerical_postfixes(self, _):
+        plugin1 = self.make_plugin_mock_with_stages('name1', [
+            'pre_deployment/-100',
+            'pre_deployment/100.0',
+            'pre_deployment'])
+        plugin2 = self.make_plugin_mock_with_stages('name2', [
+            'pre_deployment/-99',
+            'pre_deployment/100',
+            'pre_deployment'])
+
+        tasks = self.hook.deployment_tasks(
+            [plugin2, plugin1],
+            consts.STAGES.pre_deployment)
+
+        commands = map(lambda t: t['parameters']['cmd'], tasks)
+
+        self.assertEqual(
+            commands,
+            ['pre_deployment/-100',
+             'pre_deployment/-99',
+             'pre_deployment',
+             'pre_deployment',
+             'pre_deployment/100.0',
+             'pre_deployment/100'])

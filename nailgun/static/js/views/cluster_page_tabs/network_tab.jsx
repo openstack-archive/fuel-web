@@ -622,7 +622,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 isLocked = this.isLocked(),
                 cluster = this.props.cluster,
                 networkingParameters = this.props.networkConfiguration.get('networking_parameters'),
-                l23Provider = networkingParameters.get('net_l23_provider'),
                 manager = networkingParameters.get('net_manager'),
                 managers = [
                     {
@@ -651,11 +650,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             />
                         :
                             <span className='network-segment-type'>
-                                {(l23Provider == 'nsx') ?
-                                    i18n(ns + 'neutron_l23_provider', {l23_provider: l23Provider.toUpperCase()})
-                                    :
-                                    i18n(ns + 'neutron_segmentation', {segment_type: networkingParameters.get('segmentation_type').toUpperCase()})
-                                }
+                                {i18n(ns + 'neutron_segmentation', {segment_type: networkingParameters.get('segmentation_type').toUpperCase()})}
                             </span>
                         }
                     </div>

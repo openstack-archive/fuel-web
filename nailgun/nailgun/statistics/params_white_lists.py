@@ -80,13 +80,6 @@ _task_output_white_list_template = {
                 "sahara": {
                     "enabled": ""
                 },
-                "nsx_plugin": {
-                    "replication_mode": "",
-                    "connector_type": "",
-                    "metadata": {
-                        "enabled": ""
-                    }
-                },
                 "quantum": "",
                 "glance": {
                     "image_cache_max_size": ""

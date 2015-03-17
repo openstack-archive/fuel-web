@@ -33,10 +33,6 @@ class InstallationInfo(object):
         (('common', 'debug', 'value'), 'debug_mode'),
         (('common', 'use_cow_images', 'value'), 'use_cow_images'),
 
-        (('nsx_plugin', 'metadata', 'enabled'), 'nsx'),
-        (('nsx_plugin', 'connector_type', 'value'), 'nsx_transport'),
-        (('nsx_plugin', 'replication_mode', 'value'), 'nsx_replication'),
-
         (('public_network_assignment', 'assign_to_all_nodes', 'value'),
          'assign_public_to_all_nodes'),
         (('syslog', 'syslog_transport', 'value'), 'syslog_transport'),

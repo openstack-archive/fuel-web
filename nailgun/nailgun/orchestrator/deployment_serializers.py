@@ -715,9 +715,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             attrs['amqp'] = {'provider': 'qpid-rh'}
 
         cluster_attrs = Cluster.get_attributes(cluster).editable
-        if 'nsx_plugin' in cluster_attrs and \
-                cluster_attrs['nsx_plugin']['metadata']['enabled']:
-            attrs['L2']['provider'] = 'nsx'
 
         return attrs
 
@@ -1009,11 +1006,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             "use_namespaces": True
         }
         attrs = Cluster.get_attributes(cluster).editable
-        if 'nsx_plugin' in attrs and \
-                attrs['nsx_plugin']['metadata']['enabled']:
-            dhcp_attrs = l3.setdefault('dhcp_agent', {})
-            dhcp_attrs['enable_isolated_metadata'] = True
-            dhcp_attrs['enable_metadata_network'] = True
 
         return l3
 

@@ -651,11 +651,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             />
                         :
                             <span className='network-segment-type'>
-                                {(l23Provider == 'nsx') ?
-                                    i18n(ns + 'neutron_l23_provider', {l23_provider: l23Provider.toUpperCase()})
-                                    :
-                                    i18n(ns + 'neutron_segmentation', {segment_type: networkingParameters.get('segmentation_type').toUpperCase()})
-                                }
+                                {i18n(ns + 'neutron_segmentation', {segment_type: networkingParameters.get('segmentation_type').toUpperCase()})}
                             </span>
                         }
                     </div>

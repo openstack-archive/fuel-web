@@ -922,11 +922,6 @@ define([
         urlRoot: '/api/ostf'
     });
 
-    models.FuelKey = BaseModel.extend({
-        constructorName: 'FuelKey',
-        urlRoot: '/api/registration/key'
-    });
-
     models.FuelVersion = BaseModel.extend({
         constructorName: 'FuelVersion',
         urlRoot: '/api/version',
@@ -1027,9 +1022,8 @@ define([
         }
     });
 
-    models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).extend({
+    models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
         constructorName: 'MirantisCredentials',
-        url: 'http://dev_ware.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration1',
         validate: function(attrs) {
             var errors = {};
             _.each(attrs, function(group, groupName) {
@@ -1048,12 +1042,20 @@ define([
 
     models.MirantisLoginForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisLoginForm',
-        url: 'api/tracking/login'
+        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/login1',
+        nailgunUrl: 'api/tracking/login'
     });
 
     models.MirantisRegistrationForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisRegistrationForm',
-        url: 'http://dev_ware.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration1'
+        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration1',
+        nailgunUrl: 'api/tracking/registration'
+    });
+
+    models.MirantisRetrievePasswordForm = models.MirantisCredentials.extend({
+        constructorName: 'MirantisRetrievePasswordForm',
+        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/restore_password1',
+        nailgunUrl: 'api/tracking/restore_password'
     });
 
     return models;

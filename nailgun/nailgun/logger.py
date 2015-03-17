@@ -54,6 +54,11 @@ def make_api_logger():
     return logger
 
 
+def add_stream_to_logger(stream, logger):
+    handler = logging.StreamHandler(stream)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
 logger = make_nailgun_logger()
 
 

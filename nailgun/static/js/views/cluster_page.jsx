@@ -59,13 +59,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             navbarActiveElement: 'clusters',
             breadcrumbsPath: function(pageOptions) {
                 var cluster = pageOptions.cluster,
+                    tabOptions = pageOptions.tabOptions[0],
+                    screenRegexp = /^\w+$/,
+                    isScreen = tabOptions && tabOptions.match(screenRegexp),
                     breadcrumbs = [
                         ['home', '#'],
                         ['environments', '#clusters'],
                         [cluster.get('name'), '#cluster/' + cluster.get('id') + '/nodes'],
-                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, !pageOptions.tabOptions[0]]
+                        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, !isScreen]
                     ];
-                if (pageOptions.tabOptions[0]) breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + pageOptions.tabOptions[0]), null, true]);
+                if (isScreen) breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + tabOptions), null, true]);
                 return breadcrumbs;
             },
             title: function(pageOptions) {

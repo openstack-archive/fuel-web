@@ -16,8 +16,6 @@
 
 from collections import defaultdict
 
-from itertools import chain
-from itertools import ifilter
 from itertools import imap
 from itertools import islice
 
@@ -46,6 +44,7 @@ from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
+from nailgun.objects.serializers.node import NodeInterfacesSerializer
 from nailgun.utils.zabbix import ZabbixManager
 from nailgun.settings import settings
 
@@ -440,16 +439,8 @@ class NetworkManager(object):
         ng_ids = set(ng.id for ng in ngs)
         ng_wo_admin_ids = ng_ids ^ set([cls.get_admin_network_group_id(node.id)])
         for nic in node.nic_interfaces:
-            nic_dict = {
-                "id": nic.id,
-                "name": nic.name,
-                "mac": nic.mac,
-                "max_speed": nic.max_speed,
-                "current_speed": nic.current_speed,
-                "type": nic.type,
-                "driver": nic.driver,
-                "bus_info": nic.bus_info,
-            }
+            nic_dict = NodeInterfacesSerializer.serialize_nic_interface(nic)
+            nic_dict['assigned_networks'] = []
 
             if to_assign_ids:
                 allowed_ids = \
@@ -476,7 +467,7 @@ class NetworkManager(object):
                         assigned_ids.add(ng_id)
 
                 for ng_id in assigned_ids:
-                    nic_dict.setdefault('assigned_networks', []).append(
+                    nic_dict['assigned_networks'].append(
                         {'id': ng_id, 'name': ngs_by_id[ng_id].name})
                     to_assign_ids.remove(ng_id)
 

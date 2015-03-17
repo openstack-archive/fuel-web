@@ -210,6 +210,8 @@ class EnvironmentManager(object):
         cluster_data = {
             'name': 'cluster-api-' + str(randint(0, 1000000)),
         }
+        editable_attributes = kwargs.pop(
+            'editable_attributes', None)
 
         if kwargs:
             cluster_data.update(kwargs)
@@ -232,14 +234,16 @@ class EnvironmentManager(object):
             )
             self.tester.assertEqual(resp.status_code, 201, resp.body)
             cluster = resp.json_body
-            self.clusters.append(
-                Cluster.get_by_uid(cluster['id'])
-            )
+            cluster_db = Cluster.get_by_uid(cluster['id'])
         else:
             cluster = Cluster.create(cluster_data)
+            cluster_db = cluster
             db().commit()
-            self.clusters.append(cluster)
+        self.clusters.append(cluster_db)
 
+        if editable_attributes:
+            Cluster.patch_attributes(cluster_db,
+                                     {'editable': editable_attributes})
         return cluster
 
     def create_node(

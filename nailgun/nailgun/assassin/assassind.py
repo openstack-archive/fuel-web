@@ -29,6 +29,7 @@ from nailgun import notifier
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.logger import add_stream_to_logger
 from nailgun.logger import logger
 from nailgun.settings import settings
 
@@ -40,17 +41,22 @@ def update_nodes_status(timeout):
         datetime.now() > (Node.timestamp + timedelta(seconds=timeout))
     ).filter_by(online=True)
     for node_db in to_update:
+        away_message = u"Node '{0}' has gone away".format(
+            node_db.human_readable_name)
+
         notifier.notify(
             "error",
-            u"Node '{0}' has gone away".format(
-                node_db.human_readable_name),
+            away_message,
             node_id=node_db.id
         )
+        logger.warning(away_message)
     to_update.update({"online": False})
     db().commit()
 
 
 def run():
+    add_stream_to_logger(open('/var/log/nailgun/app.log', 'a'), logger)
+
     logger.info('Running Assassind...')
     try:
         while True:

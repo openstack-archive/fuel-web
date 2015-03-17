@@ -160,7 +160,11 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
                 }
                 return $.Deferred().resolve();
             }, this)).then(_.bind(function() {
-                return this.settings.fetch();
+                return this.settings.fetch()
+                    .done(_.bind(function(data) {
+                        //FIXME: it needs to move master_node_uid into tracking section
+                        this.masterNodeUid = data.master_node_uid;
+                    }, this));
             }, this)).always(_.bind(function() {
                 this.renderLayout();
                 Backbone.history.start();

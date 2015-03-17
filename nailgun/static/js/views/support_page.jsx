@@ -19,24 +19,37 @@ define(
     'underscore',
     'i18n',
     'react',
+    'utils',
+    'jsx!views/dialogs',
     'jsx!component_mixins',
     'models',
     'jsx!views/statistics_mixin',
     'jsx!views/controls'
 ],
-function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) {
+function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsMixin, controls) {
     'use strict';
 
     var SupportPage = React.createClass({
-        mixins: [componentMixins.backboneMixin('tasks')],
+        mixins: [
+            componentMixins.backboneMixin('tasks'),
+            componentMixins.backboneMixin('settings')
+        ],
         statics: {
             title: i18n('support_page.title'),
             navbarActiveElement: 'support',
             breadcrumbsPath: [['home', '#'], 'support'],
             fetchData: function() {
-                var tasks = new models.Tasks();
+                var tasks = new models.Tasks(),
+                    remoteLoginForm = new models.MirantisLoginForm(),
+                    remoteRetrievePasswordForm = new models.MirantisRetrievePasswordForm();
                 return tasks.fetch().then(function() {
-                    return {tasks: tasks, settings: app.settings};
+                    return {
+                        tasks: tasks,
+                        settings: app.settings,
+                        masterNodeUid: app.masterNodeUid,
+                        remoteLoginForm: remoteLoginForm,
+                        remoteRetrievePasswordForm: remoteRetrievePasswordForm
+                    };
                 });
             }
         },
@@ -48,7 +61,7 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
-                    <RegistrationInfo key='RegistrationInfo' settings={this.props.settings}/>,
+                    <RegistrationInfo key='RegistrationInfo' {... _.pick(this.props, 'settings', 'masterNodeUid', 'remoteLoginForm', 'remoteRetrievePasswordForm')}/>,
                     <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />,
                     <SupportContacts key='SupportContacts' />
                 );
@@ -104,6 +117,20 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
             statisticsMixin,
             componentMixins.backboneMixin('settings', 'change invalid')
         ],
+        componentDidMount: function() {
+            var remoteLoginForm = this.props.remoteLoginForm;
+            if (!this.isConnected())
+                remoteLoginForm.fetch()
+                    .fail(_.bind(function() {
+                        remoteLoginForm.url = remoteLoginForm.nailgunUrl;
+                        remoteLoginForm.fetch()
+                            .fail(_.bind(function(response) {
+                                var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
+                                this.setState({error: error});
+                            }, this))
+                            .always(_.bind(function() {this.setState({remoteLoginFormLoading: true});}, this));
+                    }, this));
+        },
         isConnected: function() {
             //FIXME: to do a better checking of connected state when backend will be finished
             return !!this.props.settings.get('tracking').email.value;
@@ -116,6 +143,21 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
                 name = settings.makePath('tracking', inputName, 'value');
             if (settings.validationError) delete settings.validationError['tracking.' + inputName];
             settings.set(name, value);
+        },
+        setConnected: function() {
+            this.setState({isConnected: true});
+        },
+        showRegistrationDialog: function() {
+            dialogs.RegistrationDialog.show({
+                registrationForm: new models.MirantisRegistrationForm(),
+                setConnected: this.setConnected,
+                settings: this.props.settings
+            });
+        },
+        showRetrievePasswordDialog: function() {
+            dialogs.RetrievePasswordDialog.show({
+                remoteRetrievePasswordForm: this.props.remoteRetrievePasswordForm
+            });
         },
         render: function() {
             var registrationInfo = this.props.settings.get('statistics'),
@@ -132,6 +174,7 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
                             {_.map(values, function(value) {
                                 return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {registrationInfo[value].value}</span>;
                             }, this)}
+                            <span key='masterNodeUid'><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.masterNodeUid}</span>
                         </p>
                         <p>
                             <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
@@ -161,7 +204,7 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
                                 {error}
                             </div>
                         }
-                        <div className='connection_form'>
+                        <div className='connection-form'>
                             {_.map(sortedFields, function(inputName) {
                                 var input = loginForm[inputName],
                                     path = 'tracking.' + inputName,
@@ -174,6 +217,10 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
                                     onChange={this.onChange}
                                     error={error}/>;
                             }, this)}
+                            <div className='links-container'>
+                                <a onClick={this.showRegistrationDialog} className='create-account'>{i18n('welcome_page.register.create_account')}</a>
+                                <a onClick={this.showRetrievePasswordDialog} className='retrive-password'>{i18n('welcome_page.register.retrive_password')}</a>
+                            </div>
                         </div>
 
                         <p>

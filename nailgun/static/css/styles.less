@@ -31,7 +31,6 @@
 @fuel-dark-5: @fuel-base-color - #555555; /* #444444 */
 
 /* unsorted */
-
 @fuel-goldenrod: #c09853;
 @fuel-orange: #ff9300;
 @fuel-red: #de4744;
@@ -1917,17 +1916,18 @@ label {cursor: default;}
 }
 
 .btn-unwanted {
-  .btn-mixin(@fuel-white-color, @fuel-dark-red, 0 1px 2px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.25), #999999, #B8B8B8, #A2A2A2);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5);
+  .btn-mixin(@fuel-white-color, @fuel-dark-red, 0 1px 2px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.25), @fuel-dark-2, @fuel-light-3, @fuel-light-1);
   &:hover {
-    background: linear-gradient(to top, #A2A2A2, #A2A2A2) repeat scroll 0 0 rgba(0, 0, 0, 0);
-    border: 1px solid #999999;
-    text-decoration: none;
+    background: linear-gradient(to bottom, @fuel-light-2, @fuel-light-1) repeat scroll 0 0 rgba(0, 0, 0, 0);
+    border: 1px solid @fuel-dark-3;
     color: #efefef;
+    text-decoration: none;
     .box-shadow-mixin-two(0 1px 1px rgba(0,0,0,.1), inset 0 0 0 1px rgba(255,255,255,.15));
   }
   &.active,
   &:active {
-    .btn-active-state-mixin(#999999, #d9d9d9);
+    .btn-active-state-mixin(@fuel-light-2, @fuel-light-1);
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
   &.disabled, &[disabled], &[disabled]:hover {
@@ -3834,7 +3834,7 @@ i.btn-cluster-details {
   .width-height-mixin;
   .box-sizing-mixin;
   padding: 40px;
-  color: #4d545b;
+  color: @fuel-dark-5;
   > div {
     width: 700px;
     background-color: @fuel-white-color;
@@ -3843,12 +3843,10 @@ i.btn-cluster-details {
     padding-bottom: 10px;
     .box-sizing-mixin;
     .border-radius-mixin(10px);
-    > div {
-      text-align: center;
-    }
+    > div {text-align: center;}
     h2 {
       line-height: 40px;
-      .font-layout-mixin(36px, #4d545b);
+      .font-layout-mixin(@font-size-big-3, @fuel-dark-5);
       .indent-mixin();
       margin-bottom: 20px;
     }
@@ -3857,7 +3855,7 @@ i.btn-cluster-details {
       padding: 30px;
       div {
         margin-top: 20px;
-        .font-layout-mixin(@font-size-big-2, #00AC51);
+        .font-layout-mixin(@font-size-big-2, @fuel-green);
       }
       .cloud-smile {
         .width-height-mixin(146px, 108px);
@@ -3872,42 +3870,6 @@ i.btn-cluster-details {
         font-style: italic;
         margin: 10px 0;
       }
-    .connection_form {
-      width: 285px;
-      margin: 0 auto;
-      text-align: left;
-      .parameter-box {
-        width: 100%;
-        vertical-align: top;
-        display: inline-block;
-        padding-right: 10px;
-        .label-wrapper {
-          margin-top: 0px;
-          span {font-weight: normal;}
-        }
-        .input-wrapper {display: block;}
-        .parameter-name {
-          width: 100%;
-          margin-top: 2px;
-          input {width: 95%;}
-        }
-        .parameter-description {
-          float: right;
-          font-style: italic;
-          margin-top: 3px;
-        }
-      }
-      .links-container {
-        min-height: 20px;
-        margin: 15px 0 15px;
-      }
-      .create-account, .retrive-password {
-        display: block;
-        float: left;
-        cursor: pointer;
-      }
-      .retrive-password {float: right;}
-    }
     .welcome-checkbox-box {
       text-align: center;
       margin-bottom: 10px;
@@ -3963,12 +3925,50 @@ i.btn-cluster-details {
   }
 }
 
+/**  Mirantis connection form **/
+.connection-form {
+  width: 285px;
+  margin: 0 auto;
+  text-align: left;
+  .parameter-box {
+    width: 100%;
+    vertical-align: top;
+    display: inline-block;
+    padding-right: 10px;
+    .label-wrapper {
+      margin-top: 0px;
+      span {font-weight: normal;}
+    }
+    .input-wrapper {display: block;}
+    .parameter-name {
+      width: 100%;
+      margin-top: 2px;
+      input {width: 95%;}
+    }
+    .parameter-description {
+      float: right;
+      font-style: italic;
+      margin-top: 3px;
+    }
+  }
+  .links-container {
+    min-height: 20px;
+    margin: 15px 0 15px;
+  }
+  .create-account, .retrive-password {
+    display: block;
+    float: left;
+    cursor: pointer;
+  }
+  .retrive-password {float: right;}
+}
+
 /**  Fuel Registration form **/
 .registration-form {
   margin-left: 20px;
   h2 {
     line-height: 30px;
-    .font-layout-mixin(22px, #4d545b);
+    .font-layout-mixin(@font-size-big-2 + 6, @fuel-dark-5);
     .indent-mixin();
     margin-bottom: 20px;
   }
@@ -3988,12 +3988,13 @@ i.btn-cluster-details {
     .parameter-name {
       width: 100%;
       margin-top: 2px;
-      input {width: 92%;}
+      input {width: 93%;}
     }
+    .parameter-description {padding-right: 20px;}
     &.first_name, &.last_name, &.company, &.phone, &.country, &.region {
       width: 47%;
-      input {width: 90%;}
-      select {width: 97%;}
+      input {width: 94%;}
+      select {width: 100%;}
     }
     &.agree {
       display: block;
@@ -4003,6 +4004,14 @@ i.btn-cluster-details {
     }
   }
   .parameter-description { font-style: italic; }
+}
+
+.retrieve-password-form {
+  .error {
+    color: @fuel-deep-red;
+    font-style: italic;
+    margin: 10px 0;
+  }
 }
 
 .retrieve-password-content {
@@ -4061,29 +4070,6 @@ i.btn-cluster-details {
 }
 
 .support-page {
-  .connection_form {
-    text-align: left;
-    .parameter-box {
-      vertical-align: top;
-      display: block;
-      width: 220px;
-      float: left;
-      padding-right: 10px;
-      margin-bottom: 20px;
-      .label-wrapper {
-        margin-top: 0px;
-        span {font-weight: normal;}
-      }
-      .parameter-name {
-        width: 100%;
-        margin-top: 2px;
-      }
-      .parameter-description {
-        font-style: italic;
-        margin-top: 3px;
-      }
-    }
-  }
   p {clear: left;}
   .registeredData > span {display: block;}
   .error {
@@ -4091,6 +4077,7 @@ i.btn-cluster-details {
     font-style: italic;
     margin: 10px 0;
   }
+  .connection-form {margin: 0;}
 }
 
 .ui-sortable-placeholder {

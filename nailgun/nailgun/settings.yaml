@@ -251,6 +251,11 @@ LOGS:
     <<: *local_log_type
     <<: *remote_syslog_log_format
     path: '/var/log/astute/astute.log'
+  - id: assassin
+    name: "Assassin"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: '/var/log/nailgun/assassind.log'
   - id: ostf
     name: "HealthCheck"
     <<: *local_log_type

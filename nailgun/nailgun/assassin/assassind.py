@@ -40,12 +40,15 @@ def update_nodes_status(timeout):
         datetime.now() > (Node.timestamp + timedelta(seconds=timeout))
     ).filter_by(online=True)
     for node_db in to_update:
+        away_message = u"Node '{0}' has gone away".format(
+            node_db.human_readable_name)
+
         notifier.notify(
             "error",
-            u"Node '{0}' has gone away".format(
-                node_db.human_readable_name),
+            away_message,
             node_id=node_db.id
         )
+        logger.warning(away_message)
     to_update.update({"online": False})
     db().commit()
 

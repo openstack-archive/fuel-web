@@ -397,7 +397,6 @@ def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
             "ADMIN_NETWORK/mac": mac,
             "ADMIN_NETWORK/dhcp_pool_start": dynamic_start,
             "ADMIN_NETWORK/dhcp_pool_end": dynamic_end,
-            "ADMIN_NETWORK/dhcp_gateway": ip,
             "HOSTNAME": hostname,
             "DNS_DOMAIN": domain,
             "DNS_SEARCH": domain,

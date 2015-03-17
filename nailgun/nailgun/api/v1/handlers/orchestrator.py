@@ -213,14 +213,15 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
                 task_manager.__class__.__name__, traceback.format_exc())
             raise self.http(400, message=six.text_type(exc))
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
                * 404 (cluster or nodes not found in db)
-               * 400 (failed to execute task)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return self.handle_task(cluster)
@@ -239,8 +240,9 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
                * 404 (cluster or nodes not found in db)
-               * 400 (failed to execute task)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
 
@@ -273,8 +275,9 @@ class DeploySelectedNodes(BaseDeploySelectedNodes):
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
                * 404 (cluster or nodes not found in db)
-               * 400 (failed to execute task)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return self.handle_task(cluster)
@@ -288,8 +291,9 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
                * 404 (cluster or nodes not found in db)
-               * 400 (failed to execute task)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         data = self.checked_data(

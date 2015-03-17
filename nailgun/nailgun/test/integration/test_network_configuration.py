@@ -19,6 +19,7 @@ from mock import patch
 from oslo.serialization import jsonutils
 from sqlalchemy.sql import not_
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
@@ -101,7 +102,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.nova_networks_put(self.cluster.id, data)
         self.assertEqual(resp.status_code, 200)
         task = resp.json_body
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         self.db.refresh(self.cluster)
         mgmt_ng = [ng for ng in self.cluster.network_groups
@@ -138,7 +139,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_network_group_update_changes_network(self):
         network = self.db.query(NetworkGroup).filter(
-            not_(NetworkGroup.name == "fuelweb_admin")
+            not_(NetworkGroup.name == consts.NETWORKS.fuelweb_admin)
         ).first()
         self.assertIsNotNone(network)
         new_vlan_id = 500  # non-used vlan id
@@ -152,7 +153,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_update_networks_and_net_manager(self):
         network = self.db.query(NetworkGroup).filter(
-            not_(NetworkGroup.name == "fuelweb_admin")
+            not_(NetworkGroup.name == consts.NETWORKS.fuelweb_admin)
         ).first()
         new_vlan_id = 500  # non-used vlan id
         new_net = {'networking_parameters': {'net_manager': 'VlanManager'},
@@ -174,7 +175,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                           expect_errors=True)
         self.assertEqual(200, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             'Invalid network ID: 500'
@@ -184,7 +185,9 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.nova_networks_get(self.cluster.id)
         data = resp.json_body
         for net in data['networks']:
-            if net['name'] in ('fuelweb_admin', 'public', 'fixed'):
+            if net['name'] in (consts.NETWORKS.fuelweb_admin,
+                               consts.NETWORKS.public,
+                               consts.NETWORKS.fixed):
                 self.assertIsNone(net['vlan_start'])
             else:
                 self.assertIsNotNone(net['vlan_start'])
@@ -294,7 +297,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEqual(200, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         self.db.refresh(self.cluster)
         mgmt_ng = [ng for ng in self.cluster.network_groups
@@ -310,7 +313,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                              expect_errors=True)
         self.assertEqual(200, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             "Change of 'segmentation_type' is prohibited"
@@ -343,7 +346,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                              expect_errors=True)
         self.assertEqual(200, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             "Change of 'segmentation_type' is prohibited"
@@ -358,7 +361,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                              expect_errors=True)
         self.assertEqual(200, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(
             task['message'],
             'Invalid network ID: 500'
@@ -379,7 +382,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEqual(200, resp.status_code)
         task = resp.json_body
-        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
 
         self.db.refresh(self.cluster)
         publ_ng = filter(lambda ng: ng.name == 'public',
@@ -471,7 +474,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
                                           expect_errors=True)
         self.assertEqual(resp.status_code, 200)
         task = resp.json_body
-        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], 'check_networks')
         self.assertIn("Address space intersection between networks:\n"
@@ -481,9 +484,9 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
     def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):
         resp = self.env.cluster_changes_put(self.cluster['id'],
                                             expect_errors=True)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
-        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
         self.assertEqual(task['progress'], 100)
         self.assertEqual(task['name'], 'deploy')
         self.assertIn("Address space intersection between networks:\n"

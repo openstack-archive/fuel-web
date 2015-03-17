@@ -90,12 +90,16 @@ class CapacityLogHandler(BaseHandler):
         """Starts capacity data generation.
 
         :returns: JSONized Task object.
-        :http: * 202 (setup task created and started)
+        :http: * 200 (setup task successfully executed)
+               * 202 (setup task created and started)
+               * 400 (data validation failed)
+               * 404 (cluster not found in db)
         """
+        # TODO(pkaminski): this seems to be synchronous, no task needed here
         manager = GenerateCapacityLogTaskManager()
         task = manager.execute()
 
-        raise self.http(202, objects.Task.to_json(task))
+        self.raise_task(task)
 
 
 class CapacityLogCsvHandler(BaseHandler):

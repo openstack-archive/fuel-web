@@ -138,8 +138,7 @@ class TestDataMigration(BaseTestCase):
                 "type": "text",
                 "restrictions": [{
                     "action": "hide",
-                    "condition": "cluster:net_provider != 'neutron' or "
-                    "networking_parameters:net_l23_provider? != 'nsx'"
+                    "condition": "cluster:net_provider != 'neutron'"
                 }],
                 "description": "Description",
                 "label": "Label"
@@ -175,8 +174,7 @@ class TestDataMigration(BaseTestCase):
 
         self.assertEqual(
             sample_group["field1"]["restrictions"][0]["condition"],
-            "cluster:net_provider != 'neutron' or "
-            "networking_parameters:net_l23_provider != 'nsx'"
+            "cluster:net_provider != 'neutron'"
         )
         self.assertEqual(
             sample_group["field2"]["values"][0]["restrictions"][0],

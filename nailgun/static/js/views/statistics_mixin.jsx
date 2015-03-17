@@ -60,30 +60,20 @@ define([
             if (e) e.preventDefault();
             var settings = this.props.settings,
                 loginInfo = this.props.settings.get('tracking'),
-                loginForm = new models.MirantisLoginForm();
-            if (settings.isValid()) {
+                remoteLoginForm = this.props.remoteLoginForm;
+            if (settings.isValid({models: this.configModels}) && !this.state.error) {
                 this.setState({actionInProgress: true});
-                loginForm.fetch({cache: true})
-                    .done(_.bind(function() {
-                        //passing connection info to mirantis.com
-                        _.each(loginInfo, function(data, inputName) {
-                            var name = loginForm.makePath('credentials', inputName, 'value');
-                            loginForm.set(name, loginInfo[inputName].value);
-                        }, this);
-                        loginForm.save()
-                            .done(_.bind(this.saveConnected, this))
-                            .always(_.bind(function() {
-                                this.setState({actionInProgress: false});
-                            }, this))
-                            .fail(_.bind(function() {
-                                this.setState({error: i18n('welcome_page.register.connection_error')});
-                            }, this));
-                    }, this))
+                _.each(loginInfo, function(data, inputName) {
+                    var name = remoteLoginForm.makePath('credentials', inputName, 'value');
+                    remoteLoginForm.set(name, loginInfo[inputName].value);
+                }, this);
+                remoteLoginForm.save()
+                    .done(_.bind(this.saveConnected, this))
                     .fail(_.bind(function() {
-                        this.setState({
-                            error: i18n('welcome_page.register.connection_error'),
-                            actionInProgress: false
-                        });
+                        this.setState({error: i18n('welcome_page.register.connection_error')});
+                    }, this))
+                    .always(_.bind(function() {
+                        this.setState({actionInProgress: false});
                     }, this));
             }
         },

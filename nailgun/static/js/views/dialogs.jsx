@@ -24,9 +24,10 @@ define(
     'models',
     'dispatcher',
     'jsx!views/controls',
+    'jsx!views/statistics_mixin',
     'jsx!component_mixins'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, componentMixins) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, statisticsMixin, componentMixins) {
     'use strict';
 
     var dialogs = {};
@@ -875,19 +876,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         componentDidMount: function() {
             var registrationForm = this.props.registrationForm;
-            registrationForm.fetch({cache: true})
-                .done(_.bind(function() {
-                    this.setState({loading: false});
-                }, this))
+            registrationForm.fetch()
+                .done(_.bind(function() {this.setState({loading: false});}, this))
                 .fail(_.bind(function() {
-                    registrationForm.url = 'api/tracking/registration';
+                    registrationForm.url = registrationForm.nailgunUrl;
                     registrationForm.fetch()
-                        .done(_.bind(function() {
-                            this.setState({loading: false});
-                        }, this))
                         .fail(_.bind(function(response) {
-                            this.showError(utils.getResponseText(response) || i18n('dialog.error_dialog.warning'));
-                        }, this));
+                            var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
+                            this.setState({error: error});
+                        }, this))
+                        .always(_.bind(function() {this.setState({loading: false});}, this));
                 }, this));
         },
         onChange: function(inputName, value) {
@@ -938,7 +936,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         this.setState({actionInProgress: false});
                     }, this))
                     .fail(_.bind(function(response) {
-                        var error = !response.responseText || response.responseText == 'None' ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
+                        var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
                         this.setState({error: error});
                     }, this));
             }
@@ -956,7 +954,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return (
                 <div className='registration-form'>
                     {actionInProgress && <controls.ProgressBar />}
-                    {error && <div className='error'>{error}</div>}
+                    {error &&
+                        <div className='error'>
+                            <i className='icon-attention'></i>
+                            {error}
+                        </div>
+                    }
                     <form className='form-horizontal'>
                         {_.map(sortedFields, function(inputName) {
                             var input = fieldsList[inputName],
@@ -994,39 +997,101 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
 
     dialogs.RetrievePasswordDialog = React.createClass({
         mixins: [
-            dialogMixin
+            dialogMixin,
+            componentMixins.backboneMixin('remoteRetrievePasswordForm', 'change invalid')
         ],
+        getInitialState: function() {
+            return {loading: true};
+        },
         getDefaultProps: function() {
             return {
                 title: i18n('dialog.retrieve_password.title'),
                 modalClass: 'retrieve-password-form'
             };
         },
-        getInitialState: function() {
-            return {};
+        componentDidMount: function() {
+            var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
+            remoteRetrievePasswordForm.fetch()
+                .done(_.bind(function() {
+                    this.setState({
+                        remoteRetrievePasswordForm: remoteRetrievePasswordForm,
+                        loading: false
+                    });
+                }, this))
+                .fail(_.bind(function() {
+                    remoteRetrievePasswordForm.url = remoteRetrievePasswordForm.nailgunUrl;
+                    remoteRetrievePasswordForm.fetch()
+                        .done(_.bind(function() {
+                            this.setState({remoteRetrievePasswordForm: remoteRetrievePasswordForm});
+                        }, this))
+                        .fail(_.bind(function(response) {
+                            var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
+                            this.setState({error: error});
+                        }, this))
+                        .always(_.bind(function() {this.setState({loading: false});}, this));
+                }, this));
+        },
+        onChange: function(inputName, value) {
+            var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
+            if (remoteRetrievePasswordForm.validationError) delete remoteRetrievePasswordForm.validationError['credentials.email'];
+            remoteRetrievePasswordForm.set('credentials.email.value', value);
         },
         retrievePassword: function() {
-            this.setState({
-                sent: true
-            });
+            var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
+            if (remoteRetrievePasswordForm.isValid() && !this.state.error) {
+                this.setState({actionInProgress: true});
+                remoteRetrievePasswordForm.save()
+                    .done(_.bind(this.passwordSent, this))
+                    .fail(_.bind(function(response) {
+                        var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
+                        this.setState({error: error});
+                    }, this))
+                    .always(_.bind(function() {
+                        this.setState({actionInProgress: false});
+                    }, this));
+            }
+        },
+        passwordSent: function() {
+            this.setState({passwordSent: true});
         },
         renderBody: function() {
-            var ns = 'dialog.retrieve_password.';
+            var ns = 'dialog.retrieve_password.',
+                remoteRetrievePasswordForm = this.state.remoteRetrievePasswordForm;
+            if (this.state.loading) return <controls.ProgressBar />;
+            var error = this.state.error,
+                actionInProgress = this.state.actionInProgress,
+                input = remoteRetrievePasswordForm ? remoteRetrievePasswordForm.attributes.credentials.email : null,
+                inputError = remoteRetrievePasswordForm ? (remoteRetrievePasswordForm.validationError || {})['credentials.email'] : null;
             return (
                 <div className='retrieve-password-content'>
-                    {!this.state.sent ?
+                    {!this.state.passwordSent ?
                         <div>
-                            <div>{i18n(ns + 'submit_email')}</div>
-                            <controls.Input
-                                key='retrievePassword'
-                                name='retrievePassword'
-                                type='text'
-                                label='Mirantis Account Email'
-                            />
+                            {actionInProgress && <controls.ProgressBar />}
+                            {error &&
+                                <div className='error'>
+                                    <i className='icon-attention'></i>
+                                    {error}
+                                </div>
+                            }
+                            {input &&
+                                <div>
+                                    <div>{i18n(ns + 'submit_email')}</div>
+                                    <controls.Input
+                                        ref='retrieve_password'
+                                        key='retrieve_password'
+                                        name='retrieve_password'
+                                        {... _.pick(input, 'type', 'value', 'label')}
+                                        onChange={this.onChange}
+                                        error={inputError}
+                                        disabled={actionInProgress}
+                                        description={input.description}
+                                    />
+                                </div>
+                            }
                         </div>
                     :
                         <div>
-                            <div>{i18n(ns + '.done')}</div>
+                            <div>{i18n(ns + 'done')}</div>
                             <div>{i18n(ns + 'check_email')}</div>
                         </div>
                     }
@@ -1036,12 +1101,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderFooter: function() {
             return (
                 <div>
-                    {!this.state.sent ?
+                    {!this.state.passwordSent ?
                         <div>
                             <button key='cancel' className='btn' onClick={this.close}>
                                 {i18n('common.cancel_button')}
                             </button>
-                            <button key='apply' className='btn btn-success' onClick={this.retrievePassword}>
+                            <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.error} onClick={this.retrievePassword}>
                                 {i18n('dialog.retrieve_password.send_new_password')}
                             </button>
                         </div>

@@ -415,7 +415,12 @@ def upgrade_master_node_settings_6_0_to_6_1(master_node_settings):
     master_node_settings['statistics']['name']['restrictions'] = {}
     master_node_settings['statistics']['email']['restrictions'] = {}
     master_node_settings['statistics']['company']['restrictions'] = {}
-    master_node_settings['statistics']['send_user_info']['restrictions'] = {}
+    master_node_settings['statistics']['send_user_info']['restrictions'] = [
+            {
+                "condition": "not ('mirantis' in version:feature_groups)",
+                "action": "hide"
+            }
+        ]
 
     return master_node_settings
 

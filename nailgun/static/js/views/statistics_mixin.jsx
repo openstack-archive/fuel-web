@@ -61,7 +61,7 @@ define([
             var settings = this.props.settings,
                 loginInfo = this.props.settings.get('tracking'),
                 loginForm = new models.MirantisLoginForm();
-            if (settings.isValid()) {
+            if (settings.isValid({models: this.configModels})) {
                 this.setState({actionInProgress: true});
                 loginForm.fetch({cache: true})
                     .done(_.bind(function() {

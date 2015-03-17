@@ -922,11 +922,6 @@ define([
         urlRoot: '/api/ostf'
     });
 
-    models.FuelKey = BaseModel.extend({
-        constructorName: 'FuelKey',
-        urlRoot: '/api/registration/key'
-    });
-
     models.FuelVersion = BaseModel.extend({
         constructorName: 'FuelVersion',
         urlRoot: '/api/version',
@@ -1029,7 +1024,8 @@ define([
 
     models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).extend({
         constructorName: 'MirantisCredentials',
-        url: 'http://dev_ware.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration1',
+        url: 'api/tracking/registration',
+        cacheFor: 60 * 60 * 1000,
         validate: function(attrs) {
             var errors = {};
             _.each(attrs, function(group, groupName) {

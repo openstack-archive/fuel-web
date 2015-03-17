@@ -2195,55 +2195,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
         self.assertEqual(1, primary_nodes_count(mn_nodes))
 
 
-class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
-
-    def setUp(self):
-        super(TestNSXOrchestratorSerializer, self).setUp()
-        self.cluster = self.create_env('ha_compact')
-
-    def create_env(self, mode, segment_type='gre'):
-        cluster = self.env.create(
-            cluster_kwargs={
-                'mode': mode,
-                'net_provider': 'neutron',
-                'net_segment_type': segment_type
-            },
-            nodes_kwargs=[
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['compute'], 'pending_addition': True},
-            ]
-        )
-
-        cluster_db = self.db.query(Cluster).get(cluster['id'])
-        editable_attrs = self._make_data_copy(cluster_db.attributes.editable)
-        nsx_attrs = editable_attrs.setdefault('nsx_plugin', {})
-        nsx_attrs.setdefault('metadata', {})['enabled'] = True
-        cluster_db.attributes.editable = editable_attrs
-
-        self.db.commit()
-        cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
-        return cluster_db
-
-    def test_serialize_node(self):
-        serialized_data = self.serializer.serialize(self.cluster,
-                                                    self.cluster.nodes)[0]
-
-        q_settings = serialized_data['quantum_settings']
-        self.assertIn('L2', q_settings)
-        self.assertIn('provider', q_settings['L2'])
-        self.assertEqual(q_settings['L2']['provider'], 'nsx')
-        l3_settings = q_settings['L3']
-        self.assertIn('dhcp_agent', l3_settings)
-        self.assertIn('enable_isolated_metadata', l3_settings['dhcp_agent'])
-        self.assertEqual(l3_settings['dhcp_agent']['enable_isolated_metadata'],
-                         True)
-        self.assertIn('enable_metadata_network', l3_settings['dhcp_agent'])
-        self.assertEqual(l3_settings['dhcp_agent']['enable_metadata_network'],
-                         True)
-
-
-class BaseDeploymentSerializer(BaseIntegrationTest):
+class BaseDeploymentSerializer61(BaseIntegrationTest):
 
     node_name = 'node name'
     # Needs to be set in childs

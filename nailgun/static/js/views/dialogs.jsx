@@ -157,6 +157,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
     dialogs.DeployChangesDialog = React.createClass({
         mixins: [
             dialogMixin,
+            componentMixins.pollingMixin(3),
             // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {
@@ -178,6 +179,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 networking_parameters: cluster.get('networkConfiguration').get('networking_parameters')
             };
         },
+        getNetworksVerificationResult: function() {
+            var networkVerificationTask = this.props.cluster.task({group: 'network'}),
+                ns = 'dialog.display_changes.',
+                networksVerificationResult;
+
+            if (_.isUndefined(networkVerificationTask)) {
+                networksVerificationResult = {warning: i18n(ns + 'verification_not_performed')};
+            } else if (networkVerificationTask.match({status: 'error'})) {
+                networksVerificationResult = {error: i18n(ns + 'verification_failed')};
+            } else if (networkVerificationTask.match({status: 'running'})) {
+                networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
+            }
+            return networksVerificationResult;
+        },
         getInitialState: function() {
             var ns = 'dialog.display_changes.',
                 cluster = this.props.cluster,
@@ -193,22 +208,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 })),
                 areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
 
-            var networkVerificationTask = cluster.task({group: 'network'}),
-                networksVerificationResult;
-            if (_.isUndefined(networkVerificationTask)) {
-                networksVerificationResult = {warning: i18n(ns + 'verification_not_performed')};
-            } else if (networkVerificationTask.match({status: 'error'})) {
-                networksVerificationResult = {error: i18n(ns + 'verification_failed')};
-            } else if (networkVerificationTask.match({status: 'running'})) {
-                networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
-            }
-
             var state = {
                 ns: ns,
                 amountRestrictions: limitValidations,
                 amountRestrictionsRecommendations: limitRecommendations,
                 isInvalid: _.any(limitValidations, {valid: false}) || areSettingsInvalid,
-                networksVerificationResult: networksVerificationResult,
+                networksVerificationResult: this.getNetworksVerificationResult(),
                 areSettingsInvalid: areSettingsInvalid,
                 vcenterError: null
             };
@@ -228,6 +233,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 }
             }
             return state;
+        },
+        shouldDataBeFetched: function() {
+            return !!this.props.cluster.task({group: 'network', status: 'running'});
+        },
+        fetchData: function() {
+            return this.props.cluster.task({group: 'network', status: 'running'}).fetch();
+        },
+        componentWillMount: function() {
+            var runningTasks = this.props.cluster.task({group: ['network'], status: 'running'});
+            if (runningTasks) {
+                this.startPolling();
+                runningTasks.on('change', _.bind(function() {
+                    this.setState({networksVerificationResult: this.getNetworksVerificationResult()});
+                    this.stopPolling();
+                }, this));
+            }
         },
         deployCluster: function() {
             this.setState({actionInProgress: true});

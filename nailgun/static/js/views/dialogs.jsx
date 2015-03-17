@@ -1022,7 +1022,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         </div>
                     :
                         <div>
-                            <div>{i18n(ns + '.done')}</div>
+                            <div>{i18n(ns + 'done')}</div>
                             <div>{i18n(ns + 'check_email')}</div>
                         </div>
                     }

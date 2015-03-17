@@ -42,8 +42,7 @@ define(
     'routefilter',
     'bootstrap',
     'jquery-timeout',
-    'less!/static/css/styles',
-    'backbone-lodash-monkeypatch'
+    'less!/static/css/styles'
 
 ],
 function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
@@ -160,7 +159,10 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
                 }
                 return $.Deferred().resolve();
             }, this)).then(_.bind(function() {
-                return this.settings.fetch();
+                return this.settings.fetch()
+                    .done(_.bind(function(data) {
+                        this.masterNodeUid = data.master_node_uid;
+                    }, this));
             }, this)).always(_.bind(function() {
                 this.renderLayout();
                 Backbone.history.start();

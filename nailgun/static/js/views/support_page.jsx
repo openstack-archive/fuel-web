@@ -19,16 +19,21 @@ define(
     'underscore',
     'i18n',
     'react',
+    'utils',
+    'jsx!views/dialogs',
     'jsx!component_mixins',
     'models',
     'jsx!views/statistics_mixin',
     'jsx!views/controls'
 ],
-function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) {
+function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsMixin, controls) {
     'use strict';
 
     var SupportPage = React.createClass({
-        mixins: [componentMixins.backboneMixin('tasks')],
+        mixins: [
+            componentMixins.backboneMixin('tasks'),
+            componentMixins.backboneMixin('settings')
+        ],
         statics: {
             title: i18n('support_page.title'),
             navbarActiveElement: 'support',
@@ -36,7 +41,7 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
             fetchData: function() {
                 var tasks = new models.Tasks();
                 return tasks.fetch().then(function() {
-                    return {tasks: tasks, settings: app.settings};
+                    return {tasks: tasks, settings: app.settings, masterNodeUid: app.masterNodeUid};
                 });
             }
         },
@@ -48,7 +53,7 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
-                    <RegistrationInfo key='RegistrationInfo' settings={this.props.settings}/>,
+                    <RegistrationInfo key='RegistrationInfo' settings={this.props.settings} masterNodeUid={this.props.masterNodeUid}/>,
                     <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />,
                     <SupportContacts key='SupportContacts' />
                 );
@@ -117,6 +122,19 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
             if (settings.validationError) delete settings.validationError['tracking.' + inputName];
             settings.set(name, value);
         },
+        setConnected: function() {
+            this.setState({isConnected: true});
+        },
+        showRegistrationDialog: function() {
+            utils.showDialog(dialogs.RegistrationDialog, {
+                registrationForm: new models.MirantisRegistrationForm(),
+                setConnected: this.setConnected,
+                settings: this.props.settings
+            });
+        },
+        showRetrievePasswordDialog: function() {
+            utils.showDialog(dialogs.RetrievePasswordDialog);
+        },
         render: function() {
             var registrationInfo = this.props.settings.get('statistics'),
                 values = ['name', 'email', 'company'];
@@ -132,6 +150,7 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
                             {_.map(values, function(value) {
                                 return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {registrationInfo[value].value}</span>;
                             }, this)}
+                            <span key='masterNodeUid'><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.masterNodeUid}</span>
                         </p>
                         <p>
                             <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
@@ -161,7 +180,7 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
                                 {error}
                             </div>
                         }
-                        <div className='connection_form'>
+                        <div className='connection-form'>
                             {_.map(sortedFields, function(inputName) {
                                 var input = loginForm[inputName],
                                     path = 'tracking.' + inputName,
@@ -174,6 +193,10 @@ function($, _, i18n, React, componentMixins, models, statisticsMixin, controls) 
                                     onChange={this.onChange}
                                     error={error}/>;
                             }, this)}
+                            <div className='links-container'>
+                                <a onClick={this.showRegistrationDialog} className='create-account'>{i18n('welcome_page.register.create_account')}</a>
+                                <a onClick={this.showRetrievePasswordDialog} className='retrive-password'>{i18n('welcome_page.register.retrive_password')}</a>
+                            </div>
                         </div>
 
                         <p>

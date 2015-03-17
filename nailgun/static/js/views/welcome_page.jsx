@@ -88,7 +88,7 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                                 {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
                                 <p>
                                     <div className='notice'>{i18n(ns + 'privacy_policy')}</div>
-                                    <div><a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a>.</div>
+                                    <div><a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a></div>
                                 </p>
                             </div>
                         :
@@ -96,8 +96,8 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                                 {this.renderIntro()}
                                 {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
                                 <p>
-                                    {i18n(ns + 'statistics_collector')}
-                                    <a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a>.
+                                    <div>{i18n(ns + 'statistics_collector')}</div>
+                                    <div><a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a></div>
                                 </p>
                             </div>
                         }
@@ -178,7 +178,7 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                                         {error}
                                     </div>
                                 }
-                                <div className='connection_form'>
+                                <div className='connection-form'>
                                     {_.map(sortedFields, function(inputName) {
                                         var input = loginForm[inputName],
                                             path = 'tracking.' + inputName,

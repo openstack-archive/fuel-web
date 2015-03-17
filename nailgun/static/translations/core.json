@@ -197,6 +197,7 @@
                 "register_fuel_content": "This will ensure that you recieve important notifications about issues and new versions of Mirantis products. In addition, you will recieve complementary access to our basic support services for the next 30 days!",
                 "product_registered_title": "Connect Mirantis Account",
                 "product_registered_content": "This OpenStack installation is connected to",
+                "master_node_uuid": "Master Node UUID",
                 "manage_account": "Manage Account",
                 "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",
                 "gen_logs_snapshot_text": "Generating Logs Snapshot...",

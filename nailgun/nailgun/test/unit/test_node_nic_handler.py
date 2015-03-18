@@ -262,6 +262,47 @@ class TestHandlers(BaseIntegrationTest):
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
 
+    def test_interface_properties_after_update_by_agent(self):
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
+             'state': 'up'}])
+        node = self.env.create_node(api=True, meta=meta)
+        node_data = {'mac': node['mac'], 'meta': meta}
+        # check default interface_properties values
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        nic = resp.json_body[0]
+        self.assertEqual(nic['interface_properties'],
+                         {'disable_offloading': True,
+                          'mtu': None})
+        # change mtu
+        nic['interface_properties']['mtu'] = 1500
+        nodes_list = [{'id': node['id'], 'interfaces': [nic]}]
+        resp_put = self.app.put(
+            reverse('NodeCollectionNICsHandler'),
+            jsonutils.dumps(nodes_list),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp_put.status_code, 200)
+        # update NICs by agent (no interface_properties values provided)
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps(node_data),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        # check interface_properties values were not reset to default
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        resp_nic = resp.json_body[0]
+        self.assertEqual(resp_nic['interface_properties'],
+                         {'disable_offloading': True,
+                          'mtu': 1500})
+
     def test_NIC_adds_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [

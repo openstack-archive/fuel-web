@@ -99,3 +99,14 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(resp.json_body['is_deployable'], True)
+
+    @mock.patch.dict(settings.VERSION, {'feature_groups': None})
+    def test_empgy_feature_groups(self):
+        release = self.env.create_release(api=False)
+        # check that release handler is not broken
+        resp = self.app.get(
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
+            headers=self.default_headers,
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(resp.json_body['is_deployable'], True)

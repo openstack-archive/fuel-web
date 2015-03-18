@@ -145,7 +145,8 @@ class Release(NailgunObject):
         :returns: True if a given release is deployable; otherwise - False
         """
         # in experimental mode we deploy all releases
-        if 'experimental' in settings.VERSION['feature_groups']:
+        fg = settings.VERSION.get('feature_groups', [])
+        if fg is not None and 'experimental' in fg:
             return True
         return instance.is_deployable
 

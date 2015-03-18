@@ -671,7 +671,8 @@ class TestActionLogObject(BaseIntegrationTest):
         self.db.add(al)
         self.db.commit()
 
-        al_db = objects.ActionLog.get_by_task_uuid(object_data['task_uuid'])
+        al_db = objects.ActionLog.get_by_kwargs(
+            task_uuid=object_data['task_uuid'])
 
         self.assertIsNotNone(al_db)
 

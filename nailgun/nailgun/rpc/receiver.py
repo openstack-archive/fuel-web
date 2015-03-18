@@ -146,7 +146,7 @@ class NailgunReceiver(object):
         }
         objects.Task.update(task, data)
 
-        cls._update_action_log_entry(status, task_uuid, nodes)
+        cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
     def remove_cluster_resp(cls, **kwargs):
@@ -299,7 +299,7 @@ class NailgunReceiver(object):
             data = {'status': status, 'progress': progress, 'message': message}
             objects.Task.update(task, data)
 
-        cls._update_action_log_entry(status, task_uuid, nodes)
+        cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
     def provision_resp(cls, **kwargs):
@@ -364,14 +364,16 @@ class NailgunReceiver(object):
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
 
-        cls._update_action_log_entry(status, task_uuid, nodes)
+        cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
-    def _update_action_log_entry(cls, task_status, task_uuid, nodes_from_resp):
+    def _update_action_log_entry(cls, task_status, task_name, task_uuid,
+                                 nodes_from_resp):
         try:
             if task_status in (consts.TASK_STATUSES.ready,
                                consts.TASK_STATUSES.error):
-                al = objects.ActionLog.get_by_task_uuid(task_uuid)
+                al = objects.ActionLog.get_by_kwargs(task_uuid=task_uuid,
+                                                     action_name=task_name)
 
                 if al:
                     data = {
@@ -654,7 +656,7 @@ class NailgunReceiver(object):
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
 
-        cls._update_action_log_entry(status, task_uuid, nodes)
+        cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
     def reset_environment_resp(cls, **kwargs):
@@ -733,7 +735,7 @@ class NailgunReceiver(object):
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
 
-        cls._update_action_log_entry(status, task_uuid, nodes)
+        cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
     def _notify_inaccessible(cls, cluster_id, nodes_uids, action):
@@ -885,7 +887,7 @@ class NailgunReceiver(object):
             objects.Task.update_verify_networks(task, status, progress,
                                                 error_msg, result)
 
-        cls._update_action_log_entry(status, task_uuid, nodes)
+        cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
     def multicast_verification_resp(cls, **kwargs):

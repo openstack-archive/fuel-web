@@ -108,7 +108,10 @@ class TestTaskManagers(BaseIntegrationTest):
         deployment_task = self.env.launch_deployment()
 
         for subtask in deployment_task.subtasks:
-            action_log = objects.ActionLog.get_by_task_uuid(subtask.uuid)
+            action_log = objects.ActionLog.get_by_kwargs(
+                task_uuid=subtask.uuid,
+                action_name=subtask.name
+            )
 
             self.assertIsNotNone(action_log)
             self.assertEqual(subtask.parent_id,

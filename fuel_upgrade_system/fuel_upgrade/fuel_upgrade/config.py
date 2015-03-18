@@ -247,6 +247,8 @@ def config(update_path, admin_password):
         current_fuel_version_path, from_version_path)
     previous_version_path = join('/etc/fuel', from_version, 'version.yaml')
 
+    container_data_path = join('/var/lib/fuel/container_data', new_version)
+
     astute_keys_path = join(working_directory, 'astute')
 
     cobbler_container_config_path = '/var/lib/cobbler/config'
@@ -381,9 +383,20 @@ def config(update_path, admin_password):
 
         'volume_puppet_manifests': [
             ('/etc/puppet', {'bind': '/etc/puppet', 'ro': True})],
+
         'volume_keys': [
             ('/var/lib/fuel/keys', {'bind': '/var/lib/fuel/keys',
                                     'ro': False})],
+
+        'volume_postgres_data': [
+            ('/var/lib/pgsql', {
+                'bind': '{0}/postgres'.format(container_data_path),
+                'ro': False})],
+
+        'volume_cobbler_data': [
+            ('/var/lib/cobbler', {
+                'bind': '{0}/cobbler'.format(container_data_path),
+                'ro': False})],
     }
 
     containers = [
@@ -456,6 +469,7 @@ def config(update_path, admin_password):
              'volume_repos',
              'volume_ssh_keys',
              'volume_fuel_configs',
+             'volume_cobbler_data',
              'volume_upgrade_directory']},
 
         {'id': 'mcollective',
@@ -596,6 +610,7 @@ def config(update_path, admin_password):
              'volume_logs',
              'volume_repos',
              'volume_fuel_configs',
+             'volume_postgres_data',
              'volume_upgrade_directory']}]
 
     # Since we dropped fuel storage containers we should provide an

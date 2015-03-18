@@ -350,30 +350,29 @@ class TestLogs(BaseIntegrationTest):
                 f.write(self._format_log_entry(log_entry))
                 f.flush()
 
-    @mock.patch.dict('nailgun.task.task.settings.DUMP',
-                     {
-                         'dump': {
-                             'local': {
-                                 'hosts': [],
-                                 'objects': [],
-                             },
-                             'master': {
-                                 'hosts': [],
-                                 'objects': [{
-                                     'type': 'subs',
-                                     'path': '/var/log/remote',
-                                     'subs': {}
-                                 }],
-                             },
-                             'slave': {
-                                 'hosts': [],
-                                 'objects': [],
-                             }
-                         },
-                         'target': '/path/to/save',
-                         'lastdump': '/path/to/latest',
-                         'timestamp': True,
-                     })
+    @mock.patch.dict('nailgun.task.task.settings.DUMP', {
+        'dump': {
+            'local': {
+                'hosts': [],
+                'objects': [],
+            },
+            'master': {
+                'hosts': [],
+                'objects': [{
+                    'type': 'subs',
+                    'path': '/var/log/remote',
+                    'subs': {}
+                }],
+            },
+            'slave': {
+                'hosts': [],
+                'objects': [],
+            }
+        },
+        'target': '/path/to/save',
+        'lastdump': '/path/to/latest',
+        'timestamp': True,
+        'compression_level': 3})
     def test_snapshot_conf(self):
         self.env.create_node(
             status='ready',
@@ -405,6 +404,7 @@ class TestLogs(BaseIntegrationTest):
             'target': '/path/to/save',
             'lastdump': '/path/to/latest',
             'timestamp': True,
+            'compression_level': 3,
         }
         self.datadiff(DumpTask.conf(), conf)
 

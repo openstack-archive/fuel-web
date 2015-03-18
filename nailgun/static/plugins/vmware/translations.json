@@ -18,7 +18,8 @@
                 "nova_computes": "Nova Computes",
                 "nova_compute": "Nova Compute Instance",
                 "has_errors": "VMware settings are invalid. For more information please visit the",
-                "tab_name": "VMware tab"
+                "tab_name": "VMware tab",
+                "duplicate_value": "Duplicate values are not allowed"
             }
         }
     }

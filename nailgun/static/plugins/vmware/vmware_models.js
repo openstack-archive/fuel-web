@@ -41,7 +41,7 @@ function($, _, i18n, Backbone, models) {
         return regexCache[regexText].test(value);
     }
 
-    var BaseModel = Backbone.Model.extend(models.restrictionMixin).extend({
+    var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.restrictionMixin).extend({
         constructorName: 'BaseModel',
         toJSON: function() {
             return _.omit(this.attributes, 'metadata');
@@ -97,7 +97,7 @@ function($, _, i18n, Backbone, models) {
         }
     });
 
-    var BaseCollection = Backbone.Collection.extend({
+    var BaseCollection = Backbone.Collection.extend(models.superMixin).extend({
         constructorName: 'BaseCollection',
         model: BaseModel,
         isValid: function() {
@@ -120,11 +120,36 @@ function($, _, i18n, Backbone, models) {
     });
 
     var Cinder = BaseModel.extend({constructorName: 'Cinder'});
-    var NovaCompute = BaseModel.extend({constructorName: 'NovaCompute'});
+    var NovaCompute = BaseModel.extend({
+        constructorName: 'NovaCompute',
+        checkDuplicateField: function(keys, fieldName) {
+            /*jshint validthis:true */
+            var fieldValue = this.get(fieldName);
+            if (fieldValue.length > 0 && keys[fieldName] && keys[fieldName][fieldValue]) {
+                this.validationError = this.validationError || {};
+                this.validationError[fieldName] = i18n('vmware.duplicate_value');
+            }
+            keys[fieldName] = keys[fieldName] || {};
+            keys[fieldName][fieldValue] = true;
+        },
+        checkDuplicates: function(keys) {
+            this.checkDuplicateField(keys, 'vsphere_cluster');
+            this.checkDuplicateField(keys, 'service_name');
+        }
+    });
 
     var NovaComputes = BaseCollection.extend({
         constructorName: 'NovaComputes',
-        model: NovaCompute
+        model: NovaCompute,
+        validate: function() {
+            this._super('validate', arguments);
+
+            var keys = {vsphere_clusters: {}, service_names: {}};
+            this.invoke('checkDuplicates', keys);
+
+            var errors = _.compact(_.pluck(this.models, 'validationError'));
+            return _.isEmpty(errors) ? null : errors;
+        }
     });
 
     var AvailabilityZone = BaseModel.extend({

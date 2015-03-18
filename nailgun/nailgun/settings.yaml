@@ -51,6 +51,7 @@ ADMIN_NETWORK:
   size: "256"
   first: "10.20.0.129"
   last: "10.20.0.254"
+  gateway: "127.0.0.1"
 
 # Check timeouts for offline-online nodes detection
 KEEPALIVE:

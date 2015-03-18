@@ -779,7 +779,7 @@ class NetworkManager(object):
         if interface_attrs.get('interface_properties'):
             interface.interface_properties = \
                 interface_attrs['interface_properties']
-        else:
+        elif not interface.interface_properties:
             # default values
             interface.interface_properties = {
                 'mtu': None,

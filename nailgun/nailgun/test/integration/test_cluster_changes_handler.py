@@ -1039,6 +1039,7 @@ class TestHandlers(BaseIntegrationTest):
                                 "IP": [ips['admin']],
                                 "other_nets":
                                 other_nets.get('fuelweb_admin', []),
+                                "gateway": "127.0.0.1",
                             },
                         },
                         "roles": {

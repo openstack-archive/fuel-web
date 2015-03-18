@@ -151,7 +151,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 hasChanges = this.hasChanges(),
                 allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
             return (
-                <div key={this.state.key} className={React.addons.classSet({'openstack-settings wrapper': true, 'changes-locked': locked})}>
+                <div key={this.state.key} className={utils.classNames({'openstack-settings wrapper': true, 'changes-locked': locked})}>
                     <h3>{i18n('cluster_page.settings_tab.title')}</h3>
                     {this.state.loading ?
                         <controls.ProgressBar />

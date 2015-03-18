@@ -19,8 +19,9 @@ define([
     'underscore',
     'i18n',
     'react',
+    'utils',
     'jsx!views/controls'
-], function($, _, i18n, React, controls) {
+], function($, _, i18n, React, utils, controls) {
     'use strict';
 
     var customControls = {};
@@ -119,7 +120,7 @@ define([
                 };
 
             return (
-                <div className={React.addons.classSet(classes)} key={this.state.key}>
+                <div className={utils.classNames(classes)} key={this.state.key}>
                     {this.props.description &&
                         <div className='custom-description parameter-description'>
                             {this.props.description}

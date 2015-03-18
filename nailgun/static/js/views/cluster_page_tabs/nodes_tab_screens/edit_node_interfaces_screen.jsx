@@ -31,8 +31,7 @@ define(
 function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins) {
     'use strict';
 
-    var cx = React.addons.classSet,
-        ScreenMixin, EditNodeInterfacesScreen, NodeInterface;
+    var ScreenMixin, EditNodeInterfacesScreen, NodeInterface;
 
     ScreenMixin = {
         goToNodeList: function() {
@@ -47,7 +46,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                utils.showDialog(dialogs.DiscardSettingsChangesDialog, {cb: _.bind(this.goToNodeList, this)});
+                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(this.goToNodeList, this)});
             } else {
                 this.goToNodeList();
             }
@@ -348,7 +347,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
 
             return (
                 <div className='edit-node-networks-screen' style={{display: 'block'}} ref='nodeNetworksScreen'>
-                    <div className={cx({'edit-node-interfaces': true, 'changes-locked': locked})}>
+                    <div className={utils.classNames({'edit-node-interfaces': true, 'changes-locked': locked})}>
                         <h3>
                             {i18n(configureInterfacesTransNS + 'title', {count: nodes.length, name: nodeNames.join(', ')})}
                         </h3>
@@ -579,7 +578,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             }
 
             return (
-                <div className={cx({'physical-network-box': true, nodrag: this.props.errors})}>
+                <div className={utils.classNames({'physical-network-box': true, nodrag: this.props.errors})}>
                     <div className='network-box-item'>
                         {ifc.isBond() &&
                             <div className='network-box-name'>
@@ -638,7 +637,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         <div className='network-connections-block'>
                             {_.map(slaveInterfaces, function(slaveInterface) {
                                 return <div key={'network-connections-slave-' + slaveInterface.get('name')} className='network-interfaces-status'>
-                                        <div className={cx(slaveOnlineClass(slaveInterface))}></div>
+                                        <div className={utils.classNames(slaveOnlineClass(slaveInterface))}></div>
                                         <div className='network-interfaces-name'>{slaveInterface.get('name')}</div>
                                     </div>;
                                 })
@@ -678,7 +677,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     },
                                     vlanRange = network.getVlanRange(networkingParameters);
 
-                                return <div key={'network-box-' + network.get('id')} className={cx(classes)}>
+                                return <div key={'network-box-' + network.get('id')} className={utils.classNames(classes)}>
                                         {_.map(networkGroup, function(interfaceNetwork) {
                                             return (
                                                 <div key={'interface-network-' + interfaceNetwork.get('name')}

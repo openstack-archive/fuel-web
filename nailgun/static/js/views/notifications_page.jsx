@@ -59,7 +59,7 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
             node.fetch();
-            utils.showDialog(dialogs.ShowNodeInfoDialog, {node: node});
+            dialogs.ShowNodeInfoDialog.show({node: node});
         },
         markAsRead: function() {
             var notification = this.props.notification;

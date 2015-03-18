@@ -199,7 +199,7 @@ define([
             return (
                 <div>
                     <div className='statistics-text-box'>
-                        <div className={React.addons.classSet({notice: isMirantisIso})}>{this.getText(ns + 'help_to_improve')}</div>
+                        <div className={utils.classNames({notice: isMirantisIso})}>{this.getText(ns + 'help_to_improve')}</div>
                         <button className="btn-link" onClick={this.toggleItemsList}>{i18n(ns + 'learn_whats_collected')}</button>
                         {this.state.showItems &&
                             <div className='statistics-disclaimer-box'>

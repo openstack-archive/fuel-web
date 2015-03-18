@@ -29,8 +29,6 @@ define(
 function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins, controls) {
     'use strict';
 
-    var cx = React.addons.classSet;
-
     var NetworkModelManipulationMixin = {
         setValue: function(attribute, value, options) {
             function convertToStringIfNaN(value) {
@@ -217,7 +215,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
 
             wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
             return (
-                <div className={cx(wrapperClasses)}>
+                <div className={utils.classNames(wrapperClasses)}>
                     {!this.props.hiddenHeader &&
                         <div className='range-row-header'>
                             <div>{i18n(ns + 'range_start')}</div>
@@ -422,7 +420,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 },
                 ns = 'cluster_page.network_tab.';
             return (
-                <div className={cx(classes)}>
+                <div className={utils.classNames(classes)}>
                     <h3>{i18n(ns + 'title')}</h3>
                     {this.state.loading ?
                         <controls.ProgressBar />

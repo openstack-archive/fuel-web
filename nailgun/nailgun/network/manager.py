@@ -1152,9 +1152,8 @@ class NetworkManager(object):
         all_nets = [(n.name, n.cidr)
                 for n in node.cluster.network_groups if n.cidr]
 
-        if node.group_id != objects.Cluster.get_default_group(node.cluster).id:
-            admin_net = cls.get_admin_network_group()
-            all_nets.append((admin_net.name, admin_net.cidr))
+        admin_net = cls.get_admin_network_group()
+        all_nets.append((admin_net.name, admin_net.cidr))
 
         other_nets = set(all_nets) ^ set(node_net)
         output = {}

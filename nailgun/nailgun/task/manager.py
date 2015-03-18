@@ -109,6 +109,13 @@ class ApplyChangesTaskManager(TaskManager):
             locked_tasks,
             name=consts.TASK_NAMES.deploy
         )
+        # locking cluster
+        objects.Cluster.get_by_uid(
+            self.cluster.id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
         for task in current_tasks:
             if task.status == consts.TASK_STATUSES.running:
                 db().commit()

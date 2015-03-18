@@ -15,6 +15,7 @@
  **/
 module.exports = function(grunt) {
     var pkg = grunt.file.readJSON('package.json');
+    var sha = grunt.file.read('../version.txt')
     var staticDir = grunt.option('static-dir') || '/tmp/static_compressed';
     var staticBuildPreparationDir = staticDir + '/_prepare_build';
     var staticBuildDir = staticDir + '/_build';
@@ -257,15 +258,8 @@ module.exports = function(grunt) {
                 dest: staticBuildDir + '/',
                 replacements: [{
                     from: '__COMMIT_SHA__',
-                    to: function() {
-                        return grunt.config.get('meta.revision');
-                    }
+                    to: sha
                 }]
-            }
-        },
-        revision: {
-            options: {
-                short: false
             }
         },
         jison: {
@@ -294,7 +288,6 @@ module.exports = function(grunt) {
         'requirejs',
         'clean:trim',
         'cleanempty:trim',
-        'revision',
         'replace',
         'copy:finalize_build',
         'clean:finalize_build'

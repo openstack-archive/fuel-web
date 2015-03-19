@@ -372,7 +372,8 @@ class DeletionTask(object):
         return remaining_nodes
 
     @classmethod
-    def execute(cls, task, nodes=None, respond_to='remove_nodes_resp'):
+    def execute(cls, task, nodes=None, respond_to='remove_nodes_resp',
+                method='remove_nodes'):
         logger.debug("DeletionTask.execute(task=%s, nodes=%s)",
                      task.uuid, nodes)
         task_uuid = task.uuid
@@ -420,7 +421,7 @@ class DeletionTask(object):
 
         msg_delete = make_astute_message(
             task,
-            'remove_nodes',
+            method,
             respond_to,
             {
                 'nodes': nodes_to_delete,

@@ -670,6 +670,7 @@ FAKE_THREADS = {
     'granular_deploy': FakeDeploymentThread,
     'deploy': FakeDeploymentThread,
     'remove_nodes': FakeDeletionThread,
+    'remove_nodes_w_check': FakeDeletionThread,
     'stop_deploy_task': FakeStopDeploymentThread,
     'reset_environment': FakeResetEnvironmentThread,
     'verify_networks': FakeVerificationThread,

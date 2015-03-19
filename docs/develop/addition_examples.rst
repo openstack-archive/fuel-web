@@ -135,7 +135,7 @@ modification of only two files in the fuel-main repository::
     bootstrap/module.mk
     requirements-rpm.txt
 
-.. note:: Any package specified in bootstrap building procedure
+.. note:: Any package specified in the bootstrap building procedure
     must be listed in the requirements-rpm.txt file explicitly.
     The Fuel mirrors must be rebuilt by the OSCI team prior to
     merging requests like this one.

@@ -160,6 +160,52 @@ Setup for Web UI Tests
     sudo apt-get install libfontconfig  #install missing package required by webui tests
     ./run_tests.sh --webui
 
+
+.. _running-parallel-tests-py:
+
+Running parallel tests with py.test
+-----------------------------------
+
+Now tests can be run over several processes
+in a distributed manner; each test is executed
+within an isolated database.
+
+Prerequisites
++++++++++++++
+
+- Nailgun user requires createdb permission.
+
+- Postgres database is used for initial connection.
+
+- If createdb cannot be granted for the environment,
+  then several databases should be created. The number of
+  databases should be equal to *TEST_WORKERS* variable.
+  The *createdb* permission
+  should have the following format: *nailgun0*, *nailgun1*.
+
+- If no *TEST_WORKERS* variable is provided, then a default
+  database name will be used. Often it is nailgun,
+  but you can overwrite it with *TEST_NAILGUN_DB*
+  environment variable.
+
+- To execute parallel tests on your local environment,
+  run the following command from *fuel-web/nailgun*:
+
+  ::
+
+       py.test -n 4 nailgun/test
+
+
+
+  You can also run the it from *fuel-web*:
+
+  ::
+
+
+     py.test -n 4 nailgun/nailgun/test
+
+
+
 .. _running-nailgun-in-fake-mode:
 
 Running Nailgun in Fake Mode
@@ -230,4 +276,16 @@ For fuel-devops configuration info please refer to
 
     dos.py list
     dos.py erase <env_name>
+
+
+Flushing database before/after running tests
+--------------------------------------------
+
+The database should be cleaned after running tests;
+before parallel tests were enabled,
+you could only run dropdb with *./run_tests.sh* script.
+
+Now you need to run dropdb for each slave node:
+the *py.test --cleandb <path to the tests>* command is introduced for this
+purpose.
 

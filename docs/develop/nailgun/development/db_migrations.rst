@@ -40,3 +40,4 @@ the migration file is called "current.py".
 
 For all additional features and needs, you may refer to Alembic documentation:
 http://alembic.readthedocs.org/en/latest/tutorial.html
+

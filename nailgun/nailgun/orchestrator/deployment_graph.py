@@ -15,6 +15,7 @@
 #    under the License.
 
 from collections import defaultdict
+from collections import OrderedDict
 
 import networkx as nx
 
@@ -46,6 +47,9 @@ class DeploymentGraph(nx.DiGraph):
     stage: direct dependency
     parameters: specific for each task type parameters
     """
+
+    node_dict_factory = OrderedDict
+    adjlist_dict_factory = OrderedDict
 
     def __init__(self, tasks=None, *args, **kwargs):
         super(DeploymentGraph, self).__init__(*args, **kwargs)

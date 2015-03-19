@@ -49,12 +49,14 @@ class ProvisioningSerializer(object):
                 serialized_nodes.extend(
                     cls.serialize_nodes(cluster_attrs, node_group))
         serialized_info = (cluster.replaced_provisioning_info or
-                           cls.serialize_cluster_info(cluster_attrs))
+                           cls.serialize_cluster_info(cluster_attrs, nodes))
+        serialized_info['fault_tolerance'] = cls.fault_tolerance(cluster,
+                                                                 nodes)
         serialized_info['nodes'] = serialized_nodes
         return serialized_info
 
     @classmethod
-    def serialize_cluster_info(cls, cluster_attrs):
+    def serialize_cluster_info(cls, cluster_attrs, nodes):
         return {
             'engine': {
                 'url': settings.COBBLER_URL,
@@ -227,6 +229,25 @@ class ProvisioningSerializer(object):
 
         logger.info(u'Node %s seems booted with real system', node.full_name)
         return settings.PATH_TO_SSH_KEY
+
+    @classmethod
+    def fault_tolerance(cls, cluster, nodes):
+        may_fail = []
+        roles_metadata = cluster.release.roles_metadata
+        for role in roles_metadata:
+            if 'fault_tolerance' in roles_metadata[role]:
+                tolerance = roles_metadata[role]['fault_tolerance']
+                # only percantage is supported for now
+                if not tolerance.endswith('%'):
+                    continue
+                percentage = tolerance[:-1]
+                uids = []
+                for node in nodes:
+                    if role in node.roles:
+                        uids.append(node.uid)
+                may_fail.append({'uids': uids,
+                                 'percentage': int(percentage)})
+        return may_fail
 
 
 class ProvisioningSerializer61(ProvisioningSerializer):

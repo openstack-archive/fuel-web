@@ -41,6 +41,7 @@
         description: "A compute node creates, manages and terminates virtual machine instances."
         limits:
           recommended: 1
+        fault_tolerance: "2%"
       cinder:
         # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
         name: "Storage - Cinder"

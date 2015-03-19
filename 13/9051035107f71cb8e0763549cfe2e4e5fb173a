@@ -1,0 +1,12 @@
+Verified+2: Jenkins
+Code-Review+1: Brianna Poulos <Brianna.Poulos@jhuapl.edu>
+Code-Review+2: Evgeniy L <eli@mirantis.com>
+Workflow+1: Evgeniy L <eli@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Irina <ipovolotskaya@mirantis.com>
+Code-Review+1: Evgeny Konstantinov <evkonstantinov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 19 Mar 2015 12:33:27 +0000
+Reviewed-on: https://review.openstack.org/161609
+Project: stackforge/fuel-web
+Branch: refs/heads/master

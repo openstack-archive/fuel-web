@@ -228,7 +228,8 @@ class ApplyChangesTaskManager(TaskManager):
             self._call_silently(
                 task_deletion,
                 tasks.DeletionTask,
-                tasks.DeletionTask.get_task_nodes_for_cluster(self.cluster))
+                tasks.DeletionTask.get_task_nodes_for_cluster(self.cluster),
+                pre_delete_check=True)
             # we should have task committed for processing in other threads
             db().commit()
 

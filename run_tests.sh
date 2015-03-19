@@ -23,8 +23,6 @@ function usage {
   echo "  -a, --agent                 Run FUEL_AGENT unit tests"
   echo "  -A, --no-agent              Don't run FUEL_AGENT unit tests"
   echo "  -h, --help                  Print this usage message"
-  echo "  -k, --tasklib               Run tasklib unit and functional tests"
-  echo "  -K, --no-tasklib            Don't run tasklib unit and functional tests"
   echo "  -l, --lint-ui               Run UI linting tasks"
   echo "  -L, --no-lint-ui            Don't run UI linting tasks"
   echo "  -n, --nailgun               Run NAILGUN unit/integration tests"
@@ -55,8 +53,6 @@ function process_options {
       -n|--nailgun) nailgun_tests=1;;
       -N|--no-nailgun) no_nailgun_tests=1;;
       -x|--performance) performance_tests=1;;
-      -k|--tasklib) tasklib_tests=1;;
-      -K|--no-tasklib) no_tasklib_tests=1;;
       -w|--webui) webui_tests=1;;
       -W|--no-webui) no_webui_tests=1;;
       -u|--upgrade) upgrade_system=1;;
@@ -117,8 +113,6 @@ no_flake8_checks=0
 lint_ui_checks=0
 no_lint_ui_checks=0
 certain_tests=0
-tasklib_tests=0
-no_tasklib_tests=0
 
 
 function run_tests {
@@ -146,7 +140,6 @@ function run_tests {
   if [[ $agent_tests -eq 0 && \
       $nailgun_tests -eq 0 && \
       $performance_tests -eq 0 && \
-      $tasklib_tests -eq 0 && \
       $webui_tests -eq 0 && \
       $upgrade_system -eq 0 && \
       $shotgun_tests -eq 0 && \
@@ -155,7 +148,6 @@ function run_tests {
 
     if [ $no_agent_tests -ne 1 ];  then agent_tests=1;  fi
     if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
-    if [ $no_tasklib_tests -ne 1 ];  then tasklib_tests=1;  fi
     if [ $no_webui_tests -ne 1 ];    then webui_tests=1;    fi
     if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
     if [ $no_shotgun_tests -ne 1 ];  then shotgun_tests=1;  fi
@@ -177,11 +169,6 @@ function run_tests {
   if [ $nailgun_tests -eq 1 ] || [ $performance_tests -eq 1 ]; then
     echo "Starting Nailgun tests..."
     run_nailgun_tests || errors+=" nailgun_tests"
-  fi
-
-  if [ $tasklib_tests -eq 1 ]; then
-    echo "Starting Tasklib tests"
-    run_tasklib_tests || errors+=" tasklib tests"
   fi
 
   if [ $webui_tests -eq 1 ]; then
@@ -380,18 +367,6 @@ function run_shotgun_tests {
   return $result
 }
 
-function run_tasklib_tests {
-  local result=0
-
-  pushd $ROOT/tasklib >> /dev/null
-
-  # run tests
-  tox -epy26 || result=1
-
-  popd >> /dev/null
-
-  return $result
-}
 
 function run_flake8_subproject {
   local DIRECTORY=$1
@@ -414,7 +389,6 @@ function run_flake8 {
   local result=0
   run_flake8_subproject fuel_agent && \
   run_flake8_subproject nailgun && \
-  run_flake8_subproject tasklib && \
   run_flake8_subproject fuelmenu && \
   run_flake8_subproject network_checker && \
   run_flake8_subproject fuel_upgrade_system/fuel_upgrade && \

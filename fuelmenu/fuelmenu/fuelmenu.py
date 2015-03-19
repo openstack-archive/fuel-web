@@ -166,7 +166,7 @@ class FuelSetup(object):
     def getVersion(self, versionfile):
         try:
             versiondata = Settings().read(versionfile)
-            return versiondata['release']
+            return versiondata['VERSION']['release']
         except (IOError, KeyError):
             log.error("Unable to set Fuel version from %s" % versionfile)
             return ""

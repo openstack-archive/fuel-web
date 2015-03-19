@@ -36,34 +36,38 @@ class BasePluginDeploymentHooksSerializer(object):
 
     def deployment_tasks(self, plugins, stage):
         tasks = []
+        sorted_plugins = sorted(plugins, key=lambda p: p.plugin.name)
 
-        for plugin in plugins:
-            plugin_tasks = filter(
-                lambda t: (t['stage'] == stage),
-                plugin.tasks)
+        plugin_tasks = []
+        for plugin in sorted_plugins:
+            plugin_tasks.extend(filter(
+                lambda t: t['stage'].startswith(stage),
+                plugin.tasks))
 
-            for task in plugin_tasks:
-                uids = get_uids_for_roles(self.nodes, task['role'])
-                if not uids:
-                    continue
-                if task['type'] == 'shell':
-                    tasks.append(self.serialize_task(
-                        plugin, task,
-                        templates.make_shell_task(
-                            uids, task, plugin.slaves_scripts_path)))
-                elif task['type'] == 'puppet':
-                    tasks.append(self.serialize_task(
-                        plugin, task,
-                        templates.make_puppet_task(
-                            uids, task, plugin.slaves_scripts_path)))
-                elif task['type'] == 'reboot':
-                    tasks.append(self.serialize_task(
-                        plugin, task,
-                        templates.make_reboot_task(
-                            uids, task)))
-                else:
-                    logger.warn('Task is skipped {0}, because its type is '
-                                'not supported').format(task)
+        sorted_tasks = self._sort_by_stage_postfix(plugin_tasks)
+
+        for task in sorted_tasks:
+            uids = get_uids_for_roles(self.nodes, task['role'])
+            if not uids:
+                continue
+            if task['type'] == 'shell':
+                tasks.append(self.serialize_task(
+                    plugin, task,
+                    templates.make_shell_task(
+                        uids, task, plugin.slaves_scripts_path)))
+            elif task['type'] == 'puppet':
+                tasks.append(self.serialize_task(
+                    plugin, task,
+                    templates.make_puppet_task(
+                        uids, task, plugin.slaves_scripts_path)))
+            elif task['type'] == 'reboot':
+                tasks.append(self.serialize_task(
+                    plugin, task,
+                    templates.make_reboot_task(
+                        uids, task)))
+            else:
+                logger.warn('Task is skipped {0}, because its type is '
+                            'not supported').format(task)
 
         return tasks
 
@@ -74,6 +78,36 @@ class BasePluginDeploymentHooksSerializer(object):
     def get_default_parameters(self, plugin, task_defaults):
         return {'fail_on_error': task_defaults.get('fail_on_error', True),
                 'diagnostic_name': plugin.full_name}
+
+    def _sort_by_stage_postfix(self, tasks):
+        """Sorts tasks in the correct order by task postfixes,
+        for example here are several tasks' stages:
+
+        stage: post_deployment/100
+        stage: post_deployment
+        stage: post_deployment/-100
+
+        The method returns tasks in the next order
+
+        stage: post_deployment/-100
+        stage: post_deployment # because by default postifx is 0
+        stage: post_deployment/100
+        """
+        def postfix(task):
+            stage_list = task['stage'].split('/')
+            postfix = stage_list[-1] if len(stage_list) > 1 else 0
+
+            try:
+                postfix = float(postfix)
+            except ValueError:
+                logger.warn(
+                    'Task %s has non numeric postfix "%s", set to 0',
+                    task, postfix)
+                postfix = 0
+
+            return postfix
+
+        return sorted(tasks, key=postfix)
 
 
 class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):

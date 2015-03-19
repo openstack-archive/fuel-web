@@ -228,12 +228,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 release = cluster.get('release'),
                 availableTabs = this.getAvailableTabs(),
                 tabs = _.pluck(availableTabs, 'url'),
-                tabObject = _.find(availableTabs, {url: this.props.activeTab});
-            if (!tabObject) return null;
-            var TabConstructor = tabObject.tab,
-                tab = <TabConstructor ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} />;
+                tab = _.find(availableTabs, {url: this.props.activeTab});
+            if (!tab) return null;
+            var Tab = tab.tab;
+
             return (
-                <div>
+                <div key={cluster.id}>
                     <ClusterInfo cluster={cluster} />
                     <DeploymentResult cluster={cluster} />
                     {release.get('state') == 'unavailable' &&
@@ -264,11 +264,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             />
                         </ul>
                         <div className='tab-content'>
-                            {tabs.map(function(url) {
-                                return <div key={url} className={utils.classNames({'tab-pane': true, active: this.props.activeTab == url})} id={'tab-' + url}>
-                                    {this.props.activeTab == url && tab}
-                                </div>;
-                            }, this)}
+                            <div key={tab.url + cluster.id} id={'tab-' + tab.url} className='tab-pane active'>
+                                <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} />
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -405,7 +405,8 @@ class DeletionTask(object):
         return remaining_nodes
 
     @classmethod
-    def execute(cls, task, nodes=None, respond_to='remove_nodes_resp'):
+    def execute(cls, task, nodes=None, respond_to='remove_nodes_resp',
+                check_ceph=False):
         logger.debug("DeletionTask.execute(task=%s, nodes=%s)",
                      task.uuid, nodes)
         task_uuid = task.uuid
@@ -457,6 +458,7 @@ class DeletionTask(object):
             respond_to,
             {
                 'nodes': nodes_to_delete,
+                'check_ceph': check_ceph,
                 'engine': {
                     'url': settings.COBBLER_URL,
                     'username': settings.COBBLER_USER,

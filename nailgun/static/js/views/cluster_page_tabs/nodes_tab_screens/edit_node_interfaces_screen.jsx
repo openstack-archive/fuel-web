@@ -231,9 +231,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         isLocked: function() {
             var hasLockedNodes = this.props.nodes.any(function(node) {
-                return !(node.get('pending_addition') ||
-                    node.get('status') == 'ready' ||
-                    node.get('status') == 'error');
+                return !node.get('pending_addition') || _.contains(['ready', 'error'], node.get('status'));
             });
             return hasLockedNodes || this.isLockedScreen();
         },

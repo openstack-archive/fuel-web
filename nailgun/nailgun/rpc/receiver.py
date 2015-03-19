@@ -229,13 +229,27 @@ class NailgunReceiver(object):
         if not status:
             status = task.status
 
-        # lock nodes for updating so they can't be deleted
-        q_nodes = objects.NodeCollection.filter_by_id_list(
-            None,
-            [n['uid'] for n in nodes],
-        )
-        q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
-        objects.NodeCollection.lock_for_update(q_nodes).all()
+        # for deployment we need just to pop
+        master = next((
+            n for n in nodes if n['uid'] == consts.MASTER_ROLE), {})
+
+        # we should remove master node from the nodes since it requires
+        # special handling and won't work with old code
+        if master:
+            nodes.remove(master)
+
+        # if there no node except master - then just skip updating
+        # nodes status, for the task itself astute will send
+        # message with descriptive error
+        if nodes:
+
+            # lock nodes for updating so they can't be deleted
+            q_nodes = objects.NodeCollection.filter_by_id_list(
+                None,
+                [n['uid'] for n in nodes],
+            )
+            q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+            objects.NodeCollection.lock_for_update(q_nodes).all()
 
         # First of all, let's update nodes in database
         for node in nodes:
@@ -290,10 +304,14 @@ class NailgunReceiver(object):
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)
 
+        # full error will be provided in next asute message
+        if master.get('status') == consts.TASK_STATUSES.error:
+            status = consts.TASK_STATUSES.error
+
         # Let's check the whole task status
-        if status in ('error',):
+        if status in (consts.TASK_STATUSES.error,):
             cls._error_action(task, status, progress, message)
-        elif status in ('ready',):
+        elif status in (consts.TASK_STATUSES.ready,):
             cls._success_action(task, status, progress)
         else:
             data = {'status': status, 'progress': progress, 'message': message}
@@ -327,10 +345,10 @@ class NailgunReceiver(object):
         # we should remove master node from the nodes since it requires
         # special handling and won't work with old code
         if master:
-            nodes.pop(nodes.index(master))
+            nodes.remove(master)
 
-        if master.get('status') == 'error':
-            status = 'error'
+        if master.get('status') == consts.TASK_STATUSES.error:
+            status = consts.TASK_STATUSES.error
             progress = 100
 
         # lock nodes for updating
@@ -348,8 +366,8 @@ class NailgunReceiver(object):
                 logger.warn('Node with uid "{0}" not found'.format(uid))
                 continue
 
-            if node.get('status') == 'error':
-                node_db.status = 'error'
+            if node.get('status') == consts.TASK_STATUSES.error:
+                node_db.status = consts.TASK_STATUSES.error
                 node_db.progress = 100
                 node_db.error_type = 'provision'
                 node_db.error_msg = node.get('error_msg', 'Unknown error')

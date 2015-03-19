@@ -21,7 +21,17 @@ from nailgun import objects
 from nailgun.test import base
 
 
-class TestRoleApi(base.BaseIntegrationTest):
+class BaseRoleTest(base.BaseIntegrationTest):
+
+    ROLE = ""
+
+    def setUp(self):
+        super(BaseRoleTest, self).setUp()
+        self.release = self.env.create_release()
+        self.role_data = yaml.load(self.ROLE)
+
+
+class TestRoleApi(BaseRoleTest):
 
     ROLE = """
     name: my_role
@@ -32,12 +42,6 @@ class TestRoleApi(base.BaseIntegrationTest):
         - id: os
           allocate_size: all
     """
-
-    def setUp(self):
-        super(TestRoleApi, self).setUp()
-        self.release = self.env.create_release()
-        self.role_data = yaml.load(self.ROLE)
-        self.role_data['release_id'] = self.release.id
 
     def test_get_all_roles(self):
 
@@ -96,3 +100,53 @@ class TestRoleApi(base.BaseIntegrationTest):
         delete_resp = self.env.delete_role(
             self.release.id, role['name'], expect_errors=True)
         self.assertEqual(delete_resp.status_code, 400)
+
+    def test_get_role(self):
+        self.env.create_role(self.release.id, self.role_data)
+        role = self.env.get_role(self.release.id, self.role_data['name'])
+
+        self.assertEqual(role.status_code, 200)
+        self.assertEqual(role.json['name'], self.role_data['name'])
+
+    def test_create_role_with_numbers(self):
+        self.role_data['name'] = '1234'
+        resp = self.env.create_role(
+            self.release.id, self.role_data, expect_errors=True)
+
+        self.assertEqual(resp.status_code, 400)
+
+
+class TestFullDataRole(BaseRoleTest):
+
+    ROLE = """
+---
+name: new_controller
+meta:
+    name: "Controller"
+    description: "The controller initiates orchestration activities."
+    conflicts:
+      - compute
+    update_required:
+      - compute
+      - cinder
+    has_primary: true
+    limits:
+      min: 1
+      overrides:
+        - condition: "cluster:mode == 'multinode'"
+          max: 1
+          message: "Multi-node environment can not have more."
+    restrictions:
+        - "cluster:mode == 'multinode'"
+        - multinode: true
+        - condition: "cluster:mode == 'multinode'"
+          action: hide
+          message: "Multi-node environment can not have more."
+volumes_roles_mapping:
+    - id: os
+      allocate_size: all
+"""
+
+    def test_create_role(self):
+        resp = self.env.create_role(self.release.id, self.role_data)
+        self.assertEqual(resp.json['meta'], self.role_data['meta'])

@@ -509,6 +509,26 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
     @fake_tasks()
+    @mock.patch.object(DeletionTask, 'execute')
+    def test_deletion_task_w_pre_delete_check(self, mdeletion_execute):
+        cluster = self.env.create_cluster()
+        cluster_id = cluster['id']
+        node_db = self.env.create_node(
+            api=False,
+            cluster_id=cluster['id'],
+            pending_addition=False,
+            pending_deletion=True,
+            status=NODE_STATUSES.ready,
+            roles=['controller'])
+
+        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        manager_.execute()
+
+        self.assertEqual(mdeletion_execute.call_count, 1)
+        _, kwargs = mdeletion_execute.call_args
+        self.assertEqual(kwargs['pre_delete_check'], True)
+
+    @fake_tasks()
     def test_no_changes_no_cry(self):
         self.env.create(
             nodes_kwargs=[

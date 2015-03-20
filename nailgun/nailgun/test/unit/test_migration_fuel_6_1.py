@@ -16,6 +16,7 @@
 from oslo.serialization import jsonutils
 import sqlalchemy as sa
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.test import base
 
@@ -51,7 +52,7 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
             }])
         releaseid = result.inserted_primary_key[0]
 
-        result = db.execute(
+        db.execute(
             meta.tables['release_orchestrator_data'].insert(),
             [{
                 'release_id': releaseid,
@@ -84,7 +85,26 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
                 'generated': '{}',
             }])
 
+        cls.ip_addr_to_check = '192.168.0.2'
+        db.execute(
+            meta.tables['ip_addrs'].insert(),
+            [{
+                'ip_addr': cls.ip_addr_to_check,
+            }])
+
         db.commit()
+
+    def test_vip_type_in_ip_addrs(self):
+        meta = sa.MetaData()
+        meta.reflect(bind=db.get_bind())
+        self.assertIn('vip_type', meta.tables['ip_addrs'].c)
+
+        ip_addrs_table = meta.tables['ip_addrs']
+        ip_addr = db.execute(
+            sa.select([ip_addrs_table.c.vip_type]).where(
+                ip_addrs_table.c.ip_addr == self.ip_addr_to_check)
+        ).first()
+        self.assertEqual(ip_addr[0], consts.NETWORK_VIP_TYPES.haproxy)
 
     def test_release_orchestrator_data_table_is_removed(self):
         meta = sa.MetaData()

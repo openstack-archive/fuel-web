@@ -20,6 +20,8 @@ import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 
+from nailgun import consts
+from nailgun.db.sqlalchemy import models
 from nailgun.settings import settings
 
 
@@ -439,6 +441,18 @@ def upgrade_role_restrictions_6_0_to_6_1(roles_meta, _new_role_restrictions):
             role_definition['restrictions'] = _new_role_restrictions[role_name]
 
     return roles_meta
+
+
+def upgrade_vip_types_6_0_to_6_1(connection):
+    session = sa.orm.Session(bind=connection)
+
+    for ipaddr in session.query(models.IPAddr):
+        if ipaddr.node:
+            ipaddr.vip_type = None
+        else:
+            ipaddr.vip_type = consts.NETWORK_VIP_TYPES.haproxy
+
+    session.commit()
 
 
 def upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection):

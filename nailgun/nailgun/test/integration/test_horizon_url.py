@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -49,7 +50,7 @@ class TestHorizonURL(BaseIntegrationTest):
         lost_ips = self.db.query(IPAddr).filter_by(
             network=network.id,
             node=None,
-            vip_type=None
+            vip_type=consts.NETWORK_VIP_TYPES.haproxy,
         ).all()
         self.assertEqual(len(lost_ips), 1)
 

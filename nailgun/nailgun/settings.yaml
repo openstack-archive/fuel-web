@@ -104,12 +104,12 @@ STATS_ENABLE_CHECK_INTERVAL: 300
 
 # polling interval for OSWL collectors (in sec.)
 OSWL_COLLECTORS_POLLING_INTERVAL:
-  vm: 300
-  flavor: 300
-  image: 300
-  volume: 300
-  tenant: 300
-  keystone_user: 300
+  vm: 900
+  flavor: 900
+  image: 900
+  volume: 900
+  tenant: 900
+  keystone_user: 900
 
 # Action log send records per request
 STATS_SEND_COUNT: 100

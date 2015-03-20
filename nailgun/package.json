@@ -6,6 +6,7 @@
     "url": "https://github.com/stackforge/fuel-web.git"
   },
   "devDependencies": {
+    "casperjs": "~1.1.0-beta3",
     "esprima-fb": "~8001.2001.0-dev-harmony-fb",
     "grunt": "~0.4.2",
     "grunt-bower-task": "~0.4.0",

@@ -136,6 +136,7 @@ Setup for Web UI Tests
 
     sudo apt-get remove nodejs nodejs-legacy
     sudo apt-get install software-properties-common
+    sudo apt-get install libfontconfig # missing package required by phantomjs
     sudo add-apt-repository ppa:chris-lea/node.js
     sudo apt-get update
     sudo apt-get install nodejs
@@ -143,21 +144,11 @@ Setup for Web UI Tests
     cd nailgun
     npm install
 
-#. Install CasperJS::
-
-    sudo npm install -g phantomjs
-    cd ~
-    git clone git://github.com/n1k0/casperjs.git
-    cd casperjs
-    git checkout tags/1.0.0-RC4
-    sudo ln -sf `pwd`/bin/casperjs /usr/local/bin/casperjs
-
 #. Run full Web UI test suite (this will wipe your Nailgun database in
    PostgreSQL)::
 
     cd fuel-web
     ./run_tests.sh --lint-ui
-    sudo apt-get install libfontconfig  #install missing package required by webui tests
     ./run_tests.sh --webui
 
 .. _running-nailgun-in-fake-mode:

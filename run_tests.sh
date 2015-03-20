@@ -79,7 +79,7 @@ ROOT=$(dirname `readlink -f $0`)
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
-CASPERJS="casperjs"
+CASPERJS="./node_modules/casperjs/bin/casperjs"
 LINTUI="grunt lint-ui"
 
 # test options

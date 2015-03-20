@@ -13,7 +13,17 @@
 #    under the License.
 
 from nailgun.api.v1.validators.json_schema import base_types
+from nailgun import consts
 
+
+VIPS = {
+    'type': 'array',
+    'uniqueItems': True,
+    'items': {
+        'type': "string",
+        'enum': list(consts.NETWORK_VIP_TYPES),
+    },
+}
 
 NETWORK = {
     'type': 'object',
@@ -30,8 +40,7 @@ NETWORK = {
         'configurable': {'type': 'boolean'},
         'floating_range_var': {'type': 'string'},
         'ext_net_data': {'type': 'array'},
-        'assign_vip': {'type': 'boolean'},
-        'assign_vrouter_vip': {'type': 'boolean'}
+        'vips': VIPS,
     },
     'required': ['name']
 }

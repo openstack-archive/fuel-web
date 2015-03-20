@@ -17,6 +17,7 @@ import alembic
 from oslo.serialization import jsonutils
 import sqlalchemy as sa
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -63,7 +64,23 @@ def prepare():
                     'cobbler': {'profile': {
                         'generator_arg': 'ubuntu_1204_x86_64'}}},
             }),
-            'networks_metadata': '{}',
+            'networks_metadata': jsonutils.dumps({
+                'neutron': {
+                    'networks': [
+                        {
+                            'assign_vip': True,
+                        },
+                    ]
+                },
+                'nova_network': {
+                    'networks': [
+                        {
+                            'assign_vip': False,
+                        },
+                    ]
+                },
+
+            }),
             'is_deployable': True,
         }])
     releaseid = result.inserted_primary_key[0]
@@ -101,7 +118,43 @@ def prepare():
             'generated': '{"cobbler": {"profile": "ubuntu_1204_x86_64"}}',
         }])
 
+    db.execute(
+        meta.tables['ip_addrs'].insert(),
+        [{
+            'ip_addr': '192.168.0.2',
+        }])
+
     db.commit()
+
+
+class TestVipTypesMigration(base.BaseAlembicMigrationTest):
+
+    def test_vip_type_in_ip_addrs(self):
+        ip_addrs_table = self.meta.tables['ip_addrs']
+        self.assertIn('vip_type', ip_addrs_table.c)
+
+        ip_addr = db.execute(
+            sa.select([ip_addrs_table.c.vip_type]).where(
+                ip_addrs_table.c.ip_addr == '192.168.0.2')
+        ).first()
+        self.assertEqual(ip_addr[0], consts.NETWORK_VIP_TYPES.haproxy)
+
+    def test_vip_type_in_releases(self):
+        releases_table = self.meta.tables['releases']
+
+        networks_meta = jsonutils.loads(
+            db.execute(
+                sa.select([releases_table.c.networks_metadata])
+            ).fetchone()[0]
+        )
+        neutron = networks_meta['neutron']['networks'][0]
+        self.assertItemsEqual(
+            neutron.get('vips'),
+            list(consts.NETWORK_VIP_TYPES)
+        )
+
+        nova_network = networks_meta['nova_network']['networks'][0]
+        self.assertIsNone(nova_network.get('vips'))
 
 
 class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):

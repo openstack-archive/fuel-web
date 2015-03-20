@@ -41,7 +41,8 @@ class TestAttributes(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self._compare_editable(
             release.attributes_metadata['editable'],
-            resp.json_body['editable']
+            resp.json_body['editable'],
+            cluster_db
         )
         attrs = objects.Cluster.get_attributes(cluster_db)
         self._compare_generated(
@@ -162,7 +163,8 @@ class TestAttributes(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self._compare_editable(
             release.attributes_metadata['editable'],
-            resp.json_body['editable']
+            resp.json_body['editable'],
+            self.env.clusters[0]
         )
 
     def test_attributes_set_defaults(self):
@@ -197,7 +199,8 @@ class TestAttributes(BaseIntegrationTest):
         )
         self._compare_editable(
             release.attributes_metadata['editable'],
-            resp.json_body['editable']
+            resp.json_body['editable'],
+            cluster_db
         )
 
     def test_attributes_merged_values(self):
@@ -238,21 +241,40 @@ class TestAttributes(BaseIntegrationTest):
                     d1.format(settings=settings, cluster=cluster),
                     d2.format(settings=settings, cluster=cluster))
 
-    def _compare_editable(self, r_attrs, c_attrs):
+    def _compare_editable(self, r_attrs, c_attrs, cluster=None):
         """Compare editable attributes omitting the check of generated values
 
         :param r_attrs: attributes from release
         :param c_attrs: attributes from cluster
         """
+        # TODO(ikalnitsky):
+        # This code should be rewritten completely. We have to use one
+        # function for comparing both generated and editable attributes.
+        # Moreover, I'm not sure we have keep that code, since it duplicated
+        # traverse function in many cases.
         if isinstance(r_attrs, dict) and isinstance(c_attrs, dict):
             for s_field, s_value in six.iteritems(r_attrs):
                 if s_field not in c_attrs:
                     self.fail("'{0}' not found in '{1}'".format(s_field,
                                                                 c_attrs))
-                self._compare_editable(s_value, c_attrs[s_field])
+                if s_field != 'regex':
+                    self._compare_editable(s_value, c_attrs[s_field], cluster)
+                else:
+                    self.assertEqual(s_value, c_attrs[s_field])
+        elif isinstance(r_attrs, (list, tuple)) and \
+                isinstance(c_attrs, (list, tuple)):
+            if len(r_attrs) != len(c_attrs):
+                self.fail('Different number of elements: {0} vs {1}'.format(
+                    c_attrs, r_attrs))
+            for index in range(0, len(r_attrs)):
+                self._compare_editable(r_attrs[index], c_attrs[index], cluster)
         elif isinstance(c_attrs, six.string_types) and \
                 isinstance(r_attrs, dict):
             self.assertIn("generator", r_attrs)
+        elif isinstance(c_attrs, six.string_types) and \
+                isinstance(r_attrs, six.string_types):
+            self.assertEqual(
+                c_attrs, r_attrs.format(settings=settings, cluster=cluster))
         else:
             self.assertEqual(c_attrs, r_attrs)
 

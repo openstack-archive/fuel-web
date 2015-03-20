@@ -1409,7 +1409,6 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
                 attrs['use_cinder'] = True
 
         self.set_storage_parameters(cluster, attrs)
-        self.set_primary_mongo(attrs['nodes'])
 
         net_serializer = self.get_net_provider_serializer(cluster)
         net_common_attrs = net_serializer.get_common_attrs(cluster, attrs)
@@ -1503,7 +1502,6 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         for node in nodes:
             for role in objects.Node.all_roles(node):
                 serialized_nodes.append(self.serialize_node(node, role))
-        self.set_primary_mongo(serialized_nodes)
         return serialized_nodes
 
     def serialize_node(self, node, role):
@@ -1581,30 +1579,6 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             return cls.nova_network_serializer
         else:
             return cls.neutron_network_serializer
-
-    def set_primary_node(self, nodes, role, primary_node_index):
-        """Set primary node for role if it not set yet.
-        primary_node_index defines primary node position in nodes list
-        """
-        sorted_nodes = sorted(
-            nodes, key=lambda node: int(node['uid']))
-
-        primary_role = 'primary-{0}'.format(role)
-        primary_node = self.filter_by_roles(
-            sorted_nodes, [primary_role])
-        if primary_node:
-            return
-
-        result_nodes = self.filter_by_roles(
-            sorted_nodes, [role])
-        if result_nodes:
-            result_nodes[primary_node_index]['role'] = primary_role
-
-    def set_primary_mongo(self, nodes):
-        """Set primary mongo for the last mongo node
-        node if it not set yet
-        """
-        self.set_primary_node(nodes, 'mongo', 0)
 
     def filter_by_roles(self, nodes, roles):
         return filter(

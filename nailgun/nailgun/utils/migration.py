@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from itertools import chain
 import re
 
 from alembic import op
@@ -20,6 +21,8 @@ import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 
+from nailgun import consts
+from nailgun.db.sqlalchemy import models
 from nailgun.settings import settings
 
 
@@ -446,6 +449,26 @@ def upgrade_role_restrictions_6_0_to_6_1(roles_meta, _new_role_restrictions):
     return roles_meta
 
 
+def upgrade_vip_types_6_0_to_6_1(connection):
+    session = sa.orm.Session(bind=connection)
+
+    for ipaddr in session.query(models.IPAddr):
+        if ipaddr.node:
+            ipaddr.vip_type = None
+        else:
+            ipaddr.vip_type = consts.NETWORK_VIP_TYPES.haproxy
+
+    session.commit()
+
+
+def downgrade_vip_types_6_1_to_6_0(connection):
+    session = sa.orm.Session(bind=connection)
+    session.query(models.IPAddr).filter(
+        models.IPAddr.vip_type != consts.NETWORK_VIP_TYPES.haproxy,
+        models.IPAddr.node is None).delete()
+    session.commit()
+
+
 def upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection):
     """In Fuel 6.0 we had plugin version in cluster attributes
     to identify which plugin should be enabled or disabled.
@@ -508,6 +531,14 @@ def upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection):
 
 def upgrade_networks_metadata_to_6_1(networks_meta, _bonding_metadata):
     networks_meta['bonding'] = _bonding_metadata
+
+    nets = [k for k, v in six.iteritems(networks_meta) if v.get('networks')]
+    for network in chain(*[networks_meta[net]['networks'] for net in nets]):
+        if network.get('assign_vip'):
+            network['vips'] = [consts.NETWORK_VIP_TYPES.haproxy,
+                               consts.NETWORK_VIP_TYPES.vrouter]
+        del network['assign_vip']
+
     return networks_meta
 
 

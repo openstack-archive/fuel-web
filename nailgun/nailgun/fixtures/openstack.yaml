@@ -77,6 +77,7 @@
         conflicts:
           - compute
           - ceph-osd
+        has_primary: true
         limits:
           min: 1
           overrides:

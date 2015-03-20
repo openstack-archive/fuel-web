@@ -22,6 +22,7 @@ from oslo.serialization import jsonutils
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
+from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -409,6 +410,65 @@ class TestNodeHandlers(BaseIntegrationTest):
         self.env.create_node(api=True, meta=meta, mac=macs[0],
                              cluster_id=cluster['id'],
                              expect_http=409)
+
+
+class TestNodeNICsSerialization(BaseIntegrationTest):
+
+    versions = [('2014.1', False),
+                ('2014.1.1-5.0.1', False),
+                ('2014.1.1-5.1', False),
+                ('2014.1.1-5.1.1', False),
+                ('2014.2-6.0', False),
+                ('2014.2-6.0.1', False),
+                ('2014.2-6.1', True)]
+
+    def test_interface_properties_in_default_nic_information(self):
+        for ver, present in self.versions:
+            self.env.create(
+                release_kwargs={'version': ver},
+                nodes_kwargs=[
+                    {'roles': ['controller'],
+                     'pending_addition': True,
+                     'api': True}
+                ]
+            )
+            node = self.env.nodes[0]
+            resp = self.app.get(
+                reverse('NodeNICsDefaultHandler',
+                        kwargs={'node_id': node.id}),
+                headers=self.default_headers
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual('interface_properties' in resp.json_body[0],
+                             present)
+            objects.Node.delete(node)
+            objects.Cluster.delete(self.env.clusters[0])
+            self.env.nodes = []
+            self.env.clusters = []
+
+    def test_interface_properties_in_current_nic_information(self):
+        for ver, present in self.versions:
+            self.env.create(
+                release_kwargs={'version': ver},
+                nodes_kwargs=[
+                    {'roles': ['controller'],
+                     'pending_addition': True,
+                     'api': True}
+                ]
+            )
+            node = self.env.nodes[0]
+            resp = self.app.get(
+                reverse('NodeNICsHandler',
+                        kwargs={'node_id': node.id}),
+                headers=self.default_headers
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual('interface_properties' in resp.json_body[0],
+                             present)
+            objects.Node.delete(node)
+            objects.Cluster.delete(self.env.clusters[0])
+            self.env.nodes = []
+            self.env.clusters = []
 
 
 class TestNodeNICAdminAssigning(BaseIntegrationTest):

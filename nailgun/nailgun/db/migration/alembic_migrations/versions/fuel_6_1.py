@@ -31,6 +31,7 @@ import sqlalchemy as sa
 from sqlalchemy.sql import text
 
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import downgrade_vip_types_6_1_to_6_0
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import move_orchestrator_data_to_attributes
 from nailgun.utils.migration import \
@@ -43,6 +44,7 @@ from nailgun.utils.migration import upgrade_networks_metadata_to_6_1
 from nailgun.utils.migration import upgrade_role_limits_6_0_to_6_1
 from nailgun.utils.migration import upgrade_role_restrictions_6_0_to_6_1
 from nailgun.utils.migration import upgrade_ubuntu_cobbler_profile_6_0_to_6_1
+from nailgun.utils.migration import upgrade_vip_types_6_0_to_6_1
 
 
 release_states_old = (
@@ -125,7 +127,7 @@ def downgrade():
 def upgrade_schema():
     connection = op.get_bind()
 
-    vrouter_enum = sa.Enum('vrouter',
+    vrouter_enum = sa.Enum('haproxy', 'vrouter',
                            name='network_vip_types')
     vrouter_enum.create(op.get_bind(), checkfirst=False)
 
@@ -422,6 +424,7 @@ def upgrade_data():
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)
     upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection)
     upgrade_cluster_attributes_6_0_to_6_1(connection)
+    upgrade_vip_types_6_0_to_6_1(connection)
 
 
 def downgrade_data():
@@ -430,6 +433,8 @@ def downgrade_data():
         """DELETE FROM cluster_changes
         WHERE name = 'vmware_attributes'""")
     connection.execute(delete)
+
+    downgrade_vip_types_6_1_to_6_0()
 
 
 def upgrade_master_node_settings(connection):

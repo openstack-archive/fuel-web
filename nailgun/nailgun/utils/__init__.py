@@ -51,31 +51,40 @@ def traverse(data, generator_class, formatter_context=None):
     :param formatter_context: a dict to be passed into .format() for strings
     :returns: a dict with traversed data
     """
-    rv = {}
 
-    for key, value in six.iteritems(data):
-        # if value should be generated then generate it
-        if isinstance(value, collections.Mapping) and 'generator' in value:
-            try:
-                generator = getattr(generator_class, value["generator"])
-                rv[key] = generator(value.get("generator_arg"))
-            except AttributeError:
-                logger.error("Attribute error: %s", value["generator"])
-                raise
+    # if data should be generated then generate it
+    if isinstance(data, collections.Mapping) and 'generator' in data:
+         try:
+             generator = getattr(generator_class, data['generator'])
+             return generator(data.get('generator_arg'))
+         except AttributeError:
+             logger.error('Attribute error: %s', data['generator'])
+             raise
 
-        # we want to traverse in all levels, so dive in child mappings
-        elif isinstance(value, collections.Mapping) and key != 'regex':
-            rv[key] = traverse(value, generator_class, formatter_context)
+    # we want to traverse in all levels, so dive in child mappings
+    elif isinstance(data, collections.Mapping):
+        rv = {}
+        for key, value in six.iteritems(data):
+            # NOTE(ikalnitsky): regex node has python's formatting symbols,
+            # so it fails if we try to format them. as a workaround, we
+            # can skip them and do copy as is.
+            if key != 'regex':
+                rv[key] = traverse(value, generator_class, formatter_context)
+            else:
+                rv[key] = value
+        return rv
 
-        # format all strings with "formatter_context"
-        elif isinstance(value, six.string_types) and formatter_context:
-            rv[key] = value.format(**formatter_context)
+    # format all strings with "formatter_context"
+    elif isinstance(data, six.string_types) and formatter_context:
+        return data.format(**formatter_context)
 
-        # all other types should be copied "as is"
-        else:
-            rv[key] = value
+    # we want to traverse all sequences also (lists, tuples, etc)
+    elif isinstance(data, (list, tuple)):
+        return type(data)(
+            (traverse(i, generator_class, formatter_context) for i in data))
 
-    return rv
+    # just return value as is for all other cases
+    return data
 
 
 def generate_editables(editable, generator_class):

@@ -102,7 +102,16 @@ class TestTraverse(base.BaseUnitTest):
         'regex': {
             'source': 'test {a} string',
             'error': 'an {a} error'
-        }
+        },
+
+        'list': [
+            {
+                'x': 'a {a} a',
+            },
+            {
+                'y': 'b 42 b',
+            }
+        ]
     }
 
     def test_wo_formatting_context(self):
@@ -115,7 +124,15 @@ class TestTraverse(base.BaseUnitTest):
             'regex': {
                 'source': 'test {a} string',
                 'error': 'an {a} error'
-            }})
+            },
+            'list': [
+                {
+                    'x': 'a {a} a',
+                },
+                {
+                    'y': 'b 42 b',
+                }
+            ]})
 
     def test_w_formatting_context(self):
         result = traverse(self.data, self.TestGenerator, {'a': 13})
@@ -127,4 +144,12 @@ class TestTraverse(base.BaseUnitTest):
             'regex': {
                 'source': 'test {a} string',
                 'error': 'an {a} error'
-            }})
+            },
+            'list': [
+                {
+                    'x': 'a 13 a',
+                },
+                {
+                    'y': 'b 42 b',
+                }
+            ]})

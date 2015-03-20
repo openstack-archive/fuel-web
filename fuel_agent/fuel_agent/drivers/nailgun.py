@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import math
+import os
 
 from fuel_agent.drivers import ks_spaces_validator
 from fuel_agent import errors
@@ -21,6 +22,8 @@ from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import hardware_utils as hu
 from fuel_agent.utils import utils
 
+from six.moves.urllib.parse import urljoin
+from six.moves.urllib.parse import urlparse
 import yaml
 
 LOG = logging.getLogger(__name__)
@@ -363,8 +366,10 @@ class Nailgun(object):
         # Also, the initial data source should be set to sort out chicken/egg
         # problem. Command line option may be useful for such a case.
         # BUG: https://bugs.launchpad.net/fuel/+bug/1430418
-        metadata_url = data['ks_meta']['image_data']['/']['uri'].\
-            split('.')[0] + '.yaml'
+        root_uri = data['ks_meta']['image_data']['/']['uri']
+        filename = os.path.basename(urlparse(root_uri).path).split('.')[0] + \
+            '.yaml'
+        metadata_url = urljoin(root_uri, filename)
         image_meta = {}
         raw_image_meta = None
         try:

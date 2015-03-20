@@ -425,9 +425,10 @@ class NetworkManager(object):
         }
 
     @classmethod
-    def get_default_networks_assignment(cls, node):
-        """Return default Networks-to-NICs assignment for given node based on
-        networks metadata
+    def get_default_interfaces_configuration(cls, node):
+        """Returns default Networks-to-NICs assignment for given node based on
+        networks' configuration and metadata, default NICs'
+        interface_properties, with no bonds configured.
         """
         nics = []
         group_id = (node.group_id or
@@ -447,9 +448,10 @@ class NetworkManager(object):
         ng_wo_admin_ids = \
             ng_ids ^ set([cls.get_admin_network_group_id(node.id)])
         for nic in node.nic_interfaces:
-            nic_dict = NodeInterfacesSerializer.serialize_nic_interface(nic)
-            nic_dict['interface_properties'] = \
-                cls.get_default_interface_properties()
+            nic_dict = NodeInterfacesSerializer.serialize(nic)
+            if 'interface_properties' in nic_dict:
+                nic_dict['interface_properties'] = \
+                    cls.get_default_interface_properties()
             nic_dict['assigned_networks'] = []
 
             if to_assign_ids:
@@ -504,7 +506,7 @@ class NetworkManager(object):
         cls.clear_assigned_networks(node)
 
         nics = dict((nic.id, nic) for nic in node.interfaces)
-        def_set = cls.get_default_networks_assignment(node)
+        def_set = cls.get_default_interfaces_configuration(node)
         for nic in def_set:
             if 'assigned_networks' in nic:
                 ng_ids = [ng['id'] for ng in nic['assigned_networks']]
@@ -641,8 +643,9 @@ class NetworkManager(object):
                 net_assignment.network_id = net['id']
                 net_assignment.interface_id = current_iface.id
                 db().add(net_assignment)
-            current_iface.interface_properties = \
-                iface.get('interface_properties')
+            if 'interface_properties' in iface:
+                current_iface.interface_properties = \
+                    iface['interface_properties']
         map(db().delete, bond_interfaces_db)
         db().commit()
 

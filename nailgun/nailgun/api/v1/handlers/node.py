@@ -277,7 +277,7 @@ class NodeNICsDefaultHandler(BaseHandler):
         if node.cluster:
             return objects.Node.get_network_manager(
                 node
-            ).get_default_networks_assignment(node)
+            ).get_default_interfaces_configuration(node)
 
 
 class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):

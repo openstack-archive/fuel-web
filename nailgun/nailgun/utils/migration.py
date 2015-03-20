@@ -496,6 +496,22 @@ def upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection):
             id=attr_id)
 
 
+def upgrade_roles_metadata_6_0_to_6_1(roles_meta, new_roles_meta):
+    """Upgrade roles metadata between releases
+
+    new_roles_meta must be dict with role names as keys and
+    new role metadata as a value, for example:
+    {
+        'mongo': {'has_primary': True}
+    }
+    """
+
+    for role_name, role in six.iteritems(roles_meta):
+        role.update(new_roles_meta.get(role_name, {}))
+
+    return roles_meta
+
+
 def upgrade_networks_metadata_to_6_1(networks_meta, _bonding_metadata):
     networks_meta['bonding'] = _bonding_metadata
     return networks_meta

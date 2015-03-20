@@ -40,6 +40,7 @@ from nailgun.utils.migration import upgrade_master_node_settings_6_0_to_6_1
 from nailgun.utils.migration import upgrade_networks_metadata_to_6_1
 from nailgun.utils.migration import upgrade_role_limits_6_0_to_6_1
 from nailgun.utils.migration import upgrade_role_restrictions_6_0_to_6_1
+from nailgun.utils.migration import upgrade_roles_metadata_6_0_to_6_1
 
 
 release_states_old = (
@@ -401,6 +402,9 @@ def upgrade_data():
         roles_meta = upgrade_role_restrictions_6_0_to_6_1(
             roles_meta,
             _new_role_restrictions)
+        roles_meta = upgrade_roles_metadata_6_0_to_6_1(
+            roles_meta,
+            _new_roles_metadata)
         attributes_meta = upgrade_attributes_metadata_6_0_to_6_1(
             jsonutils.loads(release[2]))
         networks_meta = upgrade_networks_metadata_to_6_1(
@@ -552,6 +556,13 @@ _new_role_restrictions = {
             'message': "Ceph must be enabled in settings"
         }
     ]
+}
+
+
+_new_roles_metadata = {
+    "mongo": {
+        "has_primary": True,
+    }
 }
 
 

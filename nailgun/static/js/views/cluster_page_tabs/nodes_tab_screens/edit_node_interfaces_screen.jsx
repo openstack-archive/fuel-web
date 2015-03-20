@@ -146,12 +146,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         loadDefaults: function() {
             this.setState({actionInProgress: true});
-            // FIXME(morale): needs backend fix, now interface_properties are not coming after loadDefaults
-            var bondProps = this.props.bondingConfig.properties;
             $.when(this.props.interfaces.fetch({
                 url: _.result(this.props.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true
             }, this)).done(_.bind(function() {
-                this.props.interfaces.invoke('set', {bonding: bondProps});
                 this.setState({actionInProgress: false});
             }, this)).fail(_.bind(function(response) {
                 var errorNS = 'cluster_page.nodes_tab.configure_interfaces.configuration_error.';
@@ -270,7 +267,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     },
                     interface_properties: {
                         mtu: null,
-                        disable_offloading: false
+                        disable_offloading: true
                     }
                 });
             } else {
@@ -563,7 +560,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 networksToAdd = [],
                 showHelpMessage = !locked && !assignedNetworks.length,
                 bondProperties = ifc.get('bond_properties'),
-                interfaceProperties = ifc.get('interface_properties');
+                interfaceProperties = ifc.get('interface_properties') || null;
             assignedNetworks.each(function(interfaceNetwork) {
                 if (interfaceNetwork.getFullNetwork(networks).get('name') != 'floating') {
                     if (networksToAdd.length) {
@@ -698,27 +695,28 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                             : <div className='network-help-message'>{i18n(configureInterfacesTransNS + 'drag_and_drop_description')}</div>
                             }
                         </div>
-                        <div className='interface-properties'>
-                            <controls.Input
-                                type='checkbox'
-                                label={i18n(configureInterfacesTransNS + 'disable_offloading')}
-                                checked={interfaceProperties.disable_offloading}
-                                labelClassName='offloading'
-                                name='disable_offloading'
-                                onChange={this.onInterfacePropertiesChange}
-                                disabled={locked}
-                            />
-                            <controls.Input
-                                type='text'
-                                label={i18n(configureInterfacesTransNS + 'mtu')}
-                                value={interfaceProperties.mtu || ''}
-                                labelClassName='mtu'
-                                name='mtu'
-                                onChange={this.onInterfacePropertiesChange}
-
-                                disabled={locked}
-                            />
-                        </div>
+                        {interfaceProperties &&
+                            <div className='interface-properties'>
+                                <controls.Input
+                                    type='checkbox'
+                                    label={i18n(configureInterfacesTransNS + 'disable_offloading')}
+                                    checked={interfaceProperties.disable_offloading}
+                                    labelClassName='offloading'
+                                    name='disable_offloading'
+                                    onChange={this.onInterfacePropertiesChange}
+                                    disabled={locked}
+                                />
+                                <controls.Input
+                                    type='text'
+                                    label={i18n(configureInterfacesTransNS + 'mtu')}
+                                    value={interfaceProperties.mtu || ''}
+                                    labelClassName='mtu'
+                                    name='mtu'
+                                    onChange={this.onInterfacePropertiesChange}
+                                    disabled={locked}
+                                />
+                            </div>
+                        }
                     </div>
 
                     {this.props.errors &&

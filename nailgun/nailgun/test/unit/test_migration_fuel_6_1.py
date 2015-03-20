@@ -30,6 +30,13 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
         meta = sa.MetaData()
         meta.reflect(bind=db.get_bind())
 
+        roles_metadata = jsonutils.dumps({
+            "mongo": {
+                "name": "Mongo",
+                "description": "Mongo role"
+            }
+        })
+
         result = db.execute(
             meta.tables['releases'].insert(),
             [{
@@ -37,7 +44,7 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
                 'version': '2014.2-6.0',
                 'operating_system': 'ubuntu',
                 'state': 'available',
-                'roles_metadata': jsonutils.dumps({}),
+                'roles_metadata': roles_metadata,
                 'attributes_metadata': jsonutils.dumps({
                     'editable': {
                         'storage': {
@@ -189,3 +196,11 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
                     'priority': 1001,
                 },
             ])
+
+    def test_mongo_has_primary(self):
+        meta = sa.MetaData()
+        meta.reflect(bind=db.get_bind())
+        result = db.execute(
+            sa.select([meta.tables['releases'].c.roles_metadata]))
+        roles_metadata = jsonutils.loads(result.fetchone()[0])
+        self.assertTrue(roles_metadata['mongo']['has_primary'])

@@ -620,3 +620,28 @@ class TestFindGraph(base.BaseTestCase):
         self.assertItemsEqual(
             subgraph.nodes(),
             ['task_a', 'task_b', 'task_c', 'task_d'])
+
+
+class TestOrdered(base.BaseTestCase):
+
+    TASKS = """
+    - id: a
+    - id: b
+      requires: [a]
+    - id: c
+      requires: [a]
+    - id: d
+      requires: [a]
+    - id: e
+      requires: [b,c,d]
+    """
+
+    def setUp(self):
+        super(TestOrdered, self).setUp()
+        self.tasks = yaml.load(self.TASKS)
+        self.graph = deployment_graph.DeploymentGraph(tasks=self.tasks)
+
+    def test_always_same_order(self):
+        self.assertEqual(
+            [n['id'] for n in self.graph.topology],
+            ['a', 'c', 'b', 'd', 'e'])

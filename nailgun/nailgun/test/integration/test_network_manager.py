@@ -425,7 +425,8 @@ class TestNovaNetworkManager(BaseIntegrationTest):
         ).first()
         other_nets = [n.name for n in other_nic.assigned_networks_list]
 
-        nics = NovaNetworkManager.get_default_networks_assignment(self.node_db)
+        nics = NovaNetworkManager.get_default_interfaces_configuration(
+            self.node_db)
 
         def_admin_nic = [n for n in nics if n['id'] == admin_nic_id]
         def_other_nic = [n for n in nics if n['id'] == other_nic.id]
@@ -447,7 +448,7 @@ class TestNeutronManager(BaseIntegrationTest):
             node_id=node_db.id
         ).all()
 
-        def_nics = NeutronManager.get_default_networks_assignment(node_db)
+        def_nics = NeutronManager.get_default_interfaces_configuration(node_db)
 
         self.assertEqual(len(node_nics), len(def_nics))
         for n_nic in node_nics:

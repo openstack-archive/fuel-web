@@ -14,9 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from distutils.version import StrictVersion
+
 from nailgun import consts
 
 from nailgun.objects.serializers.base import BasicSerializer
+from nailgun.settings import settings
+from nailgun.utils import extract_env_version
 
 
 class NodeSerializer(BasicSerializer):
@@ -72,18 +76,61 @@ class NodeInterfacesSerializer(BasicSerializer):
         'assigned_networks'
     )
 
+    nic_fields_60 = (
+        'id',
+        'mac',
+        'name',
+        'type',
+        'state',
+        'current_speed',
+        'max_speed',
+        'assigned_networks',
+        'driver',
+        'bus_info',
+    )
+    bond_fields_60 = (
+        'mac',
+        'name',
+        'type',
+        'mode',
+        'bond_properties',
+        'state',
+        'assigned_networks'
+    )
+
+    @classmethod
+    def _get_env_version(cls, instance):
+        """Returns environment's version.
+        Returns current Fuel version by default.
+        """
+        if instance.node.cluster:
+            return extract_env_version(instance.node.cluster.release.version)
+        return settings.VERSION["release"]
+
     @classmethod
     def serialize_nic_interface(cls, instance, fields=None):
+        if not fields:
+            if StrictVersion(cls._get_env_version(instance)) < \
+                    StrictVersion('6.1'):
+                fields = cls.nic_fields_60
+            else:
+                fields = cls.nic_fields
         return BasicSerializer.serialize(
             instance,
-            fields=fields if fields else cls.nic_fields
+            fields=fields
         )
 
     @classmethod
     def serialize_bond_interface(cls, instance, fields=None):
+        if not fields:
+            if StrictVersion(cls._get_env_version(instance)) < \
+                    StrictVersion('6.1'):
+                fields = cls.bond_fields_60
+            else:
+                fields = cls.bond_fields
         data_dict = BasicSerializer.serialize(
             instance,
-            fields=fields if fields else cls.bond_fields
+            fields=fields
         )
         data_dict['slaves'] = [{'name': slave.name}
                                for slave in instance.slaves]
@@ -93,6 +140,6 @@ class NodeInterfacesSerializer(BasicSerializer):
     def serialize(cls, instance, fields=None):
         iface_types = consts.NETWORK_INTERFACE_TYPES
         if instance.type == iface_types.ether:
-            return cls.serialize_nic_interface(instance)
+            return cls.serialize_nic_interface(instance, fields)
         elif instance.type == iface_types.bond:
-            return cls.serialize_bond_interface(instance)
+            return cls.serialize_bond_interface(instance, fields)

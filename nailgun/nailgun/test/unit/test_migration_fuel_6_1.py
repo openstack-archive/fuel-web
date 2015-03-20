@@ -14,8 +14,10 @@
 
 
 from oslo.serialization import jsonutils
+import six
 import sqlalchemy as sa
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.test import base
 
@@ -48,12 +50,28 @@ class TestMigrationFuel61(base.BaseAlembicMigrationTest):
                         'cobbler': {'profile': {
                             'generator_arg': 'ubuntu_1204_x86_64'}}},
                 }),
-                'networks_metadata': '{}',
+                'networks_metadata': jsonutils.dumps({
+                    'neutron': {
+                        'networks': [
+                            {
+                                'assign_vip': True,
+                            },
+                        ]
+                    },
+                    'nova_network': {
+                        'networks': [
+                            {
+                                'assign_vip': False,
+                            },
+                        ]
+                    },
+
+                }),
                 'is_deployable': True,
             }])
         releaseid = result.inserted_primary_key[0]
 
-        result = db.execute(
+        db.execute(
             meta.tables['release_orchestrator_data'].insert(),
             [{
                 'release_id': releaseid,
@@ -86,7 +104,47 @@ class TestMigrationFuel61(base.BaseAlembicMigrationTest):
                 'generated': '{"cobbler": {"profile": "ubuntu_1204_x86_64"}}',
             }])
 
+        cls.ip_addr_to_check = '192.168.0.2'
+        db.execute(
+            meta.tables['ip_addrs'].insert(),
+            [{
+                'ip_addr': cls.ip_addr_to_check,
+            }])
+
         db.commit()
+
+    def test_vip_type_in_ip_addrs(self):
+        meta = sa.MetaData()
+        meta.reflect(bind=db.get_bind())
+
+        ip_addrs_table = meta.tables['ip_addrs']
+        self.assertIn('vip_type', ip_addrs_table.c)
+
+        ip_addr = db.execute(
+            sa.select([ip_addrs_table.c.vip_type]).where(
+                ip_addrs_table.c.ip_addr == self.ip_addr_to_check)
+        ).first()
+        self.assertEqual(ip_addr[0], consts.NETWORK_VIP_TYPES.haproxy)
+
+    def test_vip_type_in_releases(self):
+        meta = sa.MetaData()
+        meta.reflect(bind=db.get_bind())
+
+        releases_table = meta.tables['releases']
+
+        networks_meta = jsonutils.loads(
+            db.execute(
+                sa.select([releases_table.c.networks_metadata])
+            ).fetchone()[0]
+        )
+        neutron = networks_meta['neutron']['networks'][0]
+        self.assertItemsEqual(
+            neutron.get('vips'),
+            list(consts.NETWORK_VIP_TYPES)
+        )
+
+        nova_network = networks_meta['nova_network']['networks'][0]
+        self.assertIsNone(nova_network.get('vips'))
 
     def test_release_orchestrator_data_table_is_removed(self):
         meta = sa.MetaData()

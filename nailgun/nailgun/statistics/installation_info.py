@@ -59,9 +59,6 @@ class InstallationInfo(object):
         (('additional_components', 'murano', 'value'), 'murano'),
         (('additional_components', 'heat', 'value'), 'heat'),
         (('additional_components', 'ceilometer', 'value'), 'ceilometer'),
-
-        (('vlan_splinters', 'metadata', 'enabled'), 'vlan_splinters'),
-        (('vlan_splinters', 'vswitch', 'value'), 'vlan_splinters_ovs')
     )
 
     def fuel_release_info(self):

@@ -2028,26 +2028,24 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
         return cluster_db
 
     def check_add_bond_msg_lacp(self, msg):
-        self.assertEqual(
-            msg,
-            {
-                'action': 'add-bond',
-                'bridge': 'br-ovsbond0',
-                'interfaces': ['eth1', 'eth2'],
-                'name': 'ovsbond0',
-                'properties': ['lacp=active', 'bond_mode=balance-tcp']
-            })
+        expected = {
+            'action': 'add-bond',
+            'bridge': 'br-ovsbond0',
+            'interfaces': ['eth1', 'eth2'],
+            'name': 'ovsbond0',
+            'properties': ['lacp=active', 'bond_mode=balance-tcp']
+        }
+        self.datadiff(msg, expected, compare_sorted=True)
 
     def check_add_bond_msg_non_lacp(self, msg, mode):
-        self.assertEqual(
-            msg,
-            {
-                'action': 'add-bond',
-                'bridge': 'br-ovsbond0',
-                'interfaces': ['eth1', 'eth2'],
-                'name': 'ovsbond0',
-                'properties': ['bond_mode={0}'.format(mode)]
-            })
+        expected = {
+            'action': 'add-bond',
+            'bridge': 'br-ovsbond0',
+            'interfaces': ['eth2', 'eth1'],
+            'name': 'ovsbond0',
+            'properties': ['bond_mode={0}'.format(mode)]
+        }
+        self.datadiff(msg, expected, compare_sorted=True)
 
     def check_bond_with_mode(self, mode):
         cluster = self.create_env()

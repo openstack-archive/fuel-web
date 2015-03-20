@@ -1048,8 +1048,6 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                         str(IPAddress(IPNetwork(net['cidr']).first + 2)),
                         str(IPAddress(IPNetwork(net['cidr']).first + 253)),
                     ]]
-                elif net['name'] == 'fuelweb_admin':
-                    default_admin_id = net['id']
                 net['gateway'] = str(
                     IPAddress(IPNetwork(net['cidr']).first + 1))
         resp = self.env.neutron_networks_put(cluster.id, nets)
@@ -1059,7 +1057,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
-        nm = objects.Cluster.get_network_manager(cluster)
+
         for node in facts:
             node_db = objects.Node.get_by_uid(node['uid'])
             is_public = objects.Node.should_have_public(node_db)
@@ -1074,12 +1072,6 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 set(endpoints.keys()),
                 br_set
             )
-            # default admin network won't have routes
-            if nm.get_admin_network_group_id(node['uid']) == default_admin_id:
-                admin_props = ['IP'] if is_public else ['IP', 'gateway']
-                self.assertEqual(set(endpoints['br-fw-admin'].keys()),
-                                 set(admin_props))
-                endpoints.pop('br-fw-admin')
             for name, descr in six.iteritems(endpoints):
                 self.assertTrue(set(['IP', 'routes']) <= set(descr.keys()))
                 self.assertEqual(len(descr['routes']), 1)
@@ -1738,13 +1730,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         for fact in facts:
             ep = fact['network_scheme']['endpoints']
             if 'br-ex' in ep:
-                self.assertNotIn('gateway', ep['br-fw-admin'])
                 self.assertNotIn('default_gateway', ep['br-fw-admin'])
                 self.assertIn('gateway', ep['br-ex'])
                 self.assertIn('default_gateway', ep['br-ex'])
+                self.assertTrue(ep['br-ex']['default_gateway'])
             else:
                 self.assertIn('gateway', ep['br-fw-admin'])
                 self.assertIn('default_gateway', ep['br-fw-admin'])
+                self.assertTrue(ep['br-fw-admin']['default_gateway'])
             self.assertIn('gateway', ep['br-storage'])
             self.assertIn('gateway', ep['br-mgmt'])
 

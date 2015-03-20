@@ -6,6 +6,7 @@
             "name": "fuelweb_admin",
             "cidr": "{{settings.ADMIN_NETWORK['cidr']}}",
             "vlan_start": null,
+            "gateway": "{{settings.ADMIN_NETWORK['gateway']}}",
             "meta": {
                 "use_gateway": true,
                 "notation": "ip_ranges",

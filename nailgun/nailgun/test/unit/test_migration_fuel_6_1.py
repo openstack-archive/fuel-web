@@ -20,10 +20,13 @@ from nailgun.db import db
 from nailgun.test import base
 
 
-class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
+class Migarate60To61Test(base.BaseAlembicMigrationTest):
 
     prepare_revision = '1b1d4016375d'
     test_revision = '37608259013'
+
+
+class TestRepoMetadataToRepoSetup(Migarate60To61Test):
 
     @classmethod
     def prepare(cls):
@@ -189,3 +192,47 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
                     'priority': 1001,
                 },
             ])
+
+
+class TestAddRolesMetadata(Migarate60To61Test):
+
+    @classmethod
+    def prepare(cls):
+        meta = sa.MetaData()
+        meta.reflect(bind=db.get_bind())
+
+        roles_metadata = {
+            "mongo": {
+                "name": "Mongo",
+                "description": "Mongo role"
+            }
+        }
+
+        db.execute(
+            meta.tables['releases'].insert(),
+            [{
+                'name': 'test_name',
+                'version': '2014.2-6.0',
+                'operating_system': 'ubuntu',
+                'state': 'available',
+                'roles_metadata': jsonutils.dumps(roles_metadata),
+                'attributes_metadata': jsonutils.dumps({
+                    'editable': {
+                        'storage': {
+                            'volumes_lvm': {},
+                        }
+                    },
+                    'generated': {},
+                }),
+                'networks_metadata': '{}',
+                'is_deployable': True,
+            }])
+        db.commit()
+
+    def test_mongo_has_primary(self):
+        meta = sa.MetaData()
+        meta.reflect(bind=db.get_bind())
+        result = db.execute(
+            sa.select([meta.tables['releases'].c.roles_metadata]))
+        roles_metadata = jsonutils.loads(result.fetchone()[0])
+        self.assertTrue(roles_metadata['mongo']['has_primary'])

@@ -1151,6 +1151,9 @@ class BaseAlembicMigrationTest(TestCase):
         """Alembic revision to stop and call text() method."""
 
     @classmethod
-    @abc.abstractmethod
     def prepare(cls):
         """Method that should prepare your database state."""
+        # NOTE(prmtl): abc.abstractmethod do not work with classmethod in
+        # Python 2.6
+        raise NotImplementedError(
+            "Need to prepare database for migration test")

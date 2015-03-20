@@ -12,14 +12,30 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
 from contextlib import contextmanager
+
+import six
 
 from nailgun.consts import NODE_STATUSES
 from nailgun import objects
 from nailgun.test import base
 
 
-class TestPrimaryRolesAssignment(base.BaseTestCase):
+@six.add_metaclass(abc.ABCMeta)
+class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
+
+    # NOTE(prmtl): need to mark it as not a test or pytest will try to run
+    # "test_*" from it
+    __test__ = False
+
+    @abc.abstractproperty
+    def role_name(self):
+        pass
+
+    @abc.abstractproperty
+    def primary_role_name(self):
+        pass
 
     def test_primary_controllers_assigned_for_pendings_roles(self):
         self.env.create(
@@ -27,20 +43,20 @@ class TestPrimaryRolesAssignment(base.BaseTestCase):
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
-                {'pending_roles': ['controller'],
-                 'status': 'discover',
+                {'pending_roles': [self.role_name],
+                 'status': NODE_STATUSES.discover,
                  'pending_addition': True},
-                {'pending_roles': ['controller'],
-                 'status': 'discover',
+                {'pending_roles': [self.role_name],
+                 'status': NODE_STATUSES.discover,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         # with lowest uid is assigned as primary
         self.assertEqual(
-            objects.Node.all_roles(nodes[0]), ['primary-controller'])
+            objects.Node.all_roles(nodes[0]), [self.primary_role_name])
         self.assertEqual(
-            objects.Node.all_roles(nodes[1]), ['controller'])
+            objects.Node.all_roles(nodes[1]), [self.role_name])
 
     def test_primary_controller_assigned_for_ready_node(self):
         self.env.create(
@@ -48,11 +64,11 @@ class TestPrimaryRolesAssignment(base.BaseTestCase):
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
-                {'pending_roles': ['controller'],
-                 'status': 'discover',
+                {'pending_roles': [self.role_name],
+                 'status': NODE_STATUSES.discover,
                  'pending_addition': True},
-                {'roles': ['controller'],
-                 'status': 'ready',
+                {'roles': [self.role_name],
+                 'status': NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
@@ -62,9 +78,9 @@ class TestPrimaryRolesAssignment(base.BaseTestCase):
                           if n.status == NODE_STATUSES.ready)
         self.assertEqual(nodes[1], ready_node)
         self.assertEqual(
-            objects.Node.all_roles(nodes[1]), ['primary-controller'])
+            objects.Node.all_roles(nodes[1]), [self.primary_role_name])
         self.assertEqual(
-            objects.Node.all_roles(nodes[0]), ['controller'])
+            objects.Node.all_roles(nodes[0]), [self.role_name])
 
     def test_primary_assignment_multinode(self):
         """Primary should not be assigned in multinode env."""
@@ -73,18 +89,18 @@ class TestPrimaryRolesAssignment(base.BaseTestCase):
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
-                {'pending_roles': ['controller'],
-                 'status': 'discover',
+                {'pending_roles': [self.role_name],
+                 'status': NODE_STATUSES.discover,
                  'pending_addition': True},
-                {'roles': ['controller'],
-                 'status': 'ready',
+                {'roles': [self.role_name],
+                 'status': NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         self.assertEqual(
-            objects.Node.all_roles(cluster.nodes[0]), ['controller'])
+            objects.Node.all_roles(cluster.nodes[0]), [self.role_name])
         self.assertEqual(
-            objects.Node.all_roles(cluster.nodes[1]), ['controller'])
+            objects.Node.all_roles(cluster.nodes[1]), [self.role_name])
 
     def test_primary_not_assigned_to_pending_deletion(self):
         self.env.create(
@@ -92,13 +108,13 @@ class TestPrimaryRolesAssignment(base.BaseTestCase):
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
-                {'roles': ['controller'],
-                 'status': 'ready',
+                {'roles': [self.role_name],
+                 'status': NODE_STATUSES.ready,
                  'pending_deletion': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         self.assertEqual(
-            objects.Node.all_roles(cluster.nodes[0]), ['controller'])
+            objects.Node.all_roles(cluster.nodes[0]), [self.role_name])
 
     @contextmanager
     def assert_node_reassigned(self):
@@ -107,23 +123,23 @@ class TestPrimaryRolesAssignment(base.BaseTestCase):
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
             nodes_kwargs=[
-                {'pending_roles': ['controller'],
-                 'status': 'discover',
+                {'pending_roles': [self.role_name],
+                 'status': NODE_STATUSES.discover,
                  'pending_addition': True},
-                {'roles': ['controller'],
-                 'status': 'ready',
+                {'roles': [self.role_name],
+                 'status': NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         self.assertEqual(
-            objects.Node.all_roles(nodes[1]), ['primary-controller'])
+            objects.Node.all_roles(nodes[1]), [self.primary_role_name])
         self.assertEqual(
-            objects.Node.all_roles(nodes[0]), ['controller'])
+            objects.Node.all_roles(nodes[0]), [self.role_name])
         yield nodes[1]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         self.assertEqual(
-            objects.Node.all_roles(nodes[0]), ['primary-controller'])
+            objects.Node.all_roles(nodes[0]), [self.primary_role_name])
 
     def test_primary_assign_after_reset_to_discovery(self):
         """After node is reset to discovery, it will be booted into
@@ -139,3 +155,17 @@ class TestPrimaryRolesAssignment(base.BaseTestCase):
         """
         with self.assert_node_reassigned() as node:
             objects.Node.remove_from_cluster(node)
+
+
+class TestControllerPrimaryRolesAssignment(BasePrimaryRolesAssignmentTestCase):
+    __test__ = True
+
+    role_name = 'controller'
+    primary_role_name = 'primary-controller'
+
+
+class TestMongoPrimaryRolesAssignment(BasePrimaryRolesAssignmentTestCase):
+    __test__ = True
+
+    role_name = 'mongo'
+    primary_role_name = 'primary-mongo'

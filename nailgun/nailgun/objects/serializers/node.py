@@ -17,6 +17,7 @@
 from nailgun import consts
 
 from nailgun.objects.serializers.base import BasicSerializer
+from nailgun.utils import extract_env_version
 
 
 class NodeSerializer(BasicSerializer):
@@ -72,18 +73,44 @@ class NodeInterfacesSerializer(BasicSerializer):
         'assigned_networks'
     )
 
+    nic_fields_60 = (
+        'id',
+        'mac',
+        'name',
+        'type',
+        'state',
+        'current_speed',
+        'max_speed',
+        'assigned_networks',
+        'driver',
+        'bus_info',
+    )
+    bond_fields_60 = (
+        'mac',
+        'name',
+        'type',
+        'mode',
+        'bond_properties',
+        'state',
+        'assigned_networks'
+    )
+
     @classmethod
-    def serialize_nic_interface(cls, instance, fields=None):
+    def serialize_nic_interface(cls, instance, fields=None, upto60=False):
+        if not fields:
+            fields = cls.nic_fields_60 if upto60 else cls.nic_fields
         return BasicSerializer.serialize(
             instance,
-            fields=fields if fields else cls.nic_fields
+            fields=fields
         )
 
     @classmethod
-    def serialize_bond_interface(cls, instance, fields=None):
+    def serialize_bond_interface(cls, instance, fields=None, upto60=False):
+        if not fields:
+            fields = cls.bond_fields_60 if upto60 else cls.bond_fields
         data_dict = BasicSerializer.serialize(
             instance,
-            fields=fields if fields else cls.bond_fields
+            fields=fields
         )
         data_dict['slaves'] = [{'name': slave.name}
                                for slave in instance.slaves]
@@ -92,7 +119,11 @@ class NodeInterfacesSerializer(BasicSerializer):
     @classmethod
     def serialize(cls, instance, fields=None):
         iface_types = consts.NETWORK_INTERFACE_TYPES
+        upto60 = False
+        if not fields and instance.node.cluster:
+            ver = extract_env_version(instance.node.cluster.release.version)
+            upto60 = ver.startswith('5') or ver.startswith('6.0')
         if instance.type == iface_types.ether:
-            return cls.serialize_nic_interface(instance)
+            return cls.serialize_nic_interface(instance, upto60=upto60)
         elif instance.type == iface_types.bond:
-            return cls.serialize_bond_interface(instance)
+            return cls.serialize_bond_interface(instance, upto60=upto60)

@@ -122,7 +122,7 @@ def downgrade():
 def upgrade_schema():
     connection = op.get_bind()
 
-    vrouter_enum = sa.Enum('vrouter',
+    vrouter_enum = sa.Enum('haproxy', 'vrouter',
                            name='network_vip_types')
     vrouter_enum.create(op.get_bind(), checkfirst=False)
 

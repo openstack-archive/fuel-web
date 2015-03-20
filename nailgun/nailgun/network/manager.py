@@ -267,7 +267,8 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
-    def assign_vip(cls, cluster, network_name, vip_type=None):
+    def assign_vip(cls, cluster, network_name,
+                   vip_type=consts.NETWORK_VIP_TYPES.haproxy):
         """Idempotent assignment of VirtualIP addresses to cluster.
         Returns VIP for given cluster and network.
 
@@ -282,7 +283,7 @@ class NetworkManager(object):
         :type  cluster: Cluster model
         :param network_name: Network name
         :type  network_name: str
-        :param vip_type: Type of VIP. None or 'vrouter'
+        :param vip_type: Type of VIP
         :type  vip_type: str
         :returns: assigned VIP (string)
         :raises: Exception
@@ -325,16 +326,14 @@ class NetworkManager(object):
         result = {}
 
         for ng in cluster.network_groups:
-            if ng.meta.get("assign_vip"):
-                result['{0}_vip'.format(ng.name)] = \
-                    cls.assign_vip(cluster, ng.name)
-            if ng.meta.get("assign_vrouter_vip"):
-                result['{0}_vrouter_vip'.format(ng.name)] = \
-                    cls.assign_vip(
-                        cluster,
-                        ng.name,
-                        vip_type=consts.NETWORK_VIP_TYPES.vrouter
-                    )
+            for vip_type in ng.meta.get('vips', ()):
+                if vip_type == consts.NETWORK_VIP_TYPES.haproxy:
+                    key = '{0}_vip'.format(ng.name)
+                else:
+                    key = '{0}_{1}_vip'.format(ng.name, vip_type)
+
+                result[key] = cls.assign_vip(cluster, ng.name,
+                                             vip_type=vip_type)
 
         return result
 

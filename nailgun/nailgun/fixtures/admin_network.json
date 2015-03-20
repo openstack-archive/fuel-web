@@ -13,9 +13,7 @@
                 "render_addr_mask": null,
                 "map_priority": 0,
                 "unmovable": true,
-                "configurable": false,
-                "assign_vip": false,
-                "assign_vrouter_vip": false
+                "configurable": false
             }
         }
     },

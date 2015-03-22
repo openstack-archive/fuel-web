@@ -21,6 +21,9 @@
     "less": "2.4.0",
     "jquery-ui": "~1.11.4"
   },
+  "devDependencies": {
+    "es5-shim": "4.1.0"
+  },
   "overrides": {
     "jquery": {
       "main": "jquery.js"

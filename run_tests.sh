@@ -25,8 +25,6 @@ function usage {
   echo "  -h, --help                  Print this usage message"
   echo "  -k, --tasklib               Run tasklib unit and functional tests"
   echo "  -K, --no-tasklib            Don't run tasklib unit and functional tests"
-  echo "  -l, --lint-ui               Run UI linting tasks"
-  echo "  -L, --no-lint-ui            Don't run UI linting tasks"
   echo "  -n, --nailgun               Run NAILGUN unit/integration tests"
   echo "  -N, --no-nailgun            Don't run NAILGUN unit/integration tests"
   echo "  -x, --performance           Run NAILGUN performance tests"
@@ -37,8 +35,14 @@ function usage {
   echo "  -t, --tests                 Run a given test files"
   echo "  -u, --upgrade               Run tests for UPGRADE system"
   echo "  -U, --no-upgrade            Don't run tests for UPGRADE system"
-  echo "  -w, --webui                 Run WEB-UI tests"
-  echo "  -W, --no-webui              Don't run WEB-UI tests"
+  echo "  -w, --webui                 Run all UI tests"
+  echo "  -W, --no-webui              Don't run all UI tests"
+  echo "      --ui-lint               Run UI linting tasks"
+  echo "      --no-ui-lint            Don't run UI linting tasks"
+  echo "      --ui-unit               Run UI unit tests"
+  echo "      --no-ui-unit            Don't run UI unit tests"
+  echo "      --ui-func               Run UI functional tests"
+  echo "      --no-ui-func            Don't run UI functional tests"
   echo ""
   echo "Note: with no options specified, the script will try to run all available"
   echo "      tests with all available checks."
@@ -57,16 +61,20 @@ function process_options {
       -x|--performance) performance_tests=1;;
       -k|--tasklib) tasklib_tests=1;;
       -K|--no-tasklib) no_tasklib_tests=1;;
-      -w|--webui) webui_tests=1;;
-      -W|--no-webui) no_webui_tests=1;;
       -u|--upgrade) upgrade_system=1;;
       -U|--no-upgrade) no_upgrade_system=1;;
       -s|--shotgun) shotgun_tests=1;;
       -S|--no-shotgun) no_shotgun_tests=1;;
       -p|--flake8) flake8_checks=1;;
       -P|--no-flake8) no_flake8_checks=1;;
-      -l|--lint-ui) lint_ui_checks=1;;
-      -L|--no-lint-ui) no_lint_ui_checks=1;;
+      -w|--webui) ui_lint_checks=1; ui_unit_tests=1; ui_func_tests=1;;
+      -W|--no-webui) no_ui_lint_checks=1; no_ui_unit_tests=1; no_ui_func_tests=1;;
+      --ui-lint) ui_lint_checks=1;;
+      --no-ui-lint) no_ui_lint_checks=1;;
+      --ui-unit) ui_unit_tests=1;;
+      --no-ui-unit) no_ui_unit_tests=1;;
+      --ui-func) ui_func_tests=1;;
+      --no-ui-func) no_ui_func_tests=1;;
       -t|--tests) certain_tests=1;;
       -*) testropts="$testropts $arg";;
       *) testrargs="$testrargs $arg"
@@ -109,16 +117,18 @@ no_agent_tests=0
 nailgun_tests=0
 no_nailgun_tests=0
 performance_tests=0
-webui_tests=0
-no_webui_tests=0
 upgrade_system=0
 no_upgrade_system=0
 shotgun_tests=0
 no_shotgun_tests=0
 flake8_checks=0
 no_flake8_checks=0
-lint_ui_checks=0
-no_lint_ui_checks=0
+ui_lint_checks=0
+no_ui_lint_checks=0
+ui_unit_tests=0
+no_ui_unit_tests=0
+ui_func_tests=0
+no_ui_func_tests=0
 certain_tests=0
 tasklib_tests=0
 no_tasklib_tests=0
@@ -150,20 +160,22 @@ function run_tests {
       $nailgun_tests -eq 0 && \
       $performance_tests -eq 0 && \
       $tasklib_tests -eq 0 && \
-      $webui_tests -eq 0 && \
+      $ui_lint_checks -eq 0 && \
+      $ui_unit_tests -eq 0 && \
+      $ui_func_tests -eq 0 && \
       $upgrade_system -eq 0 && \
       $shotgun_tests -eq 0 && \
-      $flake8_checks -eq 0 && \
-      $lint_ui_checks -eq 0 ]]; then
+      $flake8_checks -eq 0 ]]; then
 
     if [ $no_agent_tests -ne 1 ];  then agent_tests=1;  fi
     if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
     if [ $no_tasklib_tests -ne 1 ];  then tasklib_tests=1;  fi
-    if [ $no_webui_tests -ne 1 ];    then webui_tests=1;    fi
+    if [ $no_ui_lint_checks -ne 1 ]; then ui_lint_checks=1; fi
+    if [ $no_ui_unit_tests -ne 1 ];  then ui_unit_tests=1;  fi
+    if [ $no_ui_func_tests -ne 1 ];  then ui_func_tests=1;  fi
     if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
     if [ $no_shotgun_tests -ne 1 ];  then shotgun_tests=1;  fi
     if [ $no_flake8_checks -ne 1 ];  then flake8_checks=1;  fi
-    if [ $no_lint_ui_checks -ne 1 ];  then lint_ui_checks=1;  fi
   fi
 
   # Run all enabled tests
@@ -187,9 +199,19 @@ function run_tests {
     run_tasklib_tests || errors+=" tasklib tests"
   fi
 
-  if [ $webui_tests -eq 1 ]; then
-    echo "Starting WebUI tests..."
-    run_webui_tests || errors+=" webui_tests"
+  if [ $ui_lint_checks -eq 1 ]; then
+    echo "Starting UI lint checks..."
+    run_lint_ui || errors+=" ui_lint_checks"
+  fi
+
+  if [ $ui_unit_tests -eq 1 ]; then
+    echo "Starting UI unit tests..."
+    run_ui_unit_tests || errors+=" ui_unit_tests"
+  fi
+
+  if [ $ui_func_tests -eq 1 ]; then
+    echo "Starting UI functional tests..."
+    run_ui_func_tests || errors+=" ui_func_tests"
   fi
 
   if [ $upgrade_system -eq 1 ]; then
@@ -200,11 +222,6 @@ function run_tests {
   if [ $shotgun_tests -eq 1 ]; then
     echo "Starting Shotgun tests..."
     run_shotgun_tests || errors+=" shotgun_tests"
-  fi
-
-  if [ $lint_ui_checks -eq 1 ]; then
-    echo "Starting lint checks..."
-    run_lint_ui || errors+=" lint_ui_checks"
   fi
 
   # print failed tests
@@ -272,16 +289,30 @@ function run_nailgun_tests {
   return $result
 }
 
-# Run webui tests.
+# Run UI unit tests.
+#
+function run_ui_unit_tests {
+  local result=0
+
+  pushd $ROOT/nailgun >> /dev/null
+
+  ${GULP} bower && ${GULP} unit-tests || result=1
+
+  popd >> /dev/null
+
+  return $result
+}
+
+# Run UI functional tests.
 #
 # Arguments:
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
-function run_webui_tests {
+function run_ui_func_tests {
   local SERVER_PORT=$UI_SERVER_PORT
   local TESTS_DIR=$ROOT/nailgun/ui_tests
   local TESTS=$TESTS_DIR/test_*.js
-  local artifacts=$ARTIFACTS/webui
+  local artifacts=$ARTIFACTS/ui_func
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config
   local COMPRESSED_STATIC_DIR=$artifacts/static_compressed
@@ -595,7 +626,7 @@ EOL
 #   $1 -- path to the test file
 function guess_test_run {
   if [[ $1 == *ui_tests* && $1 == *.js ]]; then
-    run_webui_tests $1 || echo "ERROR: $1"
+    run_ui_func_tests $1 || echo "ERROR: $1"
   elif [[ $1 == *fuel_upgrade_system* ]]; then
     run_upgrade_system_tests $1 || echo "ERROR: $1"
   elif [[ $1 == *shotgun* ]]; then

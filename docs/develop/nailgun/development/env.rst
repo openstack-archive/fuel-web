@@ -95,7 +95,7 @@ Setup for Nailgun Unit Tests
 #. Run the Nailgun backend unit tests::
 
     sudo apt-get install puppet-common #install missing package required by tasklib tests
-    ./run_tests.sh --no-lint-ui --no-webui
+    ./run_tests.sh --no-webui
 
 #. Run the Nailgun flake8 test::
 
@@ -161,7 +161,6 @@ Setup for Web UI Tests
    PostgreSQL)::
 
     cd fuel-web
-    ./run_tests.sh --lint-ui
     ./run_tests.sh --webui
 
 

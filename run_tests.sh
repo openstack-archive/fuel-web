@@ -37,8 +37,10 @@ function usage {
   echo "  -t, --tests                 Run a given test files"
   echo "  -u, --upgrade               Run tests for UPGRADE system"
   echo "  -U, --no-upgrade            Don't run tests for UPGRADE system"
-  echo "  -w, --webui                 Run WEB-UI tests"
-  echo "  -W, --no-webui              Don't run WEB-UI tests"
+  echo "  -w, --webui                 Run UI functional tests"
+  echo "  -W, --no-webui              Don't run UI functional tests"
+  echo "      --ui-unit               Run UI unit tests"
+  echo "      --no-ui-unit            Don't run UI unit tests"
   echo ""
   echo "Note: with no options specified, the script will try to run all available"
   echo "      tests with all available checks."
@@ -68,6 +70,8 @@ function process_options {
       -l|--lint-ui) lint_ui_checks=1;;
       -L|--no-lint-ui) no_lint_ui_checks=1;;
       -t|--tests) certain_tests=1;;
+      --ui-unit) ui_unit_tests=1;;
+      --no-ui-unit) no_ui_unit_tests=1;;
       -*) testropts="$testropts $arg";;
       *) testrargs="$testrargs $arg"
     esac
@@ -108,6 +112,8 @@ no_agent_tests=0
 nailgun_tests=0
 no_nailgun_tests=0
 performance_tests=0
+ui_unit_tests=0
+no_ui_unit_tests=0
 webui_tests=0
 no_webui_tests=0
 upgrade_system=0
@@ -149,6 +155,7 @@ function run_tests {
       $nailgun_tests -eq 0 && \
       $performance_tests -eq 0 && \
       $tasklib_tests -eq 0 && \
+      $ui_unit_tests -eq 0 && \
       $webui_tests -eq 0 && \
       $upgrade_system -eq 0 && \
       $shotgun_tests -eq 0 && \
@@ -158,6 +165,7 @@ function run_tests {
     if [ $no_agent_tests -ne 1 ];  then agent_tests=1;  fi
     if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
     if [ $no_tasklib_tests -ne 1 ];  then tasklib_tests=1;  fi
+    if [ $no_ui_unit_tests -ne 1 ];  then ui_unit_tests=1;  fi
     if [ $no_webui_tests -ne 1 ];    then webui_tests=1;    fi
     if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
     if [ $no_shotgun_tests -ne 1 ];  then shotgun_tests=1;  fi
@@ -184,6 +192,11 @@ function run_tests {
   if [ $tasklib_tests -eq 1 ]; then
     echo "Starting Tasklib tests"
     run_tasklib_tests || errors+=" tasklib tests"
+  fi
+
+  if [ $ui_unit_tests -eq 1 ]; then
+    echo "Starting UI unit tests..."
+    run_ui_unit_tests || errors+=" ui_unit_tests"
   fi
 
   if [ $webui_tests -eq 1 ]; then
@@ -268,6 +281,20 @@ function run_nailgun_tests {
   NAILGUN_CONFIG=$config \
   tox -epy26 -- $options $TESTS  || result=1
   popd >> /dev/null
+  return $result
+}
+
+# Run UI unit tests.
+#
+function run_ui_unit_tests {
+  local result=0
+
+  pushd $ROOT/nailgun >> /dev/null
+
+  ${GULP} unit-tests || result=1
+
+  popd >> /dev/null
+
   return $result
 }
 

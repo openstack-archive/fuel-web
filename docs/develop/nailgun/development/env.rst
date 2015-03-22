@@ -95,7 +95,7 @@ Setup for Nailgun Unit Tests
 #. Run the Nailgun backend unit tests::
 
     sudo apt-get install puppet-common #install missing package required by tasklib tests
-    ./run_tests.sh --no-lint-ui --no-webui
+    ./run_tests.sh --no-webui
 
 #. Run the Nailgun flake8 test::
 
@@ -145,6 +145,9 @@ For example:
 Setup for Web UI Tests
 ----------------------
 
+#. UI tests use Selenium server, so you need to install Java Runtime
+   Environment (JRE) 1.6 or newer version.
+
 #. Install NodeJS and JS dependencies::
 
     sudo apt-get remove nodejs nodejs-legacy
@@ -161,7 +164,6 @@ Setup for Web UI Tests
    PostgreSQL)::
 
     cd fuel-web
-    ./run_tests.sh --lint-ui
     ./run_tests.sh --webui
 
 

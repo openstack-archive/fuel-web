@@ -56,7 +56,7 @@ class TestMakeTask(base.BaseTestCase):
         self.assertEqual(
             result,
             {'parameters': {
-                'data': 'Package: *\nPin: release n=/\nPin-Priority: 1001',
+                'data': 'Package: *\nPin: release a=/\nPin-Priority: 1001',
                 'path': '/etc/apt/preferences.d/plugin_name'},
              'type': 'upload_file',
              'uids': [1, 2, 3]})
@@ -75,7 +75,7 @@ class TestMakeTask(base.BaseTestCase):
             result,
             {'parameters': {
                 'data': ('Package: *\n'
-                         'Pin: release n=jessie,c=main,c=universe\n'
+                         'Pin: release a=jessie,c=main,c=universe\n'
                          'Pin-Priority: 1004'),
                 'path': '/etc/apt/preferences.d/plugin_name'},
              'type': 'upload_file',

@@ -41,7 +41,7 @@ def make_ubuntu_preferences_task(uids, repo):
     # TODO(ikalnitsky):
     # Research how to add host condition to the current pinning.
 
-    condition = ['n={0}'.format(repo['suite'])]
+    condition = ['a={0}'.format(repo['suite'])]
     for section in repo['section'].split():
         condition.append('c={0}'.format(section))
 

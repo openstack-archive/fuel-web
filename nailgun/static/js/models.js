@@ -117,7 +117,6 @@ define([
                 return ret;
             };
 
-            nodes = nodes || models.cluster.get('nodes');
             var checkedLimitTypes = {},
                 name = this.get('name'),
                 limits = this.expandedLimits[name] || {},
@@ -127,10 +126,9 @@ define([
                     min: evaluateExpressionHelper(limits.min, models).value,
                     recommended: evaluateExpressionHelper(limits.recommended, models).value
                 },
-                count = nodes.nodesAfterDeploymentWithRole(name).length,
+                count = nodes ? nodes.length : models.cluster.get('nodes').nodesAfterDeploymentWithRole(name).length,
                 messages,
                 label = this.get('label');
-
             var checkOneLimit = function(obj, limitType) {
                 var limitValue,
                     comparator;

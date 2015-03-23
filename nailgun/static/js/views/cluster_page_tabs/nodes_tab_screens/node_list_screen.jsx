@@ -118,8 +118,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }, this);
         },
         render: function() {
-            var locked = !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length,
-                nodes = this.props.nodes;
+            var cluster = this.props.cluster,
+                locked = !!cluster.tasks({group: 'deployment', status: 'running'}).length,
+                nodes = this.props.nodes,
+                rolesWithMaxRestrictionMet = cluster.get('release').get('role_models').reject(function(role) {
+                    return role.checkLimits({
+                        cluster: cluster,
+                        settings: cluster.get('settings'),
+                        version: app.version,
+                        default: cluster.get('settings')
+                    }, false, ['max'], nodes).valid;
+                }, this);
+
             return (
                 <div>
                     {this.props.mode == 'edit' &&
@@ -131,7 +141,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             if (checked) return nodes.get(id);
                         })))}
                         totalNodeAmount={nodes.length}
-                        cluster={this.props.cluster}
+                        cluster={cluster}
                         grouping={this.state.grouping}
                         changeGrouping={this.changeGrouping}
                         filter={this.state.filter}
@@ -150,7 +160,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.state.filter.toLowerCase());
                                 }, this)}
                                 grouping={this.state.grouping}
-                                locked={locked}
+                                locked={locked || !!rolesWithMaxRestrictionMet.length}
                                 selectedNodeIds={this.state.selectedNodeIds}
                                 selectNodes={this.selectNodes}
                             />
@@ -431,7 +441,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     {this.props.cluster.get('release').get('role_models').map(function(role) {
                         if (!role.checkRestrictions(this.state.configModels, 'hide').result) {
                             var name = role.get('name'),
-                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.state.configModels, nodesForLimitsCheck) : {};
+                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.state.configModels, nodesForLimitsCheck) : {},
+                                willMaxNodesLimitMet = role.get('limits') && role.get('limits').max < _.compact(_.values(this.props.selectedNodeIds)).length;
                             return (
                                 <controls.Input
                                     key={name}
@@ -441,8 +452,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     label={role.get('label')}
                                     description={role.get('description')}
                                     defaultChecked={_.contains(this.state.selectedRoles, name)}
-                                    disabled={!this.props.nodes.length || processedRestrictions.result}
-                                    tooltipText={!!this.props.nodes.length && processedRestrictions.message}
+                                    disabled={!this.props.nodes.length || processedRestrictions.result || willMaxNodesLimitMet}
+                                    tooltipText={!!this.props.nodes.length && processedRestrictions.message ||
+                                        willMaxNodesLimitMet && i18n('common.role_limits.max', {
+                                            limitValue: role.get('limits').max,
+                                            roleName: role.get('name'),
+                                            count: _.keys(this.props.selectedNodeIds).length
+                                        })}
                                     wrapperClassName='role-container'
                                     labelClassName='role-label'
                                     descriptionClassName='role-description'

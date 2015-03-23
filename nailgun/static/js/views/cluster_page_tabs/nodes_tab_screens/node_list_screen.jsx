@@ -117,9 +117,30 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 node.set({pending_roles: this.initialRoles[node.id]}, {silent: true});
             }, this);
         },
+        getNodesForLimitsCheck: function() {
+            var selectedNodes = this.props.nodes.filter(function(node) {
+                    return this.state.selectedNodeIds[node.id];
+                }, this),
+                clusterNodes = this.props.cluster.get('nodes').filter(function(node) {
+                    return !_.contains(this.state.selectedNodeIds, node.id);
+                }, this);
+            return new models.Nodes(_.union(selectedNodes, clusterNodes));
+        },
         render: function() {
-            var locked = !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length,
-                nodes = this.props.nodes;
+            var cluster = this.props.cluster,
+                locked = !!cluster.tasks({group: 'deployment', status: 'running'}).length,
+                nodes = this.props.nodes,
+                rolesWithMaxRestrictionReached = cluster.get('release').get('role_models').reject(function(role) {
+                    return role.checkLimits({
+                        cluster: cluster,
+                        settings: cluster.get('settings'),
+                        version: app.version,
+                        default: cluster.get('settings')
+                    }, false, ['max'], nodes).valid;
+                }, this),
+                roleNamesWithMaxRestrictionReached = rolesWithMaxRestrictionReached.length && _.map(rolesWithMaxRestrictionReached, function(role) {
+                    return role.get('name');
+                }, this);
             return (
                 <div>
                     {this.props.mode == 'edit' &&
@@ -131,7 +152,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             if (checked) return nodes.get(id);
                         })))}
                         totalNodeAmount={nodes.length}
-                        cluster={this.props.cluster}
+                        cluster={cluster}
                         grouping={this.state.grouping}
                         changeGrouping={this.changeGrouping}
                         filter={this.state.filter}
@@ -144,7 +165,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     />
                     {this.state.loading ? <controls.ProgressBar /> :
                         <div>
-                            {this.props.mode != 'list' && <RolePanel {...this.props} selectedNodeIds={this.state.selectedNodeIds} />}
+                            {this.props.mode != 'list' &&
+                                <RolePanel
+                                    {...this.props}
+                                    selectedNodeIds={this.state.selectedNodeIds}
+                                    nodesForLimitsCheck={this.getNodesForLimitsCheck()}
+                                />
+                            }
                             <NodeList {...this.props}
                                 nodes={nodes.filter(function(node) {
                                     return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.state.filter.toLowerCase());
@@ -153,6 +180,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 locked={locked}
                                 selectedNodeIds={this.state.selectedNodeIds}
                                 selectNodes={this.selectNodes}
+                                rolesWithMaxRestrictionReached={roleNamesWithMaxRestrictionReached}
                             />
                         </div>
                     }
@@ -362,36 +390,42 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }, this);
         },
         onChange: function(role, checked) {
-            var selectedRoles = this.state.selectedRoles;
+            var selectedRoles = this.state.selectedRoles,
+                roles = this.props.cluster.get('release').get('role_models');
+
             if (checked) {
                 selectedRoles.push(role);
             } else {
                 selectedRoles = _.without(selectedRoles, role);
             }
+            var rolesWithMaxLimit = _.compact(roles.map(function(role) {
+                if (role.get('limits') && role.get('limits').max) {
+                    return {
+                        name: role.get('name'),
+                        maxValue: role.get('limits').max
+                    };
+                }
+            }, this));
+            if (_.intersection(selectedRoles, _.pluck(rolesWithMaxLimit, 'name')).length) {
+                dispatcher.trigger('roleWithMaxLimitSelected', _.pluck(rolesWithMaxLimit, 'maxValue'));
+            } else {
+                dispatcher.trigger('roleWithMaxLimitSelected', this.props.nodes.length);
+            }
+
             this.setState({
                 selectedRoles: selectedRoles,
                 indeterminateRoles: _.without(this.state.indeterminateRoles, role)
             });
         },
-        getNodesForLimitsCheck: function() {
-            var selectedNodes = this.props.nodes.filter(function(node) {
-                    return this.props.selectedNodeIds[node.id];
-                }, this),
-                clusterNodes = this.props.cluster.get('nodes').filter(function(node) {
-                    return !_.contains(this.props.selectedNodeIds, node.id);
-                }, this);
-            return new models.Nodes(_.union(selectedNodes, clusterNodes));
-        },
         assignRoles: function() {
-            var roles = this.props.cluster.get('release').get('role_models'),
-                nodesForLimitsCheck = this.getNodesForLimitsCheck();
+            var roles = this.props.cluster.get('release').get('role_models');
             this.props.nodes.each(function(node) {
                 if (this.props.selectedNodeIds[node.id]) roles.each(function(role) {
                     var roleName = role.get('name');
                     if (!node.hasRole(roleName, true)) {
                         var nodeRoles = node.get('pending_roles');
                         if (_.contains(this.state.selectedRoles, roleName)) {
-                            if (this.checkLimits(role, nodesForLimitsCheck).valid) nodeRoles = _.union(nodeRoles, [roleName]);
+                            nodeRoles = _.union(nodeRoles, [roleName]);
                         } else if (!_.contains(this.state.indeterminateRoles, roleName)) {
                             nodeRoles = _.without(nodeRoles, roleName);
                         }
@@ -418,20 +452,28 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (restrictionsCheck.result && restrictionsCheck.message) messages.push(restrictionsCheck.message);
             if (!limitsCheck.valid && limitsCheck.message) messages.push(limitsCheck.message);
             if (_.contains(conflicts, name)) messages.push(i18n('cluster_page.nodes_tab.role_conflict'));
+
+            var willMaxNodesLimitReached = role.get('limits') && role.get('limits').max < _.compact(_.values(this.props.selectedNodeIds)).length;
+            if (willMaxNodesLimitReached) {
+                messages.push(i18n('common.role_limits.max', {
+                    limitValue: role.get('limits').max,
+                    roleName: role.get('name'),
+                    count: _.keys(this.props.selectedNodeIds).length
+                }));
+            }
             return {
-                result: restrictionsCheck.result || _.contains(conflicts, name) || (!limitsCheck.valid && !_.contains(this.state.selectedRoles, name)),
+                result: restrictionsCheck.result || _.contains(conflicts, name) || (!limitsCheck.valid && !_.contains(this.state.selectedRoles, name)) || willMaxNodesLimitReached,
                 message: messages.join(' ')
             };
         },
         render: function() {
-            var nodesForLimitsCheck = this.getNodesForLimitsCheck();
             return (
                 <div className='role-panel'>
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
                     {this.props.cluster.get('release').get('role_models').map(function(role) {
                         if (!role.checkRestrictions(this.state.configModels, 'hide').result) {
                             var name = role.get('name'),
-                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.state.configModels, nodesForLimitsCheck) : {};
+                                processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.state.configModels, this.props.nodesForLimitsCheck) : {};
                             return (
                                 <controls.Input
                                     key={name}
@@ -463,6 +505,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
             }
         },
+        getInitialState: function() {
+            return {blockSelectAll: false};
+        },
+        blockSelectAll: function(numberOfNodes) {
+            numberOfNodes = _.isArray(numberOfNodes) ? _.min(numberOfNodes) : numberOfNodes;
+            this.setState({blockSelectAll: numberOfNodes < this.props.nodes.length});
+        },
         renderSelectAllCheckbox: function() {
             var availableNodesIds = _.compact(this.props.nodes.map(function(node) {if (node.isSelectable()) return node.id;}));
             return (
@@ -470,7 +519,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     ref='select-all'
                     type='checkbox'
                     checked={this.props.mode == 'edit' || (availableNodesIds.length && !_.any(availableNodesIds, function(id) {return !this.props.selectedNodeIds[id];}, this))}
-                    disabled={this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length}
+                    disabled={this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length || this.state.blockSelectAll}
                     label={i18n('common.select_all')}
                     wrapperClassName='span2 select-all'
                     onChange={_.bind(this.props.selectNodes, this.props, availableNodesIds)}
@@ -480,7 +529,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     };
 
     NodeList = React.createClass({
-        mixins: [SelectAllMixin],
+        mixins: [
+            SelectAllMixin,
+            componentMixins.dispatcherMixin('roleWithMaxLimitSelected', 'blockSelectAll')
+        ],
         getEmptyListWarning: function() {
             var ns = 'cluster_page.nodes_tab.';
             if (this.props.mode == 'add') return i18n(ns + 'no_nodes_in_fuel');
@@ -509,6 +561,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         render: function() {
             var groups = this.groupNodes();
+            var rolesWithMax = this.props.rolesWithMaxRestrictionReached;
+            var nodesContainingRestrictions = _.compact(_.map(this.props.nodes, function(node) {
+                if (_.intersection(rolesWithMax, node.get('pending_roles')).length || _.intersection(rolesWithMax, node.get('roles')).length) {
+                    return node;
+                }
+            }, this));
+
+            var nodesWithRestrictionsIds = _.map(nodesContainingRestrictions, function(node) {
+                return node.id;
+            }, this);
             return (
                 <div className='node-list'>
                     {!!groups.length &&
@@ -525,6 +587,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                         key={group[0]}
                                         label={group[0]}
                                         nodes={group[1]}
+                                        enabledNodeIds={nodesWithRestrictionsIds}
                                     />;
                                 }, this)}
                             </div>
@@ -538,7 +601,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     });
 
     NodeGroup = React.createClass({
-        mixins: [SelectAllMixin],
+        mixins: [
+            SelectAllMixin,
+            componentMixins.dispatcherMixin('roleWithMaxLimitSelected', 'blockSelectAll')
+        ],
         render: function() {
             return (
                 <div className='node-group'>
@@ -557,6 +623,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 cluster={this.props.cluster}
                                 locked={this.props.mode == 'edit' || this.props.locked}
                                 onNodeSelection={_.bind(this.props.selectNodes, this.props, [node.id])}
+                                isDisabledNode={this.props.enabledNodeIds.length ? !_.contains(this.props.enabledNodeIds, node.id) : false}
                             />;
                         }, this)}
                     </div>
@@ -740,7 +807,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             type='checkbox'
                             name={node.id}
                             checked={this.props.checked}
-                            disabled={disabled}
+                            disabled={disabled || this.props.isDisabledNode}
                             onChange={this.props.onNodeSelection}
                         />
                         <div className='node-content'>

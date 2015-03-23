@@ -127,10 +127,10 @@ define([
                     min: evaluateExpressionHelper(limits.min, models).value,
                     recommended: evaluateExpressionHelper(limits.recommended, models).value
                 },
-                count = nodes.nodesAfterDeploymentWithRole(name).length,
+                // for max limits we need all nodes even with no role assigned so far
+                count = this.get('limits') && this.get('limits').max ? nodes.length : nodes.nodesAfterDeploymentWithRole(name).length,
                 messages,
                 label = this.get('label');
-
             var checkOneLimit = function(obj, limitType) {
                 var limitValue,
                     comparator;

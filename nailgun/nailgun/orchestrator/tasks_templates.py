@@ -41,19 +41,29 @@ def make_ubuntu_preferences_task(uids, repo):
     # TODO(ikalnitsky):
     # Research how to add host condition to the current pinning.
 
-    condition = ['n={0}'.format(repo['suite'])]
-    for section in repo['section'].split():
-        condition.append('c={0}'.format(section))
-
-    preferences_content = [
+    template = '\n'.join([
         'Package: *',
-        'Pin: release {condition}',
-        'Pin-Priority: {priority}',
-    ]
+        'Pin: release a={suite},c={section}',
+        'Pin-Priority: {priority}', ])
 
-    preferences_content = '\n'.join(preferences_content).format(
-        condition=','.join(condition),
-        priority=repo['priority'])
+    template_flat = '\n'.join([
+        'Package: *',
+        'Pin: release a={suite}',
+        'Pin-Priority: {priority}', ])
+
+    preferences_content = []
+    if repo['section']:
+        for section in repo['section'].split():
+            preferences_content.append(template.format(
+                suite=repo['suite'],
+                section=section,
+                priority=repo['priority']))
+    else:
+        preferences_content.append(template_flat.format(
+            suite=repo['suite'],
+            priority=repo['priority']))
+
+    preferences_content = '\n\n'.join(preferences_content)
     preferences_path = os.path.join('/etc/apt/preferences.d', repo['name'])
 
     return make_upload_task(uids, preferences_content, preferences_path)

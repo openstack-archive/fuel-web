@@ -158,7 +158,11 @@
                     "link_text": "Register Now",
                     "create_account": "Create Account",
                     "retrive_password": "Retrive Password",
-                    "connection_error": " Looks like this machine is not connected to Internet. Please check connection and try again"
+                    "connection_error": " Looks like this machine is not connected to Internet. Please check connection and try again",
+                    "welcome_phrase": {
+                        "thanks": "Thanks",
+                        "content": "you’re all set!"
+                    }
                 }
             },
             "navbar": {
@@ -748,7 +752,8 @@
                 "registration": {
                     "title": "Create Account",
                     "i_agree": "I Read and Accept",
-                    "terms_and_conditions": "Terms & Conditions"
+                    "terms_and_conditions": "Terms & Conditions",
+                    "agree_error": "You need to accept Terms and Conditions"
                 },
                 "retrieve_password": {
                     "title": "Retrive Password",

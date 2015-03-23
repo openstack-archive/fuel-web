@@ -43,10 +43,21 @@ define([
                     utils.showErrorDialog({response: response});
                 });
         },
+        showResponseErrors: function(response) {
+            var jsonObj,
+                error = '';
+            try {
+                jsonObj = JSON.parse(response.responseText);
+                error = jsonObj.message;
+            } catch (e) {
+                error = i18n('welcome_page.register.connection_error');
+            }
+            this.setState({error: error});
+        },
         saveConnected: function(response) {
             var registrationData = this.props.settings.get('statistics');
             _.each(response, function(value, name) {
-                registrationData[name].value = value;
+                if (name != 'password') registrationData[name].value = value;
             });
             this.saveSettings()
                 .done(_.bind(function() {
@@ -61,7 +72,7 @@ define([
             var settings = this.props.settings,
                 loginInfo = this.props.settings.get('tracking'),
                 remoteLoginForm = this.props.remoteLoginForm;
-            if (settings.isValid({models: this.configModels}) && !this.state.error) {
+            if (settings.isValid({models: this.configModels})) {
                 this.setState({actionInProgress: true});
                 _.each(loginInfo, function(data, inputName) {
                     var name = remoteLoginForm.makePath('credentials', inputName, 'value');
@@ -69,9 +80,7 @@ define([
                 }, this);
                 remoteLoginForm.save()
                     .done(_.bind(this.saveConnected, this))
-                    .fail(_.bind(function() {
-                        this.setState({error: i18n('welcome_page.register.connection_error')});
-                    }, this))
+                    .fail(this.showResponseErrors)
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this));

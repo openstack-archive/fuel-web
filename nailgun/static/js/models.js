@@ -1042,19 +1042,19 @@ define([
 
     models.MirantisLoginForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisLoginForm',
-        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/login1',
+        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/login',
         nailgunUrl: 'api/tracking/login'
     });
 
     models.MirantisRegistrationForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisRegistrationForm',
-        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration1',
+        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration',
         nailgunUrl: 'api/tracking/registration'
     });
 
     models.MirantisRetrievePasswordForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisRetrievePasswordForm',
-        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/restore_password1',
+        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/restore_password',
         nailgunUrl: 'api/tracking/restore_password'
     });
 

@@ -939,32 +939,37 @@ class BaseTestCase(TestCase):
         except exception:
             self.fail('Exception "{0}" raised.'.format(exception))
 
-    def datadiff(self, node1, node2, path=None, ignore_keys=[]):
+    def datadiff(self, node1, node2, path=None, ignore_keys=[],
+                 compare_sorted=False):
         if path is None:
             path = []
 
-        print("Path: {0}".format("->".join(path)))
+        def fail(msg, failed_path):
+            self.fail('Path "{0}": {1}'.format("->".join(failed_path), msg))
 
         if not isinstance(node1, dict) or not isinstance(node2, dict):
-            if isinstance(node1, list):
+            if isinstance(node1, (list, tuple)):
                 newpath = path[:]
+                if compare_sorted:
+                    node1 = sorted(node1)
+                    node2 = sorted(node2)
                 for i, keys in enumerate(izip(node1, node2)):
                     newpath.append(str(i))
-                    self.datadiff(keys[0], keys[1], newpath, ignore_keys)
+                    self.datadiff(keys[0], keys[1], newpath, ignore_keys,
+                                  compare_sorted)
                     newpath.pop()
             elif node1 != node2:
                 err = "Values differ: {0} != {1}".format(
                     str(node1),
                     str(node2)
                 )
-                raise Exception(err)
+                fail(err, path)
         else:
             newpath = path[:]
 
             if len(node1) != len(node2):
-                raise Exception(
-                    'Nodes have different keys number: {0} != {1}'.format(
-                        len(node1), len(node2)))
+                fail('Nodes have different keys number: {0} != {1}'.format(
+                    len(node1), len(node2)), path)
 
             for key1, key2 in zip(
                 sorted(node1),
@@ -975,11 +980,12 @@ class BaseTestCase(TestCase):
                         str(key1),
                         str(key2)
                     )
-                    raise Exception(err)
+                    fail(err, path)
                 if key1 in ignore_keys:
                     continue
                 newpath.append(key1)
-                self.datadiff(node1[key1], node2[key2], newpath, ignore_keys)
+                self.datadiff(node1[key1], node2[key2], newpath, ignore_keys,
+                              compare_sorted)
                 newpath.pop()
 
 

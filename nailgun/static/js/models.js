@@ -80,7 +80,7 @@ define([
             this.expandedLimits = this.expandedLimits || {};
             this.expandedLimits[this.get('name')] = limits;
         },
-        checkLimits: function(models, checkLimitIsReached, limitTypes, nodes) {
+        checkLimits: function(models, checkLimitIsReached, limitTypes, nodes, notAppliedRoles) {
             /*
              *  Check the 'limits' section of configuration.
              *  models -- current model to check the limits
@@ -127,7 +127,7 @@ define([
                     min: evaluateExpressionHelper(limits.min, models).value,
                     recommended: evaluateExpressionHelper(limits.recommended, models).value
                 },
-                count = nodes.nodesAfterDeploymentWithRole(name).length,
+                count = notAppliedRoles && notAppliedRoles - 1 || nodes.nodesAfterDeploymentWithRole(name).length,
                 messages,
                 label = this.get('label');
 

@@ -40,11 +40,11 @@ expressions
 e
     : e EQUALS e
         {$$ = new yy.SubexpressionWrapper(function() {
-            return $1.getValue() == $3.getValue();
+            return $1.getValue() === $3.getValue();
         })}
     | e NOT_EQUALS e
         {$$ = new yy.SubexpressionWrapper(function() {
-            return $1.getValue() != $3.getValue();
+            return $1.getValue() !== $3.getValue();
         })}
     | LPAREN e RPAREN
         {$$ = new yy.SubexpressionWrapper(function() {

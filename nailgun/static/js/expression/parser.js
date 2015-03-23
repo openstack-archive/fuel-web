@@ -88,12 +88,12 @@ return $$[$0-1];
 break;
 case 2:
 this.$ = new yy.SubexpressionWrapper(function() {
-            return $$[$0-2].getValue() == $$[$0].getValue();
+            return $$[$0-2].getValue() === $$[$0].getValue();
         })
 break;
 case 3:
 this.$ = new yy.SubexpressionWrapper(function() {
-            return $$[$0-2].getValue() != $$[$0].getValue();
+            return $$[$0-2].getValue() !== $$[$0].getValue();
         })
 break;
 case 4:

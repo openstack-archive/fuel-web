@@ -1317,6 +1317,10 @@
                 name: "MOS"
                 uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/centos/x86_64"
                 priority: 20
+              - type: "rpm"
+                name: "MOS-Updates"
+                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/centos/updates"
+                priority: 20
       generated:
         cobbler:
           profile:
@@ -1356,6 +1360,13 @@
                 suite: "trusty"
                 section: "main"
                 priority: 1001
+              - type: "deb"
+                name: "MOS-Updates"
+                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/ubuntu/updates"
+                suite: ""
+                section: "/"
+                priority: 1001
+
       generated:
         cobbler:
           profile:

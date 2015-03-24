@@ -585,6 +585,12 @@ define([
         root: 'settings'
     });
 
+    models.MasterNodeSettings = models.Settings.extend({
+        constructorName: 'MasterNodeSettings',
+        url: '/api/settings',
+        root: 'master_node'
+    });
+
     models.Disk = BaseModel.extend({
         constructorName: 'Disk',
         urlRoot: '/api/nodes/',
@@ -1025,6 +1031,7 @@ define([
 
     models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
         constructorName: 'MirantisCredentials',
+        baseUrl: 'http://dev_ware.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
         validate: function(attrs) {
             var errors = {};
             _.each(attrs, function(group, groupName) {
@@ -1043,19 +1050,25 @@ define([
 
     models.MirantisLoginForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisLoginForm',
-        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/login1',
+        url: function() {
+            return this.baseUrl + 'login';
+        },
         nailgunUrl: 'api/tracking/login'
     });
 
     models.MirantisRegistrationForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisRegistrationForm',
-        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/registration1',
+        url: function() {
+            return this.baseUrl + 'registration';
+        },
         nailgunUrl: 'api/tracking/registration'
     });
 
     models.MirantisRetrievePasswordForm = models.MirantisCredentials.extend({
         constructorName: 'MirantisRetrievePasswordForm',
-        url: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/restore_password1',
+        url: function() {
+            return this.baseUrl + 'restore_password';
+        },
         nailgunUrl: 'api/tracking/restore_password'
     });
 

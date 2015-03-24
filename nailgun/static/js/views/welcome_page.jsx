@@ -52,10 +52,7 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                 .fail(_.bind(function() {
                     remoteLoginForm.url = remoteLoginForm.nailgunUrl;
                     remoteLoginForm.fetch()
-                        .fail(_.bind(function(response) {
-                            var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
-                            this.setState({error: error});
-                        }, this))
+                        .fail(this.showResponseErrors)
                         .always(_.bind(function() {this.setState({loading: false});}, this));
                 }, this));
         },
@@ -186,7 +183,7 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                         {this.props.isConnected ?
                             <div className='happy-cloud'>
                                 <div className='cloud-smile'></div>
-                                <div>Thanks {this.props.settings.get('statistics').name.value || 'Eugene'}, you’re all set!</div>
+                                <div>{i18n(ns + 'welcome_phrase.thanks')} {this.props.settings.get('statistics').name.value}, {i18n(ns + 'welcome_phrase.content')}</div>
                             </div>
                         :
                             <div>

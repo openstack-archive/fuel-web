@@ -41,4 +41,7 @@ class TestActionLogsProcessing(BaseIntegrationTest):
         action_logs = self.db.query(models.ActionLog).all()
         for al in action_logs:
             task_status = al.additional_info["ended_with_status"]
-            self.assertEqual(task_status, consts.TASK_STATUSES.ready)
+            self.assertIn(task_status, [
+                consts.TASK_STATUSES.ready,
+                consts.TASK_STATUSES.running
+            ])

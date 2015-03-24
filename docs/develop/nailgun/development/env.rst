@@ -153,7 +153,7 @@ Setup for Web UI Tests
     sudo add-apt-repository ppa:chris-lea/node.js
     sudo apt-get update
     sudo apt-get install nodejs
-    sudo npm install -g grunt-cli
+    sudo npm install -g gulp
     cd nailgun
     npm install
 
@@ -223,7 +223,7 @@ Running Nailgun in Fake Mode
 
     cd nailgun
     npm install
-    grunt bower
+    gulp bower
 
 #. Populate the database from fixtures::
 
@@ -243,7 +243,7 @@ Running Nailgun in Fake Mode
 
 #. (optional) To create a compressed version of UI and put it into static_compressed dir::
 
-    grunt build --static-dir=static_compressed
+    gulp build --static-dir=static_compressed
 
 Note: Diagnostic Snapshot is not available in a Fake mode.
 

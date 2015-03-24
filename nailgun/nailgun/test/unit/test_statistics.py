@@ -32,6 +32,7 @@ from nailgun.objects import OpenStackWorkloadStats
 from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
+from nailgun.statistics import errors
 from nailgun.statistics.installation_info import InstallationInfo
 from nailgun.statistics.oswl_collector import collect as oswl_collect_once
 from nailgun.statistics.oswl_saver import oswl_data_checksum
@@ -975,6 +976,24 @@ class TestOSWLCollectingUtils(BaseTestCase):
         )
         self.assertIsNone(retrieved)
 
+    def test_get_online_controller(self):
+        node_name = "test"
+        self.env.create(
+            nodes_kwargs=[{"online": True,
+                           "roles": ["controller"],
+                           "name": node_name}]
+        )
+
+        cluster = self.env.clusters[0]
+        online_controller = utils._get_online_controller(cluster)
+        self.assertIsNotNone(online_controller)
+        self.assertEqual(online_controller.name, node_name)
+
+        cluster.nodes[0].online = False
+        self.assertRaises(errors.NoOnlineControllers,
+                          utils._get_online_controller,
+                          cluster)
+
 
 class TestOpenStackClientProvider(BaseTestCase):
 
@@ -1038,6 +1057,16 @@ class TestOpenStackClientProvider(BaseTestCase):
             client_provider.keystone
 
             get_kc_mock.assert_called_with_once(**auth_kwargs)
+
+    def test_fail_if_no_online_controllers(self):
+        self.env.create(
+            nodes_kwargs=[{"online": False, "roles": ["controller"]}]
+        )
+        cluster = self.env.clusters[0]
+        client_provider = utils.ClientProvider(cluster)
+
+        with self.assertRaises(errors.NoOnlineControllers):
+            client_provider.credentials
 
     @patch("nailgun.statistics.utils.keystone_client_v3.Client")
     @patch("nailgun.statistics.utils.keystone_client_v2.Client")
@@ -1157,6 +1186,44 @@ class TestOSWLCollector(BaseTestCase):
         oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
         return OpenStackWorkloadStats.get_last_by(
             cls_id, consts.OSWL_RESOURCE_TYPES.vm)
+
+    @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
+    @patch('nailgun.statistics.oswl_collector.utils.set_proxy')
+    @patch('nailgun.statistics.oswl_collector.utils.'
+           'get_info_from_os_resource_manager')
+    def test_skip_collection_for_errorful_cluster(self, get_info_mock, *_):
+        error_cluster = self.env.create(
+            api=False,
+            nodes_kwargs=[{"roles": ["controller"], "online": False}],
+            cluster_kwargs={"name": "error",
+                            "status": consts.CLUSTER_STATUSES.operational}
+        )
+        normal_cluster = self.env.create(
+            api=False,
+            nodes_kwargs=[{"roles": ["controller"], "online": True}],
+            cluster_kwargs={"name": "normal",
+                            "status": consts.CLUSTER_STATUSES.operational}
+        )
+
+        get_info_mock.return_value = self.vms_info
+
+        oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
+
+        last_for_error_clsr = OpenStackWorkloadStats.get_last_by(
+            error_cluster["id"], consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertIsNone(last_for_error_clsr)
+
+        last_for_normal_clsr = OpenStackWorkloadStats.get_last_by(
+            normal_cluster["id"], consts.OSWL_RESOURCE_TYPES.vm)
+        self.assertIsNotNone(last_for_normal_clsr)
+
+        upd_time = last_for_normal_clsr.updated_time
+        res_data = {
+            'added': [{'time': upd_time.isoformat(), 'id': 1}],
+            'removed': [],
+            'modified': [],
+            'current': self.vms_info}
+        self.assertEqual(last_for_normal_clsr.resource_data, res_data)
 
     @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
     @patch('nailgun.statistics.oswl_collector.utils.get_proxy_for_cluster')

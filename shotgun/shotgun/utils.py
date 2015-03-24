@@ -73,7 +73,7 @@ def compress(target, level, keep_target=False):
     """
     env = copy.deepcopy(os.environ)
     env['XZ_OPT'] = level
-    execute("tar cJvf {0}.xz -C {1} {2}"
+    execute("tar cJvf {0}.tar.xz -C {1} {2}"
             "".format(target,
                       os.path.dirname(target),
                       os.path.basename(target)),

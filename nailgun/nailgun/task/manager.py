@@ -783,6 +783,11 @@ class VerifyNetworksTaskManager(TaskManager):
             db().commit()
             self._call_silently(task, verify_task)
 
+        task.status = consts.TASK_STATUSES.ready
+        task.progress = 100
+        db().add(task)
+        db().commit()
+
         return task
 
 

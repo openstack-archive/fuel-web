@@ -200,6 +200,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
+
         self.assertEqual(400, resp.status_code)
 
     @unittest2.skip('Multicast is always disabled.')
@@ -444,7 +445,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
 
         # check private VLAN range for nodes in Verify parameters
         task = self.env.launch_verify_networks()
-        self.assertEqual(task.status, consts.TASK_STATUSES.running)
+        self.env.wait_ready(task, 5)
         for node in task.cache['args']['nodes']:
             for net in node['networks']:
                 if net['iface'] == priv_nics[node['uid']]:

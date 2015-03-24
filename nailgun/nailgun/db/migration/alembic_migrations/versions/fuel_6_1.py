@@ -415,10 +415,25 @@ def upgrade_data():
 
     upgrade_master_node_settings(connection)
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)
-
+    upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection)
 
 def downgrade_data():
     pass
+
+
+def upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection):
+    select_query = text("SELECT id, generated FROM attributes")
+    update_query = text(
+        "UPDATE attributes SET generated = :generated WHERE id = :attr_id")
+    generated_attributes = connection.execute(select_query)
+    for attr_id, attr in generated_attributes:
+        attr = jsonutils.loads(attr)
+        if attr['cobbler']['profile'] == 'ubuntu_1204_x86_64':
+            attr['cobbler']['profile'] = 'ubuntu_1404_x86_64'
+            connection.execute(
+                update_query,
+                generated=jsonutils.dumps(attr),
+                attr_id=attr_id)
 
 
 def upgrade_master_node_settings(connection):

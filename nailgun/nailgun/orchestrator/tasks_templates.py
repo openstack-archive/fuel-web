@@ -17,6 +17,7 @@
 import os
 
 from oslo.serialization import jsonutils
+from six.moves.urllib.parse import urljoin
 
 from nailgun.settings import settings
 
@@ -171,4 +172,28 @@ def make_provisioning_images_task(uids, repos, provision_data):
         'parameters': {
             'cmd': "fuel-image '{0}'".format(conf),
             'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
+            'retries': 1}})
+
+
+def make_download_debian_installer_task(
+        uids, repos, installer_kernel, installer_initrd):
+    # NOTE(kozhukalov): This task is going to go away by 7.0
+    # because we going to get rid of classic way of provision.
+
+    remote_kernel = urljoin(repos[0]['uri'],
+                            installer_kernel['remote_relative'])
+    remote_initrd = urljoin(repos[0]['uri'],
+                            installer_initrd['remote_relative'])
+
+    return make_shell_task(uids, {
+        'parameters': {
+            'cmd': ('LOCAL_KERNEL_FILE={local_kernel} '
+                    'LOCAL_INITRD_FILE={local_initrd} '
+                    'download-debian-installer '
+                    '{remote_kernel} {remote_initrd}').format(
+                        local_kernel=installer_kernel['local'],
+                        local_initrd=installer_initrd['local'],
+                        remote_kernel=remote_kernel,
+                        remote_initrd=remote_initrd),
+            'timeout': 10 * 60,
             'retries': 1}})

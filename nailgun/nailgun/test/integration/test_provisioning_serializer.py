@@ -153,7 +153,7 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
 
     serializer = ps.ProvisioningSerializer61
 
-    def test_ubuntu_does_contain_prov_task_for_images(self):
+    def test_ubuntu_prov_task_for_images(self):
         release = self.env.create_release(
             api=False, operating_system=consts.RELEASE_OS.ubuntu)
         self.cluster = self.env.create_cluster(
@@ -166,14 +166,21 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
         self.assertIn('pre_provision', serialized_info)
         self.assertTrue(filter(
             lambda task: all([
-                task['priority'] == 100,
                 task['uids'] == ['master'],
                 task['type'] == 'shell',
                 task['parameters']['cmd'].startswith('fuel-image')
             ]),
             serialized_info['pre_provision']))
+        self.assertFalse(filter(
+            lambda task: all([
+                task['uids'] == ['master'],
+                task['type'] == 'shell',
+                task['parameters']['cmd'].startswith(
+                    'LOCAL_KERNEL_FILE')
+            ]),
+            serialized_info['pre_provision']))
 
-    def test_ubuntu_doesnot_contain_prov_task_for_cobbler(self):
+    def test_ubuntu_prov_task_for_cobbler(self):
         release = self.env.create_release(
             api=False, operating_system=consts.RELEASE_OS.ubuntu)
         self.cluster = self.env.create_cluster(
@@ -184,16 +191,23 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
         serialized_info = self.serializer.serialize(self.cluster, [])
 
         self.assertIn('pre_provision', serialized_info)
+        self.assertTrue(filter(
+            lambda task: all([
+                task['uids'] == ['master'],
+                task['type'] == 'shell',
+                task['parameters']['cmd'].startswith(
+                    'LOCAL_KERNEL_FILE')
+            ]),
+            serialized_info['pre_provision']))
         self.assertFalse(filter(
             lambda task: all([
-                task['priority'] == 100,
                 task['uids'] == ['master'],
                 task['type'] == 'shell',
                 task['parameters']['cmd'].startswith('fuel-image')
             ]),
             serialized_info['pre_provision']))
 
-    def test_centos_doesnot_contain_prov_task_for_cobbler(self):
+    def test_centos_prov_task_for_cobbler(self):
         release = self.env.create_release(
             api=False, operating_system=consts.RELEASE_OS.centos)
         self.cluster = self.env.create_cluster(
@@ -212,8 +226,10 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
                 task['parameters']['cmd'].startswith('fuel-image')
             ]),
             serialized_info['pre_provision']))
+        self.assertIn('pre_provision', serialized_info)
+        self.assertEquals([], serialized_info['pre_provision'])
 
-    def test_centos_doesnot_contain_prov_task_for_images(self):
+    def test_centos_prov_task_for_images(self):
         release = self.env.create_release(
             api=False, operating_system=consts.RELEASE_OS.centos)
         self.cluster = self.env.create_cluster(
@@ -232,6 +248,8 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
                 task['parameters']['cmd'].startswith('fuel-image')
             ]),
             serialized_info['pre_provision']))
+        self.assertIn('pre_provision', serialized_info)
+        self.assertEquals([], serialized_info['pre_provision'])
 
     def test_engine_does_not_contain_provisioning_method(self):
         self.cluster = self.env.create_cluster(api=False)

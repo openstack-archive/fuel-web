@@ -118,25 +118,27 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             componentMixins.backboneMixin('settings', 'change invalid')
         ],
         componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm;
-            if (!this.isConnected())
-                remoteLoginForm.fetch()
-                    .fail(_.bind(function() {
-                        remoteLoginForm.url = remoteLoginForm.nailgunUrl;
+            var remoteLoginForm = this.props.remoteLoginForm,
+                settings = this.props.settings;
+            settings.fetch()
+                .done(_.bind(function() {
+                    if (!this.isConnected()) {
                         remoteLoginForm.fetch()
-                            .fail(_.bind(function(response) {
-                                var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
-                                this.setState({error: error});
-                            }, this))
-                            .always(_.bind(function() {this.setState({remoteLoginFormLoading: true});}, this));
-                    }, this));
+                            .fail(_.bind(function() {
+                                remoteLoginForm.url = remoteLoginForm.nailgunUrl;
+                                remoteLoginForm.fetch()
+                                    .fail(this.showResponseErrors);
+                            }, this));
+                    } else {
+                        this.setState({isConnected: true});
+                    }
+                }, this))
+                .always(_.bind(function() {
+                    this.setState({loading: false});
+                }, this));
         },
         isConnected: function() {
-            //FIXME: to do a better checking of connected state when backend will be finished
-            return !!this.props.settings.get('tracking').email.value;
-        },
-        getInitialState: function() {
-            return {isConnected: this.isConnected()};
+            return !!this.props.settings.get('tracking').email.value && !!this.props.settings.get('tracking').email.value;
         },
         onChange: function(inputName, value) {
             var settings = this.props.settings,
@@ -160,7 +162,9 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             });
         },
         render: function() {
-            var registrationInfo = this.props.settings.get('statistics'),
+            var settings = this.props.settings,
+                registrationInfo = settings.get('statistics'),
+                masterNodeUid = settings.get('master_node_uid'),
                 values = ['name', 'email', 'company'];
             if (this.state.loading) return null;
             if (this.state.isConnected)
@@ -174,7 +178,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                             {_.map(values, function(value) {
                                 return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {registrationInfo[value].value}</span>;
                             }, this)}
-                            <span key='masterNodeUid'><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.masterNodeUid}</span>
+                            <span key='masterNodeUid'><b>{i18n('support_page.master_node_uuid')}:</b> {masterNodeUid}</span>
                         </p>
                         <p>
                             <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
@@ -183,8 +187,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                         </p>
                     </SupportPageElement>
                 );
-            var settings = this.props.settings,
-                loginForm = this.props.settings.get('tracking'),
+            var loginForm = this.props.settings.get('tracking'),
                 sortedFields = _.chain(_.keys(loginForm))
                     .without('metadata')
                     .sortBy(function(inputName) {return loginForm[inputName].weight;})

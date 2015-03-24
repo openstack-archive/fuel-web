@@ -24,6 +24,7 @@ from nailgun.logger import logger
 from nailgun.objects import ClusterCollection
 from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.settings import settings
+from nailgun.statistics import errors
 from nailgun.statistics.oswl_saver import oswl_statistics_save
 from nailgun.statistics import utils
 
@@ -53,13 +54,22 @@ def collect(resource_type):
 
         # Collect current OSWL data and update data in DB
         for cluster in operational_clusters:
-            client_provider = utils.ClientProvider(cluster)
-            proxy_for_os_api = utils.get_proxy_for_cluster(cluster)
+            try:
+                client_provider = utils.ClientProvider(cluster)
+                proxy_for_os_api = utils.get_proxy_for_cluster(cluster)
 
-            with utils.set_proxy(proxy_for_os_api):
-                data = utils.get_info_from_os_resource_manager(
-                    client_provider, resource_type)
-                oswl_statistics_save(cluster.id, resource_type, data)
+                with utils.set_proxy(proxy_for_os_api):
+                    data = utils.get_info_from_os_resource_manager(
+                        client_provider, resource_type)
+                    oswl_statistics_save(cluster.id, resource_type, data)
+
+            except errors.NoOnlineControllers as e:
+                logger.error("Cannot collect OSWL resource {0} for cluster "
+                             "with id {1}. Details: {2}."
+                             .format(resource_type,
+                                     cluster.id,
+                                     six.text_type(e))
+                             )
 
         db.commit()
 

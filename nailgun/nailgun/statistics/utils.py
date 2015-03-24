@@ -30,6 +30,7 @@ from nailgun.logger import logger
 from nailgun.network import manager
 from nailgun import objects
 from nailgun.settings import settings
+from nailgun.statistics import errors
 from nailgun.statistics.oswl_resources_description import resources_description
 
 
@@ -150,11 +151,20 @@ def get_proxy_for_cluster(cluster):
 
 
 def _get_online_controller(cluster):
-    return filter(
-        lambda node: (
-            "controller" in node.roles and node.online is True),
+    online_controllers = filter(
+        lambda node: ("controller" in node.roles and node.online is True),
         cluster.nodes
-    )[0]
+    )
+
+    controller = next(iter(online_controllers), None)
+
+    if controller is None:
+        raise errors.NoOnlineControllers(
+            "No online controllers could be found for cluster with id {0}"
+            .format(cluster.id)
+        )
+
+    return controller
 
 
 def _get_data_from_resource_manager(resource_manager, attr_names_mapping,

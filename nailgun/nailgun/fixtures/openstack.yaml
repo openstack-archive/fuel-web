@@ -1251,11 +1251,47 @@
             description: "Please note, the first repo will be considered as Ubuntu mirror and that fact will be used during provisioning procedure."
             value:
               - type: "deb"
-                name: "MOS"
-                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/ubuntu/x86_64"
+                name: "ubuntu"
+                uri: "http://archive.ubuntu.com/ubuntu/"
                 suite: "trusty"
-                section: "main"
+                section: "main universe multiverse"
                 priority: 1001
+              - type: "deb"
+                name: "ubuntu-updates"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "trusty-updates"
+                section: "main universe multiverse"
+                priority: 1001
+              - type: "deb"
+                name: "ubuntu-security"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "trusty-security"
+                section: "main universe multiverse"
+                priority: 1001
+              - type: "deb"
+                name: "mos"
+                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/ubuntu/x86_64"
+                suite: "mos6.1"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-updates"
+                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                suite: "mos6.1-updates"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-security"
+                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                suite: "mos6.1-security"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-holdback"
+                uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
+                suite: "mos6.1-holdback"
+                section: "main restricted"
+                priority: 1051
       generated:
         cobbler:
           profile:

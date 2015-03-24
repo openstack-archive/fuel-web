@@ -184,7 +184,9 @@ class UploadMOSRepo(GenericRolesHook):
             yield templates.make_ubuntu_unauth_repos_task(uids)
             for repo in repos:
                 yield templates.make_ubuntu_sources_task(uids, repo)
-                yield templates.make_ubuntu_preferences_task(uids, repo)
+
+                if repo.get('priority'):
+                    yield templates.make_ubuntu_preferences_task(uids, repo)
             yield templates.make_apt_update_task(uids)
 
 

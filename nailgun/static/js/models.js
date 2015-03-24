@@ -128,7 +128,8 @@ define([
                     recommended: evaluateExpressionHelper(limits.recommended, models).value
                 },
                 count = nodes.nodesAfterDeploymentWithRole(name).length,
-                messages;
+                messages,
+                label = this.get('label');
 
             var checkOneLimit = function(obj, limitType) {
                 var limitValue,
@@ -155,7 +156,7 @@ define([
                     return {
                         type: limitType,
                         value: limitValue,
-                        message: obj.message || i18n('common.role_limits.' + limitType, {limitValue: limitValue, count: count, roleName: name})
+                        message: obj.message || i18n('common.role_limits.' + limitType, {limitValue: limitValue, count: count, roleName: label})
                     };
                 }
             };

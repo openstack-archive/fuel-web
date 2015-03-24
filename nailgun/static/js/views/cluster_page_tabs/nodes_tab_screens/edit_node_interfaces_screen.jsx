@@ -558,7 +558,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 networksToAdd = [],
                 showHelpMessage = !locked && !assignedNetworks.length,
                 bondProperties = ifc.get('bond_properties'),
-                interfaceProperties = ifc.get('interface_properties') || null;
+                interfaceProperties = ifc.get('interface_properties') || null,
+                isMultipleNodesConfiguration = this.props.nodes.length > 1;
+
             assignedNetworks.each(function(interfaceNetwork) {
                 if (interfaceNetwork.getFullNetwork(networks).get('name') != 'floating') {
                     if (networksToAdd.length) {
@@ -642,18 +644,23 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         <div className='network-connections-info-block'>
                             {_.map(slaveInterfaces, function(slaveInterface) {
                                 return <div key={'network-connections-info-' + slaveInterface.get('name')} className='network-connections-info-block-item'>
-                                        <div className='network-connections-info-position'></div>
-                                        <div className='network-connections-info-description'>
-                                            <div>{i18n(configureInterfacesTransNS + 'mac')}: {slaveInterface.get('mac')}</div>
-                                            <div>{i18n(configureInterfacesTransNS + 'speed')}:
-                                                {utils.showBandwidth(slaveInterface.get('current_speed'))}</div>
-                                            {(this.props.bondingAvailable && slaveInterfaces.length >= 3) &&
-                                                <button className='btn btn-link btn-remove-interface'
-                                                        type='button'
-                                                        onClick={this.bondingRemoveInterface.bind(this, slaveInterface.get('name'))}>{i18n('common.remove_button')}</button>
-                                            }
+                                    <div className='network-connections-info-position'></div>
+                                    <div className='network-connections-info-description'>
+                                        <div>
+                                            {i18n(configureInterfacesTransNS + 'mac')}: {isMultipleNodesConfiguration ?
+                                                i18n('common.not_available') : slaveInterface.get('mac')}
                                         </div>
-                                    </div>;
+                                        <div>
+                                            {i18n(configureInterfacesTransNS + 'speed')}: {isMultipleNodesConfiguration ?
+                                                i18n('common.not_available') : utils.showBandwidth(slaveInterface.get('current_speed'))}
+                                        </div>
+                                        {(this.props.bondingAvailable && slaveInterfaces.length >= 3) &&
+                                            <button className='btn btn-link btn-remove-interface'
+                                                    type='button'
+                                                    onClick={this.bondingRemoveInterface.bind(this, slaveInterface.get('name'))}>{i18n('common.remove_button')}</button>
+                                        }
+                                    </div>
+                                </div>;
                             }, this)
                             }
                         </div>

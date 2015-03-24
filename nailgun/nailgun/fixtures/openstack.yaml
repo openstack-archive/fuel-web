@@ -1382,7 +1382,7 @@
             weight: 50
           repos:
             type: "custom_repo_configuration"
-            extra_priority: 1050
+            extra_priority: null
             description: "Please note, the first repo will be considered as Ubuntu mirror and that fact will be used during provisioning procedure."
             value:
               - type: "deb"
@@ -1390,19 +1390,19 @@
                 uri: "http://archive.ubuntu.com/ubuntu/"
                 suite: "trusty"
                 section: "main universe multiverse"
-                priority: 1001
+                priority: null
               - type: "deb"
                 name: "ubuntu-updates"
                 uri: "http://archive.ubuntu.com/ubuntu/"
                 suite: "trusty-updates"
                 section: "main universe multiverse"
-                priority: 1001
+                priority: null
               - type: "deb"
                 name: "ubuntu-security"
                 uri: "http://archive.ubuntu.com/ubuntu/"
                 suite: "trusty-security"
                 section: "main universe multiverse"
-                priority: 1001
+                priority: null
               - type: "deb"
                 name: "mos"
                 uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/ubuntu/x86_64"
@@ -1426,7 +1426,7 @@
                 uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
                 suite: "mos6.1-holdback"
                 section: "main restricted"
-                priority: 1051
+                priority: 1100
       generated:
         cobbler:
           profile:

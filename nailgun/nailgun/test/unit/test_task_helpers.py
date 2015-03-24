@@ -158,3 +158,22 @@ class TestTaskHelpers(BaseTestCase):
 
         progress = TaskHelper.recalculate_provisioning_task_progress(task)
         self.assertEqual(progress, 50)
+
+    def test_get_task_cache(self):
+        expected = {"key": "value"}
+        task = Task()
+        task.cache = expected
+
+        self.db.add(task)
+        self.db.flush()
+
+        actual = TaskHelper.get_task_cache(task)
+        self.assertDictEqual(expected, actual)
+
+        task_from_db = objects.Task.get_by_uuid(task.uuid)
+        self.db.delete(task_from_db)
+        self.db.flush()
+
+        expected = {}
+        actual = TaskHelper.get_task_cache(task)
+        self.assertDictEqual(expected, actual)

@@ -22,6 +22,7 @@ import six
 import web
 
 from sqlalchemy import or_
+from sqlalchemy.orm import exc
 
 from nailgun import consts
 from nailgun.db import db
@@ -420,6 +421,29 @@ class TaskHelper(object):
             logger.error("create_action_log failed: %s", six.text_type(e))
 
     @classmethod
+    def get_task_cache(cls, task_instance):
+        """Retrieve "cache" attritbute from task instance.
+
+        In some cases row that is related to task_instance is deleted
+        from db and, since "cache" attribute has marked as deffered,
+        SQLAlchemy error occurs.
+
+        :param task_instance: task object to inspect
+        :returns: task_instance.cache attribute value or emty dict if
+        corresponding row was deleted from db
+        """
+        task_cache = {}
+        try:
+            task_cache = task_instance.cache
+        except exc.ObjectDeletedError:
+            logger.warning("Cache retrieving from task with uuid {0} failed "
+                           "due to deletion of corresponding row from db. "
+                           "Empty data will be provided for action log "
+                           "updating routine.".format(task_instance.uuid))
+
+        return task_cache
+
+    @classmethod
     def update_action_log(cls, task, al_instance=None):
         from nailgun.objects import ActionLog
 
@@ -439,12 +463,13 @@ class TaskHelper(object):
                 else task.status
 
             if al_instance:
+                task_cache = cls.get_task_cache(task)
                 update_data = {
                     "end_timestamp": datetime.datetime.utcnow(),
                     "additional_info": {
                         "ended_with_status": task_status,
                         "message": "",
-                        "output": cls.sanitize_task_output(task.cache,
+                        "output": cls.sanitize_task_output(task_cache,
                                                            al_instance)
                     }
                 }

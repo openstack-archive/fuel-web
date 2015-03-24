@@ -23,6 +23,7 @@ import mock
 
 from sqlalchemy import sql
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.consts import ACTION_TYPES
@@ -127,6 +128,18 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertIn("message", action_log.additional_info)
                 self.assertEqual(action_log.additional_info["message"], "")
                 self.assertIn("output", action_log.additional_info)
+
+    def test_update_action_logs_after_empty_cluster_deletion(self):
+        self.env.create_cluster()
+        self.env.delete_environment()
+
+        al = self.db.query(models.ActionLog).first()
+
+        self.assertIsNotNone(al.end_timestamp)
+        self.assertEqual(al.additional_info["ended_with_status"],
+                         consts.TASK_STATUSES.ready)
+        self.assertEqual(al.additional_info["message"], "")
+        self.assertEqual(al.additional_info["output"], {})
 
     def test_check_before_deployment_with_error(self):
         self.env.create(

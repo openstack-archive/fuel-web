@@ -415,10 +415,40 @@ def upgrade_data():
 
     upgrade_master_node_settings(connection)
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)
+    upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection)
 
 
 def downgrade_data():
     pass
+
+
+def upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection):
+    select_query = text("SELECT id, generated FROM attributes")
+    update_query = text(
+        "UPDATE attributes SET generated = :generated WHERE id = :attr_id")
+    for attr_id, generated in connection.execute(select_query):
+        attrs = jsonutils.loads(generated)
+        if attrs.get('cobbler', {}).get('profile', {}) == 'ubuntu_1204_x86_64':
+            attrs['cobbler']['profile'] = 'ubuntu_1404_x86_64'
+            connection.execute(
+                update_query,
+                generated=jsonutils.dumps(attrs),
+                attr_id=attr_id)
+
+    select_query = text("SELECT id, attributes_metadata FROM releases")
+    update_query = text(
+        "UPDATE releases SET attributes_metadata = :attrs_meta"
+        " WHERE id = :release_id")
+    for release_id, attributes_metadata in connection.execute(select_query):
+        attrs = jsonutils.loads(attributes_metadata)
+        if attrs.get('generated', {}).get('cobbler', {}).get('profile', {}).\
+                get('generator_arg', {}) == 'ubuntu_1204_x86_64':
+            attrs['generated']['cobbler']['profile']['generator_arg'] = \
+                'ubuntu_1404_x86_64'
+            connection.execute(
+                update_query,
+                attrs_meta=jsonutils.dumps(attrs),
+                release_id=release_id)
 
 
 def upgrade_master_node_settings(connection):

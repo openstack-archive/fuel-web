@@ -40,6 +40,7 @@ from nailgun.utils.migration import upgrade_master_node_settings_6_0_to_6_1
 from nailgun.utils.migration import upgrade_networks_metadata_to_6_1
 from nailgun.utils.migration import upgrade_role_limits_6_0_to_6_1
 from nailgun.utils.migration import upgrade_role_restrictions_6_0_to_6_1
+from nailgun.utils.migration import upgrade_ubuntu_cobbler_profile_6_0_to_6_1
 
 
 release_states_old = (
@@ -415,6 +416,7 @@ def upgrade_data():
 
     upgrade_master_node_settings(connection)
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)
+    upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection)
 
 
 def downgrade_data():

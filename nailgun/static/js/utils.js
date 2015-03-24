@@ -342,6 +342,10 @@ define([
             if (_.isString(model1Value)) return utils.natsort(model1Value, model2Value, options);
             var result = model1Value - model2Value;
             return options.desc ? -result : result;
+        },
+        // inspired by lodash https://github.com/lodash/lodash/blob/3.5.0/lodash.src.js#L9841
+        capitalize: function(stringToCapitalize) {
+            return stringToCapitalize && (stringToCapitalize.charAt(0).toUpperCase() + stringToCapitalize.slice(1));
         }
     };
 

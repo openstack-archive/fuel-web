@@ -155,7 +155,11 @@ define([
                     return {
                         type: limitType,
                         value: limitValue,
-                        message: obj.message || i18n('common.role_limits.' + limitType, {limitValue: limitValue, count: count, roleName: name})
+                        message: obj.message || i18n('common.role_limits.' + limitType, {
+                            limitValue: limitValue,
+                            count: count,
+                            roleName: utils.capitalize(name)
+                        })
                     };
                 }
             };

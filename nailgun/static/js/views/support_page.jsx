@@ -118,25 +118,24 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             componentMixins.backboneMixin('settings', 'change invalid')
         ],
         componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm;
-            if (!this.isConnected())
-                remoteLoginForm.fetch()
-                    .fail(_.bind(function() {
-                        remoteLoginForm.url = remoteLoginForm.nailgunUrl;
+            var remoteLoginForm = this.props.remoteLoginForm,
+                settings = this.props.settings;
+            settings.fetch()
+                .done(_.bind(function() {
+                    if (!this.isConnected())
                         remoteLoginForm.fetch()
-                            .fail(_.bind(function(response) {
-                                var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
-                                this.setState({error: error});
-                            }, this))
-                            .always(_.bind(function() {this.setState({remoteLoginFormLoading: true});}, this));
-                    }, this));
+                            .fail(_.bind(function() {
+                                remoteLoginForm.url = remoteLoginForm.nailgunUrl;
+                                remoteLoginForm.fetch()
+                                    .fail(this.showResponseErrors);
+                            }, this));
+                }, this))
+                .always(_.bind(function() {
+                    this.setState({loading: false, isConnected: this.isConnected()});
+                }, this));
         },
         isConnected: function() {
-            //FIXME: to do a better checking of connected state when backend will be finished
-            return !!this.props.settings.get('tracking').email.value;
-        },
-        getInitialState: function() {
-            return {isConnected: this.isConnected()};
+            return !!this.props.settings.get('tracking').email.value && !!this.props.settings.get('tracking').email.value;
         },
         onChange: function(inputName, value) {
             var settings = this.props.settings,

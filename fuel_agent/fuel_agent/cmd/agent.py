@@ -43,19 +43,19 @@ def provision():
 
 
 def partition():
-    main(['do_parsing', 'do_partitioning'])
+    main(['do_partitioning'])
 
 
 def copyimage():
-    main(['do_parsing', 'do_copyimage'])
+    main(['do_copyimage'])
 
 
 def configdrive():
-    main(['do_parsing', 'do_configdrive'])
+    main(['do_configdrive'])
 
 
 def bootloader():
-    main(['do_parsing', 'do_bootloader'])
+    main(['do_bootloader'])
 
 
 def print_err(line):

@@ -142,3 +142,7 @@ class HttpUrlInvalidContentLength(BaseError):
 
 class ImageChecksumMismatchError(BaseError):
     pass
+
+
+class NoFreeLoopDevices(BaseError):
+    pass

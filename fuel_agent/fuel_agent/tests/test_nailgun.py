@@ -405,7 +405,9 @@ LIST_BLOCK_DEVICES_SAMPLE = [
 
 
 class TestNailgun(test_base.BaseTestCase):
-    def setUp(self):
+
+    @mock.patch.object(hu, 'list_block_devices')
+    def setUp(self, mock_lbd):
         super(TestNailgun, self).setUp()
         self.drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
 

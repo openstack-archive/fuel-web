@@ -90,7 +90,7 @@ PROVISION_SAMPLE_DATA = {
         "gw": "10.20.0.1",
         "image_data": {
             "/": {
-                "uri": "http://fake_image_url",
+                "uri": "http://fake.host.org:123/imgs/fake_image.img.gz",
                 "format": "ext4",
                 "container": "gzip"
             }
@@ -618,6 +618,8 @@ class TestNailgun(test_base.BaseTestCase):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
         p_scheme = self.drv.partition_scheme()
         i_scheme = self.drv.image_scheme(p_scheme)
+        mock_http_req.assert_called_once_with(
+            'http://fake.host.org:123/imgs/fake_image.yaml')
         expected_images = []
         for fs in p_scheme.fss:
             if fs.mount not in PROVISION_SAMPLE_DATA['ks_meta']['image_data']:

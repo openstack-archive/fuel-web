@@ -1024,7 +1024,7 @@ define([
 
     models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
         constructorName: 'MirantisCredentials',
-        path: 'http://dev_ware.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
+        path: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
         validate: function(attrs) {
             var errors = {};
             _.each(attrs, function(group, groupName) {

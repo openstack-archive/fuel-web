@@ -37,5 +37,5 @@ class Manager(object):
         compress(self.conf.target, self.conf.compression_level)
 
         with open(self.conf.lastdump, "w") as fo:
-            fo.write("{0}.xz".format(self.conf.target))
-        return "{0}.xz".format(self.conf.target)
+            fo.write("{0}.tar.xz".format(self.conf.target))
+        return "{0}.tar.xz".format(self.conf.target)

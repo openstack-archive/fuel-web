@@ -141,7 +141,7 @@ class TestMakeTask(base.BaseTestCase):
                     }
                 }})
 
-        fuel_image_conf = jsonutils.dumps({
+        fuel_image_conf = {
             "image_data": {
                 "/mount": {
                     "uri": "http://uri",
@@ -156,17 +156,23 @@ class TestMakeTask(base.BaseTestCase):
                 }
             ],
             "codename": "trusty"
-        })
-        self.assertEqual(result, {
-            'type': 'shell',
-            'uids': [1, 2, 3],
-            'parameters': {
-                'cmd': "fuel-image '{0}'".format(fuel_image_conf),
+        }
+
+        self.assertEqual(result["type"], "shell")
+        self.assertEqual(result["uids"], [1, 2, 3])
+        params = result["parameters"].copy()
+        del params["cmd"]
+        self.assertEqual(
+            params,
+            {
                 'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
                 'retries': 1,
                 'interval': 1,
                 'cwd': '/',
-            }})
+            }
+        )
+        cmd = result["parameters"]["cmd"].lstrip("fuel-image '").rstrip("'")
+        self.assertEqual(jsonutils.loads(cmd), fuel_image_conf)
 
     def test_make_download_debian_installer_task(self):
         remote_kernel = ('http://some/dists/trusty/main/'

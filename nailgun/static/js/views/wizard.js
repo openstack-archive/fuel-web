@@ -668,7 +668,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 this.wizard.releases = this.releases;
                 this.releases.fetch();
             }
-            this.releases.on('sync', this.render, this);
+            this.releases.once('sync', function() {
+                this.render();
+                $('input[name=name]').focus();
+            }, this);
             this.wizard.model.on('change:NameAndRelease.release', this.updateRelease, this);
         },
         updateConfig: function(config) {

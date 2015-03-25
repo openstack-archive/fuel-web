@@ -78,15 +78,6 @@ LOG = logging.getLogger(__name__)
 class Manager(object):
     def __init__(self, data):
         self.driver = utils.get_driver(CONF.data_driver)(data)
-        self.partition_scheme = None
-        self.configdrive_scheme = None
-        self.image_scheme = None
-
-    def do_parsing(self):
-        LOG.debug('--- Parsing data (do_parsing) ---')
-        self.partition_scheme = self.driver.partition_scheme()
-        self.configdrive_scheme = self.driver.configdrive_scheme()
-        self.image_scheme = self.driver.image_scheme(self.partition_scheme)
 
     def do_partitioning(self):
         LOG.debug('--- Partitioning disks (do_partitioning) ---')
@@ -128,7 +119,7 @@ class Manager(object):
         utils.execute('udevadm', 'control', '--reload-rules',
                       check_exit_code=[0])
 
-        for parted in self.partition_scheme.parteds:
+        for parted in self.driver.partition_scheme.parteds:
             for prt in parted.partitions:
                 # We wipe out the beginning of every new partition
                 # right after creating it. It allows us to avoid possible
@@ -146,7 +137,7 @@ class Manager(object):
                               'seek=%s' % max(prt.end - 3, 0), 'count=5',
                               'of=%s' % prt.device, check_exit_code=[0, 1])
 
-        for parted in self.partition_scheme.parteds:
+        for parted in self.driver.partition_scheme.parteds:
             pu.make_label(parted.name, parted.label)
             for prt in parted.partitions:
                 pu.make_partition(prt.device, prt.begin, prt.end, prt.type)
@@ -197,25 +188,25 @@ class Manager(object):
         lu.pvremove_all()
 
         # creating meta disks
-        for md in self.partition_scheme.mds:
+        for md in self.driver.partition_scheme.mds:
             mu.mdcreate(md.name, md.level, *md.devices)
 
         # creating physical volumes
-        for pv in self.partition_scheme.pvs:
+        for pv in self.driver.partition_scheme.pvs:
             lu.pvcreate(pv.name, metadatasize=pv.metadatasize,
                         metadatacopies=pv.metadatacopies)
 
         # creating volume groups
-        for vg in self.partition_scheme.vgs:
+        for vg in self.driver.partition_scheme.vgs:
             lu.vgcreate(vg.name, *vg.pvnames)
 
         # creating logical volumes
-        for lv in self.partition_scheme.lvs:
+        for lv in self.driver.partition_scheme.lvs:
             lu.lvcreate(lv.vgname, lv.name, lv.size)
 
         # making file systems
-        for fs in self.partition_scheme.fss:
-            found_images = [img for img in self.image_scheme.images
+        for fs in self.driver.partition_scheme.fss:
+            found_images = [img for img in self.driver.image_scheme.images
                             if img.target_device == fs.device]
             if not found_images:
                 fu.make_fs(fs.type, fs.options, fs.label, fs.device)
@@ -231,16 +222,22 @@ class Manager(object):
 
         tmpl_dir = CONF.nc_template_path
         utils.render_and_save(
-            tmpl_dir, self.configdrive_scheme.template_names('cloud_config'),
-            self.configdrive_scheme.template_data(), cc_output_path
+            tmpl_dir,
+            self.driver.configdrive_scheme.template_names('cloud_config'),
+            self.driver.configdrive_scheme.template_data(),
+            cc_output_path
         )
         utils.render_and_save(
-            tmpl_dir, self.configdrive_scheme.template_names('boothook'),
-            self.configdrive_scheme.template_data(), bh_output_path
+            tmpl_dir,
+            self.driver.configdrive_scheme.template_names('boothook'),
+            self.driver.configdrive_scheme.template_data(),
+            bh_output_path
         )
         utils.render_and_save(
-            tmpl_dir, self.configdrive_scheme.template_names('meta-data'),
-            self.configdrive_scheme.template_data(), md_output_path
+            tmpl_dir,
+            self.driver.configdrive_scheme.template_names('meta-data'),
+            self.driver.configdrive_scheme.template_data(),
+            md_output_path
         )
 
         utils.execute('write-mime-multipart', '--output=%s' % ud_output_path,
@@ -250,14 +247,14 @@ class Manager(object):
                       '-volid', 'cidata', '-joliet', '-rock', ud_output_path,
                       md_output_path)
 
-        configdrive_device = self.partition_scheme.configdrive_device()
+        configdrive_device = self.driver.partition_scheme.configdrive_device()
         if configdrive_device is None:
             raise errors.WrongPartitionSchemeError(
                 'Error while trying to get configdrive device: '
                 'configdrive device not found')
         size = os.path.getsize(CONF.config_drive_path)
         md5 = utils.calculate_md5(CONF.config_drive_path, size)
-        self.image_scheme.add_image(
+        self.driver.image_scheme.add_image(
             uri='file://%s' % CONF.config_drive_path,
             target_device=configdrive_device,
             format='iso9660',
@@ -268,7 +265,7 @@ class Manager(object):
 
     def do_copyimage(self):
         LOG.debug('--- Copying images (do_copyimage) ---')
-        for image in self.image_scheme.images:
+        for image in self.driver.image_scheme.images:
             LOG.debug('Processing image: %s' % image.uri)
             processing = au.Chain()
 
@@ -320,7 +317,7 @@ class Manager(object):
         # Shorter paths earlier. We sort all mount points by their depth.
         # ['/', '/boot', '/var', '/var/lib/mysql']
         key = lambda x: len(x.mount.rstrip('/').split('/'))
-        for fs in sorted(self.partition_scheme.fss, key=key):
+        for fs in sorted(self.driver.partition_scheme.fss, key=key):
             if fs.mount == 'swap':
                 continue
             mount = chroot + fs.mount
@@ -344,7 +341,8 @@ class Manager(object):
         fu.umount_fs(chroot + '/dev')
         fu.umount_fs(chroot + '/sys')
         key = lambda x: len(x.mount.rstrip('/').split('/'))
-        for fs in sorted(self.partition_scheme.fss, key=key, reverse=True):
+        for fs in sorted(self.driver.partition_scheme.fss,
+                         key=key, reverse=True):
             if fs.mount == 'swap':
                 continue
             fu.umount_fs(fs.device)
@@ -355,17 +353,17 @@ class Manager(object):
         self.mount_target(chroot)
 
         mount2uuid = {}
-        for fs in self.partition_scheme.fss:
+        for fs in self.driver.partition_scheme.fss:
             mount2uuid[fs.mount] = utils.execute(
                 'blkid', '-o', 'value', '-s', 'UUID', fs.device,
                 check_exit_code=[0])[0].strip()
 
         grub_version = gu.guess_grub_version(chroot=chroot)
-        boot_device = self.partition_scheme.boot_device(grub_version)
-        install_devices = [d.name for d in self.partition_scheme.parteds
+        boot_device = self.driver.partition_scheme.boot_device(grub_version)
+        install_devices = [d.name for d in self.driver.partition_scheme.parteds
                            if d.install_bootloader]
 
-        kernel_params = self.partition_scheme.kernel_params
+        kernel_params = self.driver.partition_scheme.kernel_params
         kernel_params += ' root=UUID=%s ' % mount2uuid['/']
 
         if grub_version == 1:
@@ -381,7 +379,8 @@ class Manager(object):
                   'w') as f:
             f.write('# Generated by fuel-agent during provisioning: BEGIN\n')
             # pattern is aa:bb:cc:dd:ee:ff_eth0,aa:bb:cc:dd:ee:ff_eth1
-            for mapping in self.configdrive_scheme.common.udevrules.split(','):
+            for mapping in self.driver.configdrive_scheme.\
+                    common.udevrules.split(','):
                 mac_addr, nic_name = mapping.split('_')
                 f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", '
                         'ATTR{address}=="%s", ATTR{type}=="1", KERNEL=="eth*",'
@@ -396,7 +395,7 @@ class Manager(object):
                     '# DO NOT DELETE. It is needed to disable net-generator\n')
 
         with open(chroot + '/etc/fstab', 'wb') as f:
-            for fs in self.partition_scheme.fss:
+            for fs in self.driver.partition_scheme.fss:
                 # TODO(kozhukalov): Think of improving the logic so as to
                 # insert a meaningful fsck order value which is last zero
                 # at fstab line. Currently we set it into 0 which means
@@ -413,7 +412,6 @@ class Manager(object):
 
     def do_provisioning(self):
         LOG.debug('--- Provisioning (do_provisioning) ---')
-        self.do_parsing()
         self.do_partitioning()
         self.do_configdrive()
         self.do_copyimage()

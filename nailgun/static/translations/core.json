@@ -386,6 +386,9 @@
                             "uri": "URI",
                             "priority": "Priority"
                         },
+                        "placeholders": {
+                            "priority": "none"
+                        },
                         "errors": {
                             "empty_name": "Empty name",
                             "invalid_name": "Invalid name",

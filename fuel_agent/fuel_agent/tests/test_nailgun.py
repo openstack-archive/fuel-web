@@ -405,8 +405,13 @@ LIST_BLOCK_DEVICES_SAMPLE = [
 
 
 class TestNailgun(test_base.BaseTestCase):
-    def setUp(self):
+
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
+    @mock.patch.object(hu, 'list_block_devices')
+    def setUp(self, mock_lbd, mock_http, mock_yaml):
         super(TestNailgun, self).setUp()
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
         self.drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
 
     def test_match_device_by_id_matches(self):
@@ -521,7 +526,7 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertFalse(nailgun.match_device(fake_hu_disk, fake_ks_disk))
 
     def test_configdrive_scheme(self):
-        cd_scheme = self.drv.configdrive_scheme()
+        cd_scheme = self.drv.configdrive_scheme
         self.assertEqual(['fake_authorized_key1', 'fake_authorized_key2',
                           'fake_auth_key'], cd_scheme.common.ssh_auth_keys)
         self.assertEqual('node-1.domain.tld', cd_scheme.common.hostname)
@@ -571,7 +576,7 @@ class TestNailgun(test_base.BaseTestCase):
     @mock.patch.object(hu, 'list_block_devices')
     def test_partition_scheme(self, mock_lbd):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        p_scheme = self.drv.partition_scheme()
+        p_scheme = self.drv.partition_scheme
         self.assertEqual(5, len(p_scheme.fss))
         self.assertEqual(4, len(p_scheme.pvs))
         self.assertEqual(3, len(p_scheme.lvs))
@@ -583,8 +588,8 @@ class TestNailgun(test_base.BaseTestCase):
     @mock.patch.object(hu, 'list_block_devices')
     def test_image_scheme(self, mock_lbd, mock_http_req, mock_yaml):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        p_scheme = self.drv.partition_scheme()
-        i_scheme = self.drv.image_scheme(p_scheme)
+        p_scheme = self.drv.partition_scheme
+        i_scheme = self.drv.image_scheme
         expected_images = []
         for fs in p_scheme.fss:
             if fs.mount not in PROVISION_SAMPLE_DATA['ks_meta']['image_data']:
@@ -615,8 +620,10 @@ class TestNailgun(test_base.BaseTestCase):
         prop_mock = mock.PropertyMock(return_value=yaml.dump(fake_image_meta))
         type(mock_http_req.return_value).text = prop_mock
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        p_scheme = self.drv.partition_scheme()
-        i_scheme = self.drv.image_scheme(p_scheme)
+        p_data = PROVISION_SAMPLE_DATA.copy()
+        self.drv = nailgun.Nailgun(p_data)
+        p_scheme = self.drv.partition_scheme
+        i_scheme = self.drv.image_scheme
         mock_http_req.assert_called_once_with(
             'http://fake.host.org:123/imgs/fake_image.yaml')
         expected_images = []
@@ -665,8 +672,10 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual(3, self.drv._get_partition_count('Boot'))
         self.assertEqual(1, self.drv._get_partition_count('TMP'))
 
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(hu, 'list_block_devices')
-    def test_partition_scheme_ceph(self, mock_lbd):
+    def test_partition_scheme_ceph(self, mock_lbd, mock_http_req, mock_yaml):
         #TODO(agordeev): perform better testing of ceph logic
         p_data = PROVISION_SAMPLE_DATA.copy()
         for i in range(0, 3):
@@ -674,9 +683,9 @@ class TestNailgun(test_base.BaseTestCase):
                 CEPH_JOURNAL)
             p_data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(
                 CEPH_DATA)
-        self.drv = nailgun.Nailgun(p_data)
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        p_scheme = self.drv.partition_scheme()
+        self.drv = nailgun.Nailgun(p_data)
+        p_scheme = self.drv.partition_scheme
         self.assertEqual(5, len(p_scheme.fss))
         self.assertEqual(4, len(p_scheme.pvs))
         self.assertEqual(3, len(p_scheme.lvs))

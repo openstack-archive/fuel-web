@@ -20,7 +20,7 @@ from nailgun.db import db
 from nailgun.test import base
 
 
-class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
+class TestMigrationFuel61(base.BaseAlembicMigrationTest):
 
     prepare_revision = '1b1d4016375d'
     test_revision = '37608259013'
@@ -44,7 +44,9 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
                             'volumes_lvm': {},
                         }
                     },
-                    'generated': {},
+                    'generated': {
+                        'cobbler': {'profile': {
+                            'generator_arg': 'ubuntu_1204_x86_64'}}},
                 }),
                 'networks_metadata': '{}',
                 'is_deployable': True,
@@ -81,7 +83,7 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
             [{
                 'cluster_id': clusterid,
                 'editable': '{}',
-                'generated': '{}',
+                'generated': '{"cobbler": {"profile": "ubuntu_1204_x86_64"}}',
             }])
 
         db.commit()
@@ -189,3 +191,18 @@ class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
                     'priority': 1001,
                 },
             ])
+
+    def test_cobbler_profile_updated(self):
+        meta = sa.MetaData()
+        meta.reflect(bind=db.get_bind())
+
+        result = db.execute(sa.select([meta.tables['attributes'].c.generated]))
+        generated = jsonutils.loads(result.fetchone()[0])
+        self.assertEqual(generated['cobbler']['profile'], 'ubuntu_1404_x86_64')
+
+        result = db.execute(sa.select(
+            [meta.tables['releases'].c.attributes_metadata]))
+        attrs_metadata = jsonutils.loads(result.fetchone()[0])
+        self.assertEqual(
+            attrs_metadata['generated']['cobbler']['profile']['generator_arg'],
+            'ubuntu_1404_x86_64')

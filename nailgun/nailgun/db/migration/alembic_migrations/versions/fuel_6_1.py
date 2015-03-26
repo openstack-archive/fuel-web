@@ -418,7 +418,11 @@ def upgrade_data():
 
 
 def downgrade_data():
-    pass
+    connection = op.get_bind()
+    delete = text(
+        """DELETE FROM cluster_changes
+        WHERE name = 'vmware_attributes'""")
+    connection.execute(delete)
 
 
 def upgrade_master_node_settings(connection):

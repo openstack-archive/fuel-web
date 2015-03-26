@@ -31,21 +31,30 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
     def setUp(self):
         super(BaseIntegrationTest, self).setUp()
 
-        self.master_node_settings = {
-            'master_node_uid': str(uuid.uuid4()),
-        }
-        self.master_node_settings.update(_master_node_settings)
+        master_node_uid = str(uuid.uuid4())
 
-        objects.MasterNodeSettings.create(self.master_node_settings)
+        self.master_node_settings = _master_node_settings.copy()
+        self.master_node_settings["master_node"] = {
+            'master_node_uid': master_node_uid
+        }
+
+        create_settings = _master_node_settings.copy()
+        create_settings.update({
+            'master_node_uid': master_node_uid
+        })
+
+        objects.MasterNodeSettings.create(create_settings)
         self.db.commit()
 
     def test_get_controller(self):
-        expected = self.master_node_settings
+        expected = self.master_node_settings.copy()
 
         resp = self.app.get(
             reverse("MasterNodeSettingsHandler"),
             headers=self.default_headers
         )
+
+        self.datadiff(resp.json_body, expected)
         self.assertDictEqual(resp.json_body, expected)
 
     def test_put(self):
@@ -85,6 +94,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
             reverse("MasterNodeSettingsHandler"),
             headers=self.default_headers
         )
+
         self.assertDictEqual(resp.json_body, data)
 
     def test_delete(self):
@@ -137,8 +147,10 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
 
         self.assertEqual(200, resp.status_code)
         settings_from_db = objects.MasterNodeSettings.get_one()
-        self.assertEqual(settings_from_db.master_node_uid,
-                         self.master_node_settings['master_node_uid'])
+        self.assertEqual(
+            settings_from_db.master_node_uid,
+            self.master_node_settings['master_node']['master_node_uid']
+        )
 
     def test_not_found_error(self):
         settings_from_db = objects.MasterNodeSettings.get_one()

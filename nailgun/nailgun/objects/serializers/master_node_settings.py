@@ -19,5 +19,17 @@ class MasterNodeSettingsSerializer(BasicSerializer):
 
     fields = (
         'settings',
-        'master_node_uid',
     )
+
+    @classmethod
+    def serialize(cls, instance, fields=None):
+        serialized = super(MasterNodeSettingsSerializer, cls).serialize(
+            instance,
+            fields=cls.fields
+        )
+        # this hack with duplication is needed for UI to avoid
+        # issues with Javascript models
+        serialized["master_node"] = {
+            "master_node_uid": instance.master_node_uid
+        }
+        return serialized

@@ -472,7 +472,6 @@ class TestVmwareAttributes(BaseIntegrationTest):
 
     def _set_use_vcenter(self, cluster):
         cluster_attrs = objects.Cluster.get_attributes(cluster).editable
-        cluster_attrs.get('common', {}).setdefault('use_vcenter', {})
         cluster_attrs['common']['use_vcenter']['value'] = True
         objects.Cluster.update_attributes(
             cluster, {'editable': cluster_attrs})
@@ -482,6 +481,11 @@ class TestVmwareAttributesDefaults(BaseIntegrationTest):
 
     def test_get_default_vmware_attributes(self):
         cluster = self.env.create_cluster(api=True)
+        cluster_db = self.env.clusters[0]
+        cluster_attrs = objects.Cluster.get_attributes(cluster_db).editable
+        cluster_attrs['common']['use_vcenter']['value'] = True
+        objects.Cluster.update_attributes(
+            cluster_db, {'editable': cluster_attrs})
         resp = self.app.get(
             reverse(
                 'VmwareAttributesDefaultsHandler',
@@ -494,4 +498,19 @@ class TestVmwareAttributesDefaults(BaseIntegrationTest):
         self.assertEqual(
             release.vmware_attributes_metadata,
             jsonutils.loads(resp.testbody)
+        )
+
+    def test_not_acceptable_if_cluster_has_not_support_vmware(self):
+        cluster = self.env.create_cluster(api=True)
+        resp = self.app.get(
+            reverse(
+                'VmwareAttributesDefaultsHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            "Cluster doesn't support vmware configuration",
+            resp.json_body["message"]
         )

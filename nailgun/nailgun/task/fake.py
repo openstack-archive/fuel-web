@@ -17,7 +17,7 @@
 from itertools import chain
 from itertools import repeat
 from random import randrange
-import threading
+import dummy_threading as threading
 import time
 
 from fysom import Fysom

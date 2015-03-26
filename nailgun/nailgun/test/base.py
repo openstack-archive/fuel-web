@@ -20,7 +20,6 @@ except ImportError:
     # Runing unit-tests in production environment
     from unittest2.case import TestCase
 
-import abc
 import mock
 import os
 import re
@@ -34,8 +33,7 @@ from random import randint
 
 from oslo.serialization import jsonutils
 
-import alembic
-import six
+import sqlalchemy as sa
 import web
 from webtest import app
 
@@ -45,9 +43,7 @@ from nailgun.api.v1.urls import urls
 from nailgun import consts
 
 from nailgun.db import db
-from nailgun.db import dropdb
 from nailgun.db import flush
-from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.db import syncdb
 
 from nailgun.logger import logger
@@ -1136,34 +1132,18 @@ def datadiff(data1, data2, branch, p=True):
     return diff
 
 
-@six.add_metaclass(abc.ABCMeta)
+def reflect_db_metadata():
+    meta = sa.MetaData()
+    meta.reflect(bind=db.get_bind())
+    return meta
+
+
 class BaseAlembicMigrationTest(TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        super(BaseAlembicMigrationTest, cls).setUpClass()
-
-        dropdb()
-        alembic.command.upgrade(ALEMBIC_CONFIG, cls.prepare_revision)
-        cls.prepare()
-        alembic.command.upgrade(ALEMBIC_CONFIG, cls.test_revision)
+    def setUp(self):
+        super(BaseAlembicMigrationTest, self).setUp()
+        self.meta = reflect_db_metadata()
 
     def tearDown(self):
         db.remove()
         super(BaseAlembicMigrationTest, self).tearDown()
-
-    @abc.abstractproperty
-    def prepare_revision(self):
-        """Alembic revision to stop and call prepare() method."""
-
-    @abc.abstractproperty
-    def test_revision(self):
-        """Alembic revision to stop and call text() method."""
-
-    @classmethod
-    def prepare(cls):
-        """Method that should prepare your database state."""
-        # NOTE(prmtl): abc.abstractmethod do not work with classmethod in
-        # Python 2.6
-        raise NotImplementedError(
-            "Need to prepare database for migration test")

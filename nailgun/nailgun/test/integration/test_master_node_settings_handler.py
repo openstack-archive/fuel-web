@@ -31,8 +31,13 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
     def setUp(self):
         super(BaseIntegrationTest, self).setUp()
 
+        master_node_uid = str(uuid.uuid4())
+
         self.master_node_settings = {
-            'master_node_uid': str(uuid.uuid4()),
+            'master_node_uid': master_node_uid,
+            'master_node': {
+                'master_node_uid': master_node_uid
+            }
         }
         self.master_node_settings.update(_master_node_settings)
 
@@ -40,12 +45,13 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         self.db.commit()
 
     def test_get_controller(self):
-        expected = self.master_node_settings
+        expected = self.master_node_settings.copy()
 
         resp = self.app.get(
             reverse("MasterNodeSettingsHandler"),
             headers=self.default_headers
         )
+
         self.assertDictEqual(resp.json_body, expected)
 
     def test_put(self):
@@ -85,6 +91,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
             reverse("MasterNodeSettingsHandler"),
             headers=self.default_headers
         )
+
         self.assertDictEqual(resp.json_body, data)
 
     def test_delete(self):

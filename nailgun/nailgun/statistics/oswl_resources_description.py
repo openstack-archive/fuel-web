@@ -18,15 +18,31 @@ resources_description = {
         "retrieved_from_component": "nova",
         "supported_api_versions": {
             "v1.1": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "status": ["status"],
-                    "tenant_id": ["tenant_id"],
-                    "host_id": ["hostId"],
-                    "created_at": ["created"],
-                    "power_state": ["OS-EXT-STS:power_state"],
-                    "flavor_id": ["flavor", "id"],
-                    "image_id": ["image", "id"],
+                "collected_attributes": {
+                    "id": {
+                        "path_to_attr_on_instance": ["id"],
+                    },
+                    "status": {
+                        "path_to_attr_on_instance": ["status"],
+                    },
+                    "tenant_id": {
+                        "path_to_attr_on_instance": ["tenant_id"],
+                    },
+                    "host_id": {
+                        "path_to_attr_on_instance": ["hostId"],
+                    },
+                    "created_at": {
+                        "path_to_attr_on_instance": ["created"],
+                    },
+                    "power_state": {
+                        "path_to_attr_on_instance": ["OS-EXT-STS:power_state"],
+                    },
+                    "flavor_id": {
+                        "path_to_attr_on_instance": ["flavor", "id"],
+                    },
+                    "image_id": {
+                        "path_to_attr_on_instance": ["image", "id"],
+                    },
                 },
                 "resource_manager_name": "servers",
                 "additional_display_options": {
@@ -39,13 +55,26 @@ resources_description = {
         "retrieved_from_component": "nova",
         "supported_api_versions": {
             "v1.1": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "ram": ["ram"],
-                    "vcpus": ["vcpus"],
-                    "ephemeral": ["OS-FLV-EXT-DATA:ephemeral"],
-                    "disk": ["disk"],
-                    "swap": ["swap"],
+                "collected_attributes": {
+                    "id": {
+                        "path_to_attr_on_instance": ["id"],
+                    },
+                    "ram": {
+                        "path_to_attr_on_instance": ["ram"],
+                    },
+                    "vcpus": {
+                        "path_to_attr_on_instance": ["vcpus"],
+                    },
+                    "ephemeral": {
+                        "path_to_attr_on_instance":
+                        ["OS-FLV-EXT-DATA:ephemeral"],
+                    },
+                    "disk": {
+                        "path_to_attr_on_instance": ["disk"],
+                    },
+                    "swap": {
+                        "path_to_attr_on_instance": ["swap"],
+                    },
                 },
                 "resource_manager_name": "flavors"
             },
@@ -55,13 +84,25 @@ resources_description = {
         "retrieved_from_component": "nova",
         "supported_api_versions": {
             "v1.1": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "minDisk": ["minDisk"],
-                    "minRam": ["minRam"],
-                    "sizeBytes": ["OS-EXT-IMG-SIZE:size"],
-                    "created_at": ["created"],
-                    "updated_at": ["updated"]
+                "collected_attributes": {
+                    "id": {
+                        "path_to_attr_on_instance": ["id"],
+                    },
+                    "minDisk": {
+                        "path_to_attr_on_instance": ["minDisk"],
+                    },
+                    "minRam": {
+                        "path_to_attr_on_instance": ["minRam"],
+                    },
+                    "sizeBytes": {
+                        "path_to_attr_on_instance": ["OS-EXT-IMG-SIZE:size"],
+                    },
+                    "created_at": {
+                        "path_to_attr_on_instance": ["created"],
+                    },
+                    "updated_at": {
+                        "path_to_attr_on_instance": ["updated"]
+                    },
                 },
                 "resource_manager_name": "images"
             },
@@ -71,16 +112,24 @@ resources_description = {
         "retrieved_from_component": "keystone",
         "supported_api_versions": {
             "v2.0": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "enabled_flag": ["enabled"],
+                "collected_attributes": {
+                    "id": {
+                        "path_to_attr_on_instance": ["id"],
+                    },
+                    "enabled_flag": {
+                        "path_to_attr_on_instance": ["enabled"],
+                    },
                 },
                 "resource_manager_name": "tenants"
             },
             "v3": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "enabled_flag": ["enabled"],
+                "collected_attributes": {
+                    "id": {
+                        "path_to_attr_on_instance": ["id"],
+                    },
+                    "enabled_flag": {
+                        "path_to_attr_on_instance": ["enabled"],
+                    },
                 },
                 "resource_manager_name": "projects"
             },
@@ -90,18 +139,30 @@ resources_description = {
         "retrieved_from_component": "keystone",
         "supported_api_versions": {
             "v2.0": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "enabled_flag": ["enabled"],
-                    "tenant_id": ["tenantId"],
+                "collected_attributes": {
+                    "id": {
+                        "path_to_attr_on_instance": ["id"],
+                    },
+                    "enabled_flag": {
+                        "path_to_attr_on_instance": ["enabled"],
+                    },
+                    "tenant_id": {
+                        "path_to_attr_on_instance": ["tenantId"],
+                    },
                 },
                 "resource_manager_name": "users"
             },
             "v3": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "enabled_flag": ["enabled"],
-                    "tenant_id": ["default_project_id"],
+                "collected_attributes": {
+                    "id": {
+                        "path_to_attr_on_instance": ["id"],
+                    },
+                    "enabled_flag": {
+                        "path_to_attr_on_instance": ["enabled"],
+                    },
+                    "tenant_id": {
+                        "path_to_attr_on_instance": ["default_project_id"],
+                    },
                 },
                 "resource_manager_name": "users"
             }
@@ -111,18 +172,43 @@ resources_description = {
         "retrieved_from_component": "cinder",
         "supported_api_versions": {
             "v1": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "availability_zone": ["availability_zone"],
-                    "encrypted_flag": ["encrypted"],
-                    "bootable_flag": ["bootable"],
-                    "status": ["status"],
-                    "volume_type": ["volume_type"],
-                    "size": ["size"],
-                    "host": ["os-vol-host-attr:host"],
-                    "snapshot_id": ["snapshot_id"],
-                    "attachments": ["attachments"],
-                    "tenant_id": ["os-vol-tenant-attr:tenant_id"],
+                "collected_attributes": {
+                    "id": {
+                        "path_to_attr_on_instance": ["id"],
+                    },
+                    "availability_zone": {
+                        "path_to_attr_on_instance": ["availability_zone"],
+                    },
+                    "encrypted_flag": {
+                        "path_to_attr_on_instance": ["encrypted"],
+                    },
+                    "bootable_flag": {
+                        "path_to_attr_on_instance": ["bootable"],
+                    },
+                    "status": {
+                        "path_to_attr_on_instance": ["status"],
+                    },
+                    "volume_type": {
+                        "path_to_attr_on_instance": ["volume_type"],
+                    },
+                    "size": {
+                        "path_to_attr_on_instance": ["size"],
+                    },
+                    "host": {
+                        "path_to_attr_on_instance": ["os-vol-host-attr:host"],
+                    },
+                    "snapshot_id": {
+                        "path_to_attr_on_instance": ["snapshot_id"],
+                    },
+                    "attachments": {
+                        "path_to_attr_on_instance": ["attachments"],
+                        "nested_attrs_to_collect": ["device", "server_id",
+                                                    "id"],
+                    },
+                    "tenant_id": {
+                        "path_to_attr_on_instance":
+                        ["os-vol-tenant-attr:tenant_id"],
+                    },
                 },
                 "resource_manager_name": "volumes",
                 "additional_display_options": {

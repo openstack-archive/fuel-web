@@ -168,16 +168,48 @@ def _get_data_from_resource_manager(resource_manager, attr_names_mapping,
     for inst in instances_list:
         inst_details = {}
 
-        for attr_name, attr_path in six.iteritems(attr_names_mapping):
+        for attr_name, attr_descr in six.iteritems(attr_names_mapping):
             obj_dict = \
                 inst.to_dict() if hasattr(inst, "to_dict") else inst.__dict__
-            inst_details[attr_name] = _get_value_from_nested_dict(
+
+            attr_path = attr_descr["path_to_attr_on_instance"]
+            attr_value = _get_value_from_nested_dict(
                 obj_dict, attr_path
             )
+
+            if (
+                    attr_descr.get("nested_attrs_to_collect")
+                    and isinstance(attr_value, list)
+            ):
+
+                attr_value = _get_attrs_from_list_elems(
+                    attr_value,
+                    attr_descr["nested_attrs_to_collect"]
+                )
+
+            inst_details[attr_name] = attr_value
 
         data.append(inst_details)
 
     return data
+
+
+def _get_attrs_from_list_elems(list_to_get_from, inner_attrs_names_to_collect):
+    new_attr_value = []
+
+    for el in list_to_get_from:
+        collected_inner_attrs = {}
+
+        if isinstance(el, dict):
+
+            for key, value in six.iteritems(el):
+
+                if key in inner_attrs_names_to_collect:
+                    collected_inner_attrs[key] = value
+
+        new_attr_value.append(collected_inner_attrs)
+
+    return new_attr_value
 
 
 def get_info_from_os_resource_manager(client_provider, resource_name):
@@ -207,7 +239,7 @@ def get_info_from_os_resource_manager(client_provider, resource_name):
     resource_manager_name = matched_api["resource_manager_name"]
     resource_manager = getattr(client_inst, resource_manager_name)
 
-    attributes_names_mapping = matched_api["retrieved_attr_names_mapping"]
+    attributes_names_mapping = matched_api["collected_attributes"]
 
     additional_display_options = \
         matched_api.get("additional_display_options", {})

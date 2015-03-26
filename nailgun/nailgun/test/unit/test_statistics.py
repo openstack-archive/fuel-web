@@ -658,7 +658,11 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "size": 1,
                     "os-vol-host-attr:host": "test-node",
                     "snapshot_id": None,
-                    "attachments": "test_attachments",
+                    "attachments": [{"device": "/dev/sda1",
+                                     "server_id": "test_server_id",
+                                     "id": "test_volume_id",
+                                     "volume_id": "test_volume_id",
+                                     "host_id": "test_host_id"}],
                     "os-vol-tenant-attr:tenant_id": "test_tenant",
                 },
             ],
@@ -742,6 +746,27 @@ class TestOSWLCollectingUtils(BaseTestCase):
                 utils._get_nested_attr(containing_obj, attr_path)
             )
 
+    def test_get_attrs_from_list_elems(self):
+        expected_key_names = ["exp_attr_name_one", "exp_attr_name_two"]
+        list_to_get_from = [
+            {
+                "exp_attr_name_one": "test_data_one",
+                "exp_attr_name_two": "test_data_two",
+                "not_exp_attr_name": "test_data_three",
+            },
+        ]
+
+        actual_list = utils._get_attrs_from_list_elems(
+            list_to_get_from,
+            inner_attrs_names_to_collect=expected_key_names
+        )
+
+        self.assertEqual(len(list_to_get_from), len(actual_list))
+        self.assertEqual(actual_list[0].keys(), expected_key_names)
+
+        for key, value in six.iteritems(actual_list[0]):
+            self.assertEqual(value, list_to_get_from[0][key])
+
     def test_get_oswl_info(self):
         expected = {
             "vm": [
@@ -787,7 +812,9 @@ class TestOSWLCollectingUtils(BaseTestCase):
                     "size": 1,
                     "host": "test-node",
                     "snapshot_id": None,
-                    "attachments": "test_attachments",
+                    "attachments": [{"server_id": "test_server_id",
+                                     "id": "test_volume_id",
+                                     "device": "/dev/sda1"}],
                     "tenant_id": "test_tenant",
                 },
             ],

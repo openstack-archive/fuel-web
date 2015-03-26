@@ -96,6 +96,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         }
     };
 
+    var registrationResponseErrorMixin = {
+        showResponseErrors: function(response, form) {
+            var jsonObj,
+                error = '';
+            try {
+                jsonObj = JSON.parse(response.responseText);
+                error = jsonObj.message;
+                if (_.isObject(form)) {
+                    form.validationError = {};
+                    _.each(jsonObj.errors, function(value, name) {
+                        form.validationError['credentials.' + name] = value;
+                    });
+                }
+            } catch (e) {
+                error = i18n('welcome_page.register.connection_error');
+            }
+            this.setState({error: error});
+        }
+    };
+
     dialogs.ErrorDialog = React.createClass({
         mixins: [dialogMixin],
         getDefaultProps: function() {
@@ -860,11 +880,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
     dialogs.RegistrationDialog = React.createClass({
         mixins: [
             dialogMixin,
+            registrationResponseErrorMixin,
             componentMixins.backboneMixin('registrationForm', 'change invalid')
         ],
         getInitialState: function() {
             return {
-                disabled: true,
                 loading: true
             };
         },
@@ -881,10 +901,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                 .fail(_.bind(function() {
                     registrationForm.url = registrationForm.nailgunUrl;
                     registrationForm.fetch()
-                        .fail(_.bind(function(response) {
-                            var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
-                            this.setState({error: error});
-                        }, this))
+                        .fail(this.showResponseErrors)
                         .always(_.bind(function() {this.setState({loading: false});}, this));
                 }, this));
         },
@@ -893,12 +910,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                 name = registrationForm.makePath('credentials', inputName, 'value');
             if (registrationForm.validationError) delete registrationForm.validationError['credentials.' + inputName];
             registrationForm.set(name, value);
-            this.setState({disabled: !registrationForm.attributes.credentials.agree.value});
         },
         composeOptions: function(values) {
             return _.map(values, function(value, index) {
                 return (
-                    <option key={index} value={value.data} disabled={value.disabled}>
+                    <option key={index} value={value.data}>
                         {value.label}
                     </option>
                 );
@@ -907,39 +923,51 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         getAgreementLink: function(link) {
             return (<span>{i18n('dialog.registration.i_agree')} <a href={link} target='_blank'>{i18n('dialog.registration.terms_and_conditions')}</a></span>);
         },
-        goToWelcomeScreen: function() {
+        goToHomeScreen: function() {
             if (this.props.setConnected) this.props.setConnected();
             this.close();
         },
+        validateRegistrationForm: function() {
+            var registrationForm = this.props.registrationForm,
+                isValid = registrationForm.isValid();
+            if (!registrationForm.attributes.credentials.agree.value) {
+                if (!registrationForm.validationError) registrationForm.validationError = {};
+                registrationForm.validationError['credentials.agree'] = i18n('dialog.registration.agree_error');
+                isValid = false;
+            }
+            this.setState({isValid: isValid});
+            if (isValid) this.createAccount();
+        },
         createAccount: function() {
             var registrationForm = this.props.registrationForm;
-            if (registrationForm.isValid()) {
-                this.setState({actionInProgress: true});
-                registrationForm.save(registrationForm.attributes, {type: 'POST'})
-                    .done(_.bind(function(response) {
-                        var settings = this.props.settings,
-                            registrationData = settings.get('statistics'),
-                            connectionInfo = settings.get('tracking');
-                        _.each(response, function(value, name) {
-                            registrationData[name].value = value;
-                        });
-                        //FIXME: Change this part when backend will be ready
-                        connectionInfo.email.value = response.email;
-                        connectionInfo.password.value = 'temp';
-                        settings.save(null, {patch: true, wait: true, validate: false})
-                            .done(this.goToWelcomeScreen)
-                            .fail(_.bind(function() {
-                                this.setState({error: i18n('common.error')});
-                            }, this));
-                    }, this))
-                    .always(_.bind(function() {
-                        this.setState({actionInProgress: false});
-                    }, this))
-                    .fail(_.bind(function(response) {
-                        var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
-                        this.setState({error: error});
-                    }, this));
-            }
+            this.setState({actionInProgress: true});
+            registrationForm.save(registrationForm.attributes, {type: 'POST'})
+                .done(_.bind(function(response) {
+                    var settings = this.props.settings,
+                        registrationData = settings.get('statistics'),
+                        connectionInfo = settings.get('tracking'),
+                        statisticsFields = ['company', 'name', 'email'];
+                    _.each(statisticsFields, function(name) {
+                        registrationData[name].value = response[name];
+                    });
+                    connectionInfo.email.value = response.email;
+                    connectionInfo.password.value = response.password;
+                    settings.save(null, {patch: true, wait: true, validate: false})
+                        .done(this.goToHomeScreen)
+                        .fail(_.bind(function() {
+                            this.setState({error: i18n('common.error')});
+                        }, this));
+                }, this))
+                .always(_.bind(function() {
+                    this.setState({actionInProgress: false});
+                }, this))
+                .fail(_.bind(function(response) {
+                    this.showResponseErrors(response, registrationForm);
+                }, this));
+        },
+        checkCountry: function() {
+            var country = this.props.registrationForm.attributes.credentials.country.value;
+            return !(country == 'Canada' || country == 'United States' || country == 'us');
         },
         renderBody: function() {
             var registrationForm = this.props.registrationForm;
@@ -975,7 +1003,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                                 wrapperClassName={inputName}
                                 onChange={this.onChange}
                                 error={inputError}
-                                disabled={actionInProgress}
+                                disabled={actionInProgress || (inputName == 'region' && this.checkCountry())}
                                 description={inputName != 'agree' && input.description}
                             />;
                         }, this)}
@@ -988,7 +1016,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                 <button key='cancel' className='btn' onClick={this.close}>
                     {i18n('common.cancel_button')}
                 </button>,
-                <button key='apply' className='btn btn-success' disabled={this.state.disabled || this.state.actionInProgress} onClick={this.createAccount}>
+                <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.validateRegistrationForm}>
                     {i18n('welcome_page.register.create_account')}
                 </button>
             ];
@@ -998,6 +1026,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
     dialogs.RetrievePasswordDialog = React.createClass({
         mixins: [
             dialogMixin,
+            registrationResponseErrorMixin,
             componentMixins.backboneMixin('remoteRetrievePasswordForm', 'change invalid')
         ],
         getInitialState: function() {
@@ -1024,10 +1053,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                         .done(_.bind(function() {
                             this.setState({remoteRetrievePasswordForm: remoteRetrievePasswordForm});
                         }, this))
-                        .fail(_.bind(function(response) {
-                            var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
-                            this.setState({error: error});
-                        }, this))
+                        .fail(this.showResponseErrors)
                         .always(_.bind(function() {this.setState({loading: false});}, this));
                 }, this));
         },
@@ -1038,14 +1064,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         },
         retrievePassword: function() {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
-            if (remoteRetrievePasswordForm.isValid() && !this.state.error) {
+            if (remoteRetrievePasswordForm.isValid()) {
                 this.setState({actionInProgress: true});
                 remoteRetrievePasswordForm.save()
-                    .done(_.bind(this.passwordSent, this))
-                    .fail(_.bind(function(response) {
-                        var error = !response.responseText || _.isString(response.responseText) ? i18n('welcome_page.register.connection_error') : JSON.parse(response.responseText).message;
-                        this.setState({error: error});
-                    }, this))
+                    .done(this.passwordSent)
+                    .fail(this.showResponseErrors)
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this));
@@ -1076,16 +1099,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                             {input &&
                                 <div>
                                     <div>{i18n(ns + 'submit_email')}</div>
-                                    <controls.Input
-                                        ref='retrieve_password'
-                                        key='retrieve_password'
-                                        name='retrieve_password'
-                                        {... _.pick(input, 'type', 'value', 'label')}
-                                        onChange={this.onChange}
-                                        error={inputError}
-                                        disabled={actionInProgress}
-                                        description={input.description}
-                                    />
+                                    <div>
+                                        <controls.Input
+                                            {... _.pick(input, 'type', 'value', 'label')}
+                                            onChange={this.onChange}
+                                            error={inputError}
+                                            disabled={actionInProgress}
+                                            description={input.description}
+                                        />
+                                    </div>
                                 </div>
                             }
                         </div>
@@ -1106,7 +1128,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                             <button key='cancel' className='btn' onClick={this.close}>
                                 {i18n('common.cancel_button')}
                             </button>
-                            <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.error} onClick={this.retrievePassword}>
+                            <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.retrievePassword}>
                                 {i18n('dialog.retrieve_password.send_new_password')}
                             </button>
                         </div>

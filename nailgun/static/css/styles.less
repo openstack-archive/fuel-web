@@ -4001,6 +4001,11 @@ i.btn-cluster-details {
       margin: 15px 0 0 100px;
       .label-wrapper {margin-top: 6px}
     }
+    &.checkbox-or-radio {
+      &.has-error {
+        .parameter-description {clear: left;}
+      }
+    }
   }
   .parameter-description { font-style: italic; }
 }
@@ -4019,7 +4024,10 @@ i.btn-cluster-details {
     width: 100%;
     .parameter-name {
       width: 100%;
-      .label-wrapper {padding: 7px 0;}
+      .label-wrapper {
+        padding: 0;
+        margin: 0;
+      }
       .input-wrapper {display: block;}
       input {width: 95%;}
     }

@@ -1214,8 +1214,8 @@
             extra_priority: 15
             value:
               - type: "rpm"
-                name: "MOS"
-                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/centos/x86_64"
+                name: "mos"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/x86_64"
                 priority: 20
       generated:
         cobbler:
@@ -1270,7 +1270,7 @@
                 priority: null
               - type: "deb"
                 name: "mos"
-                uri: "http://{{settings.MASTER_IP}}:8080/2014.2-6.1/ubuntu/x86_64"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
                 suite: "mos6.1"
                 section: "main restricted"
                 priority: 1050

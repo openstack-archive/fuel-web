@@ -44,7 +44,6 @@ from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
-from nailgun.utils import generate_editables
 from nailgun.utils import traverse
 
 
@@ -251,7 +250,10 @@ class Cluster(NailgunObject):
         :returns: Dict object
         """
         editable = instance.release.attributes_metadata.get("editable")
-        generate_editables(editable, AttributesGenerator)
+        editable = traverse(editable, AttributesGenerator, {
+            'cluster': instance,
+            'settings': settings,
+        })
         # when attributes created we need to understand whether should plugin
         # be applied for created cluster
         plugin_attrs = PluginManager.get_plugin_attributes(instance)
@@ -744,7 +746,10 @@ class Cluster(NailgunObject):
         """Get metadata from release with empty value section.
         """
         editable = instance.release.vmware_attributes_metadata.get("editable")
-        generate_editables(editable, AttributesGenerator)
+        editable = traverse(editable, AttributesGenerator, {
+            'cluster': instance,
+            'settings': settings,
+        })
         return editable
 
     @classmethod

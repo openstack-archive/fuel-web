@@ -13,101 +13,105 @@
 #    under the License.
 
 
+import alembic
 from oslo.serialization import jsonutils
 import sqlalchemy as sa
 
 from nailgun.db import db
+from nailgun.db import dropdb
+from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
 
 
-class TestMigrationFuel61(base.BaseAlembicMigrationTest):
+_prepare_revision = '1b1d4016375d'
+_test_revision = '37608259013'
 
-    prepare_revision = '1b1d4016375d'
-    test_revision = '37608259013'
 
-    @classmethod
-    def prepare(cls):
-        meta = sa.MetaData()
-        meta.reflect(bind=db.get_bind())
+def setup_module(module):
+    dropdb()
+    alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
+    prepare()
+    alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
 
-        roles_metadata = jsonutils.dumps({
-            "mongo": {
-                "name": "Mongo",
-                "description": "Mongo role"
-            }
-        })
 
-        result = db.execute(
-            meta.tables['releases'].insert(),
-            [{
-                'name': 'test_name',
-                'version': '2014.2-6.0',
-                'operating_system': 'ubuntu',
-                'state': 'available',
-                'roles_metadata': roles_metadata,
-                'attributes_metadata': jsonutils.dumps({
-                    'editable': {
-                        'storage': {
-                            'volumes_lvm': {},
-                        },
-                        'common': {}
+def prepare():
+    meta = base.reflect_db_metadata()
+
+    roles_metadata = jsonutils.dumps({
+        "mongo": {
+            "name": "Mongo",
+            "description": "Mongo role"
+        }
+    })
+
+    result = db.execute(
+        meta.tables['releases'].insert(),
+        [{
+            'name': 'test_name',
+            'version': '2014.2-6.0',
+            'operating_system': 'ubuntu',
+            'state': 'available',
+            'roles_metadata': roles_metadata,
+            'attributes_metadata': jsonutils.dumps({
+                'editable': {
+                    'storage': {
+                        'volumes_lvm': {},
                     },
-                    'generated': {
-                        'cobbler': {'profile': {
-                            'generator_arg': 'ubuntu_1204_x86_64'}}},
-                }),
-                'networks_metadata': '{}',
-                'is_deployable': True,
-            }])
-        releaseid = result.inserted_primary_key[0]
+                    'common': {},
+                },
+                'generated': {
+                    'cobbler': {'profile': {
+                        'generator_arg': 'ubuntu_1204_x86_64'}}},
+            }),
+            'networks_metadata': '{}',
+            'is_deployable': True,
+        }])
+    releaseid = result.inserted_primary_key[0]
 
-        result = db.execute(
-            meta.tables['release_orchestrator_data'].insert(),
-            [{
-                'release_id': releaseid,
-                'puppet_manifests_source': 'rsync://0.0.0.0:/puppet/manifests',
-                'puppet_modules_source': 'rsync://0.0.0.0:/puppet/modules',
-                'repo_metadata': jsonutils.dumps({
-                    'base': 'http://baseuri base-suite main',
-                    'test': 'http://testuri test-suite main',
-                })
-            }])
+    result = db.execute(
+        meta.tables['release_orchestrator_data'].insert(),
+        [{
+            'release_id': releaseid,
+            'puppet_manifests_source': 'rsync://0.0.0.0:/puppet/manifests',
+            'puppet_modules_source': 'rsync://0.0.0.0:/puppet/modules',
+            'repo_metadata': jsonutils.dumps({
+                'base': 'http://baseuri base-suite main',
+                'test': 'http://testuri test-suite main',
+            })
+        }])
 
-        result = db.execute(
-            meta.tables['clusters'].insert(),
-            [{
-                'name': 'test_env',
-                'release_id': releaseid,
-                'mode': 'ha_compact',
-                'status': 'new',
-                'net_provider': 'neutron',
-                'grouping': 'roles',
-                'fuel_version': '6.0',
-            }])
-        clusterid = result.inserted_primary_key[0]
+    result = db.execute(
+        meta.tables['clusters'].insert(),
+        [{
+            'name': 'test_env',
+            'release_id': releaseid,
+            'mode': 'ha_compact',
+            'status': 'new',
+            'net_provider': 'neutron',
+            'grouping': 'roles',
+            'fuel_version': '6.0',
+        }])
+    clusterid = result.inserted_primary_key[0]
 
-        db.execute(
-            meta.tables['attributes'].insert(),
-            [{
-                'cluster_id': clusterid,
-                'editable': '{}',
-                'generated': '{"cobbler": {"profile": "ubuntu_1204_x86_64"}}',
-            }])
+    db.execute(
+        meta.tables['attributes'].insert(),
+        [{
+            'cluster_id': clusterid,
+            'editable': '{}',
+            'generated': '{"cobbler": {"profile": "ubuntu_1204_x86_64"}}',
+        }])
 
-        db.commit()
+    db.commit()
+
+
+class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):
 
     def test_release_orchestrator_data_table_is_removed(self):
-        meta = sa.MetaData()
-        meta.reflect(bind=db.get_bind())
-
-        self.assertNotIn('release_orchestrator_data', meta.tables)
+        self.assertNotIn('release_orchestrator_data', self.meta.tables)
 
     def test_puppets_in_release_attributes(self):
-        meta = sa.MetaData()
-        meta.reflect(bind=db.get_bind())
-
         result = db.execute(
-            sa.select([meta.tables['releases'].c.attributes_metadata]))
+            sa.select([self.meta.tables['releases'].c.attributes_metadata]))
         attributes_metadata = jsonutils.loads(result.fetchone()[0])
 
         self.assertEqual(
@@ -118,11 +122,8 @@ class TestMigrationFuel61(base.BaseAlembicMigrationTest):
             })
 
     def test_repo_setup_in_release_attributes(self):
-        meta = sa.MetaData()
-        meta.reflect(bind=db.get_bind())
-
         result = db.execute(
-            sa.select([meta.tables['releases'].c.attributes_metadata]))
+            sa.select([self.meta.tables['releases'].c.attributes_metadata]))
         attributes_metadata = jsonutils.loads(result.fetchone()[0])
         repo_setup = attributes_metadata['editable']['repo_setup']
 
@@ -150,10 +151,8 @@ class TestMigrationFuel61(base.BaseAlembicMigrationTest):
             ])
 
     def test_puppets_in_cluster_attributes(self):
-        meta = sa.MetaData()
-        meta.reflect(bind=db.get_bind())
-
-        result = db.execute(sa.select([meta.tables['attributes'].c.generated]))
+        result = db.execute(
+            sa.select([self.meta.tables['attributes'].c.generated]))
         generated = jsonutils.loads(result.fetchone()[0])
 
         self.assertEqual(
@@ -164,10 +163,8 @@ class TestMigrationFuel61(base.BaseAlembicMigrationTest):
             })
 
     def test_repo_setup_in_cluster_attributes(self):
-        meta = sa.MetaData()
-        meta.reflect(bind=db.get_bind())
-
-        result = db.execute(sa.select([meta.tables['attributes'].c.editable]))
+        result = db.execute(
+            sa.select([self.meta.tables['attributes'].c.editable]))
         editable = jsonutils.loads(result.fetchone()[0])
         repo_setup = editable['repo_setup']
 
@@ -200,25 +197,27 @@ class TestMigrationFuel61(base.BaseAlembicMigrationTest):
                 },
             ])
 
-    def test_cobbler_profile_updated(self):
-        meta = sa.MetaData()
-        meta.reflect(bind=db.get_bind())
 
-        result = db.execute(sa.select([meta.tables['attributes'].c.generated]))
+class TestCobblerMigration(base.BaseAlembicMigrationTest):
+
+    def test_cobbler_profile_updated(self):
+        result = db.execute(
+            sa.select([self.meta.tables['attributes'].c.generated]))
         generated = jsonutils.loads(result.fetchone()[0])
         self.assertEqual(generated['cobbler']['profile'], 'ubuntu_1404_x86_64')
 
         result = db.execute(sa.select(
-            [meta.tables['releases'].c.attributes_metadata]))
+            [self.meta.tables['releases'].c.attributes_metadata]))
         attrs_metadata = jsonutils.loads(result.fetchone()[0])
         self.assertEqual(
             attrs_metadata['generated']['cobbler']['profile']['generator_arg'],
             'ubuntu_1404_x86_64')
 
+
+class TestRolesMetadataMigration(base.BaseAlembicMigrationTest):
+
     def test_mongo_has_primary(self):
-        meta = sa.MetaData()
-        meta.reflect(bind=db.get_bind())
         result = db.execute(
-            sa.select([meta.tables['releases'].c.roles_metadata]))
+            sa.select([self.meta.tables['releases'].c.roles_metadata]))
         roles_metadata = jsonutils.loads(result.fetchone()[0])
         self.assertTrue(roles_metadata['mongo']['has_primary'])

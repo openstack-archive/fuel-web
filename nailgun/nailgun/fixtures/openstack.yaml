@@ -820,6 +820,18 @@
             regex:
               source: '^[1-9]\d*$'
               error: "Invalid number"
+        murano:
+          metadata:
+            label: "Murano Settings"
+            weight: 110
+          murano_repo_url:
+            value: "http://catalog.openstack.org/"
+            label: "Murano Repository URL"
+            description: ""
+            weight: 10
+            type: "text"
+            restrictions:
+              - "settings:additional_components.murano.value == false"
       generated:
         mysql:
           root_password:

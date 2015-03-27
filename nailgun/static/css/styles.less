@@ -1394,9 +1394,12 @@ label {cursor: default;}
         &:not(.has-error) {
           input.parameter-input {
             &.start{
-              margin-right: 15px;
+              margin-right: 10px;
             }
           }
+        }
+        .parameter-description {
+          margin-left: 0;
         }
       }
     }
@@ -1416,7 +1419,7 @@ label {cursor: default;}
         float: left;
       }
       input[type=text] {
-        width: 172px;
+        width: 174px;
         margin: 7px 3px 0 0;
         float: left;
       }
@@ -1424,6 +1427,8 @@ label {cursor: default;}
         &.has-error {
           .parameter-description {
             float: left;
+            margin-left: 8px;
+            display: inline-block;
           }
         }
       }
@@ -1436,6 +1441,7 @@ label {cursor: default;}
         max-width: 540px;
         color: @fuel-deep-red;
         float: none;
+        margin-left: 5px;
       }
     }
 
@@ -1468,8 +1474,9 @@ label {cursor: default;}
       .parameter-box {
         &.has-error {
           .parameter-description {
-            margin-top: 12px;
+            margin: 12px 0 0 0;
             float: right;
+            display: inline-block;
           }
         }
       }
@@ -1479,11 +1486,22 @@ label {cursor: default;}
             width: 104px;
           }
         }
-
+        .range-row {
+          .parameter-box {
+            input.parameter-input.start {
+              margin-right: 15px;
+            }
+          }
+        }
         input { width: 88px; }
+        div.validation-error {
+          .help-inline {
+            margin-left: 7px;
+          }
+        }
       }
       .parameter-name {
-        min-width: 188px;
+        min-width: 187px;
       }
       &.dns-nameservers {
         .parameter-control input.range {
@@ -1507,8 +1525,9 @@ label {cursor: default;}
   }
   .has-error {
     .parameter-description {
-      margin: 12px 0 0 5px;
+      margin: 12px 0 0 8px;
       float: none;
+      display: inline-block;
     }
   }
 }

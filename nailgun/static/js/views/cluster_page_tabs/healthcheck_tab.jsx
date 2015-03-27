@@ -293,7 +293,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             return (
                 <div className='healthcheck credentials collapse'>
                     <div className='fieldset-group wrapper'>
-                        <div className='healthcheck-group' >
+                        <div className='healthcheck-group'>
                             <div className='clearfix note'>
                                 {i18n('cluster_page.healthcheck_tab.credentials_description')}
                             </div>
@@ -395,7 +395,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             var rx = new RegExp('^\\s*' + step + '\\.');
             _.each(lines, function(line, index) {
                 if (line.match(rx)) {
-                    lines[index] = '<b><u>' + line + '</u></b>';
+                    lines[index] = '<b>' + line + '</b>';
                 }
             });
             return lines.join('\n');
@@ -437,8 +437,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                     </div>
                                 }
                                 <div className='well' dangerouslySetInnerHTML={{__html:
-                                    utils.linebreaks((result && _.isNumber(result.step)) ? this.highlightStep(test.escape('description'), result.step) : test.escape('description'))
-                                    }}>
+                                    utils.urlify((result && _.isNumber(result.step)) ?
+                                        this.highlightStep(test.escape('description'), result.step) : test.escape('description'))
+                                }}>
                                 </div>
                             </div>
                         }

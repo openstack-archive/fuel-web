@@ -17,7 +17,6 @@
 import os
 
 from oslo.serialization import jsonutils
-from six.moves.urllib.parse import urljoin
 
 from nailgun.settings import settings
 
@@ -180,10 +179,12 @@ def make_download_debian_installer_task(
     # NOTE(kozhukalov): This task is going to go away by 7.0
     # because we going to get rid of classic way of provision.
 
-    remote_kernel = urljoin(repos[0]['uri'],
-                            installer_kernel['remote_relative'])
-    remote_initrd = urljoin(repos[0]['uri'],
-                            installer_initrd['remote_relative'])
+    # NOTE(ikalnitsky): We can't use urljoin here because it works
+    # pretty bad in cases when 'uri' doesn't have a trailing slash.
+    remote_kernel = os.path.join(
+        repos[0]['uri'], installer_kernel['remote_relative'])
+    remote_initrd = os.path.join(
+        repos[0]['uri'], installer_initrd['remote_relative'])
 
     return make_shell_task(uids, {
         'parameters': {

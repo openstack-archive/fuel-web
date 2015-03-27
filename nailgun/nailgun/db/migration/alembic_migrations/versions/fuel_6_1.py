@@ -26,6 +26,7 @@ down_revision = '1b1d4016375d'
 
 from alembic import op
 from oslo.serialization import jsonutils
+import six
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 
@@ -402,6 +403,8 @@ def upgrade_data():
         roles_meta = upgrade_role_restrictions_6_0_to_6_1(
             roles_meta,
             _new_role_restrictions)
+        for role_name, role in six.iteritems(roles_meta):
+            role.update(_new_roles_metadata.get(role_name, {}))
         attributes_meta = upgrade_attributes_metadata_6_0_to_6_1(
             jsonutils.loads(release[2]))
         networks_meta = upgrade_networks_metadata_to_6_1(
@@ -558,6 +561,13 @@ _new_role_restrictions = {
             'message': "Ceph must be enabled in settings"
         }
     ]
+}
+
+
+_new_roles_metadata = {
+    "mongo": {
+        "has_primary": True,
+    }
 }
 
 

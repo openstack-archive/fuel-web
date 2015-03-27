@@ -705,10 +705,9 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             self.assertEquals(200, resp.status_code)
             interfaces = jsonutils.loads(resp.body)
             for iface in interfaces:
-                self.assertEqual(iface['interface_properties'],
-                                 {
-                                     'mtu': None,
-                                     'disable_offloading': False
+                self.assertEqual(iface['interface_properties'], {
+                                 'mtu': None,
+                                 'disable_offloading': False
                                  })
                 if iface['name'] == 'eth0':
                     iface['interface_properties'] = {
@@ -2221,17 +2220,6 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
         ha_nodes = self.serializer_ha.serialize_nodes(cluster.nodes)
         mn_nodes = self.serializer_mn.serialize_nodes(cluster.nodes)
         self.assertEqual(mn_nodes, ha_nodes)
-
-    def test_primary_node_selected(self):
-        cluster = self.create_env()
-        ha_nodes = self.serializer_ha.serialize_nodes(cluster.nodes)
-        mn_nodes = self.serializer_mn.serialize_nodes(cluster.nodes)
-
-        def primary_nodes_count(nodes):
-            return len(filter(lambda x: x['role'] == 'primary-mongo', nodes))
-
-        self.assertEqual(1, primary_nodes_count(ha_nodes))
-        self.assertEqual(1, primary_nodes_count(mn_nodes))
 
 
 class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):

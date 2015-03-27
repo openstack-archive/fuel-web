@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import namedtuple
+
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.objects import ClusterCollection
@@ -27,34 +29,86 @@ class InstallationInfo(object):
     Used for collecting info for fuel statistics
     """
 
+    WhiteListRule = namedtuple(
+        'WhiteListItem', ['path', 'map_to_name', 'transform_func'])
+
     attributes_white_list = (
-        # ((path, to, property), 'map_to_name')
-        (('common', 'libvirt_type', 'value'), 'libvirt_type'),
-        (('common', 'debug', 'value'), 'debug_mode'),
-        (('common', 'use_cow_images', 'value'), 'use_cow_images'),
+        # ((path, to, property), 'map_to_name', transform_function)
+        WhiteListRule(('common', 'libvirt_type', 'value'),
+                      'libvirt_type', None),
+        WhiteListRule(('common', 'debug', 'value'), 'debug_mode', None),
+        WhiteListRule(('common', 'use_cow_images', 'value'),
+                      'use_cow_images', None),
+        WhiteListRule(('common', 'auto_assign_floating_ip', 'value'),
+                      'auto_assign_floating_ip', None),
+        WhiteListRule(('common', 'nova_quota', 'value'), 'nova_quota', None),
+        WhiteListRule(('common', 'resume_guests_state_on_host_boot', 'value'),
+                      'resume_guests_state_on_host_boot', None),
 
-        (('public_network_assignment', 'assign_to_all_nodes', 'value'),
-         'assign_public_to_all_nodes'),
-        (('syslog', 'syslog_transport', 'value'), 'syslog_transport'),
-        (('provision', 'method', 'value'), 'provision_method'),
-        (('kernel_params', 'kernel', 'value'), 'kernel_params'),
+        WhiteListRule(('corosync', 'verified', 'value'),
+                      'corosync_verified', None),
 
-        (('storage', 'volumes_lvm', 'value'), 'volumes_lvm'),
-        (('storage', 'iser', 'value'), 'iser'),
-        (('storage', 'volumes_ceph', 'value'), 'volumes_ceph'),
-        (('storage', 'images_ceph', 'value'), 'images_ceph'),
-        (('storage', 'images_vcenter', 'value'), 'images_vcenter'),
-        (('storage', 'ephemeral_ceph', 'value'), 'ephemeral_ceph'),
-        (('storage', 'objects_ceph', 'value'), 'objects_ceph'),
-        (('storage', 'osd_pool_size', 'value'), 'osd_pool_size'),
+        WhiteListRule(('public_network_assignment', 'assign_to_all_nodes',
+                       'value'), 'assign_public_to_all_nodes', None),
+        WhiteListRule(('syslog', 'syslog_transport', 'value'),
+                      'syslog_transport', None),
+        WhiteListRule(('provision', 'method', 'value'),
+                      'provision_method', None),
+        WhiteListRule(('kernel_params', 'kernel', 'value'),
+                      'kernel_params', None),
 
-        (('neutron_mellanox', 'plugin', 'value'), 'mellanox'),
-        (('neutron_mellanox', 'vf_num', 'value'), 'mellanox_vf_num'),
+        WhiteListRule(('external_mongo', 'mongo_replset', 'value'),
+                      'external_mongo_replset', bool),
+        WhiteListRule(('external_ntp', 'ntp_list', 'value'),
+                      'external_ntp_list', bool),
 
-        (('additional_components', 'sahara', 'value'), 'sahara'),
-        (('additional_components', 'murano', 'value'), 'murano'),
-        (('additional_components', 'heat', 'value'), 'heat'),
-        (('additional_components', 'ceilometer', 'value'), 'ceilometer'),
+        WhiteListRule(('repo_setup', 'repos', 'value'), 'repos', bool),
+
+        WhiteListRule(('storage', 'volumes_lvm', 'value'),
+                      'volumes_lvm', None),
+        WhiteListRule(('storage', 'iser', 'value'), 'iser', None),
+        WhiteListRule(('storage', 'volumes_ceph', 'value'),
+                      'volumes_ceph', None),
+        WhiteListRule(('storage', 'images_ceph', 'value'),
+                      'images_ceph', None),
+        WhiteListRule(('storage', 'images_vcenter', 'value'),
+                      'images_vcenter', None),
+        WhiteListRule(('storage', 'ephemeral_ceph', 'value'),
+                      'ephemeral_ceph', None),
+        WhiteListRule(('storage', 'objects_ceph', 'value'),
+                      'objects_ceph', None),
+        WhiteListRule(('storage', 'osd_pool_size', 'value'),
+                      'osd_pool_size', None),
+
+        WhiteListRule(('neutron_mellanox', 'plugin', 'value'),
+                      'mellanox', None),
+        WhiteListRule(('neutron_mellanox', 'vf_num', 'value'),
+                      'mellanox_vf_num', None),
+
+        WhiteListRule(('additional_components', 'sahara', 'value'),
+                      'sahara', None),
+        WhiteListRule(('additional_components', 'murano', 'value'),
+                      'murano', None),
+        WhiteListRule(('additional_components', 'heat', 'value'),
+                      'heat', None),
+        WhiteListRule(('additional_components', 'ceilometer', 'value'),
+                      'ceilometer', None),
+        WhiteListRule(('additional_components', 'mongo', 'value'),
+                      'mongo', None),
+
+        WhiteListRule(('workloads_collector', 'enabled', 'value'),
+                      'workloads_collector_enabled', None),
+    )
+
+    vmware_attributes_white_list = (
+        # ((path, to, property), 'map_to_name', transform_function)
+        WhiteListRule(('value', 'availability_zones', 'cinder', 'enable'),
+                      'vmware_az_cinder_enable', None),
+        # We add 'vsphere_cluster' into path for enter into nested list.
+        # Private value of 'vsphere_cluster' is not collected, we only
+        # computes length of the nested list
+        WhiteListRule(('value', 'availability_zones', 'nova_computes',
+                       'vsphere_cluster'), 'vmware_az_nova_computes_num', len),
     )
 
     def fuel_release_info(self):
@@ -97,7 +151,12 @@ class InstallationInfo(object):
                 'nodes': self.get_nodes_info(cluster.nodes),
                 'node_groups': self.get_node_groups_info(cluster.node_groups),
                 'status': cluster.status,
-                'attributes': self.get_attributes(cluster.attributes.editable),
+                'attributes': self.get_attributes(cluster.attributes.editable,
+                                                  self.attributes_white_list),
+                'vmware_attributes': self.get_attributes(
+                    cluster.vmware_attributes.editable,
+                    self.vmware_attributes_white_list
+                ),
                 'net_provider': cluster.net_provider,
                 'fuel_version': cluster.fuel_version,
                 'is_customized': cluster.is_customized,
@@ -123,17 +182,41 @@ class InstallationInfo(object):
 
         return plugins_info
 
-    def get_attributes(self, attributes):
-        result = {}
-        for path, map_to_name in self.attributes_white_list:
-            attr = attributes
+    def get_attributes(self, attributes, white_list):
+
+        def _get_attr_value(path, func, attrs):
+            """Gets attribute value from 'attrs' by specified
+            'path'. In case of nested list - list of
+            of found values will be returned
+            :param path: list of keys for accessing the attribute value
+            :param func: if not None - will be applied to the value
+            :param attrs: attributes data
+            :return: found value(s)
+            """
+            for idx, p in enumerate(path):
+                if isinstance(attrs, (tuple, list)):
+                    result_list = []
+                    for cur_attr in attrs:
+                        try:
+                            value = _get_attr_value(path[idx:], func, cur_attr)
+                            result_list.append(value)
+                        except (KeyError, TypeError):
+                            pass
+                    return result_list
+                else:
+                    attrs = attrs[p]
+            if func is not None:
+                attrs = func(attrs)
+            return attrs
+
+        result_attrs = {}
+        for path, map_to_name, func in white_list:
             try:
-                for p in path:
-                    attr = attr[p]
-                result[map_to_name] = attr
+                result_attrs[map_to_name] = _get_attr_value(
+                    path, func, attributes)
             except (KeyError, TypeError):
                 pass
-        return result
+        return result_attrs
 
     def get_nodes_info(self, nodes):
         nodes_info = []

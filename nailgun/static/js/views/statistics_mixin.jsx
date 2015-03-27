@@ -87,7 +87,7 @@ define([
             }
         },
         onSettingChange: function(name, value) {
-            this.setState({actionInProgress: false});
+            this.setState({actionInProgress: false, isSaved: false});
             this.props.settings.set(this.props.settings.makePath('statistics', name, 'value'), value);
         },
         checkRestrictions: function(name, action) {

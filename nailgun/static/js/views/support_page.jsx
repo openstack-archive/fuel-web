@@ -335,6 +335,12 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             statisticsMixin,
             componentMixins.backboneMixin('settings')
         ],
+        saveChanges: function() {
+            this.saveSettings()
+                .done(_.bind(function() {
+                    this.setState({isSaved: true});
+                }, this));
+        },
         render: function() {
             if (this.state.loading) return null;
             var settings = this.props.settings.get('statistics'),
@@ -352,8 +358,12 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                         {_.map(sortedSettings, this.renderInput, this)}
                     </div>
                     <p>
-                        <a className='btn' disabled={this.state.actionInProgress || !this.hasChanges()} onClick={this.saveSettings}>
-                            {i18n('support_page.save_changes')}
+                        <a className='btn' disabled={this.state.actionInProgress || !this.hasChanges() || this.state.isSaved} onClick={this.saveChanges}>
+                            {this.state.isSaved ?
+                                <span>{i18n('support_page.changes_saved')}</span>
+                            :
+                                <span>{i18n('support_page.save_changes')}</span>
+                            }
                         </a>
                     </p>
                 </SupportPageElement>

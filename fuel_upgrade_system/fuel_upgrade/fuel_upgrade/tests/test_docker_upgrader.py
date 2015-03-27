@@ -129,15 +129,10 @@ class TestDockerUpgrader(BaseTestCase):
     @mock.patch('fuel_upgrade.engines.docker_engine.os.path.exists',
                 return_value=True)
     def test_upload_images(self, _, exec_mock):
-        self.upgrader.new_release_images = [
-            {'docker_image': 'image1'},
-            {'docker_image': 'image2'}]
-
         self.upgrader.upload_images()
-        self.assertEqual(
-            exec_mock.call_args_list,
-            [mock.call('docker load < "image1"'),
-             mock.call('docker load < "image2"')])
+
+        exec_mock.assert_call_with(
+            'docker load -i "/tmp/upgrade_path/images/fuel-images.tar"')
 
     def test_create_containers(self):
         fake_containers = [

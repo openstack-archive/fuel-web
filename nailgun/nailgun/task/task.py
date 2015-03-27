@@ -20,6 +20,9 @@ from distutils.version import StrictVersion
 import netaddr
 import six
 
+import random
+from oslo.serialization import jsonutils
+
 from sqlalchemy import func
 from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
@@ -921,50 +924,77 @@ class DumpTask(object):
         logger.debug("Preparing config for snapshot")
         nodes = db().query(Node).filter(
             Node.status.in_(['ready', 'provisioned', 'deploying', 'error'])
-        ).all()
-
+        ).order_by(Node.fqdn).all()
         dump_conf = deepcopy(settings.DUMP)
+        logger.debug("Dump template read from settings: %s", jsonutils.dumps(dump_conf, indent=4) )
+
+        hosts_by_role_dict = {}
         for node in nodes:
             host = {
                 'address': node.fqdn,
                 'ssh-key': settings.SHOTGUN_SSH_KEY,
             }
 
-            # save controllers
-            if 'controller' in node.roles:
-                dump_conf['dump']['controller']['hosts'].append(host)
+            # fill in dict with data like:
+            # {'controller': [host-1, host-2], 'compute': [host-3, host-4]}
+            for role in node.roles:
+                hosts_by_role_dict.setdefault(role, []).append(host)
+
             # save slaves
-            dump_conf['dump']['slave']['hosts'].append(host)
+            if "slave" in dump_conf['dump']:
+                dump_conf['dump']['slave']['hosts'].append(host)
 
-        # render postgres connection data in dump settings
-        dump_conf['dump']['local']['objects'].append({
-            'type': 'postgres',
-            'dbhost': settings.DATABASE['host'],
-            'dbname': settings.DATABASE['name'],
-            'username': settings.DATABASE['user'],
-            'password': settings.DATABASE['passwd'],
-        })
+        # Save nodes by role
+        for role in hosts_by_role_dict.keys():
+            # Save non-filtered roles
+            if role in dump_conf['dump']:
+                dump_conf['dump'][role]['hosts'] = hosts_by_role_dict[role]
 
-        # render cobbler coonection data in dump settings
-        # NOTE: we no need user/password for cobbler
-        dump_conf['dump']['local']['objects'].append({
-            'type': 'xmlrpc',
-            'server': settings.COBBLER_URL,
-            'methods': [
-                'get_distros',
-                'get_profiles',
-                'get_systems',
-            ],
-            'to_file': 'cobbler.txt',
-        })
+            # Save nodes for roles with filter(if any)
+            # Pick one random node within the role
+            suffix = ".random"
+            if role + suffix in dump_conf['dump']:
+                dump_conf['dump'][role + suffix]['hosts'] = [random.choice(hosts_by_role_dict[role])]
+            # First in sorted by fqdn list
+            suffix = ".first"
+            if role + suffix in dump_conf['dump']:
+                dump_conf['dump'][role + suffix]['hosts'] = [hosts_by_role_dict[role][0]]
+            # Last in sorted by fqdn list
+            suffix = ".last"
+            if role + suffix in dump_conf['dump']:
+                dump_conf['dump'][role + suffix]['hosts'] = [hosts_by_role_dict[role][-1]]
+
+        if "local" in dump_conf['dump']:
+            # render postgres connection data in dump settings
+            dump_conf['dump']['local']['objects'].append({
+                'type': 'postgres',
+                'dbhost': settings.DATABASE['host'],
+                'dbname': settings.DATABASE['name'],
+                'username': settings.DATABASE['user'],
+                'password': settings.DATABASE['passwd'],
+            })
+
+            # render cobbler coonection data in dump settings
+            # NOTE: we no need user/password for cobbler
+            dump_conf['dump']['local']['objects'].append({
+                'type': 'xmlrpc',
+                'server': settings.COBBLER_URL,
+                'methods': [
+                    'get_distros',
+                    'get_profiles',
+                    'get_systems',
+                ],
+                'to_file': 'cobbler.txt',
+            })
 
         # inject master host
-        dump_conf['dump']['master']['hosts'] = [{
-            'address': settings.MASTER_IP,
-            'ssh-key': settings.SHOTGUN_SSH_KEY,
-        }]
+        if "master" in dump_conf['dump']:
+            dump_conf['dump']['master']['hosts'] = [{
+                'address': settings.MASTER_IP,
+                'ssh-key': settings.SHOTGUN_SSH_KEY,
+            }]
 
-        logger.debug("Dump conf: %s", str(dump_conf))
+        logger.debug("Dump conf passed to shotgun: %s", jsonutils.dumps(dump_conf, indent=4))
         return dump_conf
 
     @classmethod

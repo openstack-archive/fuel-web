@@ -290,72 +290,8 @@ def config(update_path, admin_password):
     # Docker image description section
     image_prefix = 'fuel/'
 
-    # Here are described all images which will
-    # be loaded into the docker
-    # `id` from id we make path to image files
-    # `type`
-    #   * fuel - create name of image like fuel-core-5.0-postgres
-    #   * base - use name without prefix and postfix
-    images = [
-        {'id': 'astute',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'astute.tar'),
-         'docker_file': join(update_path, 'astute')},
-
-        {'id': 'cobbler',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'cobbler.tar'),
-         'docker_file': join(update_path, 'cobbler')},
-
-        {'id': 'mcollective',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'mcollective.tar'),
-         'docker_file': join(update_path, 'mcollective')},
-
-        {'id': 'nailgun',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'nailgun.tar'),
-         'docker_file': join(update_path, 'nailgun')},
-
-        {'id': 'nginx',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'nginx.tar'),
-         'docker_file': join(update_path, 'nginx')},
-
-        {'id': 'ostf',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'ostf.tar'),
-         'docker_file': join(update_path, 'ostf')},
-
-        {'id': 'postgres',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'postgres.tar'),
-         'docker_file': join(update_path, 'postgres')},
-
-        {'id': 'rabbitmq',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'rabbitmq.tar'),
-         'docker_file': join(update_path, 'rabbitmq')},
-
-        {'id': 'rsync',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'rsync.tar'),
-         'docker_file': join(update_path, 'rsync')},
-
-        {'id': 'rsyslog',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'rsyslog.tar'),
-         'docker_file': join(update_path, 'rsyslog')},
-
-        {'id': 'keystone',
-         'type': 'fuel',
-         'docker_image': join(update_path, 'images', 'keystone.tar'),
-         'docker_file': join(update_path, 'keystone')},
-
-        {'id': 'busybox',
-         'type': 'base',
-         'docker_image': join(update_path, 'images', 'busybox.tar'),
-         'docker_file': join(update_path, 'busybox')}]
+    # Path to the Docker images to be loaded
+    images = join(update_path, 'images', 'fuel-images.tar'),
 
     # Docker containers description section
     container_prefix = 'fuel-core-'

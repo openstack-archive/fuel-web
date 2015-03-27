@@ -527,7 +527,7 @@
                     "actual_duration": "Actual Duration",
                     "status": "Status",
                     "provide_credentials": "Provide credentials",
-                    "credentials_description": "If you changed the credentials after deployment, you need to provide new ones to run the checks. The credentials won't be stored anywhere.",
+                    "credentials_description": "If you changed credentials after deployment in Horizon, you need to provide it here. In other cases do nothing.",
                     "password_label": "Password",
                     "password_description": "Password for Administrator",
                     "user_label": "Username",

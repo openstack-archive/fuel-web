@@ -19,6 +19,7 @@ from distutils.version import StrictVersion
 import six
 
 import netaddr
+import random
 
 from sqlalchemy import func
 from sqlalchemy import not_
@@ -877,17 +878,30 @@ class DumpTask(object):
         ).all()
 
         dump_conf = deepcopy(settings.DUMP)
+        hosts_by_role_dict = {}
         for node in nodes:
             host = {
                 'address': node.fqdn,
                 'ssh-key': settings.SHOTGUN_SSH_KEY,
             }
 
-            # save controllers
-            if 'controller' in node.roles:
-                dump_conf['dump']['controller']['hosts'].append(host)
+            # fill in dict with data like:
+            # {'controller': [host-1, host-2], 'compute': [host-3, host-4]}
+            for role in node.roles:
+                hosts_by_role_dict.setdefault(role, []).append(host)
+
             # save slaves
             dump_conf['dump']['slave']['hosts'].append(host)
+
+        # Save nodes by role
+        for role in hosts_by_role_dict.keys():
+            # Save non-filtered roles
+            if role in dump_conf['dump']:
+                dump_conf['dump'][role]['hosts'] = hosts_by_role_dict[role]
+            # Save filtered nodes. Pick one random node within the role
+            filter = ".once_per_role"
+            if role+filter in dump_conf['dump']:
+                dump_conf['dump'][role+filter]['hosts'] = [random.choice(hosts_by_role_dict[role])]
 
         # render postgres connection data in dump settings
         dump_conf['dump']['local']['objects'].append({

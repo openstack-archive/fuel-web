@@ -879,7 +879,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                                 var absentVlans = _.map(node.absent_vlans, function(vlan) {
                                                     return vlan || i18n('cluster_page.network_tab.untagged');
                                                 });
-                                                return [node.name || 'N/A', node.mac || 'N/A', node.interface, absentVlans];
+                                                return [node.name || 'N/A', node.mac || 'N/A', node.interface, absentVlans.join(', ')];
                                             })
                                         }
                                     />

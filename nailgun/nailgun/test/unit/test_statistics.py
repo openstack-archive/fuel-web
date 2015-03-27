@@ -13,19 +13,20 @@
 #    under the License.
 
 
+import datetime
 from mock import Mock
 from mock import patch
 from mock import PropertyMock
-
-import datetime
 import os
 import requests
 import six
+from sqlalchemy.inspection import inspect
 import urllib3
 
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import cluster as cluster_model
 from nailgun.db.sqlalchemy.models import plugins
 from nailgun.objects import Cluster
 from nailgun.objects import OpenStackWorkloadStats
@@ -60,7 +61,7 @@ class TestInstallationInfo(BaseTestCase):
         cluster = Cluster.get_by_uid(cluster_data['id'])
         editable = cluster.attributes.editable
         attr_key_list = [a[1] for a in info.attributes_white_list]
-        attrs_dict = info.get_attributes(editable)
+        attrs_dict = info.get_attributes(editable, info.attributes_white_list)
         self.assertEqual(
             set(attr_key_list),
             set(attrs_dict.keys())
@@ -76,32 +77,58 @@ class TestInstallationInfo(BaseTestCase):
         cluster = Cluster.get_by_uid(cluster_data['id'])
         editable = cluster.attributes.editable
         attr_key_list = [a[1] for a in info.attributes_white_list]
-        attrs_dict = info.get_attributes(editable)
+        attrs_dict = info.get_attributes(editable, info.attributes_white_list)
         self.assertEqual(
             # no vlan splinters for ubuntu
             set(attr_key_list) - set(('vlan_splinters', 'vlan_splinters_ovs')),
             set(attrs_dict.keys())
         )
 
+    def test_get_attributes(self):
+        attributes = {
+            'a': 'b',
+            'c': [
+                {'x': 'z', 'y': [{'t': 'u'}, {'v': 'w'}, {'t': 'u0'}]},
+                {'x': 'zz', 'y': [{'t': 'uu'}, {'v': 'ww'}]}
+            ],
+            'd': {'f': 'g', 'k': [0, 1, 2]},
+        }
+        white_list = (
+            (('a',), 'map_a', None),
+            (('d', 'f'), 'map_f', None),
+            (('d', 'k'), 'map_k_len', len),
+            (('c', 'x'), 'map_x', None),
+            (('c', 'y', 't'), 'map_t', None),
+        )
+
+        info = InstallationInfo()
+        actual = info.get_attributes(attributes, white_list)
+        expected = {
+            'map_f': 'g',
+            'map_k_len': 3,
+            'map_a': 'b',
+            'map_x': ['z', 'zz'],
+            'map_t': [['u', 'u0'], ['uu']],
+        }
+        self.assertDictEqual(actual, expected)
+
     def test_get_empty_attributes(self):
         info = InstallationInfo()
         trash_attrs = {'some': 'trash', 'nested': {'n': 't'}}
-        result = info.get_attributes(trash_attrs)
+        result = info.get_attributes(trash_attrs, info.attributes_white_list)
         self.assertDictEqual({}, result)
 
     def test_get_attributes_exception_handled(self):
         info = InstallationInfo()
         variants = [
             None,
-            [],
             {},
             {'common': None},
-            {'common': []},
             {'common': {'libvirt_type': {}}},
             {'common': {'libvirt_type': 3}},
         ]
         for attrs in variants:
-            result = info.get_attributes(attrs)
+            result = info.get_attributes(attrs, info.attributes_white_list)
             self.assertDictEqual({}, result)
 
     def test_clusters_info(self):
@@ -313,6 +340,139 @@ class TestInstallationInfo(BaseTestCase):
         self.assertTrue('master_node_uid' in info)
         self.assertTrue('contact_info_provided' in info['user_information'])
         self.assertDictEqual(settings.VERSION, info['fuel_release'])
+
+    def test_all_cluster_data_collected(self):
+        self.env.create(nodes_kwargs=[{'roles': ['compute']}])
+        self.env.create_node(status=consts.NODE_STATUSES.discover)
+
+        # Fetching installation info struct
+        info = InstallationInfo()
+        info = info.get_installation_info()
+        actual_cluster = info['clusters'][0]
+
+        # Creating cluster schema
+        cluster_schema = {}
+        for column in inspect(cluster_model.Cluster).columns:
+            cluster_schema[six.text_type(column.name)] = None
+        for rel in inspect(cluster_model.Cluster).relationships:
+            cluster_schema[six.text_type(rel.table.name)] = None
+
+        # Removing of not required fields
+        remove_fields = (
+            'tasks', 'cluster_changes', 'nodegroups', 'pending_release_id',
+            'releases', 'replaced_provisioning_info', 'notifications',
+            'deployment_tasks', 'name', 'replaced_deployment_info',
+            'grouping'
+        )
+        for field in remove_fields:
+            cluster_schema.pop(field)
+        # Renaming fields for matching
+        rename_fields = (
+            ('plugins', 'installed_plugins'),
+            ('networking_configs', 'network_configuration'),
+            ('release_id', 'release'),
+        )
+        for name_from, name_to in rename_fields:
+            cluster_schema.pop(name_from)
+            cluster_schema[name_to] = None
+
+        # If test failed here it means, that you have added properties
+        # to cluster and they are not exported into statistics.
+        # If you don't know  what to do, contact fuel-stats team please.
+        for key in six.iterkeys(cluster_schema):
+            self.assertIn(key, actual_cluster)
+
+    def _find_leafs_paths(self, structure, leafs_names=('value',)):
+        """Finds paths to leafs
+        :param structure: structure for searching
+        :param leafs_names: leafs names
+        :return: list of tuples of dicts keys to leafs
+        """
+
+        def _keys_paths_helper(result, keys, struct):
+            if isinstance(struct, dict):
+                for k in sorted(six.iterkeys(struct)):
+                    if k in leafs_names:
+                        result.append(keys)
+                    else:
+                        _keys_paths_helper(result, keys + (k,), struct[k])
+            elif isinstance(struct, (tuple, list)):
+                for d in struct:
+                    _keys_paths_helper(result, keys, d)
+            else:
+                # leaf not found
+                pass
+        leafs_paths = []
+        _keys_paths_helper(leafs_paths, (), structure)
+        return self._remove_private_leafs_paths(leafs_paths)
+
+    def _remove_private_leafs_paths(self, leafs_paths):
+        """Removes paths to private information
+        :return: leafs paths without paths to private information
+        """
+        private_paths = (
+            ('access', 'email'), ('access', 'password'), ('access', 'tenant'),
+            ('access', 'user'), ('common', 'auth_key'), ('corosync', 'group'),
+            ('corosync', 'port'), ('external_dns', 'dns_list'),
+            ('external_mongo', 'hosts_ip'),
+            ('external_mongo', 'mongo_db_name'),
+            ('external_mongo', 'mongo_password'),
+            ('external_mongo', 'mongo_user'), ('syslog', 'syslog_port'),
+            ('syslog', 'syslog_server'), ('workloads_collector', 'password'),
+            ('workloads_collector', 'tenant'),
+            ('workloads_collector', 'username'), ('zabbix', 'password'),
+            ('zabbix', 'username'),
+            ('common', 'use_vcenter')  # removed attribute
+        )
+        return filter(lambda x: x not in private_paths, leafs_paths)
+
+    def test_all_cluster_attributes_in_white_list(self):
+        self.env.create(nodes_kwargs=[{'roles': ['compute']}])
+        self.env.create_node(status=consts.NODE_STATUSES.discover)
+
+        cluster = self.env.clusters[0]
+        expected_paths = self._find_leafs_paths(cluster.attributes.editable)
+
+        # Removing 'value' from expected paths
+        actual_paths = [rule.path[:-1] for rule in
+                        InstallationInfo.attributes_white_list]
+        # If test failed here it means, that you have added cluster
+        # attributes and they are not added into
+        # InstallationInfo.attributes_white_list
+        # If you don't know what should be added into white list, contact
+        # fuel-stats team please.
+        for path in expected_paths:
+            self.assertIn(path, actual_paths)
+
+    def test_all_cluster_vmware_attributes_in_white_list(self):
+        self.env.create(nodes_kwargs=[{'roles': ['compute']}])
+        self.env.create_node(status=consts.NODE_STATUSES.discover)
+
+        cluster = self.env.clusters[0]
+        expected_paths = self._find_leafs_paths(
+            cluster.vmware_attributes.editable,
+            leafs_names=('vsphere_cluster', 'enable'))
+
+        # Removing leaf name from expected paths
+        actual_paths = [rule.path[:-1] for rule in
+                        InstallationInfo.vmware_attributes_white_list]
+        # If test failed here it means, that you have added cluster vmware
+        # attributes and they are not added into
+        # InstallationInfo.vmware_attributes_white_list
+        # If you don't know what should be added into white list, contact
+        # fuel-stats team please.
+        for path in expected_paths:
+            self.assertIn(path, actual_paths)
+
+    def test_wite_list_unique_names(self):
+        names = set(rule.map_to_name for rule in
+                    InstallationInfo.attributes_white_list)
+        self.assertEqual(len(InstallationInfo.attributes_white_list),
+                         len(names))
+        names = set(rule.map_to_name for rule in
+                    InstallationInfo.vmware_attributes_white_list)
+        self.assertEqual(len(InstallationInfo.vmware_attributes_white_list),
+                         len(names))
 
 
 class TestStatisticsSender(BaseTestCase):

@@ -21,11 +21,13 @@ import datetime
 import os
 import requests
 import six
+from sqlalchemy.inspection import inspect
 import urllib3
 
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import cluster
 from nailgun.db.sqlalchemy.models import plugins
 from nailgun.objects import Cluster
 from nailgun.objects import OpenStackWorkloadStats
@@ -313,6 +315,127 @@ class TestInstallationInfo(BaseTestCase):
         self.assertTrue('master_node_uid' in info)
         self.assertTrue('contact_info_provided' in info['user_information'])
         self.assertDictEqual(settings.VERSION, info['fuel_release'])
+
+    def test_all_cluster_data_collected(self):
+        self.env.create(
+            nodes_kwargs=[{'roles': ['compute']}]
+        )
+        unallocated_nodes_params = [
+            {'status': consts.NODE_STATUSES.discover},
+        ]
+        for unallocated_node in unallocated_nodes_params:
+            self.env.create_node(**unallocated_node)
+
+        # Fetching installation info struct
+        info = InstallationInfo()
+        info = info.get_installation_info()
+        actual_cluster = info['clusters'][0]
+
+        # Creating cluster schema
+        cluster_schema = {}
+        for column in inspect(cluster.Cluster).columns:
+            cluster_schema[six.text_type(column.name)] = None
+        for rel in inspect(cluster.Cluster).relationships:
+            cluster_schema[six.text_type(rel.table.name)] = None
+
+        # Removing of not required fields
+        rename_fields = (
+            'tasks', 'cluster_changes', 'nodegroups', 'pending_release_id',
+            'releases', 'replaced_provisioning_info', 'notifications',
+            'deployment_tasks', 'name', 'replaced_deployment_info',
+            'grouping',
+            # 'vmware_attributes'
+        )
+        for field in rename_fields:
+            cluster_schema.pop(field)
+        # Renaming fields for matching
+        rename_fields = (
+            ('plugins', 'installed_plugins'),
+            ('networking_configs', 'network_configuration'),
+            ('release_id', 'release'),
+        )
+        for name_from, name_to in rename_fields:
+            cluster_schema.pop(name_from)
+            cluster_schema[name_to] = None
+
+        actual_keys = list(six.iterkeys(actual_cluster))
+        # If tests filed here it means, that you have added properties
+        # to cluster and they are not exported into statistics.
+        # If you don't know  what to do, contact fuel-stats team please.
+        for key in six.iterkeys(cluster_schema):
+            self.assertIn(key, actual_keys)
+
+    def _find_leafs_paths(self, structure, leafs_names=('value',)):
+        """Finds paths to leafs
+        :param structure: structure for searching
+        :param leafs_names: leafs names
+        :return: list of tuples of dicts keys to leafs
+        """
+
+        def _keys_paths_helper(result, keys, struct):
+            if isinstance(struct, dict):
+                for k in sorted(six.iterkeys(struct)):
+                    if k in leafs_names:
+                        result.append(keys)
+                    else:
+                        _keys_paths_helper(result, keys + (k,), struct[k])
+            elif isinstance(struct, (tuple, list)):
+                for d in struct:
+                    _keys_paths_helper(result, keys, d)
+            else:
+                # leaf not found
+                pass
+        leafs_paths = []
+        _keys_paths_helper(leafs_paths, (), structure)
+        return self._remove_private_leafs_paths(leafs_paths)
+
+    def _remove_private_leafs_paths(self, leafs_paths):
+        """Removes paths to private information
+        :return: leafs paths without paths to private information
+        """
+        private_paths = (
+            ('access', 'email'), ('access', 'password'), ('access', 'tenant'),
+            ('access', 'user'), ('common', 'auth_key'), ('corosync', 'group'),
+            ('corosync', 'port'), ('external_dns', 'dns_list'),
+            ('external_mongo', 'hosts_ip'), ('external_mongo', 'mongo_db_name'),
+            ('external_mongo', 'mongo_password'),
+            ('external_mongo', 'mongo_user'), ('syslog', 'syslog_port'),
+            ('syslog', 'syslog_server'), ('workloads_collector', 'password'),
+            ('workloads_collector', 'tenant'),
+            ('workloads_collector', 'username'), ('zabbix', 'password'),
+            ('zabbix', 'username'),
+            ('common', 'use_vcenter')  # removed attribute
+        )
+        return filter(lambda x: x not in private_paths, leafs_paths)
+
+    def test_all_cluster_attributes_in_white_list(self):
+        self.env.create(
+            nodes_kwargs=[{'roles': ['compute']}]
+        )
+        unallocated_nodes_params = [
+            {'status': consts.NODE_STATUSES.discover},
+        ]
+        for unallocated_node in unallocated_nodes_params:
+            self.env.create_node(**unallocated_node)
+
+        cluster = self.env.clusters[0]
+        expected_paths = self._find_leafs_paths(cluster.attributes.editable)
+
+        # Removing 'value' from expected paths
+        actual_paths = [rule[0][:-1] for rule in
+                        InstallationInfo.attributes_white_list]
+
+        # If tests filed here it means, that you have added cluster
+        # attributes and they are not added into InstallationInfo.attributes_white_list
+        # If you don't know what should be added into white list, contact
+        # fuel-stats team please.
+        for path in expected_paths:
+            self.assertIn(path, actual_paths)
+
+    def test_wite_list_unique_names(self):
+        names = set(rule[1] for rule in InstallationInfo.attributes_white_list)
+        self.assertEqual(len(InstallationInfo.attributes_white_list),
+                         len(names))
 
 
 class TestStatisticsSender(BaseTestCase):

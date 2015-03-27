@@ -84,9 +84,10 @@ var buildResultFilter = filter([
     'js/main.js',
     'js/libs/bower/requirejs/require.js',
     'css/styles.css',
+    'favicon.ico',
     'img/**',
     'font/**',
-    'favicon.ico'
+    'plugins/**'
 ]);
 
 var validateTranslations = require('./gulp/i18n').validate;
@@ -163,17 +164,11 @@ gulp.task('lint', [
     'lintspaces:styles'
 ]);
 
-var dest = argv['static-dir'] || '/tmp/static_compressed';
-
 gulp.task('rjs', function() {
-    rimraf.sync(dest);
+    var targetDir = argv['static-dir'] || '/tmp/static_compressed';
+    rimraf.sync(targetDir);
 
-    return gulp.src([
-        'static/**/*',
-        'static/**/*.js',
-        'static/**/*.jsx',
-        'static/**/styles.less'
-    ])
+    return gulp.src(['static/**'])
         .pipe(jsxFilter)
         .pipe(react())
         .pipe(jsxFilter.restore())
@@ -204,7 +199,7 @@ gulp.task('rjs', function() {
             rjs.on('close', cb);
         }))
         .pipe(buildResultFilter)
-        .pipe(gulp.dest(dest));
+        .pipe(gulp.dest(targetDir));
 });
 
 gulp.task('build', function() {

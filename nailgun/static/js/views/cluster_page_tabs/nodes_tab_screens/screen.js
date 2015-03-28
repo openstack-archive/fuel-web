@@ -41,7 +41,7 @@ function(Backbone) {
         updateButtonsState: function(state) {
             this.applyChangesButton.set('disabled', state);
             this.cancelChangesButton.set('disabled', state);
-            this.loadDefaultsButton.set('disabled',  state);
+            this.loadDefaultsButton.set('disabled', state);
         }
     });
 

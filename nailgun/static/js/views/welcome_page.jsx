@@ -124,7 +124,7 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                                     </button>
                                 :
                                     <div>
-                                        <button className='btn btn-large btn-unwanted' onClick={this.onStartButtonClick}  disabled={this.state.actionInProgress || this.state.disabled}>
+                                        <button className='btn btn-large btn-unwanted' onClick={this.onStartButtonClick} disabled={this.state.actionInProgress || this.state.disabled}>
                                             {i18n(ns + 'connect_later')}
                                         </button>
                                         <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress || this.state.disabled} onClick={this.connectToMirantis}>

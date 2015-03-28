@@ -233,7 +233,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                             {...this.getRangeProps()}
                                             error={(rangeError.start || verificationError) && ''}
                                             value={range[0]}
-                                            onChange={_.partialRight(this.onRangeChange,  attributeName, index)}
+                                            onChange={_.partialRight(this.onRangeChange, attributeName, index)}
                                             ref={'start' + index}
                                             inputClassName='start'
                                             placeholder={rangeError.start ? '' : this.props.placeholder}

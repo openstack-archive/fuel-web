@@ -233,41 +233,45 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             var Tab = tab.tab;
 
             return (
-                <div key={cluster.id}>
-                    <ClusterInfo cluster={cluster} />
+                <div className='cluster-page' key={cluster.id}>
+                    <div className='row'>
+                        <ClusterInfo cluster={cluster} />
+                        <DeploymentControl
+                            cluster={cluster}
+                            hasChanges={this.hasChanges}
+                            revertChanges={this.revertChanges}
+                            activeTab={this.props.activeTab}
+                        />
+                    </div>
                     <DeploymentResult cluster={cluster} />
                     {release.get('state') == 'unavailable' &&
-                        <div className='alert alert-block globalalert'>
-                            <p className='enable-selection'>{i18n('cluster_page.unavailable_release', {name: release.get('name')})}</p>
+                        <div className='alert deploy-alert alert-warning'>
+                            {i18n('cluster_page.unavailable_release', {name: release.get('name')})}
                         </div>
                     }
                     {cluster.get('is_customized') &&
-                        <div className='alert alert-block globalalert'>
-                            <p className='enable-selection'>{i18n('cluster_page.cluster_was_modified_from_cli')}</p>
+                        <div className='alert deploy-alert alert-warning'>
+                            {i18n('cluster_page.cluster_was_modified_from_cli')}
                         </div>
                     }
-                    <div className='whitebox'>
-                        <ul className='nav nav-tabs cluster-tabs'>
+                    <div className='tabs-box'>
+                        <div className='tabs'>
                             {tabs.map(function(url) {
-                                return <li key={url} className={utils.classNames({active: this.props.activeTab == url})}>
-                                    <a href={'#cluster/' + cluster.id + '/' + url}>
-                                        <b className={'tab-' + url + '-normal'} />
-                                        <div className='tab-title'>{i18n('cluster_page.tabs.' + url)}</div>
+                                return (
+                                    <a
+                                        key={url}
+                                        className={url + ' ' + utils.classNames({'cluster-tab': true, active: this.props.activeTab == url})}
+                                        href={'#cluster/' + cluster.id + '/' + url}
+                                    >
+                                        <div className='icon'></div>
+                                        <div className='label'>{i18n('cluster_page.tabs.' + url)}</div>
                                     </a>
-                                </li>;
+                                );
                             }, this)}
-                            <DeploymentControl
-                                cluster={cluster}
-                                hasChanges={this.hasChanges}
-                                revertChanges={this.revertChanges}
-                                activeTab={this.props.activeTab}
-                            />
-                        </ul>
-                        <div className='tab-content'>
-                            <div key={tab.url + cluster.id} id={'tab-' + tab.url} className='tab-pane active'>
-                                <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} />
-                            </div>
                         </div>
+                    </div>
+                    <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
+                        <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} />
                     </div>
                 </div>
             );
@@ -281,28 +285,29 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         render: function() {
             var cluster = this.props.cluster;
             return (
-                <div className='container'>
-                    <div className='cluster-name-box'>
-                        <div className='cluster-name-placeholder'>
-                            <div className='name-box'>
-                                <h3 className='name page-title'>{cluster.get('name')}</h3>
-                                <div className='node-list-name-count'>({i18n('common.node', {count: cluster.get('nodes').length})})</div>
-                                <div className='clearfix'/>
-                            </div>
-                        </div>
-                        <div className='cluster-summary-placeholder'>
-                            <div>
-                                <span>{i18n('cluster_page.openstack_release')}: </span>
-                                {cluster.get('release').get('name')} ({cluster.get('release').get('version')})
-                            </div>
-                            <div>
-                                <span>{i18n('cluster_page.deployment_mode')}: </span>
-                                {i18n('cluster.mode.' + cluster.get('mode'))}
-                            </div>
-                            <div className={_.contains(['error', 'update_error'], cluster.get('status')) ? 'error' : ''}>
-                                <span>{i18n('cluster_page.environment_status')}: </span>
-                                {i18n('cluster.status.' + cluster.get('status'))}
-                            </div>
+                <div className='col-xs-12 col-md-9'>
+                    <div className='page-title'>
+                        <h1 className='title'>
+                            {cluster.get('name')}
+                            <div className='title-node-count'>({i18n('common.node', {count: cluster.get('nodes').length})})</div>
+                        </h1>
+                        <div className='cluster-info'>
+                            <ul>
+                                <li>
+                                    <b>{i18n('cluster_page.openstack_release')}: </b>
+                                    {cluster.get('release').get('name')} ({cluster.get('release').get('version')})
+                                </li>
+                                <li>
+                                    <b>{i18n('cluster_page.deployment_mode')}: </b>
+                                    {i18n('cluster.mode.' + cluster.get('mode'))}
+                                </li>
+                                <li>
+                                    <b>{i18n('cluster_page.environment_status')}: </b>
+                                    <span className={_.contains(['error', 'update_error'], cluster.get('status')) ? 'text-danger' : ''}>
+                                        {i18n('cluster.status.' + cluster.get('status'))}
+                                    </span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -325,34 +330,28 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             var task = this.props.cluster.task({group: 'deployment', status: ['ready', 'error']});
             if (!task) return null;
             var error = task.match({status: 'error'}),
-                deploymentOrUpdate = task.match({name: ['deploy', 'update']}),
                 delimited = task.escape('message').split('\n\n'),
                 summary = delimited.shift(),
                 details = delimited.join('\n\n'),
                 classes = {
-                    'alert alert-block': true,
-                    'alert-error global-error': error,
-                    'alert-success': !error,
-                    'global-success': !error && deploymentOrUpdate,
-                    globalalert: !deploymentOrUpdate
+                    'alert deploy-alert': true,
+                    'alert-danger': error,
+                    'alert-success': !error
                 };
             return (
-                <div className='deployment-result'>
-                    {task &&
-                        <div className={utils.classNames(classes)}>
-                            <button className='close' onClick={this.dismissTaskResult}>&times;</button>
-                            <h4>{i18n('common.' + (error ? 'error' : 'success'))}</h4>
-                            <span className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(summary)}} />
-                            {details &&
-                                <span>
-                                    {!this.state.collapsed &&
-                                        <pre className='enable-selection' dangerouslySetInnerHTML={{__html: utils.urlify(details)}} />
-                                    }
-                                    <button className='btn-link' onClick={this.toggleCollapsed}>
-                                        {i18n('cluster_page.' + (this.state.collapsed ? 'show' : 'hide') + '_details_button')}
-                                    </button>
-                                </span>
+                <div className={utils.classNames(classes)}>
+                    <button className='close' onClick={this.dismissTaskResult}>&times;</button>
+                    <strong>{i18n('common.' + (error ? 'error' : 'success'))}</strong>
+                    <br />
+                    <span dangerouslySetInnerHTML={{__html: utils.urlify(summary)}} />
+                    {details &&
+                        <div className='task-result-details'>
+                            {!this.state.collapsed &&
+                                <pre dangerouslySetInnerHTML={{__html: utils.urlify(details)}} />
                             }
+                            <button className='btn btn-link' onClick={this.toggleCollapsed}>
+                                {i18n('cluster_page.' + (this.state.collapsed ? 'show' : 'hide') + '_details_button')}
+                            </button>
                         </div>
                     }
                 </div>
@@ -388,62 +387,58 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 taskName = task ? task.get('name') : '',
                 taskProgress = task && task.get('progress') || 0,
                 infiniteTask = _.contains(['stop_deployment', 'reset_environment'], taskName),
-                itemClass = 'deployment-control-item-box',
+                stoppableTask = !_.contains(['stop_deployment', 'reset_environment', 'update'], taskName),
                 isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' || (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
             return (
-                <div className='cluster-deploy-placeholder'>
-                    {task ? (
-                        <div className={'pull-right deployment-progress-box ' + taskName}>
-                            {!infiniteTask &&
-                                <div>
-                                    {taskName != 'update' &&
-                                        <div className={itemClass}>
-                                            <button
-                                                className='btn btn-danger stop-deployment-btn'
-                                                title={i18n('cluster_page.stop_deployment_button')}
-                                                onClick={_.bind(this.showDialog, this, dialogs.StopDeploymentDialog)}
-                                            >
-                                                <i className='icon-cancel-circle' />
-                                            </button>
-                                        </div>
-                                    }
-                                    <div className={itemClass}>
-                                        <div className='deploying-progress-text-box percentage'>{taskProgress + '%'}</div>
-                                    </div>
-                                </div>
-                            }
-                            <div className={itemClass}>
-                                <div className={'progress progress-striped active progress-' + (infiniteTask ? 'warning' : 'success')}>
-                                    <div className='bar' style={{width: (taskProgress > 3 ? taskProgress : 3) + '%'}} />
-                                </div>
-                            </div>
-                            <div className='progress-bar-description'>{i18n('cluster_page.' + taskName, {defaultValue: ''})}</div>
-                        </div>
-                    ) : (
-                        <div className='pull-right deployment-control-box'>
-                            <div className={itemClass}>
-                                <button
-                                    className='deploy-btn'
-                                    disabled={isDeploymentImpossible}
-                                    onClick={this.onDeployRequest}
-                                >
-                                    <i className='icon-upload-cloud' />
-                                    {i18n('cluster_page.deploy_changes')}
-                                </button>
-                            </div>
-                            {nodes.hasChanges() &&
-                                <div className={itemClass}>
-                                    <button
-                                        className='btn rollback'
-                                        title={i18n('cluster_page.discard_changes')}
-                                        onClick={_.bind(this.showDialog, this, dialogs.DiscardNodeChangesDialog)}
+                <div className='col-xs-6 col-md-3'>
+                    <div className='deploy-box pull-right'>
+                        {task ? (
+                            <div className={'deploy-process ' + taskName}>
+                                <div className='progress'>
+                                    <div
+                                        className={utils.classNames({
+                                            'progress-bar progress-bar-striped active': true,
+                                            'progress-bar-warning': infiniteTask,
+                                            'progress-bar-success': !infiniteTask
+                                        })}
+                                        style={{width: (taskProgress > 3 ? taskProgress : 3) + '%'}}
                                     >
-                                        <i className='icon-back-in-time' />
-                                    </button>
+                                    </div>
+                                    <div className='deploy-status'>{i18n('cluster_page.' + taskName, {defaultValue: ''})}</div>
                                 </div>
-                            }
-                        </div>
-                    )}
+                                {stoppableTask &&
+                                    <button
+                                        className='btn btn-danger btn-xs pull-right stop-deployment-btn'
+                                        title={i18n('cluster_page.stop_deployment_button')}
+                                        onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
+                                    ><i className='glyphicon glyphicon-remove'></i></button>
+                                }
+                                {!infiniteTask &&
+                                    <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>
+                                }
+                            </div>
+                        ) : [
+                            nodes.hasChanges() && (
+                                <button
+                                    key='discard-changes'
+                                    className='btn btn-transparent'
+                                    title={i18n('cluster_page.discard_changes')}
+                                    onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
+                                >
+                                    <div className='discard-changes-icon'></div>
+                                </button>
+                            ),
+                            <button
+                                key='deploy-changes'
+                                className='btn btn-primary deploy-btn'
+                                disabled={isDeploymentImpossible}
+                                onClick={this.onDeployRequest}
+                            >
+                                <div className='deploy-icon'></div>
+                                {i18n('cluster_page.deploy_changes')}
+                            </button>
+                        ]}
+                    </div>
                 </div>
             );
         }

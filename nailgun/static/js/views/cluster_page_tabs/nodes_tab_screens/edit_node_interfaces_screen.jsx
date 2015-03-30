@@ -330,7 +330,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return _.uniq(speeds).length > 1 || !_.compact(speeds).length;
         },
         render: function() {
-            var configureInterfacesTransNS = 'cluster_page.nodes_tab.configure_interfaces.',
+            var ns = 'cluster_page.nodes_tab.configure_interfaces.',
                 nodes = this.props.nodes,
                 nodeNames = nodes.pluck('name'),
                 interfaces = this.props.interfaces,
@@ -367,60 +367,67 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 });
 
             return (
-                <div className='edit-node-networks-screen' style={{display: 'block'}} ref='nodeNetworksScreen'>
-                    <div className={utils.classNames({'edit-node-interfaces': true, 'changes-locked': locked})}>
-                        <h3>
-                            {i18n(configureInterfacesTransNS + 'title', {count: nodes.length, name: nodeNames.join(', ')})}
-                        </h3>
+                <div className='row'>
+                    <div className='title'>
+                        {i18n(ns + 'title', {count: nodes.length, name: nodeNames.join(', ')})}
                     </div>
-
-                    <div className='row'>
-                        {bondingAvailable &&
-                            <div>
-                                <div className='page-control-box'>
-                                    <div className='page-control-button-placeholder'>
-                                        <button className='btn btn-bond' disabled={!bondingPossible} onClick={this.bondInterfaces}>{i18n(configureInterfacesTransNS + 'bond_button')}</button>
-                                        <button className='btn btn-unbond' disabled={!unbondingPossible} onClick={this.unbondInterfaces}>{i18n(configureInterfacesTransNS + 'unbond_button')}</button>
+                    {bondingAvailable &&
+                        <div className='col-xs-12'>
+                            <div className='page-buttons'>
+                                <div className='well clearfix'>
+                                    <div className='btn-group pull-right'>
+                                        <button className='btn btn-default btn-bond' onClick={this.bondInterfaces} disabled={!bondingPossible}>
+                                            {i18n(ns + 'bond_button')}
+                                        </button>
+                                        <button className='btn btn-default btn-unbond' onClick={this.unbondInterfaces} disabled={!unbondingPossible}>
+                                            {i18n(ns + 'unbond_button')}
+                                        </button>
                                     </div>
                                 </div>
-                                {invalidSpeedsForBonding &&
-                                    <div className='bond-speed-warning alert'>{i18n(configureInterfacesTransNS + 'bond_speed_warning')}</div>
-                                }
                             </div>
-                        }
-
-                        <div className='node-networks'>
-                            {
-                                interfaces.map(_.bind(function(ifc, index) {
-                                    if (!_.contains(slaveInterfaceNames, ifc.get('name'))) {
-                                        return <NodeInterface {...this.props}
-                                            key={'interface-' + ifc.get('name')}
-                                            interface={ifc}
-                                            locked={locked}
-                                            bondingAvailable={bondingAvailable}
-                                            getDraggedNetworks={this.getDraggedNetworks}
-                                            setDraggedNetworks={this.setDraggedNetworks}
-                                            errors={this.state.interfaceErrors[ifc.get('name')]}
-                                            validate={this.validate}
-                                            refresh={this.refresh}
-                                            bondingProperties={this.props.bondingConfig.properties}
-                                            configModels={this.props.configModels}
-                                            bondType={this.getBondType()}
-                                            interfaceSpeeds={interfaceSpeeds[index]}
-                                        />;
-                                    }
-                                }, this))
+                            {invalidSpeedsForBonding &&
+                                <div className='alert alert-warning'>{i18n(ns + 'bond_speed_warning')}</div>
                             }
                         </div>
-
-                        <div className='page-control-box'>
-                            <div className='back-button pull-left'>
-                                <button className='btn btn-return' onClick={this.returnToNodeList} disabled={!returnEnabled}>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>
+                    }
+                    <div className='ifc-list col-xs-12'>
+                        {interfaces.map(_.bind(function(ifc, index) {
+                            var ifcName = ifc.get('name');
+                            if (!_.contains(slaveInterfaceNames, ifcName)) return (
+                                <NodeInterface {...this.props}
+                                    key={'interface-' + ifcName}
+                                    interface={ifc}
+                                    locked={locked}
+                                    bondingAvailable={bondingAvailable}
+                                    getDraggedNetworks={this.getDraggedNetworks}
+                                    setDraggedNetworks={this.setDraggedNetworks}
+                                    errors={this.state.interfaceErrors[ifcName]}
+                                    validate={this.validate}
+                                    refresh={this.refresh}
+                                    bondingProperties={this.props.bondingConfig.properties}
+                                    bondType={this.getBondType()}
+                                    interfaceSpeeds={interfaceSpeeds[index]}
+                                />
+                            );
+                        }, this))}
+                    </div>
+                    <div className='col-xs-12 page-buttons'>
+                        <div className='well clearfix'>
+                            <div className='btn-group'>
+                                <button className='btn btn-default btn-return' onClick={this.returnToNodeList} disabled={!returnEnabled}>
+                                    {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
+                                </button>
                             </div>
-                            <div className='page-control-button-placeholder'>
-                                <button className='btn btn-defaults' onClick={this.loadDefaults} disabled={!loadDefaultsEnabled}>{i18n('common.load_defaults_button')}</button>
-                                <button className='btn btn-revert-changes' onClick={this.revertChanges} disabled={!revertChangesEnabled}>{i18n('common.cancel_changes_button')}</button>
-                                <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!applyEnabled}>{i18n('common.apply_button')}</button>
+                            <div className='btn-group pull-right'>
+                                <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={!loadDefaultsEnabled}>
+                                    {i18n('common.load_defaults_button')}
+                                </button>
+                                <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!revertChangesEnabled}>
+                                    {i18n('common.cancel_changes_button')}
+                                </button>
+                                <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!applyEnabled}>
+                                    {i18n('common.apply_button')}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -477,10 +484,10 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             this.props.refresh();
         },
         componentDidMount: function() {
-            $(this.refs.logicalNetworkBox.getDOMNode()).sortable({
-                connectWith: '.logical-network-box',
-                items: '.logical-network-group:not(.disabled)',
-                containment: $('.node-networks'),
+            $(this.refs.networks.getDOMNode()).sortable({
+                connectWith: '.ifc-networks',
+                items: '.network-group-block:not(.disabled)',
+                containment: $('.ifc-list'),
                 disabled: this.props.locked,
                 receive: this.dragStop,
                 remove: this.dragStart,
@@ -492,7 +499,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             this.props.validate();
         },
         dragStart: function(e, ui) {
-            var networkNames = $(ui.item).find('.logical-network-item').map(function(index, el) {
+            var networkNames = $(ui.item).find('.network-block').map(function(index, el) {
                 // NOTE(pkaminski): .data('name') returns an incorrect result here.
                 // This is probably caused by jQuery .data cache (attr reads directly from DOM).
                 // http://api.jquery.com/data/#data-html5
@@ -504,7 +511,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 this.initialNetworks = this.props.interface.get('assigned_networks').pluck('name');
             }
             if (e.type == 'sortremove') {
-                $(this.refs.logicalNetworkBox.getDOMNode()).sortable('cancel');
+                $(this.refs.networks.getDOMNode()).sortable('cancel');
                 this.props.interface.get('assigned_networks').remove(this.props.getDraggedNetworks());
             } else {
                 this.props.setDraggedNetworks(this.props.interface.get('assigned_networks').filter(function(network) {
@@ -515,14 +522,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         dragStop: function(e) {
             var networks;
-
             if (e.type == 'sortreceive') {
                 this.props.interface.get('assigned_networks').add(this.props.getDraggedNetworks());
             } else if (e.type == 'sortstop') {
                 // Block dragging within an interface
                 networks = this.props.interface.get('assigned_networks').pluck('name');
                 if (!_.xor(networks, this.initialNetworks).length) {
-                    $(this.refs.logicalNetworkBox.getDOMNode()).sortable('cancel');
+                    $(this.refs.networks.getDOMNode()).sortable('cancel');
                 }
                 this.initialNetworks = [];
             }
@@ -572,7 +578,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             this.props.interface.set('interface_properties', interfaceProperties);
         },
         render: function() {
-            var configureInterfacesTransNS = 'cluster_page.nodes_tab.configure_interfaces.',
+            var ns = 'cluster_page.nodes_tab.configure_interfaces.',
                 ifc = this.props.interface,
                 cluster = this.props.cluster,
                 locked = this.props.locked,
@@ -584,188 +590,180 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 bondable = this.props.bondingAvailable && assignedNetworks && !assignedNetworks.find(function(interfaceNetwork) {
                     return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
                 }),
-                slaveOnlineClass = function(slave) {
+                connectionStatusClasses = function(slave) {
                     var slaveDown = slave.get('state') == 'down';
                     return {
-                        'interface-online': !slaveDown,
-                        'interface-offline': slaveDown
+                        'ifc-connection-status': true,
+                        'ifc-online': !slaveDown,
+                        'ifc-offline': slaveDown
                     };
                 },
                 assignedNetworksGrouped = [],
                 networksToAdd = [],
-                showHelpMessage = !locked && !assignedNetworks.length,
                 bondProperties = ifc.get('bond_properties'),
                 interfaceProperties = ifc.get('interface_properties') || null;
 
             assignedNetworks.each(function(interfaceNetwork) {
                 if (interfaceNetwork.getFullNetwork(networks).get('name') != 'floating') {
-                    if (networksToAdd.length) {
-                        assignedNetworksGrouped.push(networksToAdd);
-                    }
+                    if (networksToAdd.length) assignedNetworksGrouped.push(networksToAdd);
                     networksToAdd = [];
                 }
                 networksToAdd.push(interfaceNetwork);
             });
-            if (networksToAdd.length) {
-                assignedNetworksGrouped.push(networksToAdd);
-            }
+            if (networksToAdd.length) assignedNetworksGrouped.push(networksToAdd);
 
             return (
-                <div className={utils.classNames({'physical-network-box': true, nodrag: this.props.errors})}>
-                    <div className='network-box-item'>
+                <div className='ifc-container'>
+                    <div className={utils.classNames({'ifc-inner-container': true, nodrag: this.props.errors})}>
                         {ifc.isBond() &&
-                            <div className='network-box-name'>
-                                {this.props.bondingAvailable ?
-                                    <controls.Input
-                                        type='checkbox'
-                                        label={ifc.get('name')}
-                                        labelClassName='pull-left'
-                                        onChange={this.bondingChanged}
-                                        checked={ifc.get('checked')} />
-                                    :
-                                    <div className='network-bond-name pull-left disabled'>{ifc.get('name')}</div>
-                                }
-                                {this.isLacpRateAvailable() &&
-                                    <div className='network-lacp-rate pull-right'>
+                            <div className='bond-properties clearfix forms-box'>
+                                <div className='ifc-name pull-left'>
+                                    {this.props.bondingAvailable ?
                                         <controls.Input
-                                            type='select'
-                                            value={bondProperties.lacp_rate}
-                                            disabled={!this.props.bondingAvailable}
-                                            onChange={this.onLacpChange}
-                                            label={i18n(configureInterfacesTransNS + 'lacp_rate') + ':'}
-                                            children={this.getBondingOptions(this.getBondPropertyValues('lacp_rate', 'values'), 'lacp_rates')}
-                                        />
-                                    </div>
-                                }
+                                            type='checkbox'
+                                            label={ifc.get('name')}
+                                            onChange={this.bondingChanged}
+                                            checked={ifc.get('checked')} />
+                                        : ifc.get('name')
+                                    }
+                                </div>
+                                <controls.Input
+                                    type='select'
+                                    disabled={!this.props.bondingAvailable}
+                                    onChange={this.bondingModeChanged}
+                                    value={this.getBondMode()}
+                                    label={i18n(ns + 'bonding_mode')}
+                                    children={this.getBondingOptions(this.getAvailableModes(), 'bonding_modes')}
+                                    wrapperClassName='pull-right'
+                                />
                                 {this.isHashPolicyNeeded() &&
-                                    <div className='network-bond-policy pull-right'>
-                                        <controls.Input
-                                            type='select'
-                                            value={bondProperties.xmit_hash_policy}
-                                            disabled={!this.props.bondingAvailable}
-                                            onChange={this.onPolicyChange}
-                                            label={i18n(configureInterfacesTransNS + 'bonding_policy') + ':'}
-                                            children={this.getBondingOptions(this.getBondPropertyValues('xmit_hash_policy', 'values'), 'hash_policy')}
-                                        />
-                                    </div>
-                                }
-                                <div className='network-bond-mode pull-right'>
                                     <controls.Input
                                         type='select'
+                                        value={bondProperties.xmit_hash_policy}
                                         disabled={!this.props.bondingAvailable}
-                                        onChange={this.bondingModeChanged}
-                                        value={this.getBondMode()}
-                                        label={i18n(configureInterfacesTransNS + 'bonding_mode') + ':'}
-                                        children={this.getBondingOptions(this.getAvailableModes(), 'bonding_modes')}
+                                        onChange={this.onPolicyChange}
+                                        label={i18n(ns + 'bonding_policy')}
+                                        children={this.getBondingOptions(this.getBondPropertyValues('xmit_hash_policy', 'values'), 'hash_policy')}
+                                        wrapperClassName='pull-right'
                                     />
-                                </div>
-                                <div className='clearfix'></div>
+                                }
+                                {this.isLacpRateAvailable() &&
+                                    <controls.Input
+                                        type='select'
+                                        value={bondProperties.lacp_rate}
+                                        disabled={!this.props.bondingAvailable}
+                                        onChange={this.onLacpChange}
+                                        label={i18n(ns + 'lacp_rate')}
+                                        children={this.getBondingOptions(this.getBondPropertyValues('lacp_rate', 'values'), 'lacp_rates')}
+                                        wrapperClassName='pull-right'
+                                    />
+                                }
                             </div>
                         }
 
-                        <div className='physical-network-checkbox'>
-                            {!ifc.isBond() && bondable && <controls.Input type='checkbox' onChange={this.bondingChanged} checked={ifc.get('checked')} />}
-                        </div>
-
-                        <div className='network-connections-block'>
-                            {_.map(slaveInterfaces, function(slaveInterface) {
-                                return <div key={'network-connections-slave-' + slaveInterface.get('name')} className='network-interfaces-status'>
-                                        <div className={utils.classNames(slaveOnlineClass(slaveInterface))}></div>
-                                        <div className='network-interfaces-name'>{slaveInterface.get('name')}</div>
-                                    </div>;
-                                })
-                            }
-                        </div>
-
-                        <div className='network-connections-info-block enable-selection'>
-                            {_.map(slaveInterfaces, function(slaveInterface, index) {
-                                return <div key={'network-connections-info-' + slaveInterface.get('name')} className='network-connections-info-block-item'>
-                                    <div className='network-connections-info-position'></div>
-                                    <div className='network-connections-info-description'>
-                                        {this.props.nodes.length == 1 &&
-                                            <div>
-                                                {i18n(configureInterfacesTransNS + 'mac')}: {slaveInterface.get('mac')}
-                                            </div>
-                                        }
-                                        <div>
-                                            {i18n(configureInterfacesTransNS + 'speed')}: {this.props.interfaceSpeeds[index].join(', ')}
-                                        </div>
-                                        {(this.props.bondingAvailable && slaveInterfaces.length >= 3) &&
-                                            <button className='btn btn-link btn-remove-interface'
-                                                    type='button'
-                                                    onClick={this.bondingRemoveInterface.bind(this, slaveInterface.get('name'))}>{i18n('common.remove_button')}
-                                            </button>
-                                        }
-                                    </div>
-                                </div>;
-                            }, this)
-                            }
-                        </div>
-
-                        <div className='logical-network-box' ref='logicalNetworkBox'>
-                            {!showHelpMessage ? _.map(assignedNetworksGrouped, function(networkGroup) {
-                                var network = networkGroup[0].getFullNetwork(networks);
-
-                                if (!network) {
-                                    return;
-                                }
-
-                                var classes = {
-                                        'logical-network-group': true,
-                                        disabled: locked || network.get('meta').unmovable
-                                    },
-                                    vlanRange = network.getVlanRange(networkingParameters);
-
-                                return <div key={'network-box-' + network.get('id')} className={utils.classNames(classes)}>
-                                        {_.map(networkGroup, function(interfaceNetwork) {
-                                            return (
-                                                <div key={'interface-network-' + interfaceNetwork.get('name')}
-                                                    className='logical-network-item' data-name={interfaceNetwork.get('name')}>
-                                                    <div className='name'>{i18n('network.' + interfaceNetwork.get('name'), {defaultValue: interfaceNetwork.get('name')})}</div>
-                                                    {vlanRange &&
-                                                        <div className='id'>
-                                                            {i18n(configureInterfacesTransNS + 'vlan_id', {count: _.uniq(vlanRange).length})}:
-                                                            {_.uniq(vlanRange).join('-')}
-                                                        </div>
+                        <div className='networks-block row'>
+                            <div className='col-xs-3'>
+                                <div className='ifc-checkbox pull-left'>
+                                    {!ifc.isBond() && bondable ?
+                                        <controls.Input
+                                            type='checkbox'
+                                            onChange={this.bondingChanged}
+                                            checked={ifc.get('checked')}
+                                        />
+                                    :
+                                        <span>&nbsp;</span>
+                                    }
+                                </div>
+                                <div className='pull-left'>
+                                    {_.map(slaveInterfaces, function(slaveInterface, index) {
+                                        var ifcName = slaveInterface.get('name');
+                                        return (
+                                            <div key={'info-' + ifcName} className='ifc-info-block clearfix'>
+                                                <div className='ifc-connection pull-left'>
+                                                    <div className={utils.classNames(connectionStatusClasses(slaveInterface))} />
+                                                    <div className='ifc-name'>{ifcName}</div>
+                                                </div>
+                                                <div className='ifc-info pull-left'>
+                                                    {this.props.nodes.length == 1 &&
+                                                        <div>{i18n(ns + 'mac')}: {slaveInterface.get('mac')}</div>
+                                                    }
+                                                    <div>
+                                                        {i18n(ns + 'speed')}: {this.props.interfaceSpeeds[index].join(', ')}
+                                                    </div>
+                                                    {(this.props.bondingAvailable && slaveInterfaces.length >= 3) &&
+                                                        <button className='btn btn-link' onClick={_.partial(this.bondingRemoveInterface, ifcName)}>
+                                                            {i18n('common.remove_button')}
+                                                        </button>
                                                     }
                                                 </div>
-                                            );
-                                        })
-                                        }
-                                    </div>;
-                            }, this)
-                            : <div className='network-help-message'>{i18n(configureInterfacesTransNS + 'drag_and_drop_description')}</div>
-                            }
+                                            </div>
+                                        );
+                                    }, this)}
+                                </div>
+                            </div>
+                            <div className='ifc-networks col-xs-9' ref='networks'>
+                                {assignedNetworks.length ?
+                                    _.map(assignedNetworksGrouped, function(networkGroup) {
+                                        var network = networkGroup[0].getFullNetwork(networks);
+                                        if (!network) return;
+
+                                        var classes = {
+                                                'network-group-block pull-left': true,
+                                                disabled: locked || network.get('meta').unmovable
+                                            },
+                                            vlanRange = network.getVlanRange(networkingParameters);
+                                        return (
+                                            <div key={'network-group-' + network.id} className={utils.classNames(classes)}>
+                                                {_.map(networkGroup, function(interfaceNetwork) {
+                                                    var networkName = interfaceNetwork.get('name');
+                                                    return (
+                                                        <div key={'network-' + networkName} className='network-block pull-left' data-name={networkName}>
+                                                            <div className='network-name'>
+                                                                {i18n('network.' + networkName, {defaultValue: networkName})}
+                                                            </div>
+                                                            {vlanRange &&
+                                                                <div className='vlan-id'>
+                                                                    {i18n(ns + 'vlan_id', {count: _.uniq(vlanRange).length})}:
+                                                                    {_.uniq(vlanRange).join('-')}
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    }, this)
+                                :
+                                    <div className='no-networks-message'>{i18n(ns + 'drag_and_drop_description')}</div>
+                                }
+                            </div>
                         </div>
+
                         {interfaceProperties &&
-                            <div className='interface-properties'>
+                            <div className='ifc-properties clearfix forms-box'>
                                 <controls.Input
                                     type='checkbox'
-                                    label={i18n(configureInterfacesTransNS + 'disable_offloading')}
+                                    label={i18n(ns + 'disable_offloading')}
                                     checked={interfaceProperties.disable_offloading}
-                                    labelClassName='offloading'
                                     name='disable_offloading'
                                     onChange={this.onInterfacePropertiesChange}
                                     disabled={locked}
+                                    wrapperClassName='pull-right'
                                 />
                                 <controls.Input
                                     type='text'
-                                    label={i18n(configureInterfacesTransNS + 'mtu')}
+                                    label={i18n(ns + 'mtu')}
                                     value={interfaceProperties.mtu || ''}
-                                    labelClassName='mtu'
                                     name='mtu'
                                     onChange={this.onInterfacePropertiesChange}
                                     disabled={locked}
+                                    wrapperClassName='pull-right'
                                 />
                             </div>
                         }
-                    </div>
 
-                    {this.props.errors &&
-                        <div className='network-box-error-message common enable-selection'>
-                            {this.props.errors}
-                        </div>
-                    }
+                    </div>
+                    {this.props.errors && <div className='ifc-error'>{this.props.errors}</div>}
                 </div>
             );
         }

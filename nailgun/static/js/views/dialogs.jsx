@@ -36,7 +36,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             title: React.PropTypes.node,
             message: React.PropTypes.node,
             modalClass: React.PropTypes.node,
-            error: React.PropTypes.bool
+            error: React.PropTypes.bool,
+            backdrop: React.PropTypes.oneOfType([
+                React.PropTypes.string,
+                React.PropTypes.bool
+            ])
         },
         statics: {
             show: function(options) {
@@ -48,14 +52,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         componentDidMount: function() {
             Backbone.history.on('route', this.close, this);
-            var $el = $(this.getDOMNode());
-            $el.on('hidden', this.handleHidden);
-            $el.on('shown', function() {$el.find('[autofocus]:first').focus();});
-            $el.modal({background: true, keyboard: true});
+            var $el = $(this.getDOMNode()),
+                options = {background: true, keyboard: true};
+            $el.on('hidden.bs.modal', this.handleHidden);
+            $el.on('shown.bs.modal', function() {$el.find('[autofocus]:first').focus();});
+            if (this.props.backdrop) _.extend(options, {backdrop: this.props.backdrop});
+            $el.modal(options);
         },
         componentWillUnmount: function() {
             Backbone.history.off(null, null, this);
-            $(this.getDOMNode()).off('shown hidden');
+            $(this.getDOMNode()).off('shown.bs.modal hidden.bs.modal');
         },
         handleHidden: function() {
             React.unmountComponentAtNode(this.getDOMNode().parentNode);
@@ -73,26 +79,34 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.setProps(props);
         },
         renderImportantLabel: function() {
-            return <span className='label label-important'>{i18n('common.important')}</span>;
+            return <span className='label label-danger'>{i18n('common.important')}</span>;
         },
         render: function() {
             var classes = {'modal fade': true};
             classes[this.props.modalClass] = this.props.modalClass;
             return (
                 <div className={utils.classNames(classes)} tabIndex="-1" onClick={this.closeOnLinkClick}>
-                    <div className='modal-header'>
-                        <button type='button' className='close' onClick={this.close}>&times;</button>
-                        <h3>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
-                    </div>
-                    <div className='modal-body'>
-                        {this.props.error ?
-                            <div className='text-error'>
-                                {this.props.message || i18n('dialog.error_dialog.warning')}
+                    <div className='modal-dialog'>
+                        <div className='modal-content'>
+                            <div className='modal-header'>
+                                <button type='button' className='close' aria-label='Close' onClick={this.close}><span aria-hidden='true'>&times;</span></button>
+                                <h4 className='modal-title'>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h4>
                             </div>
-                        : this.renderBody()}
-                    </div>
-                    <div className='modal-footer'>
-                        {this.renderFooter && !this.props.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{i18n('common.close_button')}</button>}
+                            <div className='modal-body'>
+                                {this.props.error ?
+                                    <div className='text-error'>
+                                        {this.props.message || i18n('dialog.error_dialog.warning')}
+                                    </div>
+                                : this.renderBody()}
+                            </div>
+                            <div className='modal-footer'>
+                                {this.renderFooter && !this.props.error ?
+                                    this.renderFooter()
+                                :
+                                    <button className='btn btn-default' onClick={this.close}>{i18n('common.close_button')}</button>
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -149,15 +163,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 .fail(this.showError);
         },
         renderChangedNodeAmount: function(nodes, dictKey) {
-            return nodes.length ? <div key={dictKey} className='deploy-task-name'>
-                {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
-            </div> : null;
+            return nodes.length ? <div>{i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}</div> : null;
         },
         renderBody: function() {
             var nodes = this.props.cluster.get('nodes');
             return (
                 <div>
-                    <div className='msg-error'>
+                    <div className='text-danger'>
                         {this.renderImportantLabel()}
                         {i18n('dialog.discard_changes.alert_text')}
                     </div>
@@ -172,7 +184,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='discard' className='btn btn-danger' disabled={this.state.actionInProgress} onClick={this.discardNodeChanges}>{i18n('dialog.discard_changes.discard_button')}</button>
             ]);
         }
@@ -224,9 +236,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 .fail(this.showError);
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
-            return !!nodes.length && <div key={dictKey} className='deploy-task-name'>
-                {i18n(this.ns + dictKey, {count: nodes.length})}
-            </div>;
+            return !!nodes.length && <div>{i18n(this.ns + dictKey, {count: nodes.length})}</div>;
         },
         renderBody: function() {
             var cluster = this.props.cluster,
@@ -235,24 +245,24 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className='display-changes-dialog'>
                     {(this.state.isInvalid || cluster.needsRedeployment()) ?
                         <div>
-                            <div className='deploy-task-notice text-error'>
-                                <i className='icon-attention' />
+                            <div className='text-danger'>
+                                <i className='glyphicon glyphicon-warning-sign' />
                                 <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' : 'redeployment_needed'))}</span>
                             </div>
-                            <hr className='slim' />
+                            <hr />
                         </div>
                     : _.contains(['new', 'stopped'], cluster.get('status')) &&
                         <div>
-                            <div className='deploy-task-notice text-warning'>
-                                <i className='icon-attention' />
+                            <div className='text-warning'>
+                                <i className='glyphicon glyphicon-warning-sign' />
                                 <span>{i18n(this.ns + 'locked_settings_alert')}</span>
                             </div>
-                            <hr className='slim' />
-                            <div className='deploy-task-notice text-warning'>
-                                <i className='icon-attention' />
+                            <hr />
+                            <div className='text-warning'>
+                                <i className='glyphicon glyphicon-warning-sign' />
                                 <span dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n(this.ns + 'warnings.connectivity_alert')))}} />
                             </div>
-                            <hr className='slim' />
+                            <hr />
                         </div>
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
@@ -367,7 +377,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 },
                 blockers = this.state.alerts.blocker.length;
             return (
-                <div>
+                <div className='validation-result'>
                 {
                     ['danger', 'warning'].map(function(severity) {
                         if (_.isEmpty(result[severity])) return null;
@@ -375,7 +385,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <ul key={severity} className={'alert alert-' + severity}>
                                 {result[severity].map(function(line, index) {
                                     return (<li key={severity + index}>
-                                        {severity == 'danger' && index < blockers && <i className='icon-minus-circle' />}
+                                        {severity == 'danger' && index < blockers && <i className='glyphicon glyphicon-exclamation-sign' />}
                                         {line}
                                     </li>);
                                 })}
@@ -393,7 +403,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 'btn-success': !(this.state.isInvalid || this.state.hasErrors)
             };
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
                     className={utils.classNames(classes)}
                     disabled={this.state.actionInProgress || this.state.isInvalid}
@@ -420,7 +430,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             return (
-                <div className='msg-error'>
+                <div className='text-danger'>
                     {this.renderImportantLabel()}
                     {i18n('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
                 </div>
@@ -428,7 +438,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy' className='btn stop-deployment-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.stopDeployment}>{i18n('common.stop_button')}</button>
             ]);
         }
@@ -466,8 +476,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var clusterName = this.props.cluster.get('name');
             return (
                 <div>
-                    {this.renderImportantLabel()}
-                    {this.getText()}
+                    <div className='text-danger'>
+                        {this.renderImportantLabel()}
+                        {this.getText()}
+                    </div>
                     {this.state.confirmation &&
                         <div className='confirm-deletion-form'>
                             {i18n('dialog.remove_cluster.enter_environment_name', {name: clusterName})}
@@ -487,7 +499,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button
                     key='remove'
                     className='btn btn-danger remove-cluster-btn'
@@ -525,8 +537,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var clusterName = this.props.cluster.get('name');
             return (
                 <div>
-                    {this.renderImportantLabel()}
-                    {i18n('dialog.reset_environment.text')}
+                    <div className='text-danger'>
+                        {this.renderImportantLabel()}
+                        {i18n('dialog.reset_environment.text')}
+                    </div>
                     {this.state.confirmation &&
                         <div className='confirm-reset-form'>
                             {i18n('dialog.reset_environment.enter_environment_name', {name: clusterName})}
@@ -550,7 +564,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button
                     key='reset'
                     className='btn btn-danger reset-environment-btn'
@@ -583,7 +597,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return (
                 <div>
                     {action == 'update' && this.props.isDowngrade ?
-                        <div className='msg-error'>
+                        <div className='text-danger'>
                             {this.renderImportantLabel()}
                             {i18n('dialog.' + action + '_environment.downgrade_warning')}
                         </div>
@@ -601,7 +615,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     'btn-danger': action != 'update'
                 });
             return ([
-                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='reset' className={classes} onClick={this.updateEnvironment} disabled={this.state.actionInProgress}>{i18n('common.' + action + '_button')}</button>
             ]);
         }
@@ -682,10 +696,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             if (name && name != this.state.title) this.setState({title: name});
         },
         assignAccordionEvents: function() {
-            $('.accordion-body', this.getDOMNode())
-                .on('show', function(e) {$(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-expand').addClass('icon-collapse');})
-                .on('hide', function(e) {$(e.currentTarget).siblings('.accordion-heading').find('i').removeClass('icon-collapse').addClass('icon-expand');})
-                .on('hidden', function(e) {e.stopPropagation();});
+            $('.panel-collapse', this.getDOMNode())
+                .on('show.bs.collapse', function(e) {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-plus').addClass('glyphicon-minus');})
+                .on('hide.bs.collapse', function(e) {$(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-minus').addClass('glyphicon-plus');})
+                .on('hidden.bs.collapse', function(e) {e.stopPropagation();});
         },
         toggle: function(groupIndex) {
             $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
@@ -701,32 +715,33 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
                 };
             return (
-                <div>
-                    <div className='row-fluid'>
-                        <div className='span5'><div className='node-image-outline'></div></div>
-                        <div className='span7 enable-selection'>
+                <div className='node-details-popup'>
+                    <div className='row'>
+                        <div className='col-xs-5'><div className='node-image-outline' /></div>
+                        <div className='col-xs-7 enable-selection'>
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
                         </div>
                     </div>
-                    <div className='accordion' id='nodeDetailsAccordion'>
+                    <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>
                         {_.map(groups, function(group, groupIndex) {
                             var groupEntries = meta[group],
                                 subEntries = [];
                             if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries, 'name');
                             if (_.isPlainObject(groupEntries)) subEntries = _.find(_.values(groupEntries), _.isArray);
                             return (
-                                <div className='accordion-group' key={group}>
-                                    <div className='accordion-heading' onClick={this.toggle.bind(this, groupIndex)}>
-                                        <div className='accordion-toggle' data-group={group}>
-                                            <b>{i18n('node_details.' + group, {defaultValue: group})}</b>
-                                            <span>{this.showSummary(meta, group)}</span>
-                                            <i className='icon-expand pull-right'></i>
+                                <div className='panel panel-default' key={group}>
+                                    <div className='panel-heading' role='tab' id={'heading' + group} onClick={this.toggle.bind(this, groupIndex)}>
+                                        <div className='panel-title'>
+                                            <div data-parent='#accordion' aria-expanded='true' aria-controls={'body' + group}>
+                                                <strong>{i18n('node_details.' + group, {defaultValue: group})}</strong> {this.showSummary(meta, group)}
+                                                <i className='glyphicon glyphicon-plus pull-right' />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className='accordion-body collapse' ref={'togglable_' + groupIndex}>
-                                        <div className='accordion-inner enable-selection'>
+                                    <div className='panel-collapse collapse' role='tabpanel' aria-labelledby={'heading' + group} ref={'togglable_' + groupIndex}>
+                                        <div className='panel-body enable-selection'>
                                             {_.isArray(groupEntries) &&
                                                 <div>
                                                     {_.map(groupEntries, function(entry, entryIndex) {
@@ -777,20 +792,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return (
                 <div>
                     {node.get('cluster') &&
-                        <span>
-                            <button className='btn btn-edit-networks' onClick={this.goToConfigurationScreen.bind(this, 'interfaces')}>{i18n('dialog.show_node.network_configuration_button')}</button>
-                            <button className='btn btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>{i18n('dialog.show_node.disk_configuration_button')}</button>
-                        </span>
+                        <div className='btn-group' role='group'>
+                            <button className='btn btn-default btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>
+                                {i18n('dialog.show_node.disk_configuration_button')}
+                            </button>
+                            <button className='btn btn-default btn-edit-networks' onClick={this.goToConfigurationScreen.bind(this, 'interfaces')}>
+                                {i18n('dialog.show_node.network_configuration_button')}
+                            </button>
+                        </div>
                     }
-                    <button className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>
+                    <div className='btn-group' role='group'>
+                        <button className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>
+                    </div>
                 </div>
             );
         },
         renderNodeInfo: function(name, value) {
             return (
-                <div key={name + value}>
+                <div key={name + value} className='node-details-row'>
                     <label>{i18n('dialog.show_node.' + name, {defaultValue: this.showPropertyName(name)})}</label>
-                    <span>{value}</span>
+                    {value}
                 </div>
             );
         }
@@ -806,42 +827,50 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderBody: function() {
             var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
             return (
-                <div className='msg-error dismiss-settings-dialog'>
+                <div className='text-danger dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
                     {message}
                 </div>
             );
         },
         renderFooter: function() {
-            var verification = !!this.props.verification,
-                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>],
-                buttonToAdd = <button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>
+            var buttons = [
+                <button key='stay' className='btn btn-default btn-stay' onClick={this.close}>
+                    {i18n('dialog.dismiss_settings.stay_button')}
+                </button>
+            ];
+            if (!this.props.verification) buttons.push(
+                <button key='leave' className='btn btn-danger' onClick={this.proceed}>
                     {i18n('dialog.dismiss_settings.leave_button')}
-                </button>;
-            if (!verification) buttons.push(buttonToAdd);
+                </button>
+            );
             return buttons;
         }
     });
 
     dialogs.RemoveNodeConfirmDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.remove_node.title'), defaultMessage: i18n('dialog.remove_node.default_message')};},
+        getDefaultProps: function() {
+            return {
+                title: i18n('dialog.remove_node.title'),
+                defaultMessage: i18n('dialog.remove_node.default_message')
+            };
+        },
         proceed: function() {
             this.close();
             dispatcher.trigger('networkConfigurationUpdated', this.props.cb);
         },
         renderBody: function() {
-            var message = this.props.defaultMessage;
             return (
-                <div className='msg-error'>
+                <div className='text-danger'>
                     {this.renderImportantLabel()}
-                    {message}
+                    {this.props.defaultMessage}
                 </div>
             );
         },
         renderFooter: function() {
             return [
-                <button key='stay' className='btn btn-return' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='stay' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='delete' className='btn btn-danger btn-delete' onClick={this.proceed}>
                     {i18n('cluster_page.nodes_tab.node.remove')}
                 </button>
@@ -853,11 +882,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.delete_nodes.title')};},
         renderBody: function() {
-            return (<div className='deploy-task-notice'>{this.renderImportantLabel()} {i18n('dialog.delete_nodes.message')}</div>);
+            return (
+                <div className='text-danger'>
+                    {this.renderImportantLabel()}
+                    {i18n('dialog.delete_nodes.message')}
+                </div>
+            );
         },
         renderFooter: function() {
             return [
-                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
                 <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.actionInProgress}>{i18n('common.delete_button')}</button>
             ];
         },
@@ -914,9 +948,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 fields = ['currentPassword', 'newPassword', 'confirmationPassword'],
                 translationKeys = ['current_password', 'new_password', 'confirm_new_password'];
             return (
-                <form className='change-password-form'>
+                <div className='forms-box'>
                     {_.map(fields, function(name, index) {
-                        return (<controls.Input
+                        return <controls.Input
                             key={name}
                             name={name}
                             ref={name}
@@ -929,14 +963,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             toggleable={name == 'currentPassword'}
                             defaultValue={this.state[name]}
                             error={this.getError(name)}
-                        />);
+                        />;
                     }, this)}
-                </form>
+                </div>
             );
         },
         renderFooter: function() {
             return [
-                <button key='cancel' className='btn' onClick={this.close} disabled={this.state.actionInProgress}>
+                <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
                     {i18n('common.cancel_button')}
                 </button>,
                 <button key='apply' className='btn btn-success' onClick={this.changePassword}
@@ -997,7 +1031,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         getDefaultProps: function() {
             return {
                 title: i18n('dialog.registration.title'),
-                modalClass: 'registration'
+                modalClass: 'registration',
+                backdrop: 'static'
             };
         },
         componentDidMount: function() {
@@ -1085,26 +1120,32 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 sortedFields = _.chain(_.keys(fieldsList))
                     .without('metadata')
                     .sortBy(function(inputName) {return fieldsList[inputName].weight;})
-                    .value();
+                    .value(),
+                halfWidthField = ['first_name', 'last_name', 'company', 'phone', 'country', 'region'];
             return (
-                <div className='registration-form'>
+                <div className='registration-form tracking'>
                     {actionInProgress && <controls.ProgressBar />}
                     {error &&
-                        <div className='error'>
-                            <i className='icon-attention'></i>
+                        <div className='text-danger'>
+                            <i className='glyphicon glyphicon-warning-sign' />
                             {error}
                         </div>
                     }
                     {!this.state.hideRequiredFieldsNotice && !this.state.connectionError &&
-                        <div className='alert'>
+                        <div className='alert alert-warning'>
                             {i18n('welcome_page.register.required_fields')}
                         </div>
                     }
-                    <form className='form-horizontal'>
+                    <form className='form-inline row'>
                         {_.map(sortedFields, function(inputName) {
                             var input = fieldsList[inputName],
                                 path = 'credentials.' + inputName,
-                                inputError = (registrationForm.validationError || {})[path];
+                                inputError = (registrationForm.validationError || {})[path],
+                                classes = {
+                                    'col-md-12': !_.contains(halfWidthField, inputName),
+                                    'col-md-6': _.contains(halfWidthField, inputName),
+                                    'text-center': inputName == 'agree'
+                                };
                             return <controls.Input
                                 ref={inputName}
                                 key={inputName}
@@ -1112,7 +1153,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                 label={inputName != 'agree' ? input.label : this.getAgreementLink(input.description)}
                                 {... _.pick(input, 'type', 'value')}
                                 children={input.type == 'select' && this.composeOptions(input.values)}
-                                wrapperClassName={inputName}
+                                wrapperClassName={utils.classNames(classes)}
                                 onChange={this.onChange}
                                 error={inputError}
                                 disabled={actionInProgress || (inputName == 'region' && this.checkCountry())}
@@ -1125,14 +1166,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             );
         },
         renderFooter: function() {
-            return [
-                <button key='cancel' className='btn' onClick={this.close}>
+            var buttons = [
+                <button key='cancel' className='btn btn-default' onClick={this.close}>
                     {i18n('common.cancel_button')}
-                </button>,
-                <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.loading || this.state.connectionError} onClick={this.validateRegistrationForm}>
-                    {i18n('welcome_page.register.create_account')}
                 </button>
             ];
+            if (!this.state.loading) buttons.push(
+                <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.connectionError} onClick={this.validateRegistrationForm}>
+                    {i18n('welcome_page.register.create_account')}
+                </button>
+            );
+            return buttons;
         }
     });
 
@@ -1198,23 +1242,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         <div>
                             {actionInProgress && <controls.ProgressBar />}
                             {error &&
-                                <div className='error'>
-                                    <i className='icon-attention'></i>
+                                <div className='text-danger'>
+                                    <i className='glyphicon glyphicon-warning-sign' />
                                     {error}
                                 </div>
                             }
                             {input &&
                                 <div>
-                                    <div>{i18n(ns + 'submit_email')}</div>
-                                    <div>
-                                        <controls.Input
-                                            {... _.pick(input, 'type', 'value', 'label')}
-                                            onChange={this.onChange}
-                                            error={inputError}
-                                            disabled={actionInProgress}
-                                            description={input.description}
-                                        />
-                                    </div>
+                                    <p>{i18n(ns + 'submit_email')}</p>
+                                    <controls.Input
+                                        {... _.pick(input, 'type', 'value', 'description')}
+                                        onChange={this.onChange}
+                                        error={inputError}
+                                        disabled={actionInProgress}
+                                        placeholder={input.label}
+                                    />
                                 </div>
                             }
                         </div>
@@ -1228,26 +1270,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             );
         },
         renderFooter: function() {
-            return (
-                <div>
-                    {!this.state.passwordSent ?
-                        <div>
-                            <button key='cancel' className='btn' onClick={this.close}>
-                                {i18n('common.cancel_button')}
-                            </button>
-                            <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.loading || this.state.connectionError} onClick={this.retrievePassword}>
-                                {i18n('dialog.retrieve_password.send_new_password')}
-                            </button>
-                        </div>
-                    :
-                        <div>
-                            <button key='close' className='btn' onClick={this.close}>
-                                {i18n('common.close_button')}
-                            </button>
-                        </div>
-                    }
-                </div>
+            if (this.state.passwordSent) return [
+                <button key='close' className='btn btn-default' onClick={this.close}>
+                    {i18n('common.close_button')}
+                </button>
+            ];
+            var buttons = [
+                <button key='cancel' className='btn btn-default' onClick={this.close}>
+                    {i18n('common.cancel_button')}
+                </button>
+            ];
+            if (!this.state.loading) buttons.push(
+                <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.connectionError} onClick={this.retrievePassword}>
+                    {i18n('dialog.retrieve_password.send_new_password')}
+                </button>
             );
+            return buttons;
         }
     });
 

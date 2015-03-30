@@ -51,13 +51,19 @@ function(_, i18n, React, models, componentMixins, controls) {
             var capacityLog = this.props.capacityLog;
             return (
                 <div>
-                    <h3 className='page-title'>{i18n('capacity_page.title')}</h3>
-                    <div className='capacity page-wrapper'>
-                        {!capacityLog.isNew() ?
-                            <LicenseUsage capacityLog = {capacityLog} />
-                            :
-                            <controls.ProgressBar />
-                        }
+                    <div className='page-title'>
+                        <h1 className='title'>{i18n('capacity_page.title')}</h1>
+                    </div>
+                    <div className='content-box'>
+                        <div className='row'>
+                            <div className='col-xs-12'>
+                                {!capacityLog.isNew() ?
+                                    <LicenseUsage capacityLog={capacityLog} />
+                                    :
+                                    <controls.ProgressBar />
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -67,7 +73,7 @@ function(_, i18n, React, models, componentMixins, controls) {
     var LicenseUsage = React.createClass({
         render: function() {
             var capacityReport = this.props.capacityLog.get('report'),
-                tableClassName = 'releases-table',
+                tableClassName = 'capacity-audit-table',
                 headClassName = 'name';
             return (
                 <div>
@@ -96,8 +102,7 @@ function(_, i18n, React, models, componentMixins, controls) {
                             _.values(capacityReport.roles_stat))}
                         tableClassName={tableClassName} />
                     <a href='/api/capacity/csv' target='_blank' className='btn btn-info'>
-                        <i className='icon-install'></i>
-                        <span>{i18n('capacity_page.download_report')}</span>
+                        {i18n('capacity_page.download_report')}
                     </a>
                 </div>
             );

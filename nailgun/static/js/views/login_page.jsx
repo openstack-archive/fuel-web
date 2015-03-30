@@ -30,15 +30,15 @@ function($, _, i18n, React) {
         },
         render: function() {
             return (
-                <div className='login-placeholder'>
-                    <div className='login-box'>
+                <div className='login-page'>
+                    <div className='login-box col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
                         <div className='login-logo-circle'></div>
                         <div className='login-logo'></div>
                         <div className='login-fields-box'>
                             <LoginForm />
                         </div>
                     </div>
-                    <div className='login-copyrights'>
+                    <div className='login-footer col-xs-12'>
                         {_.contains(app.version.get('feature_groups'), 'mirantis') &&
                             <p className='text-center'>{i18n('common.copyright')}</p>
                         }
@@ -83,12 +83,10 @@ function($, _, i18n, React) {
             this.setState({hasError: false});
         },
         onSubmit: function(e) {
-            var username, password;
-
             e.preventDefault();
 
-            username = this.refs.username.getDOMNode().value;
-            password = this.refs.password.getDOMNode().value;
+            var username = this.refs.username.getDOMNode().value;
+            var password = this.refs.password.getDOMNode().value;
 
             this.setState({actionInProgress: true});
 
@@ -102,35 +100,30 @@ function($, _, i18n, React) {
 
             return (
                 <form className='form-horizontal' onSubmit={this.onSubmit}>
-                    <fieldset>
-                        <div className='control-group'>
-                            <label className='control-label'>
-                                <i className='icon-user'></i>
-                            </label>
-                            <div className='controls'>
-                                <input className='input-xlarge' type='text' name='username' ref='username' placeholder={i18n('login_page.username')} onChange={this.onChange} />
-                            </div>
+                    <div className='form-group'>
+                        <label className='control-label col-xs-2'>
+                            <i className='glyphicon glyphicon-user'></i>
+                        </label>
+                        <div className='col-xs-8'>
+                            <input className='form-control input-sm' type='text' name='username' ref='username' placeholder={i18n('login_page.username')} onChange={this.onChange} />
                         </div>
-                        <div className='control-group'>
-                            <label className='control-label'>
-                                <i className='icon-key'></i>
-                            </label>
-                            <div className='controls'>
-                                <input className='input-xlarge' type='password' name='password' ref='password' placeholder={i18n('login_page.password')} onChange={this.onChange} />
-                            </div>
+                    </div>
+                    <div className='form-group'>
+                        <label className='control-label col-xs-2'>
+                            <i className='glyphicon glyphicon glyphicon-lock'></i>
+                        </label>
+                        <div className='col-xs-8'>
+                            <input className='form-control input-sm' type='password' name='password' ref='password' placeholder={i18n('login_page.password')} onChange={this.onChange} />
                         </div>
-                        {this.state.hasError && (
-                                <div className='login-error-auth login-error-message'>
-                                    <p className='text-center text-error'>{i18n('login_page.login_error')}</p>
-                                </div>
-                            )
-                        }
-                        <div className='control-group'>
-                            <div id='login-button-control' className='controls'>
-                                <button type='submit' className='btn btn-success login-btn' disabled={loginButtonDisabled}>{i18n('login_page.log_in')}</button>
-                            </div>
+                    </div>
+                    {this.state.hasError &&
+                        <p className='text-center text-danger'>{i18n('login_page.login_error')}</p>
+                    }
+                    <div className='form-group'>
+                        <div className='col-xs-12 text-center'>
+                            <button type='submit' className='btn btn-success login-btn' disabled={loginButtonDisabled}>{i18n('login_page.log_in')}</button>
                         </div>
-                    </fieldset>
+                    </div>
                 </form>
             );
         }

@@ -45,17 +45,6 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                 });
             }
         },
-        componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm;
-            remoteLoginForm.fetch()
-                .done(_.bind(function() {this.setState({loading: false});}, this))
-                .fail(_.bind(function() {
-                    remoteLoginForm.url = remoteLoginForm.nailgunUrl;
-                    remoteLoginForm.fetch()
-                        .fail(this.showResponseErrors)
-                        .always(_.bind(function() {this.setState({loading: false});}, this));
-                }, this));
-        },
         getInitialState: function() {
             return {isConnected: false};
         },
@@ -147,6 +136,7 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
             return {};
         },
         onChange: function(inputName, value) {
+            this.setState({error: null});
             var settings = this.props.settings,
                 name = settings.makePath('tracking', inputName, 'value');
             if (settings.validationError) delete settings.validationError['tracking.' + inputName];
@@ -204,6 +194,7 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                                             ref={inputName}
                                             key={inputName}
                                             name={inputName}
+                                            disabled={this.props.actionInProgress}
                                             {... _.pick(input, 'type', 'label', 'value')}
                                             onChange={this.onChange}
                                             error={error}/>;

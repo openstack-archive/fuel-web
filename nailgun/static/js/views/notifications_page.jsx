@@ -43,12 +43,21 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
         render: function() {
             return (
                 <div>
-                    <h3 className='page-title'>{i18n('notifications_page.title')}</h3>
-                    <ul className='notification-list page-wrapper'>
-                        {this.props.notifications.map(function(notification) {
-                            return <Notification {...this.props} key={'notification' + notification.id} notification={notification} />;
+                    <div className='page-title'>
+                        <h1 className='title'>{i18n('notifications_page.title')}</h1>
+                    </div>
+                    <div className='content-box'>
+                        {this.props.notifications.map(function(notification, index) {
+                            return [
+                                !!index && <hr />,
+                                <Notification
+                                    {...this.props}
+                                    key={'notification' + notification.id}
+                                    notification={notification}
+                                />
+                            ];
                         }, this)}
-                    </ul>
+                    </div>
                 </div>
             );
         }
@@ -84,16 +93,13 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
                 notificationClass = topic + ' ' + notification.get('status') + ' ' + (notification.get('node_id') ? 'clickable' : ''),
                 iconClass = {error: 'icon-attention', discover: 'icon-bell'}[topic] || 'icon-info-circled';
             return (
-                <li className={notificationClass} onClick={this.onNotificationClick}>
-                    <div className='icon'><i className={iconClass}></i></div>
-                    <div className='datetime enable-selection'>
+                <div className={'row ' + notificationClass} onClick={this.onNotificationClick}>
+                    <div className='col-xs-4 col-md-2'>
+                        <i className={iconClass}></i>
                         {notification.get('date')} {notification.get('time')}
                     </div>
-                    <div
-                        className='message enable-selection'
-                        dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}
-                    ></div>
-                </li>
+                    <div className='col-xs-12 col-md-10' dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></div>
+                </div>
             );
         }
     });

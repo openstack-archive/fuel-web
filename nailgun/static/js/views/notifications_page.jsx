@@ -43,12 +43,24 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
         render: function() {
             return (
                 <div>
-                    <h3 className='page-title'>{i18n('notifications_page.title')}</h3>
-                    <ul className='notification-list page-wrapper'>
-                        {this.props.notifications.map(function(notification) {
-                            return <Notification {...this.props} key={'notification' + notification.id} notification={notification} />;
-                        }, this)}
-                    </ul>
+                    <div className='page-title'>
+                        <h1 className='title'>{i18n('notifications_page.title')}</h1>
+                    </div>
+                    <div className='content-box'>
+                        <div className='row'>
+                            <div className='col-xs-12'>
+                                {this.props.notifications.map(function(notification) {
+                                    return (
+                                        <Notification
+                                            {...this.props}
+                                            key={'notification' + notification.id}
+                                            notification={notification}
+                                        />
+                                    );
+                                }, this)}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             );
         }

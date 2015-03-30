@@ -1,23 +1,22 @@
-<div class="edit-node-disks">
-  <h3>
+<div class="row">
+  <div class="title">
     <%- i18n('cluster_page.nodes_tab.configure_disks.title', {count: nodes.length, name: nodes.length && nodes.at(0).get('name')}) %>
-  </h3>
+  </div>
 
-  <div class="node-disks">
-    <div class="progress-bar">
-      <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
+  <div class="col-xs-12 node-disks">
+    <div class="progress">
+      <div class="progress-bar progress-bar-striped active" style="width: 100%;"></div>
     </div>
   </div>
 
-  <!-- page-control box -->
-  <div class="row">
-    <div class="page-control-box">
-      <div class="back-button pull-left">
-        <button class="btn btn-return" data-i18n="cluster_page.nodes_tab.back_to_nodes_button"></button>
+  <div class="col-xs-12 page-buttons">
+    <div class="well clearfix">
+      <div class="btn-group">
+        <button class="btn btn-default btn-return" data-i18n="cluster_page.nodes_tab.back_to_nodes_button"></button>
       </div>
-      <div class="page-control-button-placeholder">
-        <button data-i18n="common.load_defaults_button" class="btn btn-defaults"></button>
-        <button data-i18n="common.cancel_changes_button" class="btn btn-revert-changes"></button>
+      <div class="btn-group pull-right">
+        <button data-i18n="common.load_defaults_button" class="btn btn-default btn-defaults"></button>
+        <button data-i18n="common.cancel_changes_button" class="btn btn-default btn-revert-changes"></button>
         <button data-i18n="common.apply_button" class="btn btn-success btn-apply"></button>
       </div>
     </div>

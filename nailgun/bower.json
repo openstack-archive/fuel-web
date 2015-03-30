@@ -18,7 +18,9 @@
     "cocktail": "0.5.7",
     "i18next": "1.7.1",
     "backbone-deep-model": "0.10.4",
-    "less": "2.4.0"
+    "less": "2.4.0",
+    "bootstrap": "~3.3.4",
+    "open-sans-fontface": "~1.4.0"
   },
   "overrides": {
     "jquery": {
@@ -45,6 +47,14 @@
     },
     "backbone-deep-model": {
       "main": "distribution/deep-model.js"
+    },
+    "bootstrap": {
+      "main": [
+        "dist/js/bootstrap.js",
+        "dist/css/bootstrap.css",
+        "dist/css/bootstrap.css.map",
+        "dist/fonts/*"
+      ]
     }
   },
   "ignore": [

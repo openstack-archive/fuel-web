@@ -41,7 +41,7 @@ define(function() {
             coccyx: 'js/libs/custom/coccyx',
             cocktail: 'js/libs/bower/cocktail/Cocktail',
             routefilter: 'js/libs/bower/routefilter/dist/backbone.routefilter.min',
-            bootstrap: 'js/libs/custom/bootstrap.min',
+            bootstrap: 'js/libs/bower/bootstrap/dist/js/bootstrap',
             text: 'js/libs/bower/requirejs-text/text',
             json: 'js/libs/bower/requirejs-plugins/src/json',
             i18next: 'js/libs/bower/i18next/release/i18next-1.7.1',

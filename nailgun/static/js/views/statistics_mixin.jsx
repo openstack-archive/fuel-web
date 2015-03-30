@@ -132,7 +132,7 @@ define([
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) return i18n(key);
             return i18n(key + '_community');
         },
-        renderInput: function(settingName, labelClassName, wrapperClassName, disabledState) {
+        renderInput: function(settingName, wrapperClassName, disabledState) {
             var setting = this.props.settings.get(this.props.settings.makePath('statistics', settingName));
             if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result || setting.type == 'hidden') return null;
             var error = this.getError(settingName),
@@ -146,7 +146,6 @@ define([
                 value={setting.value}
                 disabled={disabled}
                 inputClassName={setting.type == 'text' && 'input-xlarge'}
-                labelClassName={labelClassName}
                 wrapperClassName={wrapperClassName}
                 onChange={this.onStatisticsSettingChange}
                 error={error && i18n(error)}

@@ -296,11 +296,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 var paneName = PaneConstructor.prototype.constructorName;
                 if (this.panesModel.get(paneName) != 'hidden') {
                     if (paneIndex == this.panesModel.get('activePaneIndex')) {
-                        this.panesModel.set(paneName, 'current');
+                        this.panesModel.set(paneName, 'active');
                     } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
                         this.panesModel.set(paneName, 'available');
                     } else {
-                        this.panesModel.set(paneName, 'unavailable');
+                        this.panesModel.set(paneName, 'disabled');
                     }
                 }
             }, this);
@@ -362,8 +362,8 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 maxAvailableStep: this.panesModel.get('maxAvailablePaneIndex')
             })).i18n();
             if (!this.modalBound) {
-                this.$el.on('hidden', _.bind(this.tearDown, this));
-                this.$el.on('shown', _.bind(function() {
+                this.$el.on('hidden.bs.modal', _.bind(this.tearDown, this));
+                this.$el.on('shown.bs.modal', _.bind(function() {
                     this.$('[autofocus]:first').focus();
                 }, this));
                 this.$el.modal({backdrop: 'static', background: true, keyboard: true});
@@ -394,7 +394,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             }, this);
             this.wizard.cluster.on('invalid', function(model, error) {
                 _.each(error, function(message, field) {
-                    this.$('*[name=' + field + ']').closest('.control-group').addClass('error').find('.help-inline').text(message);
+                    this.$('*[name=' + field + ']').closest('.form-group').addClass('has-error').find('.help-block').text(message);
                 }, this);
                 this.wizard.panesModel.set('invalid', true);
             }, this);
@@ -585,12 +585,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             this.$('.form-horizontal').before(_.template(warningTemplate, {message: message}));
         },
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({}));
+            this.$('.form-group').append(this.renderControls({}));
         },
         onWizardChange: function() {
-            this.$('input.error').removeClass('error');
-            this.$('.parameter-description').removeClass('hide');
-            this.$('.validation-error').addClass('hide');
+            this.hideError();
+
             this.wizard.panesModel.set('invalid', false);
             if (this.$('input[type=text], input[type=password]').is(':focus')) {
                 this.wizard.model.isValid({
@@ -598,6 +597,12 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                     paneName: this.constructorName
                 });
             }
+        },
+        hideError: function() {
+            this.$('.form-group.has-error').removeClass('has-error');
+            this.$('.parameter-description').removeClass('hide');
+            this.$('.validation-error').addClass('hide');
+            this.$('.has-error .help-block').html('');
         },
         render: function(options) {
             this.$el.html(this.template(options));
@@ -626,7 +631,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             return $.Deferred()[success ? 'resolve' : 'reject']();
         },
         createCluster: function() {
-            this.$('.control-group').removeClass('error').find('.help-inline').text('');
+            this.hideError();
             var success = true;
             var name = this.wizard.model.get('NameAndRelease.name');
             var release = this.wizard.model.get('NameAndRelease.release').id;
@@ -642,8 +647,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             return success;
         },
         onInputKeydown: function() {
-            this.$('.control-group.error').removeClass('error');
-            this.$('.help-inline').html('');
+            this.hideError();
             this.wizard.panesModel.set('invalid', false);
         },
         composePaneBindings: function() {
@@ -730,7 +734,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             this.$('.mode-description').text(description);
         },
         renderCustomElements: function() {
-            this.$('.mode-control-group .span5').append(this.renderControls({labelClasses: 'setting'})).i18n();
+            this.$('.mode-form-group').append(this.renderControls({
+                labelClasses: 'setting',
+                descriptionClasses: 'col-xs-offset-3'
+            })).i18n();
             this.updateModeDescription();
         }
     });
@@ -746,7 +753,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             });
         },
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({hasDescription: true})).i18n();
+            this.$('.form-group').append(this.renderControls({
+                hasDescription: true,
+                descriptionClasses: 'col-xs-0'
+            })).i18n();
         }
     });
 
@@ -755,7 +765,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         template: _.template(networkPaneTemplate),
         title: 'dialog.create_cluster_wizard.network.title',
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({hasDescription: true}));
+            this.$('.form-group').append(this.renderControls({
+                hasDescription: true,
+                descriptionClasses: 'col-xs-offset-1'
+            }));
         }
     });
 
@@ -764,13 +777,15 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         template: _.template(storagePaneTemplate),
         title: 'dialog.create_cluster_wizard.storage.title',
         renderCustomElements: function() {
-            this.$('.control-group .cinder h5').after(this.renderControls({
+            this.$('.form-group .cinder h5').after(this.renderControls({
                 hasDescription: false,
-                additionalAttribute: 'cinder'
+                additionalAttribute: 'cinder',
+                descriptionClasses: 'col-xs-offset-2'
             }));
-            this.$('.control-group .glance h5').after(this.renderControls({
+            this.$('.form-group .glance h5').after(this.renderControls({
                 hasDescription: false,
-                additionalAttribute: 'glance'
+                additionalAttribute: 'glance',
+                descriptionClasses: 'col-xs-offset-2'
             }));
         }
     });
@@ -779,9 +794,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         constructorName: 'AdditionalServices',
         title: 'dialog.create_cluster_wizard.additional.title',
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({
+            this.$('.form-group').append(this.renderControls({
                 hasDescription: true,
-                additionalAttribute: 'services'
+                additionalAttribute: 'services',
+                descriptionClasses: 'col-xs-offset-1'
             })).i18n();
         }
     });

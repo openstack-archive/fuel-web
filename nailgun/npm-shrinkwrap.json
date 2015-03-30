@@ -5335,6 +5335,102 @@
           "from": "uglify-to-browserify@~1.0.0"
         }
       }
+    },
+    "gulp-autoprefixer": {
+      "version": "2.1.0",
+      "from": "gulp-autoprefixer@",
+      "dependencies": {
+        "autoprefixer-core": {
+          "version": "5.1.9",
+          "from": "autoprefixer-core@^5.0.0",
+          "dependencies": {
+            "browserslist": {
+              "version": "0.2.0",
+              "from": "browserslist@~0.2.0"
+            },
+            "num2fraction": {
+              "version": "1.0.1",
+              "from": "num2fraction@~1.0.1"
+            },
+            "caniuse-db": {
+              "version": "1.0.30000131",
+              "from": "caniuse-db@^1.0.30000127"
+            },
+            "postcss": {
+              "version": "4.0.6",
+              "from": "postcss@~4.0.6",
+              "dependencies": {
+                "source-map": {
+                  "version": "0.2.0",
+                  "from": "source-map@~0.2.0",
+                  "dependencies": {
+                    "amdefine": {
+                      "version": "0.1.0",
+                      "from": "amdefine@>=0.0.4"
+                    }
+                  }
+                },
+                "js-base64": {
+                  "version": "2.1.8",
+                  "from": "js-base64@~2.1.7"
+                }
+              }
+            }
+          }
+        },
+        "object-assign": {
+          "version": "2.0.0",
+          "from": "object-assign@^2.0.0"
+        },
+        "through2": {
+          "version": "0.6.5",
+          "from": "through2@^0.6.2",
+          "dependencies": {
+            "readable-stream": {
+              "version": "1.0.33",
+              "from": "readable-stream@>=1.0.33-1 <1.1.0-0",
+              "dependencies": {
+                "core-util-is": {
+                  "version": "1.0.1",
+                  "from": "core-util-is@~1.0.0"
+                },
+                "isarray": {
+                  "version": "0.0.1",
+                  "from": "isarray@0.0.1"
+                },
+                "string_decoder": {
+                  "version": "0.10.31",
+                  "from": "string_decoder@~0.10.x"
+                },
+                "inherits": {
+                  "version": "2.0.1",
+                  "from": "inherits@~2.0.1"
+                }
+              }
+            },
+            "xtend": {
+              "version": "4.0.0",
+              "from": "xtend@>=4.0.0 <4.1.0-0"
+            }
+          }
+        },
+        "vinyl-sourcemaps-apply": {
+          "version": "0.1.4",
+          "from": "vinyl-sourcemaps-apply@^0.1.3",
+          "dependencies": {
+            "source-map": {
+              "version": "0.1.43",
+              "from": "source-map@^0.1.39",
+              "dependencies": {
+                "amdefine": {
+                  "version": "0.1.0",
+                  "from": "amdefine@>=0.0.4"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

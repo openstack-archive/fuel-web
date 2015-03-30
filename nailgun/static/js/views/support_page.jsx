@@ -118,18 +118,9 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             componentMixins.backboneMixin('settings', 'change invalid')
         ],
         componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm,
-                settings = this.props.settings;
-            settings.fetch()
+            this.props.settings.fetch()
                 .done(_.bind(function() {
-                    if (!this.isConnected()) {
-                        remoteLoginForm.fetch()
-                            .fail(_.bind(function() {
-                                remoteLoginForm.url = remoteLoginForm.nailgunUrl;
-                                remoteLoginForm.fetch()
-                                    .fail(this.showResponseErrors);
-                            }, this));
-                    } else {
+                    if (this.isConnected()) {
                         this.setState({isConnected: true});
                     }
                 }, this))

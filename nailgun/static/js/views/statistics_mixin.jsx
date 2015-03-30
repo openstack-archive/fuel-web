@@ -37,11 +37,15 @@ define([
         },
         saveSettings: function(e) {
             if (e) e.preventDefault();
+            this.setState({actionInProgress: true});
             return this.props.settings.save(null, {patch: true, wait: true, validate: false})
                 .done(this.updateInitialAttributes)
                 .fail(function(response) {
                     utils.showErrorDialog({response: response});
-                });
+                })
+                .always(_.bind(function() {
+                    this.setState({actionInProgress: false});
+                }, this));
         },
         showResponseErrors: function(response) {
             var jsonObj,

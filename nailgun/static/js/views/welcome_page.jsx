@@ -45,17 +45,6 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                 });
             }
         },
-        componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm;
-            remoteLoginForm.fetch()
-                .done(_.bind(function() {this.setState({loading: false});}, this))
-                .fail(_.bind(function() {
-                    remoteLoginForm.url = remoteLoginForm.nailgunUrl;
-                    remoteLoginForm.fetch()
-                        .fail(this.showResponseErrors)
-                        .always(_.bind(function() {this.setState({loading: false});}, this));
-                }, this));
-        },
         getInitialState: function() {
             return {isConnected: false};
         },

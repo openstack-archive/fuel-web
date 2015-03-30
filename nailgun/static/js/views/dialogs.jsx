@@ -24,10 +24,9 @@ define(
     'models',
     'dispatcher',
     'jsx!views/controls',
-    'jsx!views/statistics_mixin',
     'jsx!component_mixins'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, statisticsMixin, componentMixins) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, componentMixins) {
     'use strict';
 
     var dialogs = {};
@@ -949,10 +948,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         getAgreementLink: function(link) {
             return (<span>{i18n('dialog.registration.i_agree')} <a href={link} target='_blank'>{i18n('dialog.registration.terms_and_conditions')}</a></span>);
         },
-        goToHomeScreen: function() {
-            if (this.props.setConnected) this.props.setConnected();
-            this.close();
-        },
         validateRegistrationForm: function() {
             var registrationForm = this.props.registrationForm,
                 isValid = registrationForm.isValid();
@@ -972,17 +967,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
             this.setState({actionInProgress: true});
             registrationForm.save(registrationForm.attributes, {type: 'POST'})
                 .done(_.bind(function(response) {
-                    var settings = this.props.settings,
-                        registrationData = settings.get('statistics'),
-                        connectionInfo = settings.get('tracking'),
-                        statisticsFields = ['company', 'name', 'email'];
-                    _.each(statisticsFields, function(name) {
-                        registrationData[name].value = response[name];
+                    var statistics = this.props.settings.get('statistics'),
+                        tracking = this.props.settings.get('tracking');
+                    _.each(['company', 'name', 'email'], function(name) {
+                        statistics[name].value = response[name];
                     });
-                    connectionInfo.email.value = response.email;
-                    connectionInfo.password.value = response.password;
-                    settings.save(null, {patch: true, wait: true, validate: false})
-                        .done(this.goToHomeScreen)
+                    _.each(['email', 'password'], function(name) {
+                        tracking[name].value = response[name];
+                    });
+                    this.props.settings.save(null, {patch: true, wait: true, validate: false})
+                        .done(_.bind(function() {
+                            this.props.updateInitialAttributes();
+                            this.props.setConnected();
+                            this.close();
+                        }, this))
                         .fail(_.bind(function() {
                             this.setState({error: i18n('common.error')});
                         }, this));

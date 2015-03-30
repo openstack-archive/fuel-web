@@ -49,20 +49,21 @@ function(_, i18n, React, models, controls, componentMixins) {
         },
         render: function() {
             return (
-                <div>
-                    <h3 className='page-title'>{i18n('release_page.title')}</h3>
-                    <div className='table-releases-box'>
-                        {this.props.releases.length ?
-                            <controls.Table
-                                head={_.map(this.props.columns, function(column) {
-                                    return {label: i18n('release_page.' + column), className: column};
-                                })}
-                                body={this.props.releases.map(this.getReleaseData)}
-                                tableClassName='releases-table'
-                            />
-                        :
-                            <div className='alert'>{i18n('release_page.no_releases_message')}</div>
-                        }
+                <div className='releases-page'>
+                    <div className='page-title'>
+                        <h1 className='title'>{i18n('release_page.title')}</h1>
+                    </div>
+                    <div className='content-box'>
+                        <div className='row'>
+                            <div className='col-xs-12'>
+                                <controls.Table
+                                    head={_.map(this.props.columns, function(column) {
+                                        return {label: i18n('release_page.' + column), className: column};
+                                    })}
+                                    body={this.props.releases.map(this.getReleaseData)}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             );

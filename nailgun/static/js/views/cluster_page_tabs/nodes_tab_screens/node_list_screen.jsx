@@ -192,7 +192,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <div>
                     {this.props.mode == 'edit' &&
-                        <div className='alert'>{i18n('cluster_page.nodes_tab.disk_configuration_reset_warning')}</div>
+                        <div className='alert alert-warning'>{i18n('cluster_page.nodes_tab.disk_configuration_reset_warning')}</div>
                     }
                     <ManagementPanel
                         mode={this.props.mode}
@@ -306,100 +306,118 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }),
                 interfaceConflict = _.uniq(this.props.nodes.map(function(node) {return node.resource('interfaces');})).length > 1;
             return (
-                <div className='node-management-panel'>
-                    <controls.Input
-                        type='select'
-                        name='grouping'
-                        label={i18n(ns + 'group_by')}
-                        children={_.map(this.props.cluster.groupings(), function(label, grouping) {
-                            return <option key={grouping} value={grouping}>{label}</option>;
-                        })}
-                        defaultValue={this.props.grouping}
-                        disabled={!this.props.totalNodeAmount || this.props.mode == 'add'}
-                        onChange={this.props.changeGrouping}
-                    />
-                    <div className='node-filter'>
-                        <controls.Input
-                            type='text'
-                            name='filter'
-                            ref='filter'
-                            defaultValue={this.props.filter}
-                            label={i18n(ns + 'filter_by')}
-                            placeholder={i18n(ns + 'filter_placeholder')}
-                            disabled={!this.props.totalNodeAmount}
-                            onChange={this.startFiltering}
-                        />
-                        {this.state.isFilterButtonVisible &&
-                            <button className='close btn-clear-filter' onClick={this.clearFilter}>&times;</button>
-                        }
-                    </div>
-                    <div className='buttons'>
-                        {this.props.mode != 'list' ? [
-                            <button
-                                key='cancel'
-                                className='btn'
-                                disabled={this.state.actionInProgress}
-                                onClick={_.bind(this.changeScreen, this, '', false)}
-                            >
-                                {i18n('common.cancel_button')}
-                            </button>,
-                            <button
-                                key='apply'
-                                className='btn btn-success btn-apply'
-                                disabled={this.state.actionInProgress || !this.props.hasChanges}
-                                onClick={this.applyChanges}
-                            >
-                                {i18n('common.apply_changes_button')}
-                            </button>
-                        ] : [
-                            <button
-                                key='disks'
-                                className={utils.classNames({'btn btn-configure-disks': true, conflict: disksConflict})}
-                                disabled={this.props.locked || !this.props.nodes.length}
-                                onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
-                            >
-                                {disksConflict && <i className='icon-attention text-error' />}
-                                <span>{i18n('dialog.show_node.disk_configuration_button')}</span>
-                            </button>,
-                            !this.props.nodes.any(function(node) {return node.get('status') == 'error';}) &&
-                                <button
-                                    key='interfaces'
-                                    className={utils.classNames({'btn btn-configure-interfaces': true, conflict: interfaceConflict})}
-                                    disabled={this.props.locked || !this.props.nodes.length}
-                                    onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
-                                >
-                                    {interfaceConflict && <i className='icon-attention text-error' />}
-                                    <span>{i18n('dialog.show_node.network_configuration_button')}</span>
-                                </button>,
-                            !!this.props.nodes.length && this.props.nodes.any(function(node) {return !node.get('pending_deletion');}) &&
-                                <button
-                                    key='delete'
-                                    className='btn btn-danger btn-delete-nodes'
-                                    onClick={this.showDeleteNodesDialog}
-                                >
-                                    <i className='icon-trash' />
-                                    <span>{i18n('common.delete_button')}</span>
-                                </button>,
-                            !!this.props.nodes.length && !this.props.nodes.any(function(node) {return !node.get('pending_addition');}) &&
-                                <button
-                                    key='roles'
-                                    className='btn btn-success btn-edit-roles'
-                                    onClick={_.bind(this.changeScreen, this, 'edit', true)}
-                                >
-                                    <i className='icon-edit' />
-                                    <span>{i18n(ns + 'edit_roles_button')}</span>
-                                </button>,
-                            !this.props.nodes.length &&
-                                <button
-                                    key='add'
-                                    className='btn btn-success btn-add-nodes'
-                                    onClick={_.bind(this.changeScreen, this, 'add', false)}
-                                    disabled={this.props.locked}
-                                >
-                                    <i className='icon-plus' />
-                                    <span>{i18n(ns + 'add_nodes_button')}</span>
-                                </button>
-                        ]}
+                <div className='row'>
+                    <div className='sticker node-management-panel'>
+                        <div className='col-xs-2'>
+                            <div className='filter-group'>
+                                <controls.Input
+                                    type='select'
+                                    name='grouping'
+                                    label={i18n(ns + 'group_by')}
+                                    children={_.map(this.props.cluster.groupings(), function(label, grouping) {
+                                        return <option key={grouping} value={grouping}>{label}</option>;
+                                    })}
+                                    defaultValue={this.props.grouping}
+                                    disabled={!this.props.totalNodeAmount || this.props.mode == 'add'}
+                                    onChange={this.props.changeGrouping}
+                                    inputClassName='form-control'
+                                />
+                            </div>
+                        </div>
+                        <div className='col-xs-2'>
+                            <div className='filter-group'>
+                                <controls.Input
+                                    type='text'
+                                    name='filter'
+                                    ref='filter'
+                                    defaultValue={this.props.filter}
+                                    label={i18n(ns + 'filter_by')}
+                                    placeholder={i18n(ns + 'filter_placeholder')}
+                                    disabled={!this.props.totalNodeAmount}
+                                    onChange={this.startFiltering}
+                                    inputClassName='form-control'
+                                />
+                                {this.state.isFilterButtonVisible &&
+                                    <button className='close btn-clear-filter' onClick={this.clearFilter}>&times;</button>
+                                }
+                            </div>
+                        </div>
+                        <div className='col-xs-8'>
+                            <div className='control-buttons-box pull-right'>
+                                <div className='label-wrapper'>&nbsp;</div>
+                                {this.props.mode != 'list' ?
+                                    <div className='btn-group' role='group'>
+                                        <button
+                                            className='btn btn-default'
+                                            disabled={this.state.actionInProgress}
+                                            onClick={_.bind(this.changeScreen, this, '', false)}
+                                        >
+                                            {i18n('common.cancel_button')}
+                                        </button>
+                                        <button
+                                            className='btn btn-success btn-apply'
+                                            disabled={this.state.actionInProgress || !this.props.hasChanges}
+                                            onClick={this.applyChanges}
+                                        >
+                                            {i18n('common.apply_changes_button')}
+                                        </button>
+                                    </div>
+                                :
+                                    [
+                                        <div className='btn-group' role='group' key='configuration-buttons'>
+                                            <button
+                                                className='btn btn-default btn-configure-disks'
+                                                disabled={this.props.locked || !this.props.nodes.length}
+                                                onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
+                                            >
+                                                {disksConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
+                                                {i18n('dialog.show_node.disk_configuration_button')}
+                                            </button>
+                                            {!this.props.nodes.any({status: 'error'}) &&
+                                                <button
+                                                    className='btn btn-default btn-configure-interfaces'
+                                                    disabled={this.props.locked || !this.props.nodes.length}
+                                                    onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
+                                                >
+                                                    {interfaceConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
+                                                    {i18n('dialog.show_node.network_configuration_button')}
+                                                </button>
+                                            }
+                                        </div>,
+                                        <div className='btn-group' role='group' key='role-management-buttons'>
+                                            {!!this.props.nodes.length && this.props.nodes.any({pending_deletion: false}) &&
+                                                <button
+                                                    className='btn btn-danger btn-delete-nodes'
+                                                    onClick={this.showDeleteNodesDialog}
+                                                >
+                                                    <i className='glyphicon glyphicon-trash' />
+                                                    {i18n('common.delete_button')}
+                                                </button>
+                                            }
+                                            {!!this.props.nodes.length && !this.props.nodes.any({pending_addition: false}) &&
+                                                <button
+                                                    className='btn btn-success btn-edit-roles'
+                                                    onClick={_.bind(this.changeScreen, this, 'edit', true)}
+                                                >
+                                                    <i className='glyphicon glyphicon-edit' />
+                                                    {i18n(ns + 'edit_roles_button')}
+                                                </button>
+                                            }
+                                            {!this.props.nodes.length &&
+                                                <button
+                                                    className='btn btn-success btn-add-nodes'
+                                                    onClick={_.bind(this.changeScreen, this, 'add', false)}
+                                                    disabled={this.props.locked}
+                                                >
+                                                    <i className='glyphicon glyphicon-plus' />
+                                                    {i18n(ns + 'add_nodes_button')}
+                                                </button>
+                                            }
+                                        </div>
+                                    ]
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -460,7 +478,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         render: function() {
             return (
-                <div className='role-panel'>
+                <div className='well role-panel'>
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
                     {this.props.cluster.get('release').get('role_models').map(function(role) {
                         if (!role.checkRestrictions(this.props.configModels, 'hide').result) {
@@ -477,9 +495,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     defaultChecked={_.contains(this.props.selectedRoles, name)}
                                     disabled={!this.props.nodes.length || processedRestrictions.result}
                                     tooltipText={!!this.props.nodes.length && processedRestrictions.message}
-                                    wrapperClassName='role-container'
-                                    labelClassName='role-label'
-                                    descriptionClassName='role-description'
                                     onChange={this.props.selectRoles}
                                 />
                             );
@@ -510,7 +525,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         !checked && !_.isNull(this.props.maxNumberOfNodes) && this.props.maxNumberOfNodes < availableNodesIds.length
                     }
                     label={i18n('common.select_all')}
-                    wrapperClassName='span2 select-all'
+                    wrapperClassName='select-all pull-right'
                     onChange={_.bind(this.props.selectNodes, this.props, availableNodesIds)}
                 />
             );
@@ -551,25 +566,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     return roleLimit.valid || !_.contains(this.props.selectedRoles, roleName);
                 }, this));
             return (
-                <div className='node-list'>
-                    {!!groups.length &&
-                        <div className='row-fluid node-list-header'>
-                            <div className='span10' />
-                            {this.renderSelectAllCheckbox()}
-                        </div>
-                    }
-                    <div className='row-fluid'>
+                <div className='node-list row'>
+                    {!!groups.length && <div className='col-xs-12 node-list-header'>{this.renderSelectAllCheckbox()}</div>}
+                    <div className='col-xs-12'>
                         {groups.length ?
-                            <div>
-                                {groups.map(function(group) {
-                                    return <NodeGroup {...this.props}
-                                        key={group[0]}
-                                        label={group[0]}
-                                        nodes={group[1]}
-                                        rolesWithLimitReached={rolesWithLimitReached}
-                                    />;
-                                }, this)}
-                            </div>
+                            groups.map(function(group) {
+                                return <NodeGroup {...this.props}
+                                    key={group[0]}
+                                    label={group[0]}
+                                    nodes={group[1]}
+                                    rolesWithLimitReached={rolesWithLimitReached}
+                                />;
+                            }, this)
                         :
                             <div className='alert alert-warning'>{this.getEmptyListWarning()}</div>
                         }
@@ -587,12 +595,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     return _.any(this.props.rolesWithLimitReached, function(role) {return !node.hasRole(role);}, this);
                 }, this), 'id');
             return (
-                <div className='node-group'>
-                    <div className='row-fluid node-group-header'>
-                        <div className='span10'>
+                <div className='nodes-group'>
+                    <div className='row'>
+                        <div className='col-xs-10'>
                             <h4>{this.props.label} ({this.props.nodes.length})</h4>
                         </div>
-                        {this.renderSelectAllCheckbox()}
+                        <div className='col-xs-2'>
+                            {this.renderSelectAllCheckbox()}
+                        </div>
                     </div>
                     <div>
                         {this.props.nodes.map(function(node) {
@@ -628,7 +638,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         startNodeRenaming: function(e) {
             e.preventDefault();
             $('html').on(this.state.eventNamespace, _.bind(function(e) {
-                if ($(e.target).hasClass('node-name')) {
+                if ($(e.target).hasClass('node-name-input')) {
                     e.preventDefault();
                 } else {
                     this.endNodeRenaming();
@@ -691,7 +701,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }
             return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
         },
-        removeNode: function() {
+        removeNode: function(e) {
+            e.preventDefault();
             dialogs.RemoveNodeConfirmDialog.show({
                 cb: this.removeNodeConfirmed
             });
@@ -726,6 +737,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (!node.get('online')) return 'offline';
             if (node.get('pending_addition')) return 'pending_addition';
             if (node.get('pending_deletion')) return 'pending_deletion';
+            // 'error' status has priority over 'discover'
+            if (node.get('status') == 'error') return 'error';
+            if (!node.get('cluster')) return 'discover';
             return node.get('status');
         },
         sortRoles: function(roles) {
@@ -734,130 +748,124 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
         },
-        renderRoleList: function(attribute) {
-            var roles = this.props.node.get(attribute);
-            if (!roles.length) return null;
-            return (
-                <ul key={attribute} className={attribute}>
-                    {_.map(this.sortRoles(roles), function(role, index) {
-                        return <li key={index}>{role}</li>;
-                    })}
-                </ul>
-            );
-        },
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
                 disabled = this.props.locked || !node.isSelectable() || this.state.actionInProgress,
-                roles = [this.renderRoleList('roles'), this.renderRoleList('pending_roles')];
-            var status = this.calculateNodeViewStatus(),
+                deployedRoles = node.get('roles'),
+                rolesToDisplay = deployedRoles.length ? deployedRoles : node.get('pending_roles'),
+                nodeProgess = _.max([node.get('progress'), 3]),
+                status = this.calculateNodeViewStatus();
+
+            // compose classes
+            var nodePanelClasses = {
+                node: true,
+                selected: this.props.checked
+            };
+            nodePanelClasses[status] = status;
+
+            var manufacturer = node.get('manufacturer'),
+                logoClasses = {
+                    'manufacturer-logo': true
+                };
+            logoClasses[manufacturer.toLowerCase()] = manufacturer;
+
+            var roleClasses = {'text-success': !deployedRoles.length};
+
+            var statusClasses = {
+                    'node-status font-semibold text-center': true
+                },
                 statusClass = {
-                    offline: 'msg-offline',
-                    pending_addition: 'msg-ok',
-                    pending_deletion: 'msg-warning',
-                    removing: 'msg-warning',
-                    ready: 'msg-ok',
-                    provisioning: 'provisioning',
-                    provisioned: 'msg-provisioned',
-                    deploying: 'deploying',
-                    error: 'msg-error',
-                    discover: 'msg-discover'
-                }[status],
-                iconClass = {
-                    offline: 'icon-block',
-                    pending_addition: 'icon-ok-circle-empty',
-                    pending_deletion: 'icon-cancel-circle',
-                    removing: 'icon-cancel-circle',
-                    ready: 'icon-ok',
-                    provisioned: 'icon-install',
-                    error: 'icon-attention',
-                    discover: 'icon-ok-circle-empty'
+                    pending_addition: 'text-success',
+                    pending_deletion: 'text-warning',
+                    error: 'text-danger',
+                    ready: 'text-info',
+                    provisioning: 'text-info',
+                    deploying: 'text-success',
+                    provisioned: 'text-info'
                 }[status];
-            var statusClasses = {'node-status': true};
             statusClasses[statusClass] = true;
-            var logoClasses = {'node-logo': true};
-            logoClasses['manufacturer-' + node.get('manufacturer').toLowerCase()] = node.get('manufacturer');
-            var nodeBoxClasses = {'node-box': true, disabled: disabled};
-            nodeBoxClasses[status] = status;
             return (
-                <div className={utils.classNames({node: true, checked: this.props.checked})}>
-                    <label className={utils.classNames(nodeBoxClasses)}>
+                <div className={utils.classNames(nodePanelClasses)}>
+                    <label className='node-box'>
                         <controls.Input
                             type='checkbox'
                             name={node.id}
                             checked={this.props.checked}
                             disabled={disabled}
                             onChange={this.props.onNodeSelection}
+                            wrapperClassName='check-box'
                         />
-                        <div className='node-content'>
-                            <div className={utils.classNames(logoClasses)} />
-                            <div className='node-name-roles'>
-                                <div className='name enable-selection'>
-                                    {this.state.renaming ?
-                                        <controls.Input
-                                            ref='name'
-                                            type='text'
-                                            defaultValue={node.get('name')}
-                                            inputClassName='node-name'
-                                            disabled={this.state.actionInProgress}
-                                            onKeyDown={this.onNodeNameInputKeydown}
-                                            autoFocus
-                                        />
-                                    :
-                                        <p title={i18n(ns + 'edit_name')} onClick={!this.state.actionInProgress && this.startNodeRenaming}>
-                                            {node.get('name') || node.get('mac')}
-                                        </p>
-                                    }
-                                </div>
-                                <div className='role-list'>
-                                    {_.compact(roles).length ? roles : i18n(ns + 'unallocated')}
-                                </div>
+                        <div className={utils.classNames(logoClasses)} />
+                        <div className='node-name'>
+                            <div className='name'>
+                                {this.state.renaming ?
+                                    <controls.Input
+                                        ref='name'
+                                        type='text'
+                                        defaultValue={node.get('name')}
+                                        inputClassName='form-control node-name-input'
+                                        disabled={this.state.actionInProgress}
+                                        onKeyDown={this.onNodeNameInputKeydown}
+                                        autoFocus
+                                    />
+                                :
+                                    <p title={i18n(ns + 'edit_name')} onClick={!this.state.actionInProgress && this.startNodeRenaming}>
+                                        {node.get('name') || node.get('mac')}
+                                    </p>
+                                }
                             </div>
-                            <div className='node-button'>
-                                {!!node.get('cluster') && (
-                                    (this.props.locked || !node.hasChanges()) ?
-                                        <a className='btn btn-link' title={i18n(ns + 'view_logs')} href={this.getNodeLogsLink()}>
-                                            <i className='icon-logs' />
-                                        </a>
-                                    :
-                                        <button
-                                            className='btn btn-link'
-                                            title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
-                                            onClick={this.discardNodeChanges}
-                                        >
-                                            <i className='icon-back-in-time' />
-                                        </button>
-                                )}
-                            </div>
-                            <div className={utils.classNames(statusClasses)}>
-                                <div className='node-status-container'>
-                                    {_.contains(['provisioning', 'deploying'], status) &&
-                                        <div className={utils.classNames({progress: true, 'progress-success': status == 'deploying'})}>
-                                            <div className='bar' style={{width: _.max([node.get('progress'), 3]) + '%'}} />
-                                        </div>
-                                    }
-                                    <i className={iconClass} />
-                                    <span>
-                                        {i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
-                                        {status == 'offline' &&
-                                            <button onClick={this.removeNode} className='node-remove-button'>{i18n(ns + 'remove')}</button>
-                                        }
-                                    </span>
-                                </div>
-                            </div>
-                            <div className='node-details' onClick={this.showNodeDetails} />
-                            <div className='node-hardware'>
-                                <span>
-                                    {i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
-                                </span>
-                                <span>
-                                    {i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}
-                                </span>
-                                <span>
-                                    {i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}
-                                </span>
+                            <div className='role-list font-semibold'>
+                                {!!rolesToDisplay.length &&
+                                    <ul>
+                                        {_.map(this.sortRoles(rolesToDisplay), function(role) {
+                                            return <li key={node.id + role} className={utils.classNames(roleClasses)}>{role}</li>;
+                                        })}
+                                    </ul>
+                                }
                             </div>
                         </div>
+                        <div className='node-action'>
+                            {!!node.get('cluster') &&
+                                ((this.props.locked || !node.hasChanges()) ?
+                                    <a className='btn btn-link' title={i18n(ns + 'view_logs')} href={this.getNodeLogsLink()}>
+                                        <i className='icon-logs' />
+                                    </a>
+                                :
+                                    <div
+                                        className='icon'
+                                        title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
+                                        onClick={this.discardNodeChanges}
+                                    />
+                                )
+                            }
+                        </div>
+                        <div className={utils.classNames(statusClasses)}>
+                            {_.contains(['provisioning', 'deploying'], status) ?
+                                <div className='progress'>
+                                    <div
+                                        className='progress-bar'
+                                        role='progressbar'
+                                        style={{width: nodeProgess + '%'}}
+                                    >
+                                        {nodeProgess + '%'}
+                                    </div>
+                                </div>
+                            :
+                                <div>
+                                    <span>{i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}</span>
+                                    {status == 'offline' &&
+                                        <button onClick={this.removeNode} className='node-remove-button'>{i18n(ns + 'remove')}</button>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div className='node-hardware'>
+                            <span>{i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})</span>
+                            <span>{i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}</span>
+                            <span>{i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}</span>
+                        </div>
+                        <div className='node-settings' onClick={this.showNodeDetails} />
                     </label>
                 </div>
             );

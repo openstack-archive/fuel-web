@@ -37,6 +37,7 @@
                 "see_logs": "See the logs",
                 "copyright": "Copyright © 2013-2015 Mirantis. All rights reserved.",
                 "version": "Version",
+                "username": "Username",
                 "change_password": "Change password",
                 "logout": "Logout",
                 "role_limits": {
@@ -357,8 +358,7 @@
                         "discard_addition": "Discard Addition",
                         "discard_deletion": "Discard Deletion",
                         "view_logs": "View Logs",
-                        "edit_name": "Edit Name",
-                        "unallocated": "unallocated"
+                        "edit_name": "Edit Name"
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",

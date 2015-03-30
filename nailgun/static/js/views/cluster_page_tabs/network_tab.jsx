@@ -74,7 +74,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 value: this.getModel().get(attribute),
                 network: isFloatingIPRange ? null : network,
                 networkConfiguration: this.props.networkConfiguration,
-                wrapperClassName: isRange ? 'network-attribute ' + attribute : false,
+                wrapperClassName: isRange ? attribute : false,
                 error: error
             };
         },
@@ -82,7 +82,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return (
                 <controls.Input {...this.composeProps(attribute, false, isInteger)}
                     type='text'
-                    wrapperClassName='network-attribute'
                 />
             );
         },
@@ -194,11 +193,32 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return {
                 type: 'text',
                 placeholder: error ? '' : this.props.placeholder,
-                inputClassName: 'range',
+                className: 'form-control',
                 disabled: this.props.disabled,
                 onChange: _.partialRight(this.onRangeChange, attributeName),
                 name: (isRangeEnd ? 'range-end_' : 'range-start_') + attributeName
             };
+        },
+        renderRangeControls: function(attributeName, index, length) {
+            return (
+                <div className='ip-ranges-control'>
+                    <button
+                        className='btn btn-link ip-ranges-add'
+                        disabled={this.props.disabled}
+                        onClick={_.partial(this.addRange, attributeName, index)}
+                    >
+                        <i className='glyphicon glyphicon-plus-sign'></i>
+                    </button>
+                    {(length > 1) &&
+                        <button className='btn btn-link ip-ranges-delete'
+                                disabled={this.props.disabled}
+                                onClick={_.partial(this.removeRange, attributeName, index)}
+                        >
+                            <i className='glyphicon glyphicon-minus-sign'></i>
+                        </button>
+                    }
+                </div>
+            );
         },
         render: function() {
             var error = this.props.error || null,
@@ -208,97 +228,90 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     [attribute || '', this.props.autoIncreaseWith ? (attribute + this.props.autoIncreaseWith - 1 || '') : ''] :
                     attribute,
                 wrapperClasses = {
+                    'form-group range row': true,
                     mini: this.props.mini
                 },
+                rowsContainerClasses = {
+                    'rows-container range-group': true
+                },
                 verificationError = this.props.verificationError || null,
-                ns = 'cluster_page.network_tab.';
-
+                ns = 'cluster_page.network_tab.',
+                startInputError = error && error[0],
+                endInputError = error && error[1];
             wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
+            rowsContainerClasses[this.props.rowsClassName] = this.props.rowsClassName;
             return (
                 <div className={utils.classNames(wrapperClasses)}>
                     {!this.props.hiddenHeader &&
-                        <div className='range-row-header'>
-                            <div>{i18n(ns + 'range_start')}</div>
+                        <div className='range-row-header col-xs-12'>
+                            <div className='pull-left'>{i18n(ns + 'range_start')}</div>
                             <div>{i18n(ns + 'range_end')}</div>
                         </div>
                     }
-                    <div className='parameter-name'>{this.props.label}</div>
-                    {this.props.extendable ?
-                        <div className={this.props.rowsClassName}>
-                            {_.map(ranges, function(range, index) {
-                                var rangeError = _.findWhere(error, {index: index}) || {};
-                                return (
-                                    <div className='range-row autocomplete clearfix' key={index}>
-                                        <controls.Input
-                                            {...this.getRangeProps()}
-                                            error={(rangeError.start || verificationError) && ''}
-                                            value={range[0]}
-                                            onChange={_.partialRight(this.onRangeChange, attributeName, index)}
-                                            ref={'start' + index}
-                                            inputClassName='start'
-                                            placeholder={rangeError.start ? '' : this.props.placeholder}
-                                        />
-                                        <controls.Input
-                                            {...this.getRangeProps(true)}
-                                            error={rangeError.end && ''}
-                                            value={range[1]}
-                                            onChange={_.partialRight(this.onRangeChange, attributeName, index)}
-                                            onFocus={this.autoCompleteIPRange.bind(this, rangeError && rangeError.start, range[0])}
-                                            disabled={this.props.disabled || !!this.props.autoIncreaseWith}
-                                            placeholder={rangeError.end ? '' : this.props.placeholder}
-                                        />
-                                        {!this.props.hiddenControls &&
-                                            <div>
-                                                <div className='ip-ranges-control'>
-                                                    <button
-                                                        className='btn btn-link ip-ranges-add'
-                                                        disabled={this.props.disabled}
-                                                        onClick={this.addRange.bind(this, attributeName, index)}>
-                                                        <i className='icon-plus-circle'></i>
-                                                    </button>
-                                                </div>
-                                                {(ranges.length > 1) &&
-                                                    <div className='ip-ranges-control'>
-                                                        <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
-                                                            onClick={this.removeRange.bind(this, attributeName, index)}>
-                                                            <i className='icon-minus-circle'></i>
-                                                        </button>
-                                                    </div>
-                                                }
+                    <div className='col-xs-12'>
+                        <label>
+                            {this.props.label}
+                        </label>
+                        {this.props.extendable ?
+                            <div className='rows-container range-group'>
+                                {_.map(ranges, function(range, index) {
+                                    var rangeError = _.findWhere(error, {index: index}) || {},
+                                        rowClasses = utils.classNames({
+                                            'range-row autocomplete offset-left': true
+                                        });
+                                    return (
+                                        <div className={rowClasses} key={index}>
+                                            <controls.Input
+                                                {...this.getRangeProps()}
+                                                error={(rangeError.start || verificationError) ? '' : null}
+                                                value={range[0]}
+                                                onChange={_.partialRight(this.onRangeChange, attributeName, index)}
+                                                ref={'start' + index}
+                                                inputClassName='start'
+                                                placeholder={rangeError.start ? '' : this.props.placeholder}
+                                            />
+                                            <controls.Input
+                                                {...this.getRangeProps(true)}
+                                                error={rangeError.end ? '' : null}
+                                                value={range[1]}
+                                                onChange={_.partialRight(this.onRangeChange, attributeName, index)}
+                                                onFocus={_.partial(this.autoCompleteIPRange, rangeError && rangeError.start, range[0])}
+                                                disabled={this.props.disabled || !!this.props.autoIncreaseWith}
+                                                placeholder={rangeError.end ? '' : this.props.placeholder}
+                                                wrapperClassName={this.props.hiddenControls && 'no-controls'}
+                                                extraContent={!this.props.hiddenControls && this.renderRangeControls(attributeName, index, ranges.length)}
+                                            />
+                                            <div className='validation-error text-danger pull-left'>
+                                                <span className='help-inline'>
+                                                    {rangeError.start || rangeError.end}
+                                                </span>
                                             </div>
-                                        }
-                                        <div className='error validation-error'>
-                                            <span className='help-inline'>
-                                                {rangeError.start || rangeError.end}
-                                            </span>
                                         </div>
+                                    );
+                                }, this)}
+                            </div>
+                        :
+                            <div className='range-row col-xs-10 offset-left'>
+                                <controls.Input
+                                    {...this.getRangeProps()}
+                                    value={ranges[0]}
+                                    error={error && error[0] ? '' : null}
+                                    inputClassName='start'
+                                />
+                                <controls.Input
+                                    {...this.getRangeProps(true)}
+                                    disabled={this.props.disabled || _.isNumber(this.props.autoIncreaseWith)}
+                                    value={ranges[1]}
+                                    error={error && error[1] ? '' : null}
+                                />
+                                {error && (error[0] || error[1]) &&
+                                    <div className='validation-error text-danger pull-left'>
+                                        <span className='help-inline'>{error ? startInputError || endInputError : ''}</span>
                                     </div>
-                                );
-                            }, this)}
-                        </div>
-                    :
-                        <div className='range-row'>
-                            <controls.Input
-                                {...this.getRangeProps()}
-                                wrapperClassName='parameter-control'
-                                value={ranges[0]}
-                                error={error && error[0] ? '' : null}
-                                inputClassName='start'
-                            />
-                            <controls.Input
-                                {...this.getRangeProps(true)}
-                                wrapperClassName='parameter-control'
-                                disabled={this.props.disabled || _.isNumber(this.props.autoIncreaseWith)}
-                                value={ranges[1]}
-                                error={error && error[1] ? '' : null}
-                            />
-                            {error && (error[0] || error[1]) &&
-                                <div className='error validation-error'>
-                                    <span className='help-inline'>{error ? error[0] || error[1] : ''}</span>
-                                </div>
-                            }
-                        </div>
-                    }
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
             );
         }
@@ -325,20 +338,21 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         render: function() {
             return (
-                <div className='network-attribute vlan-tagging'>
+                <div className={'vlan-tagging form-group ' + this.props.name}>
+                    <label className='vlan-tag-label'>{this.props.label}</label>
                     <controls.Input {...this.props}
-                        labelBeforeControl={true}
                         onChange={this.onTaggingChange}
                         type='checkbox'
                         checked={!_.isNull(this.props.value)}
                         error={null}
+                        label={null}
                     />
                     {!_.isNull(this.props.value) &&
                         <controls.Input {...this.props}
                             ref={this.props.name}
-                            label={false}
                             onChange={this.onInputChange}
                             type='text'
+                            label={null}
                         />
                     }
                 </div>
@@ -349,7 +363,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
     // FIXME(morale): this component is a lot of copy-paste from Range component
     // and should be rewritten either as a mixin or as separate componet for
     // multiflying other components (eg accepting Range, Input etc)
-    var MulipleValuesInput = React.createClass({
+    var MultipleValuesInput = React.createClass({
         mixins: [
             NetworkModelManipulationMixin
         ],
@@ -394,19 +408,49 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 elementToFocus: 'input' + _.min([newValue.length - 1, index])
             });
         },
+        renderControls: function(attributeName, index, length) {
+            return (
+                <div className='ip-ranges-control'>
+                    <button
+                        className='btn btn-link ip-ranges-add'
+                        disabled={this.props.disabled}
+                        onClick={_.partial(this.addValue, attributeName, index)}
+                    >
+                        <i className='glyphicon glyphicon-plus-sign'></i>
+                    </button>
+                    {(length > 1) &&
+                        <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
+                                onClick={_.partial(this.removeValue, attributeName, index)}
+                        >
+                            <i className='glyphicon glyphicon-minus-sign'></i>
+                        </button>
+                    }
+                </div>
+            );
+        },
         render: function() {
             var values = this.props.value,
                 errors = this.props.error || null,
                 verificationError = this.props.verificationError || null,
-                attributeName = this.props.name;
+                attributeName = this.props.name,
+                wrapperClasses = {
+                    'form-group multiple-values dns_nameservers': true
+                };
+            wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
             return (
-                <div className={this.props.wrapperClassName}>
-                    <div className='parameter-name'>{this.props.label}</div>
+                <div className={utils.classNames(wrapperClasses)}>
+                    <label>
+                        {this.props.label}
+                    </label>
                     <div className={this.props.rowsClassName}>
                         {_.map(values, function(value, index) {
-                            var inputError = errors && errors[index];
+                            var inputError = errors && errors[index],
+                                classes = utils.classNames({
+                                    'range-row row offset-left': true,
+                                    first: index == 0
+                                });
                             return (
-                                <div className='range-row autocomplete clearfix' key={this.props.name + index}>
+                                <div className={classes} key={this.props.name + index}>
                                     <controls.Input
                                         type='text'
                                         disabled={this.props.disabled}
@@ -416,26 +460,10 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                         onChange={_.partialRight(this.onChange, index)}
                                         ref={'input' + index}
                                         placeholder={inputError ? '' : this.props.placeholder}
+                                        extraContent={this.renderControls(attributeName, index, values.length)}
                                     />
-                                    <div>
-                                        <div className='ip-ranges-control'>
-                                            <button
-                                                className='btn btn-link ip-ranges-add'
-                                                disabled={this.props.disabled}
-                                                onClick={this.addValue.bind(this, attributeName, index)}>
-                                                <i className='icon-plus-circle'></i>
-                                            </button>
-                                        </div>
-                                        {(values.length > 1) &&
-                                            <div className='ip-ranges-control'>
-                                                <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
-                                                    onClick={this.removeValue.bind(this, attributeName, index)}>
-                                                    <i className='icon-minus-circle'></i>
-                                                </button>
-                                            </div>
-                                        }
-                                    </div>
-                                    <div className='error validation-error'>
+
+                                    <div className='validation-error text-danger pull-left'>
                                         <span className='help-inline'>
                                             {inputError}
                                         </span>
@@ -518,29 +546,27 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         render: function() {
             var isLocked = this.isLocked(),
                 classes = {
-                    'network-settings wrapper': true,
+                    row: true,
                     'changes-locked': isLocked
                 },
                 ns = 'cluster_page.network_tab.';
             return (
                 <div className={utils.classNames(classes)}>
-                    <h3>{i18n(ns + 'title')}</h3>
+                    <div className='title'>{i18n(ns + 'title')}</div>
                     {this.state.loading ?
                         <controls.ProgressBar />
                     :
-                        <div>
-                            <NetworkTabContent
-                                networkConfiguration={this.props.cluster.get('networkConfiguration')}
-                                initialConfiguration={this.state.initialConfiguration}
-                                tasks={this.props.cluster.get('tasks')}
-                                cluster={this.props.cluster}
-                                isLocked={isLocked}
-                                updateInitialConfiguration={this.updateInitialConfiguration}
-                                revertChanges={this.revertChanges}
-                                hasChanges={this.hasChanges}
-                                hideVerificationResult={this.state.hideVerificationResult}
-                            />
-                        </div>
+                        <NetworkTabContent
+                            networkConfiguration={this.props.cluster.get('networkConfiguration')}
+                            initialConfiguration={this.state.initialConfiguration}
+                            tasks={this.props.cluster.get('tasks')}
+                            cluster={this.props.cluster}
+                            isLocked={isLocked}
+                            updateInitialConfiguration={this.updateInitialConfiguration}
+                            revertChanges={this.revertChanges}
+                            hasChanges={this.hasChanges}
+                            hideVerificationResult={this.state.hideVerificationResult}
+                        />
                     }
                 </div>
             );
@@ -669,20 +695,20 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 isCancelChangesDisabled = isLocked || !hasChanges,
                 isSaveChangesDisabled = error || isLocked || !hasChanges;
             return (
-                <div className='row'>
-                    <div className='page-control-box'>
-                        <div className='page-control-button-placeholder'>
-                            <button key='verify_networks' className='btn verify-networks-btn' onClick={this.verifyNetworks}
-                                disabled={isVerificationDisabled}>
-                                    {i18n('cluster_page.network_tab.verify_networks_button')}
+                <div className='col-xs-12 page-buttons'>
+                    <div className='well clearfix'>
+                        <div className='btn-group pull-right'>
+                            <button key='verify_networks' className='btn btn-default verify-networks-btn' onClick={this.verifyNetworks}
+                                    disabled={isVerificationDisabled}>
+                                {i18n('cluster_page.network_tab.verify_networks_button')}
                             </button>
-                            <button key='revert_changes' className='btn btn-revert-changes' onClick={this.props.revertChanges}
-                                disabled={isCancelChangesDisabled}>
-                                    {i18n('common.cancel_changes_button')}
+                            <button key='revert_changes' className='btn btn-default btn-revert-changes' onClick={this.props.revertChanges}
+                                    disabled={isCancelChangesDisabled}>
+                                {i18n('common.cancel_changes_button')}
                             </button>
                             <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
-                                disabled={isSaveChangesDisabled}>
-                                    {i18n('common.save_settings_button')}
+                                    disabled={isSaveChangesDisabled}>
+                                {i18n('common.save_settings_button')}
                             </button>
                         </div>
                     </div>
@@ -742,33 +768,31 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 ];
 
             return (
-                <div id='network-form'>
-                    <div className='radio-checkbox-group'>
-                        {(cluster.get('net_provider') == 'nova_network') ?
+                <div>
+                    {(cluster.get('net_provider') == 'nova_network') ?
+                        <div className='radio-checkbox-group row forms-box nova-managers'>
                             <controls.RadioGroup
                                 key='net_provider'
                                 name='net_provider'
                                 values={managers}
                                 onChange={this.onManagerChange}
+                                wrapperClassName='network-managers pull-left'
                             />
-                        :
-                            <span className='network-segment-type'>
+                        </div>
+                    :
+                        <div className='forms-box'>
+                            <em>
                                 {i18n(ns + 'neutron_segmentation', {segment_type: networkingParameters.get('segmentation_type').toUpperCase()})}
-                            </span>
-                        }
-                    </div>
-                    <div className='networks-table'>
-                        {this.renderNetworks()}
-                    </div>
-                    <div className='networking-parameters'>
-                        <NetworkingParameters
-                            networkConfiguration={this.props.networkConfiguration}
-                            validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
-                            disabled={this.isLocked()}
-
-                        />
-                    </div>
-                    <div className='verification-control'>
+                            </em>
+                        </div>
+                    }
+                    {this.renderNetworks()}
+                    <NetworkingParameters
+                        networkConfiguration={this.props.networkConfiguration}
+                        validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
+                        disabled={this.isLocked()}
+                    />
+                    <div className='verification-control col-xs-12'>
                         <NetworkVerificationResult
                             key='network_verification'
                             task={cluster.task({group: 'network'})}
@@ -796,9 +820,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 ns = 'cluster_page.network_tab.network.';
 
             return (
-                <div>
-                    <legend className='networks'>{i18n('network.' + network.get('name'))}</legend>
-                    <div className={network.get('name')}>
+                <div className='forms-box'>
+                    <h3 className='networks'>{i18n('network.' + network.get('name'))}</h3>
+                    <div className={'network-section-wrapper row ' + network.get('name')}>
                         {(networkConfig.notation == ipRangesLabel) &&
                             <Range
                                 {...this.composeProps(ipRangesLabel, true)}
@@ -845,27 +869,26 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return (
                 <div>
                     {manager ?
-                        <div>
-                            <legend className='networks'>
+                        <div className='forms-box'>
+                            <h3 className='networks'>
                                 {i18n(ns + 'nova_configuration')}
-                            </legend>
-                            <div>
+                            </h3>
+                            <div className='network-section-wrapper row'>
                                 {this.renderInput('fixed_networks_cidr')}
                                 {(manager == 'VlanManager') ?
                                     <div>
-                                        <div className='network-attribute'>
-                                            <controls.Input
-                                                {...this.composeProps('fixed_network_size')}
-                                                type='select'
-                                                children={_.map(this.props.fixedNetworkSizeValues, function(value) {
-                                                    return <option key={value} value={value}>{value}</option>;
-                                                })}
-                                            />
-                                        </div>
+                                        <controls.Input
+                                            {...this.composeProps('fixed_network_size')}
+                                            type='select'
+                                            children={_.map(this.props.fixedNetworkSizeValues, function(value) {
+                                                return <option key={value} value={value}>{value}</option>;
+                                            })}
+                                            inputClassName='pull-left'
+                                        />
                                         {this.renderInput('fixed_networks_amount', true)}
                                         <Range
                                             {...this.composeProps('fixed_networks_vlan_start', true)}
-                                            wrapperClassName='network-attribute clearfix'
+                                            wrapperClassName='clearfix vlan-id-range'
                                             label={i18n(ns + 'fixed_vlan_range')}
                                             extendable={false}
                                             autoIncreaseWith={parseInt(networkParameters.get('fixed_networks_amount')) || 0}
@@ -875,41 +898,45 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                         />
                                     </div>
                                 :
-                                    <div className='clearfix'>
-                                        <VlanTagInput
-                                            {...this.composeProps('fixed_networks_vlan_start')}
-                                            label={i18n(ns + 'use_vlan_tagging_fixed')}
-                                        />
-                                    </div>
+                                    <VlanTagInput
+                                        {...this.composeProps('fixed_networks_vlan_start')}
+                                        label={i18n(ns + 'use_vlan_tagging_fixed')}
+                                    />
                                 }
                             </div>
                         </div>
                     :
-                        <div>
-                            <legend className='networks'>{i18n(ns + 'l2_configuration')}</legend>
-                            <Range
-                                {...this.composeProps(idRangePrefix + '_range', true)}
-                                wrapperClassName='network-attribute clearfix'
-                                extendable={false}
-                                placeholder=''
-                                integerValue={true}
-                                mini={true}
-                            />
-                            {this.renderInput('base_mac')}
-                            <div>
-                                <legend className='networks'>{i18n(ns + 'l3_configuration')}</legend>
+                        <div className='neutron-l2-3-config'>
+                            <div className='forms-box'>
+                                <h3 className='networks'>{i18n(ns + 'l2_configuration')}</h3>
+                                <div className='network-section-wrapper row'>
+                                    <Range
+                                        {...this.composeProps(idRangePrefix + '_range', true)}
+                                        wrapperClassName='clearfix'
+                                        extendable={false}
+                                        placeholder=''
+                                        integerValue={true}
+                                        mini={true}
+                                    />
+                                    {this.renderInput('base_mac')}
+                                </div>
                             </div>
-                            <div>
-                                {this.renderInput('internal_cidr')}
-                                {this.renderInput('internal_gateway')}
+                            <div className='forms-box network-sub-wrapper'>
+                                <h3 className='networks'>{i18n(ns + 'l3_configuration')}</h3>
+                                <div className='network-section-wrapper row'>
+                                    {this.renderInput('internal_cidr')}
+                                    {this.renderInput('internal_gateway')}
+                                </div>
                             </div>
                         </div>
                     }
-
-                    <MulipleValuesInput
-                        {...this.composeProps('dns_nameservers', true)}
-                        rowsClassName='dns_nameservers-row'
-                    />
+                    <div className='forms-box'>
+                        <MultipleValuesInput
+                            {...this.composeProps('dns_nameservers', true)}
+                            rowsClassName='dns_nameservers-row'
+                            wrapperClassName='forms-box row'
+                        />
+                    </div>
                 </div>
             );
         }
@@ -939,7 +966,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 <div className='animation-box'>
                                     {_.times(3, function(index) {
                                         ++index;
-                                        return <div key={index} className={'connect-' + index + '-' + this.getConnectionStatus(task, index == 1)}></div>;
+                                        return <div key={index} className={this.getConnectionStatus(task, index == 1) + ' connect-' + index}></div>;
                                     }, this)}
                                 </div>
                                 <div className='nodes-box'>
@@ -950,9 +977,11 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 </div>
                             </div>
                             <div className='verification-text-placeholder'>
-                                {_.times(5, function(index) {
-                                    return <li key={index}>{i18n(ns + 'step_' + index)}</li>;
-                                }, this)}
+                                <ol>
+                                    {_.times(5, function(index) {
+                                        return <li key={index}>{i18n(ns + 'step_' + index)}</li>;
+                                    }, this)}
+                                </ol>
                             </div>
                             {(task && task.match({name: 'verify_networks', status: 'ready'})) ?
                                 <div>
@@ -966,7 +995,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                     }
                                 </div>
                             : (task && task.match({status: 'error'})) &&
-                                <div className='alert alert-error enable-selection'>
+                                <div className='alert alert-danger enable-selection'>
                                     <span>
                                         {i18n(ns + 'fail_alert')}
                                     </span>

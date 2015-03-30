@@ -15,7 +15,7 @@
 **/
 casper.start().authenticate().skipWelcomeScreen();
 casper.createCluster({name: 'Test Cluster'});
-casper.loadPage('#cluster/1/settings').waitForSelector('#tab-settings > *');
+casper.loadPage('#cluster/1/settings').waitForSelector('.settings-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster OpenStack settings');
@@ -35,10 +35,10 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Testing cluster OpenStack settings: cancel changes operation');
     this.click('input[type=checkbox]');
-    this.click('.nav-tabs li.active + li a');
+    this.click('.cluster-tab.active + .cluster-tab');
     this.test.assertSelectorAppears('.dismiss-settings-dialog', 'Dismiss changes dialog appears if there are changes and user is going to leave the tab');
     this.then(function() {
-        this.click('.btn-return');
+        this.click('.btn-stay');
     });
     this.test.assertSelectorDisappears('.dismiss-settings-dialog', 'Dismiss changes dialog was closed');
     this.then(function() {

@@ -24,7 +24,7 @@ nodes.forEach(function(node) {
 var vmSDA;
 var osSDA;
 
-casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
+casper.loadPage('#cluster/1/nodes').waitForSelector('.nodes-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing nodes disks');
@@ -34,11 +34,11 @@ casper.then(function() {
     var sdaDiskOS = sdaDisk + '  .volume-group-box[data-volume=os]';
     var vdaDisk = '.disk-box[data-disk=vda]';
     var vdaDiskVM = vdaDisk + ' .volume-group-box[data-volume=vm]';
-    var vdaDiskOS = vdaDisk + '  .volume-group-box[data-volume=os]';
+    var vdaDiskOS = vdaDisk + ' .volume-group-box[data-volume=os]';
 
     this.then(function() {
         this.then(function() {
-            this.click('.node-details');
+            this.click('.node-settings');
         });
         this.test.assertSelectorAppears('.modal', 'Node details popup was opened');
         this.then(function() {

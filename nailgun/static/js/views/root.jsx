@@ -50,19 +50,15 @@ define([
             if (!Page) return <div className='loading' />;
             return (
                 <div id='content-wrapper'>
-                    <div id='wrap'>
-                        <div className='container'>
-                            {!Page.hiddenLayout &&
-                                <div>
-                                    <layoutComponents.Navbar ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />
-                                    <layoutComponents.Breadcrumbs ref='breadcrumbs' {...this.state} />
-                                </div>
-                            }
-                            <div id='content'>
-                                <Page ref='page' {...this.state.pageOptions} />
-                            </div>
-                            <div id='push' />
+                    <div className='clamp'>
+                        {!Page.hiddenLayout && [
+                            <layoutComponents.Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
+                            <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />
+                        ]}
+                        <div id='content'>
+                            <Page ref='page' {...this.state.pageOptions} />
                         </div>
+                        {!Page.hiddenLayout && <div id='footer-spacer'></div>}
                     </div>
                     {!Page.hiddenLayout && <layoutComponents.Footer version={this.props.version} />}
                 </div>

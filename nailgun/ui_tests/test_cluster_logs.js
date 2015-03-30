@@ -16,7 +16,7 @@
 casper.start().authenticate().skipWelcomeScreen();
 casper.createCluster({name: 'Test Cluster'});
 casper.createNode({status: 'discover', mac: '84:AA:B8:E6:30:F0', cluster_id: 1});
-casper.loadPage('#cluster/1/logs').waitForSelector('#tab-logs > *');
+casper.loadPage('#cluster/1/logs').waitForSelector('.logs-tab > *');
 casper.then(function() {
     if (this.loadJsFile('sinon-server')) {
         this.evaluate(function() {

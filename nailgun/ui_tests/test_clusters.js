@@ -13,11 +13,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-casper.start().authenticate().skipWelcomeScreen().loadPage('#clusters').waitForSelector('.cluster-list');
+casper.start().authenticate().skipWelcomeScreen().loadPage('#clusters').waitForSelector('.clusters-page');
 
 casper.then(function() {
     this.test.comment('Testing cluster list page');
-    this.test.assertExists('.cluster-list', 'Cluster container exists');
+    this.test.assertExists('.clusters-page > .row', 'Cluster container exists');
     this.test.assertExists('.create-cluster', 'Cluster creation control exists');
 });
 

@@ -16,7 +16,7 @@
 
 casper.start().authenticate().skipWelcomeScreen();
 casper.createCluster({name: 'Test Cluster', net_provider: 'nova_network'});
-casper.loadPage('#cluster/1/network').waitForSelector('#tab-network > *');
+casper.loadPage('#cluster/1/network').waitForSelector('.network-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: layout rendered');

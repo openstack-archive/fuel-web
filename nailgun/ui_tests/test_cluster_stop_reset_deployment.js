@@ -22,7 +22,7 @@ nodes.forEach(function(node) {
     casper.createNode(node);
 });
 
-casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
+casper.loadPage('#cluster/1/nodes').waitForSelector('.nodes-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster page');
@@ -30,37 +30,37 @@ casper.then(function() {
     this.test.assertExists('.btn-configure-disks:disabled', 'Button Configure Disks is disabled');
     this.test.assertExists('.btn-configure-interfaces:disabled', 'Button Configure Interfaces is disabled');
     this.test.assertExists('.btn-add-nodes:not(:disabled)', 'Add Nodes button is enabled');
-    this.test.assertEvalEquals(function() {return $('.node-box').length}, 0, 'Number of environment nodes is correct');
+    this.test.assertEvalEquals(function() {return $('.node').length}, 0, 'Number of environment nodes is correct');
 });
 
 casper.then(function() {
     this.test.comment('Testing adding node with controller role');
     this.click('.btn-add-nodes');
-    this.test.assertSelectorAppears('.node-box', 'Add Nodes screen appeared and unallocated nodes loaded');
+    this.test.assertSelectorAppears('.node', 'Add Nodes screen appeared and unallocated nodes loaded');
     this.then(function() {
-        this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, 1, 'Number of unallocated nodes is correct');
-        this.click('input[name="controller"]');
+        this.test.assertEvalEquals(function() {return $('.node').length}, 1, 'Number of unallocated nodes is correct');
+        this.click('input[name=controller]');
         this.click('.node input[type=checkbox]');
-        this.test.assertSelectorAppears('.pending_roles', 'Controller role is applied to the node');
+        this.test.assertSelectorAppears('.node .role-list > ul', 'Controller role is applied to the node');
     });
     this.then(function() {
         this.click('.btn-apply');
         this.test.assertSelectorDisappears('.role-panel', 'Return to nodes tab');
     });
     this.then(function() {
-        this.test.assertEvalEquals(function() {return $('.node-box').length}, 1, 'Number of available roles is correct');
+        this.test.assertEvalEquals(function() {return $('.node').length}, 1, 'Number of available roles is correct');
         this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled now');
     });
 });
 
-casper.loadPage('#cluster/1/actions').waitForSelector('#tab-actions > *');
+casper.loadPage('#cluster/1/actions').waitForSelector('.actions-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing Reset button exist and disabled');
-    this.test.assertExists('.action-item-controls .reset-environment-btn:disabled', 'Reset button exist and disabled');
+    this.test.assertExists('.action-item .reset-environment-btn:disabled', 'Reset button exist and disabled');
 });
 
-casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
+casper.loadPage('#cluster/1/nodes').waitForSelector('.nodes-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing stop deployment');
@@ -72,7 +72,7 @@ casper.then(function() {
     });
     this.test.assertSelectorDisappears('.modal', 'Deployment dialog closes after clicking Start Deployment');
     this.test.assertSelectorDisappears('.deploy-btn', 'Deploy changes button disappears');
-    this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-success', 'Deployment progress-success bar appears');
+    this.test.assertSelectorAppears('.deploy-process .progress-bar-success', 'Deployment progress-success bar appears');
     this.test.assertSelectorAppears('.stop-deployment-btn', 'Stop deployment button appears');
     this.then(function() {
         this.click('.stop-deployment-btn'); // "Stop Deployment" button click
@@ -83,36 +83,36 @@ casper.then(function() {
     });
     this.then(function() {
         this.test.assertSelectorDisappears('.modal', 'Stop deployment dialog closes after clicking Stop button');
-        this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-striped', 'Deployment progress-stopping bar appears');
-        this.test.assertSelectorDisappears('.cluster-deploy-placeholder .progress-striped', 'Deployment progress-stopping bar disappears', 60000);
+        this.test.assertSelectorAppears('.deploy-process .progress-bar-warning', 'Deployment progress-stopping bar appears');
+        this.test.assertSelectorDisappears('.deploy-process .progress-bar-warning', 'Deployment progress-stopping bar disappears', 60000);
     });
     this.then(function() {
         this.test.assertSelectorAppears('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
         this.test.assertSelectorAppears('.alert-success', 'Success stopping deployment alert message appears');
     });
-    this.loadPage('#cluster/1/actions').waitForSelector('#tab-actions > *');
+    this.loadPage('#cluster/1/actions').waitForSelector('.actions-tab > *');
     this.then(function() {
-        this.test.assertExists('.action-item-controls .reset-environment-btn:not(:disabled)', 'Reset button exist and enabled after stopped deployment');
+        this.test.assertExists('.action-item .reset-environment-btn:not(:disabled)', 'Reset button exist and enabled after stopped deployment');
     });
 });
 
-casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
+casper.loadPage('#cluster/1/nodes').waitForSelector('.nodes-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing Tabs locking after deployment stop and there are no Ready Nodes');
-    this.test.assertEvalEquals(function() {return $('.node-box.ready').length}, 0, 'Number of ready nodes is correct');
-    this.loadPage('#cluster/1/network').waitForSelector('#tab-network > *');
+    this.test.assertEvalEquals(function() {return $('.node.ready').length}, 0, 'Number of ready nodes is correct');
+    this.loadPage('#cluster/1/network').waitForSelector('.network-tab > *');
     this.then(function() {
         this.test.assertExists('.network-settings:not(.changes-locked)', 'Network Tab is unlocked');
     });
-    this.loadPage('#cluster/1/settings').waitForSelector('#tab-settings > *');
+    this.loadPage('#cluster/1/settings').waitForSelector('.settings-tab > *');
     this.then(function() {
         this.test.assertExists('.openstack-settings:not(.changes-locked)', 'Settings Tab is unlocked');
     });
     // TODO: add "Health Check" Tab checking - it should be locked in this scenario
 });
 
-casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
+casper.loadPage('#cluster/1/nodes').waitForSelector('.nodes-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing deployment process');
@@ -124,59 +124,59 @@ casper.then(function() {
     });
     this.test.assertSelectorDisappears('.modal', 'Deployment dialog closes after clicking Start Deployment');
     this.test.assertSelectorDisappears('.deploy-btn', 'Deploy changes button disappears');
-    this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-success', 'Deployment progress-success bar appears');
+    this.test.assertSelectorAppears('.deploy-process .progress-bar-success', 'Deployment progress-success bar appears');
     this.test.assertSelectorAppears('.stop-deployment-btn', 'Stop deployment button appears');
-    this.waitForSelector('.node-box.ready', function() { // We are waiting till node become ready
-        this.test.assertEvalEquals(function() {return $('.node-box.ready').length}, 1, 'Number of ready nodes is correct');
-    }, function() { this.test.comment("Timeout reached"); }, 60000);
-    this.test.assertSelectorDisappears('.cluster-deploy-placeholder .progress-success', 'Deployment progress-stopping bar disappears', 60000);
+    this.waitForSelector('.node.ready', function() { // We are waiting till node become ready
+        this.test.assertEvalEquals(function() {return $('.node.ready').length}, 1, 'Number of ready nodes is correct');
+    }, function() { this.test.comment('Timeout reached'); }, 60000);
+    this.test.assertSelectorDisappears('.deploy-process .progress-bar-success', 'Deployment progress-stopping bar disappears', 60000);
     this.then(function() {
         this.test.assertExists('.alert-success', 'Success deployment process finish message appears');
         this.test.assertExists('.deploy-btn:disabled', 'Deploy changes button is disabled');
         var countIsReadyNodes = this.evaluate(function() { // get count of Nodes with Ready status
-            return $('.node-box.ready').length;
+            return $('.node.ready').length;
         });
-        this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, countIsReadyNodes, 'All nodes in list are ready');
+        this.test.assertEvalEquals(function() {return $('.node').length}, countIsReadyNodes, 'All nodes in list are ready');
     });
 });
 
 casper.then(function() {
     this.test.comment('Testing Tabs locking after deployment finished completely');
-    this.loadPage('#cluster/1/network').waitForSelector('#tab-network > *');
+    this.loadPage('#cluster/1/network').waitForSelector('.network-tab > *');
     this.then(function() {
         this.test.assertExists('.network-settings.changes-locked', 'Network Tab is Locked');
     });
-    this.loadPage('#cluster/1/settings').waitForSelector('#tab-settings > *');
+    this.loadPage('#cluster/1/settings').waitForSelector('.settings-tab > *');
     this.then(function() {
         this.test.assertExists('.openstack-settings.changes-locked', 'Settings Tab is Locked');
     });
     // TODO: add "Health Check" Tab checking - it should be Unlocked in this scenario
 });
 
-casper.loadPage('#cluster/1/actions').waitForSelector('#tab-actions > *');
+casper.loadPage('#cluster/1/actions').waitForSelector('.actions-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing Reset button');
-    this.test.assertExists('.action-item-controls .reset-environment-btn:not(:disabled)', 'Reset button exist and enabled after successful finished deployment');
-    this.click('.action-item-controls .reset-environment-btn'); // "Reset" button click
+    this.test.assertExists('.action-item .reset-environment-btn:not(:disabled)', 'Reset button exist and enabled after successful finished deployment');
+    this.click('.action-item .reset-environment-btn'); // "Reset" button click
     this.test.assertSelectorAppears('.modal', 'Reset dialog opens');
     this.then(function() {
         this.click('.modal .reset-environment-btn'); // "Reset environment" button click
     });
     this.test.assertSelectorDisappears('.modal', 'Reset dialog closes after clicking Reset button');
     this.test.assertSelectorDisappears('.deploy-btn', 'Deploy changes button disappears');
-    this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-striped', 'Reset progress bar appears');
-    this.test.assertSelectorDisappears('.cluster-deploy-placeholder .progress-striped', 'Reset progress bar disappears', 60000);
-    this.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
+    this.test.assertSelectorAppears('.deploy-process .progress-bar-warning', 'Reset progress bar appears');
+    this.test.assertSelectorDisappears('.deploy-process .progress-bar-warning', 'Reset progress bar disappears', 60000);
+    this.loadPage('#cluster/1/nodes').waitForSelector('.nodes-tab > *');
     this.then(function() {
         this.test.assertExists('.deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
         this.test.assertExists('.alert-success', 'Success reset message appears');
-        this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, 1, 'Number of count nodes is correct');
-        this.test.assertEvalEquals(function() {return $('.node-box.ready').length}, 0, 'Number of ready nodes is correct');
+        this.test.assertEvalEquals(function() {return $('.node').length}, 1, 'Number of count nodes is correct');
+        this.test.assertEvalEquals(function() {return $('.node.ready').length}, 0, 'Number of ready nodes is correct');
     });
-    this.loadPage('#cluster/1/actions').waitForSelector('#tab-actions > *');
+    this.loadPage('#cluster/1/actions').waitForSelector('.actions-tab > *');
     this.then(function() {
-        this.test.assertSelectorAppears('.action-item-controls .reset-environment-btn:disabled', 'Reset button is disabled after successful reset');
+        this.test.assertSelectorAppears('.action-item .reset-environment-btn:disabled', 'Reset button is disabled after successful reset');
     });
 });
 

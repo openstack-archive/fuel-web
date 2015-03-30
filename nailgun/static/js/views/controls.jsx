@@ -20,7 +20,7 @@
  * Based on https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
 **/
 
-define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) {
+define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], function($, _, React, utils, componentMixins) {
     'use strict';
 
     var controls = {};
@@ -37,7 +37,14 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
         },
         renderTooltipIcon: function() {
             return this.props.tooltipText ? (
-                <i key='tooltip' ref='tooltip' className='icon-attention text-warning' data-toggle='tooltip' title={this.props.tooltipText} />
+                <i
+                    key='tooltip'
+                    ref='tooltip'
+                    className='glyphicon glyphicon-warning-sign text-orange'
+                    data-toggle='tooltip'
+                    data-placement='right'
+                    title={this.props.tooltipText}
+                />
             ) : null;
         }
     };
@@ -83,10 +90,7 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
             }
         },
         renderInput: function() {
-            var classes = {
-                'parameter-input': true,
-                'input-append': this.props.toggleable
-            };
+            var classes = {'form-control': true};
             classes[this.props.inputClassName] = this.props.inputClassName;
             var props = {
                     ref: 'input',
@@ -99,21 +103,23 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
                 Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,
                 isCheckboxOrRadio = this.isCheckboxOrRadio(),
-                inputWrapperClasses = {'input-wrapper': this.props.type != 'hidden', 'custom-tumbler': isCheckboxOrRadio};
+                inputWrapperClasses = {
+                    'input-group': this.props.toggleable,
+                    'input-wrapper': this.props.type != 'hidden',
+                    'custom-tumbler': isCheckboxOrRadio
+                };
             return (
                 <div key='input-wrapper' className={utils.classNames(inputWrapperClasses)}>
                     {input}
+                    {this.props.toggleable &&
+                        <div className='input-group-addon' onClick={this.togglePassword}>
+                            <i className={this.state.visible ? 'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'} />
+                        </div>
+                    }
                     {isCheckboxOrRadio && <span>&nbsp;</span>}
                     {this.props.extraContent}
                 </div>
             );
-        },
-        renderToggleablePasswordAddon: function() {
-            return this.props.toggleable ? (
-                <span key='add-on' className='add-on' onClick={this.togglePassword}>
-                    <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
-                </span>
-            ) : null;
         },
         renderLabel: function(children) {
             var labelClasses = {
@@ -173,10 +179,7 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
         },
         render: function() {
             return this.renderWrapper([
-                this.renderLabel([
-                    this.renderInput(),
-                    this.renderToggleablePasswordAddon()
-                ]),
+                this.renderLabel(this.renderInput()),
                 this.renderDescription()
             ]);
         }
@@ -224,10 +227,8 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
     controls.ProgressBar = React.createClass({
         render: function() {
             return (
-                <div className='progress-bar'>
-                    <div className='progress progress-striped progress-success active'>
-                        <div className='bar'/>
-                    </div>
+                <div className='progress'>
+                    <div className='progress-bar progress-bar-striped active' style={{width: '100%'}}></div>
                 </div>
             );
         }
@@ -263,6 +264,28 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
                         })}
                     </tbody>
                 </table>
+            );
+        }
+    });
+
+    controls.Popover = React.createClass({
+        mixins: [componentMixins.outerClickMixin],
+        propTypes: {
+            className: React.PropTypes.node,
+            placement: React.PropTypes.node
+        },
+        getDefaultProps: function() {
+            return {placement: 'bottom'};
+        },
+        render: function() {
+            var classes = {'popover in': true};
+            classes[this.props.placement] = true;
+            classes[this.props.className] = true;
+            return (
+                <div className={utils.classNames(classes)}>
+                    <div className='arrow' />
+                    <div className='popover-content'>{this.props.children}</div>
+                </div>
             );
         }
     });

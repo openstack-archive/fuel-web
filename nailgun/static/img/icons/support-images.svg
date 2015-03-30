@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="120px" height="120px" viewBox="0 0 120 120" enable-background="new 0 0 120 120" xml:space="preserve">
+<polygon fill="none" points="57,57.764 57,32.236 31.472,45 "/>
+<polygon fill="none" points="82.528,45 57,32.236 57,57.764 "/>
+<path fill="#E7E7EC" d="M31.472,45L57,32.236V30L27,45v20v16c0,2.2,1.8,4,4,4h26V57.764L31.472,45z"/>
+<path fill="#E7E7EC" d="M57,30v2.236L82.528,45L57,57.764V85h26c2.2,0,4-1.8,4-4V65V45L57,30z"/>
+<path opacity="0.05" d="M57,30v2.236L82.528,45L57,57.764V85h26c2.2,0,4-1.8,4-4V65V45L57,30z"/>
+<polygon fill="#FFFFFF" points="41,25 41,36 41,38.236 41,47.764 57,55.764 73,47.764 73,38.236 73,36 73,25 "/>
+<rect x="45" y="29" fill="#BDBEC0" width="10" height="2"/>
+<rect x="45" y="33" fill="#BDBEC0" width="16" height="2"/>
+<rect x="45" y="37" fill="#BDBEC0" width="8" height="2"/>
+<rect x="45" y="41" fill="#BDBEC0" width="10" height="2"/>
+<rect x="45" y="45" fill="#BDBEC0" width="12" height="2"/>
+</svg>

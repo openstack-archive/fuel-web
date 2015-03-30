@@ -124,26 +124,26 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         },
         render: function() {
             return (
-                <div className='wrapper'>
-                    <h3>{i18n('cluster_page.logs_tab.title')}</h3>
-                    <LogFilterBar
-                        cluster={this.props.cluster}
-                        tabOptions={this.props.tabOptions}
-                        onShowButtonClick={this.onShowButtonClick} />
-                    {this.state.loading == 'fail' &&
-                        <div className='logs-fetch-error alert alert-error'>{i18n('cluster_page.logs_tab.log_alert')}</div>
-                    }
-                    {this.state.loading == 'loading' &&
-                        <div className='row row-fluid'>
-                            <controls.ProgressBar />
-                        </div>
-                    }
-                    {this.state.logsEntries &&
-                        <LogsTable
-                            logsEntries={this.state.logsEntries}
-                            showMoreLogsLink={this.state.showMoreLogsLink}
-                            onShowMoreClick={this.onShowMoreClick} />
-                    }
+                <div className='row'>
+                    <div className='title'>{i18n('cluster_page.logs_tab.title')}</div>
+                    <div className='col-xs-12'>
+                        <LogFilterBar
+                            cluster={this.props.cluster}
+                            tabOptions={this.props.tabOptions}
+                            onShowButtonClick={this.onShowButtonClick} />
+                        {this.state.loading == 'fail' &&
+                            <div className='logs-fetch-error alert alert-danger'>
+                                {i18n('cluster_page.logs_tab.log_alert')}
+                            </div>
+                        }
+                        {this.state.loading == 'loading' && <controls.ProgressBar />}
+                        {this.state.logsEntries &&
+                            <LogsTable
+                                logsEntries={this.state.logsEntries}
+                                showMoreLogsLink={this.state.showMoreLogsLink}
+                                onShowMoreClick={this.onShowMoreClick} />
+                        }
+                    </div>
                 </div>
             );
         }
@@ -270,27 +270,39 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             });
         },
         render: function() {
+            var isRemote = this.state.chosenType == 'remote';
             return (
-                <div className='row'>
-                    <div className='filter-bar'>
+                <div className='well well-sm'>
+                    <div className='sticker row'>
                         {this.renderTypeSelect()}
-                        {this.state.chosenType == 'remote' && this.renderNodeSelect()}
+                        {isRemote && this.renderNodeSelect()}
                         {this.renderSourceSelect()}
                         {this.renderLevelSelect()}
-                        <div className='filter-bar-item'>
-                            <button
-                                className='show-logs-btn btn'
-                                onClick={this.handleShowButtonClick}
-                                disabled={!this.state.chosenSourceId || this.state.locked}>
-                                {i18n('cluster_page.logs_tab.show')}
-                            </button>
-                        </div>
+                        {this.renderFilterButton(isRemote)}
                     </div>
                     {this.state.sourcesLoadingState == 'fail' &&
-                        <div className='node-sources-error alert alert-error'>{i18n('cluster_page.logs_tab.source_alert')}</div>
+                        <div className='node-sources-error alert alert-danger'>
+                            {i18n('cluster_page.logs_tab.source_alert')}
+                        </div>
                     }
                 </div>
             );
+        },
+        renderFilterButton: function(isRemote) {
+            return <div className={utils.classNames({
+                'form-group': true,
+                'col-md-4 col-sm-12': isRemote,
+                'col-md-6 col-sm-3': !isRemote
+            })}>
+                <label />
+                <button
+                    className='btn btn-default pull-right'
+                    onClick={this.handleShowButtonClick}
+                    disabled={!this.state.chosenSourceId || this.state.locked}
+                >
+                    {i18n('cluster_page.logs_tab.show')}
+                </button>
+            </div>;
         },
         renderTypeSelect: function() {
             var types = [['local', 'Fuel Master']];
@@ -300,48 +312,48 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             var typeOptions = types.map(function(type) {
                 return <option value={type[0]} key={type[0]}>{type[1]}</option>;
             });
-            return <controls.Input
-                type='select'
-                labelClassName='filter-bar-label'
-                label={i18n('cluster_page.logs_tab.logs')}
-                value={this.state.chosenType}
-                wrapperClassName='filter-bar-item log-type-filter'
-                name='type'
-                inputClassName='filter-bar-dropdown input-medium'
-                onChange={this.onTypeChange}
-                children={typeOptions}
-            />;
+            return <div className='col-md-2 col-sm-3'>
+                <controls.Input
+                    type='select'
+                    label={i18n('cluster_page.logs_tab.logs')}
+                    value={this.state.chosenType}
+                    wrapperClassName='filter-bar-item log-type-filter'
+                    name='type'
+                    onChange={this.onTypeChange}
+                    children={typeOptions}
+                />
+            </div>;
         },
         renderNodeSelect: function() {
             var nodeOptions = this.props.cluster.get('nodes').map(function(node) {
                     return <option value={node.id} key={node.id}>{node.get('name') || node.get('mac')}</option>;
                 }, this);
-            return (<controls.Input
-                type='select'
-                labelClassName='filter-bar-label'
-                label={i18n('cluster_page.logs_tab.node')}
-                value={this.state.chosenNodeId}
-                wrapperClassName='filter-bar-item log-node-filter'
-                name='node'
-                inputClassName='filter-bar-dropdown input-large'
-                onChange={this.onNodeChange}
-                children={nodeOptions}
-            />);
+            return <div className='col-md-2 col-sm-3'>
+                <controls.Input
+                    type='select'
+                    label={i18n('cluster_page.logs_tab.node')}
+                    value={this.state.chosenNodeId}
+                    wrapperClassName='filter-bar-item log-node-filter'
+                    name='node'
+                    onChange={this.onNodeChange}
+                    children={nodeOptions}
+                />
+            </div>;
         },
         renderSourceSelect: function() {
             var sourceOptions = this.state.chosenType == 'local' ? this.getLocalSources() : this.getRemoteSources();
-            return (<controls.Input
-                type='select'
-                labelClassName='filter-bar-label'
-                label={i18n('cluster_page.logs_tab.source')}
-                value={this.state.chosenSourceId}
-                wrapperClassName='filter-bar-item log-source-filter'
-                name='source'
-                inputClassName='filter-bar-dropdown input-medium'
-                onChange={this.onSourceChange}
-                disabled={!this.state.chosenSourceId}
-                children={sourceOptions}
-            />);
+            return <div className='col-md-2 col-sm-3'>
+                <controls.Input
+                    type='select'
+                    label={i18n('cluster_page.logs_tab.source')}
+                    value={this.state.chosenSourceId}
+                    wrapperClassName='filter-bar-item log-source-filter'
+                    name='source'
+                    onChange={this.onSourceChange}
+                    disabled={!this.state.chosenSourceId}
+                    children={sourceOptions}
+                />
+            </div>;
         },
         renderLevelSelect: function() {
             var levelOptions = {};
@@ -350,69 +362,81 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     return <option value={level} key={level}>{level}</option>;
                 }, this);
             }
-            return (<controls.Input
-                type='select'
-                labelClassName='filter-bar-label'
-                label={i18n('cluster_page.logs_tab.min_level')}
-                value={this.state.chosenLevelId}
-                wrapperClassName='filter-bar-item log-level-filter'
-                name='level'
-                inputClassName='filter-bar-dropdown input-medium'
-                onChange={this.onLevelChange}
-                disabled={!this.state.chosenLevelId}
-                children={levelOptions}
-            />);
+            return <div className='col-md-2 col-sm-3'>
+                <controls.Input
+                    type='select'
+                    label={i18n('cluster_page.logs_tab.min_level')}
+                    value={this.state.chosenLevelId}
+                    wrapperClassName='filter-bar-item log-level-filter'
+                    name='level'
+                    onChange={this.onLevelChange}
+                    disabled={!this.state.chosenLevelId}
+                    children={levelOptions}
+                />
+            </div>;
         }
     });
 
     var LogsTable = React.createClass({
         handleShowMoreClick: function(value) { return this.props.onShowMoreClick(value); },
+        getLevelClass: function(level) {
+            return {
+                DEBUG: '',
+                INFO: 'text-info',
+                WARNING: 'text-warning',
+                ERROR: 'text-danger',
+                CRITICAL: 'text-critical'
+            }[level];
+        },
         render: function() {
             var tabRows = [],
                 logsEntries = this.props.logsEntries;
             if (logsEntries && logsEntries.length) {
-                tabRows = logsEntries.map(function(entry, i) {
-                    var key = logsEntries.length - i;
-                    return <tr key={key} className={entry[1].toLowerCase()}>
-                        <td className='nowrap'>{entry[0]}</td>
-                        <td className='nowrap'>{entry[1]}</td>
-                        <td><pre>{entry[2]}</pre></td>
+                tabRows = _.map(
+                    logsEntries,
+                    function(entry, index) {
+                        var key = logsEntries.length - index;
+                        return <tr key={key} className={this.getLevelClass(entry[1])}>
+                            <td>{entry[0]}</td>
+                            <td>{entry[1]}</td>
+                            <td>{entry[2]}</td>
                         </tr>;
-                });
+                    },
+                    this
+                );
             }
-            return (
-                <table className='table enable-selection table-bordered table-condensed table-logs'>
+            return logsEntries.length ?
+                <table className='table log-entries'>
                     <thead>
                         <tr>
-                            <th>{i18n('cluster_page.logs_tab.date')}</th>
-                            <th>{i18n('cluster_page.logs_tab.level')}</th>
-                            <th>{i18n('cluster_page.logs_tab.message')}</th>
+                            <th className='col-date'>{i18n('cluster_page.logs_tab.date')}</th>
+                            <th className='col-level'>{i18n('cluster_page.logs_tab.level')}</th>
+                            <th className='col-message'>{i18n('cluster_page.logs_tab.message')}</th>
                         </tr>
                     </thead>
-                    <tbody className='log-entries'>
+                    <tbody>
                         {tabRows}
                     </tbody>
                     {this.props.showMoreLogsLink &&
                         <tfoot className='entries-skipped-msg'>
                             <tr>
-                                <td colSpan='3'>
-                                    <span>{i18n('cluster_page.logs_tab.bottom_text')}
-                                    </span>: {[100, 500, 1000, 5000].map(function(count) {
-                                        return <span className='show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}> {count} </span>;
-                                    }, this)}
+                                <td colSpan='3' className='text-center'>
+                                    <span>{i18n('cluster_page.logs_tab.bottom_text')}</span>:
+                                    {
+                                        [100, 500, 1000, 5000].map(
+                                            function(count) {
+                                                return <button className='btn btn-link show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}>{count} </button>;
+                                            },
+                                            this
+                                        )
+                                    }
                                 </td>
                             </tr>
                         </tfoot>
                     }
-                    {!logsEntries.length &&
-                        <tfoot className='no-logs-msg'>
-                            <tr>
-                                <td colSpan='3'>{i18n('cluster_page.logs_tab.no_log_text')}</td>
-                            </tr>
-                        </tfoot>
-                    }
                 </table>
-            );
+                :
+                <div className='no-logs-msg'>{i18n('cluster_page.logs_tab.no_log_text')}</div>;
         }
     });
 

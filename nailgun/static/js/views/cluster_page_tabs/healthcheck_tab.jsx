@@ -73,26 +73,28 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             var cluster = this.props.cluster,
                 ostf = cluster.get('ostf') || this.state.ostf;
             return (
-                <div className='wrapper'>
-                    <h3 className='span6 healthcheck-title'>{i18n('cluster_page.healthcheck_tab.title')}</h3>
-                    {this.state.loadingFailure ?
-                        <div className='cleared'>
-                            <div className='alert error-message alert-error'>
-                                {i18n('cluster_page.healthcheck_tab.not_available_alert')}
-                            </div>
+                <div className='row'>
+                    <div className='title'>
+                        {i18n('cluster_page.healthcheck_tab.title')}
+                    </div>
+                    <div className='col-xs-12'>
+                        {this.state.loadingFailure ?
+                                <div className='alert alert-danger'>
+                                    {i18n('cluster_page.healthcheck_tab.not_available_alert')}
+                                </div>
+                        : !this.state.loaded ?
+                            <controls.ProgressBar />
+                        :
+                            <HealthcheckTabContent
+                                ref='content'
+                                testsets={ostf.testsets}
+                                tests={ostf.tests}
+                                testruns={ostf.testruns}
+                                cluster={cluster}
+                                loaded={this.state.loaded}
+                            />
+                        }
                         </div>
-                    : !this.state.loaded ?
-                        <div className='row-fluid'><div className='span12'><controls.ProgressBar /></div></div>
-                    :
-                        <HealthcheckTabContent
-                            ref='content'
-                            testsets={ostf.testsets}
-                            tests={ostf.tests}
-                            testruns={ostf.testruns}
-                            cluster={cluster}
-                            loaded={this.state.loaded}
-                        />
-                    }
                 </div>
             );
         }
@@ -210,62 +212,59 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         },
         render: function() {
             var disabledState = this.isLocked(),
-                hasRunningTests = !!this.props.testruns.where({status: 'running'}).length;
+                hasRunningTests = !!this.props.testruns.where({status: 'running'}).length,
+                shouldControlsBeShown = !disabledState && !this.state.loadingFailure;
             return (
                 <div>
-                    <div className='row-fluid page-sub-title'>
-                        <div className='span2 ostf-controls'>
-                            {!disabledState &&
-                                <div className='toggle-credentials pull-right' onClick={this.toggleCredentials}>
-                                    <i className={this.state.credentialsVisible ? 'icon-minus-circle' : 'icon-plus-circle'}></i>
-                                    <div>{i18n('cluster_page.healthcheck_tab.provide_credentials')}</div>
-                                </div>
-                            }
-                        </div>
-                        <controls.Input
-                            type='checkbox'
-                            name='selectAll'
-                            onChange={this.handleSelectAllClick}
-                            checked={this.getNumberOfCheckedTests() == this.props.tests.length}
-                            disabled={disabledState || hasRunningTests}
-                            labelClassName='checkbox pull-right'
-                            label={i18n('common.select_all')}
-                            wrapperClassName='span2 ostf-controls select-all'
-                        />
-                        <div className='span2 ostf-controls'>
+                    {shouldControlsBeShown &&
+                        <div className='healthcheck-controls row well well-sm'>
+                            <div className='pull-left'>
+                                <controls.Input
+                                    type='checkbox'
+                                    name='selectAll'
+                                    onChange={this.handleSelectAllClick}
+                                    checked={this.getNumberOfCheckedTests() == this.props.tests.length}
+                                    disabled={disabledState || hasRunningTests}
+                                    label={i18n('common.select_all')}
+                                    wrapperClassName='select-all'
+                                    />
+                            </div>
                             {hasRunningTests ?
-                                (<button className='btn btn-danger pull-right action-btn stop-tests-btn'
+                                (<button className='btn btn-danger stop-tests-btn pull-right'
                                     disabled={disabledState || this.state.actionInProgress}
                                     onClick={this.stopTests}
                                 >
                                     {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
                                 </button>)
-                            :
-                                (<button className='btn btn-success pull-right action-btn run-tests-btn'
+                                :
+                                (<button className='btn btn-success run-tests-btn pull-right'
                                     disabled={disabledState || !this.getNumberOfCheckedTests() || this.state.actionInProgress}
                                     onClick={this.runTests}
                                 >
                                     {i18n('cluster_page.healthcheck_tab.run_tests_button')}
                                 </button>)
                             }
-                        </div>
-                    </div>
-                    {(this.props.cluster.get('status') == 'new') &&
-                        <div className='row-fluid'>
-                            <div className='span12'>
-                                <div className='alert'>{i18n('cluster_page.healthcheck_tab.deploy_alert')}</div>
-                            </div>
+                            <button
+                                className='btn btn-default toggle-credentials pull-right'
+                                data-toggle='collapse'
+                                data-target='.credentials'
+                                onClick={this.toggleCredentials}
+                                >
+                                {i18n('cluster_page.healthcheck_tab.provide_credentials')}
+                            </button>
+
+                            <HealthcheckCredentials
+                                credentials={this.state.credentials}
+                                onInputChange={this.handleInputChange}
+                                disabled={disabledState || hasRunningTests}
+                                />
                         </div>
                     }
-                    <HealthcheckCredentials
-                        key='credentials'
-                        visible={this.state.credentialsVisible}
-                        credentials={this.state.credentials}
-                        onInputChange={this.handleInputChange}
-                        disabled={disabledState || hasRunningTests}
-                    />
-                    <div className='testsets' key='testsets'>
-                        <div>
+                    <div>
+                        {(this.props.cluster.get('status') == 'new') &&
+                            <div className='alert alert-warning'>{i18n('cluster_page.healthcheck_tab.deploy_alert')}</div>
+                        }
+                        <div key='testsets'>
                             {this.props.testsets.map(_.bind(function(testset) {
                                 return <TestSet
                                 key={testset.id}
@@ -283,36 +282,28 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
     });
 
     var HealthcheckCredentials = React.createClass({
-        componentDidUpdate: function() {
-            if (!_.isNull(this.props.visible)) {
-                $(this.getDOMNode()).collapse(this.props.visible ? 'show' : 'hide');
-            }
-        },
         render: function() {
             var inputFields = ['user', 'password', 'tenant'];
             return (
-                <div className='healthcheck credentials collapse'>
-                    <div className='fieldset-group wrapper'>
-                        <div className='healthcheck-group'>
-                            <div className='clearfix note'>
-                                {i18n('cluster_page.healthcheck_tab.credentials_description')}
-                            </div>
-                            {_.map(inputFields, function(name) {
-                                return (<controls.Input
-                                    key={name}
-                                    type={(name == 'password') ? 'password' : 'text'}
-                                    name={name}
-                                    label={i18n('cluster_page.healthcheck_tab.' + name + '_label')}
-                                    value={this.props.credentials[name]}
-                                    onChange={this.props.onInputChange}
-                                    toggleable={name == 'password'}
-                                    description={i18n('cluster_page.healthcheck_tab.' + name + '_description')}
-                                    labelClassName='openstack-sub-title'
-                                    descriptionClassName={utils.classNames({'healthcheck-password': name == 'password'})}
-                                    disabled={this.props.disabled}
-                                />);
-                            }, this)}
+                <div className='credentials collapse col-xs-12'>
+                    <div className='forms-box'>
+                        <div className='alert alert-warning'>
+                            {i18n('cluster_page.healthcheck_tab.credentials_description')}
                         </div>
+                        {_.map(inputFields, function(name) {
+                            return (<controls.Input
+                                key={name}
+                                type={(name == 'password') ? 'password' : 'text'}
+                                name={name}
+                                label={i18n('cluster_page.healthcheck_tab.' + name + '_label')}
+                                value={this.props.credentials[name]}
+                                onChange={this.props.onInputChange}
+                                toggleable={name == 'password'}
+                                description={i18n('cluster_page.healthcheck_tab.' + name + '_description')}
+                                disabled={this.props.disabled}
+                                inputClassName='col-xs-3'
+                            />);
+                        }, this)}
                     </div>
                 </div>
             );
@@ -339,46 +330,48 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         },
         render: function() {
             return (
-                <div className='row-fluid'>
-                    <table className='table table-bordered healthcheck-table enable-selection'>
-                        <thead>
-                            <tr>
-                                <th className='healthcheck-col-select'>
-                                    <controls.Input
-                                        type='checkbox'
-                                        id={'testset-checkbox-' + this.props.testset.id}
-                                        name={this.props.testset.get('name')}
-                                        disabled={this.props.disabled}
-                                        onChange={this.handleTestSetCheck}
-                                        checked={this.props.testset.get('checked')}
-                                    />
-                                </th>
-                                <th>
-                                    <label className='testset-name' htmlFor={'testset-checkbox-' + this.props.testset.id}>
-                                        {this.props.testset.get('name')}
-                                    </label>
-                                </th>
-                                <th className='healthcheck-col-duration'>{i18n('cluster_page.healthcheck_tab.expected_duration')}</th>
-                                <th className='healthcheck-col-duration'>{i18n('cluster_page.healthcheck_tab.actual_duration')}</th>
-                                <th className='healthcheck-col-status'>{i18n('cluster_page.healthcheck_tab.status')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {this.props.tests.map(function(test) {
-                                    var result = this.props.testrun &&
-                                        _.find(this.props.testrun.get('tests'), {id: test.id});
-                                    var status = result && result.status || 'unknown';
-                                    return <Test
-                                        key={test.id}
-                                        test={test}
-                                        result={result}
-                                        status={status}
-                                        disabled={this.props.disabled}
-                                    />;
-                                }, this)}
-                        </tbody>
-                    </table>
-                </div>
+                <table className='table healthcheck-table'>
+                    <thead>
+                        <tr>
+                            <th>
+                                <controls.Input
+                                    type='checkbox'
+                                    id={'testset-checkbox-' + this.props.testset.id}
+                                    name={this.props.testset.get('name')}
+                                    disabled={this.props.disabled}
+                                    onChange={this.handleTestSetCheck}
+                                    checked={this.props.testset.get('checked')}
+                                />
+                            </th>
+                            <th className='col-xs-7 healthcheck-name'>
+                                {this.props.testset.get('name')}
+                            </th>
+                            <th className='healthcheck-col-duration col-xs-2'>
+                                {i18n('cluster_page.healthcheck_tab.expected_duration')}
+                            </th>
+                            <th className='healthcheck-col-duration col-xs-2'>
+                                {i18n('cluster_page.healthcheck_tab.actual_duration')}
+                            </th>
+                            <th className='healthcheck-col-status col-xs-1'>
+                                {i18n('cluster_page.healthcheck_tab.status')}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {this.props.tests.map(function(test) {
+                                var result = this.props.testrun &&
+                                    _.find(this.props.testrun.get('tests'), {id: test.id});
+                                var status = result && result.status || 'unknown';
+                                return <Test
+                                    key={test.id}
+                                    test={test}
+                                    result={result}
+                                    status={status}
+                                    disabled={this.props.disabled}
+                                />;
+                            }, this)}
+                    </tbody>
+                </table>
             );
         }
     });
@@ -404,20 +397,19 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             var test = this.props.test,
                 result = this.props.result,
                 status = this.props.status,
-                currentStatusClassName = 'healthcheck-status healthcheck-status-' + status,
+                currentStatusClassName = 'text-center healthcheck-status healthcheck-status-' + status,
                 iconClasses = {
-                    success: 'icon-passed',
-                    failure: 'icon-failed',
-                    error: 'icon-failed',
-                    running: 'icon-process animate-spin',
-                    wait_running: 'icon-clock'
+                    success: 'glyphicon glyphicon-ok',
+                    failure: 'glyphicon glyphicon-remove',
+                    error: 'glyphicon glyphicon-remove',
+                    running: 'glyphicon glyphicon-refresh animate-spin',
+                    wait_running: 'glyphicon glyphicon-time'
                 };
             return (
                 <tr>
-                    <td className='healthcheck-col-select'>
+                    <td>
                         <controls.Input
                             type='checkbox'
-                            controlOnly={true}
                             id={'test-checkbox-' + test.id}
                             name={test.get('name')}
                             disabled={this.props.disabled}
@@ -425,10 +417,8 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             checked={test.get('checked')}
                         />
                     </td>
-                    <td>
-                        <div className='healthcheck-name'>
-                            <label htmlFor={'test-checkbox-' + test.id}>{test.get('name')}</label>
-                        </div>
+                    <td className='healthcheck-name'>
+                        <label htmlFor={'test-checkbox-' + test.id}>{test.get('name')}</label>
                         {_.contains(['failure', 'error', 'skipped'], status) &&
                             <div className='healthcheck-msg healthcheck-status-failure'>
                                 {(result && result.message) &&

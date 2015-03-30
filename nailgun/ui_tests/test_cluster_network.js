@@ -16,11 +16,11 @@
 
 casper.start().authenticate().skipWelcomeScreen();
 casper.createCluster({name: 'Test Cluster', net_provider: 'nova_network'});
-casper.loadPage('#cluster/1/network').waitForSelector('#tab-network > *');
+casper.loadPage('#cluster/1/network').waitForSelector('.network-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: layout rendered');
-    this.test.assertEvalEquals(function() {return $('.radio-group input[name=net_provider]').length}, 2, 'Network manager options are presented');
+    this.test.assertEvalEquals(function() {return $('.checkbox-group input[name=net_provider]').length}, 2, 'Network manager options are presented');
     this.test.assertExists('input[value=FlatDHCPManager]:checked', 'Flat DHCP manager is chosen');
     this.test.assertEvalEquals(function() {return $('.networks-table legend').length}, 3, 'All networks are presented');
     this.test.assertDoesntExist('.verify-networks-btn:disabled', 'Verify networks button is enabled');

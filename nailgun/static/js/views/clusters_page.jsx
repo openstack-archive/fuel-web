@@ -38,10 +38,9 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
                 var clusters = new models.Clusters();
                 var nodes = new models.Nodes();
                 var tasks = new models.Tasks();
-                return $.when(clusters.fetch(), nodes.deferred = nodes.fetch(), tasks.fetch()).done(_.bind(function() {
+                return $.when(clusters.fetch(), nodes.fetch(), tasks.fetch()).done(_.bind(function() {
                     clusters.each(function(cluster) {
                         cluster.set('nodes', new models.Nodes(nodes.where({cluster: cluster.id})));
-                        cluster.get('nodes').deferred = nodes.deferred;
                         cluster.set('tasks', new models.Tasks(tasks.where({cluster: cluster.id})));
                     }, this);
                 }, this)).then(function() {
@@ -51,8 +50,10 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
         },
         render: function() {
             return (
-                <div>
-                    <h3 className="page-title">{i18n('clusters_page.title')}</h3>
+                <div className='clusters-page'>
+                    <div className='page-title'>
+                        <h1 className='title'>{i18n('clusters_page.title')}</h1>
+                    </div>
                     <ClusterList clusters={this.props.clusters} />
                 </div>
             );
@@ -66,15 +67,14 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
         },
         render: function() {
             return (
-                <div className="cluster-list">
-                    <div className="roles-block-row">
-                        {this.props.clusters.map(function(cluster) {
-                            return <Cluster key={cluster.id} cluster={cluster} />;
-                        }, this)}
-                        <div key="add" className="span3 clusterbox create-cluster" onClick={this.createCluster}>
-                            <div className="add-icon"><i className="icon-create"></i></div>
-                            <div className="create-cluster-text">{i18n('clusters_page.create_cluster_text')}</div>
-                        </div>
+                <div className='row'>
+                    {this.props.clusters.map(function(cluster) {
+                        return <Cluster key={cluster.id} cluster={cluster} />;
+                    }, this)}
+                    <div key='create-cluster' className='col-xs-3'>
+                        <button className='btn-link create-cluster' onClick={this.createCluster}>
+                            <span>{i18n('clusters_page.create_cluster_text')}</span>
+                        </button>
                     </div>
                 </div>
             );
@@ -126,40 +126,48 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
         },
         render: function() {
             var cluster = this.props.cluster;
+            var status = cluster.get('status');
             var nodes = cluster.get('nodes');
             var deletionTask = cluster.task('cluster_deletion', ['running', 'ready']);
             var deploymentTask = cluster.task({group: 'deployment', status: 'running'});
             return (
-                <a className={'span3 clusterbox ' + (deletionTask ? 'disabled-cluster' : '')} href={!deletionTask ? '#cluster/' + cluster.id + '/nodes' : 'javascript:void 0'}>
-                    <div className="cluster-name">{cluster.get('name')}</div>
-                    <div className="cluster-hardware">
-                        {(!nodes.deferred || nodes.deferred.state() == 'resolved') &&
-                            <div className="row-fluid">
-                                <div key="nodes-title" className="span6">{i18n('clusters_page.cluster_hardware_nodes')}</div>
-                                <div key="nodes-value" className="span4">{nodes.length}</div>
-                                {!!nodes.length && [
-                                    <div key="cpu-title" className="span6">{i18n('clusters_page.cluster_hardware_cpu')}</div>,
-                                    <div key="cpu-value" className="span4">{nodes.resources('cores')} ({nodes.resources('ht_cores')})</div>,
-                                    <div key="hdd-title" className="span6">{i18n('clusters_page.cluster_hardware_hdd')}</div>,
-                                    <div key="hdd-value" className="span4">{nodes.resources('hdd') ? utils.showDiskSize(nodes.resources('hdd')) : '?GB'}</div>,
-                                    <div key="ram-title" className="span6">{i18n('clusters_page.cluster_hardware_ram')}</div>,
-                                    <div key="ram-value" className="span4">{nodes.resources('ram') ? utils.showMemorySize(nodes.resources('ram')) : '?GB'}</div>
-                                ]}
-                            </div>
-                        }
-                    </div>
-                    <div className="cluster-status">
-                        {deploymentTask ?
-                            <div className={'cluster-status-progress ' + deploymentTask.get('name')}>
-                                <div className={'progress progress-' + (_.contains(['stop_deployment', 'reset_environment'], deploymentTask.get('name')) ? 'warning' : 'success') + ' progress-striped active'}>
-                                    <div className="bar" style={{width: (deploymentTask.get('progress') > 3 ? deploymentTask.get('progress') : 3) + '%'}}></div>
+                <div className='col-xs-3'>
+                    <a className={utils.classNames({clusterbox: true, 'cluster-disabled': !!deletionTask})} href={!deletionTask ? '#cluster/' + cluster.id + '/nodes' : 'javascript:void 0'}>
+                        <div className='name'>{cluster.get('name')}</div>
+                        <div className='tech-info'>
+                            <div key='nodes-title' className='item'>{i18n('clusters_page.cluster_hardware_nodes')}</div>
+                            <div key='nodes-value' className='value'>{nodes.length}</div>
+                            {!!nodes.length && [
+                                <div key='cpu-title' className='item'>{i18n('clusters_page.cluster_hardware_cpu')}</div>,
+                                <div key='cpu-value' className='value'>{nodes.resources('cores')} ({nodes.resources('ht_cores')})</div>,
+                                <div key='hdd-title' className='item'>{i18n('clusters_page.cluster_hardware_hdd')}</div>,
+                                <div key='hdd-value' className='value'>{nodes.resources('hdd') ? utils.showDiskSize(nodes.resources('hdd')) : '?GB'}</div>,
+                                <div key='ram-title' className='item'>{i18n('clusters_page.cluster_hardware_ram')}</div>,
+                                <div key='ram-value' className='value'>{nodes.resources('ram') ? utils.showMemorySize(nodes.resources('ram')) : '?GB'}</div>
+                            ]}
+                        </div>
+                        <div className='status text-info'>
+                            {deploymentTask ?
+                                <div className='progress'>
+                                    <div
+                                        className={utils.classNames({
+                                            'progress-bar': true,
+                                            'progress-bar-warning': _.contains(['stop_deployment', 'reset_environment'], deploymentTask.get('name'))
+                                        })}
+                                        style={{width: (deploymentTask.get('progress') > 3 ? deploymentTask.get('progress') : 3) + '%'}}
+                                    ></div>
                                 </div>
-                            </div>
-                        :
-                            i18n('cluster.status.' + cluster.get('status'), {defaultValue: cluster.get('status')})
-                        }
-                    </div>
-                </a>
+                            :
+                                <span className={utils.classNames({
+                                    'text-danger': status == 'error' || status == 'update_error',
+                                    'text-success': status == 'operational'
+                                })}>
+                                    {i18n('cluster.status.' + status, {defaultValue: status})}
+                                </span>
+                            }
+                        </div>
+                    </a>
+                </div>
             );
         }
     });

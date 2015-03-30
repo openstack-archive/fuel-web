@@ -1,0 +1,54 @@
+// Custom Checkbox
+.custom-tumbler {
+    margin: 0 6px 0 0;
+    position: relative;
+    float: left;
+    width: 22px;
+    height: 22px;
+}
+.custom-tumbler input {
+    overflow: hidden;
+    position: absolute;
+    filter: alpha(opacity=0);
+    -moz-opacity: 0;
+    -khtml-opacity: 0;
+    opacity: 0;
+    cursor: pointer;
+    margin: 5px 0 0 5px;
+    width: 22px;
+    height: 22px;
+}
+.custom-tumbler input + span {
+    display: block;
+    overflow: hidden;
+    font-size: 1px;
+    line-height: 0;
+    background: url("../img/ui/radio_checkbox.svg") no-repeat 0 0 transparent;
+    width: 22px;
+    height: 22px;
+}
+.custom-tumbler input:checked + span {
+    background: url("../img/ui/radio_checkbox.svg") no-repeat -22px 0px;
+}
+.custom-tumbler input:indeterminate + span {
+    background: url("../img/ui/radio_checkbox.svg") no-repeat -44px 0px;
+}
+.custom-tumbler input[disabled] + span {
+    filter: alpha(opacity=40);
+    -moz-opacity: 0.4;
+    -khtml-opacity: 0.4;
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.custom-tumbler input[type=radio] {
+    margin-top: 0;
+}
+.custom-tumbler input[type=radio] + span {
+    background: url("../img/ui/radio_checkbox.svg") no-repeat 0px -22px;
+}
+.custom-tumbler input[type=radio]:checked + span {
+    background: url("../img/ui/radio_checkbox.svg") no-repeat -22px -22px;
+}
+.node-box .custom-tumbler {
+    margin: 12px;
+}

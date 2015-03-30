@@ -69,9 +69,17 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                 elements.push(<StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />);
             }
             return (
-                <div>
-                    <h3 className='page-title'>{i18n('support_page.title')}</h3>
-                    <div className='support-page page-wrapper'>{elements}</div>
+                <div className='support-page'>
+                    <div className='page-title'>
+                        <h1 className='title'>{i18n('support_page.title')}</h1>
+                    </div>
+                    <div className='content-box'>
+                        {_.reduce(elements, function(result, element, index) {
+                            if (index) result.push(<hr key={index} />);
+                            result.push(element);
+                            return result;
+                        }, [])}
+                    </div>
                 </div>
             );
         }
@@ -80,14 +88,13 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
     var SupportPageElement = React.createClass({
         render: function() {
             return (
-                <div className='row-fluid'>
-                    <div className={'span2 img ' + this.props.className}></div>
-                    <div className='span10 el-inner'>
-                        <h4>{this.props.title}</h4>
+                <div className='support-box'>
+                    <div className={'support-box-cover ' + this.props.className}></div>
+                    <div className='support-box-content'>
+                        <h3>{this.props.title}</h3>
                         <p>{this.props.text}</p>
                         {this.props.children}
                     </div>
-                    <hr/>
                 </div>
             );
         }
@@ -103,7 +110,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                     text={i18n(ns + 'text')}
                 >
                     <p>
-                        <a className='btn' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
+                        <a className='btn btn-default' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
                             {i18n('support_page.documentation_link')}
                         </a>
                     </p>
@@ -292,9 +299,10 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                     text={i18n('support_page.log_text')}
                 >
                     <p className='snapshot'>
-                        <button className='btn' disabled={generating} onClick={this.downloadLogs}>
+                        <button className='btn btn-default' disabled={generating} onClick={this.downloadLogs}>
                             {generating ? i18n('support_page.gen_logs_snapshot_text') : i18n('support_page.gen_diagnostic_snapshot_text')}
                         </button>
+                        {' '}
                         {!generating && task &&
                             <span className={task.get('status')}>
                                 {task.match({status: 'ready'}) &&
@@ -321,7 +329,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                     text={i18n('support_page.capacity_audit_text')}
                 >
                     <p>
-                        <a className='btn' href='#capacity'>
+                        <a className='btn btn-default' href='#capacity'>
                             {i18n('support_page.view_capacity_audit')}
                         </a>
                     </p>
@@ -352,7 +360,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                         {_.map(sortedSettings, this.renderInput, this)}
                     </div>
                     <p>
-                        <a className='btn' disabled={this.state.actionInProgress || !this.hasChanges()} onClick={this.saveSettings}>
+                        <a className='btn btn-default' disabled={this.state.actionInProgress || !this.hasChanges()} onClick={this.saveSettings}>
                             {i18n('support_page.save_changes')}
                         </a>
                     </p>

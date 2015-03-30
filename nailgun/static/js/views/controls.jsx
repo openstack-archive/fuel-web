@@ -224,10 +224,8 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
     controls.ProgressBar = React.createClass({
         render: function() {
             return (
-                <div className='progress-bar'>
-                    <div className='progress progress-striped progress-success active'>
-                        <div className='bar'/>
-                    </div>
+                <div className='progress'>
+                    <div className='progress-bar progress-bar-striped active' style={{width: '100%'}}></div>
                 </div>
             );
         }

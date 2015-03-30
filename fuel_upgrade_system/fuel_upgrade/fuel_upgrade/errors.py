@@ -87,7 +87,3 @@ class NailgunIsNotRunningError(FuelUpgradeException):
 
 class OstfIsNotRunningError(FuelUpgradeException):
     pass
-
-
-class BaseReleaseNotFound(FuelUpgradeException):
-    pass

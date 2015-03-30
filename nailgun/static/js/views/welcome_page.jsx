@@ -23,10 +23,9 @@ define(
     'models',
     'jsx!views/dialogs',
     'jsx!component_mixins',
-    'jsx!views/statistics_mixin',
-    'jsx!views/controls'
+    'jsx!views/statistics_mixin'
 ],
-function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsMixin, controls) {
+function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsMixin) {
     'use strict';
 
     var WelcomePage = React.createClass({
@@ -38,23 +37,10 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
             title: i18n('welcome_page.title'),
             hiddenLayout: true,
             fetchData: function() {
-                var remoteLoginForm = new models.MirantisLoginForm(),
-                    remoteRetrievePasswordForm = new models.MirantisRetrievePasswordForm();
-                return app.settings.fetch({cache: true}).then(function() {
-                    return {settings: app.settings, remoteLoginForm: remoteLoginForm, remoteRetrievePasswordForm: remoteRetrievePasswordForm};
+                return app.settings.fetch().then(function() {
+                    return {settings: app.settings};
                 });
             }
-        },
-        componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm;
-            remoteLoginForm.fetch()
-                .done(_.bind(function() {this.setState({loading: false});}, this))
-                .fail(_.bind(function() {
-                    remoteLoginForm.url = remoteLoginForm.nailgunUrl;
-                    remoteLoginForm.fetch()
-                        .fail(this.showResponseErrors)
-                        .always(_.bind(function() {this.setState({loading: false});}, this));
-                }, this));
         },
         getInitialState: function() {
             return {isConnected: false};
@@ -72,13 +58,6 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                     this.setState({disabled: false});
                 }, this));
         },
-        cleanConnectionForm: function() {
-            var settings = this.props.settings;
-            _.each(settings.get('tracking'), function(data, inputName) {
-                var name = settings.makePath('tracking', inputName, 'value');
-                settings.set(name, '');
-            });
-        },
         setConnected: function() {
             this.setState({isConnected: true});
         },
@@ -92,9 +71,9 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                 <div className='welcome-page'>
                     <div>
                         <h2 className='center'>{this.getText(ns + 'title')}</h2>
-                        <RegisterTrial
-                            {... _.pick(this.state, 'isConnected', 'actionInProgress', 'error', 'userData')}
-                            {... _.pick(this.props, 'settings', 'remoteRetrievePasswordForm')}
+                        <RegisterForm
+                            {... _.pick(this.state, 'isConnected', 'actionInProgress', 'error', 'userData', 'disabled')}
+                            settings={this.props.settings}
                             setConnected={this.setConnected}/>
                         {isMirantisIso ?
                             <div>
@@ -142,11 +121,13 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
         }
     });
 
-    var RegisterTrial = React.createClass({
+    var RegisterForm = React.createClass({
+        mixins: [statisticsMixin],
         getInitialState: function() {
             return {};
         },
         onChange: function(inputName, value) {
+            this.setState({error: null});
             var settings = this.props.settings,
                 name = settings.makePath('tracking', inputName, 'value');
             if (settings.validationError) delete settings.validationError['tracking.' + inputName];
@@ -155,64 +136,24 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
         shouldShowMessage: function() {
             return _.contains(app.version.get('feature_groups'), 'mirantis') && !_.contains(app.version.get('feature_groups'), 'techpreview');
         },
-        showRegistrationDialog: function() {
-            dialogs.RegistrationDialog.show({
-                registrationForm: new models.MirantisRegistrationForm(),
-                setConnected: this.props.setConnected,
-                settings: this.props.settings
-            });
-        },
-        showRetrievePasswordDialog: function() {
-            dialogs.RetrievePasswordDialog.show({
-                remoteRetrievePasswordForm: this.props.remoteRetrievePasswordForm
-            });
+        setConnected: function() {
+            this.props.setConnected();
         },
         render: function() {
             var settings = this.props.settings,
-                loginForm = this.props.settings.get('tracking'),
-                actionInProgress = this.props.actionInProgress,
-                sortedFields = _.chain(_.keys(loginForm))
-                    .without('metadata')
-                    .sortBy(function(inputName) {return loginForm[inputName].weight;})
-                    .value(),
-                error = this.props.error;
+                ns = 'welcome_page.register.';
             if (this.shouldShowMessage()) {
-                var ns = 'welcome_page.register.';
                 return (
                     <div className='register-trial'>
                         {this.props.isConnected ?
                             <div className='happy-cloud'>
                                 <div className='cloud-smile'></div>
-                                <div>{i18n(ns + 'welcome_phrase.thanks')} {this.props.settings.get('statistics').name.value}, {i18n(ns + 'welcome_phrase.content')}</div>
+                                <div>{i18n(ns + 'welcome_phrase.thanks')} {settings.get('statistics').name.value}, {i18n(ns + 'welcome_phrase.content')}</div>
                             </div>
                         :
                             <div>
                                 <p className='register_installation'>{i18n(ns + 'register_installation')}</p>
-                                {actionInProgress && <controls.ProgressBar />}
-                                {error &&
-                                    <div className='error'>
-                                        <i className='icon-attention'></i>
-                                        {error}
-                                    </div>
-                                }
-                                <div className='connection-form'>
-                                    {_.map(sortedFields, function(inputName) {
-                                        var input = loginForm[inputName],
-                                            path = 'tracking.' + inputName,
-                                            error = settings.validationError && settings.validationError[path];
-                                        return <controls.Input
-                                            ref={inputName}
-                                            key={inputName}
-                                            name={inputName}
-                                            {... _.pick(input, 'type', 'label', 'value')}
-                                            onChange={this.onChange}
-                                            error={error}/>;
-                                    }, this)}
-                                    <div className='links-container'>
-                                        <a onClick={this.showRegistrationDialog} className='create-account'>{i18n(ns + 'create_account')}</a>
-                                        <a onClick={this.showRetrievePasswordDialog} className='retrive-password'>{i18n(ns + 'retrieve_password')}</a>
-                                    </div>
-                                </div>
+                                {this.renderRegistrationForm(settings, this.props.actionInProgress, this.props.error, this.props.disabled)}
                             </div>
                         }
                     </div>

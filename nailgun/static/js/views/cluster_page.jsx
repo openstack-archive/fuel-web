@@ -142,10 +142,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 e.preventDefault();
                 dialogs.DiscardSettingsChangesDialog.show({
                     verification: this.props.cluster.tasks({group: 'network', status: 'running'}).length,
-                    cb: _.bind(function() {
+                    cb: _.bind(dispatcher.trigger, dispatcher, 'networkConfigurationUpdated', _.bind(function() {
                         this.revertChanges();
                         app.navigate(href, {trigger: true});
-                    }, this)
+                    }, this))
                 });
             }
         },
@@ -221,7 +221,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }, this);
             this.eventNamespace = 'unsavedchanges' + this.props.activeTab;
             $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
-            $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
+            $('body').on('click.' + this.eventNamespace, 'a[href^=#]', _.bind(this.onTabLeave, this));
         },
         render: function() {
             var cluster = this.props.cluster,
@@ -372,11 +372,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         onDeployRequest: function() {
             if (this.props.hasChanges()) {
-                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(function() {
+                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(dispatcher.trigger, dispatcher, 'networkConfigurationUpdated', _.bind(function() {
                     this.props.revertChanges();
                     if (this.props.activeTab == 'nodes') app.navigate('cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
                     this.showDialog(dialogs.DeployChangesDialog);
-                }, this)});
+                }, this))});
             } else {
                 this.showDialog(dialogs.DeployChangesDialog);
             }

@@ -18,10 +18,11 @@ define(
     'underscore',
     'utils',
     'models',
+    'dispatcher',
     'jsx!views/dialogs',
     'views/cluster_page_tabs/nodes_tab_screens/screen'
 ],
-function(_, utils, models, dialogs, Screen) {
+function(_, utils, models, dispatcher, dialogs, Screen) {
     'use strict';
     var EditNodeScreen;
 
@@ -33,7 +34,7 @@ function(_, utils, models, dialogs, Screen) {
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(this.goToNodeList, this)});
+                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(dispatcher.trigger, dispatcher, 'networkConfigurationUpdated', _.bind(this.goToNodeList, this))});
             } else {
                 this.goToNodeList();
             }

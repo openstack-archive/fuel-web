@@ -18,37 +18,32 @@ define(
     'jquery',
     'underscore',
     'i18n',
+    'backbone',
     'react',
     'utils',
     'jsx!views/dialogs',
     'jsx!component_mixins',
     'models',
-    'jsx!views/statistics_mixin',
-    'jsx!views/controls'
+    'jsx!views/statistics_mixin'
 ],
-function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsMixin, controls) {
+function($, _, i18n, Backbone, React, utils, dialogs, componentMixins, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('tasks'),
-            componentMixins.backboneMixin('settings')
+            componentMixins.backboneMixin('tasks')
         ],
         statics: {
             title: i18n('support_page.title'),
             navbarActiveElement: 'support',
-            breadcrumbsPath: [['home', '#'], 'support'],
+            А: [['home', '#'], 'support'],
             fetchData: function() {
-                var tasks = new models.Tasks(),
-                    remoteLoginForm = new models.MirantisLoginForm(),
-                    remoteRetrievePasswordForm = new models.MirantisRetrievePasswordForm();
-                return tasks.fetch().then(function() {
+                var tasks = new models.Tasks();
+                return $.when(app.settings.fetch(), tasks.fetch()).then(function() {
                     return {
                         tasks: tasks,
                         settings: app.settings,
-                        masterNodeUid: app.masterNodeUid,
-                        remoteLoginForm: remoteLoginForm,
-                        remoteRetrievePasswordForm: remoteRetrievePasswordForm
+                        masterNodeUid: app.masterNodeUid
                     };
                 });
             }
@@ -61,8 +56,8 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
-                    <RegistrationInfo key='RegistrationInfo' {... _.pick(this.props, 'settings', 'masterNodeUid', 'remoteLoginForm', 'remoteRetrievePasswordForm')}/>,
-                    <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />,
+                    <RegistrationInfo key='RegistrationInfo' {... _.pick(this.props, 'settings', 'masterNodeUid')}/>,
+                    <StatisticsSettings key='StatisticsSettings' settings={this.props.settings}/>,
                     <SupportContacts key='SupportContacts' />
                 );
             } else {
@@ -117,30 +112,8 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             statisticsMixin,
             componentMixins.backboneMixin('settings', 'change invalid')
         ],
-        componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm,
-                settings = this.props.settings;
-            settings.fetch()
-                .done(_.bind(function() {
-                    if (!this.isConnected()) {
-                        remoteLoginForm.fetch()
-                            .fail(_.bind(function() {
-                                remoteLoginForm.url = remoteLoginForm.nailgunUrl;
-                                remoteLoginForm.fetch()
-                                    .fail(this.showResponseErrors);
-                            }, this));
-                    } else {
-                        this.setState({isConnected: true});
-                    }
-                }, this))
-                .always(_.bind(function() {
-                    this.setState({loading: false});
-                }, this));
-        },
-        isConnected: function() {
-            return !!this.props.settings.get('tracking').email.value && !!this.props.settings.get('tracking').email.value;
-        },
         onChange: function(inputName, value) {
+            this.setState({error: null});
             var settings = this.props.settings,
                 name = settings.makePath('tracking', inputName, 'value');
             if (settings.validationError) delete settings.validationError['tracking.' + inputName];
@@ -148,18 +121,6 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
         },
         setConnected: function() {
             this.setState({isConnected: true});
-        },
-        showRegistrationDialog: function() {
-            dialogs.RegistrationDialog.show({
-                registrationForm: new models.MirantisRegistrationForm(),
-                setConnected: this.setConnected,
-                settings: this.props.settings
-            });
-        },
-        showRetrievePasswordDialog: function() {
-            dialogs.RetrievePasswordDialog.show({
-                remoteRetrievePasswordForm: this.props.remoteRetrievePasswordForm
-            });
         },
         render: function() {
             var settings = this.props.settings,
@@ -187,12 +148,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                         </p>
                     </SupportPageElement>
                 );
-            var loginForm = this.props.settings.get('tracking'),
-                sortedFields = _.chain(_.keys(loginForm))
-                    .without('metadata')
-                    .sortBy(function(inputName) {return loginForm[inputName].weight;})
-                    .value(),
-                error = this.state.error;
+            var actionInProgress = this.state.actionInProgress;
             return (
                 <SupportPageElement
                     className='img-register-fuel'
@@ -200,34 +156,9 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                     text={i18n('support_page.register_fuel_content')}
                 >
                     <div>
-                        {this.state.actionInProgress && <controls.ProgressBar />}
-                        {error &&
-                            <div className='error'>
-                                <i className='icon-attention'></i>
-                                {error}
-                            </div>
-                        }
-                        <div className='connection-form'>
-                            {_.map(sortedFields, function(inputName) {
-                                var input = loginForm[inputName],
-                                    path = 'tracking.' + inputName,
-                                    error = (settings.validationError || {})[path];
-                                return <controls.Input
-                                    ref={inputName}
-                                    key={inputName}
-                                    name={inputName}
-                                    {... _.pick(input, 'type', 'label', 'value')}
-                                    onChange={this.onChange}
-                                    error={error}/>;
-                            }, this)}
-                            <div className='links-container'>
-                                <a onClick={this.showRegistrationDialog} className='create-account'>{i18n('welcome_page.register.create_account')}</a>
-                                <a onClick={this.showRetrievePasswordDialog} className='retrive-password'>{i18n('welcome_page.register.retrieve_password')}</a>
-                            </div>
-                        </div>
-
+                        {this.renderRegistrationForm(settings, actionInProgress, this.state.error)}
                         <p>
-                            <a className='btn registration-link' onClick={this.connectToMirantis} target='_blank'>
+                            <a className='btn registration-link' onClick={this.connectToMirantis} disabled={actionInProgress} target='_blank'>
                                 {i18n('support_page.register_fuel_title')}
                             </a>
                         </p>
@@ -335,12 +266,34 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             statisticsMixin,
             componentMixins.backboneMixin('settings')
         ],
+        onBeforeunloadEvent: function() {
+            if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
+        },
+        onPageLeave: function(e) {
+            var href = $(e.currentTarget).attr('href');
+            if (Backbone.history.getHash() != href.substr(1) && this.statisticsCheckboxesHasChanges()) {
+                e.preventDefault();
+                dialogs.DiscardSettingsChangesDialog.show({cb: function() {app.navigate(href, {trigger: true});}});
+            }
+        },
+        componentWillMount: function() {
+            $(window).on('beforeunload.support', _.bind(this.onBeforeunloadEvent, this));
+            $('body').on('click.support', 'a[href^=#]', _.bind(this.onPageLeave, this));
+        },
+        componentWillUnmount: function() {
+            $(window).off('beforeunload.support');
+            $('body').off('click.support');
+        },
+        onSaveButtonClick: function(e) {
+            if (e) e.preventDefault();
+            this.prepareSettingsToSave('statistics');
+        },
         render: function() {
             if (this.state.loading) return null;
-            var settings = this.props.settings.get('statistics'),
-                sortedSettings = _.chain(_.keys(settings))
+            var statisticsSettings = this.props.settings.get('statistics'),
+                sortedSettings = _.chain(_.keys(statisticsSettings))
                     .without('metadata')
-                    .sortBy(function(settingName) {return settings[settingName].weight;}, this)
+                    .sortBy(function(settingName) {return statisticsSettings[settingName].weight;}, this)
                     .value();
             return (
                 <SupportPageElement
@@ -352,7 +305,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                         {_.map(sortedSettings, this.renderInput, this)}
                     </div>
                     <p>
-                        <a className='btn' disabled={this.state.actionInProgress || !this.hasChanges()} onClick={this.saveSettings}>
+                        <a className='btn' disabled={this.state.actionInProgress || !this.statisticsCheckboxesHasChanges()} onClick={this.onSaveButtonClick}>
                             {i18n('support_page.save_changes')}
                         </a>
                     </p>

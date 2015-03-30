@@ -253,6 +253,17 @@ class Node(NailgunObject):
         return new_attributes
 
     @classmethod
+    def interfaces_locked(cls, instance):
+        """Returns true if interfaces update is not allowed.
+        It is not allowed during provision/deployment, after
+        successful provision/deployment and during node removal.
+        """
+        return instance.status not in (
+            consts.NODE_STATUSES.discover,
+            consts.NODE_STATUSES.error,
+        )
+
+    @classmethod
     def update_interfaces(cls, instance):
         """Update interfaces for Node instance using Cluster
         network manager (see :func:`get_network_manager`)
@@ -262,8 +273,6 @@ class Node(NailgunObject):
         """
         try:
             network_manager = Cluster.get_network_manager(instance.cluster)
-
-            network_manager.check_interfaces_correctness(instance)
             network_manager.update_interfaces_info(instance)
 
             db().refresh(instance)
@@ -421,8 +430,11 @@ class Node(NailgunObject):
             # the current instance. This appears to overwrite the object in the
             # current session and we lose the meta changes.
             db().flush()
-            # smarter check needed
-            cls.update_interfaces(instance)
+            if cls.interfaces_locked(instance):
+                logger.info("Interfaces are locked for update on node %s",
+                            instance.human_readable_name)
+            else:
+                cls.update_interfaces(instance)
 
         cluster_changed = False
         if "cluster_id" in data:

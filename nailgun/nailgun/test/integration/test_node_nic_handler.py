@@ -16,7 +16,11 @@
 
 from mock import patch
 
+from copy import deepcopy
 from oslo.serialization import jsonutils
+import six
+
+from nailgun import consts
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -262,7 +266,48 @@ class TestHandlers(BaseIntegrationTest):
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
 
-    @patch('nailgun.api.v1.handlers.version.settings.VERSION', {
+    def test_NIC_locking_on_update_by_agent(self):
+        lock_vs_status = {
+            consts.NODE_STATUSES.discover: False,
+            consts.NODE_STATUSES.error: False,
+            consts.NODE_STATUSES.provisioning: True,
+            consts.NODE_STATUSES.provisioned: True,
+            consts.NODE_STATUSES.deploying: True,
+            consts.NODE_STATUSES.ready: True,
+            consts.NODE_STATUSES.removing: True}
+
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
+             'state': 'up'}])
+        self.env.create_node(api=True, meta=meta)
+        new_meta = deepcopy(meta)
+        node = self.env.nodes[0]
+
+        for status, lock in six.iteritems(lock_vs_status):
+            node.status = status
+            self.db.flush()
+
+            new_meta['interfaces'][0]['current_speed'] += 1
+            node_data = {'mac': node['mac'], 'meta': new_meta}
+            resp = self.app.put(
+                reverse('NodeAgentHandler'),
+                jsonutils.dumps(node_data),
+                headers=self.default_headers)
+            self.assertEqual(resp.status_code, 200)
+
+            resp = self.app.get(
+                reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+                headers=self.default_headers)
+            self.assertEqual(resp.status_code, 200)
+            resp_nic = resp.json_body[0]
+            new_speed = new_meta['interfaces'][0]['current_speed']
+            old_speed = meta['interfaces'][0]['current_speed']
+            self.assertEqual(resp_nic['current_speed'],
+                             old_speed if lock else new_speed)
+            meta['interfaces'][0]['current_speed'] = resp_nic['current_speed']
+
+    @patch.dict('nailgun.api.v1.handlers.version.settings.VERSION', {
         'release': '6.1'})
     def test_interface_properties_after_update_by_agent(self):
         meta = self.env.default_metadata()

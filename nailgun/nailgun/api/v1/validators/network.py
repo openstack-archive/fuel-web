@@ -259,6 +259,10 @@ class NetAssignmentValidator(BasicValidator):
                 "There is no node with ID '{0}' in DB".format(node['id']),
                 log_message=True
             )
+        if objects.Node.interfaces_locked(db_node):
+            raise errors.InvalidData(
+                "Node '{0}': Interfaces configuration can't be changed after "
+                "or during deployment.".format(db_node.id))
         interfaces = node['interfaces']
         db_interfaces = db_node.nic_interfaces
         network_group_ids = objects.Node.get_network_manager(

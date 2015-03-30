@@ -16,13 +16,13 @@
 
 casper.start().authenticate().skipWelcomeScreen();
 casper.createCluster({name: 'Test Cluster', net_provider: 'nova_network'});
-casper.loadPage('#cluster/1/network').waitForSelector('#tab-network > *');
+casper.loadPage('#cluster/1/network').waitForSelector('.network-tab > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: layout rendered');
-    this.test.assertEvalEquals(function() {return $('.radio-group input[name=net_provider]').length}, 2, 'Network manager options are presented');
+    this.test.assertEvalEquals(function() {return $('.checkbox-group input[name=net_provider]').length}, 2, 'Network manager options are presented');
     this.test.assertExists('input[value=FlatDHCPManager]:checked', 'Flat DHCP manager is chosen');
-    this.test.assertEvalEquals(function() {return $('.networks-table legend').length}, 3, 'All networks are presented');
+    this.test.assertEvalEquals(function() {return $('.network-tab h3').length}, 4, 'All networks are presented');
     this.test.assertDoesntExist('.verify-networks-btn:disabled', 'Verify networks button is enabled');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled');
 });
@@ -50,7 +50,7 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Testing cluster networks: VLAN range fields');
     this.click('input[name=net_provider]:not(:checked)');
-    this.test.assertExists('.networking-parameters input[name=range-end_fixed_networks_vlan_start]', 'VLAN range is displayed');
+    this.test.assertExists('.network-section-wrapper input[name=range-end_fixed_networks_vlan_start]', 'VLAN range is displayed');
     this.click('input[name=net_provider]:not(:checked)');
 });
 
@@ -68,14 +68,14 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Testing cluster networks: verification');
     this.click('.verify-networks-btn:not(:disabled)');
-    this.test.assertSelectorAppears('.connect-3-error',
+    this.test.assertSelectorAppears('.connect-3.error',
         ' At least two nodes are required to be in the environment for network verification.', 10000);
 });
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: verification task deletion');
     this.click('input[name=net_provider]:not(:checked)');
-    this.test.assertDoesntExist('.page-control-error-placeholder', 'Verification task was removed after settings has been changed');
+    this.test.assertDoesntExist('.page-control-box .alert', 'Verification task was removed after settings has been changed');
     this.click('input[name=net_provider]:not(:checked)');
 });
 
@@ -93,13 +93,13 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: data validation');
-    this.click('.networking-parameters input[name=fixed_networks_vlan_start]');
+    this.click('.network-section-wrapper input[name=fixed_networks_vlan_start]');
     this.click('input[name=net_provider]:not(:checked)');
-    this.test.assertExists('.networking-parameters .has-error input[name=range-start_fixed_networks_vlan_start]', 'Field validation has worked');
+    this.test.assertExists('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start]', 'Field validation has worked');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled if there is validation error');
     this.click('input[name=net_provider]:not(:checked)');
-    this.click('.networking-parameters input[name=fixed_networks_vlan_start]');
-    this.test.assertDoesntExist('.networking-parameters .has-error input[name=range-start_fixed_networks_vlan_start]', 'Field validation works properly');
+    this.click('.network-section-wrapper input[name=fixed_networks_vlan_start]');
+    this.test.assertDoesntExist('.network-section-wrapper .has-error input[name=range-start_fixed_networks_vlan_start]', 'Field validation works properly');
 });
 
 /*

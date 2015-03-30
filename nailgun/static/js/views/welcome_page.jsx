@@ -72,12 +72,12 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                 buttonProps = {
                     disabled: disabled,
                     onClick: this.onStartButtonClick,
-                    className: 'btn btn-large btn-success'
+                    className: 'btn btn-lg btn-block btn-success'
                 };
             return (
-                <div className='welcome-page'>
-                    <div>
-                        <h2 className='center'>{this.getText(ns + 'title')}</h2>
+                <div className='welcome-page tracking'>
+                    <div className='col-md-8 col-md-offset-2 col-xs-10 col-xs-offset-1'>
+                        <h1 className='text-center'>{this.getText(ns + 'title')}</h1>
                         {isMirantisIso ?
                             <div>
                                 {!_.contains(featureGroups, 'techpreview') &&
@@ -85,7 +85,9 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                                         {this.state.isConnected ?
                                             <div className='happy-cloud'>
                                                 <div className='cloud-smile' />
-                                                <div>{i18n(ns + 'register.welcome_phrase.thanks')} {this.props.tracking.get('statistics').name.value}, {i18n(ns + 'register.welcome_phrase.content')}</div>
+                                                <div className='row'>
+                                                    <div className='col-xs-8 col-xs-offset-2'>{i18n(ns + 'register.welcome_phrase.thanks')} {this.props.settings.get('statistics').name.value}, {i18n(ns + 'register.welcome_phrase.content')}</div>
+                                                </div>
                                             </div>
                                         :
                                             <div>
@@ -95,9 +97,9 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                                         }
                                     </div>
                                 }
-                                {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box', disabled)}
+                                {this.renderInput('send_anonymous_statistic', 'welcome-checkbox-box', disabled)}
                                 {this.renderIntro()}
-                                {this.renderInput('send_user_info', null, 'welcome-checkbox-box', disabled)}
+                                {this.renderInput('send_user_info', 'welcome-checkbox-box', disabled)}
                                 <p>
                                     <div className='notice'>{i18n(ns + 'privacy_policy')}</div>
                                     <div><a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a></div>
@@ -106,26 +108,34 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                         :
                             <div>
                                 {this.renderIntro()}
-                                {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
+                                {this.renderInput('send_anonymous_statistic', 'welcome-checkbox-box')}
                                 <p>
                                     <div>{i18n(ns + 'statistics_collector')}</div>
                                     <div><a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a></div>
                                 </p>
                             </div>
                         }
-                        <div className='welcome-button-box'>
+                        <div className='welcome-button-box row'>
                             {this.state.isConnected || !isMirantisIso ?
-                                <button autoFocus {...buttonProps}>
-                                    {i18n(ns + 'start_fuel')}
-                                </button>
+                                <div className='col-xs-6 col-xs-offset-3'>
+                                    <button autoFocus {...buttonProps}>
+                                        {i18n(ns + 'start_fuel')}
+                                    </button>
+                                </div>
                             :
-                                <div>
-                                    <button {...buttonProps} className='btn btn-large btn-unwanted'>
-                                        {i18n(ns + 'connect_later')}
-                                    </button>
-                                    <button autoFocus {...buttonProps} onClick={this.connectToMirantis}>
-                                        {i18n(ns + 'connect_now')}
-                                    </button>
+                                <div className='col-xs-10 col-xs-offset-1'>
+                                    <div className='row'>
+                                        <div className='col-xs-6'>
+                                            <button {...buttonProps} className='btn btn-lg btn-block btn-default'>
+                                                {i18n(ns + 'connect_later')}
+                                            </button>
+                                        </div>
+                                        <div className='col-xs-6'>
+                                            <button autoFocus {...buttonProps} onClick={this.connectToMirantis}>
+                                                {i18n(ns + 'connect_now')}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             }
                         </div>

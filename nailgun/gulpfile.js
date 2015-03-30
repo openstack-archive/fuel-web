@@ -94,11 +94,16 @@ gulp.task('i18n:validate', function() {
 });
 
 gulp.task('bower:fetch', bower);
-gulp.task('bower', ['bower:fetch'], function() {
+
+gulp.task('bower:copy-main', function() {
     var bowerDir = 'static/js/libs/bower/';
     rimraf.sync(bowerDir);
     return gulp.src(mainBowerFiles({checkExistence: true}), {base: 'bower_components'})
         .pipe(gulp.dest(bowerDir));
+});
+
+gulp.task('bower', function(cb) {
+    runSequence('bower:fetch', 'bower:copy-main', cb);
 });
 
 gulp.task('jison', function() {
@@ -196,8 +201,8 @@ gulp.task('rjs', function() {
         .pipe(gulp.dest(targetDir));
 });
 
-gulp.task('build', function() {
-    runSequence('bower', 'rjs');
+gulp.task('build', function(cb) {
+    runSequence('bower', 'rjs', cb);
 });
 
 gulp.task('default', ['build']);

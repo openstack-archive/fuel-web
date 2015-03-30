@@ -541,13 +541,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         mixins: [SelectAllMixin],
         render: function() {
             return (
-                <div className='node-group'>
-                    <div className='row-fluid node-group-header'>
-                        <div className='span10'>
-                            <h4>{this.props.label} ({this.props.nodes.length})</h4>
-                        </div>
-                        {this.renderSelectAllCheckbox()}
-                    </div>
+                <div className='nodes-group'>
+                    <h4>{this.props.label} ({this.props.nodes.length})</h4>
                     <div>
                         {this.props.nodes.map(function(node) {
                             return <Node
@@ -680,6 +675,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             if (!node.get('online')) return 'offline';
             if (node.get('pending_addition')) return 'pending_addition';
             if (node.get('pending_deletion')) return 'pending_deletion';
+            // 'error' status has priority over 'discover'
+            if (node.get('status') == 'error') return 'error';
+            if (!node.get('cluster')) return 'discover';
             return node.get('status');
         },
         sortRoles: function(roles) {
@@ -688,130 +686,132 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
         },
-        renderRoleList: function(attribute) {
-            var roles = this.props.node.get(attribute);
-            if (!roles.length) return null;
-            return (
-                <ul key={attribute} className={attribute}>
-                    {_.map(this.sortRoles(roles), function(role, index) {
-                        return <li key={index}>{role}</li>;
-                    })}
-                </ul>
-            );
-        },
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
                 disabled = this.props.locked || !node.isSelectable() || this.state.actionInProgress,
-                roles = [this.renderRoleList('roles'), this.renderRoleList('pending_roles')];
-            var status = this.calculateNodeViewStatus(),
+                deployedRoles = node.get('roles'),
+                rolesToDisplay = deployedRoles.length ? deployedRoles : node.get('pending_roles'),
+                nodeProgess = _.max([node.get('progress'), 3]),
+                status = this.calculateNodeViewStatus();
+
+            // compose classes
+            var nodePanelClasses = {
+                node: true,
+                selected: this.props.checked
+            };
+            nodePanelClasses[status] = status;
+
+            var manufacturer = node.get('manufacturer'),
+                logoClasses = {
+                    'manufacturer-logo': true
+                };
+            logoClasses[manufacturer.toLowerCase()] = manufacturer;
+
+            var nameClasses = {
+                name: true,
+                semibold: !this.state.renaming
+            };
+
+            var roleClasses = {'text-green': !deployedRoles.length};
+
+            var statusClasses = {
+                    'node-status': true
+                },
                 statusClass = {
-                    offline: 'msg-offline',
-                    pending_addition: 'msg-ok',
-                    pending_deletion: 'msg-warning',
-                    removing: 'msg-warning',
-                    ready: 'msg-ok',
-                    provisioning: 'provisioning',
-                    provisioned: 'msg-provisioned',
-                    deploying: 'deploying',
-                    error: 'msg-error',
-                    discover: 'msg-discover'
-                }[status],
-                iconClass = {
-                    offline: 'icon-block',
-                    pending_addition: 'icon-ok-circle-empty',
-                    pending_deletion: 'icon-cancel-circle',
-                    removing: 'icon-cancel-circle',
-                    ready: 'icon-ok',
-                    provisioned: 'icon-install',
-                    error: 'icon-attention',
-                    discover: 'icon-ok-circle-empty'
+                    pending_addition: 'text-green',
+                    pending_deletion: 'text-orange',
+                    error: 'text-red',
+                    ready: 'text-blue',
+                    provisioning: 'text-blue',
+                    deploying: 'text-green',
+                    provisioned: 'text-blue'
                 }[status];
-            var statusClasses = {'node-status': true};
             statusClasses[statusClass] = true;
-            var logoClasses = {'node-logo': true};
-            logoClasses['manufacturer-' + node.get('manufacturer').toLowerCase()] = node.get('manufacturer');
-            var nodeBoxClasses = {'node-box': true, disabled: disabled};
-            nodeBoxClasses[status] = status;
+
             return (
-                <div className={utils.classNames({node: true, checked: this.props.checked})}>
-                    <label className={utils.classNames(nodeBoxClasses)}>
+                <div className={utils.classNames(nodePanelClasses)}>
+                    <label className='node-box'>
                         <controls.Input
                             type='checkbox'
                             name={node.id}
                             checked={this.props.checked}
                             disabled={disabled}
                             onChange={this.props.onNodeSelection}
+                            wrapperClassName='check-box'
                         />
-                        <div className='node-content'>
-                            <div className={utils.classNames(logoClasses)} />
-                            <div className='node-name-roles'>
-                                <div className='name enable-selection'>
-                                    {this.state.renaming ?
+                        <div className={utils.classNames(logoClasses)} />
+                        <div className='node-name'>
+                            <div className={utils.classNames(nameClasses)}>
+                                {this.state.renaming ?
+                                    <p>
                                         <controls.Input
                                             ref='name'
                                             type='text'
                                             defaultValue={node.get('name')}
-                                            inputClassName='node-name'
+                                            inputClassName='form-control'
                                             disabled={this.state.actionInProgress}
                                             onKeyDown={this.onNodeNameInputKeydown}
                                             autoFocus
                                         />
-                                    :
-                                        <p title={i18n(ns + 'edit_name')} onClick={!disabled && this.startNodeRenaming}>
-                                            {node.get('name') || node.get('mac')}
-                                        </p>
-                                    }
-                                </div>
-                                <div className='role-list'>
-                                    {_.compact(roles).length ? roles : i18n(ns + 'unallocated')}
-                                </div>
+                                    </p>
+                                :
+                                    <p title={i18n(ns + 'edit_name')} onClick={!disabled && this.startNodeRenaming}>
+                                        {node.get('name') || node.get('mac')}
+                                    </p>
+                                }
                             </div>
-                            <div className='node-button'>
-                                {!!node.get('cluster') && (
-                                    (this.props.locked || !node.hasChanges()) ?
-                                        <a className='btn btn-link' title={i18n(ns + 'view_logs')} href={this.getNodeLogsLink()}>
-                                            <i className='icon-logs' />
-                                        </a>
-                                    :
-                                        <button
-                                            className='btn btn-link'
-                                            title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
-                                            onClick={this.discardNodeChanges}
-                                        >
-                                            <i className='icon-back-in-time' />
-                                        </button>
-                                )}
-                            </div>
-                            <div className={utils.classNames(statusClasses)}>
-                                <div className='node-status-container'>
-                                    {_.contains(['provisioning', 'deploying'], status) &&
-                                        <div className={utils.classNames({progress: true, 'progress-success': status == 'deploying'})}>
-                                            <div className='bar' style={{width: _.max([node.get('progress'), 3]) + '%'}} />
-                                        </div>
-                                    }
-                                    <i className={iconClass} />
-                                    <span>
-                                        {i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
-                                        {status == 'offline' &&
-                                            <button onClick={this.removeNode} className='node-remove-button'>{i18n(ns + 'remove')}</button>
-                                        }
-                                    </span>
-                                </div>
-                            </div>
-                            <div className='node-details' onClick={this.showNodeDetails} />
-                            <div className='node-hardware'>
-                                <span>
-                                    {i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
-                                </span>
-                                <span>
-                                    {i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}
-                                </span>
-                                <span>
-                                    {i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}
-                                </span>
+                            <div className='role-list'>
+                                {!!rolesToDisplay.length &&
+                                    <ul>
+                                        {_.map(this.sortRoles(rolesToDisplay), function(role) {
+                                            return <li key={node.id + role} className={utils.classNames(roleClasses)}>{role}</li>;
+                                        })}
+                                    </ul>
+                                }
                             </div>
                         </div>
+                        <div className='node-action'>
+                            {!!node.get('cluster') &&
+                                ((this.props.locked || !node.hasChanges()) ?
+                                    <a className='btn btn-link' title={i18n(ns + 'view_logs')} href={this.getNodeLogsLink()}>
+                                        <i className='icon-logs' />
+                                    </a>
+                                :
+                                    <div
+                                        className='icon node-discard-changes-icon'
+                                        title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
+                                        onClick={this.discardNodeChanges}
+                                    />
+                                )
+                            }
+                        </div>
+                        <div className={utils.classNames(statusClasses)}>
+                            {_.contains(['provisioning', 'deploying'], status) ?
+                                <div className='progress'>
+                                    <div
+                                        className='progress-bar'
+                                        role='progressbar'
+                                        style={{width: nodeProgess + '%'}}
+                                    >
+                                        {nodeProgess + '%'}
+                                    </div>
+                                </div>
+                            :
+                                <div>
+                                    <span>{i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}</span>
+                                    {status == 'offline' &&
+                                        <button onClick={this.removeNode} className='node-remove-button'>{i18n(ns + 'remove')}</button>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div className='node-hardware'>
+                            <span>{i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})</span>
+                            <span>{i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}</span>
+                            <span>{i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}</span>
+                        </div>
+                        <div className='node-settings' onClick={this.showNodeDetails} />
                     </label>
                 </div>
             );

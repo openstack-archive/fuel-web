@@ -121,11 +121,11 @@ define([
         renderDeleteButton: function(index) {
             return (
                 <button
-                    className='btn btn-link btn-delete-input'
+                    className='btn btn-link'
                     onClick={this.changeRepos.bind(this, 'delete', index)}
                     disabled={this.props.disabled}
                 >
-                    <i className='icon-minus-circle' />
+                    <i className='glyphicon glyphicon-minus-sign' />
                 </button>
             );
         },
@@ -133,9 +133,9 @@ define([
             var ns = 'cluster_page.settings_tab.custom_repo_configuration.',
                 os = this.props.cluster.get('release').get('operating_system');
             return (
-                <div className='table-wrapper repos' key={this.state.key}>
+                <div className='repos' key={this.state.key}>
                     {this.props.description &&
-                        <div className='custom-description parameter-description' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(_.escape(this.props.description)))}} />
+                        <span className='help-block' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(_.escape(this.props.description)))}} />
                     }
                     {this.props.value.map(function(repo, index) {
                         var error = (this.props.error || {})[index],
@@ -145,7 +145,7 @@ define([
                                 disabled: this.props.disabled
                             };
                         return (
-                            <div className='tablerow-wrapper repo-group' key={'repo-' + index}>
+                            <div className='form-inline' key={'repo-' + index}>
                                 <controls.Input
                                     {...props}
                                     defaultValue={repo.name}
@@ -160,6 +160,7 @@ define([
                                     error={error && (error.uri ? error.name ? '' : error.uri : null)}
                                     onChange={this.changeRepos.bind(this, null)}
                                     label={index == 0 && i18n(ns + 'labels.uri')}
+                                    wrapperClassName='repo-uri'
                                 />
                                 <controls.Input
                                     {...props}
@@ -174,8 +175,8 @@ define([
                             </div>
                         );
                     }, this)}
-                    <div className='buttons' key='buttons'>
-                        <button key='addExtraRepo' className='btn' onClick={this.changeRepos.bind(this, 'add')} disabled={this.props.disabled}>
+                    <div className='buttons'>
+                        <button key='addExtraRepo' className='btn btn-default' onClick={this.changeRepos.bind(this, 'add')} disabled={this.props.disabled}>
                             {i18n(ns + 'add_repo_button')}
                         </button>
                     </div>

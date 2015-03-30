@@ -37,6 +37,8 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
             componentMixins.dispatcherMixin('updateNotifications', 'updateNotifications'),
             componentMixins.backboneMixin('user'),
             componentMixins.backboneMixin('version'),
+            componentMixins.backboneMixin('statistics'),
+            componentMixins.backboneMixin('notifications', 'add remove change:status'),
             componentMixins.pollingMixin(20)
         ],
         showChangePasswordDialog: function(e) {
@@ -72,13 +74,6 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
                 }
             }, this);
         },
-        handleBodyClick: function(e) {
-            if (_.all([this.refs.popover, this.refs.notifications], function(component) {
-                return !$(e.target).closest(component.getDOMNode()).length;
-            })) {
-                _.defer(_.partial(this.togglePopover, false));
-            }
-        },
         getDefaultProps: function() {
             return {
                 notificationsDisplayCount: 5,
@@ -95,92 +90,62 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
             };
         },
         render: function() {
+            var unreadNotificationsCount = this.props.notifications.where({status: 'unread'}).length;
             return (
-                <div>
-                    <div className='user-info-box'>
-                        {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
-                            <div>
-                                <i className='icon-user'></i>
-                                <span className='username'>{this.props.user.get('username')}</span>
-                                <a className='change-password' onClick={this.showChangePasswordDialog}>{i18n('common.change_password')}</a>
-                                <a href='#logout'>{i18n('common.logout')}</a>
+                <div className='navigation-box'>
+                    <div className='navbar-bg'></div>
+                    <div className='row'>
+                        <nav className='navbar navbar-default' role='navigation'>
+                            <div className='container-fluid'>
+                                <div className='navbar-header'>
+                                    <a className='navbar-logo' href='#'></a>
+                                </div>
+                                <ul className='nav navbar-nav'>
+                                    {_.map(this.props.elements, function(element) {
+                                        return (
+                                            <li className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} key={element.label}>
+                                                <a href={element.url}>
+                                                    {i18n('navbar.' + element.label, {defaultValue: element.label})}
+                                                </a>
+                                            </li>
+                                        );
+                                    }, this)}
+                                </ul>
+                                <ul className='nav navbar-icons navbar-right'>
+                                    <li className='lang-icon'><div className='lang-text'>EN</div></li>
+                                    <li className={'usage-icon ' + (this.props.statistics.get('unallocated') ? '' : 'no-unallocated')}>
+                                        {!!this.props.statistics.get('unallocated') &&
+                                            <div className='unallocated'>{this.props.statistics.get('unallocated')}</div>
+                                        }
+                                        <div className='total'>{this.props.statistics.get('total')}</div>
+                                    </li>
+                                    {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
+                                        <li className='user-icon'></li>
+                                    }
+                                    <li className='notice-icon' ref='notifications' onClick={this.togglePopover}>
+                                        {unreadNotificationsCount ? <span className='badge'>{unreadNotificationsCount}</span> : null}
+                                        {this.state.popoverVisible &&
+                                            <NotificationsPopover ref='popover'
+                                                notifications={this.props.notifications}
+                                                displayCount={this.props.notificationsDisplayCount}
+                                                toggle={this.togglePopover}
+                                            />
+                                        }
+                                    </li>
+                                </ul>
                             </div>
-                        }
-                    </div>
-                    <div className='navigation-bar'>
-                        <div className='navigation-bar-box'>
-                            <ul className='navigation-bar-ul'>
-                                <li className='product-logo'>
-                                    <a href='#'><div className='logo'></div></a>
-                                </li>
-                                {_.map(this.props.elements, function(element) {
-                                    return <li key={element.label}>
-                                        <a className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} href={element.url}>{i18n('navbar.' + element.label, {defaultValue: element.label})}</a>
-                                    </li>;
-                                }, this)}
-                                <li className='space'></li>
-                                <Notifications ref='notifications'
-                                    notifications={this.props.notifications}
-                                    togglePopover={this.togglePopover}
-                                />
-                                <NodeStats statistics={this.props.statistics} />
-                            </ul>
-                        </div>
-                    </div>
-                    <div className='notification-wrapper'>
-                        {this.state.popoverVisible &&
-                            <NotificationsPopover ref='popover'
-                                notifications={this.props.notifications}
-                                displayCount={this.props.notificationsDisplayCount}
-                                togglePopover={this.togglePopover}
-                                handleBodyClick={this.handleBodyClick}
-                            />
-                        }
+                        </nav>
                     </div>
                 </div>
             );
         }
     });
 
-    var NodeStats = React.createClass({
-        mixins: [componentMixins.backboneMixin('statistics')],
-        render: function() {
-            return (
-                <li className='navigation-bar-icon nodes-summary-container'>
-                    <div className='statistic'>
-                        {_.map(['total', 'unallocated'], function(prop) {
-                            var value = this.props.statistics.get(prop);
-                            return _.isUndefined(value) ? '' : [
-                                <div className='stat-count'>{value}</div>,
-                                <div className='stat-title' dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n('navbar.stats.' + prop, {count: value})))}}></div>
-                            ];
-                        }, this)}
-                    </div>
-                </li>
-            );
-        }
-    });
-
-    var Notifications = React.createClass({
-        mixins: [componentMixins.backboneMixin('notifications', 'add remove change:status')],
-        render: function() {
-            var unreadNotifications = this.props.notifications.where({status: 'unread'});
-            return (
-                <li className='navigation-bar-icon notifications' onClick={this.props.togglePopover}>
-                    <i className='icon-comment'></i>
-                    {unreadNotifications.length && <span className='badge badge-warning'>{unreadNotifications.length}</span>}
-                </li>
-            );
-        }
-    });
-
     var NotificationsPopover = React.createClass({
-        mixins: [componentMixins.backboneMixin('notifications')],
-        getDefaultProps: function() {
-            return {
-                eventNamespace: 'click.click-notifications'
-            };
-        },
+        mixins: [
+            componentMixins.outerClickMixin,
+            componentMixins.backboneMixin('notifications')
+        ],
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
             node.fetch();
@@ -201,41 +166,51 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         },
         componentDidMount: function() {
             this.markAsRead();
-            $('html').on(this.props.eventNamespace, this.props.handleBodyClick);
-            Backbone.history.on('route', _.partial(this.props.togglePopover, false), this);
-        },
-        componentWillUnmount: function() {
-            $('html').off(this.props.eventNamespace);
-            Backbone.history.off('route', this.props.togglePopover, this);
         },
         getInitialState: function() {
             return {unreadNotificationsIds: []};
         },
+        renderNotification: function(notification) {
+            var notificationClasses = {
+                    'text-red': notification.get('topic') == 'error',
+                    'text-orange': notification.get('topic') == 'warning',
+                    unread: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
+                },
+                iconClass = {
+                    error: 'glyphicon-exclamation-sign',
+                    warning: 'glyphicon-warning-sign',
+                    discover: 'glyphicon-bell'
+                }[notification.get('topic')] || 'glyphicon-info-sign';
+            return (
+                <div
+                    className={'notification ' + utils.classNames(notificationClasses)}
+                    onClick={notification.get('node_id') && _.partial(this.showNodeInfo, notification.get('node_id'))}
+                >
+                    <i className={'glyphicon ' + iconClass}></i>
+                    <span dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></span>
+                </div>
+            );
+        },
         render: function() {
-            var showMore = (Backbone.history.getHash() != 'notifications') && this.props.notifications.length;
+            var showMore = Backbone.history.getHash() != 'notifications';
             var notifications = this.props.notifications.first(this.props.displayCount);
             return (
-                <div className='message-list-placeholder'>
-                    <ul className='message-list-popover'>
-                        {this.props.notifications.length ? (
-                            _.map(notifications, function(notification, index, collection) {
-                                var unread = notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id);
-                                var nodeId = notification.get('node_id');
-                                return [
-                                    <li
-                                        key={'notification' + notification.id}
-                                        className={utils.classNames({'enable-selection': true, new: unread, clickable: nodeId}) + ' ' + notification.get('topic')}
-                                        onClick={nodeId && _.bind(this.showNodeInfo, this, nodeId)}
-                                    >
-                                        <i className={{error: 'icon-attention', warning: 'icon-attention', discover: 'icon-bell'}[notification.get('topic')] || 'icon-info-circled'}></i>
-                                        <span dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></span>
-                                    </li>,
-                                    (showMore || index < (collection.length - 1)) && <li key={'divider' + notification.id} className='divider'></li>
-                                ];
-                            }, this)
-                        ) : <li key='no_notifications'>{i18n('notifications_popover.no_notifications_text')}</li>}
-                    </ul>
-                    {showMore && <div className='show-more-notifications'><a href='#notifications'>{i18n('notifications_popover.view_all_button')}</a></div>}
+                <div className='notifications-popover popover bottom in'>
+                    <div className='arrow' />
+                    <div className='popover-content'>
+                        {_.map(notifications, function(notification, index) {
+                            return [
+                                !!index && <hr />,
+                                this.renderNotification(notification)
+                            ];
+                        }, this)}
+                        {showMore &&
+                            <div className='show-more'>
+                                <hr />
+                                <a href='#notifications'>{i18n('notifications_popover.view_all_button')}</a>
+                            </div>
+                        }
+                    </div>
                 </div>
             );
         }
@@ -246,56 +221,41 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
         render: function() {
             var version = this.props.version;
             return (
-                <div id='footer'>
-                    <div className='footer-box'>
-                        {_.contains(version.get('feature_groups'), 'mirantis') &&
-                            <div>
-                                <a href='http://www.mirantis.com' target='_blank' className='footer-logo'></a>
-                                <div className='footer-copyright pull-left'>{i18n('common.copyright')}</div>
-                            </div>
-                        }
-                        {version.get('release') &&
-                            <div className='footer-version pull-right'>Version: {version.get('release')}</div>
-                        }
-                        <div className='footer-lang pull-right'>
-                            <div className='dropdown dropup'>
-                                <button className='dropdown-toggle current-locale btn btn-link' data-toggle='dropdown'>{this.getCurrentLocale().name}</button>
-                                <ul className='dropdown-menu locales'>
-                                    {_.map(this.props.locales, function(locale) {
-                                        return <li key={locale.name} onClick={_.bind(this.setLocale, this, locale)}>
-                                            <a>{locale.name}</a>
-                                        </li>;
-                                    }, this)}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+                <div className='footer'>
+                    {_.contains(version.get('feature_groups'), 'mirantis') && [
+                        <a key='logo' className="mirantis-logo-white" href='http://www.mirantis.com/' target='_blank'></a>,
+                        <div key='copyright'>{i18n('common.copyright')}</div>
+                    ]}
+                    <div key='version'>Version: {version.get('release')}</div>
                 </div>
             );
-        },
-        setLocale: function(newLocale) {
-            i18next.setLng(newLocale.locale, {});
-            window.location.reload();
-        },
-        getAvailableLocales: function() {
-            return _.map(_.keys(i18next.options.resStore).sort(), function(locale) {
-                return {locale: locale, name: i18n('language', {lng: locale})};
-            }, this);
-        },
-        getCurrentLocale: function() {
-            return _.find(this.props.locales, {locale: i18next.lng()});
-        },
-        setDefaultLocale: function() {
-            if (!this.getCurrentLocale()) {
-                i18next.setLng(this.props.locales[0].locale, {});
-            }
-        },
-        getDefaultProps: function() {
-            return {locales: this.prototype.getAvailableLocales()};
-        },
-        componentWillMount: function() {
-            this.setDefaultLocale();
         }
+
+        // FIXME(vkramskikh): restore functionality
+
+        //setLocale: function(newLocale) {
+        //    i18next.setLng(newLocale.locale, {});
+        //    window.location.reload();
+        //},
+        //getAvailableLocales: function() {
+        //    return _.map(_.keys(i18next.options.resStore).sort(), function(locale) {
+        //        return {locale: locale, name: i18n('language', {lng: locale})};
+        //    }, this);
+        //},
+        //getCurrentLocale: function() {
+        //    return _.find(this.props.locales, {locale: i18next.lng()});
+        //},
+        //setDefaultLocale: function() {
+        //    if (!this.getCurrentLocale()) {
+        //        i18next.setLng(this.props.locales[0].locale, {});
+        //    }
+        //},
+        //getDefaultProps: function() {
+        //    return {locales: this.prototype.getAvailableLocales()};
+        //},
+        //componentWillMount: function() {
+        //    this.setDefaultLocale();
+        //}
     });
 
     components.Breadcrumbs = React.createClass({
@@ -313,19 +273,19 @@ function($, _, i18n, i18next, Backbone, React, utils, models, componentMixins, d
             this.setState({path: this.getBreadcrumbsPath()});
         },
         render: function() {
-            return <div id='breadcrumbs' className='container'>
-                <ul className='breadcrumb'>
+            return (
+                <ol className='breadcrumb'>
                     {_.map(this.state.path, function(breadcrumb, index) {
                         if (_.isArray(breadcrumb)) {
                             if (breadcrumb[2]) {
                                 return <li key={index} className='active'>{breadcrumb[0]}</li>;
                             }
-                            return <li key={index}><a href={breadcrumb[1]}>{i18n('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</a><span className='divider'>/</span></li>;
+                            return <li key={index}><a href={breadcrumb[1]}><strong>{i18n('breadcrumbs.' + breadcrumb[0], {defaultValue: breadcrumb[0]})}</strong></a></li>;
                         }
                         return <li key={index} className='active'>{i18n('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
                     })}
-                </ul>
-            </div>;
+                </ol>
+            );
         }
     });
 

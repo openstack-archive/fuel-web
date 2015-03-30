@@ -25,15 +25,15 @@ define(
     'dispatcher',
     'jsx!component_mixins',
     'jsx!views/dialogs',
+    'jsx!views/cluster_page_tabs/dashboard_tab',
     'jsx!views/cluster_page_tabs/nodes_tab',
     'jsx!views/cluster_page_tabs/network_tab',
     'jsx!views/cluster_page_tabs/settings_tab',
     'jsx!views/cluster_page_tabs/logs_tab',
-    'jsx!views/cluster_page_tabs/actions_tab',
     'jsx!views/cluster_page_tabs/healthcheck_tab',
     'plugins/vmware/vmware'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, vmWare) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, DashboardTab, NodesTab, NetworkTab, SettingsTab, LogsTab, HealthCheckTab, vmWare) {
     'use strict';
 
     var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl;
@@ -188,12 +188,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         getAvailableTabs: function() {
             var tabs = [
+                {url: 'dashboard', tab: DashboardTab},
                 {url: 'nodes', tab: NodesTab},
                 {url: 'network', tab: NetworkTab},
                 {url: 'settings', tab: SettingsTab},
                 {url: 'logs', tab: LogsTab},
-                {url: 'healthcheck', tab: HealthCheckTab},
-                {url: 'actions', tab: ActionsTab}
+                {url: 'healthcheck', tab: HealthCheckTab}
             ];
             var settings = this.props.cluster.get('settings'),
                 useVCenter = settings.get('common.use_vcenter').value,

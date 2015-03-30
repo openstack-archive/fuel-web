@@ -245,12 +245,12 @@
             },
             "cluster_page": {
                 "tabs": {
+                    "dashboard": "Dashboard",
                     "nodes": "Nodes",
                     "network": "Networks",
                     "settings": "Settings",
                     "logs": "Logs",
-                    "healthcheck": "Health Check",
-                    "actions": "Actions"
+                    "healthcheck": "Health Check"
                 },
                 "nodes_tab": {
                     "roles": "Roles",
@@ -408,8 +408,9 @@
                         }
                     }
                 },
-                "actions_tab": {
-                    "title": "Actions",
+                "dashboard_tab": {
+                    "title_new": "Ready to Deploy?",
+                    "actions_title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
@@ -430,7 +431,34 @@
                     "rollback_message": "You can retry update, or rollback the environment",
                     "rename_error": {
                         "title": "Unable to Rename the Environment"
-                    }
+                    },
+                    "cluster_info_fields": {
+                        "name": "Name",
+                        "openstack_release": "Openstack Release",
+                        "operating_system": "OS",
+                        "compute": "Compute",
+                        "network": "Network",
+                        "storage_backends": "Storage Backends",
+                        "healthcheck_status": "Healthcheck Status",
+                        "cpu_cores": "CPU (Cores)",
+                        "hdd": "HDD",
+                        "ram": "RAM",
+                        "capacity": "Capacity",
+                        "statistics": "Statistics",
+                        "total": "Total Nodes",
+                        "compute": "Compute",
+                        "controller": "Controller",
+                        "storage": "Storage",
+                        "offline": "Offline",
+                        "error": "Error"
+                    },
+                    "no_nodes_warning": "You have no nodes and to deploy cluster you need to add ones",
+                    "mos_documentation": " Mirantis Openstack Documentation",
+                    "plugin_documentation": "Plugin Documentation",
+                    "technical_bulletins": "Technical Bulletins",
+                    "cluster_information": "Cluster Information",
+                    "summary": "Summary",
+                    "changes_header": "List of Changes"
                 },
                 "network_tab": {
                     "title": "Network Settings",

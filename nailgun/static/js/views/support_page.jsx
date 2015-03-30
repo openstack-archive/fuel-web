@@ -40,14 +40,12 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             breadcrumbsPath: [['home', '#'], 'support'],
             fetchData: function() {
                 var tasks = new models.Tasks(),
-                    remoteLoginForm = new models.MirantisLoginForm(),
                     remoteRetrievePasswordForm = new models.MirantisRetrievePasswordForm();
                 return tasks.fetch().then(function() {
                     return {
                         tasks: tasks,
                         settings: app.settings,
                         masterNodeUid: app.masterNodeUid,
-                        remoteLoginForm: remoteLoginForm,
                         remoteRetrievePasswordForm: remoteRetrievePasswordForm
                     };
                 });
@@ -61,7 +59,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
-                    <RegistrationInfo key='RegistrationInfo' {... _.pick(this.props, 'settings', 'masterNodeUid', 'remoteLoginForm', 'remoteRetrievePasswordForm')}/>,
+                    <RegistrationInfo key='RegistrationInfo' {... _.pick(this.props, 'settings', 'masterNodeUid', 'remoteRetrievePasswordForm')}/>,
                     <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />,
                     <SupportContacts key='SupportContacts' />
                 );
@@ -118,18 +116,9 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             componentMixins.backboneMixin('settings', 'change invalid')
         ],
         componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm,
-                settings = this.props.settings;
-            settings.fetch()
+            this.props.settings.fetch()
                 .done(_.bind(function() {
-                    if (!this.isConnected()) {
-                        remoteLoginForm.fetch()
-                            .fail(_.bind(function() {
-                                remoteLoginForm.url = remoteLoginForm.nailgunUrl;
-                                remoteLoginForm.fetch()
-                                    .fail(this.showResponseErrors);
-                            }, this));
-                    } else {
+                    if (this.isConnected()) {
                         this.setState({isConnected: true});
                     }
                 }, this))
@@ -141,6 +130,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
             return !!this.props.settings.get('tracking').email.value && !!this.props.settings.get('tracking').email.value;
         },
         onChange: function(inputName, value) {
+            this.setState({error: null});
             var settings = this.props.settings,
                 name = settings.makePath('tracking', inputName, 'value');
             if (settings.validationError) delete settings.validationError['tracking.' + inputName];
@@ -216,6 +206,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                                     ref={inputName}
                                     key={inputName}
                                     name={inputName}
+                                    disabled={this.state.actionInProgress}
                                     {... _.pick(input, 'type', 'label', 'value')}
                                     onChange={this.onChange}
                                     error={error}/>;
@@ -227,7 +218,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                         </div>
 
                         <p>
-                            <a className='btn registration-link' onClick={this.connectToMirantis} target='_blank'>
+                            <a className='btn registration-link' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
                                 {i18n('support_page.register_fuel_title')}
                             </a>
                         </p>

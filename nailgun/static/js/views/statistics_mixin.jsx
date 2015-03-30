@@ -32,16 +32,21 @@ define([
             return {
                 loading: true,
                 actionInProgress: false,
-                showItems: false
+                showItems: false,
+                remoteLoginForm: new models.MirantisLoginForm()
             };
         },
         saveSettings: function(e) {
             if (e) e.preventDefault();
+            this.setState({actionInProgress: true});
             return this.props.settings.save(null, {patch: true, wait: true, validate: false})
                 .done(this.updateInitialAttributes)
                 .fail(function(response) {
                     utils.showErrorDialog({response: response});
-                });
+                })
+                .always(_.bind(function() {
+                    this.setState({actionInProgress: false});
+                }, this));
         },
         showResponseErrors: function(response) {
             var jsonObj,
@@ -71,7 +76,7 @@ define([
             if (e) e.preventDefault();
             var settings = this.props.settings,
                 loginInfo = this.props.settings.get('tracking'),
-                remoteLoginForm = this.props.remoteLoginForm;
+                remoteLoginForm = this.state.remoteLoginForm;
             this.setState({error: null});
             if (settings.isValid({models: this.configModels})) {
                 this.setState({actionInProgress: true});

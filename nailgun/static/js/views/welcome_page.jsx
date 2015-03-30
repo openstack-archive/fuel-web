@@ -95,9 +95,9 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                                         }
                                     </div>
                                 }
-                                {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box', disabled)}
+                                {this.renderInput('send_anonymous_statistic', 'welcome-checkbox-box', disabled)}
                                 {this.renderIntro()}
-                                {this.renderInput('send_user_info', null, 'welcome-checkbox-box', disabled)}
+                                {this.renderInput('send_user_info', 'welcome-checkbox-box', disabled)}
                                 <p>
                                     <div className='notice'>{i18n(ns + 'privacy_policy')}</div>
                                     <div><a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a></div>
@@ -106,7 +106,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                         :
                             <div>
                                 {this.renderIntro()}
-                                {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
+                                {this.renderInput('send_anonymous_statistic', 'welcome-checkbox-box')}
                                 <p>
                                     <div>{i18n(ns + 'statistics_collector')}</div>
                                     <div><a href={statsCollectorLink} target='_blank'>{statsCollectorLink}</a></div>

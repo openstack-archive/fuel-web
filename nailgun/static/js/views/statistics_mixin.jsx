@@ -135,7 +135,7 @@ define([
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) return i18n(key);
             return i18n(key + '_community');
         },
-        renderInput: function(settingName, labelClassName, wrapperClassName, disabledState) {
+        renderInput: function(settingName, wrapperClassName, disabledState) {
             var model = this.props.statistics || this.props.tracking,
                 setting = model.get(model.makePath('statistics', settingName));
             if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result || setting.type == 'hidden') return null;
@@ -150,7 +150,6 @@ define([
                 value={setting.value}
                 disabled={disabled}
                 inputClassName={setting.type == 'text' && 'input-xlarge'}
-                labelClassName={labelClassName}
                 wrapperClassName={wrapperClassName}
                 onChange={this.onCheckboxChange}
                 error={error && i18n(error)}

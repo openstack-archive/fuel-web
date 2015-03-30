@@ -15,11 +15,12 @@
     "autoNumeric": "1.9.12",
     "backbone": "1.1.2",
     "backbone.stickit": "0.7.0",
-    "cocktail": "0.5.7",
     "i18next": "1.7.1",
     "backbone-deep-model": "0.10.4",
     "less": "2.4.0",
-    "jquery-ui": "~1.11.4"
+    "jquery-ui": "~1.11.4",
+    "bootstrap": "~3.3.4",
+    "open-sans-fontface": "~1.4.0"
   },
   "overrides": {
     "jquery": {
@@ -53,6 +54,14 @@
         "ui/core.js",
         "ui/mouse.js",
         "ui/widget.js"
+      ]
+    },
+    "bootstrap": {
+      "main": [
+        "dist/js/bootstrap.js",
+        "dist/css/bootstrap.css",
+        "dist/css/bootstrap.css.map",
+        "dist/fonts/*"
       ]
     }
   },

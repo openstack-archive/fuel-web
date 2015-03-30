@@ -43,16 +43,14 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                 task = cluster.task({group: 'deployment', status: 'running'}),
                 isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
             return (
-                <div className='wrapper'>
-                    <h3>{i18n('cluster_page.actions_tab.title')}</h3>
-                    <div className='row-fluid environment-actions'>
-                        <RenameEnvironmentAction cluster={cluster}/>
-                        <ResetEnvironmentAction cluster={cluster} task={task} />
-                        <DeleteEnvironmentAction cluster={cluster}/>
-                        {isExperimental &&
-                            <UpdateEnvironmentAction cluster={cluster} releases={releases} task={task}/>
-                        }
-                    </div>
+                <div className='row'>
+                    <div className='title'>{i18n('cluster_page.actions_tab.title')}</div>
+                    <RenameEnvironmentAction cluster={cluster}/>
+                    <ResetEnvironmentAction cluster={cluster} task={task} />
+                    <DeleteEnvironmentAction cluster={cluster}/>
+                    {isExperimental &&
+                        <UpdateEnvironmentAction cluster={cluster} releases={releases} task={task}/>
+                    }
                 </div>
             );
         }
@@ -60,17 +58,17 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
 
     var Action = React.createClass({
         getDefaultProps: function() {
-            return {className: 'span4'};
+            return {className: 'col-xs-12 col-md-4'};
         },
         render: function() {
             return (
-                <div className={'action-item-placeholder ' + this.props.className}>
-                    <form className='environment-action-form'>
-                        <h4>{this.props.title}</h4>
-                        <div className='action-item-controls'>
+                <div className={'action-item ' + this.props.className}>
+                    <div className='panel panel-default'>
+                        <div className='panel-heading font-bold'>{this.props.title}</div>
+                        <div className='panel-body'>
                             {this.props.children}
                         </div>
-                    </form>
+                    </div>
                 </div>
             );
         }
@@ -132,11 +130,11 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                     <div className='action-body'>
                         <input type='text'
                             disabled={this.state.disabled}
-                            className={this.state.error && 'error'}
+                            className={utils.classNames({'form-control': true, error: this.state.error})}
                             maxLength='50'
                             valueLink={valueLink}/>
                         {this.state.error &&
-                            <div className='text-error'>
+                            <div className='text-danger'>
                                 {this.state.error}
                             </div>
                         }
@@ -181,7 +179,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                         <div className='action-item-description'>
                             {i18n('cluster_page.actions_tab.' + this.getDescriptionKey())}
                         </div>
-                        {!isLocked && <div className='important action-item-description'>{i18n('cluster_page.actions_tab.reset_environment_warning')}</div>}
+                        {!isLocked && <div className='text-danger action-item-description'>{i18n('cluster_page.actions_tab.reset_environment_warning')}</div>}
                     </div>
                     <button
                         className='btn btn-danger reset-environment-btn'
@@ -203,7 +201,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
             return (
                 <Action title={i18n('cluster_page.actions_tab.delete_environment')}>
                     <div className='action-body'>
-                        <div className='action-item-description important'>
+                        <div className='action-item-description text-danger'>
                             {i18n('cluster_page.actions_tab.alert_delete')}
                         </div>
                     </div>
@@ -294,7 +292,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                     return <option value={release.id} key={release.id}>{release.get('name') + ' (' + release.get('version') + ')'}</option>;
                 }, this);
             return (
-                <Action className='span12 action-update' title={i18n('cluster_page.actions_tab.update_environment')}>
+                <Action className='col-xs-12 col-md-12 action-update' title={i18n('cluster_page.actions_tab.update_environment')}>
                     <div className='action-body'>
                         {(action == 'rollback' || releases) &&
                             <div className='action-item-description'>
@@ -306,14 +304,14 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                                 {i18n('cluster_page.actions_tab.rollback_message')}
                             </div>
                         }
+                        {action == 'update' && !isLocked && this.state.pendingReleaseId &&
+                            <select className='form-control' valueLink={this.linkState('pendingReleaseId')}>
+                                {options}
+                            </select>
+                        }
                     </div>
                     {action == 'update' &&
                         <div>
-                            {!isLocked && this.state.pendingReleaseId &&
-                                <select valueLink={this.linkState('pendingReleaseId')}>
-                                    {options}
-                                </select>
-                            }
                             <button
                                 className='btn btn-success update-environment-btn'
                                 onClick={this.updateEnvironmentAction}

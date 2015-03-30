@@ -22,8 +22,6 @@ define(
     'backbone',
     'utils',
     'models',
-    'cocktail',
-    'view_mixins',
     'text!templates/wizard/create_cluster_wizard.html',
     'text!templates/wizard/name_and_release.html',
     'text!templates/wizard/common_wizard_panel.html',
@@ -35,7 +33,7 @@ define(
     'text!templates/wizard/warning.html',
     'text!templates/wizard/text_input.html'
 ],
-function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {},
@@ -296,11 +294,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 var paneName = PaneConstructor.prototype.constructorName;
                 if (this.panesModel.get(paneName) != 'hidden') {
                     if (paneIndex == this.panesModel.get('activePaneIndex')) {
-                        this.panesModel.set(paneName, 'current');
+                        this.panesModel.set(paneName, 'active');
                     } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
                         this.panesModel.set(paneName, 'available');
                     } else {
-                        this.panesModel.set(paneName, 'unavailable');
+                        this.panesModel.set(paneName, 'disabled');
                     }
                 }
             }, this);
@@ -362,8 +360,8 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 maxAvailableStep: this.panesModel.get('maxAvailablePaneIndex')
             })).i18n();
             if (!this.modalBound) {
-                this.$el.on('hidden', _.bind(this.tearDown, this));
-                this.$el.on('shown', _.bind(function() {
+                this.$el.on('hidden.bs.modal', _.bind(this.tearDown, this));
+                this.$el.on('shown.bs.modal', _.bind(function() {
                     this.$('[autofocus]:first').focus();
                 }, this));
                 this.$el.modal({backdrop: 'static', background: true, keyboard: true});
@@ -379,6 +377,9 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
     views.WizardPane = Backbone.View.extend({
         template: _.template(commonWizardTemplate),
         constructorName: 'WizardPane',
+        events: {
+            'click span.add-on': 'togglePassword'
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.attachWarningListeners();
@@ -394,7 +395,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             }, this);
             this.wizard.cluster.on('invalid', function(model, error) {
                 _.each(error, function(message, field) {
-                    this.$('*[name=' + field + ']').closest('.control-group').addClass('error').find('.help-inline').text(message);
+                    this.$('*[name=' + field + ']').closest('.form-group').addClass('has-error').find('.help-block').text(message);
                 }, this);
                 this.wizard.panesModel.set('invalid', true);
             }, this);
@@ -585,12 +586,11 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             this.$('.form-horizontal').before(_.template(warningTemplate, {message: message}));
         },
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({}));
+            this.$('.form-group').append(this.renderControls({}));
         },
         onWizardChange: function() {
-            this.$('input.error').removeClass('error');
-            this.$('.parameter-description').removeClass('hide');
-            this.$('.validation-error').addClass('hide');
+            this.hideError();
+
             this.wizard.panesModel.set('invalid', false);
             if (this.$('input[type=text], input[type=password]').is(':focus')) {
                 this.wizard.model.isValid({
@@ -599,11 +599,32 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 });
             }
         },
+        hideError: function() {
+            this.$('.form-group.has-error').removeClass('has-error');
+            this.$('.parameter-description').removeClass('hide');
+            this.$('.validation-error').addClass('hide');
+            this.$('.help-block').html('');
+        },
+        togglePassword: function(e) {
+            var input = this.$(e.currentTarget).prev();
+            if (input.attr('disabled')) {return;}
+            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
+            this.$(e.currentTarget).find('i').toggleClass('hide');
+        },
+        addPasswordToggle: function() {
+            this.$('input[type=password]').each(function() {
+                $(this)
+                    .after('<span class="add-on"><i class="icon-eye"/><i class="icon-eye-off hide"/></span>')
+                    .addClass('input-group-addon')
+                    .parent('.parameter-control').addClass('input-append');
+            });
+        },
         render: function(options) {
             this.$el.html(this.template(options));
             this.renderCustomElements();
             this.$el.i18n();
             this.handleWarnings();
+            this.addPasswordToggle();
 
             if (!_.isUndefined(this.releases) && this.releases.length) {
                 this.releases = new Backbone.Collection(this.releases.where({is_deployable: true}));
@@ -612,7 +633,6 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             return this;
         }
     });
-    Cocktail.mixin(views.WizardPane, viewMixins.toggleablePassword);
 
     clusterWizardPanes.NameAndRelease = views.WizardPane.extend({
         constructorName: 'NameAndRelease',
@@ -626,7 +646,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             return $.Deferred()[success ? 'resolve' : 'reject']();
         },
         createCluster: function() {
-            this.$('.control-group').removeClass('error').find('.help-inline').text('');
+            this.hideError();
             var success = true;
             var name = this.wizard.model.get('NameAndRelease.name');
             var release = this.wizard.model.get('NameAndRelease.release').id;
@@ -642,8 +662,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             return success;
         },
         onInputKeydown: function() {
-            this.$('.control-group.error').removeClass('error');
-            this.$('.help-inline').html('');
+            this.hideError();
             this.wizard.panesModel.set('invalid', false);
         },
         composePaneBindings: function() {
@@ -730,7 +749,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             this.$('.mode-description').text(description);
         },
         renderCustomElements: function() {
-            this.$('.mode-control-group .span5').append(this.renderControls({labelClasses: 'setting'})).i18n();
+            this.$('.mode-form-group').append(this.renderControls({
+                labelClasses: 'setting',
+                descriptionClasses: 'col-xs-offset-3'
+            })).i18n();
             this.updateModeDescription();
         }
     });
@@ -746,7 +768,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             });
         },
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({hasDescription: true})).i18n();
+            this.$('.form-group').append(this.renderControls({
+                hasDescription: true,
+                descriptionClasses: 'col-xs-0'
+            })).i18n();
         }
     });
 
@@ -755,7 +780,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         template: _.template(networkPaneTemplate),
         title: 'dialog.create_cluster_wizard.network.title',
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({hasDescription: true}));
+            this.$('.form-group').append(this.renderControls({
+                hasDescription: true,
+                descriptionClasses: 'col-xs-offset-1'
+            }));
         }
     });
 
@@ -764,9 +792,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         template: _.template(storagePaneTemplate),
         title: 'dialog.create_cluster_wizard.storage.title',
         renderCustomElements: function() {
-            this.$('.control-group .ceph h5').after(this.renderControls({
+            this.$('.form-group .ceph h5').after(this.renderControls({
                 hasDescription: false,
-                additionalAttribute: 'ceph'
+                additionalAttribute: 'ceph',
+                descriptionClasses: 'col-xs-offset-1'
             }));
         }
     });
@@ -775,9 +804,10 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         constructorName: 'AdditionalServices',
         title: 'dialog.create_cluster_wizard.additional.title',
         renderCustomElements: function() {
-            this.$('.control-group').append(this.renderControls({
+            this.$('.form-group').append(this.renderControls({
                 hasDescription: true,
-                additionalAttribute: 'services'
+                additionalAttribute: 'services',
+                descriptionClasses: 'col-xs-offset-1'
             })).i18n();
         }
     });

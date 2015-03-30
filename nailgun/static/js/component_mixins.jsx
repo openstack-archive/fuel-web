@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['underscore', 'dispatcher', 'react', 'react.backbone'], function(_, dispatcher, React) {
+define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbone'], function($, _, Backbone, dispatcher, React) {
     'use strict';
 
     return {
@@ -59,6 +59,29 @@ define(['underscore', 'dispatcher', 'react', 'react.backbone'], function(_, disp
                     this.stopPolling();
                 }
             };
+        },
+        outerClickMixin: {
+            propTypes: {
+                toggle: React.PropTypes.func.isRequired
+            },
+            getInitialState: function() {
+                return {
+                    clickEventName: 'click.' + _.uniqueId('outer-click')
+                };
+            },
+            handleBodyClick: function(e) {
+                if (!$(e.target).closest(this.getDOMNode()).length) {
+                    _.defer(_.partial(this.props.toggle, false));
+                }
+            },
+            componentDidMount: function() {
+                $('html').on(this.state.clickEventName, this.handleBodyClick);
+                Backbone.history.on('route', _.partial(this.props.toggle, false), this);
+            },
+            componentWillUnmount: function() {
+                $('html').off(this.state.clickEventName);
+                Backbone.history.off('route', null, this);
+            }
         }
     };
 });

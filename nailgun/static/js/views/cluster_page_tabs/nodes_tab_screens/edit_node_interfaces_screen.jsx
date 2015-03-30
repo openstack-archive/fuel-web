@@ -46,7 +46,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(this.goToNodeList, this)});
+                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(dispatcher.trigger, dispatcher, 'networkConfigurationUpdated', _.bind(this.goToNodeList, this))});
             } else {
                 this.goToNodeList();
             }

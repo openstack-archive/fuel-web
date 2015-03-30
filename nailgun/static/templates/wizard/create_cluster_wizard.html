@@ -1,33 +1,39 @@
-<div class="modal-header">
-  <button type="button" class="close" data-dismiss="modal">×</button>
-  <h3 data-i18n="dialog.create_cluster_wizard.title"></h3>
-</div>
+<div id="wizard" class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close" aria-label="Close" data-dismiss="modal">
+        <span aria-hidden="true">×</span>
+      </button>
+      <h4 class="modal-title" data-i18n="dialog.create_cluster_wizard.title"></h4>
+    </div>
+    <div class="modal-body wizard-body">
+      <div class="wizard-steps-box">
+        <div class="wizard-steps-nav col-xs-3">
+          <ul class="wizard-step-nav-item nav nav-pills nav-stacked">
+            <% _.each(panesTitles, function(paneTitle, step) { %>
+              <li role="wizard-step" class="wizard-step" data-pane="<%= step %>">
+                <a><%- i18n(paneTitle) %></a>
+              </li>
+            <% }) %>
+          </ul>
+        </div>
 
-<div class="modal-body wizard-body">
-  <div class="wizard-steps-box">
-    <div class="wizard-steps-nav">
-      <ul class="wizard-step-nav-item">
-        <% _.each(panesTitles, function(paneTitle, step) { %>
-          <li class="wizard-step" data-pane="<%= step %>">
-            <%- i18n(paneTitle) %>
-          </li>
-        <% }) %>
-      </ul>
+        <div class="pane-content col-xs-9"></div>
+        <div class="clearfix"></div>
+      </div>
     </div>
 
-    <div class="wizard-steps-content">
-      <fieldset>
-        <!--<h3 class="pane-title"></h3>-->
-        <div class="pane-content"></div>
-      </fieldset>
+    <div class="modal-footer wizard-footer">
+      <button class="btn btn-default pull-left" data-dismiss="modal" data-i18n="common.cancel_button"></button>
+      <button class="btn btn-default prev-pane-btn">
+        <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+        <span data-i18n="dialog.create_cluster_wizard.prev"></span>
+      </button>
+      <button class="btn btn-default btn-success next-pane-btn">
+        <span data-i18n="dialog.create_cluster_wizard.next"></span>
+        <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+      </button>
+      <button class="btn btn-default btn-success finish-btn" data-i18n="dialog.create_cluster_wizard.create"></button>
     </div>
-    <div class="clearfix"></div>
   </div>
-</div>
-
-<div class="modal-footer wizard-footer">
-  <button class="btn pull-left" data-dismiss="modal" data-i18n="common.cancel_button"></button>
-  <button class="btn prev-pane-btn"><i class="icon-prev"></i><span data-i18n="dialog.create_cluster_wizard.prev"></span></button>
-  <button class="btn btn-success next-pane-btn"><span data-i18n="dialog.create_cluster_wizard.next"></span><i class="icon-next"></i></button>
-  <button class="btn btn-success finish-btn" data-i18n="dialog.create_cluster_wizard.create"></button>
 </div>

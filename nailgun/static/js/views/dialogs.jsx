@@ -49,13 +49,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidMount: function() {
             Backbone.history.on('route', this.close, this);
             var $el = $(this.getDOMNode());
-            $el.on('hidden', this.handleHidden);
-            $el.on('shown', function() {$el.find('[autofocus]:first').focus();});
+            $el.on('hidden.bs.modal', this.handleHidden);
+            $el.on('shown.bs.modal', function() {$el.find('[autofocus]:first').focus();});
             $el.modal({background: true, keyboard: true});
         },
         componentWillUnmount: function() {
             Backbone.history.off(null, null, this);
-            $(this.getDOMNode()).off('shown hidden');
+            $(this.getDOMNode()).off('shown.bs.modal hidden.bs.modal');
         },
         handleHidden: function() {
             React.unmountComponentAtNode(this.getDOMNode().parentNode);
@@ -80,19 +80,23 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             classes[this.props.modalClass] = this.props.modalClass;
             return (
                 <div className={utils.classNames(classes)} tabIndex="-1" onClick={this.closeOnLinkClick}>
-                    <div className='modal-header'>
-                        <button type='button' className='close' onClick={this.close}>&times;</button>
-                        <h3>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
-                    </div>
-                    <div className='modal-body'>
-                        {this.props.error ?
-                            <div className='text-error'>
-                                {this.props.message || i18n('dialog.error_dialog.warning')}
+                    <div className='modal-dialog'>
+                        <div className='modal-content'>
+                            <div className='modal-header'>
+                                <button type='button' className='close' onClick={this.close}>&times;</button>
+                                <h3>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
                             </div>
-                        : this.renderBody()}
-                    </div>
-                    <div className='modal-footer'>
-                        {this.renderFooter && !this.props.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{i18n('common.close_button')}</button>}
+                            <div className='modal-body'>
+                                {this.props.error ?
+                                    <div className='text-error'>
+                                        {this.props.message || i18n('dialog.error_dialog.warning')}
+                                    </div>
+                                : this.renderBody()}
+                            </div>
+                            <div className='modal-footer'>
+                                {this.renderFooter && !this.props.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{i18n('common.close_button')}</button>}
+                            </div>
+                        </div>
                     </div>
                 </div>
             );

@@ -20,7 +20,7 @@
  * Based on https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
 **/
 
-define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) {
+define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], function($, _, React, utils, componentMixins) {
     'use strict';
 
     var controls = {};
@@ -224,10 +224,8 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
     controls.ProgressBar = React.createClass({
         render: function() {
             return (
-                <div className='progress-bar'>
-                    <div className='progress progress-striped progress-success active'>
-                        <div className='bar'/>
-                    </div>
+                <div className='progress'>
+                    <div className='progress-bar progress-bar-striped active' style={{width: '100%'}}></div>
                 </div>
             );
         }
@@ -263,6 +261,28 @@ define(['jquery', 'underscore', 'react', 'utils'], function($, _, React, utils) 
                         })}
                     </tbody>
                 </table>
+            );
+        }
+    });
+
+    controls.Popover = React.createClass({
+        mixins: [componentMixins.outerClickMixin],
+        propTypes: {
+            className: React.PropTypes.node,
+            placement: React.PropTypes.node
+        },
+        getDefaultProps: function() {
+            return {placement: 'bottom'};
+        },
+        render: function() {
+            var classes = {'popover in': true};
+            classes[this.props.placement] = true;
+            classes[this.props.className] = true;
+            return (
+                <div className={utils.classNames(classes)}>
+                    <div className='arrow' />
+                    <div className='popover-content'>{this.props.children}</div>
+                </div>
             );
         }
     });

@@ -24,10 +24,9 @@ define(
     'models',
     'dispatcher',
     'jsx!views/controls',
-    'jsx!views/statistics_mixin',
     'jsx!component_mixins'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, statisticsMixin, componentMixins) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, componentMixins) {
     'use strict';
 
     var dialogs = {};

@@ -24,10 +24,32 @@ define([
 ], function($, _, i18next, translations) {
     'use strict';
 
-    i18next.init({resStore: translations, fallbackLng: 'en-US'});
+    var defaultLocale = 'en-US';
+
+    var i18n = _.extend(_.bind(i18next.t, i18next), {
+        getLocaleName: function(locale) {
+            return i18n('language', {lng: locale});
+        },
+        getAvailableLocales: function() {
+            return _.keys(translations).sort();
+        },
+        getCurrentLocale: function() {
+            return i18next.lng();
+        },
+        setLocale: function(locale) {
+            i18next.setLng(locale, {});
+        }
+    });
+
+    i18next.init({resStore: translations, fallbackLng: defaultLocale});
+
+    // reset locale to default if current locale is not available
+    if (!_.contains(i18n.getAvailableLocales(), i18n.getCurrentLocale())) {
+        i18n.setLocale(defaultLocale);
+    }
 
     // export global i18n variable to use in templates
-    var i18n = window.i18n = i18next.t;
+    window.i18n = i18n;
 
     return i18n;
 });

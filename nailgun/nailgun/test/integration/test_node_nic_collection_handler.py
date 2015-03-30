@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from oslo.serialization import jsonutils
 
 from nailgun import consts
@@ -82,6 +84,9 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         self.assertEquals(0, len(changes))
 
         node_id = self.env.nodes[0].id
+        # Change node status to be able to update its interfaces
+        self.env.nodes[0].status = 'discover'
+        self.db.flush()
         # Getting nics
         resp = self.env.node_nics_get(node_id)
 
@@ -93,6 +98,29 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             cluster['changes']
         )
         self.assertEquals(1, len(changes))
+
+    def test_interface_changes_locking(self):
+        lock_vs_status = {
+            consts.NODE_STATUSES.discover: False,
+            consts.NODE_STATUSES.error: False,
+            consts.NODE_STATUSES.provisioning: True,
+            consts.NODE_STATUSES.provisioned: True,
+            consts.NODE_STATUSES.deploying: True,
+            consts.NODE_STATUSES.ready: True,
+            consts.NODE_STATUSES.removing: True}
+        self.env.create_node(
+            roles=['controller'],
+        )
+        node = self.env.nodes[0]
+        for status, lock in six.iteritems(lock_vs_status):
+            node.status = status
+            self.db.flush()
+            # Getting nics
+            resp = self.env.node_nics_get(node.id)
+            # Updating nics
+            resp = self.env.node_nics_put(
+                node.id, resp.json_body, expect_errors=lock)
+            self.assertEqual(resp.status_code, 400 if lock else 200)
 
 
 class TestNodeCollectionNICsDefaultHandler(BaseIntegrationTest):

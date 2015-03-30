@@ -34,6 +34,7 @@ var mainBowerFiles = require('main-bower-files');
 var filter = require('gulp-filter');
 var react = require('gulp-react');
 var less = require('gulp-less');
+var autoprefixer = require('gulp-autoprefixer');
 var replace = require('gulp-replace');
 var jison = require('gulp-jison');
 var lintspaces = require('gulp-lintspaces');
@@ -86,7 +87,7 @@ var buildResultFilter = filter([
     'css/styles.css',
     'favicon.ico',
     'img/**',
-    'font/**',
+    '**/*.+(ttf|eot|svg|woff|woff2)',
     'plugins/**'
 ]);
 
@@ -176,6 +177,7 @@ gulp.task('rjs', function() {
         .pipe(jsxFilter.restore())
         .pipe(lessFilter)
         .pipe(less())
+        .pipe(autoprefixer())
         .pipe(lessFilter.restore())
         .pipe(jsFilter)
         // use CSS loader instead LESS loader - styles are precompiled

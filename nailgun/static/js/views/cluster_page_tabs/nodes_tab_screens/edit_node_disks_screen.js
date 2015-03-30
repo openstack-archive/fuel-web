@@ -197,20 +197,11 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
             showDiskSize: utils.showDiskSize
         },
         events: {
-            'click .toggle-volume': 'toggleEditDiskForm',
+            'click .disk-visual': 'toggleDiskFormVisibleAttribute',
             'click .close-btn': 'deleteVolume',
-            'click .use-all-allowed': 'useAllAllowedSpace'
+            'click .volume-group-use-all-allowed-btn button': 'useAllAllowedSpace'
         },
-        diskFormBindings: {
-            '.disk-form': {
-                observe: 'visible',
-                visible: true,
-                visibleFn: function($el, isVisible) {
-                    $el.collapse(isVisible ? 'show' : 'hide');
-                }
-            }
-        },
-        toggleEditDiskForm: function() {
+        toggleDiskFormVisibleAttribute: function() {
             this.diskForm.set({visible: !this.diskForm.get('visible')});
         },
         getVolumeMinimum: function(name) {
@@ -218,14 +209,14 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
         },
         checkForGroupsDeletionAvailability: function() {
             this.disk.get('volumes').each(function(volume) {
-                var name = volume.get('name');
-                this.$('.disk-visual .' + name + ' .close-btn').toggle(!this.screen.isLocked() && this.diskForm.get('visible') && volume.getMinimalSize(this.getVolumeMinimum(name)) <= 0);
+                var name = volume.get('name'),
+                    showRemoveButton = !this.screen.isLocked() && this.diskForm.get('visible') && volume.getMinimalSize(this.getVolumeMinimum(name)) <= 0;
+                this.$('.disk-visual [data-volume=' + name + '] .close-btn').toggleClass('hide', !showRemoveButton);
             }, this);
         },
         updateDisk: function() {
-            this.$('.disk-visual').removeClass('invalid');
-            this.$('input').removeClass('error').parents('.volume-group').next().text('');
-            this.$('.volume-group-error-message.common').text('');
+            this.$('.disk-utility-box .form-group').removeClass('has-error').next('.volume-group-error').text('');
+            this.$('.volume-group-error.common').text('');
             this.disk.get('volumes').each(function(volume) {
                 volume.set({size: volume.get('size')}, {validate: true, minimum: this.getVolumeMinimum(volume.get('name'))});
             }, this); // volumes validation (minimum)
@@ -238,6 +229,7 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
             this.screen.checkForChanges();
         },
         deleteVolume: function(e) {
+            e.stopPropagation();
             var volumeName = this.$(e.currentTarget).parents('.volume-group').data('volume');
             var volume = this.disk.get('volumes').findWhere({name: volumeName});
             volume.set({size: 0});
@@ -252,22 +244,19 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
             this.diskForm = new Backbone.Model({visible: false});
             this.diskForm.on('change:visible', this.checkForGroupsDeletionAvailability, this);
             this.disk.on('invalid', function(cluster, error) {
-                this.$('.disk-visual').addClass('invalid');
-                this.$('input').addClass('error');
-                this.$('.volume-group-error-message.common').text(error);
+                this.$('.disk-utility-box .form-group').addClass('has-error');
+                this.$('.volume-group-error.common').text(error);
             }, this);
             this.disk.get('volumes').each(function(volume) {
                 volume.on('change:size', this.updateDisks, this);
                 volume.on('change:size', function() {_.invoke(this.screen.subViews, 'checkForGroupsDeletionAvailability', this);}, this);
                 volume.on('invalid', function(cluster, error) {
-                    this.$('.disk-visual').addClass('invalid');
-                    this.$('input[name=' + volume.get('name') + ']').addClass('error').parents('.volume-group').next().text(error);
+                    this.$('.form-group[data-volume=' + volume.get('name') + ']').addClass('has-error').next('.volume-group-error').text(error);
                 }, this);
             }, this);
         },
         renderVolume: function(name, width, size) {
-            this.$('.disk-visual .' + name)
-                .toggleClass('hidden-titles', width < 6)
+            this.$('.disk-visual [data-volume=' + name + ']')
                 .css('width', width + '%')
                 .find('.volume-group-size').text(utils.showDiskSize(size, 2));
         },
@@ -286,7 +275,8 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
             this.disk.get('volumes').each(function(volume) {
                 var name = volume.get('name');
                 var colors = this.screen.volumesColors[name];
-                this.$('.disk-visual .' + name + ', .volume-group-box-flag.' + name).attr('style', this.volumeStylesTemplate({startColor: _.first(colors), endColor: _.last(colors)}));
+                this.$('.disk-visual [data-volume=' + name + '], .volume-group-flag.' + name)
+                    .attr('style', this.volumeStylesTemplate({startColor: _.first(colors), endColor: _.last(colors)}));
             }, this);
         },
         setupVolumesBindings: function() {
@@ -312,11 +302,9 @@ function($, _, i18n, Backbone, utils, models, EditNodeScreen, editNodeDisksScree
                 volumes: this.screen.volumes,
                 locked: this.screen.isLocked()
             }, this.templateHelpers))).i18n();
-            this.$('.disk-form').collapse({toggle: false});
             this.applyColors();
             this.renderVisualGraph();
             this.$('input').autoNumeric('init', {mDec: 0});
-            this.stickit(this.diskForm, this.diskFormBindings);
             this.setupVolumesBindings();
             return this;
         }

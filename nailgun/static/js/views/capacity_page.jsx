@@ -79,7 +79,7 @@ function(_, i18n, React, models, componentMixins, controls) {
                         tableClassName={tableClassName}
                     />
                     <controls.Table
-                        head={[{label: i18n('capacity_page.env_name'),  className: headClassName},
+                        head={[{label: i18n('capacity_page.env_name'), className: headClassName},
                             {label: i18n('capacity_page.node_count')}]}
                         body={_.map(capacityReport.environment_stats, _.values)}
                         tableClassName={tableClassName} />
@@ -87,15 +87,15 @@ function(_, i18n, React, models, componentMixins, controls) {
                         head={[{label: i18n('capacity_page.total_number_alloc_nodes'), className: headClassName},
                                 {label: i18n('capacity_page.total_number_unalloc_nodes')}]}
                         body={[[capacityReport.allocation_stats.allocated,
-                                capacityReport.allocation_stats.unallocated]] }
+                                capacityReport.allocation_stats.unallocated]]}
                         tableClassName={tableClassName} />
                     <controls.Table
-                        head={[{label: i18n('capacity_page.node_role'),  className: headClassName},
+                        head={[{label: i18n('capacity_page.node_role'), className: headClassName},
                                 {label: i18n('capacity_page.nodes_with_config')}]}
                         body={_.zip(_.keys(capacityReport.roles_stat),
                             _.values(capacityReport.roles_stat))}
                         tableClassName={tableClassName} />
-                    <a href='/api/capacity/csv'  target='_blank' className='btn btn-info'>
+                    <a href='/api/capacity/csv' target='_blank' className='btn btn-info'>
                         <i className='icon-install'></i>
                         <span>{i18n('capacity_page.download_report')}</span>
                     </a>

@@ -331,7 +331,7 @@ define([
                 } else if (resourceName == 'ht_cores') {
                     resource = this.get('meta').cpu.total;
                 } else if (resourceName == 'hdd') {
-                    resource = _.reduce(this.get('meta').disks, function(hdd, disk) {return _.isNumber(disk.size) ?  hdd + disk.size : hdd;}, 0);
+                    resource = _.reduce(this.get('meta').disks, function(hdd, disk) {return _.isNumber(disk.size) ? hdd + disk.size : hdd;}, 0);
                 } else if (resourceName == 'ram') {
                     resource = this.get('meta').memory.total;
                 } else if (resourceName == 'disks') {
@@ -1005,7 +1005,7 @@ define([
             var errors = [];
             _.each(options.config, function(attributeConfig, attribute) {
                 if (!(attributeConfig.regex && attributeConfig.regex.source)) {return;}
-                var hasNoSatisfiedRestrictions =  _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), function(restriction) {
+                var hasNoSatisfiedRestrictions = _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), function(restriction) {
                     // this probably will be changed when other controls need validation
                     return !utils.evaluateExpression(restriction.condition, {default: this}).value;
                 }, this);

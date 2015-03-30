@@ -1,4 +1,5 @@
 {
+    "esprima": "esprima-fb",
     "requireSpaceBeforeKeywords": ["else", "catch", "finally"],
     "requireParenthesesAroundIIFE": true,
     "requireSpaceAfterKeywords": ["do", "for", "if", "else", "switch", "case", "try", "while", "return", "typeof"],
@@ -27,6 +28,7 @@
     "disallowKeywords": ["with"],
     "disallowMultipleLineStrings": true,
     "disallowMultipleLineBreaks": true,
+    "disallowMultipleSpaces": true,
     "disallowMixedSpacesAndTabs": true,
     "disallowTrailingComma": true,
     "disallowKeywordsOnNewLine": ["else"],

@@ -71,10 +71,6 @@ var rjsConfig = _.merge(rjs('static/js/config.js'), {
     ]
 });
 
-var jsFiles = ['static/js/**/*.js', '!static/js/libs/**', '!static/js/expression/parser.js'];
-var jsxFiles = ['static/js/**/*.jsx', '!static/js/libs/**'];
-var styleFiles = 'static/styles/*.less';
-
 var jsFilter = filter('**/*.js');
 var jsxFilter = filter('**/*.jsx');
 var lessFilter = filter('**/*.less');
@@ -111,13 +107,12 @@ gulp.task('jison', function() {
         .pipe(gulp.dest('static/js/expression/'));
 });
 
-gulp.task('jscs:jsx', function() {
-    return gulp.src(jsxFiles)
-        .pipe(jscs(_.extend({esprima: 'esprima-fb'}, jscsConfig)));
-});
+var jsFiles = ['static/js/**/*.js', '!static/js/libs/**', '!static/js/expression/parser.js'];
+var jsxFiles = ['static/js/**/*.jsx', '!static/js/libs/**'];
+var styleFiles = 'static/styles/*.less';
 
-gulp.task('jscs:js', function() {
-    return gulp.src(jsFiles)
+gulp.task('jscs', function() {
+    return gulp.src(jsxFiles.concat(jsFiles))
         .pipe(jscs(jscsConfig));
 });
 
@@ -157,8 +152,7 @@ gulp.task('lintspaces:styles', function() {
 });
 
 gulp.task('lint', [
-    'jscs:js',
-    'jscs:jsx',
+    'jscs',
     'jshint',
     'lintspaces:js',
     'lintspaces:styles'

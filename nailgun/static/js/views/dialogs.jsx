@@ -24,10 +24,9 @@ define(
     'models',
     'dispatcher',
     'jsx!views/controls',
-    'jsx!views/statistics_mixin',
     'jsx!component_mixins'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, statisticsMixin, componentMixins) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, componentMixins) {
     'use strict';
 
     var dialogs = {};
@@ -721,7 +720,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
         proceed: function() {
             this.close();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(this.props.cb, this.props));
+            if (this.props.cb) this.props.cb();
         },
         renderBody: function() {
             var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;

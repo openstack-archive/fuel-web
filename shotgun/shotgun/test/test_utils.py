@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import StringIO
+
 from mock import call
 from mock import patch
 
@@ -68,3 +70,45 @@ class TestUtils(base.BaseTestCase):
             'tar cJvf /path/target.tar.xz -C /path target')
 
         self.assertEqual(rm_call[0][0], 'rm -r /path/target')
+
+
+class TestCCStringIO(base.BaseTestCase):
+
+    def test_no_cc(self):
+        test_string = 'some_string'
+
+        ccstring = utils.CCStringIO()
+        ccstring.write(test_string)
+
+        self.assertEqual(ccstring.getvalue(), test_string)
+
+    def test_with_one_cc(self):
+        test_string = 'some_string'
+
+        cc = StringIO.StringIO()
+        ccstring = utils.CCStringIO(cc=cc)
+        ccstring.write(test_string)
+
+        self.assertEqual(ccstring.getvalue(), test_string)
+        self.assertEqual(cc.getvalue(), test_string)
+
+    def test_with_multiple_cc(self):
+        test_string = 'some_string'
+
+        cc_a = StringIO.StringIO()
+        cc_b = StringIO.StringIO()
+        ccstring = utils.CCStringIO(cc=[cc_a, cc_b])
+        ccstring.write(test_string)
+
+        self.assertEqual(ccstring.getvalue(), test_string)
+        self.assertEqual(cc_a.getvalue(), test_string)
+        self.assertEqual(cc_b.getvalue(), test_string)
+
+    def test_with_cc_and_buffer(self):
+        buffer = 'I am here already'
+
+        cc = StringIO.StringIO()
+        ccstring = utils.CCStringIO(buffer, cc=cc)
+
+        self.assertEqual(ccstring.getvalue(), buffer)
+        self.assertEqual(cc.getvalue(), '')

@@ -51,7 +51,6 @@ class DockerUpgrader(UpgradeEngine):
             version=self.config.docker['api_version'],
             timeout=self.config.docker['http_timeout'])
 
-        self.new_release_images = self.make_new_release_images_list()
         self.new_release_containers = self.make_new_release_containers_list()
         self.cobbler_config_path = self.config.cobbler_config_path.format(
             working_directory=self.working_directory)
@@ -153,8 +152,7 @@ class DockerUpgrader(UpgradeEngine):
             self.working_directory: 150}
 
     def _calculate_images_size(self):
-        images_list = [i['docker_image'] for i in self.new_release_images]
-        return utils.files_size(images_list)
+        return utils.files_size([self.config.images])
 
     def save_db(self):
         """Saves postgresql database into the file
@@ -256,18 +254,15 @@ class DockerUpgrader(UpgradeEngine):
         """
         logger.info(u'Start image uploading')
 
-        for image in self.new_release_images:
-            logger.debug(u'Try to upload docker image %s', image)
+        if not os.path.exists(self.config.images):
+            logger.warn(u'Cannot find docker images "%s"', self.config.images)
+            return
 
-            docker_image = image['docker_image']
-            if not os.path.exists(docker_image):
-                logger.warn(u'Cannot find docker image "%s"', docker_image)
-                continue
-            # NOTE(eli): docker-py binding
-            # doesn't have equal call for
-            # image importing which equals to
-            # `docker load`
-            utils.exec_cmd(u'docker load < "{0}"'.format(docker_image))
+        # NOTE(eli): docker-py binding
+        # doesn't have equal call for
+        # image importing which equals to
+        # `docker load`
+        utils.exec_cmd(u'docker load -i "{0}"'.format(self.config.images))
 
     def create_and_start_new_containers(self):
         """Create containers in the right order
@@ -438,27 +433,6 @@ class DockerUpgrader(UpgradeEngine):
         """
         self.supervisor.switch_to_new_configs()
 
-    def build_images(self):
-        """Use docker API to build new containers
-        """
-        self.remove_new_release_images()
-
-        for image in self.new_release_images:
-            logger.info(u'Start image building: %s', image)
-            self.docker_client.build(
-                path=image['docker_file'],
-                tag=image['name'],
-                nocache=True)
-
-            # NOTE(eli): 0.10 and early versions of
-            # Docker api dont't return correct http
-            # response in case of failed build, here
-            # we check if build succed and raise error
-            # if it failed i.e. image was not created
-            if not self.docker_client.images(name=image):
-                raise errors.DockerFailedToBuildImageError(
-                    u'Failed to build image {0}'.format(image))
-
     def volumes_dependencies(self, container):
         """Get list of `volumes` dependencies
 
@@ -609,55 +583,16 @@ class DockerUpgrader(UpgradeEngine):
         return u'{0}{1}-{2}'.format(
             self.config.container_prefix, version, container_id)
 
-    def make_new_release_images_list(self):
-        """Returns list of dicts with information
-        for new images.
-        """
-        new_images = []
-
-        for image in self.config.images:
-            new_image = deepcopy(image)
-            new_image['name'] = self.make_image_name(image['id'])
-            new_image['type'] = image['type']
-            new_image['docker_image'] = image['docker_image']
-            new_image['docker_file'] = image['docker_file']
-
-            new_images.append(new_image)
-
-        return new_images
-
     def make_image_name(self, image_id):
         """Makes full image name
 
         :param image_id: image id from config file
         :returns: full name
         """
-        images = filter(
-            lambda i: i['id'] == image_id,
-            self.config.images)
-
-        if not images:
-            raise errors.CannotFindImageError(
-                'Cannot find image with id: {0}'.format(image_id))
-        image = images[0]
-
-        self._check_image_type(image['type'])
-        if image['type'] == 'base':
-            return image['id']
-
         return u'{0}{1}_{2}'.format(
             self.config.image_prefix,
-            image['id'],
+            image_id,
             self.config.new_version)
-
-    def _check_image_type(self, image_type):
-        """Check if image type is valid
-        :param image_type: string, type of image
-        :raises UnsupportedImageTypeError:
-        """
-        if image_type not in ('base', 'fuel'):
-            raise errors.UnsupportedImageTypeError(
-                'Unsupported umage type: {0}'.format(image_type))
 
     def container_by_id(self, container_id):
         """Get container from new release by id
@@ -691,25 +626,6 @@ class DockerUpgrader(UpgradeEngine):
                 'Cannot find running container with name "{0}"'.format(name))
 
         return running_containers[0]['Id']
-
-    def remove_new_release_images(self):
-        """We need to remove images for current release
-        because this script can be run several times
-        and we have to delete images before images
-        building
-        """
-        # Don't remove base images because we cannot
-        # determine what version they belong to
-        images = filter(
-            lambda i: i.get('type') == 'fuel',
-            self.new_release_images)
-        image_names = [c['name'] for c in images]
-
-        for image in image_names:
-            self._delete_containers_for_image(image)
-            if self.docker_client.images(name=image):
-                logger.info(u'Remove image for new version %s', image)
-                self.docker_client.remove_image(image)
 
     def _delete_container_if_exist(self, container_name):
         """Deletes docker container if it exists

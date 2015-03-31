@@ -12,14 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from collections import namedtuple
-
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
 from nailgun.settings import settings
+from nailgun.statistics.utils import _get_attr_value
+from nailgun.statistics import WhiteListRule
 from nailgun import utils
 
 
@@ -28,9 +28,6 @@ class InstallationInfo(object):
     Master nodes, clusters, networks, e.t.c.
     Used for collecting info for fuel statistics
     """
-
-    WhiteListRule = namedtuple(
-        'WhiteListItem', ['path', 'map_to_name', 'transform_func'])
 
     attributes_white_list = (
         # ((path, to, property), 'map_to_name', transform_function)
@@ -183,32 +180,6 @@ class InstallationInfo(object):
         return plugins_info
 
     def get_attributes(self, attributes, white_list):
-
-        def _get_attr_value(path, func, attrs):
-            """Gets attribute value from 'attrs' by specified
-            'path'. In case of nested list - list of
-            of found values will be returned
-            :param path: list of keys for accessing the attribute value
-            :param func: if not None - will be applied to the value
-            :param attrs: attributes data
-            :return: found value(s)
-            """
-            for idx, p in enumerate(path):
-                if isinstance(attrs, (tuple, list)):
-                    result_list = []
-                    for cur_attr in attrs:
-                        try:
-                            value = _get_attr_value(path[idx:], func, cur_attr)
-                            result_list.append(value)
-                        except (KeyError, TypeError):
-                            pass
-                    return result_list
-                else:
-                    attrs = attrs[p]
-            if func is not None:
-                attrs = func(attrs)
-            return attrs
-
         result_attrs = {}
         for path, map_to_name, func in white_list:
             try:

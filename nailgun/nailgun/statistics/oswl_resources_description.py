@@ -12,22 +12,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.statistics import WhiteListRule
+
 
 resources_description = {
     "vm": {
         "retrieved_from_component": "nova",
         "supported_api_versions": {
             "v1.1": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "status": ["status"],
-                    "tenant_id": ["tenant_id"],
-                    "host_id": ["hostId"],
-                    "created_at": ["created"],
-                    "power_state": ["OS-EXT-STS:power_state"],
-                    "flavor_id": ["flavor", "id"],
-                    "image_id": ["image", "id"],
-                },
+                "attributes_white_list": (
+                    WhiteListRule(("id",), "id", None),
+                    WhiteListRule(("status",), "status", None),
+                    WhiteListRule(("tenant_id",), "tenant_id", None),
+                    WhiteListRule(("hostId",), "host_id", None),
+                    WhiteListRule(("created",), "created_at", None),
+                    WhiteListRule(("OS-EXT-STS:power_state",), "power_state",
+                                  None,),
+                    WhiteListRule(("flavor", "id",), "flavor_id", None),
+                    WhiteListRule(("image", "id",), "image_id", None),
+                ),
                 "resource_manager_name": "servers",
                 "additional_display_options": {
                     "search_opts": {"all_tenants": 1},
@@ -39,14 +42,15 @@ resources_description = {
         "retrieved_from_component": "nova",
         "supported_api_versions": {
             "v1.1": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "ram": ["ram"],
-                    "vcpus": ["vcpus"],
-                    "ephemeral": ["OS-FLV-EXT-DATA:ephemeral"],
-                    "disk": ["disk"],
-                    "swap": ["swap"],
-                },
+                "attributes_white_list": (
+                    WhiteListRule(("id",), "id", None),
+                    WhiteListRule(("ram",), "ram", None),
+                    WhiteListRule(("vcpus",), "vcpus", None),
+                    WhiteListRule(("OS-FLV-EXT-DATA:ephemeral",),
+                                  "ephemeral", None),
+                    WhiteListRule(("disk",), "disk", None),
+                    WhiteListRule(("swap",), "swap", None),
+                ),
                 "resource_manager_name": "flavors"
             },
         },
@@ -55,14 +59,15 @@ resources_description = {
         "retrieved_from_component": "nova",
         "supported_api_versions": {
             "v1.1": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "minDisk": ["minDisk"],
-                    "minRam": ["minRam"],
-                    "sizeBytes": ["OS-EXT-IMG-SIZE:size"],
-                    "created_at": ["created"],
-                    "updated_at": ["updated"]
-                },
+                "attributes_white_list": (
+                    WhiteListRule(("id",), "id", None),
+                    WhiteListRule(("minDisk",), "minDisk", None),
+                    WhiteListRule(("minRam",), "minRam", None),
+                    WhiteListRule(("OS-EXT-IMG-SIZE:size",), "sizeBytes",
+                                  None),
+                    WhiteListRule(("created",), "created_at", None),
+                    WhiteListRule(("updated",), "updated_at", None),
+                ),
                 "resource_manager_name": "images"
             },
         }
@@ -71,17 +76,17 @@ resources_description = {
         "retrieved_from_component": "keystone",
         "supported_api_versions": {
             "v2.0": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "enabled_flag": ["enabled"],
-                },
+                "attributes_white_list": (
+                    WhiteListRule(("id",), "id", None),
+                    WhiteListRule(("enabled",), "enabled_flag", None),
+                ),
                 "resource_manager_name": "tenants"
             },
             "v3": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "enabled_flag": ["enabled"],
-                },
+                "attributes_white_list": (
+                    WhiteListRule(("id",), "id", None),
+                    WhiteListRule(("enabled",), "enabled_flag", None),
+                ),
                 "resource_manager_name": "projects"
             },
         }
@@ -90,19 +95,19 @@ resources_description = {
         "retrieved_from_component": "keystone",
         "supported_api_versions": {
             "v2.0": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "enabled_flag": ["enabled"],
-                    "tenant_id": ["tenantId"],
-                },
+                "attributes_white_list": (
+                    WhiteListRule(("id",), "id", None),
+                    WhiteListRule(("enabled",), "enabled_flag", None),
+                    WhiteListRule(("tenantId",), "tenant_id", None),
+                ),
                 "resource_manager_name": "users"
             },
             "v3": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "enabled_flag": ["enabled"],
-                    "tenant_id": ["default_project_id"],
-                },
+                "attributes_white_list": (
+                    WhiteListRule(("id",), "id", None),
+                    WhiteListRule(("enabled",), "enabled_flag", None),
+                    WhiteListRule(("default_project_id",), "tenant_id", None),
+                ),
                 "resource_manager_name": "users"
             }
         },
@@ -111,19 +116,21 @@ resources_description = {
         "retrieved_from_component": "cinder",
         "supported_api_versions": {
             "v1": {
-                "retrieved_attr_names_mapping": {
-                    "id": ["id"],
-                    "availability_zone": ["availability_zone"],
-                    "encrypted_flag": ["encrypted"],
-                    "bootable_flag": ["bootable"],
-                    "status": ["status"],
-                    "volume_type": ["volume_type"],
-                    "size": ["size"],
-                    "host": ["os-vol-host-attr:host"],
-                    "snapshot_id": ["snapshot_id"],
-                    "attachments": ["attachments"],
-                    "tenant_id": ["os-vol-tenant-attr:tenant_id"],
-                },
+                "attributes_white_list": (
+                    WhiteListRule(("id",), "id", None),
+                    WhiteListRule(("availability_zone",), "availability_zone",
+                                  None),
+                    WhiteListRule(("encrypted",), "encrypted_flag", None),
+                    WhiteListRule(("bootable",), "bootable_flag", None),
+                    WhiteListRule(("status",), "status", None),
+                    WhiteListRule(("volume_type",), "volume_type", None),
+                    WhiteListRule(("size",), "size", None),
+                    WhiteListRule(("os-vol-host-attr:host",), "host", None),
+                    WhiteListRule(("snapshot_id",), "snapshot_id", None),
+                    WhiteListRule(("attachments",), "attachments", None),
+                    WhiteListRule(("os-vol-tenant-attr:tenant_id",),
+                                  "tenant_id", None),
+                ),
                 "resource_manager_name": "volumes",
                 "additional_display_options": {
                     "search_opts": {"all_tenants": 1},

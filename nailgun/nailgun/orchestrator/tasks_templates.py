@@ -169,7 +169,8 @@ def make_provisioning_images_task(uids, repos, provision_data):
 
     return make_shell_task(uids, {
         'parameters': {
-            'cmd': "fuel-image '{0}'".format(conf),
+            'cmd': "fa_build_image --data_driver nailgun_build_image '
+            '--input_data '{0}'".format(conf),
             'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
             'retries': 1}})
 

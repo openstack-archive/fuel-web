@@ -13,12 +13,18 @@
 # limitations under the License.
 
 import os
+import shutil
+import signal
+import tempfile
+import time
+import yaml
 
 from oslo.config import cfg
 
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import artifact_utils as au
+from fuel_agent.utils import build_utils as bu
 from fuel_agent.utils import fs_utils as fu
 from fuel_agent.utils import grub_utils as gu
 from fuel_agent.utils import lvm_utils as lu
@@ -27,11 +33,6 @@ from fuel_agent.utils import partition_utils as pu
 from fuel_agent.utils import utils
 
 opts = [
-    cfg.StrOpt(
-        'data_driver',
-        default='nailgun',
-        help='Data driver'
-    ),
     cfg.StrOpt(
         'nc_template_path',
         default='/usr/share/fuel-agent/cloud-init-templates',
@@ -62,10 +63,29 @@ opts = [
         default='.renamedrule',
         help='Substring to which file extension .rules be renamed',
     ),
+    cfg.StrOpt(
+        'image_build_dir',
+        default='/tmp',
+        help='Directory where we build images',
+    ),
+    cfg.StrOpt(
+        'image_build_suffix',
+        default='.fuel-agent-image',
+        help='Directory where we build images',
+    ),
+]
+
+cli_opts = [
+    cfg.StrOpt(
+        'data_driver',
+        default='nailgun',
+        help='Data driver'
+    ),
 ]
 
 CONF = cfg.CONF
 CONF.register_opts(opts)
+CONF.register_cli_opts(cli_opts)
 
 LOG = logging.getLogger(__name__)
 
@@ -298,41 +318,40 @@ class Manager(object):
                           (image.format, image.target_device))
                 fu.extend_fs(image.format, image.target_device)
 
-    def mount_target(self, chroot):
+    def mount_target(self, chroot, treat_mtab=True):
         LOG.debug('Mounting target file systems')
         # Here we are going to mount all file systems in partition scheme.
-        # Shorter paths earlier. We sort all mount points by their depth.
-        # ['/', '/boot', '/var', '/var/lib/mysql']
-        key = lambda x: len(x.mount.rstrip('/').split('/'))
-        for fs in sorted(self.driver.partition_scheme.fss, key=key):
+        for fs in self.driver.partition_scheme.fs_sorted_by_depth():
             if fs.mount == 'swap':
                 continue
             mount = chroot + fs.mount
             if not os.path.isdir(mount):
                 os.makedirs(mount, mode=0o755)
-            fu.mount_fs(fs.type, fs.device, mount)
-        fu.mount_bind(chroot, '/sys')
-        fu.mount_bind(chroot, '/dev')
-        fu.mount_bind(chroot, '/proc')
-        mtab = utils.execute(
-            'chroot', chroot, 'grep', '-v', 'rootfs', '/proc/mounts')[0]
-        mtab_path = chroot + '/etc/mtab'
-        if os.path.islink(mtab_path):
-            os.remove(mtab_path)
-        with open(mtab_path, 'wb') as f:
-            f.write(mtab)
+            fu.mount_fs(fs.type, str(fs.device), mount)
+
+        for path in ('/sys', '/dev', '/proc'):
+            if not os.path.isdir(chroot + path):
+                os.makedirs(chroot + path, mode=0o755)
+            fu.mount_bind(chroot, path)
+
+        if treat_mtab:
+            mtab = utils.execute(
+                'chroot', chroot, 'grep', '-v', 'rootfs', '/proc/mounts')[0]
+            mtab_path = chroot + '/etc/mtab'
+            if os.path.islink(mtab_path):
+                os.remove(mtab_path)
+            with open(mtab_path, 'wb') as f:
+                f.write(mtab)
 
     def umount_target(self, chroot):
         LOG.debug('Umounting target file systems')
-        fu.umount_fs(chroot + '/proc')
-        fu.umount_fs(chroot + '/dev')
-        fu.umount_fs(chroot + '/sys')
-        key = lambda x: len(x.mount.rstrip('/').split('/'))
-        for fs in sorted(self.driver.partition_scheme.fss,
-                         key=key, reverse=True):
+        for path in ('/proc', '/dev', '/sys'):
+            fu.umount_fs(chroot, path)
+        for fs in self.driver.partition_scheme.fs_sorted_by_depth(
+                reverse=True):
             if fs.mount == 'swap':
                 continue
-            fu.umount_fs(fs.device)
+            fu.umount_fs(chroot + fs.mount)
 
     def do_bootloader(self):
         LOG.debug('--- Installing bootloader (do_bootloader) ---')
@@ -403,3 +422,176 @@ class Manager(object):
         self.do_configdrive()
         self.do_copyimage()
         self.do_bootloader()
+        LOG.debug('--- Provisioning END (do_provisioning) ---')
+
+    def do_build_image(self):
+        LOG.debug('--- Building image (do_build_image) ---')
+        """Building OS images includes following steps
+        1) create temporary sparsed files for all images
+        2) attach them to loop devices
+        3) create file systems on these loop devices
+        4) create temporary chroot directory
+        5) mount loop devices into chroot directory
+        6) install operating system (debootstrap and apt-get)
+        7) configure OS (clean sources.list and preferences, etc.)
+        8) umount loop devices
+        9) resize file systems on loop devices
+        10) shrink temporary sparsed files (images)
+        11) containerize (gzip) temporary sparsed files
+        12) move temporary sparsed gzipped files to their final location
+        """
+        # TODO(kozhukalov): Implement metadata
+        # as a pluggable data driver
+        metadata = {}
+
+        LOG.debug('*** Preparing image space ***')
+        for image in self.driver.image_scheme.images:
+            LOG.debug('Creating temporary sparsed file for the'
+                      'image: {0}'.format(image.uri))
+            img_tmp_file = bu.create_sparsed_tmp_file(
+                dir=CONF.image_build_dir, suffix=CONF.image_build_suffix)
+            LOG.debug('Temporary file: {0}'.format(img_tmp_file))
+
+            # we need to remember those files
+            # to be able to shrink them and move in the end
+            image.img_tmp_file = img_tmp_file
+
+            LOG.debug('Looking for a free loop device')
+            image.target_device.name = bu.get_free_loop()
+
+            LOG.debug('Attaching temporary image file to free loop device')
+            bu.attach_file_to_loop(str(image.target_device), img_tmp_file)
+
+            # find fs with the same loop device object
+            # as image.target_device
+            fs = self.partition_scheme.fs_by_device(image.target_device)
+
+            LOG.debug('Creating file system on the image')
+            fu.make_fs(
+                fs_type=fs.type,
+                fs_options=fs.options,
+                fs_label=fs.label,
+                dev=str(fs.device))
+
+        LOG.debug('Creating temporary chroot directory')
+        chroot = tempfile.mkdtemp(
+            dir=CONF.image_build_dir, suffix=CONF.image_build_suffix)
+        LOG.debug('Temporary chroot: {0}'.format(chroot))
+
+        # mounting all images into chroot tree
+        self.mount_target(chroot, treat_mtab=False)
+
+        LOG.debug('*** Shipping image content ***')
+        LOG.debug('Installing operating system into image')
+        # FIXME(kozhukalov): !!! we need this part to be OS agnostic
+
+        # DEBOOTSTRAP
+        # we use first repo as the main mirror
+        uri = self.driver.operating_system.repos[0]['uri']
+        suite = self.driver.operating_system.repos[0]['suite']
+
+        LOG.debug('Preventing services from being get started')
+        bu.suppress_services_start(chroot)
+        LOG.debug('Installing base operating system using debootstrap')
+        bu.run_debootstrap(uri=uri, suite=suite, chroot=chroot)
+
+        # APT-GET
+        LOG.debug('Configuring apt inside chroot')
+        LOG.debug('Setting environment variables')
+        bu.set_apt_get_env()
+        LOG.debug('Allowing unauthenticated repos')
+        bu.pre_apt_get(chroot)
+
+        for repo in self.operating_system.repos:
+            LOG.debug('Adding repository source: name={name}, uri={uri},'
+                      'suite={suite}, section={section}'.format(
+                          name=repo.name, uri=repo.uri,
+                          suite=repo.suite, section=repo.section))
+            bu.add_apt_source(
+                name=repo.name,
+                uri=repo.uri,
+                suite=repo.suite,
+                section=repo.section,
+                chroot=chroot)
+            LOG.debug('Adding repository preference: '
+                      'name={name}, priority={priority}'.format(
+                          name=repo.name, priority=repo.priority))
+            bu.add_apt_preference(
+                name=repo.name,
+                priority=repo.priority,
+                suite=repo.suite,
+                section=repo.section,
+                chroot=chroot)
+
+            metadata.setdefault('repos',[]).append({
+                'type': 'deb',
+                'name': repo.name,
+                'uri': repo.uri,
+                'suite': repo.suite,
+                'section': repo.section,
+                'priority': repo.priority,
+                'meta': repo.meta}})
+
+        LOG.debug('Preventing services from being get started')
+        bu.suppress_services_start(chroot)
+
+        packages = self.driver.operating_system.packages
+        metadata['packages'] = packages
+
+        LOG.debug('Installing packages using apt-get: '
+                  '{0}'.format(' '.join(packages)))
+        bu.run_apt_get(chroot, packages=packages)
+
+        LOG.debug('Post-install OS configuration')
+        bu.do_post_inst(chroot)
+
+        LOG.debug('Making sure there are no running processes '
+                  'inside chroot before trying to umount chroot')
+        bu.signal_chrooted_processes(chroot, signal.SIGTERM)
+        time.sleep(2)
+        bu.signal_chrooted_processes(chroot, signal.SIGKILL)
+
+        LOG.debug('*** Finalizing image space ***')
+        # umounting all loop devices
+        self.umount_target(chroot)
+
+        for image in self.image_scheme.images:
+            LOG.debug('Deattaching loop device from file: '
+                      '{0}'.format(image.img_tmp_file))
+            bu.deattach_loop(str(image.target_device))
+            LOG.debug('Shrinking temporary image file: '
+                      '{0}'.format(image.img_tmp_file))
+            bu.shrink_sparse_file(image.img_tmp_file)
+
+            # looking for fs bound to image
+            fs = self.partition_scheme.fs_by_device(image.target_device)
+
+            raw_size = os.path.getsize(image.img_tmp_file)
+            raw_md5 = utils.calculate_md5(image.img_tmp_file, raw_size)
+
+            LOG.debug('Containerizing temporary image file')
+            img_tmp_containerized = bu.containerize(
+                image.img_tmp_file, image.container)
+            img_containerized = image.uri.split('file://', 1)[1]
+
+            # NOTE(kozhukalov): implement abstract publisher
+            LOG.debug('Moving image file to the final location')
+            shutil.move(img_tmp_containerized, img_containerized)
+
+            container_size = os.path.getsize(img_containerized)
+            container_md5 = utils.calculate_md5(
+                img_containerized, container_size)
+            metadata.setdefault('images', []).append({
+                'raw_md5': md5,
+                'raw_size': size,
+                'raw_name': None
+                'container_name': img_containerized
+                'container_md5': containerized_md5,
+                'container_size': containerized_size,
+                'container': image.container,
+                'format': image.format})
+
+        # NOTE(kozhukalov): implement abstract publisher
+        with open(self.driver.metadata_uri.split('file://', 1)[1], 'w') as f:
+            f.write(yaml.dump(metadata))
+        LOG.debug('--- Building image END (do_build_image) ---')

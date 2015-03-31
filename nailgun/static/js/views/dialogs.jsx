@@ -84,7 +84,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                     <div className='modal-body'>
                         {this.props.error ?
                             <div className='text-error'>
-                                {this.props.message || i18n('dialog.error_dialog.warning')}
+                                {this.props.response || this.props.message || i18n('dialog.error_dialog.warning')}
                             </div>
                         : this.renderBody()}
                     </div>

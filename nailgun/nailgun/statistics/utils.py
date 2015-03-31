@@ -3,7 +3,6 @@
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
 #    a copy of the License at
-#
 #         http://www.apache.org/licenses/LICENSE-2.0
 #
 #    Unless required by applicable law or agreed to in writing, software
@@ -167,29 +166,6 @@ def _get_online_controller(cluster):
     return controller
 
 
-def _get_data_from_resource_manager(resource_manager, attr_names_mapping,
-                                    additional_display_options):
-    data = []
-
-    display_options = {}
-    display_options.update(additional_display_options)
-
-    instances_list = resource_manager.list(**display_options)
-    for inst in instances_list:
-        inst_details = {}
-
-        for attr_name, attr_path in six.iteritems(attr_names_mapping):
-            obj_dict = \
-                inst.to_dict() if hasattr(inst, "to_dict") else inst.__dict__
-            inst_details[attr_name] = _get_value_from_nested_dict(
-                obj_dict, attr_path
-            )
-
-        data.append(inst_details)
-
-    return data
-
-
 def get_info_from_os_resource_manager(client_provider, resource_name):
     """Utilize clients provided by client_provider instance to retrieve
     data for resource_name, description of which is stored in
@@ -217,30 +193,68 @@ def get_info_from_os_resource_manager(client_provider, resource_name):
     resource_manager_name = matched_api["resource_manager_name"]
     resource_manager = getattr(client_inst, resource_manager_name)
 
-    attributes_names_mapping = matched_api["retrieved_attr_names_mapping"]
+    attributes_white_list = matched_api["attributes_white_list"]
 
     additional_display_options = \
         matched_api.get("additional_display_options", {})
 
     resource_info = _get_data_from_resource_manager(
         resource_manager,
-        attributes_names_mapping,
+        attributes_white_list,
         additional_display_options
     )
 
     return resource_info
 
 
-def _get_value_from_nested_dict(obj_dict, key_path):
-    if not isinstance(obj_dict, dict) or not key_path:
-        return None
+def _get_data_from_resource_manager(resource_manager, attrs_white_list_rules,
+                                    additional_display_options):
+    data = []
 
-    value = obj_dict.get(key_path[0])
+    display_options = {}
+    display_options.update(additional_display_options)
 
-    if isinstance(value, dict):
-        return _get_value_from_nested_dict(value, key_path[1:])
+    instances_list = resource_manager.list(**display_options)
+    for inst in instances_list:
+        inst_details = {}
 
-    return value
+        obj_dict = \
+            inst.to_dict() if hasattr(inst, "to_dict") else inst.__dict__
+
+        for rule in attrs_white_list_rules:
+            inst_details[rule.map_to_name] = _get_attr_value(
+                rule.path, rule.transform_func, obj_dict
+            )
+
+        data.append(inst_details)
+
+    return data
+
+
+def _get_attr_value(path, func, attrs):
+    """Gets attribute value from 'attrs' by specified
+    'path'. In case of nested list - list of
+    of found values will be returned
+    :param path: list of keys for accessing the attribute value
+    :param func: if not None - will be applied to the value
+    :param attrs: attributes data
+    :return: found value(s)
+    """
+    for idx, p in enumerate(path):
+        if isinstance(attrs, (tuple, list)):
+            result_list = []
+            for cur_attr in attrs:
+                try:
+                    value = _get_attr_value(path[idx:], func, cur_attr)
+                    result_list.append(value)
+                except (KeyError, TypeError):
+                    pass
+            return result_list
+        else:
+            attrs = attrs[p]
+    if func is not None:
+        attrs = func(attrs)
+    return attrs
 
 
 def _get_nested_attr(obj, attr_path):

@@ -64,7 +64,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         close: function() {
             $(this.getDOMNode()).modal('hide');
         },
-        showError: function(response, message) {
+        getErrorTextFromResponse: function(response, message) {
             var props = {error: true};
             props.message = utils.getResponseText(response) || message;
             this.setProps(props);
@@ -75,6 +75,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         render: function() {
             var classes = {'modal fade': true};
             classes[this.props.modalClass] = this.props.modalClass;
+
             return (
                 <div className={utils.classNames(classes)} tabIndex="-1">
                     <div className='modal-header'>
@@ -84,7 +85,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                     <div className='modal-body'>
                         {this.props.error ?
                             <div className='text-error'>
-                                {this.props.message || i18n('dialog.error_dialog.warning')}
+                                {this.props.response || this.props.message || i18n('dialog.error_dialog.warning')}
                             </div>
                         : this.renderBody()}
                     </div>
@@ -143,7 +144,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                     dispatcher.trigger('updateNodeStats');
                     this.close();
                 }, this))
-                .fail(this.showError);
+                .fail(this.getErrorTextFromResponse);
         },
         renderChangedNodeAmount: function(nodes, dictKey) {
             return nodes.length ? <div key={dictKey} className='deploy-task-name'>
@@ -257,7 +258,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
                 .always(this.close)
                 .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
-                .fail(this.showError);
+                .fail(this.getErrorTextFromResponse);
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
             return !!nodes.length && <div key={dictKey} className='deploy-task-name'>
@@ -381,7 +382,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                 .always(this.close)
                 .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
                 .fail(_.bind(function(response) {
-                    this.showError(response, i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
+                    this.getErrorTextFromResponse(response, i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
                 }, this));
         },
         renderBody: function() {
@@ -411,7 +412,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                     dispatcher.trigger('updateNodeStats updateNotifications');
                     app.navigate('#clusters', {trigger: true});
                 })
-                .fail(this.showError);
+                .fail(this.getErrorTextFromResponse);
         },
         renderBody: function() {
             return (
@@ -439,7 +440,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/reset', type: 'PUT'})
                 .always(this.close)
                 .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
-                .fail(this.showError);
+                .fail(this.getErrorTextFromResponse);
         },
         renderBody: function() {
             return (
@@ -465,7 +466,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
             var cluster = this.props.cluster;
             cluster.save({pending_release_id: this.props.pendingReleaseId || cluster.get('release_id')}, {patch: true, wait: true})
                 .always(this.close)
-                .fail(this.showError)
+                .fail(this.getErrorTextFromResponse)
                 .done(_.bind(function() {
                     dispatcher.trigger('deploymentTasksUpdated');
                     (new models.Task()).save({}, {url: _.result(cluster, 'url') + '/update', type: 'PUT'})
@@ -770,7 +771,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                     this.close();
                 }, this))
                 .fail(_.bind(function(response) {
-                    this.showError(response, i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
+                    this.getErrorTextFromResponse(response, i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
                 }, this));
         }
     });

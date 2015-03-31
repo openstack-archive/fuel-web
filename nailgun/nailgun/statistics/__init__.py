@@ -11,3 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+from collections import namedtuple
+
+
+WhiteListRule = namedtuple(
+    'WhiteListItem', ['path', 'map_to_name', 'transform_func'])

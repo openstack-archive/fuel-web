@@ -19,6 +19,7 @@ import os
 import re
 import shlex
 import socket
+from StringIO import StringIO
 import subprocess
 
 
@@ -116,3 +117,29 @@ def execute(command, to_filename=None, env=None):
             process[-2].stdout.close()
     stdout, stderr = process[-1].communicate()
     return (process[-1].returncode, stdout, stderr)
+
+
+class CCStringIO(StringIO):
+    """A "carbon copy" StringIO.
+
+    It's capable of multiplexing its writes to other buffer objects.
+
+    Taken from fabric.tests.mock_streams.CarbonCopy
+    """
+
+    def __init__(self, buffer='', writers=None):
+        """If ``writers`` is given and is a file-like object or an
+        iterable of same, it/they will be written to whenever this
+        StringIO instance is written to.
+        """
+        StringIO.__init__(self, buffer)
+        if writers is None:
+            writers = []
+        elif hasattr(writers, 'write'):
+            writers = [writers]
+        self.writers = writers
+
+    def write(self, s):
+        StringIO.write(self, s)
+        for writer in self.writers:
+            writer.write(s)

@@ -200,3 +200,8 @@ def init_http_request(url, byte_range=0):
                 'Exceeded maximum http request retries for %s' % url)
     response_obj.raise_for_status()
     return response_obj
+
+
+def makedirs_if_not_exists(path, mode=0o755):
+    if not os.path.isdir(path):
+        os.makedirs(path, mode=mode)

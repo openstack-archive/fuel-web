@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 
@@ -288,6 +290,15 @@ class PartitionScheme(object):
         found = filter(lambda x: x.device == device, self.fss)
         if found:
             return found[0]
+
+    def fs_sorted_by_depth(self, reverse=False):
+        """Getting file systems sorted by path length. Shorter paths earlier.
+        ['/', '/boot', '/var', '/var/lib/mysql']
+        :param reverse: Sort backward (Default: False)
+        """
+        def key(x):
+            return x.mount.rstrip(os.path.sep).count(os.path.sep)
+        return sorted(self.fss, key=key, reverse=reverse)
 
     def lv_by_device_name(self, device_name):
         found = filter(lambda x: x.device_name == device_name, self.lvs)

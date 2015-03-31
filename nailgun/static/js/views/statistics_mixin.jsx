@@ -72,6 +72,7 @@ define([
             var settings = this.props.settings,
                 loginInfo = this.props.settings.get('tracking'),
                 remoteLoginForm = this.props.remoteLoginForm;
+            this.setState({error: null});
             if (settings.isValid({models: this.configModels})) {
                 this.setState({actionInProgress: true});
                 _.each(loginInfo, function(data, inputName) {

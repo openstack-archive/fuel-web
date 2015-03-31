@@ -562,7 +562,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             return result;
         },
         handleWarnings: function() {
-            this.$('.alert').remove();
+            this.$('.alert:not(.alert-regular)').remove();
             var messages = [];
             _.each(this.wizard.restrictions[this.constructorName], function(paneConfig) {
                 _.each(paneConfig, function(paneRestriction) {

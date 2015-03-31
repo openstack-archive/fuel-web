@@ -1205,9 +1205,6 @@
             value: "console=ttyS0,9600 console=tty0 biosdevname=0 crashkernel=none rootdelay=90 nomodeset"
         repo_setup:
           metadata:
-            restrictions:
-              - condition: "true"
-                action: "hide"
             label: "Repositories"
             weight: 50
           repos:

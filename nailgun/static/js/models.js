@@ -546,7 +546,7 @@ define([
                     // support of custom controls
                     var CustomControl = customControls[setting.type];
                     if (CustomControl) {
-                        var error = CustomControl.validate(setting);
+                        var error = CustomControl.validate(setting, models);
                         if (error) errors[path] = error;
                         return;
                     }

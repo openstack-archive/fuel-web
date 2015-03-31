@@ -18,19 +18,24 @@ import sys
 from oslo.config import cfg
 
 from fuel_agent import manager as manager
-from fuel_agent.openstack.common import log
+from fuel_agent.openstack.common import log as logging
 from fuel_agent import version
 
-opts = [
+cli_opts = [
     cfg.StrOpt(
-        'provision_data_file',
+        'input_data_file',
         default='/tmp/provision.json',
-        help='Provision data file'
+        help='Input data file'
+    ),
+    cfg.StrOpt(
+        'input_data',
+        default='',
+        help='Input data (json string)'
     ),
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(opts)
+CONF.register_cli_opts(cli_opts)
 
 
 def provision():
@@ -53,18 +58,30 @@ def bootloader():
     main(['do_bootloader'])
 
 
+def build_image():
+    main(['do_build_image'])
+
+
 def main(actions=None):
     CONF(sys.argv[1:], project='fuel-agent',
          version=version.version_info.release_string())
-    log.setup('fuel-agent')
+    logging.setup('fuel-agent')
+    LOG = logging.getLogger(__name__)
 
-    with open(CONF.provision_data_file) as f:
-        data = json.load(f)
+    if CONF.input_data:
+        LOG.debug('Input data are given: {0}'.format(CONF.input_data))
+        data = json.loads(CONF.input_data)
+    else:
+        LOG.debug('Input data are not given and going to be '
+                  'read from {0}'.format(CONF.input_data_file))
+        with open(CONF.input_data_file) as f:
+            data = json.load(f)
 
     mgr = manager.Manager(data)
     if actions:
         for action in actions:
             getattr(mgr, action)()
+
 
 if __name__ == '__main__':
     main()

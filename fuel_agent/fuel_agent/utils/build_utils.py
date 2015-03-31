@@ -71,12 +71,12 @@ def run_apt_get(chroot, packages):
 def suppress_services_start(chroot):
     path = os.path.join(chroot, 'usr/sbin')
     if not os.path.exists(path):
-        os.makedirs(os.path.join(chroot, 'usr/bin'))
+        os.makedirs(path)
     with open(os.path.join(path, 'policy-rc.d'), 'w') as f:
         f.write('#!/bin/sh\n'
                 '# prevent any service from being started\n'
                 'exit 101\n')
-        os.fchmod(f, 0o755)
+        os.fchmod(f.fileno(), 0o755)
 
 
 def do_post_inst(chroot):
@@ -121,7 +121,11 @@ def get_free_loop(loop_count=8):
             raise errors.TooManyLoopDevices(
                 'Too many loop devices are used: %s' % loop_count)
         loop_count *= 2
-        loop_dev = utils.execute('losetup', '--find')[0].split()[0]
+        try:
+            loop_dev = utils.execute('losetup', '--find')[0].split()[0]
+        except errors.ProcessExecutionError:
+            LOG.warning('There are no free loop devices. '
+                        'We are going to try to create more of them.')
     return loop_dev
 
 

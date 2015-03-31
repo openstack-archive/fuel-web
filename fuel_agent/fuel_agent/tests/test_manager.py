@@ -35,6 +35,8 @@ CONF = cfg.CONF
 
 class TestManager(test_base.BaseTestCase):
 
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(hu, 'list_block_devices')
     def setUp(self, mock_lbd, mock_http, mock_yaml):
         super(TestManager, self).setUp()

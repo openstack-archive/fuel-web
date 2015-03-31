@@ -19,6 +19,7 @@ from oslo.config import cfg
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import artifact_utils as au
+from fuel_agent.utils import build_utils as bu
 from fuel_agent.utils import fs_utils as fu
 from fuel_agent.utils import grub_utils as gu
 from fuel_agent.utils import lvm_utils as lu
@@ -298,41 +299,39 @@ class Manager(object):
                           (image.format, image.target_device))
                 fu.extend_fs(image.format, image.target_device)
 
-    def mount_target(self, chroot):
+    def mount_target(self, chroot, treat_mtab=True):
         LOG.debug('Mounting target file systems')
         # Here we are going to mount all file systems in partition scheme.
-        # Shorter paths earlier. We sort all mount points by their depth.
-        # ['/', '/boot', '/var', '/var/lib/mysql']
-        key = lambda x: len(x.mount.rstrip('/').split('/'))
-        for fs in sorted(self.driver.partition_scheme.fss, key=key):
+        for fs in self.driver.partition_scheme.fs_sorted_by_depth():
             if fs.mount == 'swap':
                 continue
             mount = chroot + fs.mount
             if not os.path.isdir(mount):
                 os.makedirs(mount, mode=0o755)
-            fu.mount_fs(fs.type, fs.device, mount)
-        fu.mount_bind(chroot, '/sys')
-        fu.mount_bind(chroot, '/dev')
-        fu.mount_bind(chroot, '/proc')
-        mtab = utils.execute(
-            'chroot', chroot, 'grep', '-v', 'rootfs', '/proc/mounts')[0]
-        mtab_path = chroot + '/etc/mtab'
-        if os.path.islink(mtab_path):
-            os.remove(mtab_path)
-        with open(mtab_path, 'wb') as f:
-            f.write(mtab)
+            fu.mount_fs(fs.type, str(fs.device), mount)
+
+        for path in ('/sys', '/dev', '/proc'):
+            if not os.path.isdir(chroot + path):
+                os.makedirs(chroot + path, mode=0o755)
+            fu.mount_bind(chroot, path)
+
+        if treat_mtab:
+            mtab = utils.execute(
+                'chroot', chroot, 'grep', '-v', 'rootfs', '/proc/mounts')[0]
+            mtab_path = chroot + '/etc/mtab'
+            if os.path.islink(mtab_path):
+                os.remove(mtab_path)
+            with open(mtab_path, 'wb') as f:
+                f.write(mtab)
 
     def umount_target(self, chroot):
         LOG.debug('Umounting target file systems')
-        fu.umount_fs(chroot + '/proc')
-        fu.umount_fs(chroot + '/dev')
-        fu.umount_fs(chroot + '/sys')
-        key = lambda x: len(x.mount.rstrip('/').split('/'))
-        for fs in sorted(self.driver.partition_scheme.fss,
-                         key=key, reverse=True):
+        for path in ('/proc', '/dev', '/sys'):
+            fu.umount_fs(chroot, path)
+        for fs in self.driver.partition_scheme.fs_sorted_by_depth(reverse=True):
             if fs.mount == 'swap':
                 continue
-            fu.umount_fs(fs.device)
+            fu.umount_fs(chroot + fs.mount)
 
     def do_bootloader(self):
         LOG.debug('--- Installing bootloader (do_bootloader) ---')
@@ -403,3 +402,44 @@ class Manager(object):
         self.do_configdrive()
         self.do_copyimage()
         self.do_bootloader()
+
+    def do_build_image(self):
+        LOG.debug('--- Building image (do_build_image) ---')
+        # 1) create temporary sparsed files for all images
+        # 2) attach them to loop devices
+        # 3) create file systems on this loop devices
+        # 4) create temporary chroot directory
+        # 5) mount loop devices into chroot directory
+        # 6) install operating system (debootstrap and apt-get)
+
+        for image in self.driver.image_scheme.images:
+            # FIXME(kozhukalov): use real build utils methods
+
+            # temp sparsed file for the image
+            tmp_image_file = bu.create_sparsed_tmp_file()
+            # find free loop device
+            image.target_device.name = bu.get_free_loop()
+            # attach sparsed file to the loop device
+            bu.attach_file_to_loop(image.target_device.name, tmp_image_file)
+            # create file system on the loop device
+            fs = self.partition_scheme.fs_by_device(image.target_device)
+            fu.make_fs(
+                fs_type=fs.type,
+                fs_options=fs.options,
+                fs_label=fs.label,
+                dev=fs.device.name)
+
+        # create temp chroot directory
+        chroot = tempfile.mkdtemp()
+        self.mount_target(chroot, treat_mtab=False)
+        bu.run_debootstrap(
+            arch='amd64',
+            release=self.driver.operating_system.repos[0]['suite'],
+            chroot=chroot,
+            mirror_url=self.driver.operating_system.repos[0]['uri'])
+        bu.set_apt_get_env()
+        bu.suppress_udev_start(chroot)
+        bu.run_apt_get(chroot, packages=self.driver.operating_system.packages)
+
+
+        self.umount_target(chroot)

@@ -26,54 +26,72 @@ define([
 
     var customControls = {};
 
-    var repoRegexp = /^(deb|deb-src)\s+(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s+([\w\-.\/]+)(?:\s+([\w\-.\/\s]+))?$/i,
-        repoAttributes = ['type', 'uri', 'suite', 'section'],
-        repoToString = function(repo) {
-            var repoData = _.compact(repoAttributes.map(function(attribute) {return repo[attribute];}));
-            if (!repoData.length) return ''; // in case of new repo
-            return repoData.join(' ');
-        };
-
     customControls.custom_repo_configuration = React.createClass({
         statics: {
-            validate: function(setting) {
+            // validate method represented as static method to support cluster settings validation
+            validate: function(setting, models) {
                 var ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.',
-                    nameRegexp = /^[\w-]+$/;
+                    nameRegexp = /^[\w-]+$/,
+                    os = models.release.get('operating_system');
                 var errors = setting.value.map(function(repo) {
                     var error = {},
-                        value = repoToString(repo);
+                        value = this.repoToString(repo, os);
                     if (!repo.name) {
                         error.name = i18n(ns + 'empty_name');
                     } else if (!repo.name.match(nameRegexp)) {
                         error.name = i18n(ns + 'invalid_name');
                     }
-                    if (!value || !value.match(repoRegexp)) {
+                    if (!value || !value.match(this.defaultProps.repoRegexes[os])) {
                         error.uri = i18n(ns + 'invalid_repo');
                     }
-                    if (_.isNaN(repo.priority) || !(_.isNumber(repo.priority) || _.isNull(repo.priority))) {
+                    var priority = repo.priority;
+                    if (_.isNaN(priority) || !_.isNull(priority) && (!_.isNumber(priority) || os == 'CentOS' && (priority < 1 || priority > 99))) {
                         error.priority = i18n(ns + 'invalid_priority');
                     }
                     return _.isEmpty(error) ? null : error;
                 }, this);
                 return _.compact(errors).length ? errors : null;
+            },
+            repoToString: function(repo, os) {
+                var repoData = _.compact(this.defaultProps.repoAttributes[os].map(function(attribute) {return repo[attribute];}));
+                if (!repoData.length) return ''; // in case of new repo
+                return repoData.join(' ');
             }
         },
         getInitialState: function() {
             return {};
         },
+        getDefaultProps: function() {
+            return {
+                repoRegexes: {
+                    Ubuntu: /^(deb|deb-src)\s+(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s+([\w\-.\/]+)(?:\s+([\w\-.\/\s]+))?$/i,
+                    CentOS: /^(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s*$/i
+                },
+                repoAttributes: {
+                    Ubuntu: ['type', 'uri', 'suite', 'section'],
+                    CentOS: ['uri']
+                }
+            };
+        },
         changeRepos: function(method, index, value) {
             value = $.trim(value).replace(/\s+/g, ' ');
-            var repos = _.cloneDeep(this.props.value);
+            var repos = _.cloneDeep(this.props.value),
+                os = this.props.cluster.get('release').get('operating_system');
             switch (method) {
                 case 'add':
-                    repos.push({
+                    var data = {
                         name: '',
                         type: '',
                         uri: '',
-                        suite: '',
-                        section: '',
                         priority: this.props.extra_priority
-                    });
+                    };
+                    if (os == 'Ubuntu') {
+                        data.suite = '';
+                        data.section = '';
+                    } else {
+                        data.type = 'rpm';
+                    }
+                    repos.push(data);
                     break;
                 case 'delete':
                     repos.splice(index, 1);
@@ -87,13 +105,13 @@ define([
                     break;
                 default:
                     var repo = repos[index],
-                        match = value.match(repoRegexp);
+                        match = value.match(this.props.repoRegexes[os]);
                     if (match) {
-                        _.each(repoAttributes, function(attribute, index) {
+                        _.each(this.props.repoAttributes[os], function(attribute, index) {
                             repo[attribute] = match[index + 1] || '';
                         });
                     } else {
-                        repo.type = value;
+                        repo.uri = value;
                     }
             }
             var path = this.props.settings.makePath(this.props.path, 'value');
@@ -114,6 +132,7 @@ define([
         render: function() {
             var ns = 'cluster_page.settings_tab.custom_repo_configuration.',
                 isExperimental = _.contains(app.version.get('feature_groups'), 'experimental'),
+                os = this.props.cluster.get('release').get('operating_system'),
                 classes = {
                     'table-wrapper repos': true,
                     experimental: isExperimental
@@ -145,7 +164,7 @@ define([
                                 />
                                 <controls.Input
                                     {...props}
-                                    defaultValue={repoToString(repo)}
+                                    defaultValue={this.constructor.repoToString(repo, os)}
                                     error={error && (error.uri ? error.name ? '' : error.uri : null)}
                                     onChange={this.changeRepos.bind(this, null)}
                                     extraContent={!isExperimental && index > 0 && this.renderDeleteButton(index)}
@@ -160,7 +179,6 @@ define([
                                         onChange={this.changeRepos.bind(this, 'change_priority')}
                                         extraContent={index > 0 && this.renderDeleteButton(index)}
                                         label={index == 0 && i18n(ns + 'labels.priority')}
-                                        placeholder={i18n(ns + 'placeholders.priority')}
                                     />
                                 }
                             </div>

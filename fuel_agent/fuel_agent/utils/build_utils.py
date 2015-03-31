@@ -156,17 +156,17 @@ def shrink_sparse_file(filename):
         f.truncate(block_count * block_size)
 
 
-def add_apt_source(name, url, suite, section, chroot):
+def add_apt_source(name, uri, suite, section, chroot):
     sources_list_dir = 'etc/apt/sources.list.d'
     #TODO(agordeev): File names need to end with .list and may only contain
     # letters (a-z and A-Z), digits (0-9), underscore (_), hyphen (-) and
     # period (.) characters. Otherwise APT will ignore it.
     filename = 'fuel-image-{name}.list'.format(name=name)
     if section:
-        entry = 'deb {url} {suite} {section}\n'.format(url=url, suite=suite,
+        entry = 'deb {uri} {suite} {section}\n'.format(uri=uri, suite=suite,
                                                        section=section)
     else:
-        entry = 'deb {url} {suite}\n'.format(url=url, suite=suite)
+        entry = 'deb {uri} {suite}\n'.format(uri=uri, suite=suite)
     with open(os.path.join(chroot, sources_list_dir, filename), 'w') as f:
         f.write(entry)
 

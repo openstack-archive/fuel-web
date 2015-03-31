@@ -17,13 +17,34 @@
 # value)
 #config_drive_path=/tmp/config-drive.img
 
+# Path where to store actual rules for udev daemon (string
+# value)
+#udev_rules_dir=/etc/udev/rules.d
+
+# Path where to store default rules for udev daemon (string
+# value)
+#udev_rules_lib_dir=/lib/udev/rules.d
+
+# Substring to which file extension .rules be renamed (string
+# value)
+#udev_rename_substr=.renamedrule
+
+# Directory where we build images (string value)
+#image_build_dir=/tmp
+
+# Directory where we build images (string value)
+#image_build_suffix=.fuel-agent-image
+
 
 #
 # Options defined in fuel_agent.cmd.agent
 #
 
-# Provision data file (string value)
-#provision_data_file=/tmp/provision.json
+# Input data file (string value)
+#input_data_file=/tmp/provision.json
+
+# Input data (json string) (string value)
+#input_data=
 
 
 #
@@ -99,6 +120,7 @@ logging_debug_format_suffix=
 # Deprecated group/name - [DEFAULT]/logfile
 log_file=/var/log/fuel-agent.log
 
+
 # (Optional) The base directory used for relative --log-file
 # paths. (string value)
 # Deprecated group/name - [DEFAULT]/logdir
@@ -120,3 +142,43 @@ log_file=/var/log/fuel-agent.log
 #syslog_log_facility=LOG_USER
 
 
+#
+# Options defined in fuel_agent.utils.artifact_utils
+#
+
+# Size of data chunk to operate with images (integer value)
+#data_chunk_size=1048576
+
+
+#
+# Options defined in fuel_agent.utils.build_utils
+#
+
+# Maximum allowed loop devices count to use (integer value)
+#max_loop_count=255
+
+# Size of sparse file in MiBs (integer value)
+#sparse_file_size=2048
+
+# System-wide major number for loop device (integer value)
+#loop_dev_major=7
+
+
+#
+# Options defined in fuel_agent.utils.utils
+#
+
+# Maximum retries count for http requests. 0 means infinite
+# (integer value)
+#http_max_retries=30
+
+# Http request timeout in seconds (floating point value)
+#http_request_timeout=10.0
+
+# Delay in seconds before the next http request retry
+# (floating point value)
+#http_retry_delay=2.0
+
+# Block size of data to read for calculating checksum (integer
+# value)
+#read_chunk_size=1048576

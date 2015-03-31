@@ -188,7 +188,9 @@ class TestMakeTask(base.BaseTestCase):
                 'cwd': '/',
             }
         )
-        cmd = result["parameters"]["cmd"].lstrip("fuel-image '").rstrip("'")
+        cmd = result["parameters"]["cmd"].lstrip(
+            "fa_build_image --data_driver "
+            "nailgun_build_image --input_data '").rstrip("'")
         self.assertEqual(jsonutils.loads(cmd), fuel_image_conf)
 
     def test_make_download_debian_installer_task(self):

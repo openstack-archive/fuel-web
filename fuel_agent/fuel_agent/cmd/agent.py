@@ -23,9 +23,9 @@ from fuel_agent import version
 
 opts = [
     cfg.StrOpt(
-        'provision_data_file',
+        'input_data_file',
         default='/tmp/provision.json',
-        help='Provision data file'
+        help='Input data file'
     ),
 ]
 
@@ -53,12 +53,15 @@ def bootloader():
     main(['do_bootloader'])
 
 
+def build_image():
+    main(['do_build_image'])
+
 def main(actions=None):
     CONF(sys.argv[1:], project='fuel-agent',
          version=version.version_info.release_string())
     log.setup('fuel-agent')
 
-    with open(CONF.provision_data_file) as f:
+    with open(CONF.input_data_file) as f:
         data = json.load(f)
 
     mgr = manager.Manager(data)

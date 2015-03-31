@@ -274,7 +274,8 @@ class ProvisioningSerializer61(ProvisioningSerializer):
                 tasks_templates.make_provisioning_images_task(
                     [consts.MASTER_ROLE],
                     attrs['repo_setup']['repos'],
-                    attrs['provision']))
+                    attrs['provision'],
+                    cluster.id))
 
         # NOTE(kozhukalov): This pre-provision task is going to be
         # removed by 7.0 because we need this only for classic way of

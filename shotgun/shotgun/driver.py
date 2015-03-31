@@ -19,11 +19,14 @@ import pprint
 import pwd
 import re
 import stat
+import sys
 import tempfile
 import xmlrpclib
 
 import fabric.api
+import fabric.exceptions
 
+from shotgun.utils import CCStringIO
 from shotgun.utils import execute
 from shotgun.utils import is_local
 from shotgun.utils import remove_matched_files
@@ -72,6 +75,8 @@ class Driver(object):
 
     def command(self, command):
         out = CommandOut()
+
+        raw_stdout = CCStringIO(writers=sys.stdout)
         try:
             if not self.local:
                 with fabric.api.settings(
@@ -83,16 +88,18 @@ class Driver(object):
                 ):
                     logger.debug("Running remote command: "
                                  "host: %s command: %s", self.host, command)
-                    output = fabric.api.run(command, pty=True)
-                    out.stdout = output
+                    output = fabric.api.run(command, stdout=raw_stdout)
+                    # NOTE(prmtl): because of pty=True (default) and
+                    # combine_stderr=True (default) stderr is combined
+                    # with stdout
+                    out.stdout = raw_stdout.getvalue()
                     out.return_code = output.return_code
-                    out.stderr = output.stderr
             else:
                 logger.debug("Running local command: %s", command)
                 out.return_code, out.stdout, out.stderr = execute(command)
-            logger.debug("Stderr: %s", out.stderr)
         except Exception as e:
             logger.error("Error occured: %s", str(e))
+            out.stdout = raw_stdout.getvalue()
         return out
 
     def get(self, path, target_path):

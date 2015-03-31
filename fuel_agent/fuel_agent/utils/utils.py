@@ -41,7 +41,10 @@ u_opts = [
     ),
     cfg.FloatOpt(
         'http_request_timeout',
-        default=1.0,
+        # Setting it to 10 secs will allow fuel-agent to overcome the momentary
+        # peak loads when network bandwidth becomes as low as 0.1MiB/s, thus
+        # preventing of wasting too much retries on such false positives.
+        default=10.0,
         help='Http request timeout in seconds',
     ),
     cfg.FloatOpt(

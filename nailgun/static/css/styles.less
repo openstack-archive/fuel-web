@@ -3403,7 +3403,12 @@ hr.slim {
 form.create-cluster-form {
   margin-bottom: 10px;
   .input-large { width: 330px; }
-  select { width: 340px; }
+  select {
+    width: 340px;
+    &[name=release] {
+      border-color: @fuel-goldenrod;
+    }
+  }
   .control-label {
     width: 140px;
     font-weight: bold;
@@ -3429,7 +3434,16 @@ form.create-cluster-form {
   line-height: 15px;
   margin-left: 160px;
   text-align: justify;
-  width: 335px;
+  width: 340px;
+}
+
+.release-alert {
+  font-size: 12px;
+  line-height: 14px;
+  margin: 10px 0 0 160px !important;
+  padding: 6px 9px;
+  text-align: justify;
+  width: 320px;
 }
 
 .table-releases-box {

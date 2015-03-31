@@ -570,7 +570,8 @@
                         "title": "Name and Release",
                         "name": "Name",
                         "release_label": "OpenStack Release",
-                        "existing_environment": "Environment with name \"__name__\" already exists"
+                        "existing_environment": "Environment with name \"__name__\" already exists",
+                        "repo_connectivity_alert": "Please check the Internet connection and the connection to your repositories to deploy the environment successfully."
                     },
                     "mode": {
                         "title": "Deployment Mode"

@@ -16,6 +16,7 @@ import math
 import os
 import six
 
+from fuel_agent.drivers.base import BaseDataDriver
 from fuel_agent.drivers import ks_spaces_validator
 from fuel_agent import errors
 from fuel_agent import objects
@@ -60,11 +61,9 @@ def match_device(hu_disk, ks_disk):
     return False
 
 
-class Nailgun(object):
+class Nailgun(BaseDataDriver):
     def __init__(self, data):
-        # Here data is expected to be raw provisioning data
-        # how it is given by nailgun
-        self.data = data
+        super(Nailgun, self).__init__(data)
         self.partition_scheme = self.parse_partition_scheme()
         self.configdrive_scheme = self.parse_configdrive_scheme()
         # parsing image scheme needs partition scheme has been parsed
@@ -405,4 +404,89 @@ class Nailgun(object):
                 size=image_meta.get(mount_point, {}).get('size'),
                 md5=image_meta.get(mount_point, {}).get('md5'),
             )
+        return image_scheme
+
+
+class NailgunBuildImage(BaseDataDriver):
+
+    TRUSTY_PACKAGES = [
+        "bash-completion",
+        "curl",
+        "daemonize",
+        "build-essential",
+        "gdisk",
+        "grub-pc",
+        "linux-firmware",
+        "linux-firmware-nonfree",
+        "linux-image-generic-lts-trusty",
+        "linux-headers-generic-lts-trusty",
+        "lvm2",
+        "mdadm",
+        "nailgun-agent",
+        "nailgun-mcagents",
+        "nailgun-net-check",
+        "ntp",
+        "openssh-client",
+        "openssh-server",
+        "telnet",
+        "ubuntu-minimal",
+        "ubuntu-standard",
+        "virt-what",
+        "acl",
+        "anacron",
+        "bridge-utils",
+        "bsdmainutils",
+        "cloud-init",
+        "debconf-utils",
+        "ruby-augeas",
+        "ruby-shadow",
+        "ruby-json",
+        "mcollective",
+        "puppet",
+        "python-amqp",
+        "ruby-ipaddress",
+        "ruby-netaddr",
+        "ruby-openstack",
+        "ruby-stomp",
+        "vim",
+        "vlan",
+        "uuid-runtime",
+    ]
+
+    def __init__(self, data):
+        super(NailgunBuildImage, self).__init__(data)
+        self.image_scheme = self.parse_image_scheme()
+        self.operating_system = self.parse_operating_system()
+
+    def parse_operating_system(self):
+        if self.data.get('codename') != 'trusty':
+            raise errors.WrongInputDataError(
+                'Currently, we only support Ubuntu trusty but given'
+                'codename is {0}'.format(self.data.get('codename')))
+
+        packages = self.TRUSTY_PACKAGES
+        if 'packages' in self.data:
+            packages = self.data['packages']
+
+        repos = []
+        for repo in self.data['repos']:
+            repos.append(objects.DEBRepo(
+                name=repo['name'],
+                uri=repo['uri'],
+                suite=repo['suite'],
+                priority=repo['priority']))
+
+        return objects.Ubuntu(repos=repos, packages=packages)
+
+    def parse_image_scheme(self):
+        image_scheme = objects.ImageScheme()
+        for mount_point, image  in self.data['image_data']:
+            filename = os.path.basename(
+                urlparse.urlsplit(image['uri'])[2])
+            image_scheme.add_image(
+                uri='file://' + os.path.join(self.data['output'], filename),
+                format=image['format'],
+                container=image['container'],
+                target_device=None)
+
         return image_scheme

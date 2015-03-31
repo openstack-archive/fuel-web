@@ -23,6 +23,10 @@ class BaseError(Exception):
         LOG.error(self.message)
 
 
+class WrongInputDataError(BaseError):
+    pass
+
+
 class WrongPartitionSchemeError(BaseError):
     pass
 
@@ -145,4 +149,8 @@ class HttpUrlInvalidContentLength(BaseError):
 
 
 class ImageChecksumMismatchError(BaseError):
+    pass
+
+
+class WrongRepositoryError(BaseError):
     pass

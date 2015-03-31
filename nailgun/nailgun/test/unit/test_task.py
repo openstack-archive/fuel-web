@@ -318,9 +318,9 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         resp = self.env.neutron_networks_get(cluster.id)
         nets = resp.json_body
 
-        # enough IPs for 3 nodes but VIP
+        # not enough IPs for 3 nodes and 2 VIPs
         self.find_net_by_name(nets, 'public')['ip_ranges'] = \
-            [["172.16.0.2", "172.16.0.4"]]
+            [["172.16.0.2", "172.16.0.5"]]
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 
@@ -329,9 +329,9 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             CheckBeforeDeploymentTask._check_public_network,
             self.task)
 
-        # enough IPs for 3 nodes and VIP
+        # enough IPs for 3 nodes and 2 VIPs
         self.find_net_by_name(nets, 'public')['ip_ranges'] = \
-            [["172.16.0.2", "172.16.0.5"]]
+            [["172.16.0.2", "172.16.0.6"]]
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 

@@ -162,7 +162,7 @@ def make_reboot_task(uids, task):
             'timeout': task['parameters']['timeout']}}
 
 
-def make_provisioning_images_task(uids, repos, provision_data):
+def make_provisioning_images_task(uids, repos, provision_data, cid):
     conf = {
         'repos': repos,
         'image_data': provision_data['image_data'],
@@ -175,7 +175,10 @@ def make_provisioning_images_task(uids, repos, provision_data):
 
     return make_shell_task(uids, {
         'parameters': {
-            'cmd': "fuel-image '{0}'".format(conf),
+            'cmd': ("fa_build_image "
+                    "--log-file /var/log/fuel-agent-env-{0}.log "
+                    "--data_driver nailgun_build_image "
+                    "--input_data '{1}'").format(cid, conf),
             'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
             'retries': 1}})
 

@@ -135,8 +135,11 @@ def B2MiB(b, ceil=True):
 
 
 def get_driver(name):
-    return stevedore.driver.DriverManager(
+    LOG.debug('Trying to get driver: fuel_agent.drivers.%s', name)
+    driver = stevedore.driver.DriverManager(
         namespace='fuel_agent.drivers', name=name).driver
+    LOG.debug('Found driver: %s', driver.__name__)
+    return driver
 
 
 def render_and_save(tmpl_dir, tmpl_names, tmpl_data, file_name):
@@ -200,3 +203,12 @@ def init_http_request(url, byte_range=0):
                 'Exceeded maximum http request retries for %s' % url)
     response_obj.raise_for_status()
     return response_obj
+
+
+def makedirs_if_not_exists(path, mode=0o755):
+    """Create directory if it does not exist
+    :param path: Directory path
+    :param mode: Directory mode (Default: 0o755)
+    """
+    if not os.path.isdir(path):
+        os.makedirs(path, mode=mode)

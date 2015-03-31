@@ -14,12 +14,14 @@
 
 import mock
 import os
+import signal
 
 from oslo.config import cfg
 from oslotest import base as test_base
 
 from fuel_agent import errors
 from fuel_agent import manager
+from fuel_agent import objects
 from fuel_agent.objects import partition
 from fuel_agent.tests import test_nailgun
 from fuel_agent.utils import artifact_utils as au
@@ -328,3 +330,183 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual(2, len(self.mgr.driver.image_scheme.images))
         self.assertRaises(errors.ImageChecksumMismatchError,
                           self.mgr.do_copyimage)
+
+    @mock.patch('fuel_agent.manager.bu', create=True)
+    @mock.patch('fuel_agent.manager.fu', create=True)
+    @mock.patch('fuel_agent.manager.utils', create=True)
+    @mock.patch('fuel_agent.manager.os', create=True)
+    @mock.patch('fuel_agent.manager.shutil.move')
+    @mock.patch('fuel_agent.manager.open',
+                create=True, new_callable=mock.mock_open)
+    @mock.patch('fuel_agent.manager.tempfile.mkdtemp')
+    @mock.patch('fuel_agent.manager.time.sleep')
+    @mock.patch('fuel_agent.manager.yaml.safe_dump')
+    @mock.patch.object(manager.Manager, 'mount_target')
+    @mock.patch.object(manager.Manager, 'umount_target')
+    def test_do_build_image(self, mock_umount_target, mock_mount_target,
+                            mock_yaml_dump, mock_sleep, mock_mkdtemp,
+                            mock_open, mock_shutil_move, mock_os,
+                            mock_utils, mock_fu, mock_bu):
+
+        loops = [objects.Loop(), objects.Loop()]
+
+        self.mgr.driver.image_scheme = objects.ImageScheme([
+            objects.Image('file:///fake/img.img.gz', loops[0], 'ext4', 'gzip'),
+            objects.Image('file:///fake/img-boot.img.gz',
+                          loops[1], 'ext2', 'gzip')])
+        self.mgr.driver.partition_scheme = objects.PartitionScheme()
+        self.mgr.driver.partition_scheme.add_fs(
+            device=loops[0], mount='/', fs_type='ext4')
+        self.mgr.driver.partition_scheme.add_fs(
+            device=loops[1], mount='/boot', fs_type='ext2')
+        self.mgr.driver.metadata_uri = 'file:///fake/img.yaml'
+        self.mgr.driver.operating_system = objects.Ubuntu(
+            repos=[
+                objects.DEBRepo('ubuntu', 'http://fakeubuntu',
+                                'trusty', 'fakesection'),
+                objects.DEBRepo('mos', 'http://fakemos',
+                                'mosX.Y', 'fakesection', priority=1000)],
+            packages=['fakepackage1', 'fakepackage2'])
+
+        mock_os.path.exists.return_value = False
+        mock_os.path.join.return_value = '/tmp/imgdir/proc'
+        mock_os.path.basename.side_effect = ['img.img.gz', 'img-boot.img.gz']
+        mock_bu.create_sparse_tmp_file.side_effect = \
+            ['/tmp/img', '/tmp/img-boot']
+        mock_bu.get_free_loop_device.side_effect = ['/dev/loop0', '/dev/loop1']
+        mock_mkdtemp.return_value = '/tmp/imgdir'
+        getsize_side = [20, 2, 10, 1]
+        mock_os.path.getsize.side_effect = getsize_side
+        md5_side = ['fakemd5_raw', 'fakemd5_gzip',
+                    'fakemd5_raw_boot', 'fakemd5_gzip_boot']
+        mock_utils.calculate_md5.side_effect = md5_side
+        mock_bu.containerize.side_effect = ['/tmp/img.gz', '/tmp/img-boot.gz']
+
+        self.mgr.do_build_image()
+        self.assertEqual(
+            [mock.call('/fake/img.img.gz'),
+             mock.call('/fake/img-boot.img.gz')],
+            mock_os.path.exists.call_args_list)
+        self.assertEqual([mock.call(dir=CONF.image_build_dir,
+                                    suffix=CONF.image_build_suffix)] * 2,
+                         mock_bu.create_sparse_tmp_file.call_args_list)
+        self.assertEqual([mock.call()] * 2,
+                         mock_bu.get_free_loop_device.call_args_list)
+        self.assertEqual([mock.call('/tmp/img', '/dev/loop0'),
+                          mock.call('/tmp/img-boot', '/dev/loop1')],
+                         mock_bu.attach_file_to_loop.call_args_list)
+        self.assertEqual([mock.call(fs_type='ext4', fs_options='',
+                                    fs_label='', dev='/dev/loop0'),
+                          mock.call(fs_type='ext2', fs_options='',
+                                    fs_label='', dev='/dev/loop1')],
+                         mock_fu.make_fs.call_args_list)
+        mock_mkdtemp.assert_called_once_with(dir=CONF.image_build_dir,
+                                             suffix=CONF.image_build_suffix)
+        mock_mount_target.assert_called_once_with(
+            '/tmp/imgdir', treat_mtab=False, pseudo=False)
+        self.assertEqual([mock.call('/tmp/imgdir')] * 2,
+                         mock_bu.suppress_services_start.call_args_list)
+        mock_bu.run_debootstrap.assert_called_once_with(
+            uri='http://fakeubuntu', suite='trusty', chroot='/tmp/imgdir')
+        mock_bu.set_apt_get_env.assert_called_once_with()
+        mock_bu.pre_apt_get.assert_called_once_with('/tmp/imgdir')
+        self.assertEqual([
+            mock.call(name='ubuntu',
+                      uri='http://fakeubuntu',
+                      suite='trusty',
+                      section='fakesection',
+                      chroot='/tmp/imgdir'),
+            mock.call(name='mos',
+                      uri='http://fakemos',
+                      suite='mosX.Y',
+                      section='fakesection',
+                      chroot='/tmp/imgdir')],
+            mock_bu.add_apt_source.call_args_list)
+        self.assertEqual([
+            mock.call(name='ubuntu',
+                      priority=None,
+                      suite='trusty',
+                      section='fakesection',
+                      chroot='/tmp/imgdir'),
+            mock.call(name='mos',
+                      priority=1000,
+                      suite='mosX.Y',
+                      section='fakesection',
+                      chroot='/tmp/imgdir')],
+            mock_bu.add_apt_preference.call_args_list)
+        mock_utils.makedirs_if_not_exists.assert_called_once_with(
+            '/tmp/imgdir/proc')
+        mock_fu.mount_bind.assert_called_once_with('/tmp/imgdir', '/proc')
+        mock_bu.run_apt_get.assert_called_once_with(
+            '/tmp/imgdir', packages=['fakepackage1', 'fakepackage2'])
+        mock_bu.do_post_inst.assert_called_once_with('/tmp/imgdir')
+        signal_calls = mock_bu.send_signal_to_chrooted_processes.call_args_list
+        self.assertEqual([mock.call('/tmp/imgdir', signal.SIGTERM),
+                          mock.call('/tmp/imgdir', signal.SIGKILL)],
+                         signal_calls)
+        mock_sleep.assert_called_once_with(2)
+        mock_fu.umount_fs.assert_called_once_with('/tmp/imgdir/proc')
+        mock_umount_target.assert_called_once_with('/tmp/imgdir', pseudo=False)
+        self.assertEqual([mock.call('/dev/loop0'), mock.call('/dev/loop1')],
+                         mock_bu.deattach_loop.call_args_list)
+        self.assertEqual([mock.call('/tmp/img'), mock.call('/tmp/img-boot')],
+                         mock_bu.shrink_sparse_file.call_args_list)
+        self.assertEqual([mock.call('/tmp/img'),
+                          mock.call('/fake/img.img.gz'),
+                          mock.call('/tmp/img-boot'),
+                          mock.call('/fake/img-boot.img.gz')],
+                         mock_os.path.getsize.call_args_list)
+        self.assertEqual([mock.call('/tmp/img', 20),
+                          mock.call('/fake/img.img.gz', 2),
+                          mock.call('/tmp/img-boot', 10),
+                          mock.call('/fake/img-boot.img.gz', 1)],
+                         mock_utils.calculate_md5.call_args_list)
+        self.assertEqual([mock.call('/tmp/img', 'gzip'),
+                          mock.call('/tmp/img-boot', 'gzip')],
+                         mock_bu.containerize.call_args_list)
+        mock_open.assert_called_once_with('/fake/img.yaml', 'w')
+        self.assertEqual(
+            [mock.call('/tmp/img.gz', '/fake/img.img.gz'),
+             mock.call('/tmp/img-boot.gz', '/fake/img-boot.img.gz')],
+            mock_shutil_move.call_args_list)
+
+        metadata = {}
+        for repo in self.mgr.driver.operating_system.repos:
+            metadata.setdefault('repos', []).append({
+                'type': 'deb',
+                'name': repo.name,
+                'uri': repo.uri,
+                'suite': repo.suite,
+                'section': repo.section,
+                'priority': repo.priority,
+                'meta': repo.meta})
+        metadata['packages'] = self.mgr.driver.operating_system.packages
+        metadata['images'] = [
+            {
+                'raw_md5': md5_side[0],
+                'raw_size': getsize_side[0],
+                'raw_name': None,
+                'container_name':
+                os.path.basename(
+                    self.mgr.driver.image_scheme.images[0].uri.split(
+                        'file://', 1)[1]),
+                'container_md5': md5_side[1],
+                'container_size': getsize_side[1],
+                'container': self.mgr.driver.image_scheme.images[0].container,
+                'format': self.mgr.driver.image_scheme.images[0].format
+            },
+            {
+                'raw_md5': md5_side[2],
+                'raw_size': getsize_side[2],
+                'raw_name': None,
+                'container_name':
+                os.path.basename(
+                    self.mgr.driver.image_scheme.images[1].uri.split(
+                        'file://', 1)[1]),
+                'container_md5': md5_side[3],
+                'container_size': getsize_side[3],
+                'container': self.mgr.driver.image_scheme.images[1].container,
+                'format': self.mgr.driver.image_scheme.images[1].format
+            }
+        ]
+        mock_yaml_dump.assert_called_once_with(metadata, stream=mock_open())

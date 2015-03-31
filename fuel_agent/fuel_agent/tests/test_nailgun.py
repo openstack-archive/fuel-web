@@ -616,7 +616,8 @@ class TestNailgun(test_base.BaseTestCase):
     @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(hu, 'list_block_devices')
     def test_image_scheme_with_checksums(self, mock_lbd, mock_http_req):
-        fake_image_meta = [{'/': {'md5': 'fakeroot', 'size': 1}}]
+        fake_image_meta = {'images': [{'raw_md5': 'fakeroot', 'raw_size': 1,
+                                       'container_name': 'fake_image.img.gz'}]}
         prop_mock = mock.PropertyMock(return_value=yaml.dump(fake_image_meta))
         type(mock_http_req.return_value).text = prop_mock
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
@@ -646,8 +647,9 @@ class TestNailgun(test_base.BaseTestCase):
                              expected_images[i].format)
             self.assertEqual(img.container,
                              expected_images[i].container)
-            self.assertEqual(img.size, fake_image_meta[0]['/']['size'])
-            self.assertEqual(img.md5, fake_image_meta[0]['/']['md5'])
+            self.assertEqual(
+                img.size, fake_image_meta['images'][0]['raw_size'])
+            self.assertEqual(img.md5, fake_image_meta['images'][0]['raw_md5'])
 
     def test_getlabel(self):
         self.assertEqual('', self.drv._getlabel(None))

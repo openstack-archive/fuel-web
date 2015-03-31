@@ -4121,9 +4121,6 @@ i.btn-cluster-details {
 }
 
 .repos {
-  .tablerow-wrapper {
-    position: relative;
-  }
   input[type=text] {
     width: 500px;
   }
@@ -4139,6 +4136,13 @@ i.btn-cluster-details {
     > div {
       float: left;
       clear: none;
+      .position(relative);
+      .parameter-description {
+        left: 566px;
+      }
+      &.repo-name .parameter-description {
+        left: 690px;
+      }
     }
     input {
       margin: 0 0 10px 10px;
@@ -4153,7 +4157,7 @@ i.btn-cluster-details {
     .parameter-description {
       margin-left: 0;
       width: 250px;
-      .position(absolute, @bottom: 4px, @left: 690px);
+      .position(absolute, @bottom: 4px);
     }
     .parameter-name {
       padding: 0;
@@ -4166,7 +4170,12 @@ i.btn-cluster-details {
       }
     }
   }
-  &.experimental .repo-group .parameter-description {
-    left: 810px;
+  &.experimental .repo-group > div {
+    .parameter-description {
+      left: 690px;
+    }
+    &.repo-name .parameter-description {
+      left: 814px;
+    }
   }
 }

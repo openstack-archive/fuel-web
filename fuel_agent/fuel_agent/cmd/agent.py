@@ -12,30 +12,36 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import sys
 
 from oslo.config import cfg
+from oslo_serialization import jsonutils as json
 import six
 
 from fuel_agent import manager as manager
-from fuel_agent.openstack.common import log
+from fuel_agent.openstack.common import log as logging
 from fuel_agent import version
 
-opts = [
+cli_opts = [
     cfg.StrOpt(
-        'provision_data_file',
+        'input_data_file',
         default='/tmp/provision.json',
-        help='Provision data file'
+        help='Input data file'
+    ),
+    cfg.StrOpt(
+        'input_data',
+        default='',
+        help='Input data (json string)'
     ),
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(opts)
+CONF.register_cli_opts(cli_opts)
 CONF(sys.argv[1:], project='fuel-agent',
      version=version.version_info.release_string())
-log.setup('fuel-agent')
-LOG = log.getLogger(__name__)
+
+logging.setup('fuel-agent')
+LOG = logging.getLogger(__name__)
 
 
 def provision():
@@ -58,6 +64,10 @@ def bootloader():
     main(['do_bootloader'])
 
 
+def build_image():
+    main(['do_build_image'])
+
+
 def print_err(line):
     sys.stderr.write(six.text_type(line))
     sys.stderr.write('\n')
@@ -72,8 +82,12 @@ def handle_exception(exc):
 
 def main(actions=None):
     try:
-        with open(CONF.provision_data_file) as f:
-            data = json.load(f)
+        if CONF.input_data:
+            data = json.loads(CONF.input_data)
+        else:
+            with open(CONF.input_data_file) as f:
+                data = json.load(f)
+        LOG.debug('Input data: %s', data)
 
         mgr = manager.Manager(data)
         if actions:
@@ -81,6 +95,7 @@ def main(actions=None):
                 getattr(mgr, action)()
     except Exception as exc:
         handle_exception(exc)
+
 
 if __name__ == '__main__':
     main()

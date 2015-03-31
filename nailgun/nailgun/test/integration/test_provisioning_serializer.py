@@ -168,7 +168,7 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
             lambda task: all([
                 task['uids'] == ['master'],
                 task['type'] == 'shell',
-                task['parameters']['cmd'].startswith('fuel-image')
+                task['parameters']['cmd'].startswith('fa_build_image')
             ]),
             serialized_info['pre_provision']))
         self.assertFalse(filter(

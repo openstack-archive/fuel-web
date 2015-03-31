@@ -12,10 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 import math
 import os
 import six
+import yaml
 
+from six.moves.urllib.parse import urljoin
+from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlsplit
+
+from fuel_agent.drivers.base import BaseDataDriver
 from fuel_agent.drivers import ks_spaces_validator
 from fuel_agent import errors
 from fuel_agent import objects
@@ -23,9 +30,6 @@ from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import hardware_utils as hu
 from fuel_agent.utils import utils
 
-from six.moves.urllib.parse import urljoin
-from six.moves.urllib.parse import urlparse
-import yaml
 
 LOG = logging.getLogger(__name__)
 
@@ -60,11 +64,9 @@ def match_device(hu_disk, ks_disk):
     return False
 
 
-class Nailgun(object):
+class Nailgun(BaseDataDriver):
     def __init__(self, data):
-        # Here data is expected to be raw provisioning data
-        # how it is given by nailgun
-        self.data = data
+        super(Nailgun, self).__init__(data)
 
         # this var is used as a flag that /boot fs
         # has already been added. we need this to
@@ -394,16 +396,13 @@ class Nailgun(object):
         filename = os.path.basename(urlparse(root_uri).path).split('.')[0] + \
             '.yaml'
         metadata_url = urljoin(root_uri, filename)
-        image_meta = {}
-        raw_image_meta = None
         try:
-            raw_image_meta = yaml.load(
+            image_meta = yaml.load(
                 utils.init_http_request(metadata_url).text)
         except Exception as e:
             LOG.exception(e)
             LOG.debug('Failed to fetch/decode image meta data')
-        if raw_image_meta:
-            [image_meta.update(img_info) for img_info in raw_image_meta]
+            image_meta = {}
         # We assume for every file system user may provide a separate
         # file system image. For example if partitioning scheme has
         # /, /boot, /var/lib file systems then we will try to get images
@@ -415,13 +414,120 @@ class Nailgun(object):
             LOG.debug('Adding image for fs %s: uri=%s format=%s container=%s' %
                       (mount_point, image_data['uri'],
                        image_data['format'], image_data['container']))
+            iname = os.path.basename(urlparse(image_data['uri']).path)
+            imeta = next(itertools.chain(
+                (img for img in image_meta.get('images', [])
+                 if img['container_name'] == iname), [{}]))
             image_scheme.add_image(
                 uri=image_data['uri'],
                 target_device=self.partition_scheme.fs_by_mount(
                     mount_point).device,
                 format=image_data['format'],
                 container=image_data['container'],
-                size=image_meta.get(mount_point, {}).get('size'),
-                md5=image_meta.get(mount_point, {}).get('md5'),
+                size=imeta.get('raw_size'),
+                md5=imeta.get('raw_md5'),
             )
         return image_scheme
+
+
+class NailgunBuildImage(BaseDataDriver):
+
+    # TODO(kozhukalov):
+    # This list of packages is used by default only if another
+    # list isn't given in build image data. In the future
+    # we need to handle package list in nailgun. Even more,
+    # in the future, we'll be building not only ubuntu images
+    # and we'll likely move this list into some kind of config.
+    DEFAULT_TRUSTY_PACKAGES = [
+        "acl",
+        "anacron",
+        "bash-completion",
+        "bridge-utils",
+        "bsdmainutils",
+        "build-essential",
+        "cloud-init",
+        "curl",
+        "daemonize",
+        "debconf-utils",
+        "gdisk",
+        "grub-pc",
+        "linux-firmware",
+        "linux-firmware-nonfree",
+        "linux-headers-generic-lts-trusty",
+        "linux-image-generic-lts-trusty",
+        "lvm2",
+        "mcollective",
+        "mdadm",
+        "nailgun-agent",
+        "nailgun-mcagents",
+        "nailgun-net-check",
+        "ntp",
+        "openssh-client",
+        "openssh-server",
+        "puppet",
+        "python-amqp",
+        "ruby-augeas",
+        "ruby-ipaddress",
+        "ruby-json",
+        "ruby-netaddr",
+        "ruby-openstack",
+        "ruby-shadow",
+        "ruby-stomp",
+        "telnet",
+        "ubuntu-minimal",
+        "ubuntu-standard",
+        "uuid-runtime",
+        "vim",
+        "virt-what",
+        "vlan",
+    ]
+
+    def __init__(self, data):
+        super(NailgunBuildImage, self).__init__(data)
+        self.parse_schemes()
+        self.parse_operating_system()
+
+    def parse_operating_system(self):
+        if self.data.get('codename').lower() != 'trusty':
+            raise errors.WrongInputDataError(
+                'Currently, only Ubuntu Trusty is supported, given '
+                'codename is {0}'.format(self.data.get('codename')))
+
+        packages = self.data.get('packages', self.DEFAULT_TRUSTY_PACKAGES)
+
+        repos = []
+        for repo in self.data['repos']:
+            repos.append(objects.DEBRepo(
+                name=repo['name'],
+                uri=repo['uri'],
+                suite=repo['suite'],
+                section=repo['section'],
+                priority=repo['priority']))
+
+        self.operating_system = objects.Ubuntu(repos=repos, packages=packages)
+
+    def parse_schemes(self):
+        self.image_scheme = objects.ImageScheme()
+        self.partition_scheme = objects.PartitionScheme()
+
+        for mount, image in six.iteritems(self.data['image_data']):
+            filename = os.path.basename(urlsplit(image['uri']).path)
+            # Loop does not allocate any loop device
+            # during initialization.
+            device = objects.Loop()
+
+            self.image_scheme.add_image(
+                uri='file://' + os.path.join(self.data['output'], filename),
+                format=image['format'],
+                container=image['container'],
+                target_device=device)
+
+            self.partition_scheme.add_fs(
+                device=device,
+                mount=mount,
+                fs_type=image['format'])
+
+            if mount == '/':
+                metadata_filename = filename.split('.', 1)[0] + '.yaml'
+                self.metadata_uri = 'file://' + os.path.join(
+                    self.data['output'], metadata_filename)

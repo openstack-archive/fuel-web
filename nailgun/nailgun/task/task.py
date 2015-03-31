@@ -832,8 +832,13 @@ class CheckBeforeDeploymentTask(object):
             else:
                 nodes_count = sum(int(objects.Node.should_have_public(node))
                                   for node in nodes)
-            vip_count = 0 if not task.cluster.is_ha_mode else \
-                int(any('controller' in node.all_roles for node in nodes))
+            vip_count = 0
+            if task.cluster.is_ha_mode and (
+                any('controller' in node.all_roles
+                    for node in nodes)
+            ):
+                # 2 IPs are required for VIPs (1 for haproxy + 1 for vrouter)
+                vip_count = 2
             if cls.__network_size(public) < nodes_count + vip_count:
                 error_message = cls.__format_network_error(public, nodes_count)
                 raise errors.NetworkCheckError(error_message)

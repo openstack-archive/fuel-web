@@ -77,7 +77,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return this.state.loading ? false : this.props.cluster.get('settings').hasChanges(this.state.initialAttributes, this.state.configModels);
         },
         applyChanges: function() {
-            var deferred = this.props.cluster.get('settings').save(null, {patch: true, wait: true, models: this.state.configModels});
+            // collecting data to save
+            var settings = this.props.cluster.get('settings'),
+                dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes : _.pick(settings.attributes, function(group) {
+                    return (group.metadata || {}).always_editable;
+                });
+
+            var options = {url: settings.url, patch: true, wait: true, validate: false},
+                deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
@@ -147,11 +154,13 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 sortedSettingGroups = _.sortBy(_.keys(settings.attributes), function(groupName) {
                     return settings.get(groupName + '.metadata.weight');
                 }),
-                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}) || !cluster.isAvailableForSettingsChanges(),
+                locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}),
+                lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 hasChanges = this.hasChanges(),
-                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
+                tabClasses = {'openstack-settings wrapper': true, 'changes-locked': locked || lockedCluster};
             return (
-                <div key={this.state.key} className={utils.classNames({'openstack-settings wrapper': true, 'changes-locked': locked})}>
+                <div key={this.state.key} className={utils.classNames(tabClasses)}>
                     <h3>{i18n('cluster_page.settings_tab.title')}</h3>
                     {this.state.loading ?
                         <controls.ProgressBar />
@@ -169,13 +178,14 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     makePath={settings.makePath}
                                     getValueAttribute={settings.getValueAttribute}
                                     locked={locked}
+                                    lockedCluster={lockedCluster}
                                     configModels={this.state.configModels}
                                 />;
                             }, this)}
                             <div className='row'>
                                 <div className='page-control-box'>
                                     <div className='page-control-button-placeholder'>
-                                        <button key='loadDefaults' className='btn btn-load-defaults' onClick={this.loadDefaults} disabled={locked}>
+                                        <button key='loadDefaults' className='btn btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
                                             {i18n('common.load_defaults_button')}
                                         </button>
                                         <button key='cancelChanges' className='btn btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
@@ -310,7 +320,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                     .sortBy(function(settingName) {return group[settingName].weight;})
                     .value(),
                 processedGroupRestrictions = this.processRestrictions(this.props.groupName, 'metadata'),
-                isGroupDisabled = this.props.locked || (metadata.toggleable && processedGroupRestrictions.result);
+                isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || (metadata.toggleable && processedGroupRestrictions.result);
             return (
                 <div className='fieldset-group wrapper'>
                     <legend className='openstack-settings'>
@@ -347,7 +357,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                         key={settingName}
                                         path={path}
                                         error={error}
-                                        disabled={this.props.locked || isSettingDisabled}
+                                        disabled={isSettingDisabled}
                                         tooltipText={processedSettingRestrictions.message}
                                     />;
                                 }

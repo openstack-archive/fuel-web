@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
 from oslo.serialization import jsonutils
 
 from nailgun.test.base import BaseIntegrationTest
@@ -164,9 +166,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(resp_nic['max_speed'], nic['max_speed'])
             for conn in ('assigned_networks', ):
                 self.assertEqual(resp_nic[conn], [])
-            self.assertEqual(resp_nic['interface_properties'],
-                             {'disable_offloading': False,
-                              'mtu': None})
+            self.assertNotIn('interface_properties', resp_nic)
 
     def test_nic_mac_swap(self):
         mac_eth0 = '00:11:22:dd:ee:ff'
@@ -262,6 +262,8 @@ class TestHandlers(BaseIntegrationTest):
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
 
+    @patch('nailgun.api.v1.handlers.version.settings.VERSION', {
+        'release': '6.1'})
     def test_interface_properties_after_update_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [

@@ -41,7 +41,7 @@ u_opts = [
     ),
     cfg.FloatOpt(
         'http_request_timeout',
-        default=1.0,
+        default=10.0,
         help='Http request timeout in seconds',
     ),
     cfg.FloatOpt(

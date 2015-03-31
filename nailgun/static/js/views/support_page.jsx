@@ -174,7 +174,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                         title={i18n('support_page.product_registered_title')}
                         text={i18n('support_page.product_registered_content')}
                     >
-                        <p className='registeredData'>
+                        <p className='registeredData enable-selection'>
                             {_.map(values, function(value) {
                                 return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {registrationInfo[value].value}</span>;
                             }, this)}

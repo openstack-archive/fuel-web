@@ -18,6 +18,8 @@ from fuel_agent.objects.configdrive import ConfigDrivePuppet
 from fuel_agent.objects.configdrive import ConfigDriveScheme
 from fuel_agent.objects.image import Image
 from fuel_agent.objects.image import ImageScheme
+from fuel_agent.objects.os import OperatingSystem
+from fuel_agent.objects.os import Ubuntu
 from fuel_agent.objects.partition import Fs
 from fuel_agent.objects.partition import Lv
 from fuel_agent.objects.partition import Md
@@ -25,9 +27,13 @@ from fuel_agent.objects.partition import Partition
 from fuel_agent.objects.partition import PartitionScheme
 from fuel_agent.objects.partition import Pv
 from fuel_agent.objects.partition import Vg
+from fuel_agent.objects.repo import DEBRepo
+from fuel_agent.objects.repo import Repo
 
 __all__ = [
     'Partition', 'Pv', 'Vg', 'Lv', 'Md', 'Fs', 'PartitionScheme',
     'ConfigDriveCommon', 'ConfigDrivePuppet', 'ConfigDriveMcollective',
     'ConfigDriveScheme', 'Image', 'ImageScheme',
+    'OperatingSystem', 'Ubuntu',
+    'Repo', 'DEBRepo',
 ]

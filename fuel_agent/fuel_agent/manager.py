@@ -403,3 +403,21 @@ class Manager(object):
         self.do_configdrive()
         self.do_copyimage()
         self.do_bootloader()
+
+    def do_install_os(self):
+        LOG.debug('--- Installing operating system (do_install_os) ---')
+        # TODO(kozhukalov):
+        # debootstrap
+        # configure sources and preferences
+        # apt-get install
+
+    def do_build_image(self):
+        LOG.debug('--- Building image (do_build_image) ---')
+        # TODO(kozhukalov):
+        # create and mount loop devices
+        # according to self.driver.image_scheme
+        # install os according to self.driver.operating_system
+        # configure os if necessary (not sure)
+        # umount loop devices
+        # calculate check sums
+        # prepare image metadata

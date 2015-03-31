@@ -26,32 +26,42 @@ define([
 
     var customControls = {};
 
-    var repoRegexp = /^(deb|deb-src)\s+(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s+([\w\-.\/]+)(?:\s+([\w\-.\/\s]+))?$/i,
-        repoAttributes = ['type', 'uri', 'suite', 'section'],
-        repoToString = function(repo) {
-            var repoData = _.compact(repoAttributes.map(function(attribute) {return repo[attribute];}));
+    var repoRegexes = {
+            Ubuntu: /^(deb|deb-src)\s+(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s+([\w\-.\/]+)(?:\s+([\w\-.\/\s]+))?$/i,
+            CentOS: /^(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s*$/i
+        },
+        repoAttributes = {
+            Ubuntu: ['type', 'uri', 'suite', 'section'],
+            CentOS: ['uri']
+        },
+        repoToString = function(repo, os) {
+            var repoData = _.compact(repoAttributes[os].map(function(attribute) {return repo[attribute];}));
             if (!repoData.length) return ''; // in case of new repo
             return repoData.join(' ');
         };
 
     customControls.custom_repo_configuration = React.createClass({
         statics: {
-            validate: function(setting) {
+            validate: function(setting, models) {
                 var ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.',
-                    nameRegexp = /^[\w-]+$/;
+                    nameRegexp = /^[\w-]+$/,
+                    os = models.release.get('operating_system');
                 var errors = setting.value.map(function(repo) {
                     var error = {},
-                        value = repoToString(repo);
+                        value = repoToString(repo, os);
                     if (!repo.name) {
                         error.name = i18n(ns + 'empty_name');
                     } else if (!repo.name.match(nameRegexp)) {
                         error.name = i18n(ns + 'invalid_name');
                     }
-                    if (!value || !value.match(repoRegexp)) {
+                    if (!value || !value.match(repoRegexes[os])) {
                         error.uri = i18n(ns + 'invalid_repo');
                     }
-                    if (_.isNaN(repo.priority) || !(_.isNumber(repo.priority) || _.isNull(repo.priority))) {
-                        error.priority = i18n(ns + 'invalid_priority');
+                    var priority = repo.priority;
+                    if (_.isNaN(priority) || !(_.isNumber(priority) || _.isNull(priority))) {
+                        if (os == 'Ubuntu' || priority < 0 || priority > 99) {
+                            error.priority = i18n(ns + 'invalid_priority');
+                        }
                     }
                     return _.isEmpty(error) ? null : error;
                 }, this);
@@ -59,21 +69,28 @@ define([
             }
         },
         getInitialState: function() {
-            return {};
+            return {
+                os: this.props.cluster.get('release').get('operating_system')
+            };
         },
         changeRepos: function(method, index, value) {
             value = $.trim(value).replace(/\s+/g, ' ');
             var repos = _.cloneDeep(this.props.value);
             switch (method) {
                 case 'add':
-                    repos.push({
+                    var data = {
                         name: '',
                         type: '',
                         uri: '',
-                        suite: '',
-                        section: '',
                         priority: this.props.extra_priority
-                    });
+                    };
+                    if (this.state.os == 'Ubuntu') {
+                        data.suite = '';
+                        data.section = '';
+                    } else {
+                        data.type = 'rpm';
+                    }
+                    repos.push(data);
                     break;
                 case 'delete':
                     repos.splice(index, 1);
@@ -87,13 +104,13 @@ define([
                     break;
                 default:
                     var repo = repos[index],
-                        match = value.match(repoRegexp);
+                        match = value.match(repoRegexes[this.state.os]);
                     if (match) {
-                        _.each(repoAttributes, function(attribute, index) {
+                        _.each(repoAttributes[this.state.os], function(attribute, index) {
                             repo[attribute] = match[index + 1] || '';
                         });
                     } else {
-                        repo.type = value;
+                        repo.uri = value;
                     }
             }
             var path = this.props.settings.makePath(this.props.path, 'value');
@@ -145,7 +162,7 @@ define([
                                 />
                                 <controls.Input
                                     {...props}
-                                    defaultValue={repoToString(repo)}
+                                    defaultValue={repoToString(repo, this.state.os)}
                                     error={error && (error.uri ? error.name ? '' : error.uri : null)}
                                     onChange={this.changeRepos.bind(this, null)}
                                     extraContent={!isExperimental && index > 0 && this.renderDeleteButton(index)}
@@ -160,7 +177,6 @@ define([
                                         onChange={this.changeRepos.bind(this, 'change_priority')}
                                         extraContent={index > 0 && this.renderDeleteButton(index)}
                                         label={index == 0 && i18n(ns + 'labels.priority')}
-                                        placeholder={i18n(ns + 'placeholders.priority')}
                                     />
                                 }
                             </div>

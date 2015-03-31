@@ -21,11 +21,9 @@ import os
 
 import requests
 import six
-import yaml
 
 from fuel_upgrade.clients import NailgunClient
 from fuel_upgrade.engines.base import UpgradeEngine
-from fuel_upgrade import errors
 from fuel_upgrade import utils
 
 
@@ -143,7 +141,7 @@ class OpenStackUpgrader(UpgradeEngine):
         # base repo if needed
         existing_releases = self.nailgun.get_releases()
         releases = self._get_unique_releases(self.releases, existing_releases)
-        self._add_base_repos_to_releases(releases, existing_releases)
+
         # upload unexisting releases
         for release in releases:
             # register new release
@@ -241,68 +239,7 @@ class OpenStackUpgrader(UpgradeEngine):
             with io.open(release_yaml, 'r', encoding='utf-8') as f:
                 releases.extend(utils.load_fixture(f))
 
-        # inject orchestrator_data into releases if empty
-        #
-        # NOTE(ikalnitsky): we can drop this block of code when
-        #   we got two things done:
-        #     * remove `fuelweb` word from default repos
-        #     * add this template to `openstack.yaml`
-        #     * fill orchestrator_data in nailgun during syncdb
-        for release in releases:
-            repo_path = \
-                'http://{{MASTER_IP}}:8080/{{OPENSTACK_VERSION}}/{OS}/x86_64'\
-                .format(OS=release['operating_system'].lower())
-
-            if release['operating_system'].lower() == 'ubuntu':
-                repo_path += ' trusty main'
-
-            release['orchestrator_data'] = {
-                'puppet_manifests_source':
-                'rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/manifests/',
-
-                'puppet_modules_source':
-                'rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/',
-
-                'repo_metadata': {
-                    release['version']: repo_path}}
-
         return releases
-
-    def _add_base_repos_to_releases(self, releases, existing_releases):
-        """Update given releases with orchestrator data of base release.
-
-        :param releases: a list of releases to process
-        :param existing_releases: a list of existings releases
-        """
-        metadata_path = self.config.openstack['metadata']
-
-        # do nothing in case of metadata.yaml absence - just assume
-        # that we have full repos
-        if not os.path.exists(metadata_path):
-            return
-
-        with io.open(metadata_path, 'r', encoding='utf-8') as f:
-            metadata = yaml.load(f) or {}
-
-        # keep diff-based releases
-        releases = filter(
-            lambda r: r['version'] in metadata.get('diff_releases', {}),
-            releases)
-
-        # inject repos from base releases
-        for release in releases:
-            version = release['version']
-            base_release = utils.get_base_release(
-                release, metadata['diff_releases'][version], existing_releases)
-
-            if base_release is None:
-                raise errors.BaseReleaseNotFound(
-                    'Could not find a base release - "{0}" - of the '
-                    'release "{1}".'.format(
-                        metadata['diff_releases'][version], version))
-
-            release['orchestrator_data']['repo_metadata'].update(
-                base_release['orchestrator_data']['repo_metadata'])
 
     @property
     def required_free_space(self):

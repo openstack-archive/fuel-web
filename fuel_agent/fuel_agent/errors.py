@@ -19,6 +19,10 @@ class BaseError(Exception):
         super(BaseError, self).__init__(message, *args, **kwargs)
 
 
+class WrongInputDataError(BaseError):
+    pass
+
+
 class WrongPartitionSchemeError(BaseError):
     pass
 
@@ -145,4 +149,12 @@ class ImageChecksumMismatchError(BaseError):
 
 
 class NoFreeLoopDevices(BaseError):
+    pass
+
+
+class WrongRepositoryError(BaseError):
+    pass
+
+
+class WrongDeviceError(BaseError):
     pass

@@ -156,7 +156,8 @@ class TestMakeTask(base.BaseTestCase):
                         'format': 'ext4',
                         'uri': 'http://uri'
                     }
-                }})
+                }},
+            cid=123)
 
         fuel_image_conf = {
             "image_data": {
@@ -188,7 +189,9 @@ class TestMakeTask(base.BaseTestCase):
                 'cwd': '/',
             }
         )
-        cmd = result["parameters"]["cmd"].lstrip("fuel-image '").rstrip("'")
+        cmd = result["parameters"]["cmd"].lstrip(
+            "fa_build_image --log-file /var/log/fuel-agent-env-123.log "
+            "--data_driver nailgun_build_image --input_data '").rstrip("'")
         self.assertEqual(jsonutils.loads(cmd), fuel_image_conf)
 
     def test_make_download_debian_installer_task(self):

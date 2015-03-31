@@ -1005,6 +1005,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                                 error={inputError}
                                 disabled={actionInProgress || (inputName == 'region' && this.checkCountry())}
                                 description={inputName != 'agree' && input.description}
+                                maxLength='50'
                             />;
                         }, this)}
                     </form>

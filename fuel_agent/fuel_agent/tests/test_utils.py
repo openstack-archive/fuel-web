@@ -34,7 +34,7 @@ class ExecuteTestCase(testtools.TestCase):
     def setUp(self):
         super(ExecuteTestCase, self).setUp()
         fake_driver = stevedore.extension.Extension('fake_driver', None, None,
-                                                    'fake_obj')
+                                                    mock.MagicMock)
         self.drv_manager = stevedore.driver.DriverManager.make_test_instance(
             fake_driver)
 
@@ -64,7 +64,8 @@ class ExecuteTestCase(testtools.TestCase):
     @mock.patch('stevedore.driver.DriverManager')
     def test_get_driver(self, mock_drv_manager):
         mock_drv_manager.return_value = self.drv_manager
-        self.assertEqual('fake_obj', utils.get_driver('fake_driver'))
+        self.assertEqual(mock.MagicMock.__name__,
+                         utils.get_driver('fake_driver').__name__)
 
     @mock.patch('jinja2.Environment')
     @mock.patch('jinja2.FileSystemLoader')
@@ -136,3 +137,26 @@ class ExecuteTestCase(testtools.TestCase):
         mock_req.side_effect = requests.exceptions.ConnectionError()
         self.assertRaises(errors.HttpUrlConnectionError,
                           utils.init_http_request, 'fake_url')
+
+    @mock.patch('fuel_agent.utils.utils.os.makedirs')
+    @mock.patch('fuel_agent.utils.utils.os.path.isdir', return_value=False)
+    def test_makedirs_if_not_exists(self, mock_isdir, mock_makedirs):
+        utils.makedirs_if_not_exists('/fake/path')
+        mock_isdir.assert_called_once_with('/fake/path')
+        mock_makedirs.assert_called_once_with('/fake/path', mode=0o755)
+
+    @mock.patch('fuel_agent.utils.utils.os.makedirs')
+    @mock.patch('fuel_agent.utils.utils.os.path.isdir', return_value=False)
+    def test_makedirs_if_not_exists_mode_given(
+            self, mock_isdir, mock_makedirs):
+        utils.makedirs_if_not_exists('/fake/path', mode=0o000)
+        mock_isdir.assert_called_once_with('/fake/path')
+        mock_makedirs.assert_called_once_with('/fake/path', mode=0o000)
+
+    @mock.patch('fuel_agent.utils.utils.os.makedirs')
+    @mock.patch('fuel_agent.utils.utils.os.path.isdir', return_value=True)
+    def test_makedirs_if_not_exists_already_exists(
+            self, mock_isdir, mock_makedirs):
+        utils.makedirs_if_not_exists('/fake/path')
+        mock_isdir.assert_called_once_with('/fake/path')
+        self.assertEqual(mock_makedirs.mock_calls, [])

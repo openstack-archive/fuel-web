@@ -23,9 +23,14 @@ from fuel_agent import version
 
 opts = [
     cfg.StrOpt(
-        'provision_data_file',
+        'input_data_file',
         default='/tmp/provision.json',
-        help='Provision data file'
+        help='Input data file'
+    ),
+    cfg.StrOpt(
+        'input_data',
+        default='',
+        help='Input data (json string)'
     ),
 ]
 
@@ -53,18 +58,27 @@ def bootloader():
     main(['do_bootloader'])
 
 
+def build_image():
+    main(['do_build_image'])
+
+
 def main(actions=None):
     CONF(sys.argv[1:], project='fuel-agent',
          version=version.version_info.release_string())
     log.setup('fuel-agent')
 
-    with open(CONF.provision_data_file) as f:
-        data = json.load(f)
+    if CONF.input_data:
+        data = json.load(CONF.input_data)
+    else:
+        with open(CONF.input_data_file) as f:
+            data = json.load(f)
 
-    mgr = manager.Manager(data)
-    if actions:
-        for action in actions:
-            getattr(mgr, action)()
+    print data
+    # mgr = manager.Manager(data)
+    # if actions:
+    #     for action in actions:
+    #         getattr(mgr, action)()
+
 
 if __name__ == '__main__':
     main()

@@ -23,6 +23,10 @@ class BaseError(Exception):
         LOG.error(self.message)
 
 
+class WrongInputDataError(BaseError):
+    pass
+
+
 class WrongPartitionSchemeError(BaseError):
     pass
 
@@ -149,4 +153,12 @@ class ImageChecksumMismatchError(BaseError):
 
 
 class TooManyLoopDevices(BaseError):
+    pass
+
+
+class WrongRepositoryError(BaseError):
+    pass
+
+
+class WrongDeviceError(BaseError):
     pass

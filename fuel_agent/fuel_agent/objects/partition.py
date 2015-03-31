@@ -289,6 +289,12 @@ class PartitionScheme(object):
         if found:
             return found[0]
 
+    def fs_sorted_by_depth(self, reverse=False):
+        # Shorter paths earlier. We sort all mount points by their depth.
+        # ['/', '/boot', '/var', '/var/lib/mysql']
+        key = lambda x: len(x.mount.rstrip('/').split('/'))
+        return sorted(self.fss, key=key, reverse=reverse)
+
     def lv_by_device_name(self, device_name):
         found = filter(lambda x: x.device_name == device_name, self.lvs)
         if found:

@@ -18,8 +18,8 @@ from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
 from nailgun.settings import settings
-from nailgun.statistics.utils import _get_attr_value
-from nailgun.statistics import WhiteListRule
+from nailgun.statistics.utils import get_attr_value
+from nailgun.statistics.utils import WhiteListRule
 from nailgun import utils
 
 
@@ -185,7 +185,7 @@ class InstallationInfo(object):
         result_attrs = {}
         for path, map_to_name, func in white_list:
             try:
-                result_attrs[map_to_name] = _get_attr_value(
+                result_attrs[map_to_name] = get_attr_value(
                     path, func, attributes)
             except (KeyError, TypeError):
                 pass

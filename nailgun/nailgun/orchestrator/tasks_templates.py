@@ -98,7 +98,7 @@ def make_sync_scripts_task(uids, src, dst):
             'dst': dst}}
 
 
-def make_shell_task(uids, task, cwd='/'):
+def make_shell_task(uids, task):
     return {
         'type': 'shell',
         'uids': uids,
@@ -109,7 +109,7 @@ def make_shell_task(uids, task, cwd='/'):
                 'retries', settings.SHELL_TASK_RETRIES),
             'interval': task['parameters'].get(
                 'interval', settings.SHELL_TASK_INTERVAL),
-            'cwd': cwd}}
+            'cwd': task['parameters'].get('cwd', '/')}}
 
 
 def make_yum_clean(uids):
@@ -128,7 +128,7 @@ def make_apt_update_task(uids):
     return make_shell_task(uids, task)
 
 
-def make_puppet_task(uids, task, cwd='/'):
+def make_puppet_task(uids, task):
     return {
         'type': 'puppet',
         'uids': uids,
@@ -136,7 +136,7 @@ def make_puppet_task(uids, task, cwd='/'):
             'puppet_manifest': task['parameters']['puppet_manifest'],
             'puppet_modules': task['parameters']['puppet_modules'],
             'timeout': task['parameters']['timeout'],
-            'cwd': cwd}}
+            'cwd': task['parameters'].get('cwd', '/')}}
 
 
 def make_generic_task(uids, task):

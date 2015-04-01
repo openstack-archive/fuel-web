@@ -27,11 +27,11 @@ from oslo_serialization import jsonutils
 
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import Query
 
 from nailgun.objects.serializers.base import BasicSerializer
 
 from nailgun.db import db
-from nailgun.db import NoCacheQuery
 from nailgun.errors import errors
 
 
@@ -157,7 +157,7 @@ class NailgunCollection(object):
     def _is_query(cls, obj):
         return isinstance(
             obj,
-            NoCacheQuery
+            Query
         )
 
     @classmethod

@@ -826,7 +826,6 @@ class TestNetworkManager(BaseNetworkManagerTest):
                 "interface %r",
                 "restricted_net", mock.ANY, mock.ANY
             )
-        self.db.refresh(cluster)
         assigned_nets_count = 0
         for iface in cluster.nodes[0].interfaces:
             assigned_nets_count += len(filter(lambda n: n['name'] ==
@@ -837,7 +836,6 @@ class TestNetworkManager(BaseNetworkManagerTest):
                                     cluster.network_groups)), 1)
         objects.Cluster.patch_attributes(
             cluster, yaml.load(attributes_metadata % False))
-        self.db.refresh(cluster)
         self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
                                     cluster.network_groups)), 0)
 

@@ -31,6 +31,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
+from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_dhcp_gateway \
+    import AddDhcpGateway
 from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_monitord_credentials \
     import AddMonitordKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys \
@@ -53,6 +55,7 @@ class PreUpgradeHookManager(object):
     #: List of hook clases
     hook_list = [
         AddCredentialsHook,
+        AddDhcpGateway,
         AddFuelwebX8664LinkForUbuntu,
         AddKeystoneCredentialsHook,
         AddMonitordKeystoneCredentialsHook,

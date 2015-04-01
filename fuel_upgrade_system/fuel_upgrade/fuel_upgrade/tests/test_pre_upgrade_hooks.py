@@ -39,6 +39,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_add_keystone_credentials \
     import AddKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_1_to_any_ln_fuelweb_x86_64 \
     import AddFuelwebX8664LinkForUbuntu
+from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_dhcp_gateway \
+    import AddDhcpGateway
 from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_add_monitord_credentials \
     import AddMonitordKeystoneCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys \
@@ -618,6 +620,55 @@ class TestAddMonitordKeystoneCredentialsHook(TestPreUpgradeHooksBase):
         self.assertTrue(set(self.monitord_keys).issubset(called_config))
         # Check that nothing else was changed
         self.assertEqual(called_config[file_key], file_value)
+
+
+class TestAddDhcpGatewayHook(TestPreUpgradeHooksBase):
+
+    HookClass = AddDhcpGateway
+
+    def test_is_required_returns_true(self):
+        hook = self.get_hook({})
+        self.assertTrue(hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        hook = self.get_hook({
+            'astute': {
+                'ADMIN_NETWORK': {
+                    'dhcp_gateway': '10.20.0.2',
+                }
+            }})
+
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.read_yaml_config')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.copy_file')
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.base.utils.save_as_yaml')
+    def test_run(self, msave_as_yaml, mcopy_file, mread_yaml_config):
+        hook = self.get_hook({
+            'astute': {
+                'ADMIN_NETWORK': {
+                    'a': 1,
+                    'b': 2,
+                }
+            }})
+        mread_yaml_config.return_value = hook.config.astute
+        hook.run()
+
+        mcopy_file.assert_called_once_with(
+            '/etc/fuel/astute.yaml',
+            '/etc/fuel/astute.yaml_0',
+            overwrite=False)
+
+        args = msave_as_yaml.call_args
+        self.assertEqual(args[0][0], '/etc/fuel/astute.yaml')
+
+        # Check that all required keys are in method call
+        admin_network = args[0][1]['ADMIN_NETWORK']
+        self.assertEqual(admin_network, {
+            'a': 1,
+            'b': 2,
+            'dhcp_gateway': '0.0.0.0',
+        })
 
 
 class TestMoveKeysHook(TestPreUpgradeHooksBase):

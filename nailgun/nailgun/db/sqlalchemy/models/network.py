@@ -63,7 +63,7 @@ class NetworkGroup(Base):
     ip_ranges = relationship(
         "IPAddrRange",
         backref="network_group",
-        cascade="all, delete"
+        cascade="all, delete, delete-orphan"
     )
     nodes = relationship(
         "Node",

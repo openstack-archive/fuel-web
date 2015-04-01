@@ -18,5 +18,4 @@ from nailgun.db.sqlalchemy import db
 from nailgun.db.sqlalchemy import dropdb
 from nailgun.db.sqlalchemy import engine
 from nailgun.db.sqlalchemy import flush
-from nailgun.db.sqlalchemy import NoCacheQuery
 from nailgun.db.sqlalchemy import syncdb

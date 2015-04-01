@@ -36,17 +36,6 @@ db_str = utils.make_dsn(**settings.DATABASE)
 engine = create_engine(db_str, client_encoding='utf8')
 
 
-class NoCacheQuery(Query):
-    """Override for common Query class.
-    Needed for automatic refreshing objects
-    from database during every query for evading
-    problems with multiple sessions
-    """
-    def __init__(self, *args, **kwargs):
-        self._populate_existing = True
-        super(NoCacheQuery, self).__init__(*args, **kwargs)
-
-
 class DeadlocksSafeQueryMixin(object):
     """Introduces ordered by id bulk deletes and updates into Query
 
@@ -97,14 +86,14 @@ class DeadlocksSafeQueryMixin(object):
         super(DeadlocksSafeQueryMixin, self).update(*args, **kwargs)
 
 
-class DeadlockDetectingQuery(DeadlocksSafeQueryMixin, NoCacheQuery):
+class DeadlockDetectingQuery(DeadlocksSafeQueryMixin, Query):
 
     def with_lockmode(self, mode):
         """with_lockmode function wrapper for deadlock detection
         """
         for table in self._get_tables():
             dd.register_lock(table)
-        return super(NoCacheQuery, self).with_lockmode(mode)
+        return super(DeadlockDetectingQuery, self).with_lockmode(mode)
 
     def with_for_update(self, *args, **kwargs):
         for table in self._get_tables():
@@ -170,9 +159,8 @@ if settings.DEVELOPMENT:
     query_class = DeadlockDetectingQuery
     session_class = DeadlockDetectingSession
 else:
-    query_class = NoCacheQuery
+    query_class = Query
     session_class = Session
-
 
 db = scoped_session(
     sessionmaker(

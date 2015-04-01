@@ -15,6 +15,7 @@
 #    under the License.
 
 import collections
+import copy
 import mock
 import netaddr
 import six
@@ -1294,7 +1295,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                     node.all_roles))
 
     def test_gateway_not_set_for_none_ip(self):
-        attrs = self.cluster.attributes.editable
+        attrs = copy.deepcopy(self.cluster.attributes.editable)
         attrs['neutron_advanced_configuration']['neutron_dvr']['value'] = True
         resp = self.app.patch(
             reverse(
@@ -1326,7 +1327,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         self.assertEqual('none', network_scheme['endpoints']['br-ex']['IP'])
 
     def test_public_iface_added_to_br_ex_in_dvr(self):
-        attrs = self.cluster.attributes.editable
+        attrs = copy.deepcopy(self.cluster.attributes.editable)
         attrs['neutron_advanced_configuration']['neutron_dvr']['value'] = True
         resp = self.app.patch(
             reverse(

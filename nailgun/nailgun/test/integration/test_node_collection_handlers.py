@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Node
@@ -319,12 +321,14 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=False)
 
         # Set IP outside of admin network range on eth1
-        node.meta['interfaces'][1]['ip'] = '10.21.0.3'
+        meta = copy.deepcopy(node.meta)
+        meta['interfaces'][1]['ip'] = '10.21.0.3'
+
         self.app.put(
             reverse('NodeAgentHandler'),
             jsonutils.dumps({
                 'mac': node.mac,
-                'meta': node.meta,
+                'meta': meta,
             }),
             headers=self.default_headers)
 

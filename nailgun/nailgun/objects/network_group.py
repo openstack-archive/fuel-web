@@ -81,7 +81,7 @@ class NetworkGroup(NailgunObject):
         notation = instance.meta.get('notation')
         if notation and not instance.nodegroup.cluster.is_locked:
             cls._delete_ips(instance)
-        db().delete(instance)
+        instance.nodegroup.networks.remove(instance)
         db().flush()
 
     @classmethod

@@ -79,12 +79,11 @@ class TestCharsetIssues(BaseIntegrationTest):
         timeout = 10
         timer = time.time()
         while True:
-            c = self.db.query(Cluster).get(cluster_id)
-            if not c:
+            cluster = self.db.query(Cluster).filter_by(id=cluster_id).first()
+            if not cluster:
                 break
             if (time.time() - timer) > timeout:
                 raise Exception("Cluster deletion timeout")
             time.sleep(0.24)
 
-        cluster_db = self.db.query(Cluster).get(cluster_id)
-        self.assertIsNone(cluster_db)
+        self.assertIsNone(cluster)

@@ -54,7 +54,7 @@ class NodeGroup(Base):
     networks = relationship(
         "NetworkGroup",
         backref="nodegroup",
-        cascade="delete"
+        cascade="delete, delete-orphan"
     )
 
 

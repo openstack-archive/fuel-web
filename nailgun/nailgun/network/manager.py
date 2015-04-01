@@ -1402,6 +1402,7 @@ class NetworkManager(object):
                             ng = cls.create_network_group(
                                 cluster, net, node_group.id
                             )
+                            node_group.networks.append(ng)
                             cls.assign_network_to_interface_by_default(ng)
 
     @classmethod
@@ -1464,14 +1465,14 @@ class NetworkManager(object):
                 if ip_range_db.first != ip_range_db.last:
                     ip_range_db.first = str(cidr[2])
                 else:
-                    db.delete(ip_range_db)
+                    network.ip_ranges.remove(ip_range_db)
                 # delete intersecting IPs
                 # TODO(akasatkin): need to reexamine deleting of IPs when
                 # manual setting of IPs will be allowed
                 db.query(IPAddr).filter(
                     IPAddr.ip_addr == network.gateway,
                     IPAddr.network == network.id
-                ).delete()
+                ).delete(synchronize_session='fetch')
         db().flush()
 
     @classmethod

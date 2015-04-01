@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 import netaddr
 from oslo_serialization import jsonutils
 
@@ -264,7 +266,7 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.nodes[0]
         node_data = {
             'id': node.id,
-            'meta': node.meta,
+            'meta': copy.deepcopy(node.meta),
             'mac': node.mac,
             'status': node.status
         }

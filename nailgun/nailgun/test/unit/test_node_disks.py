@@ -431,7 +431,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
         response = self.get(node_db.id)
         self.assertEqual(len(response), 6)
 
-        new_meta = node_db.meta.copy()
+        new_meta = deepcopy(node_db.meta)
         new_meta['disks'].append({
             'size': 1000022933376,
             'model': 'SAMSUNG B00B135',

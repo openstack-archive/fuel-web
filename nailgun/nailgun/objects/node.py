@@ -550,6 +550,9 @@ class Node(NailgunObject):
 
         super(Node, cls).update(instance, data)
 
+        # we need to update relationships, if fk's are changed
+        db.refresh(instance)
+
         if roles_changed:
             cls.update_roles(instance, roles)
         if pending_roles_changed:
@@ -1059,7 +1062,7 @@ class NodeCollection(NailgunCollection):
     def delete_by_ids(cls, ids):
         fire_callback_on_node_collection_delete(ids)
         db.query(cls.single.model).filter(
-            cls.single.model.id.in_(ids)).delete(synchronize_session=False)
+            cls.single.model.id.in_(ids)).delete(synchronize_session='fetch')
 
     @classmethod
     def discovery_node_ids(self):

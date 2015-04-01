@@ -341,11 +341,6 @@ class TestNetworkManager(BaseNetworkManagerTest):
             name=consts.NETWORKS.management
         ).first()
 
-        # since there's no delete-orphan cascade on network.ip_ranges
-        # relationship, we have to remove old ip_ranges manually
-        self.db.query(IPAddrRange).filter_by(
-            network_group_id=mgmt_net.id).delete()
-
         # set new range for management network of non-default node group
         mgmt_net.cidr = '7.7.7.0/24'
         mgmt_net.ip_ranges = [IPAddrRange(first='7.7.7.1', last='7.7.7.254')]
@@ -826,7 +821,6 @@ class TestNetworkManager(BaseNetworkManagerTest):
                 "interface %r",
                 "restricted_net", mock.ANY, mock.ANY
             )
-        self.db.refresh(cluster)
         assigned_nets_count = 0
         for iface in cluster.nodes[0].interfaces:
             assigned_nets_count += len(filter(lambda n: n['name'] ==
@@ -837,7 +831,6 @@ class TestNetworkManager(BaseNetworkManagerTest):
                                     cluster.network_groups)), 1)
         objects.Cluster.patch_attributes(
             cluster, yaml.load(attributes_metadata % False))
-        self.db.refresh(cluster)
         self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
                                     cluster.network_groups)), 0)
 

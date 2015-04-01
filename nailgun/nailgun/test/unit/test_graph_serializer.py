@@ -16,6 +16,7 @@
 
 from collections import defaultdict
 from itertools import groupby
+import os
 
 import mock
 import yaml
@@ -639,9 +640,15 @@ class TestOrdered(base.BaseTestCase):
     def setUp(self):
         super(TestOrdered, self).setUp()
         self.tasks = yaml.load(self.TASKS)
-        self.graph = deployment_graph.DeploymentGraph(tasks=self.tasks)
 
     def test_always_same_order(self):
-        self.assertEqual(
-            [n['id'] for n in self.graph.topology],
-            ['a', 'c', 'b', 'd', 'e'])
+
+        with mock.patch.dict(os.environ, {'PYTHONHASHSEED': '10'}):
+            first = deployment_graph.DeploymentGraph(tasks=self.tasks)
+            first_order = [n['id'] for n in first.topology]
+
+        with mock.patch.dict(os.environ, {'PYTHONHASHSEED': '50'}):
+            second = deployment_graph.DeploymentGraph(tasks=self.tasks)
+            second_order = [n['id'] for n in second.topology]
+
+        self.assertEqual(first_order, second_order)

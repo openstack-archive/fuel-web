@@ -118,7 +118,7 @@ class NetworkManager(object):
 
     @classmethod
     def reusable_ip_address(cls, node, network):
-        """Verifies that ip belongs to network and creates IPAddr in case it did
+        """Verifies that ip belongs to network and creates IPAddr in case it is
 
         :param node: Node database object.
         :param network: Network database object.
@@ -695,7 +695,8 @@ class NetworkManager(object):
         for interface in node.meta["interfaces"]:
             # try to get interface by mac address
             interface_db = next((
-                n for n in node.nic_interfaces if utils.is_same_mac(n.mac, interface['mac'])),
+                n for n in node.nic_interfaces
+                if utils.is_same_mac(n.mac, interface['mac'])),
                 None)
 
             # try to get interface instance by interface name. this protects

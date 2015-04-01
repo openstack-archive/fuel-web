@@ -1217,7 +1217,7 @@
               - type: "rpm"
                 name: "mos"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/x86_64"
-                priority: 20
+                priority: null
       generated:
         cobbler:
           profile:

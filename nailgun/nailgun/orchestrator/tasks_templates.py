@@ -79,13 +79,19 @@ def make_ubuntu_unauth_repos_task(uids):
 
 
 def make_centos_repo_task(uids, repo):
-    repo_content = '\n'.join([
+    repo_content = [
         '[{name}]',
         'name=Plugin {name} repository',
         'baseurl={uri}',
         'gpgcheck=0',
-        'priority={priority}']).format(**repo)
+    ]
+
+    if repo.get('priority'):
+        repo_content.append('priority={priority}')
+
+    repo_content = '\n'.join(repo_content).format(**repo)
     repo_path = '/etc/yum.repos.d/{name}.repo'.format(name=repo['name'])
+
     return make_upload_task(uids, repo_content, repo_path)
 
 

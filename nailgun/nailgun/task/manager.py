@@ -557,12 +557,25 @@ class DeploymentTaskManager(TaskManager):
     def execute(self, nodes_to_deployment, deployment_tasks=None):
         deployment_tasks = deployment_tasks or []
 
-        logger.debug('Nodes to deploy: {0}'.format(
-            ' '.join([objects.Node.get_node_fqdn(n)
-                      for n in nodes_to_deployment])))
         task_deployment = Task(
             name=consts.TASK_NAMES.deployment, cluster=self.cluster)
         db().add(task_deployment)
+        db().flush()
+
+        # locking task
+        task_deployment = objects.Task.get_by_uid(
+            task_deployment.id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
+        # locking nodes for update
+        objects.NodeCollection.lock_nodes(nodes_to_deployment)
+        objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_deployment)
+
+        logger.debug('Nodes to deploy: {0}'.format(
+            ' '.join([objects.Node.get_node_fqdn(n)
+                      for n in nodes_to_deployment])))
 
         deployment_message = self._call_silently(
             task_deployment,
@@ -572,16 +585,6 @@ class DeploymentTaskManager(TaskManager):
             method_name='message')
 
         db().refresh(task_deployment)
-
-        # locking task
-        task_deployment = objects.Task.get_by_uid(
-            task_deployment.id,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
-        # locking nodes
-        objects.NodeCollection.lock_nodes(nodes_to_deployment)
-
         task_deployment.cache = deployment_message
 
         for node in nodes_to_deployment:

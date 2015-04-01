@@ -218,7 +218,6 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.task.task.rpc.cast')
     def test_start_deployment_on_selected_nodes(self, mcast):
         controller_nodes = [
@@ -258,7 +257,6 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         self.check_deployment_call_made([nodes_uids[0]], mcast)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.task.task.rpc.cast')
     def test_deployment_of_node_is_forbidden(self, mcast):
         # cluster is in ha mode so for the sanity of the check
@@ -278,12 +276,6 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         resp = self.send_put(deploy_action_url)
         self.check_resp_declined(resp)
-
-        self.emulate_nodes_provisioning([node_to_deploy])
-
-        self.send_put(deploy_action_url)
-
-        self.check_deployment_call_made([node_to_deploy.uid], mcast)
 
     @patch('nailgun.task.task.rpc.cast')
     def test_deployment_forbidden_on_pending_deletion(self, mcast):

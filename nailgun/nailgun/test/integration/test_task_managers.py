@@ -16,7 +16,6 @@
 
 
 import nailgun
-import nailgun.rpc as rpc
 import time
 
 import mock
@@ -584,10 +583,7 @@ class TestTaskManagers(BaseIntegrationTest):
         manager_ = manager.ApplyChangesTaskManager(cluster_id)
         task = models.Task(name='provision', cluster_id=cluster_id)
         self.db.add(task)
-        self.db.commit()
-        rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
-            {'uid': 666, 'id': 666, 'status': 'discover'}
-        ], task_uuid=task.uuid)
+        self.db.flush()
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @fake_tasks()

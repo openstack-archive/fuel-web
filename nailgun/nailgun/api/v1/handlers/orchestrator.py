@@ -202,10 +202,10 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
 
     def handle_task(self, cluster, **kwargs):
 
+        task_manager = self.task_manager(cluster_id=cluster.id)
         nodes = self.get_nodes(cluster)
 
         try:
-            task_manager = self.task_manager(cluster_id=cluster.id)
             task = task_manager.execute(nodes, **kwargs)
         except Exception as exc:
             logger.warn(

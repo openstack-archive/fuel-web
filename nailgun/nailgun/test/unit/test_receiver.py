@@ -66,6 +66,7 @@ class TestNailgunReceiver(base.BaseTestCase):
                  "role": "hook", "uid": "master"}]}
         NailgunReceiver.deploy_resp(**node_resp)
         self.assertEqual(self.task.status, 'error')
+        self.db.rollback()
 
         task_resp = {
             "status": "error",

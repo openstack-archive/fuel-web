@@ -181,6 +181,9 @@ define([
                                         label={index == 0 && i18n(ns + 'labels.priority')}
                                     />
                                 }
+                                {!isExperimental && error && error.priority &&
+                                    <div className='parameter-description error'>{error.priority}</div>
+                                }
                             </div>
                         );
                     }, this)}

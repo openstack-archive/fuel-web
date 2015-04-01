@@ -2582,10 +2582,8 @@ input.error:focus,
   text-align: justify;
 }
 
-.has-error {
-  .parameter-description {
-    color: @fuel-deep-red;
-  }
+.has-error .parameter-description, .parameter-description.error {
+  color: @fuel-deep-red;
 }
 
 .parameter-spacer {
@@ -4157,7 +4155,9 @@ i.btn-cluster-details {
     .parameter-description {
       margin-left: 0;
       width: 250px;
-      .position(absolute, @bottom: 4px);
+      &:not(.error) {
+        .position(absolute, @bottom: 4px);
+      }
     }
     .parameter-name {
       padding: 0;

@@ -12,8 +12,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.statistics.utils import get_attr_value
 from nailgun.statistics.utils import WhiteListRule
 
+
+def volume_attachments_transform_func(attachments_list):
+    attachment_attributes_white_list = (
+        WhiteListRule(("device",), "device", None),
+        WhiteListRule(("server_id",), "server_id", None),
+        WhiteListRule(("id",), "id", None),
+    )
+
+    result = []
+    for attachment in attachments_list:
+        filtered_attachment = {}
+
+        for rule in attachment_attributes_white_list:
+            filtered_attachment[rule.map_to_name] = \
+                get_attr_value(rule.path, rule.transform_func, attachment)
+
+        result.append(filtered_attachment)
+
+    return result
 
 resources_description = {
     "vm": {
@@ -127,7 +147,8 @@ resources_description = {
                     WhiteListRule(("size",), "size", None),
                     WhiteListRule(("os-vol-host-attr:host",), "host", None),
                     WhiteListRule(("snapshot_id",), "snapshot_id", None),
-                    WhiteListRule(("attachments",), "attachments", None),
+                    WhiteListRule(("attachments",), "attachments",
+                                  volume_attachments_transform_func),
                     WhiteListRule(("os-vol-tenant-attr:tenant_id",),
                                   "tenant_id", None),
                 ),

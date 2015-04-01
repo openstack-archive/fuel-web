@@ -18,10 +18,13 @@ import copy
 import mock
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun.test import base
 
 from nailgun.orchestrator.plugins_serializers import \
     BasePluginDeploymentHooksSerializer
+from nailgun.orchestrator.plugins_serializers import \
+    PluginsPreDeploymentHooksSerializer
 
 
 class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
@@ -180,3 +183,64 @@ class TestTasksDeploymentOrder(base.BaseTestCase):
              'pre_deployment/100.0',
              'pre_deployment/+100',
              'pre_deployment/100'])
+
+
+@mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_tasks',
+            return_value=[1, 2])
+class TestPluginsPreDeploymentHooksSerializer(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestPluginsPreDeploymentHooksSerializer, self).setUp()
+        self.cluster = mock.Mock()
+        self.cluster.release.operating_system = 'ubuntu'
+        self.nodes = [
+            {'id': 1, 'role': 'controller'},
+            {'id': 2, 'role': 'compute'}
+        ]
+        self.hook = PluginsPreDeploymentHooksSerializer(
+            self.cluster,
+            self.nodes)
+        self.plugins = [mock.Mock()]
+
+    @mock.patch(
+        'nailgun.orchestrator.plugins_serializers.'
+        'templates.make_centos_repo_task',
+        return_value={'task_type': 'centos_repo_task', 'parameters': {}})
+    def test_create_repositories_centos(self, _, __):
+        self.cluster.release.operating_system = consts.RELEASE_OS.centos
+        tasks = self.hook.create_repositories(self.plugins)
+        self.assertEqual(
+            map(lambda t: t['task_type'], tasks),
+            ['centos_repo_task'])
+
+    @mock.patch(
+        'nailgun.orchestrator.plugins_serializers.'
+        'templates.make_ubuntu_sources_task',
+        return_value={'task_type': 'ubuntu_sources_task',
+                      'parameters': {}})
+    @mock.patch(
+        'nailgun.orchestrator.plugins_serializers.'
+        'templates.make_ubuntu_preferences_task',
+        return_value={'task_type': 'ubuntu_preferences_task',
+                      'parameters': {}})
+    @mock.patch(
+        'nailgun.orchestrator.plugins_serializers.'
+        'templates.make_apt_update_task',
+        return_value={'task_type': 'apt_update_task',
+                      'parameters': {}})
+    def test_create_repositories_ubuntu(self, _, __, ___, ____):
+        self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
+        tasks = self.hook.create_repositories(self.plugins)
+        self.assertEqual(
+            map(lambda t: t['task_type'], tasks),
+            ['ubuntu_sources_task',
+             'ubuntu_preferences_task',
+             'apt_update_task'])
+
+    def test_create_repositories_raises_error(self, _):
+        self.cluster.release.operating_system = 'no_name'
+        self.assertRaisesRegexp(
+            errors.InvalidOperatingSystem,
+            'Operating system no_name is invalid',
+            self.hook.create_repositories,
+            self.plugins)

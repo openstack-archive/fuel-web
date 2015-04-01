@@ -1,0 +1,3 @@
+ordereddict>=1.1
+PyYAML==3.10
+python-keystoneclient

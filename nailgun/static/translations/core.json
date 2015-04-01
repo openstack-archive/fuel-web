@@ -159,6 +159,7 @@
                     "create_account": "Create Account",
                     "retrive_password": "Retrive Password",
                     "connection_error": " Looks like this machine is not connected to Internet. Please check connection and try again",
+                    "required_fields": "Please note that all fields are required.",
                     "welcome_phrase": {
                         "thanks": "Thanks",
                         "content": "you’re all set!"

@@ -51,16 +51,36 @@ class DeploymentGraph(nx.DiGraph):
     parameters: specific for each task type parameters
     """
 
-    @property
-    def node_dict_factory(self):
-        return OrderedDict
+    node_dict_factory = OrderedDict
+    adjlist_dict_factory = OrderedDict
 
     def __init__(self, tasks=None, *args, **kwargs):
+        self.node = self.node_dict_factory()
+        self.adj = self.adjlist_dict_factory()
+        self.pred = self.adjlist_dict_factory()
+        self.succ = self.adj  # successor
 
         super(DeploymentGraph, self).__init__(*args, **kwargs)
-        self.node = self.node_dict_factory()
         if tasks is not None:
             self.add_tasks(tasks)
+
+    def add_node(self, n, **attr):
+        if n not in self.succ:
+            self.succ[n] = self.adjlist_dict_factory()
+            self.pred[n] = self.adjlist_dict_factory()
+            self.node[n] = attr
+        super(DeploymentGraph, self).add_node(n, **attr)
+
+    def add_edge(self, u, v, **attr):
+        if u not in self.succ:
+            self.succ[u] = self.adjlist_dict_factory()
+            self.pred[u] = self.adjlist_dict_factory()
+            self.node[u] = self.node_dict_factory()
+        if v not in self.succ:
+            self.succ[v] = self.adjlist_dict_factory()
+            self.pred[v] = self.adjlist_dict_factory()
+            self.node[v] = self.node_dict_factory()
+        super(DeploymentGraph, self).add_edge(u, v, **attr)
 
     def add_tasks(self, tasks):
         for task in tasks:

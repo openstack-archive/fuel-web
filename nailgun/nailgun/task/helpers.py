@@ -32,7 +32,8 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
-from nailgun.statistics.params_white_lists import task_output_white_list
+from nailgun.statistics.fuel_statistic.tasks_params_white_lists \
+    import task_output_white_list
 
 
 tasks_names_actions_groups_mapping = {

@@ -69,8 +69,8 @@ if __name__ == "__main__":
                   'assassind = nailgun.assassin.assassind:run',
                   'receiverd = nailgun.rpc.receiverd:run',
                   'statsenderd = nailgun.statistics.statsenderd:run',
-                  'oswl_collectord = nailgun.statistics.oswl_collector:run',
-                  ('oswl_cleaner = nailgun.statistics.utils:'
+                  'oswl_collectord = nailgun.statistics.oswl.collector:run',
+                  ('oswl_cleaner = nailgun.statistics.oswl.helpers:'
                    'delete_expired_oswl_entries'),
               ],
               'nose.plugins.0.10': [

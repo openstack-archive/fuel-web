@@ -23,7 +23,8 @@ from nailgun.test.base import reverse
 
 from nailgun import consts
 from nailgun import objects
-from nailgun.statistics.params_white_lists import task_output_white_list
+from nailgun.statistics.fuel_statistics.tasks_params_white_lists \
+    import task_output_white_list
 from nailgun.task.helpers import TaskHelper
 
 

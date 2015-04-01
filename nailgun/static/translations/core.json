@@ -157,7 +157,7 @@
                     "register_installation": "Connect this installation with your Mirantis account and get free support for next 30 days!",
                     "link_text": "Register Now",
                     "create_account": "Create Account",
-                    "retrive_password": "Retrive Password",
+                    "retrieve_password": "Retrieve Password",
                     "connection_error": " Looks like this machine is not connected to Internet. Please check connection and try again",
                     "welcome_phrase": {
                         "thanks": "Thanks",
@@ -753,8 +753,8 @@
                     "agree_error": "You need to accept Terms and Conditions"
                 },
                 "retrieve_password": {
-                    "title": "Retrive Password",
-                    "send_new_password": "Send new password",
+                    "title": "Retrieve Password",
+                    "send_new_password": "Send New Password",
                     "submit_email": "Please submit your Mirantis Account Email and we will send your new password.",
                     "done": "Done.",
                     "check_email": "Please check your email for new password"

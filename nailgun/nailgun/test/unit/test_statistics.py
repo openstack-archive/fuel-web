@@ -793,7 +793,22 @@ class TestOSWLHelpers(BaseTestCase):
                     "size": 1,
                     "os-vol-host-attr:host": "test-node",
                     "snapshot_id": None,
-                    "attachments": "test_attachments",
+                    "attachments": [
+                        {
+                            "device": "/dev/sda1",
+                            "server_id": "one_test_server_id",
+                            "id": "firs_test_id",
+                            "host_name": "test_host",
+                            "volume_id": "first_test_id",
+                        },
+                        {
+                            "device": "/dev/sda2",
+                            "server_id": "another_test_server_id",
+                            "id": "second_test_id",
+                            "host_name": "test_host",
+                            "volume_id": "second_test_id",
+                        },
+                    ],
                     "os-vol-tenant-attr:tenant_id": "test_tenant",
                 },
             ],
@@ -899,7 +914,18 @@ class TestOSWLHelpers(BaseTestCase):
                     "size": 1,
                     "host": "test-node",
                     "snapshot_id": None,
-                    "attachments": "test_attachments",
+                    "attachments": [
+                        {
+                            "device": "/dev/sda1",
+                            "server_id": "one_test_server_id",
+                            "id": "firs_test_id",
+                        },
+                        {
+                            "device": "/dev/sda2",
+                            "server_id": "another_test_server_id",
+                            "id": "second_test_id",
+                        },
+                    ],
                     "tenant_id": "test_tenant",
                 },
             ],

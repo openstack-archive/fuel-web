@@ -25,7 +25,8 @@ from nailgun.objects import ClusterCollection
 from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.settings import settings
 from nailgun.statistics import errors
-from nailgun.statistics.oswl_saver import oswl_statistics_save
+from nailgun.statistics.oswl import helpers
+from nailgun.statistics.oswl.saver import oswl_statistics_save
 from nailgun.statistics import utils
 
 
@@ -55,11 +56,11 @@ def collect(resource_type):
         # Collect current OSWL data and update data in DB
         for cluster in operational_clusters:
             try:
-                client_provider = utils.ClientProvider(cluster)
+                client_provider = helpers.ClientProvider(cluster)
                 proxy_for_os_api = utils.get_proxy_for_cluster(cluster)
 
                 with utils.set_proxy(proxy_for_os_api):
-                    data = utils.get_info_from_os_resource_manager(
+                    data = helpers.get_info_from_os_resource_manager(
                         client_provider, resource_type)
                     oswl_statistics_save(cluster.id, resource_type, data)
 

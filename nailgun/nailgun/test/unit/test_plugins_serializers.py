@@ -75,11 +75,13 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
 
         plugin = mock.Mock()
         plugin.full_name = 'plugin_name'
+        plugin.slaves_scripts_path = 'plugin_path'
 
-        plugin.tasks = [
-            {'type': 'reboot', 'role': 'controller', 'stage': stage,
-             'parameters': {'timeout': 15}}
-        ]
+        plugin.tasks = [{
+            'type': 'reboot',
+            'role': 'controller',
+            'stage': stage,
+            'parameters': {'timeout': 15}}]
 
         get_uids_for_roles_mock.return_value = [1, 2]
 
@@ -92,6 +94,29 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
             'uids': [1, 2]}
 
         self.assertEqual(result, [expecting_format])
+
+    @mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_roles',
+                return_value=[1, 2])
+    def test_generates_scripts_path_in_case_of_several_plugins(self, _):
+        stage = 'pre_deployment'
+        plugins = []
+        names = ['plugin_name1', 'plugin_name2']
+
+        for name in names:
+            plugin = mock.Mock()
+            plugin.full_name = name
+            plugin.slaves_scripts_path = name
+
+            plugin.tasks = [{
+                'type': 'shell',
+                'role': 'controller',
+                'stage': stage,
+                'parameters': {'timeout': 15, 'cmd': 'cmd'}}]
+            plugins.append(plugin)
+
+        result = self.hook.deployment_tasks(plugins, stage)
+        script_paths = sorted(map(lambda p: p['parameters']['cwd'], result))
+        self.assertEqual(script_paths, names)
 
 
 @mock.patch('nailgun.orchestrator.plugins_serializers.get_uids_for_roles',

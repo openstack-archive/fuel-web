@@ -28,7 +28,7 @@ from nailgun.settings import settings
 
 
 class BasePluginDeploymentHooksSerializer(object):
-    #TODO(dshulyak) refactor it to be consistent with task_serializer
+    # TODO(dshulyak) refactor it to be consistent with task_serializer
 
     def __init__(self, cluster, nodes):
         self.cluster = cluster
@@ -36,48 +36,57 @@ class BasePluginDeploymentHooksSerializer(object):
 
     def deployment_tasks(self, plugins, stage):
         tasks = []
+        plugin_tasks = []
         sorted_plugins = sorted(plugins, key=lambda p: p.plugin.name)
 
-        plugin_tasks = []
         for plugin in sorted_plugins:
-            plugin_tasks.extend(filter(
-                lambda t: t['stage'].startswith(stage),
-                plugin.tasks))
+            stage_tasks = filter(
+                lambda t: t['stage'].startswith(stage), plugin.tasks)
+            plugin_tasks.extend(self._set_tasks_defaults(plugin, stage_tasks))
 
         sorted_tasks = self._sort_by_stage_postfix(plugin_tasks)
-
         for task in sorted_tasks:
+            make_task = None
             uids = get_uids_for_roles(self.nodes, task['role'])
             if not uids:
                 continue
+
             if task['type'] == 'shell':
-                tasks.append(self.serialize_task(
-                    plugin, task,
-                    templates.make_shell_task(
-                        uids, task, plugin.slaves_scripts_path)))
+                make_task = templates.make_shell_task
             elif task['type'] == 'puppet':
-                tasks.append(self.serialize_task(
-                    plugin, task,
-                    templates.make_puppet_task(
-                        uids, task, plugin.slaves_scripts_path)))
+                make_task = templates.make_puppet_task
             elif task['type'] == 'reboot':
-                tasks.append(self.serialize_task(
-                    plugin, task,
-                    templates.make_reboot_task(
-                        uids, task)))
+                make_task = templates.make_reboot_task
             else:
                 logger.warn('Task is skipped {0}, because its type is '
                             'not supported').format(task)
 
+            if make_task:
+                tasks.append(self._serialize_task(make_task(uids, task), task))
+
         return tasks
 
-    def serialize_task(self, plugin, task_defaults, task):
-        task.update(self.get_default_parameters(plugin, task_defaults))
+    def _set_tasks_defaults(self, plugin, tasks):
+        for task in tasks:
+            self._set_task_defaults(plugin, task)
+        return tasks
+
+    def _set_task_defaults(self, plugin, task):
+        task['parameters'].setdefault('cwd', plugin.slaves_scripts_path)
+        task.setdefault('diagnostic_name', plugin.full_name)
+        task.setdefault('fail_on_error', True)
+
         return task
 
-    def get_default_parameters(self, plugin, task_defaults):
-        return {'fail_on_error': task_defaults.get('fail_on_error', True),
-                'diagnostic_name': plugin.full_name}
+    def _serialize_task(self, task, default_task):
+        task.update({
+            'diagnostic_name': default_task['diagnostic_name'],
+            'fail_on_error': default_task['fail_on_error']})
+        return task
+
+    def serialize_task(self, plugin, task):
+        return self._serialize_task(
+            self._set_task_defaults(plugin, task), task)
 
     def _sort_by_stage_postfix(self, tasks):
         """Sorts tasks in the correct order by task postfixes,
@@ -136,7 +145,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
                 repo = self.get_centos_repo(plugin)
                 repo_tasks.append(
                     self.serialize_task(
-                        plugin, {},
+                        plugins,
                         templates.make_centos_repo_task(uids, repo)))
 
             elif operating_system == consts.RELEASE_OS.ubuntu:
@@ -144,17 +153,17 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
                 repo_tasks.extend([
                     self.serialize_task(
-                        plugin, {},
+                        plugin,
                         templates.make_ubuntu_sources_task(uids, repo)),
                     self.serialize_task(
-                        plugin, {},
+                        plugin,
                         templates.make_ubuntu_preferences_task(uids, repo))])
 
                 # apt-get update executed after every additional source.list
                 # to be able understand what plugin source.list caused error
                 repo_tasks.append(
                     self.serialize_task(
-                        plugin, {},
+                        plugin,
                         templates.make_apt_update_task(uids)))
             else:
                 raise errors.InvalidOperatingSystem(
@@ -170,7 +179,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
                 continue
             tasks.append(
                 self.serialize_task(
-                    plugin, {},
+                    plugin,
                     templates.make_sync_scripts_task(
                         uids,
                         plugin.master_scripts_path(self.cluster),

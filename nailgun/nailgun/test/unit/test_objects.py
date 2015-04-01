@@ -318,10 +318,8 @@ class TestNodeObject(BaseIntegrationTest):
         cluster = self.env.clusters[0]
         cluster.release.roles_metadata['mongo']['public_ip_required'] = True
         attrs = cluster.attributes.editable
-        self.assertEqual(
-            attrs['public_network_assignment']['assign_to_all_nodes']['value'],
-            False
-        )
+        self.assertFalse(
+            attrs['public_network_assignment']['assign_to_all_nodes']['value'])
         self.assertFalse(
             objects.Cluster.should_assign_public_to_all_nodes(cluster))
 
@@ -332,14 +330,7 @@ class TestNodeObject(BaseIntegrationTest):
 
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
-        resp = self.app.patch(
-            reverse(
-                'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster.id}),
-            params=jsonutils.dumps({'editable': attrs}),
-            headers=self.default_headers
-        )
-        self.assertEqual(200, resp.status_code)
+
         self.assertTrue(
             objects.Cluster.should_assign_public_to_all_nodes(cluster))
 
@@ -365,7 +356,7 @@ class TestNodeObject(BaseIntegrationTest):
             nodes_kwargs=nodes)
 
         cluster = self.env.clusters[0]
-        attrs = cluster.attributes.editable
+        attrs = copy.deepcopy(cluster.attributes.editable)
         attrs['neutron_advanced_configuration']['neutron_dvr']['value'] = True
         resp = self.app.patch(
             reverse(

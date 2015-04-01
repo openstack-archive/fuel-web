@@ -1577,7 +1577,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assert_nodes_with_role(nodes, 'cinder', 3)
 
     def set_assign_public_to_all_nodes(self, cluster_db, value):
-        attrs = cluster_db.attributes.editable
+        attrs = copy.deepcopy(cluster_db.attributes.editable)
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             value
         resp = self.app.patch(
@@ -2060,7 +2060,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         self.db.commit()
 
         cluster = self.db.query(Cluster).get(cluster_id)
-        editable_attrs = cluster.attributes.editable
+        editable_attrs = copy.deepcopy(cluster.attributes.editable)
         self.assertEqual(editable_attrs['vlan_splinters']['vswitch']['value'],
                          'some_text')
 

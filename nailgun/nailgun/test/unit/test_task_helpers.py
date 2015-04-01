@@ -170,6 +170,11 @@ class TestTaskHelpers(BaseTestCase):
         actual = TaskHelper.get_task_cache(task)
         self.assertDictEqual(expected, actual)
 
+        # NOTE: We need to expire 'cache' attribute because otherwise
+        #       the 'task.cache' won't throw 'ObjectDeletedError' and
+        #       will be unable to test 'get_task_cache'.
+        self.db.expire(task, ['cache'])
+
         task_from_db = objects.Task.get_by_uuid(task.uuid)
         self.db.delete(task_from_db)
         self.db.flush()

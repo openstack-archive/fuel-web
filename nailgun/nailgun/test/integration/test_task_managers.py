@@ -528,7 +528,8 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
         def cluster_is_deleted():
-            return not self.db.query(models.Cluster).get(cluster_id)
+            q = self.db.query(models.Cluster).filter_by(id=cluster_id)
+            return not self.db.query(q.exists()).scalar()
 
         self.env.wait_for_true(cluster_is_deleted,
                                error_message="Cluster deletion timeout")

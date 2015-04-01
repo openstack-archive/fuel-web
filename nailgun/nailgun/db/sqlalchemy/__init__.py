@@ -43,7 +43,6 @@ class NoCacheQuery(Query):
     problems with multiple sessions
     """
     def __init__(self, *args, **kwargs):
-        self._populate_existing = True
         super(NoCacheQuery, self).__init__(*args, **kwargs)
 
 
@@ -172,7 +171,6 @@ if settings.DEVELOPMENT:
 else:
     query_class = NoCacheQuery
     session_class = Session
-
 
 db = scoped_session(
     sessionmaker(

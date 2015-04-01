@@ -34,10 +34,12 @@ from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.objects import ReleaseCollection
 from nailgun.settings import settings
 from nailgun.statistics import errors
-from nailgun.statistics.installation_info import InstallationInfo
-from nailgun.statistics.oswl_collector import collect as oswl_collect_once
-from nailgun.statistics.oswl_saver import oswl_data_checksum
-from nailgun.statistics.oswl_saver import oswl_statistics_save
+from nailgun.statistics.fuel_statistic.installation_info \
+    import InstallationInfo
+from nailgun.statistics.oswl.collector import collect as oswl_collect_once
+from nailgun.statistics.oswl import helpers
+from nailgun.statistics.oswl.saver import oswl_data_checksum
+from nailgun.statistics.oswl.saver import oswl_statistics_save
 from nailgun.statistics.statsenderd import StatsSender
 from nailgun.statistics import utils
 
@@ -741,7 +743,7 @@ class TestStatisticsSender(BaseTestCase):
             self.check_oswl_data_send_result(send_data_to_url, status, is_sent)
 
 
-class TestOSWLCollectingUtils(BaseTestCase):
+class TestOSWLHelpers(BaseTestCase):
 
     components_to_mock = {
         "nova": {
@@ -852,29 +854,6 @@ class TestOSWLCollectingUtils(BaseTestCase):
 
             setattr(root_mock, attr_name, attr_value)
 
-    def test_get_nested_attr(self):
-        expected_attr = Mock()
-        intermediate_attr = Mock(spec=["expected_attr"])
-        containing_obj = Mock(spec=["intermediate_attr"])
-
-        intermediate_attr.expected_attr = expected_attr
-        containing_obj.intermediate_attr = intermediate_attr
-
-        existing_attr_path = ["intermediate_attr", "expected_attr"]
-        self.assertEqual(
-            expected_attr,
-            utils._get_nested_attr(containing_obj, existing_attr_path)
-        )
-
-        missing_attrs_pathes = [
-            ["missing_attr", "expected_attr"],
-            ["intermediate_attr", "missing_attr"],
-        ]
-        for attr_path in missing_attrs_pathes:
-            self.assertIsNone(
-                utils._get_nested_attr(containing_obj, attr_path)
-            )
-
     def test_get_oswl_info(self):
         expected = {
             "vm": [
@@ -945,7 +924,7 @@ class TestOSWLCollectingUtils(BaseTestCase):
                                             self.components_to_mock)
 
         for resource_name, expected_data in six.iteritems(expected):
-            actual = utils.get_info_from_os_resource_manager(
+            actual = helpers.get_info_from_os_resource_manager(
                 client_provider_mock, resource_name
             )
             self.assertEqual(actual, expected_data)
@@ -1015,14 +994,14 @@ class TestOSWLCollectingUtils(BaseTestCase):
         client_provider_mock = self._prepare_client_provider_mock()
         self._update_mock_with_complex_dict(client_provider_mock,
                                             keystone_v2_component)
-        kc_v2_info = utils.get_info_from_os_resource_manager(
+        kc_v2_info = helpers.get_info_from_os_resource_manager(
             client_provider_mock, consts.OSWL_RESOURCE_TYPES.keystone_user
         )
 
         client_provider_mock = self._prepare_client_provider_mock()
         self._update_mock_with_complex_dict(client_provider_mock,
                                             keystone_v3_component)
-        kc_v3_info = utils.get_info_from_os_resource_manager(
+        kc_v3_info = helpers.get_info_from_os_resource_manager(
             client_provider_mock, consts.OSWL_RESOURCE_TYPES.keystone_user
         )
 
@@ -1035,19 +1014,22 @@ class TestOSWLCollectingUtils(BaseTestCase):
         self._update_mock_with_complex_dict(client_provider_mock,
                                             self.components_to_mock)
 
-        utils.get_info_from_os_resource_manager(
+        helpers.get_info_from_os_resource_manager(
             client_provider_mock, consts.OSWL_RESOURCE_TYPES.vm
         )
         client_provider_mock.nova.servers.list.assert_called_once_with(
             **expected_display_options
         )
 
-        utils.get_info_from_os_resource_manager(
+        helpers.get_info_from_os_resource_manager(
             client_provider_mock, consts.OSWL_RESOURCE_TYPES.volume
         )
         client_provider_mock.cinder.volumes.list.assert_called_once_with(
             **expected_display_options
         )
+
+
+class TestUtilsFunctions(BaseTestCase):
 
     def test_set_proxy_func(self):
         def check_proxy():
@@ -1080,7 +1062,7 @@ class TestOSWLCollectingUtils(BaseTestCase):
         raise_inside_context()
         self.assertNotIn("http_proxy", os.environ)
 
-    def test_get_attributes(self):
+    def test_get_attr_value(self):
         attributes = {
             'a': 'b',
             'c': [
@@ -1090,15 +1072,18 @@ class TestOSWLCollectingUtils(BaseTestCase):
             'd': {'f': 'g', 'k': [0, 1, 2]},
         }
         white_list = (
-            (('a',), 'map_a', None),
-            (('d', 'f'), 'map_f', None),
-            (('d', 'k'), 'map_k_len', len),
-            (('c', 'x'), 'map_x', None),
-            (('c', 'y', 't'), 'map_t', None),
+            utils.WhiteListRule(('a',), 'map_a', None),
+            utils.WhiteListRule(('d', 'f'), 'map_f', None),
+            utils.WhiteListRule(('d', 'k'), 'map_k_len', len),
+            utils.WhiteListRule(('c', 'x'), 'map_x', None),
+            utils.WhiteListRule(('c', 'y', 't'), 'map_t', None),
         )
 
-        info = InstallationInfo()
-        actual = info.get_attributes(attributes, white_list)
+        actual = {}
+        for rule in white_list:
+            actual[rule.map_to_name] = utils.get_attr_value(
+                rule.path, rule.transform_func, attributes)
+
         expected = {
             'map_f': 'g',
             'map_k_len': 3,
@@ -1117,19 +1102,42 @@ class TestOSWLCollectingUtils(BaseTestCase):
         )
 
         cluster = self.env.clusters[0]
-        online_controller = utils._get_online_controller(cluster)
+        online_controller = utils.get_online_controller(cluster)
         self.assertIsNotNone(online_controller)
         self.assertEqual(online_controller.name, node_name)
 
         cluster.nodes[0].online = False
         self.assertRaises(errors.NoOnlineControllers,
-                          utils._get_online_controller,
+                          utils.get_online_controller,
                           cluster)
+
+    def test_get_nested_attr(self):
+        expected_attr = Mock()
+        intermediate_attr = Mock(spec=["expected_attr"])
+        containing_obj = Mock(spec=["intermediate_attr"])
+
+        intermediate_attr.expected_attr = expected_attr
+        containing_obj.intermediate_attr = intermediate_attr
+
+        existing_attr_path = ["intermediate_attr", "expected_attr"]
+        self.assertEqual(
+            expected_attr,
+            utils.get_nested_attr(containing_obj, existing_attr_path)
+        )
+
+        missing_attrs_pathes = [
+            ["missing_attr", "expected_attr"],
+            ["intermediate_attr", "missing_attr"],
+        ]
+        for attr_path in missing_attrs_pathes:
+            self.assertIsNone(
+                utils.get_nested_attr(containing_obj, attr_path)
+            )
 
 
 class TestOpenStackClientProvider(BaseTestCase):
 
-    @patch("nailgun.statistics.utils.ClientProvider.credentials",
+    @patch("nailgun.statistics.oswl.helpers.ClientProvider.credentials",
            new_callable=PropertyMock)
     def test_clients_providing(self, creds_mock):
         fake_credentials = (
@@ -1147,12 +1155,12 @@ class TestOpenStackClientProvider(BaseTestCase):
         }
 
         creds_mock.return_value = fake_credentials
-        client_provider = utils.ClientProvider(cluster=None)
+        client_provider = helpers.ClientProvider(cluster=None)
 
-        nova_client_path = ("nailgun.statistics.utils."
-                            "nova_client.Client")
-        cinder_client_path = ("nailgun.statistics.utils."
-                              "cinder_client.Client")
+        nova_client_path = ("nailgun.statistics.oswl."
+                            "helpers.nova_client.Client")
+        cinder_client_path = ("nailgun.statistics.oswl."
+                              "helpers.cinder_client.Client")
 
         return_value_mock = Mock()
 
@@ -1195,14 +1203,14 @@ class TestOpenStackClientProvider(BaseTestCase):
             nodes_kwargs=[{"online": False, "roles": ["controller"]}]
         )
         cluster = self.env.clusters[0]
-        client_provider = utils.ClientProvider(cluster)
+        client_provider = helpers.ClientProvider(cluster)
 
         with self.assertRaises(errors.NoOnlineControllers):
             client_provider.credentials
 
-    @patch("nailgun.statistics.utils.keystone_client_v3.Client")
-    @patch("nailgun.statistics.utils.keystone_client_v2.Client")
-    @patch("nailgun.statistics.utils.keystone_discover.Discover")
+    @patch("nailgun.statistics.oswl.helpers.keystone_client_v3.Client")
+    @patch("nailgun.statistics.oswl.helpers.keystone_client_v2.Client")
+    @patch("nailgun.statistics.oswl.helpers.keystone_discover.Discover")
     def test_get_keystone_client(self, kd_mock, kc_v2_mock, kc_v3_mock):
         version_data_v2 = [{"version": (2, 0)}]
         version_data_v3 = [{"version": (3, 0)}]
@@ -1211,7 +1219,7 @@ class TestOpenStackClientProvider(BaseTestCase):
 
         auth_creds = {"auth_url": "fake"}
 
-        client_provider = utils.ClientProvider(cluster=None)
+        client_provider = helpers.ClientProvider(cluster=None)
 
         discover_inst_mock = Mock()
         kd_mock.return_value = discover_inst_mock
@@ -1276,11 +1284,11 @@ class TestOpenStackClientProvider(BaseTestCase):
         Cluster.update_attributes(cluster, updated_attributes)
 
         get_host_for_auth_path = ("nailgun.statistics.utils."
-                                  "_get_host_for_auth")
+                                  "get_mgmt_ip_of_cluster_controller")
 
         with patch(get_host_for_auth_path,
                    return_value=expected_auth_host):
-            client_provider = utils.ClientProvider(cluster)
+            client_provider = helpers.ClientProvider(cluster)
             creds = client_provider.credentials
 
             self.assertEqual(expected, creds)
@@ -1319,9 +1327,9 @@ class TestOSWLCollector(BaseTestCase):
         return OpenStackWorkloadStats.get_last_by(
             cls_id, consts.OSWL_RESOURCE_TYPES.vm)
 
-    @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
-    @patch('nailgun.statistics.oswl_collector.utils.set_proxy')
-    @patch('nailgun.statistics.oswl_collector.utils.'
+    @patch('nailgun.statistics.oswl.collector.utils.set_proxy')
+    @patch('nailgun.statistics.oswl.collector.helpers.ClientProvider')
+    @patch('nailgun.statistics.oswl.collector.helpers.'
            'get_info_from_os_resource_manager')
     def test_skip_collection_for_errorful_cluster(self, get_info_mock, *_):
         error_cluster = self.env.create(
@@ -1357,10 +1365,10 @@ class TestOSWLCollector(BaseTestCase):
             'current': self.vms_info}
         self.assertEqual(last_for_normal_clsr.resource_data, res_data)
 
-    @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
-    @patch('nailgun.statistics.oswl_collector.utils.get_proxy_for_cluster')
-    @patch('nailgun.statistics.oswl_collector.utils.set_proxy')
-    @patch('nailgun.statistics.oswl_collector.utils.'
+    @patch('nailgun.statistics.oswl.collector.utils.get_proxy_for_cluster')
+    @patch('nailgun.statistics.oswl.collector.utils.set_proxy')
+    @patch('nailgun.statistics.oswl.collector.helpers.ClientProvider')
+    @patch('nailgun.statistics.oswl.collector.helpers.'
            'get_info_from_os_resource_manager')
     def test_clear_data_for_changed_cluster(self, get_info_mock, *_):
         cls_id, res_data = self.collect_for_operational_cluster(get_info_mock)
@@ -1380,10 +1388,10 @@ class TestOSWLCollector(BaseTestCase):
         # current data is cleared when cluster status is changed
         self.assertEqual(last.resource_data, res_data)
 
-    @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
-    @patch('nailgun.statistics.oswl_collector.utils.get_proxy_for_cluster')
-    @patch('nailgun.statistics.oswl_collector.utils.set_proxy')
-    @patch('nailgun.statistics.oswl_collector.utils.'
+    @patch('nailgun.statistics.oswl.collector.utils.get_proxy_for_cluster')
+    @patch('nailgun.statistics.oswl.collector.utils.set_proxy')
+    @patch('nailgun.statistics.oswl.collector.helpers.ClientProvider')
+    @patch('nailgun.statistics.oswl.collector.helpers.'
            'get_info_from_os_resource_manager')
     def test_clear_data_for_removed_cluster(self, get_info_mock, *_):
         cls_id, res_data = self.collect_for_operational_cluster(get_info_mock)
@@ -1402,10 +1410,10 @@ class TestOSWLCollector(BaseTestCase):
         # current data is cleared when cluster is deleted
         self.assertEqual(last.resource_data, res_data)
 
-    @patch('nailgun.statistics.oswl_collector.utils.ClientProvider')
-    @patch('nailgun.statistics.oswl_collector.utils.get_proxy_for_cluster')
-    @patch('nailgun.statistics.oswl_collector.utils.set_proxy')
-    @patch('nailgun.statistics.oswl_collector.utils.'
+    @patch('nailgun.statistics.oswl.collector.utils.get_proxy_for_cluster')
+    @patch('nailgun.statistics.oswl.collector.utils.set_proxy')
+    @patch('nailgun.statistics.oswl.collector.helpers.ClientProvider')
+    @patch('nailgun.statistics.oswl.collector.helpers.'
            'get_info_from_os_resource_manager')
     def test_removed_several_times(self, get_info_mock, *_):
         cls_id, res_data = self.collect_for_operational_cluster(get_info_mock)

@@ -11,145 +11,40 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import namedtuple
 import os
 import random
 import six
 
 from contextlib import contextmanager
 
-from cinderclient import client as cinder_client
-from keystoneclient import discover as keystone_discover
-from keystoneclient.v2_0 import client as keystone_client_v2
-from keystoneclient.v3 import client as keystone_client_v3
-from novaclient import client as nova_client
-
 from nailgun import consts
-from nailgun.db import db
 from nailgun.logger import logger
 from nailgun.network import manager
-from nailgun import objects
 from nailgun.settings import settings
 from nailgun.statistics import errors
-from nailgun.statistics.oswl_resources_description import resources_description
 
 
-class ClientProvider(object):
-    """Initialize clients for OpenStack components
-    and expose them as attributes
-    """
-
-    clients_version_attr_path = {
-        "nova": ["client", "version"],
-        "cinder": ["client", "version"],
-        "keystone": ["version"]
-    }
-
-    def __init__(self, cluster):
-        self.cluster = cluster
-        self._nova = None
-        self._cinder = None
-        self._keystone = None
-        self._credentials = None
-
-    @property
-    def nova(self):
-        if self._nova is None:
-            self._nova = nova_client.Client(
-                settings.OPENSTACK_API_VERSION["nova"],
-                *self.credentials,
-                service_type=consts.NOVA_SERVICE_TYPE.compute
-            )
-
-        return self._nova
-
-    @property
-    def cinder(self):
-        if self._cinder is None:
-            self._cinder = cinder_client.Client(
-                settings.OPENSTACK_API_VERSION["cinder"],
-                *self.credentials
-            )
-
-        return self._cinder
-
-    @property
-    def keystone(self):
-        if self._keystone is None:
-            # kwargs are universal for v2 and v3 versions of
-            # keystone client that are different only in accepting
-            # of tenant/project keyword name
-            auth_kwargs = {
-                "username": self.credentials[0],
-                "password": self.credentials[1],
-                "tenant_name": self.credentials[2],
-                "project_name": self.credentials[2],
-                "auth_url": self.credentials[3]
-            }
-            self._keystone = self._get_keystone_client(auth_kwargs)
-
-        return self._keystone
-
-    def _get_keystone_client(self, auth_creds):
-        """Instantiate client based on returned from keystone
-        server version data.
-
-        :param auth_creds: credentials for authentication which also are
-        parameters for client's instance initialization
-        :returns: instance of keystone client of appropriate version
-        :raises: exception if response from server contains version other than
-        2.x and 3.x
-        """
-        discover = keystone_discover.Discover(**auth_creds)
-
-        for version_data in discover.version_data():
-            version = version_data["version"][0]
-            if version <= 2:
-                return keystone_client_v2.Client(**auth_creds)
-            elif version == 3:
-                return keystone_client_v3.Client(**auth_creds)
-
-        raise Exception("Failed to discover keystone version "
-                        "for auth_url {0}".format(
-                            auth_creds.get("auth_url"))
-                        )
-
-    @property
-    def credentials(self):
-        if self._credentials is None:
-            access_data = objects.Cluster.get_editable_attributes(
-                self.cluster
-            )['editable']['workloads_collector']
-
-            os_user = access_data["username"]["value"]
-            os_password = access_data["password"]["value"]
-            os_tenant = access_data["tenant"]["value"]
-
-            auth_host = _get_host_for_auth(self.cluster)
-            auth_url = "http://{0}:{1}/{2}/".format(
-                auth_host, settings.AUTH_PORT,
-                settings.OPENSTACK_API_VERSION["keystone"])
-
-            self._credentials = (os_user, os_password, os_tenant, auth_url)
-
-        return self._credentials
+WhiteListRule = namedtuple(
+    'WhiteListItem', ['path', 'map_to_name', 'transform_func'])
 
 
-def _get_host_for_auth(cluster):
+def get_mgmt_ip_of_cluster_controller(cluster):
     return manager.NetworkManager._get_ip_by_network_name(
-        _get_online_controller(cluster),
+        get_online_controller(cluster),
         consts.NETWORKS.management
     ).ip_addr
 
 
 def get_proxy_for_cluster(cluster):
-    proxy_host = _get_online_controller(cluster).ip
+    proxy_host = get_online_controller(cluster).ip
     proxy_port = settings.OPENSTACK_INFO_COLLECTOR_PROXY_PORT
     proxy = "http://{0}:{1}".format(proxy_host, proxy_port)
 
     return proxy
 
 
-def _get_online_controller(cluster):
+def get_online_controller(cluster):
     online_controllers = filter(
         lambda node: ("controller" in node.roles and node.online is True),
         cluster.nodes
@@ -166,72 +61,7 @@ def _get_online_controller(cluster):
     return controller
 
 
-def get_info_from_os_resource_manager(client_provider, resource_name):
-    """Utilize clients provided by client_provider instance to retrieve
-    data for resource_name, description of which is stored in
-    resources_description data structure.
-
-    :param client_provider: objects that provides instances of openstack
-    clients as its attributes
-    :param resource_name: string that contains name of resource for which
-    info should be collected from installation
-    :returns: data that store collected info
-    """
-    resource_description = resources_description[resource_name]
-
-    client_name = resource_description["retrieved_from_component"]
-    client_inst = getattr(client_provider, client_name)
-
-    client_api_version = _get_nested_attr(
-        client_inst,
-        client_provider.clients_version_attr_path[client_name]
-    )
-
-    matched_api = \
-        resource_description["supported_api_versions"][client_api_version]
-
-    resource_manager_name = matched_api["resource_manager_name"]
-    resource_manager = getattr(client_inst, resource_manager_name)
-
-    attributes_white_list = matched_api["attributes_white_list"]
-
-    additional_display_options = \
-        matched_api.get("additional_display_options", {})
-
-    resource_info = _get_data_from_resource_manager(
-        resource_manager,
-        attributes_white_list,
-        additional_display_options
-    )
-
-    return resource_info
-
-
-def _get_data_from_resource_manager(resource_manager, attrs_white_list_rules,
-                                    additional_display_options):
-    data = []
-
-    display_options = {}
-    display_options.update(additional_display_options)
-
-    instances_list = resource_manager.list(**display_options)
-    for inst in instances_list:
-        inst_details = {}
-
-        obj_dict = \
-            inst.to_dict() if hasattr(inst, "to_dict") else inst.__dict__
-
-        for rule in attrs_white_list_rules:
-            inst_details[rule.map_to_name] = _get_attr_value(
-                rule.path, rule.transform_func, obj_dict
-            )
-
-        data.append(inst_details)
-
-    return data
-
-
-def _get_attr_value(path, func, attrs):
+def get_attr_value(path, func, attrs):
     """Gets attribute value from 'attrs' by specified
     'path'. In case of nested list - list of
     of found values will be returned
@@ -245,7 +75,7 @@ def _get_attr_value(path, func, attrs):
             result_list = []
             for cur_attr in attrs:
                 try:
-                    value = _get_attr_value(path[idx:], func, cur_attr)
+                    value = get_attr_value(path[idx:], func, cur_attr)
                     result_list.append(value)
                 except (KeyError, TypeError):
                     pass
@@ -257,7 +87,7 @@ def _get_attr_value(path, func, attrs):
     return attrs
 
 
-def _get_nested_attr(obj, attr_path):
+def get_nested_attr(obj, attr_path):
     # prevent from error in case of empty list and
     # None object
     if not all([obj, attr_path]):
@@ -270,7 +100,7 @@ def _get_nested_attr(obj, attr_path):
     if len(attr_path) == 1:
         return attr_value
 
-    return _get_nested_attr(attr_value, attr_path[1:])
+    return get_nested_attr(attr_value, attr_path[1:])
 
 
 @contextmanager
@@ -309,23 +139,3 @@ def set_proxy(proxy):
 
 def dithered(medium, interval=(0.9, 1.1)):
     return random.randint(int(medium * interval[0]), int(medium * interval[1]))
-
-
-def delete_expired_oswl_entries():
-    try:
-        deleted_rows_count = \
-            objects.OpenStackWorkloadStatsCollection.clean_expired_entries()
-
-        if deleted_rows_count == 0:
-            logger.info("There are no expired OSWL entries in db.")
-
-        db().commit()
-
-        logger.info("Expired OSWL entries are "
-                    "successfully cleaned from db")
-
-    except Exception as e:
-        logger.exception("Exception while cleaning oswls entries from "
-                         "db. Details: {0}".format(six.text_type(e)))
-    finally:
-        db.remove()

@@ -18,6 +18,7 @@ import six
 
 from oslo.serialization import jsonutils
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import Release
@@ -352,6 +353,81 @@ class TestAttributes(BaseIntegrationTest):
             set(editable["workloads_collector"]["metadata"].keys()),
             set(["label", "weight", "restrictions"])
         )
+
+
+class TestAlwaysEditable(BaseIntegrationTest):
+
+    _reposetup = {
+        'repo_setup': {
+            'metadata': {
+                'label': 'Repositories',
+                'weight': 50,
+            },
+            'repos': {
+                'type': 'custom_repo_configuration',
+                'extra_priority': 15,
+                'value': [
+                    {
+                        'type': 'rpm',
+                        'name': 'mos',
+                        'uri': 'http://127.0.0.1:8080/myrepo'
+                    }
+                ]
+            }
+        }}
+
+    def setUp(self):
+        super(TestAlwaysEditable, self).setUp()
+        self.env.create(
+            release_kwargs={
+                'version': '2014.2-6.1',
+                'operating_system': consts.RELEASE_OS.centos})
+        self.cluster = self.env.clusters[0]
+
+    def _put(self, data, expect_code=200):
+        resp = self.app.put(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            params=jsonutils.dumps(data),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(expect_code, resp.status_code)
+        return resp.json_body
+
+    def test_can_change_repos_on_operational_cluster(self):
+        self.cluster.status = consts.CLUSTER_STATUSES.operational
+        self.db.flush()
+
+        data = {'editable': {}}
+        data['editable'].update(self._reposetup)
+
+        self._put(data, expect_code=200)
+
+        attrs = self.cluster.attributes.editable
+        self.assertEqual(attrs['repo_setup']['repos']['value'], [{
+            'type': 'rpm',
+            'name': 'mos',
+            'uri': 'http://127.0.0.1:8080/myrepo',
+        }])
+
+    def test_cannot_change_repos_on_operational_cluster(self):
+        self.cluster.status = consts.CLUSTER_STATUSES.operational
+        self.db.flush()
+
+        data = {'editable': {}}
+        data['editable'].update(self._reposetup)
+        data['editable'].update({'access': {}})     # always_editable is False
+
+        self._put(data, expect_code=403)
+
+        attrs = self.cluster.attributes.editable
+        self.assertEqual(attrs['repo_setup']['repos']['value'], [{
+            'type': 'rpm',
+            'name': 'mos',
+            'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/x86_64',
+            'priority': 20,
+        }])
 
 
 class TestVmwareAttributes(BaseIntegrationTest):

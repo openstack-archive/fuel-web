@@ -1106,15 +1106,6 @@
                     regex:
                       source: *non_empty_string
                       error: "Invalid datastore regex"
-              -
-                name: "cinder"
-                type: "object"
-                fields:
-                  -
-                    name: "enable"
-                    type: "checkbox"
-                    label: "Enable Cinder"
-                    description: ""
           -
             name: "network"
             type: "object"

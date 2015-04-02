@@ -118,6 +118,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 });
             }
         },
+        getInitialState: function() {
+            return {
+                hideConnectivityAlert: localStorage.getItem('hideConnectivityAlert')
+            };
+        },
+        hideConnectivityAlert: function() {
+            localStorage.setItem('hideConnectivityAlert', true);
+            this.setState({hideConnectivityAlert: true});
+        },
         removeFinishedNetworkTasks: function(callback) {
             var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
             if (callback) request.always(callback);
@@ -236,6 +245,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 <div key={cluster.id}>
                     <ClusterInfo cluster={cluster} />
                     <DeploymentResult cluster={cluster} />
+                    {cluster.get('status') == 'new' && !this.state.hideConnectivityAlert &&
+                        <div className='alert alert-block globalalert'>
+                            <button className='close' onClick={this.hideConnectivityAlert}>&times;</button>
+                            <p className='enable-selection'>{i18n('dialog.create_cluster_wizard.name_release.repo_connectivity_alert')}</p>
+                        </div>
+                    }
                     {release.get('state') == 'unavailable' &&
                         <div className='alert alert-block globalalert'>
                             <p className='enable-selection'>{i18n('cluster_page.unavailable_release', {name: release.get('name')})}</p>

@@ -19,8 +19,9 @@ define([
     'underscore',
     'i18n',
     'react',
+    'utils',
     'jsx!views/controls'
-], function($, _, i18n, React, controls) {
+], function($, _, i18n, React, utils, controls) {
     'use strict';
 
     var customControls = {};
@@ -134,9 +135,7 @@ define([
             return (
                 <div className='table-wrapper repos' key={this.state.key}>
                     {this.props.description &&
-                        <div className='custom-description parameter-description'>
-                            {this.props.description}
-                        </div>
+                        <div className='custom-description parameter-description' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(_.escape(this.props.description)))}} />
                     }
                     {this.props.value.map(function(repo, index) {
                         var error = (this.props.error || {})[index],

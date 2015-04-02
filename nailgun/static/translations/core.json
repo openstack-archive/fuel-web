@@ -575,7 +575,8 @@
                         "name": "Name",
                         "release_label": "OpenStack Release",
                         "existing_environment": "Environment with name \"__name__\" already exists",
-                        "repo_connectivity_alert": "Please check the Internet connection and the connection to your repositories to deploy the environment successfully."
+                        "Ubuntu_connectivity_alert": "By default, Ubuntu packages will be fetched from Canonical repositories. Please make sure your Fuel master node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment.",
+                        "CentOS_connectivity_alert": "Please make sure your Fuel master node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment."
                     },
                     "mode": {
                         "title": "Deployment Mode"
@@ -668,7 +669,8 @@
                         "interfaces": "Changed interface configuration of the following nodes:"
                     },
                     "warnings": {
-                        "no_deployment": "Environment configuration is invalid. Deployment cannot be started. Please check warnings below."
+                        "no_deployment": "Environment configuration is invalid. Deployment cannot be started. Please check warnings below.",
+                        "connectivity_alert": "By default, packages and package updates will be fetched from repositories. Please make sure your Fuel node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment."
                     },
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",

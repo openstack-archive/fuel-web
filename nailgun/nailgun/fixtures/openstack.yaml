@@ -1220,9 +1220,10 @@
           metadata:
             label: "Repositories"
             weight: 50
+            always_editable: true
           repos:
             type: "custom_repo_configuration"
-            extra_priority: 15
+            extra_priority: null
             value:
               - type: "rpm"
                 name: "mos"
@@ -1256,6 +1257,7 @@
           metadata:
             label: "Repositories"
             weight: 50
+            always_editable: true
           repos:
             type: "custom_repo_configuration"
             extra_priority: null

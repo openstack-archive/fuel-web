@@ -935,7 +935,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                 registrationForm.validationError['credentials.agree'] = i18n('dialog.registration.agree_error');
                 isValid = false;
             }
-            this.setState({isValid: isValid});
+            this.setState({
+                error: null,
+                hideRequiredFieldsNotice: isValid
+            });
             if (isValid) this.createAccount();
         },
         createAccount: function() {
@@ -986,6 +989,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                         <div className='error'>
                             <i className='icon-attention'></i>
                             {error}
+                        </div>
+                    }
+                    {!this.state.hideRequiredFieldsNotice &&
+                        <div className='alert'>
+                            {i18n('welcome_page.register.required_fields')}
                         </div>
                     }
                     <form className='form-horizontal'>

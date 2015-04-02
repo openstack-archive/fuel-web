@@ -651,7 +651,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                             }
                         </div>
 
-                        <div className='network-connections-info-block'>
+                        <div className='network-connections-info-block enable-selection'>
                             {_.map(slaveInterfaces, function(slaveInterface) {
                                 return <div key={'network-connections-info-' + slaveInterface.get('name')} className='network-connections-info-block-item'>
                                     <div className='network-connections-info-position'></div>

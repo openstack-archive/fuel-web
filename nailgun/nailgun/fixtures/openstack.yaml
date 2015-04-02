@@ -565,6 +565,12 @@
             description: "Debug logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
+          puppet_debug:
+            value: true
+            label: "Puppet debug logging"
+            description: "Debug puppet logging mode provides more information, but requires more disk space."
+            weight: 20
+            type: "checkbox"
           nova_quota:
             value: false
             label: "Nova quotas"

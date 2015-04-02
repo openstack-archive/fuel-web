@@ -64,6 +64,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         close: function() {
             $(this.getDOMNode()).modal('hide');
         },
+        closeOnLinkClick: function(e) {
+            // close dialogs on click of any link inside it
+            if (e.target.tagName == 'A') this.close();
+        },
         showError: function(response, message) {
             var props = {error: true};
             props.message = utils.getResponseText(response) || message;
@@ -76,7 +80,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
             var classes = {'modal fade': true};
             classes[this.props.modalClass] = this.props.modalClass;
             return (
-                <div className={utils.classNames(classes)} tabIndex="-1">
+                <div className={utils.classNames(classes)} tabIndex="-1" onClick={this.closeOnLinkClick}>
                     <div className='modal-header'>
                         <button type='button' className='close' onClick={this.close}>&times;</button>
                         <h3>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>

@@ -145,15 +145,33 @@ class ClusterAttributesHandler(BaseHandler):
                * 500 (cluster has no attributes)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
-        if cluster.is_locked:
-            raise self.http(403, "Environment attributes can't be changed "
-                                 "after, or in deploy.")
-
         data = self.checked_data()
-        objects.Cluster.update_attributes(cluster, data)
+
+        # if cluster is locked we have to check which attributes
+        # we want to change and block an entire operation if there
+        # one with always_editable=False.
+        if cluster.is_locked:
+            attrs = objects.Cluster.get_editable_attributes(cluster)
+            editable = attrs['editable']
+
+            for group_name in data.get('editable', {}):
+                # we need bunch of gets because the attribute may not
+                # even exist (user adds a new one)
+                metadata = editable.get(group_name, {}).get('metadata', {})
+                if not metadata.get('always_editable'):
+                    raise self.http(403, (
+                        "Environment attribute '{0}' couldn't be changed "
+                        "after or during deployment.".format(group_name)))
+
+        # unfortunately, we can't use "update_attributes" here because
+        # input data could be partial. this is a general issue now, we
+        # don't support PATCH method anywhere in the code and UI works
+        # with PUT requests only.
+        objects.Cluster.patch_attributes(cluster, data)
         return objects.Cluster.get_editable_attributes(cluster)
 
     @content
@@ -169,11 +187,24 @@ class ClusterAttributesHandler(BaseHandler):
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
-        if cluster.is_locked:
-            raise self.http(403, "Environment attributes can't be changed "
-                                 "after, or in deploy.")
-
         data = self.checked_data()
+
+        # if cluster is locked we have to check which attributes
+        # we want to change and block an entire operation if there
+        # one with always_editable=False.
+        if cluster.is_locked:
+            attrs = objects.Cluster.get_editable_attributes(cluster)
+            editable = attrs['editable']
+
+            for group_name in data.get('editable', {}):
+                # we need bunch of gets because the attribute may not
+                # even exist (user adds a new one)
+                metadata = editable.get(group_name, {}).get('metadata', {})
+                if not metadata.get('always_editable'):
+                    raise self.http(403, (
+                        "Environment attribute '{0}' couldn't be changed "
+                        "after or during deployment.".format(group_name)))
+
         objects.Cluster.patch_attributes(cluster, data)
         return objects.Cluster.get_editable_attributes(cluster)
 

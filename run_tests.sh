@@ -90,7 +90,6 @@ testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 # nosetest xunit options
 NAILGUN_XUNIT=${NAILGUN_XUNIT:-"$ROOT/nailgun.xml"}
 FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
-FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-"$ROOT/fuelupgradedownloader.xml"}
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
 UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
 NAILGUN_PORT=${NAILGUN_PORT:-8003}
@@ -346,8 +345,6 @@ function run_webui_tests {
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_upgrade_system_tests {
   local UPGRADE_TESTS="$ROOT/fuel_upgrade_system/fuel_upgrade/fuel_upgrade/tests/"
-  local DOWNLOADER_TESTS="$ROOT/fuel_upgrade_system/fuel_update_downloader/fuel_update_downloader/tests/"
-
   local result=0
 
   if [ $# -ne 0 ]; then
@@ -358,10 +355,6 @@ function run_upgrade_system_tests {
     # run all tests
     pushd $ROOT/fuel_upgrade_system/fuel_upgrade >> /dev/null
     tox -epy26 -- -vv $testropts $UPGRADE_TESTS --xunit-file $FUELUPGRADE_XUNIT || result=1
-    popd >> /dev/null
-
-    pushd $ROOT/fuel_upgrade_system/fuel_update_downloader >> /dev/null
-    tox -epy26 -- -vv $testropts $DOWNLOADER_TESTS --xunit-file $FUELUPGRADEDOWNLOADER_XUNIT || result=1
     popd >> /dev/null
 
   fi
@@ -425,7 +418,6 @@ function run_flake8 {
   run_flake8_subproject tasklib && \
   run_flake8_subproject fuelmenu && \
   run_flake8_subproject network_checker && \
-  run_flake8_subproject fuel_upgrade_system/fuel_update_downloader && \
   run_flake8_subproject fuel_upgrade_system/fuel_upgrade && \
   run_flake8_subproject fuel_development && \
   run_flake8_subproject shotgun || result=1

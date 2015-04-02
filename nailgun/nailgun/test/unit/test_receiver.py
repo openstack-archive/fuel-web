@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
 from nailgun import consts
 from nailgun.objects import Plugin
 from nailgun.rpc.receiver import NailgunReceiver
@@ -71,3 +73,15 @@ class TestNailgunReceiver(base.BaseTestCase):
         NailgunReceiver.deploy_resp(**task_resp)
         self.assertEqual(self.task.status, 'error')
         self.assertIn(task_resp['error'], self.task.message)
+
+    @patch('nailgun.rpc.receiver.notifier.notify')
+    def test_multiline_error_message(self, mnotify):
+        task_resp = {
+            "status": "error",
+            "task_uuid": self.task.uuid,
+            "error": "Method granular_deploy.\n\n Something Something"}
+        NailgunReceiver.deploy_resp(**task_resp)
+        mnotify.assert_called_with(
+            task_resp['status'],
+            u'Deployment has failed. Method granular_deploy.',
+            self.cluster.id)

@@ -565,6 +565,15 @@ class NetworkCheck(object):
                     logger.warn(warn_msg)
                     self.err_msgs.append(warn_msg)
 
+    def check_dns_servers_ips(self):
+        """check DNS servers IPs are distinct
+        """
+        ips = self.network_config['dns_nameservers']
+        if len(set(ips)) < len(ips):
+            warn_msg = u"DNS servers IPs have to be distinct."
+            logger.warn(warn_msg)
+            self.err_msgs.append(warn_msg)
+
     def check_configuration(self):
         """check network configuration parameters
         """
@@ -579,6 +588,7 @@ class NetworkCheck(object):
             self.check_vlan_ids_range_and_intersection()
         self.check_network_classes_exclude_loopback()
         self.check_network_addresses_not_match_subnet_and_broadcast()
+        self.check_dns_servers_ips()
 
     def check_interface_mapping(self):
         """check mapping of networks to NICs

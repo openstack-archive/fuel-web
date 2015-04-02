@@ -379,6 +379,11 @@ def move_orchestrator_data_to_attributes(connection):
 def upgrade_attributes_metadata_6_0_to_6_1(attributes_meta):
     attributes_meta['editable']['storage']['volumes_lvm']['description'] = \
         'It is recommended to have at least one Storage - Cinder LVM node.'
+    attributes_meta['editable']['common']['use_vcenter'] = {
+        "value": False,
+        "weight": 30,
+        "type": "hidden"
+    }
 
     return attributes_meta
 

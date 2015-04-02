@@ -29,6 +29,7 @@ from nailgun.api.v1.handlers.cluster import ClusterCollectionHandler
 from nailgun.api.v1.handlers.cluster import ClusterDeploymentTasksHandler
 from nailgun.api.v1.handlers.cluster import ClusterGeneratedData
 from nailgun.api.v1.handlers.cluster import ClusterHandler
+from nailgun.api.v1.handlers.cluster import ClusterReposHandler
 from nailgun.api.v1.handlers.cluster import ClusterResetHandler
 from nailgun.api.v1.handlers.cluster import ClusterStopDeploymentHandler
 from nailgun.api.v1.handlers.cluster import ClusterUpdateHandler
@@ -131,6 +132,9 @@ urls = (
     ClusterAttributesHandler,
     r'/clusters/(?P<cluster_id>\d+)/attributes/defaults/?$',
     ClusterAttributesDefaultsHandler,
+    r'/clusters/(?P<cluster_id>\d+)/attributes/repos/?$',
+    ClusterReposHandler,
+
     # nova network-related
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/nova_network/?$',
     NovaNetworkConfigurationHandler,

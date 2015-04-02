@@ -18,6 +18,7 @@ import six
 
 from oslo.serialization import jsonutils
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import Release
@@ -352,6 +353,96 @@ class TestAttributes(BaseIntegrationTest):
             set(editable["workloads_collector"]["metadata"].keys()),
             set(["label", "weight", "restrictions"])
         )
+
+
+class TestReposAttributes(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestReposAttributes, self).setUp()
+        self.env.create(
+            release_kwargs={
+                'version': '2014.2-6.1',
+                'operating_system': consts.RELEASE_OS.centos})
+        self.cluster = self.env.clusters[0]
+
+    def _get(self):
+        resp = self.app.get(
+            reverse(
+                'ClusterReposHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        return resp.json_body
+
+    def _put(self, data):
+        resp = self.app.put(
+            reverse(
+                'ClusterReposHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            params=jsonutils.dumps(data),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        return resp.json_body
+
+    def test_get_on_new_cluster(self):
+        self.cluster.status = consts.CLUSTER_STATUSES.new
+        self.db.flush()
+
+        self.assertEqual(self._get(), [{
+            'type': 'rpm',
+            'name': 'mos',
+            'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/x86_64',
+            'priority': 20,
+        }])
+
+    def test_get_on_operational_cluster(self):
+        self.cluster.status = consts.CLUSTER_STATUSES.operational
+        self.db.flush()
+
+        self.assertEqual(self._get(), [{
+            'type': 'rpm',
+            'name': 'mos',
+            'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/x86_64',
+            'priority': 20,
+        }])
+
+    def test_put_on_new_cluster(self):
+        self.cluster.status = consts.CLUSTER_STATUSES.new
+        self.db.flush()
+
+        self._put([{
+            'type': 'rpm',
+            'name': 'mos',
+            'uri': 'http://127.0.0.1:8080/mypath/centos/x86_64',
+            'priority': None,
+        }])
+
+        attrs = self.cluster.attributes.editable
+        self.assertEqual(attrs['repo_setup']['repos']['value'], [{
+            'type': 'rpm',
+            'name': 'mos',
+            'uri': 'http://127.0.0.1:8080/mypath/centos/x86_64',
+            'priority': None,
+        }])
+
+    def test_put_on_operational_cluster(self):
+        self.cluster.status = consts.CLUSTER_STATUSES.operational
+        self.db.flush()
+
+        self._put([{
+            'type': 'rpm',
+            'name': 'mos',
+            'uri': 'http://127.0.0.1:8080/mypath/centos/x86_64',
+            'priority': None,
+        }])
+
+        attrs = self.cluster.attributes.editable
+        self.assertEqual(attrs['repo_setup']['repos']['value'], [{
+            'type': 'rpm',
+            'name': 'mos',
+            'uri': 'http://127.0.0.1:8080/mypath/centos/x86_64',
+            'priority': None,
+        }])
 
 
 class TestVmwareAttributes(BaseIntegrationTest):

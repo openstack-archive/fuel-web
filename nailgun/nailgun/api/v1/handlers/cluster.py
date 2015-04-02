@@ -178,6 +178,47 @@ class ClusterAttributesHandler(BaseHandler):
         return objects.Cluster.get_editable_attributes(cluster)
 
 
+class ClusterReposHandler(BaseHandler):
+    """Cluster repos handler
+
+    Despite the fact that repos are part of cluster attributes and we
+    can't change cluster attribute after deployment, we have to be
+    able to change repos list.
+    """
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: JSONized Cluster repos.
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        attributes = objects.Cluster.get_editable_attributes(cluster)
+        return attributes['editable']['repo_setup']['repos']['value']
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized Cluster repos.
+        :http: * 200 (OK)
+               * 400 (wrong attributes data specified)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+
+        data = self.checked_data()
+        objects.Cluster.update_attributes(cluster, {
+            'editable': {
+                'repo_setup': {
+                    'repos': {
+                        'value': data,
+                    }
+                }
+            }})
+
+        attributes = objects.Cluster.get_editable_attributes(cluster)
+        return attributes['editable']['repo_setup']['repos']['value']
+
+
 class ClusterAttributesDefaultsHandler(BaseHandler):
     """Cluster default attributes handler
     """

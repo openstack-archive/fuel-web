@@ -222,7 +222,7 @@ function($, _, i18n, React, utils, dialogs, componentMixins, models, statisticsM
                             }, this)}
                             <div className='links-container'>
                                 <a onClick={this.showRegistrationDialog} className='create-account'>{i18n('welcome_page.register.create_account')}</a>
-                                <a onClick={this.showRetrievePasswordDialog} className='retrive-password'>{i18n('welcome_page.register.retrive_password')}</a>
+                                <a onClick={this.showRetrievePasswordDialog} className='retrive-password'>{i18n('welcome_page.register.retrieve_password')}</a>
                             </div>
                         </div>
 

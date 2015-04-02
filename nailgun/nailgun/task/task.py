@@ -16,9 +16,9 @@
 
 from copy import deepcopy
 from distutils.version import StrictVersion
-import six
 
 import netaddr
+import six
 
 from sqlalchemy import func
 from sqlalchemy import not_
@@ -367,27 +367,40 @@ class DeletionTask(object):
         :returns: Remaining (non-undeployed) nodes to delete.
         """
 
-        remaining_nodes = list(nodes_to_delete)
+        node_names_dict = dict(
+            (node['id'], node['slave_name']) for node in nodes_to_delete)
 
-        # locking nodes
-        nodes_dict = dict((node['id'], node) for node in nodes_to_delete)
-        nodes_db = objects.NodeCollection.filter_by_list(
-            None,
-            'id',
-            nodes_dict.keys(),
-            order_by='id'
-        ).filter(objects.Node.model.status == consts.NODE_STATUSES.discover)
-        objects.NodeCollection.lock_for_update(nodes_db).all()
+        objects.NodeCollection \
+            .filter_by_list(None, 'id', six.iterkeys(node_names_dict)) \
+            .filter(
+                objects.Node.model.status == consts.NODE_STATUSES.discover
+            ) \
+            .delete(synchronize_session=False)
+        db.commit()
 
-        nodes_db_dict = dict((node_db.id, node_db) for node_db in nodes_db)
+        remaining_nodes_db = db().query(
+            Node.id).filter(Node.id.in_(node_names_dict.keys()))
 
-        for node_id, node_db in six.iteritems(nodes_db_dict):
-            node = nodes_dict[node_id]
-            logger.info("Node is not deployed yet, can't clean MBR: %s",
-                        node['slave_name'])
-            db().delete(node_db)
-            remaining_nodes.remove(node)
-        db().commit()
+        remaining_nodes_ids = set([
+            row[0] for row
+            in remaining_nodes_db
+        ])
+
+        remaining_nodes = filter(
+            lambda node: node['id'] in remaining_nodes_ids,
+            nodes_to_delete
+        )
+
+        deleted_nodes_ids = set(node_names_dict).difference(
+            remaining_nodes_ids)
+
+        slave_names_joined = ', '.join([slave_name
+                                        for id, slave_name
+                                        in six.iteritems(node_names_dict)
+                                        if id in deleted_nodes_ids])
+        if len(slave_names_joined):
+            logger.info("Nodes are not deployed yet, can't clean MBR: %s",
+                        slave_names_joined)
 
         return remaining_nodes
 

@@ -355,6 +355,17 @@ class Node(NailgunObject):
         })
 
     @classmethod
+    def interfaces_locked(cls, instance):
+        """Returns true if interfaces update is not allowed.
+        It is not allowed during provision/deployment, after
+        successful provision/deployment.
+        """
+        return instance.status not in (
+            consts.NODE_STATUSES.discover,
+            consts.NODE_STATUSES.error,
+        )
+
+    @classmethod
     def update(cls, instance, data):
         """Update Node instance with specified parameters in DB.
         This includes:
@@ -396,8 +407,15 @@ class Node(NailgunObject):
 
         if new_meta:
             instance.update_meta(new_meta)
-            # smarter check needed
-            cls.update_interfaces(instance)
+            # The call to update_interfaces will execute a select query for
+            # the current instance. This appears to overwrite the object in the
+            # current session and we lose the meta changes.
+            db().flush()
+            if cls.interfaces_locked(instance):
+                logger.info("Interfaces are locked for update on node %s",
+                            instance.human_readable_name)
+            else:
+                cls.update_interfaces(instance)
 
         cluster_changed = False
         if "cluster_id" in data:

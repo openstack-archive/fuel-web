@@ -23,9 +23,7 @@ cloud-init-per instance udev_persistent_net1 service network stop
 
 ADMIN_MAC={{ common.admin_mac }}
 ADMIN_IF=$(echo {{ common.udevrules }} | sed 's/[,=]/\n/g' | grep "$ADMIN_MAC" | cut -d_ -f2 | head -1)
-if [ ! -z "$(grep $ADMIN_IF /etc/sysconfig/network-scripts/ifcfg-$ADMIN_IF | grep dhcp)" ] ; then
-    echo -e "# FROM COBBLER SNIPPET\nDEVICE=$ADMIN_IF\nIPADDR={{ common.admin_ip }}\nNETMASK={{ common.admin_mask }}\nBOOTPROTO=none\nONBOOT=yes\nUSERCTL=no\n" > /etc/sysconfig/network-scripts/ifcfg-"$ADMIN_IF"
-fi
+cloud-init-per instance configure_admin_interface /bin/sh -c "echo -e \"# FROM COBBLER SNIPPET\nDEVICE=$ADMIN_IF\nIPADDR={{ common.admin_ip }}\nNETMASK={{ common.admin_mask }}\nBOOTPROTO=none\nONBOOT=yes\nUSERCTL=no\n\" | tee /etc/sysconfig/network-scripts/ifcfg-$ADMIN_IF"
 
 cloud-init-per instance set_gateway /bin/sh -c 'echo GATEWAY="{{ common.gw }}" | tee -a /etc/sysconfig/network'
 

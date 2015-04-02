@@ -42,6 +42,8 @@ class InstallationInfo(object):
         WhiteListRule(('common', 'auto_assign_floating_ip', 'value'),
                       'auto_assign_floating_ip', None),
         WhiteListRule(('common', 'nova_quota', 'value'), 'nova_quota', None),
+        WhiteListRule(('common', 'puppet_debug', 'value'),
+                      'puppet_debug', None),
         WhiteListRule(('common', 'resume_guests_state_on_host_boot', 'value'),
                       'resume_guests_state_on_host_boot', None),
 

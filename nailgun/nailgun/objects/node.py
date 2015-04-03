@@ -253,8 +253,8 @@ class Node(NailgunObject):
         return new_attributes
 
     @classmethod
-    def interfaces_locked(cls, instance):
-        """Returns true if interfaces update is not allowed.
+    def hardware_info_locked(cls, instance):
+        """Returns true if update of hardware information is not allowed.
         It is not allowed during provision/deployment, after
         successful provision/deployment and during node removal.
         """
@@ -430,7 +430,7 @@ class Node(NailgunObject):
             # the current instance. This appears to overwrite the object in the
             # current session and we lose the meta changes.
             db().flush()
-            if cls.interfaces_locked(instance):
+            if cls.hardware_info_locked(instance):
                 logger.info("Interfaces are locked for update on node %s",
                             instance.human_readable_name)
             else:
@@ -542,17 +542,11 @@ class Node(NailgunObject):
 
                 data['status'] = instance.status
 
-        # don't update volume information, if agent has sent an empty array
+        # don't update volume information, if it is locked by node status
         meta = data.get('meta', {})
-        if meta and len(meta.get('disks', [])) == 0 \
-                and instance.meta.get('disks'):
-
-            logger.warning(
-                u'Node {0} has received an empty disks array - '
-                u'volume information will not be updated'.format(
-                    instance.human_readable_name
-                )
-            )
+        if 'disks' in meta and cls.hardware_info_locked(instance):
+            logger.info("Volume information is locked for update on node %s",
+                        instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
         #(dshulyak) change this verification to NODE_STATUSES.deploying

@@ -102,8 +102,10 @@
           - controller
           - compute
           - cinder
+          - cinder-vmware
           - ceph-osd
           - mongo
+          - base-os
         limits:
           max: 1
         restrictions:
@@ -112,6 +114,14 @@
       base-os:
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
+        conflicts:
+          - controller
+          - compute
+          - cinder
+          - cinder-vmware
+          - ceph-osd
+          - mongo
+          - zabbix-server
     networks_metadata:
       bonding:
         availability:

@@ -541,6 +541,11 @@ else
   logger.level = Logger::DEBUG
 end
 
+# random sleep is here to prevent target nodes
+# from reporting to master node all at once
+sleep_time = rand(30)
+logger.debug("Sleep for #{sleep_time} seconds before sending request")
+sleep(sleep_time)
 
 if File.exist?('/var/run/nodiscover')
   logger.info("Discover prevented by /var/run/nodiscover presence.")
@@ -554,10 +559,6 @@ begin
 rescue Exception => e
   logger.info("Could not get url from configuration file: #{e.message}, trying other ways..")
 end
-
-sleep_time = rand(30)
-logger.debug("Sleep for #{sleep_time} seconds before sending request")
-sleep(sleep_time)
 
 agent = NodeAgent.new(logger, url)
 agent.update_state

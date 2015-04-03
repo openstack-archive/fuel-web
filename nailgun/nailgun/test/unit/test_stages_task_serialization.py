@@ -80,7 +80,7 @@ class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 14)
+        self.assertEqual(len(serialized), 16)
         self.assertEqual(serialized[0]['type'], 'shell')
         self.assertEqual(serialized[1]['type'], 'upload_file')
         self.assertEqual(serialized[2]['type'], 'upload_file')
@@ -124,7 +124,7 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 2)
+        self.assertEqual(len(serialized), 3)
         self.assertEqual(serialized[0]['type'], 'upload_file')
         self.assertEqual(serialized[1]['type'], 'shell')
         self.assertEqual(serialized[1]['parameters']['cmd'], 'yum clean all')
@@ -292,7 +292,7 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
         self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 17)
+        self.assertEqual(len(tasks), 19)
         tasks_tests = [('shell', ['master']),
                        ('shell', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),

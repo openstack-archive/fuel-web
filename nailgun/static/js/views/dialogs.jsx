@@ -203,55 +203,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                 networking_parameters: cluster.get('networkConfiguration').get('networking_parameters')
             };
         },
+        ns: 'dialog.display_changes.',
         getInitialState: function() {
-            var ns = 'dialog.display_changes.',
-                cluster = this.props.cluster,
-                configModels = this.getConfigModels(),
-                validRoleModels = cluster.get('release').get('role_models').filter(function(role) {
-                    return !role.checkRestrictions(configModels).result;
-                }),
-                limitValidations = _.zipObject(validRoleModels.map(function(role) {
-                    return [role.get('name'), role.checkLimits(configModels)];
-                })),
-                limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
-                    return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
-                })),
-                areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
-
-            var networkVerificationTask = cluster.task({group: 'network'}),
-                networksVerificationResult;
-            if (_.isUndefined(networkVerificationTask)) {
-                networksVerificationResult = {warning: i18n(ns + 'verification_not_performed')};
-            } else if (networkVerificationTask.match({status: 'error'})) {
-                networksVerificationResult = {error: i18n(ns + 'verification_failed')};
-            } else if (networkVerificationTask.match({status: 'running'})) {
-                networksVerificationResult = {warning: i18n(ns + 'verification_in_progress')};
-            }
-
-            var state = {
-                ns: ns,
-                amountRestrictions: limitValidations,
-                amountRestrictionsRecommendations: limitRecommendations,
-                isInvalid: _.any(limitValidations, {valid: false}) || areSettingsInvalid,
-                networksVerificationResult: networksVerificationResult,
-                areSettingsInvalid: areSettingsInvalid,
-                vcenterError: null
-            };
-
-            // vcenter
-            var useVcenter = cluster.get('settings').get('common.use_vcenter.value');
-            if (useVcenter) {
-                var vcenter = cluster.get('vcenter');
-                vcenter.setModels(configModels).parseRestrictions();
-                if (!vcenter.isValid()) {
-                    state.isInvalid = true;
-                    state.vcenterError = {
-                        text: i18n('vmware.has_errors'),
-                        linkUrl: '/#cluster/' + cluster.id + '/vmware',
-                        linkText: i18n('vmware.tab_name')
-                    };
-                }
-            }
+            var alerts = this.validate(this.props.cluster),
+                state = {
+                    alerts: alerts,
+                    isInvalid: !_.isEmpty(alerts.blocker),
+                    hasErrors: !_.isEmpty(alerts.error)
+                };
             return state;
         },
         deployCluster: function() {
@@ -265,13 +224,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
             return !!nodes.length && <div key={dictKey} className='deploy-task-name'>
-                {i18n(this.state.ns + dictKey, {count: nodes.length})}
+                {i18n(this.ns + dictKey, {count: nodes.length})}
             </div>;
         },
         renderBody: function() {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                roleModels = cluster.get('release').get('role_models'),
                 settingsLocked = _.contains(['new', 'stopped'], cluster.get('status')),
                 needsRedeployment = cluster.needsRedeployment(),
                 warningClasses = {
@@ -285,7 +243,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                         <div>
                             <div className={utils.classNames(warningClasses)}>
                                 <i className='icon-attention' />
-                                <span>{i18n(this.state.ns + (this.state.isInvalid ? 'warnings.no_deployment' :
+                                <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' :
                                     settingsLocked ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
@@ -293,76 +251,140 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
                     {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                    {!_.isNull(this.state.vcenterError) &&
-                        <div className='alert alert-error'>
-                            {' ' + this.state.vcenterError.text + ' '}
-                            <a href={this.state.vcenterError.linkUrl}>
-                                {this.state.vcenterError.linkText}
-                            </a>
-                        </div>
-                    }
-                    {this.state.areSettingsInvalid &&
-                        this.showInvalidSettingsMessage()
-                    }
-                    <div className='amount-restrictions'>
-                        {roleModels.map(_.bind(function(role) {
-                            var name = role.get('name'),
-                                limits = this.state.amountRestrictions[name];
 
-                            if (limits && !limits.valid) {
-                                return (<div key={'limit-error-' + name} className='alert alert-error'>{limits.message}</div>);
-                            }
-                        }, this))}
-                        {roleModels.map(_.bind(function(role) {
-                            var name = role.get('name'),
-                                recommendation = this.state.amountRestrictionsRecommendations[name];
-
-                            if (recommendation && !recommendation.valid) {
-                                return (<div key={'limit-warning-' + name} className='alert alert-warning'>{recommendation.message}</div>);
-                            }
-                        }, this))}
-                        {this.state.networksVerificationResult &&
-                            this.showNetworkVerificationMessage(this.state.networksVerificationResult)
-                        }
-                    </div>
+                    {this.showVerificationMessages()}
                 </div>
             );
         },
-        showInvalidSettingsMessage: function() {
-            return (
-                <div className={'alert alert-error'}>
-                    {i18n(this.state.ns + 'invalid_settings')}
-                    {' ' + i18n(this.state.ns + 'get_more_info') + ' '}
-                    <a href={'#cluster/' + this.props.cluster.id + '/settings'}>
-                        {i18n(this.state.ns + 'settings_link')}
-                    </a>.
-                </div>
-            );
-        },
-        showNetworkVerificationMessage: function(verificationResult) {
-            if (_.isEmpty(verificationResult)) return null;
-            var verificationWarning = verificationResult.warning,
-                verificationError = verificationResult.error,
-                classes = {
-                    alert: true,
-                    'alert-error': !!verificationError,
-                    'alert-warning': !!verificationWarning
+        validations: [
+            // VCenter
+            function(cluster) {
+                if (cluster.get('settings').get('common.use_vcenter.value')) {
+                    var vcenter = cluster.get('vcenter');
+                    vcenter.setModels(this.getConfigModels()).parseRestrictions();
+                    return !vcenter.isValid() &&
+                        {blocker: [
+                            (<span>{i18n('vmware.has_errors') + ' '}
+                                <a href={'/#cluster/' + cluster.id + '/vmware'}>
+                                    {i18n('vmware.tab_name')}
+                                </a>
+                            </span>)
+                            ]
+                        };
+                    }
+            },
+            // Invalid settings
+            function(cluster) {
+                var configModels = this.getConfigModels(),
+                    areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
+                return areSettingsInvalid &&
+                    {blocker: [
+                        (<span>
+                            {i18n(this.ns + 'invalid_settings')}
+                            {' ' + i18n(this.ns + 'get_more_info') + ' '}
+                            <a href={'#cluster/' + cluster.id + '/settings'}>
+                                {i18n(this.ns + 'settings_link')}
+                            </a>.
+                        </span>)
+                    ]};
+            },
+            // Amount restrictions
+            function(cluster) {
+                var configModels = this.getConfigModels(),
+                    roleModels = cluster.get('release').get('role_models'),
+                    validRoleModels = roleModels.filter(function(role) {
+                        return !role.checkRestrictions(configModels).result;
+                    }),
+                    limitValidations = _.zipObject(validRoleModels.map(function(role) {
+                        return [role.get('name'), role.checkLimits(configModels)];
+                    })),
+                    limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
+                        return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
+                    }));
+                return {
+                    blocker: roleModels.map(_.bind(
+                        function(role) {
+                            var name = role.get('name'),
+                                limits = limitValidations[name];
+                            return limits && !limits.valid && limits.message;
+                    }, this)),
+                    warning: roleModels.map(_.bind(
+                        function(role) {
+                            var name = role.get('name'),
+                                recommendation = limitRecommendations[name];
+
+                            return recommendation && !recommendation.valid && recommendation.message;
+                    }, this))
                 };
+            },
+            // Network
+            function(cluster) {
+                var networkVerificationTask = cluster.task({group: 'network'}),
+                    makeComponent = _.bind(function(text, isError) {
+                        var span = (
+                            <span>
+                                {text}
+                                {' ' + i18n(this.ns + 'get_more_info') + ' '}
+                                <a href={'#cluster/' + this.props.cluster.id + '/network'}>
+                                    {i18n(this.ns + 'networks_link')}
+                                </a>.
+                            </span>
+                        );
+                        return isError ? {error: [span]} : {warning: [span]};
+                    }, this);
+
+                if (_.isUndefined(networkVerificationTask)) {
+                    return makeComponent(i18n(this.ns + 'verification_not_performed'));
+                } else if (networkVerificationTask.match({status: 'error'})) {
+                    return makeComponent(i18n(this.ns + 'verification_failed'), true);
+                } else if (networkVerificationTask.match({status: 'running'})) {
+                    return makeComponent(i18n(this.ns + 'verification_in_progress'));
+                }
+            }
+        ],
+        validate: function(cluster) {
+            return _.reduce(
+                this.validations,
+                function(accumulator, validator) {
+                    return _.merge(accumulator, validator.call(this, cluster), function(a, b) {
+                        return a.concat(_.compact(b));
+                    });
+                },
+                {blocker: [], error: [], warning: []},
+                this
+            );
+        },
+        showVerificationMessages: function() {
+            var result = {
+                    danger: _.union(this.state.alerts.blocker, this.state.alerts.error),
+                    warning: this.state.alerts.warning
+                },
+                blockers = this.state.alerts.blocker.length;
             return (
-                <div className={utils.classNames(classes)}>
-                    {verificationWarning || verificationError}
-                    {' ' + i18n(this.state.ns + 'get_more_info') + ' '}
-                    <a href={'#cluster/' + this.props.cluster.id + '/network'}>
-                        {i18n(this.state.ns + 'networks_link')}
-                    </a>.
+                <div>
+                {
+                    ['danger', 'warning'].map(function(severity) {
+                        if (_.isEmpty(result[severity])) return null;
+                        return (
+                            <ul key={severity} className={'alert alert-' + severity}>
+                                {result[severity].map(function(line, index) {
+                                    return (<li key={severity + index}>
+                                        {severity == 'danger' && index < blockers && <i className='icon-minus-circle' />}
+                                        {line}
+                                    </li>);
+                                })}
+                            </ul>
+                        );
+                    }, [])
+                }
                 </div>
             );
         },
         renderFooter: function() {
             var classes = {
                 'btn start-deployment-btn': true,
-                'btn-danger': this.state.isInvalid || (this.state.networksVerificationResult || {}).error,
-                'btn-success': !this.state.isInvalid
+                'btn-danger': this.state.isInvalid || this.state.hasErrors,
+                'btn-success': !(this.state.isInvalid || this.state.hasErrors)
             };
             return ([
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
@@ -370,7 +392,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
                     className={utils.classNames(classes)}
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
-                >{i18n(this.state.ns + 'deploy')}</button>
+                >{i18n(this.ns + 'deploy')}</button>
             ]);
         }
     });

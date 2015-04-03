@@ -36,7 +36,7 @@
       }());
 
       if (hasCookies && hasStorage) {
-        requirejs.config({baseUrl: '/static/js', urlArgs: '_=__COMMIT_SHA__'});
+        requirejs.config({baseUrl: '/static/js', urlArgs: '_=__CACHE_BUST__'});
         requirejs(['main']);
       } else {
         document.write('Fuel UI requires Cookies and LocalStorage to work.');

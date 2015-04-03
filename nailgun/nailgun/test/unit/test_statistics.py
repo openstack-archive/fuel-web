@@ -218,7 +218,7 @@ class TestInstallationInfo(BaseTestCase):
                 'operating_system': consts.RELEASE_OS.centos
             },
             nodes_kwargs=[
-                {'status': consts.NODE_STATUSES.ready,
+                {'status': consts.NODE_STATUSES.discover,
                  'roles': ['controller', 'compute']},
                 {'roles': [],
                  'pending_roles': ['compute']}

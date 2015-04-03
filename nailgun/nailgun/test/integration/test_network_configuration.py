@@ -456,7 +456,7 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 
 class TestAdminNetworkConfiguration(BaseIntegrationTest):
 
-    @patch('nailgun.db.sqlalchemy.fixman.settings.ADMIN_NETWORK', {
+    @patch.dict('nailgun.db.sqlalchemy.fixman.settings.ADMIN_NETWORK', {
         "cidr": "192.168.0.0/24",
         "size": "256",
         "first": "192.168.0.129",

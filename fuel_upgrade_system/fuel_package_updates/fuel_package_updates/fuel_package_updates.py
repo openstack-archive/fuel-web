@@ -167,12 +167,12 @@ class FuelWebClient(object):
         self.admin_node_ip = admin_node_ip
         self.client = NailgunClient(admin_node_ip)
         self._environment = environment
-        #self.security = SecurityChecks(self.client, self._environment)
         super(FuelWebClient, self).__init__()
 
     @property
     def environment(self):
         """Environment Model
+
         :rtype: EnvironmentModel
         """
         return self._environment
@@ -181,6 +181,7 @@ class FuelWebClient(object):
                              cluster_id,
                              settings=None):
         """Creates a cluster
+
         :param id:
         :param settings:
         """
@@ -210,7 +211,6 @@ def json_parse(func):
 class NailgunClient(object):
     def __init__(self, admin_node_ip, **kwargs):
         url = "http://{0}:8000".format(admin_node_ip)
-        #logger.info('Initiate Nailgun client with url %s', url)
         self.keystone_url = "http://{0}:5000/v2.0".format(admin_node_ip)
         self._client = HTTPClient(url=url, keystone_url=self.keystone_url,
                                   credentials=KEYSTONE_CREDS,
@@ -285,7 +285,7 @@ def get_repository_packages(remote_repo_url, distro):
 
 def get_ubuntu_repos(repopath, ip, baseurl=None, httproot="/var/www/nailgun/",
                      port=8000):
-    #TODO(mattymo): parse all repo metadata
+    # TODO(mattymo): parse all repo metadata
     repolist = ['mos6.1-updates', 'mos6.1-security', 'mos6.1-holdback']
     if baseurl:
         repourl = "{baseurl}/{repopath}".format(
@@ -299,7 +299,7 @@ def get_ubuntu_repos(repopath, ip, baseurl=None, httproot="/var/www/nailgun/",
 
     repos = []
     for repo in repolist:
-        #FIXME(mattymo): repositories cannot have a period in their name
+        # FIXME(mattymo): repositories cannot have a period in their name
         name = repo.replace('6.1', '')
         repoentry = {
             "type": "deb",
@@ -485,20 +485,21 @@ def main():
         options.release)
     if not os.path.exists(updates_path):
         os.makedirs(updates_path)
-    #logger.info('Checking remote repository...')
-    #try:
-    #    pkgs = get_repository_packages(options.url, distro)
-    #except HTTPError as e:
-    #    if e.code == 404:
-    #        raise UpdatePackagesException(
-    #            'Remote repository does not contain packages'
-    #            ' metadata ({0})!'.format(distro))
-    #    else:
-    #        raise
-    #if len(pkgs) < 1:
-    #    raise UpdatePackagesException('Remote "{0}" repository does not '
-    #                                  'contain any packages.')
-    #logger.debug('Remote repository contains next packages: {0}'.format(pkgs))
+    # logger.info('Checking remote repository...')
+    # try:
+    #     pkgs = get_repository_packages(options.url, distro)
+    # except HTTPError as e:
+    #     if e.code == 404:
+    #         raise UpdatePackagesException(
+    #             'Remote repository does not contain packages'
+    #             ' metadata ({0})!'.format(distro))
+    #     else:
+    #         raise
+    # if len(pkgs) < 1:
+    #     raise UpdatePackagesException('Remote "{0}" repository does not '
+    #                                   'contain any packages.')
+    # logger.debug('Remote repository contains'
+    #              ' next packages: {0}'.format(pkgs))
     logger.info('Started mirroring remote repository...')
     mirror_remote_repository(options.url, updates_path,
                              settings.exclude_dirs, options.distro)

@@ -1235,6 +1235,10 @@
                 name: "mos"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/x86_64"
                 priority: null
+              - type: "rpm"
+                name: "Auxiliary"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/auxiliary"
+                priority: null
       generated:
         cobbler:
           profile:
@@ -1314,6 +1318,12 @@
                 suite: "mos6.1-holdback"
                 section: "main restricted"
                 priority: 1100
+              - type: "deb"
+                name: "Auxiliary"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"
+                suite: "auxiliary"
+                section: "main restricted"
+                priority: 1050
       generated:
         repo_setup:
           installer_kernel:

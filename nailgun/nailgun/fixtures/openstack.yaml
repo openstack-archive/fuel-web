@@ -433,6 +433,19 @@
           tenant:
             value: "services"
             type: "text"
+        murano_settings:
+          metadata:
+            label: "Murano Settings"
+            weight: 20
+            restrictions:
+              - condition: "settings:additional_components.murano.value == false"
+                action: "hide"
+          murano_repo_url:
+            value: "http://catalog.openstack.org/"
+            label: "Murano Repository URL"
+            description: ""
+            weight: 10
+            type: "text"
         external_mongo:
           metadata:
             label: "External MongoDB"

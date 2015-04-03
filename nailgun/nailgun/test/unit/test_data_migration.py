@@ -268,6 +268,7 @@ class TestDataMigration(BaseTestCase):
                         'description': 'xx',
                     }
                 },
+                'common': {}
             }
         }
         attributes_after = {
@@ -278,6 +279,13 @@ class TestDataMigration(BaseTestCase):
                                         'one Storage - Cinder LVM node.')
                     }
                 },
+                'common': {
+                    'use_vcenter': {
+                        'value': False,
+                        'weight': 30,
+                        'type': "hidden"
+                    }
+                }
             }
         }
 

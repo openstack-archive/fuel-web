@@ -49,7 +49,8 @@ class TestMigrationFuel61(base.BaseAlembicMigrationTest):
                     'editable': {
                         'storage': {
                             'volumes_lvm': {},
-                        }
+                        },
+                        'common': {}
                     },
                     'generated': {
                         'cobbler': {'profile': {

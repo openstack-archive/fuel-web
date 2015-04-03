@@ -435,9 +435,9 @@
                     "range_end": "End",
                     "verify_networks": {
                         "step_0": "Network Verification is done in 4 steps:",
-                        "step_1": "1. Every node starts listening for test frames",
-                        "step_2": "2. Every node sends out 802.1Q tagged UDP frames",
-                        "step_3": "3. Nodes listeners register test frames from other nodes",
+                        "step_1": "1. Every node starts listening for test frames.",
+                        "step_2": "2. Every node sends out 802.1Q tagged UDP frames.",
+                        "step_3": "3. Nodes listeners register test frames from other nodes.",
                         "step_4": "4. Send DHCP discover messages on all available ports.",
                         "success_alert": "Verification succeeded. Your network is configured correctly.",
                         "verification_error": {

@@ -1,4 +1,4 @@
-hacking>=0.8.0,<0.9
+hacking>=0.10.1
 mock>=1.0
 oslotest==1.0
 testtools>=0.9.34

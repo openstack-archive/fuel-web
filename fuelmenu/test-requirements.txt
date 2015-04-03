@@ -1,1 +1,1 @@
-hacking==0.7
+hacking>=0.10.1

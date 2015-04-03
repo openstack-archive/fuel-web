@@ -313,10 +313,10 @@ class TestNodeObject(BaseIntegrationTest):
             "mac": node_db.mac,
         }
 
-        # test empty disks handling
+        # test empty disks are applied to new node
         data["meta"]["disks"] = []
         objects.Node.update_by_agent(node_db, copy.deepcopy(data))
-        self.assertNotEqual(node_db.meta["disks"], data["meta"]["disks"])
+        self.assertEqual(node_db.meta["disks"], data["meta"]["disks"])
 
         # test status handling
         for status in ('provisioning', 'error'):

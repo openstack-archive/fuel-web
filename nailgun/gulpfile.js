@@ -181,7 +181,7 @@ gulp.task('rjs', function() {
         .pipe(replace(/jsx!/g, ''))
         .pipe(jsFilter.restore())
         .pipe(indexFilter)
-        .pipe(replace('__COMMIT_SHA__', Date.now()))
+        .pipe(replace('__CACHE_BUST__', Date.now()))
         .pipe(indexFilter.restore())
         .pipe(intermediate({output: '_build'}, function(tempDir, cb) {
             var configFile = path.join(tempDir, 'build.json');

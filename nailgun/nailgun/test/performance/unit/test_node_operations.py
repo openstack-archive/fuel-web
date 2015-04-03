@@ -80,6 +80,12 @@ class NodeOperationsLoadTest(base.BaseUnitLoadTestCase):
 
     @base.evaluate_unit_performance
     def test_put_nodes_nics(self):
+        # node's nics can be changed only in discover or error state
+        for node in self.env.nodes:
+            node.status = consts.NODE_STATUSES.discover
+
+        self.env.db.flush()
+
         nodes_list = []
         for node in self.env.nodes:
             resp = self.get_handler(

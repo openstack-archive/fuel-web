@@ -256,3 +256,21 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
         serialized_info = self.serializer.serialize(self.cluster, [])
 
         self.assertNotIn('provision_method', serialized_info['engine'])
+
+    def test_centos_fedora_kernel_selection(self):
+        release = self.env.create_release(
+            api=False, operating_system=consts.RELEASE_OS.centos)
+        self.cluster = self.env.create_cluster(
+            api=False, release_id=release.id)
+        self.env.create_node(
+            api=False, cluster_id=self.cluster['id'], pending_addition=True)
+        self.cluster.attributes.editable['use_fedora_lt']['kernel'] = \
+            'fedora_lt_kernel'
+
+        serialized_info = self.serializer.serialize(
+            self.cluster,
+            self.cluster.nodes)
+
+        node_info = serialized_info['nodes'][0]
+        self.assertIn('kernel_lt', node_info['ks_meta'])
+        self.assertEqual(1, node_info['ks_meta']['kernel_lt'])

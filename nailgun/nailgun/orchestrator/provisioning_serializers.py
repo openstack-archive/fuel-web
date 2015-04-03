@@ -134,8 +134,14 @@ class ProvisioningSerializer(object):
 
         serialized_node['ks_meta']['repo_setup'] = cluster_attrs['repo_setup']
 
+        # for 6.0 envs and earlier
         vlan_splinters = cluster_attrs.get('vlan_splinters', {})
         if vlan_splinters.get('vswitch') == 'kernel_lt':
+            serialized_node['ks_meta']['kernel_lt'] = 1
+
+        # for 6.1 envs (and later)
+        use_fedora_61 = cluster_attrs.get('use_fedora_lt', {})
+        if use_fedora_61.get('kernel') == 'fedora_lt_kernel':
             serialized_node['ks_meta']['kernel_lt'] = 1
 
         mellanox_data = cluster_attrs.get('neutron_mellanox')

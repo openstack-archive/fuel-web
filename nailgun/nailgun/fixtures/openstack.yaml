@@ -748,6 +748,9 @@
             description: "List of upstream DNS servers, separated by comma"
             weight: 10
             type: "text"
+            regex:
+              source: '^\*$|^(?:\d|1?\d\d|2[0-4]\d|25[0-5])(?:\.(?:\d|1?\d\d|2[0-4]\d|25[0-5])){3}(?:\s*,\s*(?:\d|1?\d\d|2[0-4]\d|25[0-5])(?:\.(?:\d|1?\d\d|2[0-4]\d|25[0-5])){3})*$'
+              error: "Invalid IP address list"
         external_ntp:
           metadata:
             label: "Upstream NTP"
@@ -760,6 +763,9 @@
             description: "List of upstream NTP servers, separated by comma"
             weight: 10
             type: "text"
+            regex:
+              source: '^\s*(?:(?:\w+(?:-+\w+)*\.)+[a-z]+)\s*(?:,\s*(?:(?:\w+(?:-+\w+)*\.)+[a-z]+)\s*)*$'
+              error: "Invalid domain name list"
         kernel_params:
           metadata:
             label: "Kernel parameters"

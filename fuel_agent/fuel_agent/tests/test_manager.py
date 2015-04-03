@@ -44,7 +44,7 @@ class TestManager(test_base.BaseTestCase):
     def test_do_parsing(self, mock_lbd, mock_http_req, mock_yaml):
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         self.mgr.do_parsing()
-        #NOTE(agordeev): there's no need for deeper assertions as all schemes
+        # NOTE(agordeev): there's no need for deeper assertions as all schemes
         # thoroughly tested in test_nailgun
         self.assertFalse(self.mgr.partition_scheme is None)
         self.assertFalse(self.mgr.configdrive_scheme is None)

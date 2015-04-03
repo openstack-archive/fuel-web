@@ -356,7 +356,7 @@ class Nailgun(object):
         LOG.debug('--- Preparing image scheme ---')
         data = self.data
         image_scheme = objects.ImageScheme()
-        #FIXME(agordeev): this piece of code for fetching additional image
+        # FIXME(agordeev): this piece of code for fetching additional image
         # meta data should be factored out of this particular nailgun driver
         # into more common and absract data getter which should be able to deal
         # with various data sources (local file, http(s), etc.) and different

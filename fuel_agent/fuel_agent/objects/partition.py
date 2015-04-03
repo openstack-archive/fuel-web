@@ -71,7 +71,7 @@ class Parted(object):
                 return 'primary'
             elif len(self.partitions) == 3 and not self.extended:
                 return 'extended'
-            #NOTE(agordeev): how to reach that condition?
+            # NOTE(agordeev): how to reach that condition?
             else:
                 return 'logical'
 

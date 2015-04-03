@@ -354,8 +354,7 @@ LIST_BLOCK_DEVICES_SAMPLE = [
      'bspec': {
          'sz': '976773168', 'iomin': '4096', 'size64': '500107862016',
          'ss': '512', 'ioopt': '0', 'alignoff': '0', 'pbsz': '4096',
-         'ra': '256', 'ro': '0', 'maxsect': '1024'
-     },
+         'ra': '256', 'ro': '0', 'maxsect': '1024'},
      'size': 500107862016},
     {'uspec':
         {'DEVLINKS': [
@@ -668,7 +667,7 @@ class TestNailgun(test_base.BaseTestCase):
 
     @mock.patch.object(hu, 'list_block_devices')
     def test_partition_scheme_ceph(self, mock_lbd):
-        #TODO(agordeev): perform better testing of ceph logic
+        # TODO(agordeev): perform better testing of ceph logic
         p_data = PROVISION_SAMPLE_DATA.copy()
         for i in range(0, 3):
             p_data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(
@@ -685,8 +684,8 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual(1, len(p_scheme.mds))
         self.assertEqual(3, len(p_scheme.parteds))
         self.assertEqual(3, self.drv._get_partition_count('ceph'))
-        #NOTE(agordeev): (-2, -1, -1) is the list of ceph data partition counts
-        #                corresponding to (sda, sdb, sdc) disks respectively.
+        # NOTE(agordeev): (-2, -1, -1) is the list of ceph data partition
+        # counts corresponding to (sda, sdb, sdc) disks respectively.
         for disk, part in enumerate((-2, -1, -1)):
             self.assertEqual(CEPH_DATA['partition_guid'],
                              p_scheme.parteds[disk].partitions[part].guid)

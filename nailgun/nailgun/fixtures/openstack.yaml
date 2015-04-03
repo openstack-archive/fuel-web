@@ -760,6 +760,9 @@
             description: "List of upstream NTP servers, separated by comma"
             weight: 10
             type: "text"
+            regex:
+              source: '^\s*(?:(?:\w+(?:-+\w+)*\.)+[a-z]+)\s*(?:,\s*(?:(?:\w+(?:-+\w+)*\.)+[a-z]+)\s*)*$'
+              error: "NTP servers list is not correct"
         kernel_params:
           metadata:
             label: "Kernel parameters"

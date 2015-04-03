@@ -31,7 +31,7 @@ define([
             // validate method represented as static method to support cluster settings validation
             validate: function(setting, models) {
                 var ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.',
-                    nameRegexp = /^[\w-]+$/,
+                    nameRegexp = /^[\w-.]+$/,
                     os = models.release.get('operating_system');
                 var errors = setting.value.map(function(repo) {
                     var error = {},

@@ -39,6 +39,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys \
     import MoveKeysHook
 from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf \
     import FixDhcrelayConf
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_monitor \
+    import FixDhcrelayMonitor
 from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers \
     import RecreateNailgunInPriveleged
 
@@ -66,6 +68,7 @@ class PreUpgradeHookManager(object):
         MoveKeysHook,
         RecreateNailgunInPriveleged,
         FixDhcrelayConf,
+        FixDhcrelayMonitor,
     ]
 
     def __init__(self, upgraders, config):

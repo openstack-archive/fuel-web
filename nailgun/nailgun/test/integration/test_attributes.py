@@ -422,12 +422,20 @@ class TestAlwaysEditable(BaseIntegrationTest):
         self._put(data, expect_code=403)
 
         attrs = self.cluster.attributes.editable
-        self.assertEqual(attrs['repo_setup']['repos']['value'], [{
-            'type': 'rpm',
-            'name': 'mos',
-            'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/x86_64',
-            'priority': None,
-        }])
+        self.assertEqual(attrs['repo_setup']['repos']['value'], [
+            {
+                'type': 'rpm',
+                'name': 'mos',
+                'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/x86_64',
+                'priority': None,
+            },
+            {
+                'type': 'rpm',
+                'name': 'Auxiliary',
+                'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/auxiliary',
+                'priority': 20,
+            },
+        ])
 
 
 class TestVmwareAttributes(BaseIntegrationTest):

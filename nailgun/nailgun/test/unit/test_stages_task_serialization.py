@@ -80,7 +80,7 @@ class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 14)
+        self.assertEqual(len(serialized), 16)
         self.assertEqual(serialized[0]['type'], 'shell')
         self.assertEqual(serialized[1]['type'], 'upload_file')
         self.assertEqual(serialized[2]['type'], 'upload_file')
@@ -94,8 +94,10 @@ class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
         self.assertEqual(serialized[10]['type'], 'upload_file')
         self.assertEqual(serialized[11]['type'], 'upload_file')
         self.assertEqual(serialized[12]['type'], 'upload_file')
-        self.assertEqual(serialized[13]['type'], 'shell')
-        self.assertEqual(serialized[13]['parameters']['cmd'], 'apt-get update')
+        self.assertEqual(serialized[13]['type'], 'upload_file')
+        self.assertEqual(serialized[14]['type'], 'upload_file')
+        self.assertEqual(serialized[15]['type'], 'shell')
+        self.assertEqual(serialized[15]['parameters']['cmd'], 'apt-get update')
         self.assertItemsEqual(serialized[3]['uids'], self.all_uids)
 
 
@@ -124,11 +126,12 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 2)
+        self.assertEqual(len(serialized), 3)
         self.assertEqual(serialized[0]['type'], 'upload_file')
-        self.assertEqual(serialized[1]['type'], 'shell')
-        self.assertEqual(serialized[1]['parameters']['cmd'], 'yum clean all')
-        self.assertItemsEqual(serialized[1]['uids'], self.all_uids)
+        self.assertEqual(serialized[1]['type'], 'upload_file')
+        self.assertEqual(serialized[2]['type'], 'shell')
+        self.assertEqual(serialized[2]['parameters']['cmd'], 'yum clean all')
+        self.assertItemsEqual(serialized[2]['uids'], self.all_uids)
 
     def test_serialize_rados_with_ceph(self):
         task_config = {'id': 'restart_radosgw',
@@ -292,9 +295,11 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
         self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 17)
+        self.assertEqual(len(tasks), 19)
         tasks_tests = [('shell', ['master']),
                        ('shell', sorted(self.all_uids)),
+                       ('upload_file', sorted(self.all_uids)),
+                       ('upload_file', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),

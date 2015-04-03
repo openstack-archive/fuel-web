@@ -1216,6 +1216,22 @@
         kernel_params:
           kernel:
             value: "console=ttyS0,9600 console=tty0 biosdevname=0 crashkernel=none rootdelay=90 nomodeset"
+        use_fedora_lt:
+          metadata:
+            label: "Use Fedora longterm kernel"
+            weight: 50
+          kernel:
+            label: "Select kernel"
+            weight: 55
+            type: "radio"
+            value: "default_kernel"
+            values:
+              - data: "default_kernel"
+                label: "CentOS default kernel"
+                description: "Install default 2.6.32 kernel."
+              - data: "fedora_lt_kernel"
+                label: "Fedora LT kernel"
+                description: "EXPERIMENTAL: Install the Fedora 3.10 longterm kernel instead of the default 2.6.32 kernel. This kernel may not work with all hardware platforms, use with caution."
         repo_setup:
           metadata:
             label: "Repositories"

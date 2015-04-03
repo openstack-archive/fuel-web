@@ -423,7 +423,8 @@ class TestInstallationInfo(BaseTestCase):
             ('workloads_collector', 'tenant'),
             ('workloads_collector', 'username'), ('zabbix', 'password'),
             ('zabbix', 'username'),
-            ('common', 'use_vcenter')  # removed attribute
+            ('common', 'use_vcenter'),  # removed attribute
+            ('murano_settings', 'murano_repo_url'),
         )
         return filter(lambda x: x not in private_paths, leafs_paths)
 

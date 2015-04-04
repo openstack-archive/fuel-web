@@ -14,6 +14,8 @@
 
 import logging
 
+from shotgun.settings import LOG_FILE
+
 
 def configure_logger():
     """Configures shotgun logger
@@ -24,7 +26,7 @@ def configure_logger():
         '%(asctime)s %(levelname)s %(process)d (%(module)s) %(message)s',
         "%Y-%m-%d %H:%M:%S")
 
-    stream_handler = logging.StreamHandler()
+    stream_handler = logging.FileHandler(LOG_FILE)
     stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(formatter)
 

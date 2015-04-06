@@ -13,7 +13,7 @@
 # under the License.
 
 import netaddr
-
+import subprocess
 from fuelmenu.common.errors import BadIPException
 
 
@@ -76,3 +76,13 @@ def intersects(range1, range2):
 
 def netmaskToCidr(netmask):
     return sum([bin(int(x)).count('1') for x in netmask.split('.')])
+
+
+def duplicateIPExists(ip, iface):
+    noout = open('/dev/null', 'w')
+    no_dupes = subprocess.call(["/sbin/arping", "-D", "-c3", "-w1", "-I",
+                               iface, ip], stdout=noout, stderr=noout)
+    if no_dupes == 0:
+        return False
+    else:
+        return True

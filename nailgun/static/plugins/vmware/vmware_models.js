@@ -119,7 +119,6 @@ function($, _, i18n, Backbone, models) {
         }
     });
 
-    var Cinder = BaseModel.extend({constructorName: 'Cinder'});
     var NovaCompute = BaseModel.extend({
         constructorName: 'NovaCompute',
         checkDuplicateField: function(keys, fieldName) {
@@ -181,17 +180,11 @@ function($, _, i18n, Backbone, models) {
             });
             result.nova_computes = new NovaComputes(novaValues);
 
-            // cinder
-            var cinderMetadata = _.find(metadata, {name: 'cinder'});
-            var cinderValue = _.extend(_.clone(response.cinder), {metadata: cinderMetadata.fields});
-            result.cinder =  new Cinder(cinderValue);
-
             return result;
         },
         toJSON: function() {
-            var result = _.omit(this.attributes, 'metadata', 'nova_computes', 'cinder');
+            var result = _.omit(this.attributes, 'metadata', 'nova_computes');
             result.nova_computes = this.get('nova_computes').toJSON();
-            result.cinder = this.get('cinder').toJSON();
             return result;
         },
         validate: function() {
@@ -201,12 +194,6 @@ function($, _, i18n, Backbone, models) {
             novaComputes.isValid();
             if (novaComputes.validationError) {
                 errors.nova_computes = novaComputes.validationError;
-            }
-
-            var cinder = this.get('cinder');
-            cinder.isValid();
-            if (cinder.validationError) {
-                errors.cinder = cinder.validationError;
             }
 
             return _.isEmpty(errors) ? null : errors;

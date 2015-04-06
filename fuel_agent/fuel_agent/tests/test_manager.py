@@ -50,6 +50,7 @@ class TestManager(test_base.BaseTestCase):
         self.assertFalse(self.mgr.configdrive_scheme is None)
         self.assertFalse(self.mgr.image_scheme is None)
 
+    @mock.patch('six.moves.builtins.open')
     @mock.patch.object(os, 'symlink')
     @mock.patch.object(os, 'remove')
     @mock.patch.object(os, 'path')
@@ -73,7 +74,8 @@ class TestManager(test_base.BaseTestCase):
                              mock_pu_spf, mock_pu_sgt, mock_mu_m, mock_lu_p,
                              mock_lu_v, mock_lu_l, mock_fu_mf, mock_pvr,
                              mock_vgr, mock_lvr, mock_mdr, mock_exec,
-                             mock_os_ld, mock_os_p, mock_os_r, mock_os_s):
+                             mock_os_ld, mock_os_p, mock_os_r, mock_os_s,
+                             mock_open):
         mock_os_ld.return_value = ['not_a_rule', 'fake.rules']
         mock_os_p.exists.return_value = True
         mock_hu_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE

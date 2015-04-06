@@ -388,6 +388,10 @@ def save_only(iface, settingsfile='/etc/fuel/astute.yaml'):
                   (num_dhcp, dhcp_server_data))
         print("ERROR: %s foreign DHCP server(s) found: %s" %
               (num_dhcp, dhcp_server_data))
+    if network.duplicateIPExists(ip, iface):
+        log.error("Duplicate host found with IP {0}".format(ip))
+        print("ERROR: Duplicate host found with IP {0}".format(ip))
+
     newsettings = Settings().read(settingsfile)
     settings = \
         {

@@ -164,7 +164,7 @@ define(
         renderComputes: function(actions) {
             var novaComputes = this.props.model.get('nova_computes'),
                 isSingleInstance = (novaComputes.length == 1),
-                disabled = actions.disable.cinder;
+                disabled = actions.disable.nova_computes;
 
             return (
                 <div className='idented'>
@@ -186,17 +186,6 @@ define(
                 </div>
             );
         },
-        renderCinder: function(actions) {
-            var disabled = actions.disable.cinder;
-            return (
-                <GenericSection
-                    model={this.props.model.get('cinder')}
-                    className='cinder'
-                    title={i18n('vmware.cinder')}
-                    disabled={disabled.result || this.props.disabled}
-                />
-            );
-        },
         render: function() {
             var restrictActions = this.props.model.testRestrictions();
 
@@ -204,7 +193,6 @@ define(
                 <div>
                     {this.renderFields(restrictActions)}
                     {this.renderComputes(restrictActions)}
-                    {this.renderCinder(restrictActions)}
                 </div>
             );
         }

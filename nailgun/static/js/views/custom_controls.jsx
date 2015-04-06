@@ -64,8 +64,8 @@ define([
         getDefaultProps: function() {
             return {
                 repoRegexes: {
-                    Ubuntu: /^(deb|deb-src)\s+(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s+([\w\-.\/]+)(?:\s+([\w\-.\/\s]+))?$/i,
-                    CentOS: /^(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s*$/i
+                    Ubuntu: /^(deb|deb-src)\s+(\w+:\/\/(?:[\w\-\/]+\.)*(?:[\w\-\/]+)(?::\d+)?(?:[\w\-\/]+\.)*(?:[\w\-\/]+))\s+([\w\-.\/]+)(?:\s+([\w\-.\/\s]+))?$/i,
+                    CentOS: /^(\w+:\/\/(?:[\w\-\/]+\.)*(?:[\w\-\/]+)(?::\d+)?(?:[\w\-\/]+\.)*(?:[\w\-\/]+))\s*$/i
                 },
                 repoAttributes: {
                     Ubuntu: ['type', 'uri', 'suite', 'section'],

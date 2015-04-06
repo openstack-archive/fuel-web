@@ -248,6 +248,12 @@ interface first.")
                     errors.append("DHCP Gateway does not match management "
                                   "network.")
 
+                self.parent.footer.set_text("Scanning for duplicate IP address"
+                                            "es. Please wait...")
+                if network.duplicateIPExists(mgmt_if_ipaddr, self.activeiface):
+                    errors.append("Duplicate host found with IP {0}.".format(
+                        mgmt_if_ipaddr))
+
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
             log.error("Errors: %s %s" % (len(errors), errors))

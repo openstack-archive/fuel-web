@@ -112,17 +112,16 @@ gulp.task('jison', function() {
         .pipe(gulp.dest('static/js/expression/'));
 });
 
-var jsFiles = ['static/js/**/*.js', '!static/js/libs/**', '!static/js/expression/parser.js'];
-var jsxFiles = ['static/js/**/*.jsx', '!static/js/libs/**'];
-var styleFiles = 'static/styles/*.less';
+var jsFiles = ['static/js/**/*.js', 'static/js/**/*.jsx', '!static/js/libs/**', '!static/js/expression/parser.js'];
+var styleFiles = 'static/**/*.less';
 
 gulp.task('jscs', function() {
-    return gulp.src(jsxFiles.concat(jsFiles))
+    return gulp.src(jsFiles)
         .pipe(jscs(jscsConfig));
 });
 
 gulp.task('jshint', function() {
-    return gulp.src(jsxFiles.concat(jsFiles))
+    return gulp.src(jsFiles)
         .pipe(jsxFilter)
         .pipe(react())
         .pipe(jsxFilter.restore())
@@ -138,7 +137,7 @@ var lintspacesConfig = {
 };
 
 gulp.task('lintspaces:js', function() {
-    return gulp.src(jsxFiles.concat(jsFiles))
+    return gulp.src(jsFiles)
         .pipe(lintspaces(_.extend({}, lintspacesConfig, {
             ignores: ['js-comments'],
             spaces: 4

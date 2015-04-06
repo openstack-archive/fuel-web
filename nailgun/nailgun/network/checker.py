@@ -577,6 +577,27 @@ class NetworkCheck(object):
                                 "errors": ['dns_nameservers']})
             self.expose_error_messages()
 
+    def check_calculated_network_cidr(self):
+        """Check calculated networks CIDRs are equal to values set by user.
+        E.g. when user set CIDR to "10.20.30.0/16" it will be calculated as
+        "10.20.0.0/16". So, this helps to avoid some user errors while entering
+        network parameters.
+        """
+        nets_w_cidr = filter(lambda n: n['cidr'], self.networks)
+        for ng in nets_w_cidr:
+            calc_cidr_str = str(netaddr.IPNetwork(ng['cidr']).cidr)
+            if calc_cidr_str != ng['cidr']:
+                self.err_msgs.append(
+                    u"Calculated CIDR ({0}) is different from value ({1}) "
+                    u"set by user for network:\n{2}.".format(
+                        calc_cidr_str, ng['cidr'], ng['name'])
+                )
+                self.result.append({
+                    "ids": [int(ng["id"])],
+                    "errors": ["cidr"]
+                })
+        self.expose_error_messages()
+
     def check_configuration(self):
         """check network configuration parameters
         """
@@ -592,6 +613,7 @@ class NetworkCheck(object):
         self.check_network_classes_exclude_loopback()
         self.check_network_addresses_not_match_subnet_and_broadcast()
         self.check_dns_servers_ips()
+        self.check_calculated_network_cidr()
 
     def check_interface_mapping(self):
         """check mapping of networks to NICs

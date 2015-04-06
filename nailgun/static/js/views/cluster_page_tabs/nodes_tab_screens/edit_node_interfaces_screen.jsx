@@ -338,16 +338,20 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 returnEnabled = !this.state.actionInProgress,
                 loadDefaultsEnabled = !this.state.actionInProgress && !locked,
                 revertChangesEnabled = !this.state.actionInProgress && hasChanges,
-                applyEnabled = !hasErrors && !this.state.actionInProgress && hasChanges,
-                hasMultipleNodes = nodes.length > 1;
+                applyEnabled = !hasErrors && !this.state.actionInProgress && hasChanges;
 
-            if (hasMultipleNodes) {
-                var resultingSpeeds = interfaces.map(function(ifc, index) {
+            // calculate interfaces speed
+            var getIfcSpeed = function(index) {
                     return _.unique(nodes.map(function(node) {
                         return utils.showBandwidth(node.interfaces.at(index).get('current_speed'));
-                    }, this));
-                }, this);
-            }
+                    }));
+                },
+                interfaceSpeeds = interfaces.map(function(ifc, index) {
+                    if (!ifc.isBond()) return [getIfcSpeed(index)];
+                    return _.map(ifc.get('slaves'), function(slave) {
+                        return getIfcSpeed(interfaces.indexOf(interfaces.findWhere(slave)));
+                    });
+                });
 
             return (
                 <div className='edit-node-networks-screen' style={{display: 'block'}} ref='nodeNetworksScreen'>
@@ -386,7 +390,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                             refresh={this.refresh}
                                             bondingProperties={this.props.bondingConfig.properties}
                                             bondType={this.getBondType()}
-                                            interfaceSpeeds={hasMultipleNodes ? resultingSpeeds[index] : null}
+                                            interfaceSpeeds={interfaceSpeeds[index]}
                                         />;
                                     }
                                 }, this))
@@ -568,8 +572,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 networksToAdd = [],
                 showHelpMessage = !locked && !assignedNetworks.length,
                 bondProperties = ifc.get('bond_properties'),
-                interfaceProperties = ifc.get('interface_properties') || null,
-                isMultipleNodesConfiguration = this.props.nodes.length > 1;
+                interfaceProperties = ifc.get('interface_properties') || null;
 
             assignedNetworks.each(function(interfaceNetwork) {
                 if (interfaceNetwork.getFullNetwork(networks).get('name') != 'floating') {
@@ -652,19 +655,17 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         </div>
 
                         <div className='network-connections-info-block enable-selection'>
-                            {_.map(slaveInterfaces, function(slaveInterface) {
+                            {_.map(slaveInterfaces, function(slaveInterface, index) {
                                 return <div key={'network-connections-info-' + slaveInterface.get('name')} className='network-connections-info-block-item'>
                                     <div className='network-connections-info-position'></div>
                                     <div className='network-connections-info-description'>
-                                        {!isMultipleNodesConfiguration &&
+                                        {this.props.nodes.length == 1 &&
                                             <div>
                                                 {i18n(configureInterfacesTransNS + 'mac')}: {slaveInterface.get('mac')}
                                             </div>
                                         }
                                         <div>
-                                            {i18n(configureInterfacesTransNS + 'speed')}: {isMultipleNodesConfiguration ?
-                                                this.props.interfaceSpeeds.join(', ') :
-                                                utils.showBandwidth(slaveInterface.get('current_speed'))}
+                                            {i18n(configureInterfacesTransNS + 'speed')}: {this.props.interfaceSpeeds[index].join(', ')}
                                         </div>
                                         {(this.props.bondingAvailable && slaveInterfaces.length >= 3) &&
                                             <button className='btn btn-link btn-remove-interface'

@@ -62,6 +62,11 @@ opts = [
         default='.renamedrule',
         help='Substring to which file extension .rules be renamed',
     ),
+    cfg.StrOpt(
+        'udev_empty_rule',
+        default='empty_rule',
+        help='Correct empty rule for udev daemon',
+    ),
 ]
 
 CONF = cfg.CONF
@@ -99,6 +104,10 @@ class Manager(object):
         # 'parted' generates too many udev events in short period of time
         # so we should increase processing speed for those events,
         # otherwise partitioning is doomed.
+        empty_rule_path = os.path.join(CONF.udev_rules_dir,
+                                       os.path.basename(CONF.udev_empty_rule))
+        with open(empty_rule_path, 'w') as f:
+            f.write('#\n')
         LOG.debug("Enabling udev's rules blacklisting")
         for rule in os.listdir(CONF.udev_rules_lib_dir):
             dst = os.path.join(CONF.udev_rules_dir, rule)
@@ -115,7 +124,7 @@ class Manager(object):
                 except OSError:
                     LOG.debug("Skipping udev rule %s blacklising" % dst)
                 else:
-                    os.symlink('/dev/null', dst)
+                    os.symlink(empty_rule_path, dst)
         utils.execute('udevadm', 'control', '--reload-rules',
                       check_exit_code=[0])
 

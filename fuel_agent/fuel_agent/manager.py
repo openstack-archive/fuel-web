@@ -173,6 +173,10 @@ class Manager(object):
                     LOG.debug("Skipping udev rule %s de-blacklisting" % src)
         utils.execute('udevadm', 'control', '--reload-rules',
                       check_exit_code=[0])
+        #NOTE(agordeev): re-create all the links which were skipped by udev
+        # while blacklisted
+        utils.execute('udevadm', 'trigger', check_exit_code=[0])
+        utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
 
         # If one creates partitions with the same boundaries as last time,
         # there might be md and lvm metadata on those partitions. To prevent

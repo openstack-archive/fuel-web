@@ -19,9 +19,8 @@ define([
     'underscore',
     'i18n',
     'react',
-    'utils',
     'jsx!views/controls'
-], function($, _, i18n, React, utils, controls) {
+], function($, _, i18n, React, controls) {
     'use strict';
 
     var customControls = {};
@@ -131,15 +130,9 @@ define([
         },
         render: function() {
             var ns = 'cluster_page.settings_tab.custom_repo_configuration.',
-                isExperimental = _.contains(app.version.get('feature_groups'), 'experimental'),
-                os = this.props.cluster.get('release').get('operating_system'),
-                classes = {
-                    'table-wrapper repos': true,
-                    experimental: isExperimental
-                };
-
+                os = this.props.cluster.get('release').get('operating_system');
             return (
-                <div className={utils.classNames(classes)} key={this.state.key}>
+                <div className='table-wrapper repos' key={this.state.key}>
                     {this.props.description &&
                         <div className='custom-description parameter-description'>
                             {this.props.description}
@@ -167,23 +160,17 @@ define([
                                     defaultValue={this.constructor.repoToString(repo, os)}
                                     error={error && (error.uri ? error.name ? '' : error.uri : null)}
                                     onChange={this.changeRepos.bind(this, null)}
-                                    extraContent={!isExperimental && index > 0 && this.renderDeleteButton(index)}
                                     label={index == 0 && i18n(ns + 'labels.uri')}
                                 />
-                                {isExperimental &&
-                                    <controls.Input
-                                        {...props}
-                                        defaultValue={repo.priority}
-                                        error={error && (error.priority ? (error.name || error.uri) ? '' : error.priority : null)}
-                                        wrapperClassName='repo-priority'
-                                        onChange={this.changeRepos.bind(this, 'change_priority')}
-                                        extraContent={index > 0 && this.renderDeleteButton(index)}
-                                        label={index == 0 && i18n(ns + 'labels.priority')}
-                                    />
-                                }
-                                {!isExperimental && error && error.priority &&
-                                    <div className='parameter-description error'>{error.priority}</div>
-                                }
+                                <controls.Input
+                                    {...props}
+                                    defaultValue={repo.priority}
+                                    error={error && (error.priority ? (error.name || error.uri) ? '' : error.priority : null)}
+                                    wrapperClassName='repo-priority'
+                                    onChange={this.changeRepos.bind(this, 'change_priority')}
+                                    extraContent={index > 0 && this.renderDeleteButton(index)}
+                                    label={index == 0 && i18n(ns + 'labels.priority')}
+                                />
                             </div>
                         );
                     }, this)}

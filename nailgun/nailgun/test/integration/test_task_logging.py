@@ -16,6 +16,7 @@
 
 
 from mock import patch
+import six
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -245,3 +246,68 @@ class TestTasksLogging(BaseIntegrationTest):
                               (consts.TASK_NAMES.deploy,
                                consts.TASK_NAMES.check_networks,
                                consts.TASK_NAMES.check_before_deployment))
+
+    def simulate_running_deployment(self, deploy_task, progress=42):
+        """To exclude race condition errors in the tests we simulate
+        running process of deployment
+        :param deploy_task: deploy task object
+        :param progress: task progress value
+        """
+        # Updating deploy task
+        TaskHelper.update_action_log(deploy_task)
+        deploy_task.status = consts.TASK_STATUSES.running
+        deploy_task.progress = progress
+        # Updating action log
+        action_log = objects.ActionLog.get_by_kwargs(
+            task_uuid=deploy_task.uuid, action_name=deploy_task.name)
+        action_log.end_timestamp = None
+
+        self.db.commit()
+
+    @fake_tasks()
+    def test_update_task_logging_on_deployment(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ["controller"]}
+            ]
+        )
+        deploy = self.env.launch_deployment()
+        self.env.wait_ready(deploy)
+
+        # Dereferencing uuid value due to deploy task deletion
+        # after stop deployment
+        deploy_uuid = six.text_type(deploy.uuid)
+        self.simulate_running_deployment(deploy)
+
+        # Stopping deployment
+        self.env.stop_deployment()
+
+        # Checking action log updated
+        action_log = objects.ActionLogCollection.filter_by(
+            iterable=None, task_uuid=deploy_uuid).first()
+        self.assertEqual(consts.TASK_NAMES.deploy, action_log.action_name)
+        self.assertIsNotNone(action_log.end_timestamp)
+
+    @fake_tasks()
+    def test_update_task_logging_on_env_deletion(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ["controller"]}
+            ]
+        )
+        deploy = self.env.launch_deployment()
+        self.env.wait_ready(deploy)
+
+        # Dereferencing uuid value due to deploy task deletion
+        # after environment deletion
+        deploy_uuid = six.text_type(deploy.uuid)
+        self.simulate_running_deployment(deploy)
+
+        # Removing deployment
+        self.env.delete_environment()
+
+        # Checking action log updated
+        action_log = objects.ActionLogCollection.filter_by(
+            iterable=None, task_uuid=deploy_uuid).first()
+        self.assertEqual(consts.TASK_NAMES.deploy, action_log.action_name)
+        self.assertIsNotNone(action_log.end_timestamp)

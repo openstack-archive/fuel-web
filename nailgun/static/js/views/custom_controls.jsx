@@ -170,6 +170,7 @@ define([
                                     onChange={this.changeRepos.bind(this, 'change_priority')}
                                     extraContent={index > 0 && this.renderDeleteButton(index)}
                                     label={index == 0 && i18n(ns + 'labels.priority')}
+                                    placeholder={i18n(ns + 'placeholders.priority')}
                                 />
                             </div>
                         );

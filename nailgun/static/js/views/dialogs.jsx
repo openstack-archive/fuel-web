@@ -65,8 +65,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
             $(this.getDOMNode()).modal('hide');
         },
         closeOnLinkClick: function(e) {
-            // close dialogs on click of any link inside it
-            if (e.target.tagName == 'A') this.close();
+            // close dialogs on click of any internal link inside it
+            if (e.target.tagName == 'A' && !e.target.target) this.close();
         },
         showError: function(response, message) {
             var props = {error: true};

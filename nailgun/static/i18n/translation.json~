@@ -3,7 +3,7 @@
         "translation": {
             "language": "EN",
             "common": {
-                "title": "Fuel Dashboard",
+                "title": "OakCloud Dashboard",
                 "select_all_button": "Select All",
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
@@ -34,7 +34,7 @@
                 "success": "Success",
                 "error": "Error",
                 "see_logs": "See the logs",
-                "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved.",
+                "copyright": "Copyright © 2006-2015 青岛众恒信息科技股份有限公司. All rights reserved.",
                 "change_password": "Change password",
                 "logout": "Logout"
             },
@@ -105,7 +105,7 @@
             "support_page": {
                 "title": "Support",
                 "contact_text": "If you need to report a problem or just suggest an improvement, click the button below. We will get back to you as soon as possible.",
-                "irc_text": "If you have any questions, you can also reach out to developers on the IRC channel",
+                "irc_text": "If you have any questions, you can also reach out to us",
                 "log_text": "If you have encountered some bugs or errors, you may need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
                 "contact_support": "Contact Support",
                 "register_fuel_title": "Register product",
@@ -238,7 +238,7 @@
                     "no_selected_nodes": "There are no selected nodes to edit.",
                     "disk_configuration_reset_warning": "Disk configuration will be reset to default after roles change.",
                     "no_nodes_in_environment": "To add nodes to the environment, select the Add Nodes option, choose the nodes you want to allocate and assign roles to each.",
-                    "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes.",
+                    "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). OakCloud will automatically provision and discover the nodes.",
                     "one_controller_restriction": "Only one controller can be assigned in a multi-node deployment that is not Highly-Available (HA).",
                     "mongo_restriction": "The environment already has deployed MongoDB nodes.",
                     "one_zabbix_restriction": "Only one zabbix can be assigned in an environment.",
@@ -404,14 +404,14 @@
                 "deployment_mode": "Environment Deployment Mode:",
                 "openstack_release": "OakCloud Release:",
                 "environment_status": "Status",
-                "cluster_was_modified_from_cli" : "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
+                "cluster_was_modified_from_cli" : "Some deployment parameters for this environment have been modified from OakCloud CLI. Changes from OakCloud CLI take precedence over any settings made from your browser. Proceed with caution.",
                 "reconfigure_redhat_account": "You can __opt1__ reconfigure your account __opt2__ or "
             },
             "capacity_page": {
                 "title": "Capacity Audit",
                 "license_usage": "License Usage Report",
-                "fuel_version": "Fuel version",
-                "fuel_uuid": "Fuel UUID",
+                "fuel_version": "OakCloud version",
+                "fuel_uuid": "OakCloud UUID",
                 "env_name": "Environment Name",
                 "node_count": "Node Count",
                 "total_number_alloc_nodes": "Total number of allocated nodes",
@@ -432,7 +432,7 @@
                         "title": "Name and Release",
                         "name": "Name",
                         "release_label": "OakCloud Release",
-                        "red_hat_info": "To deploy OakCloud, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment.",
+                        "red_hat_info": "To deploy OakCloud, you must first download both RHOS and RHEL to be cached on the OakCloud master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment.",
                         "existing_environment": "Environment with name \"__name__\" already exists"
                     },
                     "mode": {
@@ -495,7 +495,7 @@
                     "ready": {
                         "title": "Finish",
                         "env_select_deploy": "Your environment is now ready for deployment! After clicking on the Create button, you can select",
-                        "or_make_config_choice": "or make additional configuration choices in the Fuel",
+                        "or_make_config_choice": "or make additional configuration choices in the OakCloud",
                         "console": "console.",
                         "deploy": "Deploy Changes",
                         "env": "Environments"
@@ -555,7 +555,7 @@
                 },
                 "rhel_license": {
                     "title": "Enterprise Linux Account Settings",
-                    "description": "To deploy the Enterprise Linux OakCloud Platform, you must first download it to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  The RHEL OakCloud Platform will be automatically downloaded and cached after you create the environment.",
+                    "description": "To deploy the Enterprise Linux OakCloud Platform, you must first download it to be cached on the OakCloud master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  The RHEL OakCloud Platform will be automatically downloaded and cached after you create the environment.",
                     "rhn_sattelite": "RHN Satellite",
                     "redhat_username": "Username",
                     "redhat_password": "Password",
@@ -617,7 +617,7 @@
         "translation": {
             "language": "CN",
             "common": {
-                "title": "Fuel Dashboard",
+                "title": "OakCloud Dashboard",
                 "select_all_button": "选择全部",
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
@@ -697,8 +697,8 @@
             "support_page": {
                 "title": "支持",
                 "contact_text": "欢迎提出反馈和改进意见，请点击下面的按钮，我们将尽快回复您。",
-                "irc_text": "如果您有任何问题，可通过IRC（freenode.net网络的 #fuel 频道）联系开发者。",
-                "log_text": "如果您在使用Fuel Web的过程中遇到任何错误或异常，可能需要将日志提交给支持团队，请点击按钮下载：",
+                "irc_text": "如果您有任何问题，可通过联系我们。",
+                "log_text": "如果您在使用OakCloud Web的过程中遇到任何错误或异常，可能需要将日志提交给支持团队，请点击按钮下载：",
                 "contact_support": "联系支持",
                 "register_fuel_title": "注册FUEL",
                 "register_fuel_content": "注册后能收到新版本和相关重要信息。另外，您在接下来的30天内将可得到基础支持服务!",
@@ -790,7 +790,7 @@
                     "unallocated_nodes": "未分配节点",
                     "no_selected_nodes": "没有选择任何节点",
                     "no_nodes_in_environment": "选择想分配的节点并设置角色",
-                    "no_nodes_in_fuel": "这个操作需要拥有一个或多个未分配节点的节点池。配置节点从网络启动来将它添加到节点池(PXE booting)。Fuel会自动发现节点。"
+                    "no_nodes_in_fuel": "这个操作需要拥有一个或多个未分配节点的节点池。配置节点从网络启动来将它添加到节点池(PXE booting)。OakCloud会自动发现节点。"
                 },
                 "settings_tab": {
                     "title": "OakCloud设置",
@@ -1011,8 +1011,8 @@
             "capacity_page": {
                 "title": "性能审计",
                 "license_usage": "许可使用报告",
-                "fuel_version": "Fuel版本",
-                "fuel_uuid": "Fuel UUID",
+                "fuel_version": "OakCloud版本",
+                "fuel_uuid": "OakCloud UUID",
                 "env_name": "环境名称",
                 "node_count": "节点数量",
                 "total_number_alloc_nodes": "全部已分配节点的数量",
@@ -1032,7 +1032,7 @@
                         "title": "名称和版本",
                         "name": "名称",
                         "release_label": "OakCloud版本",
-                        "red_hat_info": "要安装OakCloud, 您需要先下载缓存在Fuel主节点上的RHOS和RHEL。你可以前往版本页面操作，或者在下方选择您的订阅类型并输入认证，RHEL和RHOS将会在新建环境后自动下载并存储。"
+                        "red_hat_info": "要安装OakCloud, 您需要先下载缓存在OakCloud主节点上的RHOS和RHEL。你可以前往版本页面操作，或者在下方选择您的订阅类型并输入认证，RHEL和RHOS将会在新建环境后自动下载并存储。"
                     },
                     "mode": {
                         "title": "部署模式"
@@ -1141,7 +1141,7 @@
                 },
                 "rhel_license": {
                     "title": "红帽企业版Linux账户设置",
-                    "description": "安装红帽版的OakCloud平台, 你首先必须下载RHOS和RHEL并缓存在Fuel的主节点上。请选择你的订阅并在下面输入你的凭据开始下载。",
+                    "description": "安装红帽版的OakCloud平台, 你首先必须下载RHOS和RHEL并缓存在OakCloud的主节点上。请选择你的订阅并在下面输入你的凭据开始下载。",
                     "cancel_button": "取消",
                     "redhat_username": "红帽账户",
                     "redhat_password": "红帽密码",

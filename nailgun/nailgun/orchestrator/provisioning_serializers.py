@@ -100,7 +100,8 @@ class ProvisioningSerializer(object):
             'netboot_enabled': '1',
             # For provisioning phase
             'kernel_options': {
-                'netcfg/choose_interface': node.admin_interface.mac,
+                'netcfg/choose_interface':
+                objects.Node.get_admin_physical_iface(node).mac,
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'pm_data': {
@@ -199,7 +200,8 @@ class ProvisioningSerializer(object):
             # assignted fqdn to be resolved into one IP address
             # because we don't completely support multiinterface
             # configuration yet.
-            if interface.mac == node.mac:
+            if interface.mac == objects.Node.\
+               get_admin_physical_iface(node).mac:
                 interfaces[name]['dns_name'] = node.fqdn
                 interfaces[name]['netmask'] = admin_netmask
                 interfaces[name]['ip_address'] = admin_ip

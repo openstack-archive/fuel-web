@@ -162,9 +162,6 @@ class NetAssignmentValidator(BasicValidator):
                             "must have name".format(node['id'], iface['name']),
                             log_message=True
                         )
-                bond_mode = None
-                if 'mode' in iface:
-                    bond_mode = iface['mode']
                 if 'bond_properties' in iface:
                     for k in iface['bond_properties'].keys():
                         if k not in consts.BOND_PROPERTIES:
@@ -174,8 +171,7 @@ class NetAssignmentValidator(BasicValidator):
                                     node['id'], iface['name'], k),
                                 log_message=True
                             )
-                    if 'mode' in iface['bond_properties']:
-                        bond_mode = iface['bond_properties']['mode']
+                bond_mode = cls.get_bond_mode(iface)
                 if not bond_mode:
                     raise errors.InvalidData(
                         "Node '{0}': bond interface '{1}' doesn't have "
@@ -226,6 +222,15 @@ class NetAssignmentValidator(BasicValidator):
         return node
 
     @classmethod
+    def get_bond_mode(cls, iface):
+        bond_mode = None
+        if 'mode' in iface:
+            bond_mode = iface['mode']
+        if 'mode' in iface.get('bond_properties', {}):
+            bond_mode = iface['bond_properties']['mode']
+        return bond_mode
+
+    @classmethod
     def validate_structure(cls, webdata):
         node_data = cls.validate_json(webdata)
         return cls.validate(node_data)
@@ -265,9 +270,8 @@ class NetAssignmentValidator(BasicValidator):
                 "or during deployment.".format(db_node.id))
         interfaces = node['interfaces']
         db_interfaces = db_node.nic_interfaces
-        network_group_ids = objects.Node.get_network_manager(
-            db_node
-        ).get_node_networkgroups_ids(db_node)
+        net_manager = objects.Node.get_network_manager(db_node)
+        network_group_ids = net_manager.get_node_networkgroups_ids(db_node)
 
         bonded_eth_ids = set()
         for iface in interfaces:
@@ -300,6 +304,18 @@ class NetAssignmentValidator(BasicValidator):
                             "Node '{0}': there is no interface '{1}' found "
                             "for bond '{2}' in DB".format(
                                 node['id'], slave['name'], iface['name']),
+                            log_message=True
+                        )
+
+                iface_nets = [n['name'] for n in iface['assigned_networks']]
+                if 'fuelweb_admin' in iface_nets:
+                    lacp_modes = net_manager.get_bond_modes_w_lacp()
+                    bond_mode = cls.get_bond_mode(iface)
+                    if bond_mode in lacp_modes:
+                        raise errors.InvalidData(
+                            "Node '{0}': interface '{1}' belongs to "
+                            "admin network and has lacp mode '{2}'".format(
+                                node['id'], iface['name'], bond_mode),
                             log_message=True
                         )
 

@@ -14,11 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 from oslo.serialization import jsonutils
 
 from nailgun.consts import BOND_MODES
 from nailgun.consts import BOND_XMIT_HASH_POLICY
 from nailgun.consts import NETWORK_INTERFACE_TYPES
+from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -460,3 +462,69 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "Node '{0}', interface 'ovs-bond0': each bond slave "
             "must have name".format(self.env.nodes[0]["id"])
         )
+
+    @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})
+    def test_nics_bond_create_failed_admin_net_w_lacp_lnx(self):
+        mode = BOND_MODES.l_802_3ad
+        bond_nets = self.admin_nic["assigned_networks"] + \
+            self.other_nic["assigned_networks"]
+        self.data.append({
+            "name": 'lnx-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": mode,
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.other_nic["name"]}],
+            "assigned_networks": bond_nets
+        })
+
+        self.admin_nic["assigned_networks"] = []
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}': interface 'lnx-bond0' belongs to admin network "
+            "and has lacp mode '{1}'".format(self.env.nodes[0]["id"], mode)
+        )
+
+    @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})
+    def test_nics_bond_create_failed_admin_net_w_lacp_ovs(self):
+        mode = BOND_MODES.lacp_balance_tcp
+        bond_nets = self.admin_nic["assigned_networks"] + \
+            self.other_nic["assigned_networks"]
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": mode,
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.other_nic["name"]}],
+            "assigned_networks": bond_nets
+        })
+
+        self.admin_nic["assigned_networks"] = []
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}': interface 'ovs-bond0' belongs to admin network "
+            "and has lacp mode '{1}'".format(self.env.nodes[0]["id"], mode)
+        )
+
+    def test_nics_bond_create_admin_net_w_lacp_experimental_mode(self):
+        mode = BOND_MODES.lacp_balance_tcp
+        bond_nets = self.admin_nic["assigned_networks"] + \
+            self.other_nic["assigned_networks"]
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": mode,
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.other_nic["name"]}],
+            "assigned_networks": bond_nets
+        })
+
+        self.admin_nic["assigned_networks"] = []
+        self.other_nic["assigned_networks"] = []
+
+        resp = self.put_single()
+        self.assertEqual(resp.status_code, 200)

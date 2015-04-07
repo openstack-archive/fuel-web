@@ -688,6 +688,27 @@ class Node(NailgunObject):
             return Cluster.get_network_manager(instance.cluster)
 
     @classmethod
+    def get_admin_physical_iface(cls, instance):
+        """Returns node's physical iface.
+        In case if we have bonded admin iface, first
+        of the bonded ifaces will be returned
+
+        :param instance: Node instance
+        :returns: interface instance
+        """
+        admin_iface = cls.get_network_manager(instance) \
+            .get_admin_interface(instance)
+
+        if admin_iface.type != consts.NETWORK_INTERFACE_TYPES.bond:
+            #print 'REAL admin iface mac'
+            #print admin_iface.mac
+            #print 'REAL admin iface mac'
+            return admin_iface
+
+        iface = filter(lambda iface: iface.mac == instance.mac, admin_iface.slaves)
+        return iface[0] if iface else admin_iface.slaves[-1]
+
+    @classmethod
     def remove_from_cluster(cls, instance):
         """Remove Node from Cluster.
         Also drops networks assignment for Node and clears both

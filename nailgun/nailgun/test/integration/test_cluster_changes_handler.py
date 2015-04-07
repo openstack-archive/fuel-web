@@ -19,7 +19,6 @@ from mock import patch
 import netaddr
 
 from oslo.serialization import jsonutils
-
 import nailgun
 
 from nailgun import consts
@@ -248,8 +247,6 @@ class TestHandlers(BaseIntegrationTest):
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             udev_interfaces_mapping = ','.join([
                 '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
-            eth1_mac = [i.mac for i in n.interfaces if i.name == 'eth1'][0]
-
             pnd = {
                 'uid': n.uid,
                 'slave_name': objects.Node.make_slave_name(n),
@@ -257,7 +254,8 @@ class TestHandlers(BaseIntegrationTest):
                 'power_type': 'ssh',
                 'power_user': 'root',
                 'kernel_options': {
-                    'netcfg/choose_interface': eth1_mac,
+                    'netcfg/choose_interface':
+                    objects.Node.get_admin_physical_iface(n).mac,
                     'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
@@ -323,7 +321,7 @@ class TestHandlers(BaseIntegrationTest):
                     'onboot': 'no'
                 }
 
-                if i.mac == n.mac:
+                if i.mac == objects.Node.get_admin_physical_iface(n).mac:
                     pnd['interfaces'][i.name]['dns_name'] = n.fqdn
                     pnd['interfaces_extra'][i.name]['onboot'] = 'yes'
                     pnd['interfaces'][i.name]['ip_address'] = admin_ip
@@ -696,7 +694,6 @@ class TestHandlers(BaseIntegrationTest):
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             udev_interfaces_mapping = ','.join([
                 '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
-            eth1_mac = [i.mac for i in n.interfaces if i.name == 'eth1'][0]
 
             pnd = {
                 'uid': n.uid,
@@ -705,7 +702,8 @@ class TestHandlers(BaseIntegrationTest):
                 'power_type': 'ssh',
                 'power_user': 'root',
                 'kernel_options': {
-                    'netcfg/choose_interface': eth1_mac,
+                    'netcfg/choose_interface':
+                    objects.Node.get_admin_physical_iface(n).mac,
                     'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
@@ -770,7 +768,7 @@ class TestHandlers(BaseIntegrationTest):
                     'onboot': 'no'
                 }
 
-                if i['mac'] == n.mac:
+                if i['mac'] == objects.Node.get_admin_physical_iface(n).mac:
                     pnd['interfaces'][i['name']]['dns_name'] = n.fqdn
                     pnd['interfaces_extra'][i['name']]['onboot'] = 'yes'
                     pnd['interfaces'][i['name']]['ip_address'] = admin_ip
@@ -1161,7 +1159,6 @@ class TestHandlers(BaseIntegrationTest):
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             udev_interfaces_mapping = ','.join([
                 '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
-            eth1_mac = [i.mac for i in n.interfaces if i.name == 'eth1'][0]
 
             pnd = {
                 'uid': n.uid,
@@ -1170,7 +1167,8 @@ class TestHandlers(BaseIntegrationTest):
                 'power_type': 'ssh',
                 'power_user': 'root',
                 'kernel_options': {
-                    'netcfg/choose_interface': eth1_mac,
+                    'netcfg/choose_interface':
+                    objects.Node.get_admin_physical_iface(n).mac,
                     'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
@@ -1235,7 +1233,7 @@ class TestHandlers(BaseIntegrationTest):
                     'onboot': 'no'
                 }
 
-                if i['mac'] == n.mac:
+                if i['mac'] == objects.Node.get_admin_physical_iface(n).mac:
                     pnd['interfaces'][i['name']]['dns_name'] = n.fqdn
                     pnd['interfaces_extra'][i['name']]['onboot'] = 'yes'
                     pnd['interfaces'][i['name']]['ip_address'] = admin_ip

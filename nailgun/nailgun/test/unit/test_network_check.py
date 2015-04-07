@@ -215,6 +215,18 @@ class TestNetworkCheck(BaseIntegrationTest):
                                   checker.check_dns_servers_ips)
 
     @patch.object(helpers, 'db')
+    def test_check_calculated_network_cidr(self, mocked_db):
+        checker = NetworkCheck(self.task, {})
+        checker.networks = [{'id': 1,
+                             'cidr': '192.168.99.0/16',
+                             'name': 'storage',
+                             'gateway': '192.168.0.1',
+                             'vlan_start': 1}]
+
+        self.assertRaises(errors.NetworkCheckError,
+                          checker.check_calculated_network_cidr)
+
+    @patch.object(helpers, 'db')
     def test_check_vlan_ids_range_and_intersection(self, mocked_db):
         checker = NetworkCheck(self.task, {})
         checker.networks = [{'id': 1,

@@ -634,14 +634,18 @@ class TestOrdered(base.BaseTestCase):
       requires: [a]
     - id: e
       requires: [b,c,d]
+    - id: f
+      requires: [e]
     """
 
     def setUp(self):
         super(TestOrdered, self).setUp()
         self.tasks = yaml.load(self.TASKS)
-        self.graph = deployment_graph.DeploymentGraph(tasks=self.tasks)
 
     def test_always_same_order(self):
+
+        graph = deployment_graph.DeploymentGraph(tasks=self.tasks)
+        # (dshulyak) order should be static
         self.assertEqual(
-            [n['id'] for n in self.graph.topology],
-            ['a', 'c', 'b', 'd', 'e'])
+            [n['id'] for n in graph.topology],
+            ['a', 'b', 'c', 'd', 'e', 'f'])

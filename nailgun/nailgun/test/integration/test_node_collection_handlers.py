@@ -330,7 +330,9 @@ class TestHandlers(BaseIntegrationTest):
         self.env.network_manager.update_interfaces_info(node)
 
         # node.mac == eth0 mac so eth0 should now be admin interface
-        self.assertEqual(node.admin_interface.name, 'eth0')
+        admin_iface = self.env.network_manager.get_admin_interface(node)
+
+        self.assertEqual(admin_iface.name, 'eth0')
 
     def test_node_create_ext_mac(self):
         node1 = self.env.create_node(

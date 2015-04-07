@@ -27,7 +27,8 @@ from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.settings import settings
-from nailgun.statistics.installation_info import InstallationInfo
+from nailgun.statistics.fuel_statistics.installation_info \
+    import InstallationInfo
 from nailgun.statistics.utils import dithered
 
 

@@ -85,34 +85,6 @@ class TestInstallationInfo(BaseTestCase):
             set(attrs_dict.keys())
         )
 
-    def test_get_attributes(self):
-        attributes = {
-            'a': 'b',
-            'c': [
-                {'x': 'z', 'y': [{'t': 'u'}, {'v': 'w'}, {'t': 'u0'}]},
-                {'x': 'zz', 'y': [{'t': 'uu'}, {'v': 'ww'}]}
-            ],
-            'd': {'f': 'g', 'k': [0, 1, 2]},
-        }
-        white_list = (
-            (('a',), 'map_a', None),
-            (('d', 'f'), 'map_f', None),
-            (('d', 'k'), 'map_k_len', len),
-            (('c', 'x'), 'map_x', None),
-            (('c', 'y', 't'), 'map_t', None),
-        )
-
-        info = InstallationInfo()
-        actual = info.get_attributes(attributes, white_list)
-        expected = {
-            'map_f': 'g',
-            'map_k_len': 3,
-            'map_a': 'b',
-            'map_x': ['z', 'zz'],
-            'map_t': [['u', 'u0'], ['uu']],
-        }
-        self.assertDictEqual(actual, expected)
-
     def test_get_empty_attributes(self):
         info = InstallationInfo()
         trash_attrs = {'some': 'trash', 'nested': {'n': 't'}}
@@ -1109,33 +1081,33 @@ class TestOSWLCollectingUtils(BaseTestCase):
         raise_inside_context()
         self.assertNotIn("http_proxy", os.environ)
 
-    def test_get_value_from_nested_dict_func(self):
-        dict_to_retrieve = {
-            "containing_dict": {
-                "intermediate_dict": {
-                    "expected_attr": "test",
-                },
-            },
+    def test_get_attributes(self):
+        attributes = {
+            'a': 'b',
+            'c': [
+                {'x': 'z', 'y': [{'t': 'u'}, {'v': 'w'}, {'t': 'u0'}]},
+                {'x': 'zz', 'y': [{'t': 'uu'}, {'v': 'ww'}]}
+            ],
+            'd': {'f': 'g', 'k': [0, 1, 2]},
         }
-
-        expected = "test"
-
-        key_path = ["containing_dict", "intermediate_dict", "expected_attr"]
-
-        retrieved = utils._get_value_from_nested_dict(
-            dict_to_retrieve, key_path
+        white_list = (
+            (('a',), 'map_a', None),
+            (('d', 'f'), 'map_f', None),
+            (('d', 'k'), 'map_k_len', len),
+            (('c', 'x'), 'map_x', None),
+            (('c', 'y', 't'), 'map_t', None),
         )
-        self.assertEqual(retrieved, expected)
 
-        retrieved = utils._get_value_from_nested_dict(
-            dict_to_retrieve, []
-        )
-        self.assertIsNone(retrieved)
-
-        retrieved = utils._get_value_from_nested_dict(
-            [], key_path
-        )
-        self.assertIsNone(retrieved)
+        info = InstallationInfo()
+        actual = info.get_attributes(attributes, white_list)
+        expected = {
+            'map_f': 'g',
+            'map_k_len': 3,
+            'map_a': 'b',
+            'map_x': ['z', 'zz'],
+            'map_t': [['u', 'u0'], ['uu']],
+        }
+        self.assertDictEqual(actual, expected)
 
     def test_get_online_controller(self):
         node_name = "test"

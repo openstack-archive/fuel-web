@@ -923,12 +923,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, stati
         componentDidMount: function() {
             var registrationForm = this.props.registrationForm;
             registrationForm.fetch()
-                .done(_.bind(function() {this.setState({loading: false});}, this))
-                .fail(_.bind(function() {
+                .then(null, function() {
                     registrationForm.url = registrationForm.nailgunUrl;
-                    registrationForm.fetch()
-                        .fail(this.showResponseErrors)
-                        .always(_.bind(function() {this.setState({loading: false});}, this));
+                    return registrationForm.fetch();
+                })
+                .fail(this.showResponseErrors)
+                .always(_.bind(function() {
+                    this.setState({loading: false});
                 }, this));
         },
         onChange: function(inputName, value) {

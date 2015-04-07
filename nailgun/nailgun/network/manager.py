@@ -546,7 +546,7 @@ class NetworkManager(object):
         net_cidr = IPNetwork(net.cidr)
         ip_addr = cls.get_admin_ip_for_node(node)
         if ip_addr:
-            ip_addr =  "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
+            ip_addr = "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
 
         return {
             'name': net.name,
@@ -1185,3 +1185,12 @@ class NetworkManager(object):
                 iface.interface_properties['disable_offloading']
             }
         return properties
+
+    @classmethod
+    def get_bond_modes_w_lacp(cls):
+        lacp_modes = []
+        # ovs lacp bond mode
+        lacp_modes.append(consts.BOND_MODES.lacp_balance_tcp)
+        # linux lacp bond mode
+        lacp_modes.append(consts.BOND_MODES.l_802_3ad)
+        return lacp_modes

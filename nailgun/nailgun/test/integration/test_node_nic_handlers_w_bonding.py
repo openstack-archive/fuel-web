@@ -460,3 +460,32 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "Node '{0}', interface 'ovs-bond0': each bond slave "
             "must have name".format(self.env.nodes[0]["id"])
         )
+
+    def check_admin_bond_non_lacp_w_specific_mode(self, mode):
+        bond_nets = self.admin_nic["assigned_networks"] + \
+            self.other_nic["assigned_networks"]
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": mode,
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.other_nic["name"]}],
+            "assigned_networks": bond_nets
+        })
+
+        self.admin_nic["assigned_networks"] = []
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}': interface 'ovs-bond0' is belong to admin network "
+            "and has lacp mode '{1}'".format(self.env.nodes[0]["id"], mode)
+        )
+
+    def test_nics_bond_create_failed_admin_net_w_lacp_lnx(self):
+        self.check_admin_bond_non_lacp_w_specific_mode(BOND_MODES.l_802_3ad)
+
+    def test_nics_bond_create_failed_admin_net_w_lacp_ovs(self):
+        self.check_admin_bond_non_lacp_w_specific_mode(
+            BOND_MODES.lacp_balance_tcp
+        )

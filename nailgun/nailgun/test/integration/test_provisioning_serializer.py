@@ -18,6 +18,7 @@ from nailgun import consts
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.orchestrator import provisioning_serializers as ps
 from nailgun.settings import settings
+from nailgun.test.base import reverse
 from nailgun.test.base import BaseIntegrationTest
 
 
@@ -147,6 +148,42 @@ class TestProvisioningSerializer(BaseIntegrationTest):
                 'peerdns': 'no',
                 'onboot': 'yes'
             })
+
+    def test_node_serialization_w_bonded_admin_iface(self):
+        self.cluster_db = self.env.clusters[0]
+        # create additional node to test bonding
+        admin_mac = self.env.generate_random_mac()
+        meta = {
+            'interfaces': [
+                {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+                {'name': 'eth2', 'mac': self.env.generate_random_mac()},
+                {'name': 'eth3', 'mac': self.env.generate_random_mac()},
+                {'name': 'eth4', 'mac': self.env.generate_random_mac()}
+            ]
+        }
+        node = self.env.create_node(
+           **{
+               'roles': ['compute'],
+               'pending_addition': True,
+               'cluster_id': self.cluster_db.id,
+               'meta': meta,
+               'mac' : admin_mac
+           }
+        )
+        # get node from db
+        node_db = self.db.query(Node).get(node['id'])
+        # bond admin iface
+        self.env.make_bond_via_api('lnx_bond',
+                                   '',
+                                   ['eth1', 'eth4'],
+                                   node['id'],
+                                   bond_properties={
+                                       'mode': consts.BOND_MODES.balance_rr
+                                   })
+        # check serialized data
+        serialized_node = ps.serialize(self.cluster_db, [node_db])['nodes'][0]
+        out_mac = serialized_node['kernel_options']['netcfg/choose_interface']
+        self.assertEqual(out_mac, admin_mac)
 
 
 class TestProvisioningSerializer61(BaseIntegrationTest):

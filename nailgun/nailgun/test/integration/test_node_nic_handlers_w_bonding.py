@@ -460,3 +460,22 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "Node '{0}', interface 'ovs-bond0': each bond slave "
             "must have name".format(self.env.nodes[0]["id"])
         )
+
+    def test_admin_nic_bonding(self):
+        bond_nets = self.admin_nic["assigned_networks"] + \
+            self.other_nic["assigned_networks"]
+
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": BOND_MODES.balance_slb,
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.other_nic["name"]}],
+            "assigned_networks": bond_nets
+        })
+
+        self.admin_nic["assigned_networks"] = []
+        self.other_nic["assigned_networks"] = []
+        resp = self.put_single()
+        self.assertEqual(resp.status_code, 200)

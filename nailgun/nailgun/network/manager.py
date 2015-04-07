@@ -456,7 +456,8 @@ class NetworkManager(object):
 
             if to_assign_ids:
                 allowed_ids = \
-                    ng_wo_admin_ids if nic != node.admin_interface else ng_ids
+                    ng_wo_admin_ids if nic != cls.get_admin_interface(node) \
+                    else ng_ids
                 can_assign = [ng_id for ng_id in to_assign_ids
                               if ng_id in allowed_ids]
                 assigned_ids = set()
@@ -546,7 +547,7 @@ class NetworkManager(object):
         net_cidr = IPNetwork(net.cidr)
         ip_addr = cls.get_admin_ip_for_node(node)
         if ip_addr:
-            ip_addr =  "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
+            ip_addr = "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
 
         return {
             'name': net.name,
@@ -556,7 +557,7 @@ class NetworkManager(object):
             'netmask': str(net_cidr.netmask),
             'brd': str(net_cidr.broadcast),
             'gateway': net.gateway,
-            'dev': node_db.admin_interface.name
+            'dev': cls.get_admin_interface(node).name
         }
 
     @classmethod
@@ -1200,3 +1201,15 @@ class NetworkManager(object):
             if network_group in assigned_networks:
                 return iface
         return None
+
+    @classmethod
+    def get_prohibited_admin_bond_modes(cls):
+        """Returns prohibited bond modes for admin interface
+
+        :returns: list of bond modes
+        """
+        # in experimental mode we don't prohibit any mode
+        if 'experimental' in settings.VERSION['feature_groups']:
+            return []
+        return [consts.BOND_MODES.lacp_balance_tcp,
+                consts.BOND_MODES.l_802_3ad]

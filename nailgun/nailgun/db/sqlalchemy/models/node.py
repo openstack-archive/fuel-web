@@ -237,17 +237,6 @@ class Node(Base):
             Role.name.in_(new_roles)
         ).all()
 
-    @property
-    def admin_interface(self):
-        """Iterate over interfaces, if admin subnet include
-        ip address of current interface then return this interface.
-
-        :raises: errors.CanNotFindInterface
-        """
-        # TODO(enchantner): move to object
-        from nailgun.network.manager import NetworkManager
-        return NetworkManager.get_admin_interface(self)
-
     def _check_interface_has_required_params(self, iface):
         return bool(iface.get('name') and iface.get('mac'))
 

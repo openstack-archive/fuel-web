@@ -148,6 +148,41 @@ class TestProvisioningSerializer(BaseIntegrationTest):
                 'onboot': 'yes'
             })
 
+    def test_node_serialization_w_bonded_admin_iface(self):
+        self.cluster_db = self.env.clusters[0]
+        # create additional node to test bonding
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 3,
+            **{
+                'roles': ['compute'],
+                'pending_addition': True,
+                'cluster_id': self.cluster_db.id
+            }
+        )[0]
+        # identify admin nic
+        for nic in node['interfaces']:
+            net_names = [n["name"] for n in nic["assigned_networks"]]
+            if "fuelweb_admin" in net_names:
+                admin_nic = nic
+            elif net_names:
+                other_nic = nic
+            else:
+                empty_nic = nic
+        # bond admin iface
+        self.env.make_bond_via_api('lnx_bond',
+                                   '',
+                                   [admin_nic['name'], other_nic['name']],
+                                   node['id'],
+                                   bond_properties={
+                                       'mode': consts.BOND_MODES.balance_rr
+                                   })
+        # check serialized data
+        serialized_node = ps.serialize(self.cluster_db, node)[0]
+        self.assertDictEqual(serialized_node['kernel_options'], {
+            'netcfg/choose_interface': admin_nic['mac'],
+            'udevrules': '{0}_{1}'.format(admin_nic['name'], admin_nic['mac'])
+        })
+
 
 class TestProvisioningSerializer61(BaseIntegrationTest):
 

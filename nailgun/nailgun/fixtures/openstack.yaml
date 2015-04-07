@@ -771,7 +771,7 @@
             label: "Kernel parameters"
             weight: 40
           kernel:
-            value: "console=ttyS0,9600 console=tty0 rootdelay=90 nomodeset"
+            value: "console=ttyS0,9600 console=tty0 biosdevname=0 rootdelay=90 nomodeset"
             label: "Initial parameters"
             description: "Default kernel parameters"
             weight: 45
@@ -1258,6 +1258,9 @@
     description: "This option will install the OpenStack Juno packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
       editable:
+        kernel_params:
+          kernel:
+            value: "console=ttyS0,9600 console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset"
         repo_setup:
           metadata:
             label: "Repositories"

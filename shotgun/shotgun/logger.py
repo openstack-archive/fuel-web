@@ -14,6 +14,8 @@
 
 import logging
 
+from shotgun.settings import LOG_FILE
+
 
 def configure_logger():
     """Configures shotgun logger
@@ -28,4 +30,9 @@ def configure_logger():
     stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(formatter)
 
+    file_handler = logging.FileHandler(LOG_FILE)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+
     logger.addHandler(stream_handler)
+    logger.addHandler(file_handler)

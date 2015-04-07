@@ -100,7 +100,8 @@ class ProvisioningSerializer(object):
             'netboot_enabled': '1',
             # For provisioning phase
             'kernel_options': {
-                'netcfg/choose_interface': node.admin_interface.mac,
+                'netcfg/choose_interface':
+                objects.Node.get_admin_physical_iface(node).mac,
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'pm_data': {

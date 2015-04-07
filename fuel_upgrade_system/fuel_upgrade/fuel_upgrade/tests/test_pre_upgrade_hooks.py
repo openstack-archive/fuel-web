@@ -47,6 +47,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_6_0_to_any_copy_keys \
     import MoveKeysHook
 from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf \
     import FixDhcrelayConf
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_monitor \
+    import FixDhcrelayMonitor
 from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers \
     import RecreateNailgunInPriveleged
 
@@ -829,3 +831,31 @@ class FixDhcrelayConf(TestPreUpgradeHooksBase):
             '/etc/supervisord.d/dhcrelay.conf')
         mock_exec.assert_called_with(
             'supervisorctl stop dhcrelay_monitor')
+
+
+class FixDhcrelayMontitor(TestPreUpgradeHooksBase):
+
+    HookClass = FixDhcrelayMonitor
+
+    def test_is_required_returns_true(self):
+        hook = self.get_hook({'from_version': '6.0'})
+        self.assertTrue(hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        hook = self.get_hook({'from_version': '6.1'})
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_monitor.'
+        'os')
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_monitor.'
+        'utils.copy')
+    def test_run(self, mock_copy, mock_os):
+        hook = self.get_hook()
+        hook.run()
+
+        self.assertIn(
+            'templates/dhcrelay_monitor', mock_copy.call_args[0][0])
+        self.assertEqual(
+            '/usr/local/bin/dhcrelay_monitor', mock_copy.call_args[0][1])

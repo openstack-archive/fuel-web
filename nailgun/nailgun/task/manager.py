@@ -488,6 +488,7 @@ class StopDeploymentTaskManager(TaskManager):
     def execute(self):
         # locking tasks for processing
         names = (
+            consts.TASK_NAMES.deploy,
             consts.TASK_NAMES.stop_deployment,
             consts.TASK_NAMES.deployment,
             consts.TASK_NAMES.provision
@@ -542,6 +543,17 @@ class StopDeploymentTaskManager(TaskManager):
                     self.cluster.id
                 )
             )
+
+        # Updating action logs for deploy task
+        deploy_task = objects.TaskCollection.filter_by(
+            None,
+            cluster_id=self.cluster.id,
+            name=consts.TASK_NAMES.deploy
+        )
+        deploy_task = objects.TaskCollection.order_by(
+            deploy_task, 'id').first()
+        if deploy_task:
+            TaskHelper.set_ready_if_not_finished(deploy_task)
 
         task = Task(
             name=consts.TASK_NAMES.stop_deployment,
@@ -865,6 +877,8 @@ class ClusterDeletionManager(TaskManager):
                     self.cluster.name
                 )
             )
+            # Updating action logs for deploy task
+            TaskHelper.set_ready_if_not_finished(deploy_running)
 
         logger.debug("Removing cluster tasks")
         for task in current_cluster_tasks:

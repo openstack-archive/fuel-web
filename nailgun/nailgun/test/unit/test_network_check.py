@@ -195,6 +195,26 @@ class TestNetworkCheck(BaseIntegrationTest):
                           checker.check_vlan_ids_range_and_intersection)
 
     @patch.object(helpers, 'db')
+    def test_check_dns_equality(self, mocked_db):
+        dns_lists = [
+            (['2.3.4.5'], True),
+            (['2.3.4.5', '2.3.4.5'], False),
+            (['2.3.4.5', '2.3.4.99'], True),
+            (['2.3.4.5', '2.3.4.99', '2.3.4.99'], False),
+            (['2.3.4.5', '2.3.4.99', '2.3.4.199'], True),
+        ]
+        checker = NetworkCheck(self.task, {})
+        for dns_setup, must_pass in dns_lists:
+            checker.network_config['dns_nameservers'] = dns_setup
+
+            if must_pass:
+                self.assertNotRaises(errors.NetworkCheckError,
+                                     checker.check_dns_servers_ips)
+            else:
+                self.assertRaises(errors.NetworkCheckError,
+                                  checker.check_dns_servers_ips)
+
+    @patch.object(helpers, 'db')
     def test_check_vlan_ids_range_and_intersection(self, mocked_db):
         checker = NetworkCheck(self.task, {})
         checker.networks = [{'id': 1,

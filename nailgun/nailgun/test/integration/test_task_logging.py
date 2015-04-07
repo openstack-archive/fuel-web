@@ -16,6 +16,7 @@
 
 
 from mock import patch
+import six
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -245,3 +246,66 @@ class TestTasksLogging(BaseIntegrationTest):
                               (consts.TASK_NAMES.deploy,
                                consts.TASK_NAMES.check_networks,
                                consts.TASK_NAMES.check_before_deployment))
+
+    @fake_tasks()
+    def test_update_task_logging_on_deployment(self):
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ["controller"]},
+                {"pending_addition": True, "pending_roles": ["cinder"]},
+                {"pending_addition": True, "pending_roles": ["compute"]},
+            ]
+        )
+        # Setting tick interval to large value to be ensure
+        # stop deployment started before deployment completion
+        with patch(
+                'nailgun.task.fake.settings.FAKE_TASKS_TICK_INTERVAL', 100):
+            deployment = self.env.launch_deployment()
+            # Dereferencing uuid value due to deployment task deletion
+            # after stop deployment
+            deployment_uuid = six.text_type(deployment.uuid)
+        with patch(
+                'nailgun.task.fake.settings.FAKE_TASKS_TICK_INTERVAL', 0):
+            self.env.stop_deployment()
+        # Checking action log updated
+        action_logs = objects.ActionLogCollection.filter_by(
+            iterable=None, task_uuid=deployment_uuid).all()
+        action_log = action_logs[0]
+        self.assertEqual(consts.TASK_NAMES.deploy, action_log.action_name)
+        self.assertIsNotNone(action_log.end_timestamp)
+
+    @fake_tasks()
+    def test_update_task_logging_on_deletion(self):
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ["controller"]},
+                {"pending_addition": True, "pending_roles": ["cinder"]},
+                {"pending_addition": True, "pending_roles": ["compute"]},
+            ]
+        )
+        # Setting tick interval to large value to be ensure
+        # deployment deletion started before deployment completion
+        with patch(
+                'nailgun.task.fake.settings.FAKE_TASKS_TICK_INTERVAL', 100):
+            deployment = self.env.launch_deployment()
+            # Dereferencing uuid value due to deployment task deletion
+            # after stop deployment
+            deployment_uuid = six.text_type(deployment.uuid)
+
+        with patch(
+                'nailgun.task.fake.settings.FAKE_TASKS_TICK_INTERVAL', 0):
+            self.env.delete_environment()
+        # Checking action log updated
+        action_logs = objects.ActionLogCollection.filter_by(
+            iterable=None, task_uuid=deployment_uuid).all()
+        action_log = action_logs[0]
+        self.assertEqual(consts.TASK_NAMES.deploy, action_log.action_name)
+        self.assertIsNotNone(action_log.end_timestamp)

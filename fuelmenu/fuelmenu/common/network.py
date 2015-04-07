@@ -12,9 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import netaddr
-
 from fuelmenu.common.errors import BadIPException
+
+import netaddr
+import subprocess
 
 
 def inSameSubnet(ip1, ip2, netmask_or_cidr):
@@ -76,3 +77,13 @@ def intersects(range1, range2):
 
 def netmaskToCidr(netmask):
     return sum([bin(int(x)).count('1') for x in netmask.split('.')])
+
+
+def duplicateIPExists(ip, iface):
+    noout = open('/dev/null', 'w')
+    no_dupes = subprocess.call(["arping", "-D", "-c3", "-w1", "-I", iface,
+                               ip], stdout=noout, stderr=noout)
+    if no_dupes == 0:
+        return False
+    else:
+        return True

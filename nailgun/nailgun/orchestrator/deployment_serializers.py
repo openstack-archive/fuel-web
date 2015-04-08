@@ -86,16 +86,13 @@ class VmwareDeploymentSerializerMixin(object):
 
                     compute_instances.append(compute_item)
 
-                cinder_instance = zone.get('cinder', {})
-                if cinder_instance.get('enable'):
-                    cinder_item = {
-                        'availability_zone_name': zone.get('az_name', ''),
-                        'vc_host': zone.get('vcenter_host', ''),
-                        'vc_user': zone.get('vcenter_username', ''),
-                        'vc_password': zone.get('vcenter_password', '')
-                    }
-
-                    cinder_instances.append(cinder_item)
+                cinder_item = {
+                    'availability_zone_name': zone.get('az_name', ''),
+                    'vc_host': zone.get('vcenter_host', ''),
+                    'vc_user': zone.get('vcenter_username', ''),
+                    'vc_password': zone.get('vcenter_password', '')
+                }
+                cinder_instances.append(cinder_item)
 
             vmware_data['use_vcenter'] = True
 

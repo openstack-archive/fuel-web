@@ -16,6 +16,7 @@ import json
 import sys
 
 from oslo.config import cfg
+import six
 
 from fuel_agent import manager as manager
 from fuel_agent.openstack.common import log
@@ -31,6 +32,10 @@ opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(opts)
+CONF(sys.argv[1:], project='fuel-agent',
+     version=version.version_info.release_string())
+log.setup('fuel-agent')
+LOG = log.getLogger(__name__)
 
 
 def provision():
@@ -53,18 +58,29 @@ def bootloader():
     main(['do_parsing', 'do_bootloader'])
 
 
+def print_err(line):
+    sys.stderr.write(six.text_type(line))
+    sys.stderr.write('\n')
+
+
+def handle_exception(exc):
+    LOG.exception(exc)
+    print_err('Unexpected error')
+    print_err(exc)
+    sys.exit(-1)
+
+
 def main(actions=None):
-    CONF(sys.argv[1:], project='fuel-agent',
-         version=version.version_info.release_string())
-    log.setup('fuel-agent')
+    try:
+        with open(CONF.provision_data_file) as f:
+            data = json.load(f)
 
-    with open(CONF.provision_data_file) as f:
-        data = json.load(f)
-
-    mgr = manager.Manager(data)
-    if actions:
-        for action in actions:
-            getattr(mgr, action)()
+        mgr = manager.Manager(data)
+        if actions:
+            for action in actions:
+                getattr(mgr, action)()
+    except Exception as exc:
+        handle_exception(exc)
 
 if __name__ == '__main__':
     main()

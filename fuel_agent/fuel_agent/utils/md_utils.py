@@ -61,7 +61,8 @@ def mddisplay(names=None):
             output = utils.execute('mdadm', '--detail', mdname,
                                    check_exit_code=[0])[0]
             md.update(mddetail_parse(output))
-        except errors.ProcessExecutionError:
+        except errors.ProcessExecutionError as exc:
+            LOG.debug(exc)
             continue
         finally:
             mds.append(md)

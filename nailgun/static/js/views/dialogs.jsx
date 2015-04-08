@@ -985,10 +985,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             this.setState({error: i18n('common.error')});
                         }, this));
                 }, this))
-                .always(_.bind(function() {
-                    this.setState({actionInProgress: false});
-                }, this))
                 .fail(_.bind(function(response) {
+                    this.setState({actionInProgress: false});
                     this.showResponseErrors(response, registrationForm);
                 }, this));
         },

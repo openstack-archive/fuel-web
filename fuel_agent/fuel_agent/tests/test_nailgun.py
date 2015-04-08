@@ -576,7 +576,6 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual(4, len(p_scheme.pvs))
         self.assertEqual(3, len(p_scheme.lvs))
         self.assertEqual(2, len(p_scheme.vgs))
-        self.assertEqual(1, len(p_scheme.mds))
         self.assertEqual(3, len(p_scheme.parteds))
 
     @mock.patch('yaml.load')
@@ -682,7 +681,6 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual(4, len(p_scheme.pvs))
         self.assertEqual(3, len(p_scheme.lvs))
         self.assertEqual(2, len(p_scheme.vgs))
-        self.assertEqual(1, len(p_scheme.mds))
         self.assertEqual(3, len(p_scheme.parteds))
         self.assertEqual(3, self.drv._get_partition_count('ceph'))
         #NOTE(agordeev): (-2, -1, -1) is the list of ceph data partition counts

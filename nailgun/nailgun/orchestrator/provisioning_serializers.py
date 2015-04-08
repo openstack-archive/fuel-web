@@ -296,6 +296,17 @@ class ProvisioningSerializer61(ProvisioningSerializer):
         PriorityStrategy().one_by_one(tasks)
         return tasks
 
+    @classmethod
+    def serialize_node(cls, cluster_attrs, node):
+        serialized_node = super(ProvisioningSerializer61, cls).serialize_node(
+            cluster_attrs, node)
+
+        use_fedora = cluster_attrs.get('use_fedora_lt', {})
+        if use_fedora.get('kernel') == 'fedora_lt_kernel':
+            serialized_node['ks_meta']['kernel_lt'] = 1
+
+        return serialized_node
+
 
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.

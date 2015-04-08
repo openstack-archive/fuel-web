@@ -55,18 +55,6 @@
                         ],
                         "type": "array",
                         "name": "nova_computes"
-                    },
-                    {
-                        "fields": [
-                            {
-                                "type": "checkbox",
-                                "description": "",
-                                "name": "enable",
-                                "label": "Enable Cinder"
-                            }
-                        ],
-                        "type": "object",
-                        "name": "cinder"
                     }
                 ],
                 "type": "array",
@@ -165,10 +153,7 @@
                             "service_name": "Compute 3",
                             "datastore_regex": ""
                         }
-                    ],
-                    "cinder": {
-                        "enable": true
-                    }
+                    ]
                 },
                 {
                     "az_name": "Zone 2",
@@ -186,10 +171,7 @@
                             "service_name": "Compute 7",
                             "datastore_regex": ""
                         }
-                    ],
-                    "cinder": {
-                        "enable": false
-                    }
+                    ]
                 }
             ],
             "glance": {

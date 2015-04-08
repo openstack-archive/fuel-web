@@ -320,10 +320,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
                             "service_name": "",
                             "datastore_regex": ""
                         }
-                    ],
-                    "cinder": {
-                        "enable": True
-                    }
+                    ]
                 }
             ],
             "network": {

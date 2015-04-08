@@ -261,7 +261,10 @@ class interfaces(urwid.WidgetWrap):
         #If there is a gateway configured in /etc/sysconfig/network, unset it
         expr = '^GATEWAY=.*'
         replace.replaceInFile("/etc/sysconfig/network", expr, "")
-
+        l2port = {'type': "resource",
+                  'class': "l23network::l2::port",
+                  'name': self.activeiface}
+        puppetclasses.append(l2port)
         l3ifconfig = {'type': "resource",
                       'class': "l23network::l3::ifconfig",
                       'name': self.activeiface}

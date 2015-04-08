@@ -96,7 +96,7 @@ class TestMakeTask(base.BaseTestCase):
              'type': 'upload_file',
              'uids': [1, 2, 3]})
 
-    def test_make_centos_repo_task(self):
+    def test_make_centos_repo_task_w_priority(self):
         result = tasks_templates.make_centos_repo_task(
             [1, 2, 3],
             {
@@ -110,6 +110,23 @@ class TestMakeTask(base.BaseTestCase):
             {'parameters': {
                 'data': ('[plugin_name]\nname=Plugin plugin_name repository\n'
                          'baseurl=http://url\ngpgcheck=0\npriority=1'),
+                'path': '/etc/yum.repos.d/plugin_name.repo'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
+    def test_make_centos_repo_task_wo_priority(self):
+        result = tasks_templates.make_centos_repo_task(
+            [1, 2, 3],
+            {
+                'name': 'plugin_name',
+                'type': 'rpm',
+                'uri': 'http://url',
+            })
+        self.assertEqual(
+            result,
+            {'parameters': {
+                'data': ('[plugin_name]\nname=Plugin plugin_name repository\n'
+                         'baseurl=http://url\ngpgcheck=0'),
                 'path': '/etc/yum.repos.d/plugin_name.repo'},
              'type': 'upload_file',
              'uids': [1, 2, 3]})

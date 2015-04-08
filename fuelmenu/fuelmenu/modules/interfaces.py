@@ -27,6 +27,7 @@ import logging
 import netaddr
 import re
 import socket
+import subprocess
 import traceback
 import urwid
 import urwid.raw_display
@@ -268,6 +269,7 @@ class interfaces(urwid.WidgetWrap):
         if responses["onboot"].lower() == "no":
             params = {"ipaddr": "none"}
         elif responses["bootproto"] == "dhcp":
+            self.unset_gateway()
             if "dhcp_nowait" in responses.keys():
                 params = {"ipaddr": "dhcp",
                           "dhcp_nowait": responses["dhcp_nowait"]}
@@ -279,6 +281,7 @@ class interfaces(urwid.WidgetWrap):
                       "check_by_ping": "none"}
         if len(responses["gateway"]) > 1:
             params["gateway"] = responses["gateway"]
+            self.unset_gateway()
         l3ifconfig['params'] = params
         puppetclasses.append(l3ifconfig)
         self.log.info("Puppet data: %s" % (puppetclasses))
@@ -312,6 +315,23 @@ class interfaces(urwid.WidgetWrap):
 
     def get_default_gateway_linux(self):
         return ModuleHelper.get_default_gateway_linux()
+
+    def unset_gateway(self):
+        """Unset current gateway."""
+        command = "ip route del default dev $(ip ro | grep default"\
+                  " | awk '{print $NF}')"
+        if self.get_default_gateway_linux() is None:
+            return True
+        try:
+            noout = open('/dev/null', 'w')
+            subprocess.call(command, stdout=noout, stderr=noout,
+                            shell=True)
+        except OSError:
+            self.log.warning(traceback.format_exc())
+            self.log.error("Unable to unset gateway")
+            self.log.error("Command was: {0}".format(command))
+            self.parent.footer.set_text("Unable to unset gateway.")
+            return False
 
     def radioSelectIface(self, current, state, user_data=None):
         """Update network details and display information."""

@@ -15,18 +15,13 @@
  **/
 define(
 [
-    'jquery',
     'underscore',
     'i18n',
     'react',
-    'utils',
-    'models',
-    'jsx!views/dialogs',
     'jsx!component_mixins',
-    'jsx!views/statistics_mixin',
-    'jsx!views/controls'
+    'jsx!views/statistics_mixin'
 ],
-function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsMixin, controls) {
+function(_, i18n, React, componentMixins, statisticsMixin) {
     'use strict';
 
     var WelcomePage = React.createClass({
@@ -38,69 +33,63 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
             title: i18n('welcome_page.title'),
             hiddenLayout: true,
             fetchData: function() {
-                var remoteLoginForm = new models.MirantisLoginForm(),
-                    remoteRetrievePasswordForm = new models.MirantisRetrievePasswordForm();
-                return app.settings.fetch({cache: true}).then(function() {
-                    return {settings: app.settings, remoteLoginForm: remoteLoginForm, remoteRetrievePasswordForm: remoteRetrievePasswordForm};
+                return app.settings.fetch().then(function() {
+                    return {settings: app.settings};
                 });
             }
         },
-        componentDidMount: function() {
-            var remoteLoginForm = this.props.remoteLoginForm;
-            remoteLoginForm.fetch()
-                .done(_.bind(function() {this.setState({loading: false});}, this))
-                .fail(_.bind(function() {
-                    remoteLoginForm.url = remoteLoginForm.nailgunUrl;
-                    remoteLoginForm.fetch()
-                        .fail(this.showResponseErrors)
-                        .always(_.bind(function() {this.setState({loading: false});}, this));
-                }, this));
-        },
-        getInitialState: function() {
-            return {isConnected: false};
-        },
-        onStartButtonClick: function(e) {
-            if (!this.state.isConnected) this.cleanConnectionForm();
-            this.props.settings.get('statistics').user_choice_saved.value = true;
-            this.setState({disabled: true});
-            this.saveSettings(e)
+        onStartButtonClick: function() {
+            this.clearRegistrationForm();
+            var statistics = this.props.settings.get('statistics');
+            statistics.user_choice_saved.value = true;
+            // locked state is similar to actionInProgress but
+            // we want the page isn't unlocked after successful saving
+            this.setState({locked: true});
+            this.saveSettings()
                 .done(function() {
                     app.navigate('', {trigger: true});
                 })
                 .fail(_.bind(function() {
-                    this.props.settings.get('statistics').user_choice_saved.value = false;
-                    this.setState({disabled: false});
+                    statistics.user_choice_saved.value = false;
+                    this.setState({locked: false});
                 }, this));
         },
-        cleanConnectionForm: function() {
-            var settings = this.props.settings;
-            _.each(settings.get('tracking'), function(data, inputName) {
-                var name = settings.makePath('tracking', inputName, 'value');
-                settings.set(name, '');
-            });
-        },
-        setConnected: function() {
-            this.setState({isConnected: true});
-        },
         render: function() {
-            if (this.state.loading) return null;
             var ns = 'welcome_page.',
-                isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
+                featureGroups = app.version.get('feature_groups'),
+                isMirantisIso = _.contains(featureGroups, 'mirantis'),
                 statsCollectorLink = 'https://stats.fuel-infra.org/',
                 privacyPolicyLink = 'https://www.mirantis.com/company/privacy-policy/';
+            var disabled = this.state.actionInProgress || this.state.locked,
+                buttonProps = {
+                    disabled: disabled,
+                    onClick: this.onStartButtonClick,
+                    className: 'btn btn-large btn-success'
+                };
             return (
                 <div className='welcome-page'>
                     <div>
                         <h2 className='center'>{this.getText(ns + 'title')}</h2>
-                        <RegisterTrial
-                            {... _.pick(this.state, 'isConnected', 'actionInProgress', 'error', 'userData')}
-                            {... _.pick(this.props, 'settings', 'remoteRetrievePasswordForm')}
-                            setConnected={this.setConnected}/>
                         {isMirantisIso ?
                             <div>
-                                {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box')}
+                                {!_.contains(featureGroups, 'techpreview') &&
+                                    <div className='register-trial'>
+                                        {this.state.isConnected ?
+                                            <div className='happy-cloud'>
+                                                <div className='cloud-smile' />
+                                                <div>{i18n(ns + 'register.welcome_phrase.thanks')} {this.props.settings.get('statistics').name.value}, {i18n(ns + 'register.welcome_phrase.content')}</div>
+                                            </div>
+                                        :
+                                            <div>
+                                                <p className='register_installation'>{i18n(ns + 'register.register_installation')}</p>
+                                                {this.renderRegistrationForm(this.props.settings, disabled, this.state.error, this.state.actionInProgress && !this.state.locked)}
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                {this.renderInput('send_anonymous_statistic', null, 'welcome-checkbox-box', disabled)}
                                 {this.renderIntro()}
-                                {this.renderInput('send_user_info', null, 'welcome-checkbox-box')}
+                                {this.renderInput('send_user_info', null, 'welcome-checkbox-box', disabled)}
                                 <p>
                                     <div className='notice'>{i18n(ns + 'privacy_policy')}</div>
                                     <div><a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a></div>
@@ -116,109 +105,27 @@ function($, _, i18n, React, utils, models, dialogs, componentMixins, statisticsM
                                 </p>
                             </div>
                         }
-                        <form className='form-horizontal'>
-                            <div className='welcome-button-box'>
-                                {this.state.isConnected || !isMirantisIso ?
-                                    <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress || this.state.disabled} onClick={this.onStartButtonClick}>
-                                        {i18n(ns + 'start_fuel')}
+                        <div className='welcome-button-box'>
+                            {this.state.isConnected || !isMirantisIso ?
+                                <button autoFocus {...buttonProps}>
+                                    {i18n(ns + 'start_fuel')}
+                                </button>
+                            :
+                                <div>
+                                    <button {...buttonProps} className='btn btn-large btn-unwanted'>
+                                        {i18n(ns + 'connect_later')}
                                     </button>
-                                :
-                                    <div>
-                                        <button className='btn btn-large btn-unwanted' onClick={this.onStartButtonClick} disabled={this.state.actionInProgress || this.state.disabled}>
-                                            {i18n(ns + 'connect_later')}
-                                        </button>
-                                        <button autoFocus className='btn btn-large btn-success' disabled={this.state.actionInProgress || this.state.disabled} onClick={this.connectToMirantis}>
-                                            {i18n(ns + 'connect_now')}
-                                        </button>
-                                    </div>
-                                }
-                            </div>
-                        </form>
+                                    <button autoFocus {...buttonProps} onClick={this.connectToMirantis}>
+                                        {i18n(ns + 'connect_now')}
+                                    </button>
+                                </div>
+                            }
+                        </div>
                         {isMirantisIso && <div className='welcome-text-box'>{i18n(ns + 'change_settings')}</div>}
                         <div className='welcome-text-box'>{this.getText(ns + 'thanks')}</div>
                     </div>
                 </div>
             );
-        }
-    });
-
-    var RegisterTrial = React.createClass({
-        getInitialState: function() {
-            return {};
-        },
-        onChange: function(inputName, value) {
-            var settings = this.props.settings,
-                name = settings.makePath('tracking', inputName, 'value');
-            if (settings.validationError) delete settings.validationError['tracking.' + inputName];
-            settings.set(name, value);
-        },
-        shouldShowMessage: function() {
-            return _.contains(app.version.get('feature_groups'), 'mirantis') && !_.contains(app.version.get('feature_groups'), 'techpreview');
-        },
-        showRegistrationDialog: function() {
-            dialogs.RegistrationDialog.show({
-                registrationForm: new models.MirantisRegistrationForm(),
-                setConnected: this.props.setConnected,
-                settings: this.props.settings
-            });
-        },
-        showRetrievePasswordDialog: function() {
-            dialogs.RetrievePasswordDialog.show({
-                remoteRetrievePasswordForm: this.props.remoteRetrievePasswordForm
-            });
-        },
-        render: function() {
-            var settings = this.props.settings,
-                loginForm = this.props.settings.get('tracking'),
-                actionInProgress = this.props.actionInProgress,
-                sortedFields = _.chain(_.keys(loginForm))
-                    .without('metadata')
-                    .sortBy(function(inputName) {return loginForm[inputName].weight;})
-                    .value(),
-                error = this.props.error;
-            if (this.shouldShowMessage()) {
-                var ns = 'welcome_page.register.';
-                return (
-                    <div className='register-trial'>
-                        {this.props.isConnected ?
-                            <div className='happy-cloud'>
-                                <div className='cloud-smile'></div>
-                                <div>{i18n(ns + 'welcome_phrase.thanks')} {this.props.settings.get('statistics').name.value}, {i18n(ns + 'welcome_phrase.content')}</div>
-                            </div>
-                        :
-                            <div>
-                                <p className='register_installation'>{i18n(ns + 'register_installation')}</p>
-                                {actionInProgress && <controls.ProgressBar />}
-                                {error &&
-                                    <div className='error'>
-                                        <i className='icon-attention'></i>
-                                        {error}
-                                    </div>
-                                }
-                                <div className='connection-form'>
-                                    {_.map(sortedFields, function(inputName) {
-                                        var input = loginForm[inputName],
-                                            path = 'tracking.' + inputName,
-                                            error = settings.validationError && settings.validationError[path];
-                                        return <controls.Input
-                                            ref={inputName}
-                                            key={inputName}
-                                            name={inputName}
-                                            {... _.pick(input, 'type', 'label', 'value')}
-                                            onChange={this.onChange}
-                                            error={error}/>;
-                                    }, this)}
-                                    <div className='links-container'>
-                                        <a onClick={this.showRegistrationDialog} className='create-account'>{i18n(ns + 'create_account')}</a>
-                                        <a onClick={this.showRetrievePasswordDialog} className='retrive-password'>{i18n(ns + 'retrieve_password')}</a>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                );
-            }
-            return null;
         }
     });
 

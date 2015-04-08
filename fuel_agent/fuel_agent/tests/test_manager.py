@@ -112,11 +112,6 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual(mock_pu_sgt_expected_calls,
                          mock_pu_sgt.call_args_list)
 
-        mock_mu_m_expected_calls = [mock.call('/dev/md0', 'mirror',
-                                              '/dev/sda3', '/dev/sdb3',
-                                              '/dev/sdc3')]
-        self.assertEqual(mock_mu_m_expected_calls, mock_mu_m.call_args_list)
-
         mock_lu_p_expected_calls = [
             mock.call('/dev/sda5', metadatasize=28, metadatacopies=2),
             mock.call('/dev/sda6', metadatasize=28, metadatacopies=2),
@@ -135,8 +130,8 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual(mock_lu_l_expected_calls, mock_lu_l.call_args_list)
 
         mock_fu_mf_expected_calls = [
-            mock.call('ext2', '', '', '/dev/md0'),
-            mock.call('ext2', '', '', '/dev/sda4'),
+            mock.call('ext2', '', '', '/dev/sda3'), # /boot
+            mock.call('ext2', '', '', '/dev/sda4'), # /tmp
             mock.call('swap', '', '', '/dev/mapper/os-swap'),
             mock.call('xfs', '', '', '/dev/mapper/image-glance')]
         self.assertEqual(mock_fu_mf_expected_calls, mock_fu_mf.call_args_list)

@@ -65,6 +65,11 @@ class Nailgun(object):
         # how it is given by nailgun
         self.data = data
 
+        # this var is used as a flag that /boot fs
+        # has already been added. we need this to
+        # get rid of md over all disks for /boot partition.
+        self._boot_done = False
+
     def partition_data(self):
         return self.data['ks_meta']['pm_data']['ks_spaces']
 
@@ -250,13 +255,26 @@ class Nailgun(object):
                         metadatacopies=metadatacopies)
 
                 if volume['type'] == 'raid':
-                    if 'mount' in volume and volume['mount'] != 'none':
+                    if 'mount' in volume and \
+                            volume['mount'] not in ('none', '/boot'):
                         LOG.debug('Attaching partition to RAID '
                                   'by its mount point %s' % volume['mount'])
                         partition_scheme.md_attach_by_mount(
                             device=prt.name, mount=volume['mount'],
                             fs_type=volume.get('file_system', 'xfs'),
                             fs_label=self._getlabel(volume.get('disk_label')))
+
+                    if 'mount' in volume and volume['mount'] == '/boot' and \
+                            not self._boot_done:
+                        LOG.debug('Adding file system on partition: '
+                                  'mount=%s type=%s' %
+                                  (volume['mount'],
+                                   volume.get('file_system', 'ext2')))
+                        partition_scheme.add_fs(
+                            device=prt.name, mount=volume['mount'],
+                            fs_type=volume.get('file_system', 'ext2'),
+                            fs_label=self._getlabel(volume.get('disk_label')))
+                        self._boot_done = True
 
             # this partition will be used to put there configdrive image
             if partition_scheme.configdrive_device() is None:

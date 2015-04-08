@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,19 +14,17 @@
 #    under the License.
 
 
+from itertools import chain
 from copy import deepcopy
 import functools
 import json
 import logging
 import os
-import re
-import string
 import subprocess
 import sys
 import traceback
 import urllib2
 import yaml
-import zlib
 
 try:
     from collections import OrderedDict
@@ -38,16 +36,16 @@ from keystoneclient import exceptions
 from keystoneclient.v2_0 import Client as keystoneclient
 
 from optparse import OptionParser
-from urllib2 import urlopen
 from urlparse import urlparse
-from xml.dom.minidom import parseString
 
 logger = logging.getLogger(__name__)
 
 
-KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
-                  'password': os.environ.get('KEYSTONE_PASSWORD', 'admin'),
-                  'tenant_name': os.environ.get('KEYSTONE_TENANT', 'admin')}
+KEYSTONE_CREDS = {
+    'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
+    'password': os.environ.get('KEYSTONE_PASSWORD', 'admin'),
+    'tenant_name': os.environ.get('KEYSTONE_TENANT', 'admin'),
+}
 
 
 class Settings(object):
@@ -154,11 +152,11 @@ def repo_merge(a, b):
     '''merges two lists of repositories. b replaces records from a.'''
     if not isinstance(b, list):
         return deepcopy(b)
+
     result = OrderedDict()
-    for repo in a:
+    for repo in chain(a, b):
         result[repo['name']] = repo
-    for repo in b:
-        result[repo['name']] = repo
+
     return result.values()
 
 
@@ -198,6 +196,7 @@ class FuelWebClient(object):
 
 
 class NailgunClient(object):
+
     def __init__(self, admin_node_ip, **kwargs):
         url = "http://{0}:8000".format(admin_node_ip)
         logger.debug('Initiate Nailgun client with url %s', url)
@@ -239,7 +238,8 @@ class UpdatePackagesException(Exception):
 def exec_cmd(cmd):
     logger.debug('Execute command "%s"', cmd)
     child = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE,
+        cmd,
+        stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         shell=True)
 
@@ -257,29 +257,9 @@ def _wait_and_check_exit_code(cmd, child):
     return exit_code
 
 
-def get_repository_packages(remote_repo_url, distro):
-    repo_url = urlparse(remote_repo_url)
-    packages = []
-    if distro in ('ubuntu',):
-        packages_url = '{0}/Packages'.format(repo_url.geturl())
-        pkgs_raw = urlopen(packages_url).read()
-        for pkg in pkgs_raw.split('\n'):
-            match = re.search(r'^Package: (\S+)\s*$', pkg)
-            if match:
-                packages.append(match.group(1))
-    elif distro in ('centos',):
-        packages_url = '{0}/repodata/primary.xml.gz'.format(repo_url.geturl())
-        pkgs_xml = parseString(zlib.decompressobj(zlib.MAX_WBITS | 32).
-                               decompress(urlopen(packages_url).read()))
-        for pkg in pkgs_xml.getElementsByTagName('package'):
-            packages.append(
-                pkg.getElementsByTagName('name')[0].firstChild.nodeValue)
-    return packages
-
-
 def get_ubuntu_repos(repopath, ip, httproot, port, baseurl=None):
     # TODO(mattymo): parse all repo metadata
-    repolist = ['mos6.1-updates', 'mos6.1-security', 'mos6.1-holdback']
+    repolist = ('mos6.1-updates', 'mos6.1-security', 'mos6.1-holdback')
     if baseurl:
         repourl = "{baseurl}/{repopath}".format(
             baseurl=baseurl,
@@ -300,10 +280,14 @@ def get_ubuntu_repos(repopath, ip, httproot, port, baseurl=None):
             "uri": repourl,
             "suite": repo,
             "section": "main restricted",
-            "priority": 1050}
+            "priority": 1050
+        }
+
         if "holdback" in repo:
             repoentry['priority'] = 1100
+
         repos.append(repoentry)
+
     return repos
 
 
@@ -326,11 +310,8 @@ def get_centos_repos(repopath, ip, httproot, port, baseurl=None):
     return [repoentry]
 
 
-def reindent(s, numSpaces):
-    s = string.split(s, '\n')
-    s = [(numSpaces * ' ') + line for line in s]
-    s = string.join(s, '\n')
-    return s
+def reindent(s, num_spaces=10):
+    return ''.join((num_spaces * ' ') + line for line in s.split('\n'))
 
 
 def show_env_conf(repos, showuri=False, ip="10.20.0.2"):
@@ -356,9 +337,8 @@ def show_env_conf(repos, showuri=False, ip="10.20.0.2"):
                       name=repo['name'],
                       uri=repo['uri']))
     else:
-        spaces = 10
         yamldata = {"repos": repos}
-        print(reindent(yaml.dump(yamldata, default_flow_style=False), spaces))
+        print(reindent(yaml.dump(yamldata, default_flow_style=False)))
 
 
 def update_env_conf(ip, env_id, distro, repos):
@@ -396,15 +376,15 @@ def mirror_remote_repository(remote_repo_url, local_repo_path, exclude_dirs,
                                       ' repository failed!')
 
 
-def main():
-    settings = Settings()
-
+def setup_logging():
     sh = logging.StreamHandler()
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     sh.setFormatter(formatter)
     logger.addHandler(sh)
     logger.setLevel(logging.INFO)
 
+
+def get_parser():
     parser = OptionParser(
         description="Pull updates for a given release of Fuel based on "
                     "the provided URL."
@@ -440,6 +420,13 @@ def main():
                       help="Fuel Master admin password (defaults to admin)."
                       " Alternatively, use env var KEYSTONE_PASSWORD).")
 
+    return parser
+
+
+def main():
+    setup_logging()
+    parser = get_parser()
+
     (options, args) = parser.parse_args()
 
     if options.verbose:
@@ -447,20 +434,20 @@ def main():
 
     if options.list_distros:
         logger.info("Available distributions:\n  {0}".format(
-            "\n  ".join(settings.supported_distros)))
+            "\n  ".join(Settings.supported_distros)))
         sys.exit(0)
 
-    if options.distro not in settings.supported_distros:
+    if options.distro not in Settings.supported_distros:
         raise UpdatePackagesException(
             'Distro "{0}" is not supported. Please specify one of the '
             'following: "{1}". See help (--help) for details.'.format(
-                options.distro, ', '.join(settings.supported_distros)))
+                options.distro, ', '.join(Settings.supported_distros)))
 
-    if options.release not in settings.supported_releases:
+    if options.release not in Settings.supported_releases:
         raise UpdatePackagesException(
             'Fuel release "{0}" is not supported. Please specify one of the '
             'following: "{1}". See help (--help) for details.'.format(
-                options.release, ', '.join(settings.supported_releases)))
+                options.release, ', '.join(Settings.supported_releases)))
 
     if 'http' not in urlparse(options.url) and 'rsync' not in \
             urlparse(options.url):
@@ -473,13 +460,14 @@ def main():
             '--apply option requires --env to be specified. '
             'See help (--help) for details.')
 
-    updates_path = settings.updates_destinations[options.distro].format(
+    updates_path = Settings.updates_destinations[options.distro].format(
         options.release)
     if not os.path.exists(updates_path):
         os.makedirs(updates_path)
+
     logger.info('Started mirroring remote repository...')
     mirror_remote_repository(options.url, updates_path,
-                             settings.exclude_dirs, options.distro)
+                             Settings.exclude_dirs, options.distro)
     logger.info('Remote repository "{url}" for "{release}" ({distro}) was '
                 'successfuly mirrored to {path} folder.'.format(
                     url=options.url,
@@ -487,11 +475,11 @@ def main():
                     distro=options.distro,
                     path=updates_path))
     if options.distro == "ubuntu":
-        repos = get_ubuntu_repos(updates_path, options.ip, settings.httproot,
-                                 settings.port, options.baseurl)
+        repos = get_ubuntu_repos(updates_path, options.ip, Settings.httproot,
+                                 Settings.port, options.baseurl)
     elif options.distro == "centos":
-        repos = get_centos_repos(updates_path, options.ip, settings.httproot,
-                                 settings.port, options.baseurl)
+        repos = get_centos_repos(updates_path, options.ip, Settings.httproot,
+                                 Settings.port, options.baseurl)
     else:
         raise UpdatePackagesException('Unknown distro "{0}"'.format(
             options.distro))

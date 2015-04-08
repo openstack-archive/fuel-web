@@ -346,6 +346,109 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         }
     });
 
+    // FIXME(morale): this component is a lot of copy-paste from Range component
+    // and should be rewritten either as a mixin or as separate componet for
+    // multiflying other components (eg accepting Range, Input etc)
+    var MulipleValuesInput = React.createClass({
+        mixins: [
+            NetworkModelManipulationMixin
+        ],
+        propTypes: {
+            name: React.PropTypes.string,
+            placeholder: React.PropTypes.string,
+            label: React.PropTypes.string,
+            rowsClassName: React.PropTypes.node,
+            wrapperClassName: React.PropTypes.node,
+            value: React.PropTypes.array
+        },
+        getInitialState: function() {
+            return {elementToFocus: null};
+        },
+        componentDidUpdate: function() {
+            // this glitch is needed to fix
+            // when pressing '+' or '-' buttons button remains focused
+            if (this.state.elementToFocus && (this.getModel().get(this.props.name).length > 1)) {
+                $(this.refs[this.state.elementToFocus].getInputDOMNode()).focus();
+                this.setState({elementToFocus: null});
+            }
+        },
+        onChange: function(attribute, value, index) {
+            var model = this.getModel(),
+                valueToSet = _.cloneDeep(model.get(attribute));
+            valueToSet[index] = value;
+            this.setValue(attribute, valueToSet);
+        },
+        addValue: function(attribute, index) {
+            var newValue = _.clone(this.getModel().get(attribute));
+            newValue.push('');
+            this.setValue(attribute, newValue);
+            this.setState({
+                elementToFocus: 'input' + (index + 1)
+            });
+        },
+        removeValue: function(attribute, index) {
+            var newValue = _.clone(this.getModel().get(attribute));
+            newValue.splice(index, 1);
+            this.setValue(attribute, newValue);
+            this.setState({
+                elementToFocus: 'input' + _.min([newValue.length - 1, index])
+            });
+        },
+        render: function() {
+            var values = this.props.value,
+                errors = this.props.error || null,
+                verificationError = this.props.verificationError || null,
+                attributeName = this.props.name;
+            return (
+                <div className={this.props.wrapperClassName}>
+                    <div className='parameter-name'>{this.props.label}</div>
+                    <div className={this.props.rowsClassName}>
+                        {_.map(values, function(value, index) {
+                            var inputError = errors && errors[index];
+                            return (
+                                <div className='range-row autocomplete clearfix' key={this.props.name + index}>
+                                    <controls.Input
+                                        type='text'
+                                        disabled={this.props.disabled}
+                                        name={attributeName}
+                                        error={(inputError || verificationError) && ''}
+                                        value={value}
+                                        onChange={_.partialRight(this.onChange, index)}
+                                        ref={'input' + index}
+                                        placeholder={inputError ? '' : this.props.placeholder}
+                                    />
+                                    <div>
+                                        <div className='ip-ranges-control'>
+                                            <button
+                                                className='btn btn-link ip-ranges-add'
+                                                disabled={this.props.disabled}
+                                                onClick={this.addValue.bind(this, attributeName, index)}>
+                                                <i className='icon-plus-circle'></i>
+                                            </button>
+                                        </div>
+                                        {(values.length > 1) &&
+                                            <div className='ip-ranges-control'>
+                                                <button className='btn btn-link ip-ranges-delete' disabled={this.props.disabled}
+                                                    onClick={this.removeValue.bind(this, attributeName, index)}>
+                                                    <i className='icon-minus-circle'></i>
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div className='error validation-error'>
+                                        <span className='help-inline'>
+                                            {inputError}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        }, this)}
+                    </div>
+                </div>
+            );
+        }
+    });
+
     var NetworkTab = React.createClass({
         mixins: [
             componentMixins.backboneMixin('cluster', 'change:status'),
@@ -803,11 +906,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         </div>
                     }
 
-                    <Range
+                    <MulipleValuesInput
                         {...this.composeProps('dns_nameservers', true)}
-                        extendable={false}
                         rowsClassName='dns_nameservers-row'
-                        hiddenHeader={true}
                     />
                 </div>
             );

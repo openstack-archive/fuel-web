@@ -426,7 +426,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
             'type': 'rpm',
             'name': 'mos',
             'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/x86_64',
-            'priority': 20,
+            'priority': None,
         }])
 
 

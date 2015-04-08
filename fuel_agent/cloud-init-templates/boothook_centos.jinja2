@@ -21,17 +21,13 @@ cloud-init-per instance disable_selinux sed -i 's/^SELINUX=.*/SELINUX=disabled/g
 # udev persistent net
 cloud-init-per instance udev_persistent_net1 service network stop
 
-DEFAULT_GW={{ common.master_ip }}
 ADMIN_MAC={{ common.admin_mac }}
 ADMIN_IF=$(echo {{ common.udevrules }} | sed 's/[,=]/\n/g' | grep "$ADMIN_MAC" | cut -d_ -f2 | head -1)
-#NOTE: it will be broken, once ifconfig (net-tools) 2.0 or higher version of package be used
-INSTALL_IF=$(ifconfig -a | grep "$ADMIN_MAC" | head -1 | cut -d' ' -f1)
-NETADDR=( $(ifconfig $INSTALL_IF | grep -oP "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}") )
 if [ ! -z "$(grep $ADMIN_IF /etc/sysconfig/network-scripts/ifcfg-$ADMIN_IF | grep dhcp)" ] ; then
-    echo -e "# FROM COBBLER SNIPPET\nDEVICE=$ADMIN_IF\nIPADDR=${NETADDR[0]}\nNETMASK=${NETADDR[2]}\nBOOTPROTO=none\nONBOOT=yes\nUSERCTL=no\n" > /etc/sysconfig/network-scripts/ifcfg-"$ADMIN_IF"
+    echo -e "# FROM COBBLER SNIPPET\nDEVICE=$ADMIN_IF\nIPADDR={{ common.admin_ip }}\nNETMASK={{ common.admin_mask }}\nBOOTPROTO=none\nONBOOT=yes\nUSERCTL=no\n" > /etc/sysconfig/network-scripts/ifcfg-"$ADMIN_IF"
 fi
 
-cloud-init-per instance set_gateway /bin/sh -c 'echo GATEWAY="{{ common.master_ip }}" | tee -a /etc/sysconfig/network'
+cloud-init-per instance set_gateway /bin/sh -c 'echo GATEWAY="{{ common.gw }}" | tee -a /etc/sysconfig/network'
 
 cloud-init-per instance udev_persistent_net5 service network start
 

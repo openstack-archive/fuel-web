@@ -132,23 +132,20 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
 
     def test_do_not_create_notification_if_disks_meta_is_empty(self):
+
         def get_notifications_count(**kwargs):
             return objects.NotificationCollection.count(
                 objects.NotificationCollection.filter_by(None, **kwargs)
             )
 
-        # add node to environment: this makes us possible to reach
-        # buggy code
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
             ]
         )
 
-        # prepare data to put
         node = self.env.nodes[0]
         node.meta['disks'] = []
-
         node = {
             'id': node.id,
             'meta': node.meta,
@@ -156,10 +153,8 @@ class TestHandlers(BaseIntegrationTest):
             'status': node.status
         }
 
-        # get node info
         before_count = get_notifications_count(node_id=node['id'])
 
-        # put new info
         for i in range(5):
             response = self.app.put(
                 reverse('NodeAgentHandler'),
@@ -168,9 +163,36 @@ class TestHandlers(BaseIntegrationTest):
             )
             self.assertEqual(response.status_code, 200)
 
-        # check there's not create notification
+        # check there's no notification created
         after_count = get_notifications_count(node_id=node['id'])
         self.assertEqual(before_count, after_count)
+
+    def test_no_volumes_changes_if_node_is_locked(self):
+
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True,
+                 'status': consts.NODE_STATUSES.ready},
+            ]
+        )
+
+        node = self.env.nodes[0]
+        node_data = {
+            'id': node.id,
+            'meta': node.meta,
+            'mac': node.mac,
+            'status': node.status
+        }
+        node_data['meta']['disks'] = []
+
+        response = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps(node_data),
+            headers=self.default_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        # check volumes data wasn't reset
+        self.assertGreater(len(node.meta['disks']), 0)
 
     @fake_tasks()
     def test_interface_changes_for_new_node(self):

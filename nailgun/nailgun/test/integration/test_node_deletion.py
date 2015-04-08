@@ -96,3 +96,48 @@ class TestNodeDeletion(BaseIntegrationTest):
 
         node_query = self.db.query(Node).filter_by(cluster_id=cluster.id)
         self.assertEquals(node_query.count(), 0)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=True)
+    def test_mclient_remove_is_false_on_node_deletion(self, mrpc):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+            ]
+        )
+
+        self.env.launch_deployment()
+
+        cluster = self.env.clusters[0]
+        node_ids = [node.id for node in cluster.nodes]
+
+        url = reverse(
+            'NodeHandler',
+            kwargs={'obj_id': node_ids[0]}
+        )
+
+        self.app.delete(
+            url,
+            headers=self.default_headers
+        )
+
+        msg = mrpc.call_args[0][1]
+
+        self.assertTrue(
+            all([node['mclient_remove'] is False
+                 for node in msg['args']['nodes']])
+        )
+
+        url = reverse('NodeCollectionHandler')
+        query_str = 'ids={0}'.format(','.join(map(str, node_ids)))
+
+        self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers
+        )
+
+        msg = mrpc.call_args[0][1]
+
+        self.assertTrue(
+            all([node['mclient_remove'] is False
+                 for node in msg['args']['nodes']])
+        )

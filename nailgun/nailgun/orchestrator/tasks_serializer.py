@@ -170,12 +170,12 @@ class UploadMOSRepo(GenericRolesHook):
             yield templates.make_yum_clean(uids)
         elif operating_system == consts.RELEASE_OS.ubuntu:
             # NOTE(ikalnitsky):
-            #   We have to remove /etc/apt/sources.list, because it
-            #   has a lot of invalid repos right after provisioning
-            #   and that lead us to deployment failures.
+            # We have to clear /etc/apt/sources.list, because it
+            # has a lot of invalid repos right after provisioning
+            # and that lead us to deployment failures.
             yield templates.make_shell_task(uids, {
                 'parameters': {
-                    'cmd': 'rm -f /etc/apt/sources.list',
+                    'cmd': '> /etc/apt/sources.list',
                     'timeout': 10
                 }})
             # NOTE(kozhukalov):

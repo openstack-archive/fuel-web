@@ -97,7 +97,7 @@ def prepare():
         meta.tables['attributes'].insert(),
         [{
             'cluster_id': clusterid,
-            'editable': '{}',
+            'editable': '{"common": {}}',
             'generated': '{"cobbler": {"profile": "ubuntu_1204_x86_64"}}',
         }])
 
@@ -221,3 +221,18 @@ class TestRolesMetadataMigration(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['releases'].c.roles_metadata]))
         roles_metadata = jsonutils.loads(result.fetchone()[0])
         self.assertTrue(roles_metadata['mongo']['has_primary'])
+
+
+class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
+
+    def test_vcenter_in_cluster_attributes(self):
+        meta = sa.MetaData()
+        meta.reflect(bind=db.get_bind())
+
+        result = db.execute(sa.select([meta.tables['attributes'].c.editable]))
+        editable = jsonutils.loads(result.fetchone()[0])
+        self.assertDictEqual(editable['common']['use_vcenter'], {
+            "value": False,
+            "weight": 30,
+            "type": "hidden"
+        })

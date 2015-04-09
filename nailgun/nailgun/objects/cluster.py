@@ -720,17 +720,16 @@ class Cluster(NailgunObject):
 
     @classmethod
     def create_vmware_attributes(cls, instance):
-        """Write description
+        """Store VmwareAttributes instance into DB.
         """
-        attributes = VmwareAttributes.create(
-            {
-                "editable": instance.release.vmware_attributes_metadata.get(
-                    "editable"),
-                "cluster_id": instance.id
-            }
-        )
-
-        return attributes
+        vmware_metadata = instance.release.vmware_attributes_metadata
+        if vmware_metadata:
+            return VmwareAttributes.create(
+                {
+                    "editable": vmware_metadata.get("editable"),
+                    "cluster_id": instance.id
+                }
+            )
 
     @classmethod
     def get_vmware_attributes(cls, instance):

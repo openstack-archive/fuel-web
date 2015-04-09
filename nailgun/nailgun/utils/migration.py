@@ -538,3 +538,22 @@ def upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection):
                 update_query,
                 attrs_meta=jsonutils.dumps(attrs),
                 release_id=release_id)
+
+
+def upgrade_cluster_attributes_6_0_to_6_1(connection):
+    select_query = text("""SELECT id, editable FROM attributes""")
+    update_query = text(
+        """UPDATE attributes SET editable = :editable WHERE id = :attr_id""")
+
+    for attr_id, editable in connection.execute(select_query):
+        attributes = jsonutils.loads(editable)
+        attributes['common']['use_vcenter'] = {
+            "value": False,
+            "weight": 30,
+            "type": "hidden"
+        }
+
+        connection.execute(
+            update_query,
+            editable=jsonutils.dumps(attributes),
+            attr_id=attr_id)

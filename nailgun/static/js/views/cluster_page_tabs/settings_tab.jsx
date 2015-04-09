@@ -159,8 +159,34 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 hasChanges = this.hasChanges(),
                 allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
                 tabClasses = {'openstack-settings wrapper': true, 'changes-locked': locked || lockedCluster};
+
             return (
                 <div key={this.state.key} className={utils.classNames(tabClasses)}>
+                    {!this.state.loading &&
+                        <controls.StickyControls
+                            buttons={[
+                                {
+                                    key: 'load-defaults',
+                                    onClick: this.loadDefaults,
+                                    disabled: locked || lockedCluster,
+                                    title: i18n('common.load_defaults_button')
+                                },
+                                {
+                                    key: 'revert-changes',
+                                    onClick: this.revertChanges,
+                                    disabled: locked || !hasChanges,
+                                    title: i18n('common.cancel_changes_button')
+                                },
+                                {
+                                    key: 'apply-changes',
+                                    onClick: this.applyChanges,
+                                    disabled: locked || !hasChanges || settings.validationError,
+                                    className: 'btn-success',
+                                    title: i18n('common.save_settings_button')
+                                }
+                            ]}
+                        />
+                    }
                     <h3>{i18n('cluster_page.settings_tab.title')}</h3>
                     {this.state.loading ?
                         <controls.ProgressBar />
@@ -182,21 +208,6 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     configModels={this.state.configModels}
                                 />;
                             }, this)}
-                            <div className='row'>
-                                <div className='page-control-box'>
-                                    <div className='page-control-button-placeholder'>
-                                        <button key='loadDefaults' className='btn btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
-                                            {i18n('common.load_defaults_button')}
-                                        </button>
-                                        <button key='cancelChanges' className='btn btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
-                                            {i18n('common.cancel_changes_button')}
-                                        </button>
-                                        <button key='applyChanges' className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
-                                            {i18n('common.save_settings_button')}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     }
                 </div>

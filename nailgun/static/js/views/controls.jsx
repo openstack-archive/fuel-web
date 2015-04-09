@@ -20,7 +20,14 @@
  * Based on https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
 **/
 
-define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], function($, _, React, utils, componentMixins) {
+define([
+    'jquery',
+    'underscore',
+    'react',
+    'react-sticky',
+    'utils',
+    'jsx!component_mixins'
+], function($, _, React, Sticky, utils, componentMixins) {
     'use strict';
 
     var controls = {};
@@ -283,6 +290,48 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                     <div className='arrow' />
                     <div className='popover-content'>{this.props.children}</div>
                 </div>
+           );
+        }
+    });
+
+    controls.StickyControls = React.createClass({
+        propTypes: {
+            buttons: React.PropTypes.arrayOf(React.PropTypes.object)
+        },
+        composeButtonClasses: function(data) {
+            var classes = {btn: true, 'btn-default': !data.className};
+            classes['btn-' + data.key] = true;
+            classes[data.className] = data.className;
+            return classes;
+        },
+        render: function() {
+            return (
+                <Sticky>
+                    <div className='row'>
+                        <div id='sticker'>
+                            <div className='col-xs-12'>
+                                {this.props.children}
+                                {this.props.buttons &&
+                                    <div className='control-buttons-box pull-right'>
+                                        {this.props.buttons.map(function(data) {
+                                            return (
+                                                <button
+                                                    key={data.key}
+                                                    className={utils.classNames(this.composeButtonClasses(data))}
+                                                    onClick={data.onClick}
+                                                    disabled={data.disabled}
+                                                >
+                                                    {data.iconClassName && <i className={data.iconClassName} />}
+                                                    {data.title}
+                                                </button>
+                                            );
+                                        }, this)}
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </Sticky>
             );
         }
     });

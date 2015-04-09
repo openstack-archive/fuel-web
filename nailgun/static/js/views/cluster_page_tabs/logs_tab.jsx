@@ -126,10 +126,13 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             return (
                 <div className='wrapper'>
                     <h3>{i18n('cluster_page.logs_tab.title')}</h3>
-                    <LogFilterBar
-                        cluster={this.props.cluster}
-                        tabOptions={this.props.tabOptions}
-                        onShowButtonClick={this.onShowButtonClick} />
+                    <controls.StickyControls>
+                        <LogFilterBar
+                            cluster={this.props.cluster}
+                            tabOptions={this.props.tabOptions}
+                            onShowButtonClick={this.onShowButtonClick}
+                        />
+                    </controls.StickyControls>
                     {this.state.loading == 'fail' &&
                         <div className='logs-fetch-error alert alert-error'>{i18n('cluster_page.logs_tab.log_alert')}</div>
                     }

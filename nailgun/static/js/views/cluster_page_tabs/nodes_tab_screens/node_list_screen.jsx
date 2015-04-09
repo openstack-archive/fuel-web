@@ -228,102 +228,107 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     return roleConflict || !_.isEqual(sampleNode.resource('disks'), node.resource('disks'));
                 }),
                 interfaceConflict = _.uniq(this.props.nodes.map(function(node) {return node.resource('interfaces');})).length > 1;
+
+            // compose buttons list
+            var buttons;
+            if (this.props.mode != 'list') {
+                buttons = [
+                    {
+                        key: 'cancel',
+                        onClick: _.partial(this.changeScreen, '', false),
+                        disabled: this.state.actionInProgress,
+                        title: i18n('common.cancel_button')
+                    }, {
+                        key: 'apply',
+                        onClick: this.applyChanges,
+                        disabled: this.state.actionInProgress || !this.props.hasChanges,
+                        title: i18n('common.apply_changes_button'),
+                        className: 'btn-success'
+                    }
+                ];
+            } else {
+                buttons = [
+                    {
+                        key: 'configure-disks',
+                        onClick: _.partial(this.goToConfigurationScreen, 'disks', disksConflict),
+                        disabled: this.props.locked || !this.props.nodes.length,
+                        title: i18n('dialog.show_node.disk_configuration_button'),
+                        className: disksConflict && 'btn-default conflict',
+                        iconClassName: disksConflict && 'icon-attention text-error'
+                    }
+                ];
+                if (!this.props.nodes.any({status: 'error'})) {
+                    buttons.push({
+                        key: 'configure-interfaces',
+                        onClick: _.partial(this.goToConfigurationScreen, 'interfaces', interfaceConflict),
+                        disabled: this.props.locked || !this.props.nodes.length,
+                        title: i18n('dialog.show_node.network_configuration_button'),
+                        className: interfaceConflict && 'btn-default conflict',
+                        iconClassName: interfaceConflict && 'icon-attention text-error'
+                    });
+                }
+                if (this.props.nodes.length) {
+                    if (this.props.nodes.any({pending_deletion: false})) {
+                        buttons.push({
+                            key: 'delete-nodes',
+                            onClick: this.showDeleteNodesDialog,
+                            title: i18n('common.delete_button'),
+                            className: 'btn-danger',
+                            iconClassName: 'icon-trash'
+                        });
+                    }
+                    if (!this.props.nodes.any({pending_addition: false})) {
+                        buttons.push({
+                            key: 'edit-roles',
+                            onClick: _.partial(this.changeScreen, 'edit', true),
+                            title: i18n(ns + 'edit_roles_button'),
+                            className: 'btn-success',
+                            iconClassName: 'icon-edit'
+                        });
+                    }
+                } else {
+                    buttons.push({
+                        key: 'add-nodes',
+                        onClick: _.partial(this.changeScreen, 'add', false),
+                        disabled: this.props.locked,
+                        title: i18n(ns + 'add_nodes_button'),
+                        className: 'btn-success',
+                        iconClassName: 'icon-plus'
+                    });
+                }
+            }
+
             return (
                 <div className='node-management-panel'>
-                    <controls.Input
-                        type='select'
-                        name='grouping'
-                        label={i18n(ns + 'group_by')}
-                        children={_.map(this.props.cluster.groupings(), function(label, grouping) {
-                            return <option key={grouping} value={grouping}>{label}</option>;
-                        })}
-                        defaultValue={this.props.grouping}
-                        disabled={!this.props.totalNodeAmount || this.props.mode == 'add'}
-                        onChange={this.props.changeGrouping}
-                    />
-                    <div className='node-filter'>
+                    <controls.StickyControls buttons={buttons}>
                         <controls.Input
-                            type='text'
-                            name='filter'
-                            ref='filter'
-                            defaultValue={this.props.filter}
-                            label={i18n(ns + 'filter_by')}
-                            placeholder={i18n(ns + 'filter_placeholder')}
-                            disabled={!this.props.totalNodeAmount}
-                            onChange={this.startFiltering}
+                            type='select'
+                            name='grouping'
+                            label={i18n(ns + 'group_by')}
+                            children={_.map(this.props.cluster.groupings(), function(label, grouping) {
+                                return <option key={grouping} value={grouping}>{label}</option>;
+                            })}
+                            defaultValue={this.props.grouping}
+                            disabled={!this.props.totalNodeAmount || this.props.mode == 'add'}
+                            onChange={this.props.changeGrouping}
+                            wrapperClassName='node-grouping'
                         />
-                        {this.state.isFilterButtonVisible &&
-                            <button className='close btn-clear-filter' onClick={this.clearFilter}>&times;</button>
-                        }
-                    </div>
-                    <div className='buttons'>
-                        {this.props.mode != 'list' ? [
-                            <button
-                                key='cancel'
-                                className='btn'
-                                disabled={this.state.actionInProgress}
-                                onClick={_.bind(this.changeScreen, this, '', false)}
-                            >
-                                {i18n('common.cancel_button')}
-                            </button>,
-                            <button
-                                key='apply'
-                                className='btn btn-success btn-apply'
-                                disabled={this.state.actionInProgress || !this.props.hasChanges}
-                                onClick={this.applyChanges}
-                            >
-                                {i18n('common.apply_changes_button')}
-                            </button>
-                        ] : [
-                            <button
-                                key='disks'
-                                className={utils.classNames({'btn btn-configure-disks': true, conflict: disksConflict})}
-                                disabled={this.props.locked || !this.props.nodes.length}
-                                onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
-                            >
-                                {disksConflict && <i className='icon-attention text-error' />}
-                                <span>{i18n('dialog.show_node.disk_configuration_button')}</span>
-                            </button>,
-                            !this.props.nodes.any(function(node) {return node.get('status') == 'error';}) &&
-                                <button
-                                    key='interfaces'
-                                    className={utils.classNames({'btn btn-configure-interfaces': true, conflict: interfaceConflict})}
-                                    disabled={this.props.locked || !this.props.nodes.length}
-                                    onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
-                                >
-                                    {interfaceConflict && <i className='icon-attention text-error' />}
-                                    <span>{i18n('dialog.show_node.network_configuration_button')}</span>
-                                </button>,
-                            !!this.props.nodes.length && this.props.nodes.any(function(node) {return !node.get('pending_deletion');}) &&
-                                <button
-                                    key='delete'
-                                    className='btn btn-danger btn-delete-nodes'
-                                    onClick={this.showDeleteNodesDialog}
-                                >
-                                    <i className='icon-trash' />
-                                    <span>{i18n('common.delete_button')}</span>
-                                </button>,
-                            !!this.props.nodes.length && !this.props.nodes.any(function(node) {return !node.get('pending_addition');}) &&
-                                <button
-                                    key='roles'
-                                    className='btn btn-success btn-edit-roles'
-                                    onClick={_.bind(this.changeScreen, this, 'edit', true)}
-                                >
-                                    <i className='icon-edit' />
-                                    <span>{i18n(ns + 'edit_roles_button')}</span>
-                                </button>,
-                            !this.props.nodes.length &&
-                                <button
-                                    key='add'
-                                    className='btn btn-success btn-add-nodes'
-                                    onClick={_.bind(this.changeScreen, this, 'add', false)}
-                                    disabled={this.props.locked}
-                                >
-                                    <i className='icon-plus' />
-                                    <span>{i18n(ns + 'add_nodes_button')}</span>
-                                </button>
-                        ]}
-                    </div>
+                        <div className='node-filter'>
+                            <controls.Input
+                                type='text'
+                                name='filter'
+                                ref='filter'
+                                defaultValue={this.props.filter}
+                                label={i18n(ns + 'filter_by')}
+                                placeholder={i18n(ns + 'filter_placeholder')}
+                                disabled={!this.props.totalNodeAmount}
+                                onChange={this.startFiltering}
+                            />
+                            {this.state.isFilterButtonVisible &&
+                                <button className='close btn-clear-filter' onClick={this.clearFilter}>&times;</button>
+                            }
+                        </div>
+                    </controls.StickyControls>
                 </div>
             );
         }

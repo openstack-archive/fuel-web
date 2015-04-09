@@ -524,23 +524,23 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 ns = 'cluster_page.network_tab.';
             return (
                 <div className={utils.classNames(classes)}>
-                    <h3>{i18n(ns + 'title')}</h3>
                     {this.state.loading ?
-                        <controls.ProgressBar />
-                    :
                         <div>
-                            <NetworkTabContent
-                                networkConfiguration={this.props.cluster.get('networkConfiguration')}
-                                initialConfiguration={this.state.initialConfiguration}
-                                tasks={this.props.cluster.get('tasks')}
-                                cluster={this.props.cluster}
-                                isLocked={isLocked}
-                                updateInitialConfiguration={this.updateInitialConfiguration}
-                                revertChanges={this.revertChanges}
-                                hasChanges={this.hasChanges}
-                                hideVerificationResult={this.state.hideVerificationResult}
-                            />
+                            <h3>{i18n(ns + 'title')}</h3>
+                            <controls.ProgressBar />
                         </div>
+                    :
+                        <NetworkTabContent
+                            networkConfiguration={this.props.cluster.get('networkConfiguration')}
+                            initialConfiguration={this.state.initialConfiguration}
+                            tasks={this.props.cluster.get('tasks')}
+                            cluster={this.props.cluster}
+                            isLocked={isLocked}
+                            updateInitialConfiguration={this.updateInitialConfiguration}
+                            revertChanges={this.revertChanges}
+                            hasChanges={this.hasChanges}
+                            hideVerificationResult={this.state.hideVerificationResult}
+                        />
                     }
                 </div>
             );
@@ -661,34 +661,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     }, this));
             }, this));
         },
-        renderButtons: function() {
-            var error = this.props.networkConfiguration.validationError,
-                isLocked = this.isLocked(),
-                hasChanges = this.props.hasChanges(),
-                isVerificationDisabled = error || this.state.actionInProgress || !!this.props.cluster.task({group: ['deployment', 'network'], status: 'running'}),
-                isCancelChangesDisabled = isLocked || !hasChanges,
-                isSaveChangesDisabled = error || isLocked || !hasChanges;
-            return (
-                <div className='row'>
-                    <div className='page-control-box'>
-                        <div className='page-control-button-placeholder'>
-                            <button key='verify_networks' className='btn verify-networks-btn' onClick={this.verifyNetworks}
-                                disabled={isVerificationDisabled}>
-                                    {i18n('cluster_page.network_tab.verify_networks_button')}
-                            </button>
-                            <button key='revert_changes' className='btn btn-revert-changes' onClick={this.props.revertChanges}
-                                disabled={isCancelChangesDisabled}>
-                                    {i18n('common.cancel_changes_button')}
-                            </button>
-                            <button key='apply_changes' className='btn btn-success apply-btn' onClick={this.applyChanges}
-                                disabled={isSaveChangesDisabled}>
-                                    {i18n('common.save_settings_button')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        },
         getVerificationErrors: function() {
             var task = this.props.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
                 fieldsWithVerificationErrors = [];
@@ -724,6 +696,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             var ns = 'cluster_page.network_tab.',
                 isLocked = this.isLocked(),
                 cluster = this.props.cluster,
+                hasChanges = this.props.hasChanges(),
+                runningTask = !!cluster.task({group: ['deployment', 'network'], status: 'running'}),
                 networkingParameters = this.props.networkConfiguration.get('networking_parameters'),
                 manager = networkingParameters.get('net_manager'),
                 managers = [
@@ -742,41 +716,66 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 ];
 
             return (
-                <div id='network-form'>
-                    <div className='radio-checkbox-group'>
-                        {(cluster.get('net_provider') == 'nova_network') ?
-                            <controls.RadioGroup
-                                key='net_provider'
-                                name='net_provider'
-                                values={managers}
-                                onChange={this.onManagerChange}
-                            />
-                        :
-                            <span className='network-segment-type'>
-                                {i18n(ns + 'neutron_segmentation', {segment_type: networkingParameters.get('segmentation_type').toUpperCase()})}
-                            </span>
-                        }
-                    </div>
-                    <div className='networks-table'>
-                        {this.renderNetworks()}
-                    </div>
-                    <div className='networking-parameters'>
-                        <NetworkingParameters
-                            networkConfiguration={this.props.networkConfiguration}
-                            validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
-                            disabled={this.isLocked()}
+                <div>
+                    <controls.StickyControls
+                        buttons={[
+                            {
+                                key: 'verify-networks',
+                                onClick: this.verifyNetworks,
+                                disabled: this.props.networkConfiguration.validationError || this.state.actionInProgress || !!runningTask,
+                                title: i18n(ns + 'verify_networks_button')
+                            },
+                            {
+                                key: 'revert-changes',
+                                onClick: this.props.revertChanges,
+                                disabled: isLocked || this.state.actionInProgress || !hasChanges,
+                                title: i18n('common.cancel_changes_button')
+                            },
+                            {
+                                key: 'apply-changes',
+                                onClick: this.applyChanges,
+                                disabled: this.props.networkConfiguration.validationError || isLocked || this.state.actionInProgress || !hasChanges,
+                                className: 'btn-success',
+                                title: i18n('common.save_settings_button')
+                            }
+                        ]}
+                    />
+                    <h3>{i18n(ns + 'title')}</h3>
+                    <div id='network-form'>
+                        <div className='radio-checkbox-group'>
+                            {(cluster.get('net_provider') == 'nova_network') ?
+                                <controls.RadioGroup
+                                    key='net_provider'
+                                    name='net_provider'
+                                    values={managers}
+                                    onChange={this.onManagerChange}
+                                />
+                            :
+                                <span className='network-segment-type'>
+                                    {i18n(ns + 'neutron_segmentation', {segment_type: networkingParameters.get('segmentation_type').toUpperCase()})}
+                                </span>
+                            }
+                        </div>
+                        <div className='networks-table'>
+                            {this.renderNetworks()}
+                        </div>
+                        <div className='networking-parameters'>
+                            <NetworkingParameters
+                                networkConfiguration={this.props.networkConfiguration}
+                                validationError={(this.props.networkConfiguration.validationError || {}).networking_parameters}
+                                disabled={this.isLocked()}
 
-                        />
+                            />
+                        </div>
+                        <div className='verification-control'>
+                            <NetworkVerificationResult
+                                key='network_verification'
+                                task={cluster.task({group: 'network'})}
+                                networks={this.props.networkConfiguration.get('networks')}
+                                hideVerificationResult={this.props.hideVerificationResult}
+                            />
+                        </div>
                     </div>
-                    <div className='verification-control'>
-                        <NetworkVerificationResult
-                            key='network_verification'
-                            task={cluster.task({group: 'network'})}
-                            networks={this.props.networkConfiguration.get('networks')}
-                            hideVerificationResult={this.props.hideVerificationResult}
-                        />
-                    </div>
-                    {this.renderButtons()}
                 </div>
             );
         }

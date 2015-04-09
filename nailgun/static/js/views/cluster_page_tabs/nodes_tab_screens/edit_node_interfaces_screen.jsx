@@ -353,8 +353,56 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     });
                 });
 
+            // compose buttons list
+            var buttons = [
+                {
+                    key: 'return',
+                    onClick: this.returnToNodeList,
+                    disabled: !returnEnabled,
+                    title: i18n('cluster_page.nodes_tab.back_to_nodes_button')
+                }, {
+                    key: 'defaults',
+                    onClick: this.loadDefaults,
+                    disabled: !loadDefaultsEnabled,
+                    title: i18n('common.load_defaults_button')
+                }, {
+                    key: 'revert-changes',
+                    onClick: this.revertChanges,
+                    disabled: !revertChangesEnabled,
+                    title: i18n('common.cancel_changes_button')
+                }, {
+                    key: 'apply',
+                    onClick: this.applyChanges,
+                    disabled: !applyEnabled,
+                    title: i18n('common.apply_button'),
+                    className: 'btn-success'
+                }
+            ];
+            if (bondingAvailable) {
+                buttons.unshift({
+                    key: 'bond',
+                    onClick: this.bondInterfaces,
+                    disabled: !bondingPossible,
+                    title: i18n(configureInterfacesTransNS + 'bond_button')
+                });
+                buttons.unshift({
+                    key: 'unbond',
+                    onClick: this.unbondInterfaces,
+                    disabled: !unbondingPossible,
+                    title: i18n(configureInterfacesTransNS + 'unbond_button')
+                });
+            }
+
             return (
                 <div className='edit-node-networks-screen' style={{display: 'block'}} ref='nodeNetworksScreen'>
+                    <controls.StickyControls buttons={buttons}>
+                        {bondingAvailable &&
+                            <div className='bond-speed-warning alert hide'>
+                                {i18n(configureInterfacesTransNS + 'bond_speed_warning')}
+                            </div>
+                        }
+                    </controls.StickyControls>
+
                     <div className={utils.classNames({'edit-node-interfaces': true, 'changes-locked': locked})}>
                         <h3>
                             {i18n(configureInterfacesTransNS + 'title', {count: nodes.length, name: nodeNames.join(', ')})}
@@ -362,18 +410,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                     </div>
 
                     <div className='row'>
-                        {bondingAvailable &&
-                            <div>
-                                <div className='page-control-box'>
-                                    <div className='page-control-button-placeholder'>
-                                        <button className='btn btn-bond' disabled={!bondingPossible} onClick={this.bondInterfaces}>{i18n(configureInterfacesTransNS + 'bond_button')}</button>
-                                        <button className='btn btn-unbond' disabled={!unbondingPossible} onClick={this.unbondInterfaces}>{i18n(configureInterfacesTransNS + 'unbond_button')}</button>
-                                    </div>
-                                </div>
-                                <div className='bond-speed-warning alert hide'>{i18n(configureInterfacesTransNS + 'bond_speed_warning')}</div>
-                            </div>
-                        }
-
                         <div className='node-networks'>
                             {
                                 interfaces.map(_.bind(function(ifc, index) {
@@ -395,17 +431,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                     }
                                 }, this))
                             }
-                        </div>
-
-                        <div className='page-control-box'>
-                            <div className='back-button pull-left'>
-                                <button className='btn btn-return' onClick={this.returnToNodeList} disabled={!returnEnabled}>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>
-                            </div>
-                            <div className='page-control-button-placeholder'>
-                                <button className='btn btn-defaults' onClick={this.loadDefaults} disabled={!loadDefaultsEnabled}>{i18n('common.load_defaults_button')}</button>
-                                <button className='btn btn-revert-changes' onClick={this.revertChanges} disabled={!revertChangesEnabled}>{i18n('common.cancel_changes_button')}</button>
-                                <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!applyEnabled}>{i18n('common.apply_button')}</button>
-                            </div>
                         </div>
                     </div>
                 </div>

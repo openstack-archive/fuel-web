@@ -57,7 +57,8 @@ define(function() {
             views: 'js/views',
             view_mixins: 'js/view_mixins',
             component_mixins: 'js/component_mixins',
-            controls: 'js/views/controls'
+            controls: 'js/views/controls',
+            'react-sticky': 'js/libs/custom/sticky'
         },
         shim: {
             'expression/parser': {
@@ -94,6 +95,9 @@ define(function() {
             },
             'jquery-autoNumeric': {
                 deps: ['jquery']
+            },
+            'react-sticky': {
+                deps: ['react']
             }
         },
         map: {

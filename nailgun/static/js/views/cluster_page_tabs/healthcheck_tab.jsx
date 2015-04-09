@@ -210,50 +210,52 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         },
         render: function() {
             var disabledState = this.isLocked(),
-                hasRunningTests = !!this.props.testruns.where({status: 'running'}).length;
+                hasRunningTests = !!this.props.testruns.where({status: 'running'}).length,
+                ns = 'cluster_page.healthcheck_tab.';
             return (
                 <div>
-                    <div className='row-fluid page-sub-title'>
-                        <div className='span2 ostf-controls'>
+                    <controls.StickyControls
+                        buttons={hasRunningTests ? [
+                            {
+                                key: 'stop-tests',
+                                onClick: this.stopTests,
+                                disabled: disabledState || this.state.actionInProgress,
+                                title: i18n(ns + 'stop_tests_button'),
+                                className: 'btn-danger'
+                            }
+                        ] : [
+                            {
+                                key: 'run-tests',
+                                onClick: this.runTests,
+                                disabled: disabledState || this.state.actionInProgress || !this.getNumberOfCheckedTests(),
+                                title: i18n(ns + 'run_tests_button'),
+                                className: 'btn-success'
+                            }
+                        ]}
+                    >
+                        <div>
                             {!disabledState &&
                                 <div className='toggle-credentials pull-right' onClick={this.toggleCredentials}>
                                     <i className={this.state.credentialsVisible ? 'icon-minus-circle' : 'icon-plus-circle'}></i>
-                                    <div>{i18n('cluster_page.healthcheck_tab.provide_credentials')}</div>
+                                    <div>{i18n(ns + 'provide_credentials')}</div>
                                 </div>
                             }
+                            <controls.Input
+                                type='checkbox'
+                                name='selectAll'
+                                onChange={this.handleSelectAllClick}
+                                checked={this.getNumberOfCheckedTests() == this.props.tests.length}
+                                disabled={disabledState || hasRunningTests}
+                                labelClassName='checkbox pull-right'
+                                label={i18n('common.select_all')}
+                                wrapperClassName='span2 ostf-controls select-all'
+                            />
                         </div>
-                        <controls.Input
-                            type='checkbox'
-                            name='selectAll'
-                            onChange={this.handleSelectAllClick}
-                            checked={this.getNumberOfCheckedTests() == this.props.tests.length}
-                            disabled={disabledState || hasRunningTests}
-                            labelClassName='checkbox pull-right'
-                            label={i18n('common.select_all')}
-                            wrapperClassName='span2 ostf-controls select-all'
-                        />
-                        <div className='span2 ostf-controls'>
-                            {hasRunningTests ?
-                                (<button className='btn btn-danger pull-right action-btn stop-tests-btn'
-                                    disabled={disabledState || this.state.actionInProgress}
-                                    onClick={this.stopTests}
-                                >
-                                    {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
-                                </button>)
-                            :
-                                (<button className='btn btn-success pull-right action-btn run-tests-btn'
-                                    disabled={disabledState || !this.getNumberOfCheckedTests() || this.state.actionInProgress}
-                                    onClick={this.runTests}
-                                >
-                                    {i18n('cluster_page.healthcheck_tab.run_tests_button')}
-                                </button>)
-                            }
-                        </div>
-                    </div>
+                    </controls.StickyControls>
                     {(this.props.cluster.get('status') == 'new') &&
                         <div className='row-fluid'>
                             <div className='span12'>
-                                <div className='alert'>{i18n('cluster_page.healthcheck_tab.deploy_alert')}</div>
+                                <div className='alert'>{i18n(ns + 'deploy_alert')}</div>
                             </div>
                         </div>
                     }

@@ -842,9 +842,8 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
 #sticker {
   width: @page-width - 10;
   z-index: 999999;
-  height: 80px;
   overflow: hidden;
-  margin-bottom: 6px;
+  margin: 0 auto 6px;
   background: -moz-linear-gradient(top,  rgba(255,255,255,1) 0%, rgba(255,255,255,1) 80%, rgba(255,255,255,0) 100%); /* FF3.6+ */
   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,1)), color-stop(80%,rgba(255,255,255,1)), color-stop(100%,rgba(255,255,255,0))); /* Chrome,Safari4+ */
   background: -webkit-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(255,255,255,1) 80%,rgba(255,255,255,0) 100%); /* Chrome10+,Safari5.1+ */
@@ -853,6 +852,9 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   background: linear-gradient(to bottom,  rgba(255,255,255,1) 0%,rgba(255,255,255,1) 80%,rgba(255,255,255,0) 100%); /* W3C */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#00ffffff',GradientType=0 ); /* IE6-9 */
   .box-sizing;
+  > div > div {
+    float: left;
+  }
 }
 
 // NODES
@@ -1120,8 +1122,11 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
 
 .control-buttons-box {
   height: 34px;
-  margin-top: 24px;
+  margin-top: 14px;
   overflow: hidden;
+  &.pull-right button {
+    margin-left: 5px;
+  }
 }
 
 .clusters-page {

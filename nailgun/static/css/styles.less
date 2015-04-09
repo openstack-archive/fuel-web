@@ -59,11 +59,11 @@
 @tab-color-active: @white;
 
 // Fonts and Weight
-@light: 'open sans light';
-@normal: 'open sans';
-@semibold: 'open sans semibold';
-@bold: 'open sans bold';
-@fat: 'open sans extrabold';
+@light: 'open sans light', helvetica, arial, tahoma, verdana, sans-serif;
+@normal: 'open sans', helvetica, arial, tahoma, verdana, sans-serif;
+@semibold: 'open sans semibold', helvetica, arial, tahoma, verdana, sans-serif;
+@bold: 'open sans bold', helvetica, arial, tahoma, verdana, sans-serif;
+@fat: 'open sans extrabold', helvetica, arial, tahoma, verdana, sans-serif;
 
 .light {font-family: @light;}
 .normal {font-family: @normal;}
@@ -661,6 +661,33 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     background: url(../img/icons/icons-sprite.svg) no-repeat 0px -40px;
     width: 40px;
     height: 40px;
+  }
+
+  .actions-tab {
+    .action-item {
+      > .panel {
+        min-height: 215px;
+      }
+      .action-body {
+        margin-bottom: 10px;
+        font-size: @base-font-size - 1;
+      }
+      .action-item-description {
+        margin-bottom: 5px;
+      }
+      &.action-update {
+        > .panel {
+          min-height: 150px;
+        }
+        select {
+          width: 300px;
+          margin-bottom: 10px;
+        }
+        button {
+          margin-right: 5px;
+        }
+      }
+    }
   }
 }
 

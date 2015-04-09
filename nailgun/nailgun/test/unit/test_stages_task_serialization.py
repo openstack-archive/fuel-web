@@ -82,6 +82,8 @@ class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
         serialized = list(task.serialize())
         self.assertEqual(len(serialized), 14)
         self.assertEqual(serialized[0]['type'], 'shell')
+        self.assertEqual(
+            serialized[0]['parameters']['cmd'], '> /etc/apt/sources.list')
         self.assertEqual(serialized[1]['type'], 'upload_file')
         self.assertEqual(serialized[2]['type'], 'upload_file')
         self.assertEqual(serialized[3]['type'], 'upload_file')

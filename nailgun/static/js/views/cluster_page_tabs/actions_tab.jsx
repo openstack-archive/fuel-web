@@ -43,16 +43,14 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                 task = cluster.task({group: 'deployment', status: 'running'}),
                 isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
             return (
-                <div className='wrapper'>
-                    <h3>{i18n('cluster_page.actions_tab.title')}</h3>
-                    <div className='row-fluid environment-actions'>
-                        <RenameEnvironmentAction cluster={cluster}/>
-                        <ResetEnvironmentAction cluster={cluster} task={task} />
-                        <DeleteEnvironmentAction cluster={cluster}/>
-                        {isExperimental &&
-                            <UpdateEnvironmentAction cluster={cluster} releases={releases} task={task}/>
-                        }
-                    </div>
+                <div className='row actions-tab'>
+                    <div className='title'>{i18n('cluster_page.actions_tab.title')}</div>
+                    <RenameEnvironmentAction cluster={cluster}/>
+                    <ResetEnvironmentAction cluster={cluster} task={task} />
+                    <DeleteEnvironmentAction cluster={cluster}/>
+                    {isExperimental &&
+                        <UpdateEnvironmentAction cluster={cluster} releases={releases} task={task}/>
+                    }
                 </div>
             );
         }
@@ -60,17 +58,17 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
 
     var Action = React.createClass({
         getDefaultProps: function() {
-            return {className: 'span4'};
+            return {className: 'col-xs-12 col-md-4'};
         },
         render: function() {
             return (
-                <div className={'action-item-placeholder ' + this.props.className}>
-                    <form className='environment-action-form'>
-                        <h4>{this.props.title}</h4>
-                        <div className='action-item-controls'>
+                <div className={'action-item ' + this.props.className}>
+                    <div className='panel panel-default'>
+                        <div className='panel-heading'>{this.props.title}</div>
+                        <div className='panel-body'>
                             {this.props.children}
                         </div>
-                    </form>
+                    </div>
                 </div>
             );
         }
@@ -132,7 +130,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                     <div className='action-body'>
                         <input type='text'
                             disabled={this.state.disabled}
-                            className={this.state.error && 'error'}
+                            className={'form-control ' + (this.state.error ? 'error' : '')}
                             maxLength='50'
                             valueLink={valueLink}/>
                         {this.state.error &&
@@ -294,7 +292,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                     return <option value={release.id} key={release.id}>{release.get('name') + ' (' + release.get('version') + ')'}</option>;
                 }, this);
             return (
-                <Action className='span12 action-update' title={i18n('cluster_page.actions_tab.update_environment')}>
+                <Action className='col-xs-12 col-md-12 action-update' title={i18n('cluster_page.actions_tab.update_environment')}>
                     <div className='action-body'>
                         {(action == 'rollback' || releases) &&
                             <div className='action-item-description'>

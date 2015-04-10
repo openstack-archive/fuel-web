@@ -295,14 +295,14 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'upload_file',
     'group',
     'stage',
-    'void',
+    'skipped',
     'reboot',
     'copy_files',
 )
 
 INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.stage,
-                  ORCHESTRATOR_TASK_TYPES.void)
+                  ORCHESTRATOR_TASK_TYPES.skipped)
 
 ALL_ROLES = '*'
 MASTER_ROLE = 'master'

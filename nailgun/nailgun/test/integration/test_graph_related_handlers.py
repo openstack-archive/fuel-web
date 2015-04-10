@@ -18,6 +18,7 @@ import mock
 from oslo.serialization import jsonutils
 import yaml
 
+from nailgun import consts
 from nailgun import objects
 from nailgun.orchestrator.deployment_graph import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
@@ -355,3 +356,33 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
         self.assertIn('"pre-D" -> "pre-C"', resp.body)
         self.assertNotIn('pre_deployment', resp.body)
         self.assertNotIn('pre-B', resp.body)
+
+    def test_remove_tasks_by_type(self, m_get_tasks):
+        tasks = []
+        for task_type in consts.INTERNAL_TASKS:
+            tasks.append({
+                'id': 'task-{0}'.format(task_type),
+                'type': task_type,
+            })
+        m_get_tasks.return_value = tasks
+
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': self.cluster.id,
+            }) + '?remove={0}'.format(
+                ','.join(consts.INTERNAL_TASKS)),
+        )
+
+        for task in tasks:
+            self.assertNotIn(task['id'], resp.body)
+
+    def test_remove_non_existent_type(self, m_get_tasks):
+        m_get_tasks.return_value = self.tasks
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': self.cluster.id,
+            }) + '?remove=nonexistent',
+            expect_errors=True,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Task types nonexistent do not exist', resp.body)

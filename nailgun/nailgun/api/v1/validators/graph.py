@@ -16,6 +16,7 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import tasks
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 from nailgun.orchestrator import deployment_graph
@@ -58,6 +59,20 @@ class TaskDeploymentValidator(BasicValidator):
                     ','.join(non_existent_tasks)))
 
         return tasks
+
+    @classmethod
+    def validate_tasks_types(cls, types):
+        """Check that passed types are actuall tasks types
+
+        :param types: list of types
+        """
+        cls.validate_schema(types, base_types.STRINGS_ARRAY)
+
+        non_existent_types = set(types) - set(consts.INTERNAL_TASKS)
+        if non_existent_types:
+            raise errors.InvalidData("Task types {0} do not exist".format(
+                ','.join(non_existent_types)))
+        return types
 
 
 class GraphVisualizationValidator(TaskDeploymentValidator):

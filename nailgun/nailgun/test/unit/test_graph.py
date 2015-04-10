@@ -53,9 +53,9 @@ class TestDeploymentGraphViualization(base.BaseUnitTest):
         six.assertRegex(self, dotgraph,
                         'controller .*style="filled, rounded".*;')
 
-    def test_void_type(self):
+    def test_skipped_type(self):
         tasks = [
-            {'id': 'hiera', 'type': 'void'},
+            {'id': 'hiera', 'type': 'skipped'},
         ]
         dotgraph = self.get_dotgraph_with_tasks(tasks)
         self.assertIn('hiera [color=gray95];', dotgraph)

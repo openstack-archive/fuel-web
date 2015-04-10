@@ -320,6 +320,7 @@ class TaskDeployGraph(BaseHandler):
 
         tasks = web.input(tasks=None).tasks
         parents_for = web.input(parents_for=None).parents_for
+        remove = web.input(remove=None).remove
 
         if tasks:
             tasks = self.checked_data(
@@ -335,7 +336,15 @@ class TaskDeployGraph(BaseHandler):
                 graph=graph)
             logger.debug('Graph with predecessors for %s', parents_for)
 
+        if remove:
+            remove = list(set(remove.split(',')))
+            remove = self.checked_data(
+                self.validator.validate_tasks_types,
+                data=remove)
+            logger.debug('Types to remove %s', remove)
+
         visualization = graph_visualization.GraphVisualization(graph)
         dotgraph = visualization.get_dotgraph(tasks=tasks,
-                                              parents_for=parents_for)
+                                              parents_for=parents_for,
+                                              remove=remove)
         return dotgraph.to_string()

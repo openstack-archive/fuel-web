@@ -26,11 +26,12 @@ class GraphVisualization(object):
     def __init__(self, graph):
         self._graph = graph
 
-    def get_dotgraph(self, tasks=None, parents_for=None):
+    def get_dotgraph(self, tasks=None, parents_for=None, remove=None):
         """Get a graph representation in DOT format.
 
         :param tasks: list of tasks that will be used in deployemnt
         :param parents_for: name of task which parents will be shown
+        :param remove: type of tasks to remove from graph visualization
         """
         graph = self._graph.copy()
 
@@ -41,6 +42,9 @@ class GraphVisualization(object):
             parents = graph.predecessors(parents_for)
             parents.append(parents_for)
             graph = graph.subgraph(parents)
+
+        if not remove:
+            remove = []
 
         # NOTE(prmtl) it is not guaranted that node default
         # values will be put on top of DOT file so we must be sure
@@ -55,7 +59,7 @@ class GraphVisualization(object):
                 'shape': 'box',
                 'style': 'filled, rounded',
             },
-            consts.ORCHESTRATOR_TASK_TYPES.void: {
+            consts.ORCHESTRATOR_TASK_TYPES.skipped: {
                 'color': 'gray95',
             },
             consts.ORCHESTRATOR_TASK_TYPES.stage: {
@@ -68,6 +72,9 @@ class GraphVisualization(object):
         # set graph attributes for nodes
         for name, data in graph.nodes_iter(data=True):
             task_type = data.get('type')
+            if task_type in remove:
+                graph.remove_node(name)
+                continue
             graph.node[name] = type_node_attrs_map.get(task_type,
                                                        default_node_attrs)
 

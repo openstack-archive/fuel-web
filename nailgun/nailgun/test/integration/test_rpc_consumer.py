@@ -592,6 +592,72 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
 
+    def test_verify_networks_with_excluded_networks(self):
+        """Verify that network verification can exclude interfaces
+        """
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node1, node2 = self.env.nodes
+        nets_sent = [{'iface': 'eth0', 'vlans': [0]},
+                     {'iface': 'eth1', 'vlans': range(100, 104)}]
+        nets_excluded = [{'iface': 'eth3'}, {'iface': 'eth4'}]
+
+        task = Task(
+            name="super",
+            cluster_id=cluster_db.id
+        )
+        task.cache = {
+            "args": {
+                'nodes': [
+                    {
+                        'uid': node1.id,
+                        'networks': nets_sent,
+                        'excluded_networks': nets_excluded
+                    },
+                    {
+                        'uid': node2.id,
+                        'networks': nets_sent,
+                        'excluded_networks': nets_excluded
+                    }
+                ]
+            }
+        }
+        self.db.add(task)
+        self.db.commit()
+
+        kwargs = {
+            'task_uuid': task.uuid,
+            'status': 'ready',
+            'nodes': [
+                {
+                    'uid': node1.id,
+                    'networks': nets_sent,
+                    'excluded_networks': nets_excluded
+                },
+                {
+                    'uid': node2.id,
+                    'networks': nets_sent,
+                    'excluded_networks': nets_excluded
+                }
+            ]
+        }
+        self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
+        self.db.refresh(task)
+        self.assertEqual(task.status, "ready")
+        expected_message = 'Be aware next interfaces: \n [eth3 eth4] in node'\
+                           ' {0}\n[eth3 eth4] in node {1}\n have LACP' \
+                           ' bonding and can\'t be checked before' \
+                           ' deployment process in current version' \
+                           ' of Fuel'.format(node1.name, node2.name)
+        self.assertEqual(task.message, expected_message)
+
 
 class TestDhcpCheckTask(BaseIntegrationTest):
 

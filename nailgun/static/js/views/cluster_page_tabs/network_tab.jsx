@@ -955,8 +955,19 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                 }, this)}
                             </div>
                             {(task && task.match({name: 'verify_networks', status: 'ready'})) ?
+                                <div>
                                 <div className='alert alert-success enable-selection'>
-                                    {i18n(ns + 'success_alert')}
+                                    <span>
+                                        {i18n(ns + 'success_alert')}
+                                    </span>
+                                </div>
+                                {(task.get('message') != '') &&
+                                    <div className='alert alert-warning enable-selection'>
+                                        <span>
+                                            {task.get('message')}
+                                        </span>
+                                    </div>
+                                }
                                 </div>
                             : (task && task.match({status: 'error'})) &&
                                 <div className='alert alert-error enable-selection'>

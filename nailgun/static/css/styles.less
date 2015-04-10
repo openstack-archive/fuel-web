@@ -664,6 +664,124 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 // PAGES
 
+.welcome-page {
+  padding: 40px;
+  > div {
+    background-color: @white;
+    border-radius: 10px;
+    padding: 10px 30px;
+    box-sizing: border-box;
+    > div {text-align: center;}
+    h1 {margin-bottom: 20px;}
+    .notice {color:@gray;}
+    .happy-cloud {
+      padding: 30px;
+      .cloud-smile {
+        width: 146px;
+        height: 108px;
+        background-image: url(../img/cloud-smile.png);
+        background-repeat: no-repeat;
+        margin: 0 auto;
+        + div {margin-top: 20px;}
+      }
+      span {color: @green - 30%;}
+    }
+    .welcome-checkbox-box {
+      text-align: center;
+      padding-top: 15px;
+    }
+    .welcome-button-box {
+      margin: 20px 0;
+      .btn-lg {
+        font-size: @base-font-size;
+        margin: 2px 0;
+      }
+    }
+    .checkbox-group label span {.font-semibold;}
+    .form-group label span {.font-semibold;}
+    .register-trial {
+      padding: 20px 10px 4px 10px;
+      margin: 0px -30px 20px -30px;
+      background-color: @gray + 100%;
+    }
+    .text-red {
+      margin-bottom: 15px;
+      font-style: italic;
+      .glyphicon {margin-right: 10px;}
+    }
+    .has-error .help-block {
+      font-style: italic;
+      text-align: right;
+    }
+  }
+}
+
+.statistics-disclaimer-box {
+  background-color: @gray + 80%;
+  border: 1px solid @gray + 40%;
+  overflow-y: auto;
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: left;
+  height: 300px;
+  max-height: 300px;
+  box-sizing: border-box;
+  p { margin-bottom: 10px; }
+  ul { margin-bottom: 20px; }
+}
+
+.connection-form {
+  width: 300px;
+  margin: 0 auto;
+  text-align: left;
+  .links-container {
+    min-height: 20px;
+    margin: 15px 0 15px;
+  }
+  .create-account, .retrive-password {
+    display: block;
+    float: left;
+    cursor: pointer;
+  }
+  .retrive-password {float: right;}
+  .btn-link {padding: 0;}
+}
+
+.registration .modal-body {
+  padding: 15px 20px 15px 30px;
+}
+.registration-form {
+  .label-wrapper span {.font-semibold;}
+  .alert {margin: 0 5px 15px 0;}
+  .text-red {
+    margin-bottom: 15px;
+    font-style: italic;
+    .glyphicon {margin-right: 10px;}
+  }
+  .form-group {
+    width: 100%;
+    display: inline-block;
+    vertical-align: top;
+    padding-right: 5px;
+    input {width: 100%;}
+    select {width: 100%;}
+    &.first_name, &.last_name, &.company, &.phone, &.country, &.region {width: 50%;}
+  }
+  .checkbox-group {
+    &.agree {margin-left: 20%;}
+  }
+  .help-block {font-style: italic;}
+}
+
+.retrieve-password-form {
+  input {.font-normal;}
+  .text-red {
+    margin-bottom: 15px;
+    font-style: italic;
+    .glyphicon {margin-right: 10px;}
+  }
+}
+
 .cluster-page {
   .page-title {
     .title-node-count {

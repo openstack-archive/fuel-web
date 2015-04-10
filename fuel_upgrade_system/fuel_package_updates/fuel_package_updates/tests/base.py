@@ -1,4 +1,4 @@
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,8 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import setuptools
+import shlex
+import unittest2
 
-setuptools.setup(
-    setup_requires=['pbr'],
-    pbr=True)
+from fuel_package_updates import main
+
+
+class UnitTestCase(unittest2.TestCase):
+
+    def execute(self, command=None):
+        args = None
+        if command:
+            args = shlex.split(command)
+        main.main(args)

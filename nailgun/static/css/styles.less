@@ -980,7 +980,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     margin: 18px 0px;
     color: @base-text-color;
   }
-  .unallocated {
+  .discover {
     background-color: @node-color-unallocated;
     border-color: @node-border-color-unallocated;
     &:hover {
@@ -991,7 +991,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     border-color: @node-border-color-error !important;
     background-color: @node-color-error !important;
   }
-  .new {
+  .pending_addition {
     background-color: @node-color-new !important;
     border-color: @node-border-color-new !important;
   }
@@ -1050,6 +1050,9 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   }
   .custom-tumbler {
     margin: 12px;
+  }
+  .progress-bar {
+    min-width: 32px;
   }
   .node-name {
     float: left;
@@ -1182,10 +1185,13 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   font-family: @semibold;
   .box-sizing;
   span {
-    display: block;
+    display: inline-block;
     font-size: @base-font-size - 3;
     text-transform: uppercase;
     margin-top: 3px;
+  }
+  .node-remove-button {
+    margin-left: 5px;
   }
 }
 
@@ -1198,12 +1204,8 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   text-align: right;
   -webkit-font-smoothing: antialiased;
   .box-sizing;
-  .span {
-    font-size: @base-font-size - 3;
-    display: inline-block;
-    float: left;
-    overflow: hidden;
-    padding: 0 0 0 15px;
+  > span {
+    padding: 0 0 0 5px;
   }
 }
 

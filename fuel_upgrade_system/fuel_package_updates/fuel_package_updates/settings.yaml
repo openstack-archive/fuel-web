@@ -1,0 +1,12 @@
+keystone_creds:
+    # names of enviroment variables
+    username: KEYSTONE_USERNAME
+    password: KEYSTONE_PASSWORD
+    tenant_name: KEYSTONE_TENANT
+supported_releases:
+    - "2014.2-6.1"
+updates_destinations:
+    centos: '/var/www/nailgun/{0}/centos/updates'
+    ubuntu: '/var/www/nailgun/{0}/ubuntu/updates'
+httproot: "/var/www/nailgun"
+port: 8000

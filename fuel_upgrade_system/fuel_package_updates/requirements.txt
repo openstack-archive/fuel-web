@@ -1,3 +1,5 @@
+oslo.serialization>=1.0.0
+requests>=1.2.3
 ordereddict>=1.1
-PyYAML==3.10
-python-keystoneclient
+PyYAML>=3.10
+python-keystoneclient>=0.11

@@ -298,8 +298,10 @@ Group: Development/Libraries
 Prefix: %{_prefix}
 BuildArch: noarch
 Requires:  python-keystoneclient >= 0.11
-Requires:  python-keystonemiddleware >= 1.2.0
 Requires:  python-ordereddict >= 1.1
+Requires:  python-oslo-serialization >= 1.0.0
+Requires:  PyYAML >= 3.10
+Requires:  python-requests >= 1.2.3
 
 %description -n fuel-package-updates
 Command line utility to download apt/yum repositories for Fuel

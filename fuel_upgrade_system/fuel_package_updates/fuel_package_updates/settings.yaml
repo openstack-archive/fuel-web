@@ -1,0 +1,18 @@
+keystone_creds:
+    username: admin
+    password: admin
+    tenant_name: admin
+httproot: '/var/www/nailgun'
+updates_destinations:
+    # relatively to httproot
+    centos: '{0}/centos/updates'
+    ubuntu: '{0}/ubuntu/updates'
+    ubuntu_baseos: '{0}/ubuntu/trusty'
+ubuntu_codename: 'trusty'
+port: 8000
+ubuntu_repos:
+    - 'mos6.1-updates'
+    - 'mos6.1-security'
+    - 'mos6.1-holdback'
+centos_repos:
+    - 'MOS-Updates'

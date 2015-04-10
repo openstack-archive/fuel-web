@@ -1,4 +1,4 @@
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,8 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import setuptools
+import logging
 
-setuptools.setup(
-    setup_requires=['pbr'],
-    pbr=True)
+
+def setup_logging(name, level=logging.INFO):
+    sh = logging.StreamHandler()
+    formatter = logging.Formatter('[%(levelname)s] %(message)s')
+    sh.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.addHandler(sh)
+    logger.setLevel(level)

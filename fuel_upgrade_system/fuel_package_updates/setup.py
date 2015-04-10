@@ -45,5 +45,4 @@ if __name__ == "__main__":
           include_package_data=True,
           entry_points={
               'console_scripts': [
-                  'fuel-package-updates = fuel_package_updates.fuel_package_'
-                  'updates:main']})
+                  'fuel-package-updates = fuel_package_updates.main:main']})

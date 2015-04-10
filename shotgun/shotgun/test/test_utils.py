@@ -23,6 +23,16 @@ from shotgun import utils
 
 class TestUtils(base.BaseTestCase):
 
+    @patch('shotgun.utils.shutil.rmtree')
+    def test_remove_subdir(self, muremove):
+        utils.remove_sub_dirs('/', ['good'])
+        muremove.assert_called_once_with('/good')
+
+    @patch('shotgun.utils.shutil.rmtree')
+    def test_remove_non_existing_subdir(self, muremove):
+        muremove.side_effect = OSError()
+        utils.remove_sub_dirs('/imposible/to/exist/path', ['good'])
+
     @patch('shotgun.utils.iterfiles')
     @patch('shotgun.utils.os.unlink')
     def test_remove_matched_files(self, munlink, mfiles):

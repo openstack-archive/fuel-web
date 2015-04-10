@@ -1202,6 +1202,61 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   overflow: hidden;
 }
 
+.login-page {
+  .login-box {
+    position: relative;
+    width: 500px;
+    height: 400px;
+    background-color: @white;
+    color: @base-text-color;
+    border-radius: 18px;
+    margin: 10% auto 0;
+    box-shadow: 0 1px 1px rgba(0,0,0,.5);
+  }
+
+  .login-logo-circle {
+    width: 160px;
+    height: 160px;
+    background-color: @white;
+    position: relative;
+    top: -80px;
+    border-radius: 80px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .login-logo {
+    background: url(../img/fuel-big-logo.png) repeat scroll 0 0 rgba(0, 0, 0, 0);
+    position: relative;
+    top: -240px;
+    left: 156px;
+    width: 200px;
+    height: 250px;
+    margin-bottom: -220px;
+  }
+
+  .login-fields-box {
+    height: 200px;
+    overflow: hidden;
+    padding-top: 10px;
+    form {
+      label {
+        font-size: @base-font-size + 2;
+        padding-top: 8px;
+        .glyphicon {
+          color: @gray;
+        }
+      }
+    }
+  }
+
+  .login-footer {
+    margin-top: 20px;
+    font-size: 12px;
+    color: @base-dark-color + 60%;
+  }
+}
+
 .clusters-page {
   .clusterbox {
     display: block;

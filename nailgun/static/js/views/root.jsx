@@ -58,7 +58,7 @@ define([
                         <div id='content'>
                             <Page ref='page' {...this.state.pageOptions} />
                         </div>
-                        <div id="footer-spacer"></div>
+                        {!Page.hiddenLayout && <div id='footer-spacer'></div>}
                     </div>
                     {!Page.hiddenLayout && <layoutComponents.Footer version={this.props.version} />}
                 </div>

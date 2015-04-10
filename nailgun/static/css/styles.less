@@ -47,12 +47,12 @@
 @orange: #bc6e12;
 @gray:   #8c8c8c;
 
-// @bg-color: #394c59;
 @link-color: saturate(lighten(@base-dark-color, 20%), 30%);
 @link-color-hover: saturate(lighten(@base-dark-color, 10%), 15%);
 @navbar-color: saturate(lighten(@base-dark-color, 20%), 15%);
 @navbar-color-active: saturate(lighten(@base-dark-color, 20%), 15%);
 @navbar-icon-color: @base-dark-color + #203c4c;
+@shadow-color: rgba(0,0,0,0.5);
 
 // Tabs & Content Settings
 @tab-color: desaturate(lighten(@base-dark-color, 55%), 20%);
@@ -289,7 +289,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   width: 100%;
   height: 70px;
   background-color: @white;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  box-shadow: 0 0 10px @shadow-color;
 }
 
 .navigation-box {
@@ -393,7 +393,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
       font-family: @navbar-icon-font;
       font-weight: 100;
       padding: 3px 3px 3px 4px;
-      box-shadow: 0 1px 1px rgba(0,0,0,0.5);
+      box-shadow: 0 1px 1px @shadow-color;
       font-size: @base-font-size;
       letter-spacing: 1px;
       .box-sizing;
@@ -1223,6 +1223,60 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   height: 34px;
   margin-top: 24px;
   overflow: hidden;
+}
+
+.login-page {
+  .login-box {
+    position: relative;
+    background-color: @white;
+    color: @base-text-color;
+    border-radius: 18px;
+    margin-top: 10%;
+    box-shadow: 0 1px 1px @shadow-color;
+  }
+
+  .login-logo-circle {
+    @logo-circle-size: 160px;
+    background-color: @white;
+    position: relative;
+    width: @logo-circle-size;
+    height: @logo-circle-size;
+    top: -@logo-circle-size / 2;
+    border-radius: @logo-circle-size / 2;
+    margin: 0 auto;
+  }
+
+  .login-logo {
+    @logo-width: 200px;
+    @logo-height: 260px;
+    background: url(../img/fuel-big-logo.png) repeat scroll 0 0 rgba(0, 0, 0, 0);
+    position: relative;
+    top: -@logo-height + 20px;
+    width: @logo-width;
+    height: @logo-height;
+    margin: 0 auto -(@logo-height - 40px) auto;
+  }
+
+  .login-fields-box {
+    height: 200px;
+    overflow: hidden;
+    padding-top: 10px;
+    form {
+      label {
+        font-size: @base-font-size + 2;
+        padding-top: 8px;
+        .glyphicon {
+          color: @gray;
+        }
+      }
+    }
+  }
+
+  .login-footer {
+    margin-top: 20px;
+    font-size: 12px;
+    color: @base-dark-color + 60%;
+  }
 }
 
 .clusters-page {

@@ -1,1 +1,2 @@
 include *requirements.txt
+include fuel_package_updates/settings.yaml

@@ -1082,7 +1082,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             {error}
                         </div>
                     }
-                    {!this.state.hideRequiredFieldsNotice && !this.state.connectionError &&
+                    {!this.state.hideRequiredFieldsNotice &&
                         <div className='alert alert-warning'>
                             {i18n('welcome_page.register.required_fields')}
                         </div>

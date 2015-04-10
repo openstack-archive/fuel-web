@@ -34,7 +34,6 @@ define([
             return {
                 isConnected: !!(tracking.email.value && tracking.password.value),
                 actionInProgress: false,
-                showItems: false,
                 remoteLoginForm: new models.MirantisLoginForm(),
                 registrationForm: new models.MirantisRegistrationForm(),
                 remoteRetrievePasswordForm: new models.MirantisRetrievePasswordForm()
@@ -110,9 +109,6 @@ define([
         checkRestrictions: function(name, action) {
             action = action || 'disable';
             return this.props.settings.checkRestrictions(this.configModels, action, this.props.settings.makePath('statistics', name));
-        },
-        toggleItemsList: function() {
-            this.setState({showItems: !this.state.showItems});
         },
         updateInitialAttributes: function() {
             this.initialAttributes = _.cloneDeep(this.props.settings.attributes);
@@ -205,13 +201,11 @@ define([
                 <div>
                     <div className='statistics-text-box'>
                         <div className={utils.classNames({notice: isMirantisIso})}>{this.getText(ns + 'help_to_improve')}</div>
-                        <button className='btn-link' onClick={this.toggleItemsList}>{i18n(ns + 'learn_whats_collected')}</button>
-                        {this.state.showItems &&
-                            <div className='statistics-disclaimer-box'>
-                                <p>{i18n(ns + 'statistics_includes_full')}</p>
-                                {_.map(lists, this.renderList)}
-                            </div>
-                        }
+                        <button className='btn-link' data-toggle='collapse' data-target='.statistics-disclaimer-box'>{i18n(ns + 'learn_whats_collected')}</button>
+                        <div className='collapse statistics-disclaimer-box'>
+                            <p>{i18n(ns + 'statistics_includes_full')}</p>
+                            {_.map(lists, this.renderList)}
+                        </div>
                     </div>
                 </div>
             );

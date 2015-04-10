@@ -1018,7 +1018,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         </div>
                     }
                     {!this.state.hideRequiredFieldsNotice &&
-                        <div className='alert'>
+                        <div className='alert alert-warning'>
                             {i18n('welcome_page.register.required_fields')}
                         </div>
                     }

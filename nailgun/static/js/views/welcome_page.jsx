@@ -68,8 +68,8 @@ function(_, i18n, React, componentMixins, statisticsMixin) {
                 };
             return (
                 <div className='welcome-page'>
-                    <div>
-                        <h2 className='center'>{this.getText(ns + 'title')}</h2>
+                    <div className='col-md-8 col-md-offset-2'>
+                        <h1 className='text-center'>{this.getText(ns + 'title')}</h1>
                         {isMirantisIso ?
                             <div>
                                 {!_.contains(featureGroups, 'techpreview') &&

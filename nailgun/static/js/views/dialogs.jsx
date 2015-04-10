@@ -427,7 +427,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
 
     dialogs.RemoveClusterDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.remove_cluster.title')};},
+        getInitialState: function() {
+            return {confirmation: false};
+        },
+        getDefaultProps: function() {
+            return {title: i18n('dialog.remove_cluster.title')};
+        },
         removeCluster: function() {
             this.setState({actionInProgress: true});
             this.props.cluster.destroy({wait: true})
@@ -438,18 +443,50 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 })
                 .fail(this.showError);
         },
+        showConfirmationForm: function() {
+            this.setState({confirmation: true});
+        },
+        getText: function() {
+            var cluster = this.props.cluster,
+                ns = 'dialog.remove_cluster.';
+            if (cluster.tasks({status: 'running'}).length) return i18n(ns + 'incomplete_actions_text');
+            if (cluster.get('nodes').length) return i18n(ns + 'node_returned_text');
+            return i18n(ns + 'default_text');
+        },
         renderBody: function() {
+            var clusterName = this.props.cluster.get('name');
             return (
-                <div className='msg-error'>
+                <div>
                     {this.renderImportantLabel()}
-                    {i18n('dialog.remove_cluster.' + (this.props.cluster.tasks({status: 'running'}).length ? 'incomplete_actions_text' : 'node_returned_text'))}
+                    {this.getText()}
+                    {this.state.confirmation &&
+                        <div className='confirm-deletion-form'>
+                            {i18n('dialog.remove_cluster.enter_environment_name', {name: clusterName})}
+                            <controls.Input
+                                type='text'
+                                disabled={this.state.actionInProgress}
+                                onChange={_.bind(function(name, value) {
+                                    this.setState({confirmationError: value != clusterName});
+                                }, this)}
+                                onPaste={function(e) {e.preventDefault();}}
+                                autoFocus
+                            />
+                        </div>
+                    }
                 </div>
             );
         },
         renderFooter: function() {
             return ([
                 <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
-                <button key='deploy' className='btn remove-cluster-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.removeCluster}>{i18n('common.delete_button')}</button>
+                <button
+                    key='remove'
+                    className='btn btn-danger remove-cluster-btn'
+                    disabled={this.state.actionInProgress || this.state.confirmation && _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
+                    onClick={this.props.cluster.get('status') == 'new' || this.state.confirmation ? this.removeCluster : this.showConfirmationForm}
+                >
+                    {i18n('common.delete_button')}
+                </button>
             ]);
         }
     });

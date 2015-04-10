@@ -2373,6 +2373,7 @@ class BaseDeploymentSerializer(BaseIntegrationTest):
         self.assertEqual(result['vcenter']['esxi_vlan_interface'], "eth0")
 
         # check cinder parameters
+        self.assertEqual(len(result['cinder']['instances']), 2)
         self.assertEqual(
             result['cinder']['instances'][0]['availability_zone_name'],
             "Zone 1")

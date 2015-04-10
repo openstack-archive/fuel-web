@@ -18,6 +18,7 @@ import logging
 import os
 import re
 import shlex
+import shutil
 import socket
 from StringIO import StringIO
 import subprocess
@@ -50,6 +51,21 @@ def iterfiles(path):
     for root, dirnames, filenames in os.walk(path, topdown=True):
         for filename in filenames:
             yield os.path.join(root, filename)
+
+
+def remove_sub_dirs(target_path, sub_dirs):
+    """Removes subdirs from target_path
+
+    :param path: str
+    :param patterns: list with subdirs
+    """
+    for sub_dir in sub_dirs:
+        try:
+            path = os.path.join(target_path, str(sub_dir))
+            logger.debug('Deleting subdir %s', path)
+            shutil.rmtree(path)
+        except OSError as exc:
+            logger.debug(exc)
 
 
 def remove_matched_files(path, patterns):

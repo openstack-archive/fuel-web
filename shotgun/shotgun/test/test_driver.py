@@ -48,7 +48,7 @@ class TestDriver(base.BaseTestCase):
                 shotgun.driver.Driver.getDriver({"type": t}, None)
                 mocked.assert_called_with({"type": t}, None)
 
-    @mock.patch('shotgun.driver.CCStringIO')
+    @mock.patch('shotgun.driver.utils.CCStringIO')
     @mock.patch('shotgun.driver.fabric.api.settings')
     @mock.patch('shotgun.driver.fabric.api.run')
     def test_driver_remote_command(self, mfabrun, mfabset, mccstring):
@@ -74,7 +74,7 @@ class TestDriver(base.BaseTestCase):
             warn_only=True, key_filename=None)
         self.assertEqual(result, out)
 
-    @mock.patch('shotgun.driver.execute')
+    @mock.patch('shotgun.driver.utils.execute')
     def test_driver_local_command(self, mexecute):
         mexecute.return_value = ("RETURN_CODE", "STDOUT", "STDERR")
 
@@ -86,10 +86,10 @@ class TestDriver(base.BaseTestCase):
         command = "COMMAND"
         driver = shotgun.driver.Driver({}, None)
         result = driver.command(command)
-        shotgun.driver.execute.assert_called_with(command)
+        shotgun.driver.utils.execute.assert_called_with(command)
         self.assertEqual(result, out)
 
-    @mock.patch('shotgun.driver.CCStringIO')
+    @mock.patch('shotgun.driver.utils.CCStringIO')
     @mock.patch('shotgun.driver.fabric.api.settings')
     @mock.patch('shotgun.driver.fabric.api.run')
     def test_command_timeout(self, mfabrun, mfabset, mstringio):
@@ -111,7 +111,7 @@ class TestDriver(base.BaseTestCase):
         mfabrun.assert_called_with(command, stdout=mstdout)
         self.assertEqual(result.stdout, 'FULL STDOUT')
 
-    @mock.patch('shotgun.driver.execute')
+    @mock.patch('shotgun.driver.utils.execute')
     @mock.patch('shotgun.driver.fabric.api.settings')
     @mock.patch('shotgun.driver.fabric.api.get')
     def test_driver_get(self, mfabget, mfabset, mexecute):
@@ -160,7 +160,7 @@ class TestFile(base.BaseTestCase):
 
         mget.assert_called_with(data["path"], target_path)
 
-    @mock.patch('shotgun.driver.remove_matched_files')
+    @mock.patch('shotgun.driver.utils.remove_matched_files')
     @mock.patch('shotgun.driver.Driver.get')
     def test_dir_exclude_called(self, mget, mremove):
         data = {
@@ -180,6 +180,27 @@ class TestFile(base.BaseTestCase):
 
         mget.assert_called_with(data["path"], target_path)
         mremove.assert_called_with(target_path, data['exclude'])
+
+    @mock.patch('shotgun.driver.utils.remove_sub_dirs')
+    @mock.patch('shotgun.driver.Driver.get')
+    def test_dir_exclude_path_called(self, mget, msubdirrm):
+        data = {
+            "type": "dir",
+            "path": "/remote_dir/",
+            "exclude_paths": ["test"],
+            "host": {
+                "address": "remote_host",
+            },
+        }
+        conf = mock.MagicMock()
+        conf.target = "/target"
+        dir_driver = shotgun.driver.Dir(data, conf)
+
+        target_path = "/target/remote_host/remote_dir"
+        dir_driver.snapshot()
+
+        mget.assert_called_with(data["path"], target_path)
+        msubdirrm.assert_called_with(target_path, data['exclude_paths'])
 
 
 class TestSubs(base.BaseTestCase):
@@ -205,7 +226,7 @@ class TestSubs(base.BaseTestCase):
 
     @mock.patch('shotgun.driver.tempfile.NamedTemporaryFile')
     @mock.patch('shotgun.driver.Driver.get')
-    @mock.patch('shotgun.driver.execute')
+    @mock.patch('shotgun.driver.utils.execute')
     def test_sed(self, mexecute, mget, mntemp):
         mexecute.return_value = ("RETURN_CODE", "STDOUT", "STDERR")
         mntemp.return_value = self.sedscript
@@ -215,23 +236,23 @@ class TestSubs(base.BaseTestCase):
         self.assertEqual(self.sedscript.write.mock_calls, [
             mock.call("s/{0}/{1}/g\n".format(old, new))
             for old, new in self.data["subs"].iteritems()])
-        shotgun.driver.execute.assert_called_with(
+        shotgun.driver.utils.execute.assert_called_with(
             "cat from_file | sed -f SEDSCRIPT", to_filename="to_file")
 
         subs_driver.sed("from_file.gz", "to_file.gz")
-        shotgun.driver.execute.assert_called_with(
+        shotgun.driver.utils.execute.assert_called_with(
             "cat from_file.gz | gunzip -c | sed -f SEDSCRIPT | gzip -c",
             to_filename="to_file.gz")
 
         subs_driver.sed("from_file.bz2", "to_file.bz2")
-        shotgun.driver.execute.assert_called_with(
+        shotgun.driver.utils.execute.assert_called_with(
             "cat from_file.bz2 | bunzip2 -c | sed -f SEDSCRIPT | bzip2 -c",
             to_filename="to_file.bz2")
 
     @mock.patch('shotgun.driver.os.walk')
     @mock.patch('shotgun.driver.Subs.sed')
     @mock.patch('shotgun.driver.Driver.get')
-    @mock.patch('shotgun.driver.execute')
+    @mock.patch('shotgun.driver.utils.execute')
     def test_snapshot(self, mexecute, mdriverget, msed, mwalk):
         mexecute.return_value = ("RETURN_CODE", "STDOUT", "STDERR")
 

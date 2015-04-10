@@ -1,0 +1,18 @@
+keystone_creds:
+    # names of enviroment variables
+    username: KEYSTONE_USERNAME
+    password: KEYSTONE_PASSWORD
+    tenant_name: KEYSTONE_TENANT
+supported_releases:
+    - '2014.2-6.1'
+updates_destinations:
+    centos: '/var/www/nailgun/{0}/centos/updates'
+    ubuntu: '/var/www/nailgun/{0}/ubuntu/updates'
+httproot: '/var/www/nailgun'
+port: 8000
+ubuntu_repos:
+    - 'mos6.1-updates'
+    - 'mos6.1-security'
+    - 'mos6.1-holdback'
+centos_repos:
+    - 'MOS-Updates'

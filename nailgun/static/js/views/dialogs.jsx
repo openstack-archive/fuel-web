@@ -36,7 +36,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             title: React.PropTypes.node,
             message: React.PropTypes.node,
             modalClass: React.PropTypes.node,
-            error: React.PropTypes.bool
+            error: React.PropTypes.bool,
+            backdrop: React.PropTypes.oneOfType([
+                React.PropTypes.string,
+                React.PropTypes.bool
+            ])
         },
         statics: {
             show: function(options) {
@@ -48,10 +52,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         componentDidMount: function() {
             Backbone.history.on('route', this.close, this);
-            var $el = $(this.getDOMNode());
+            var $el = $(this.getDOMNode()),
+                options = {background: true, keyboard: true};
             $el.on('hidden.bs.modal', this.handleHidden);
             $el.on('shown.bs.modal', function() {$el.find('[autofocus]:first').focus();});
-            $el.modal({background: true, keyboard: true});
+            if (this.props.backdrop) _.extend(options, {backdrop: this.props.backdrop});
+            $el.modal(options);
         },
         componentWillUnmount: function() {
             Backbone.history.off(null, null, this);
@@ -987,7 +993,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         getDefaultProps: function() {
             return {
                 title: i18n('dialog.registration.title'),
-                modalClass: 'registration'
+                modalClass: 'registration',
+                backdrop: 'static'
             };
         },
         componentDidMount: function() {
@@ -1076,9 +1083,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 sortedFields = _.chain(_.keys(fieldsList))
                     .without('metadata')
                     .sortBy(function(inputName) {return fieldsList[inputName].weight;})
-                    .value();
+                    .value(),
+                halfWidthField = ['first_name', 'last_name', 'company', 'phone', 'country', 'region'];
             return (
-                <div className='registration-form'>
+                <div className='registration-form tracking'>
                     {actionInProgress && <controls.ProgressBar />}
                     {error &&
                         <div className='text-red'>
@@ -1091,11 +1099,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             {i18n('welcome_page.register.required_fields')}
                         </div>
                     }
-                    <form className='form-inline'>
+                    <form className='form-inline row'>
                         {_.map(sortedFields, function(inputName) {
                             var input = fieldsList[inputName],
                                 path = 'credentials.' + inputName,
-                                inputError = (registrationForm.validationError || {})[path];
+                                inputError = (registrationForm.validationError || {})[path],
+                                classes = {
+                                    'col-md-12': !_.contains(halfWidthField, inputName),
+                                    'col-md-6': _.contains(halfWidthField, inputName),
+                                    'text-center': inputName == 'agree'
+                                };
                             return <controls.Input
                                 ref={inputName}
                                 key={inputName}
@@ -1103,7 +1116,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                 label={inputName != 'agree' ? input.label : this.getAgreementLink(input.description)}
                                 {... _.pick(input, 'type', 'value')}
                                 children={input.type == 'select' && this.composeOptions(input.values)}
-                                wrapperClassName={inputName}
+                                wrapperClassName={utils.classNames(classes)}
                                 onChange={this.onChange}
                                 error={inputError}
                                 disabled={actionInProgress || (inputName == 'region' && this.checkCountry())}

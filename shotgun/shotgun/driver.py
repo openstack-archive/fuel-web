@@ -24,12 +24,8 @@ import tempfile
 import xmlrpclib
 
 import fabric.api
-import fabric.exceptions
 
-from shotgun.utils import CCStringIO
-from shotgun.utils import execute
-from shotgun.utils import is_local
-from shotgun.utils import remove_matched_files
+from shotgun import utils
 
 
 logger = logging.getLogger(__name__)
@@ -67,7 +63,7 @@ class Driver(object):
         self.data = data
         self.host = self.data.get("host", {}).get("address", "localhost")
         self.ssh_key = self.data.get("host", {}).get("ssh-key")
-        self.local = is_local(self.host)
+        self.local = utils.is_local(self.host)
         self.conf = conf
 
     def snapshot(self):
@@ -76,7 +72,7 @@ class Driver(object):
     def command(self, command):
         out = CommandOut()
 
-        raw_stdout = CCStringIO(writers=sys.stdout)
+        raw_stdout = utils.CCStringIO(writers=sys.stdout)
         try:
             if not self.local:
                 with fabric.api.settings(
@@ -96,7 +92,8 @@ class Driver(object):
                     out.return_code = output.return_code
             else:
                 logger.debug("Running local command: %s", command)
-                out.return_code, out.stdout, out.stderr = execute(command)
+                out.return_code, out.stdout, out.stderr = utils.execute(
+                    command)
         except Exception as e:
             logger.error("Error occured: %s", str(e))
             out.stdout = raw_stdout.getvalue()
@@ -116,13 +113,14 @@ class Driver(object):
                 ):
                     logger.debug("Getting remote file: %s %s",
                                  path, target_path)
-                    execute('mkdir -p "{0}"'.format(target_path))
+                    utils.execute('mkdir -p "{0}"'.format(target_path))
                     return fabric.api.get(path, target_path)
             else:
                 logger.debug("Getting local file: cp -r %s %s",
                              path, target_path)
-                execute('mkdir -p "{0}"'.format(target_path))
-                return execute('cp -r "{0}" "{1}"'.format(path, target_path))
+                utils.execute('mkdir -p "{0}"'.format(target_path))
+                return utils.execute('cp -r "{0}" "{1}"'.format(path,
+                                                                target_path))
         except Exception as e:
             logger.error("Error occured: %s", str(e))
 
@@ -136,6 +134,9 @@ class File(Driver):
         self.target_path = str(os.path.join(
             self.conf.target, self.host,
             os.path.dirname(self.path).lstrip("/")))
+        self.full_dst_path = os.path.join(
+            self.conf.target, self.host,
+            self.path.lstrip("/"))
         logger.debug("File to save: %s", self.target_path)
 
     def snapshot(self):
@@ -148,8 +149,7 @@ class File(Driver):
         self.get(self.path, self.target_path)
 
         if self.exclude:
-            remove_matched_files(self.target_path, self.exclude)
-
+            utils.remove(self.full_dst_path, self.exclude)
 
 Dir = File
 
@@ -186,7 +186,7 @@ class Subs(File):
             "sed -f {0}".format(sedscript.name),
             self.compress(from_filename),
         ]))
-        execute(command, to_filename=to_filename)
+        utils.execute(command, to_filename=to_filename)
         sedscript.close()
 
     def snapshot(self):
@@ -219,9 +219,10 @@ class Subs(File):
                 match_orig_path = os.path.join("/", rel_tgt_host)
                 if not fnmatch.fnmatch(match_orig_path, self.path):
                     continue
-                tempfilename = execute("mktemp")[1].strip()
+                tempfilename = utils.execute("mktemp")[1].strip()
                 self.sed(fullfilename, tempfilename)
-                execute('mv -f "{0}" "{1}"'.format(tempfilename, fullfilename))
+                utils.execute('mv -f "{0}" "{1}"'.format(tempfilename,
+                                                         fullfilename))
 
 
 class Postgres(Driver):
@@ -257,10 +258,10 @@ class Postgres(Driver):
                      "-f {file} {dbname}".format(
                          dbhost=self.dbhost, username=self.username,
                          file=temp, dbname=self.dbname))
-        execute('mkdir -p "{0}"'.format(self.target_path))
+        utils.execute('mkdir -p "{0}"'.format(self.target_path))
         dump_basename = "{0}_{1}.sql".format(self.dbhost, self.dbname)
 
-        execute('mv -f "{0}" "{1}"'.format(
+        utils.execute('mv -f "{0}" "{1}"'.format(
             temp,
             os.path.join(self.target_path, dump_basename)))
 
@@ -277,7 +278,8 @@ class XmlRpc(Driver):
             self.conf.target, self.host, "xmlrpc", self.to_file)
 
     def snapshot(self):
-        execute('mkdir -p "{0}"'.format(os.path.dirname(self.target_path)))
+        utils.execute('mkdir -p "{0}"'.format(os.path.dirname(
+            self.target_path)))
 
         server = xmlrpclib.Server(self.server)
         with open(self.target_path, "w") as f:
@@ -301,7 +303,8 @@ class Command(Driver):
 
     def snapshot(self):
         out = self.command(self.cmdname)
-        execute('mkdir -p "{0}"'.format(os.path.dirname(self.target_path)))
+        utils.execute('mkdir -p "{0}"'.format(os.path.dirname(
+            self.target_path)))
         with open(self.target_path, "w") as f:
             f.write("===== COMMAND =====: {0}\n".format(self.cmdname))
             f.write("===== RETURN CODE =====: {0}\n".format(

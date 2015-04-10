@@ -587,15 +587,20 @@ class BaseNetworkVerification(object):
 
     def get_message_body(self):
         nodes = []
-        for n in self.task.cluster.nodes:
-            node_json = {'uid': n.id, 'networks': []}
-
-            for nic in n.nic_interfaces:
+        for node in self.task.cluster.nodes:
+            node_json = {
+                'uid': node.id,
+                'networks': [],
+                'excluded_networks': []
+            }
+            for nic in node.nic_interfaces:
                 assigned_networks = nic.assigned_networks_list
                 # in case of using bond interface - use networks assigned
-                # to bond
+                # to bond. We should skip LACP bonds because network_checker
+                # can't process it now.
                 if nic.bond:
                     assigned_networks = nic.bond.assigned_networks_list
+
                 vlans = []
                 for ng in assigned_networks:
                     # Handle FuelWeb admin network first.
@@ -610,11 +615,17 @@ class BaseNetworkVerification(object):
                         # in case absence of vlans net_probe will
                         # send packages on untagged iface
                         vlans.append(0)
+
                 if not vlans:
                     continue
-                node_json['networks'].append(
-                    {'iface': nic.name, 'vlans': vlans}
-                )
+
+                if nic.bond and nic.bond.mode == consts.BOND_MODES.l_802_3ad:
+                    node_json['excluded_networks'].append(
+                        {'iface': nic.name})
+                else:
+                    node_json['networks'].append(
+                        {'iface': nic.name, 'vlans': vlans})
+
             nodes.append(node_json)
 
         return nodes

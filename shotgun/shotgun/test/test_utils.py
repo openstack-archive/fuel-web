@@ -14,8 +14,7 @@
 
 import StringIO
 
-from mock import call
-from mock import patch
+import mock
 
 from shotgun.test import base
 from shotgun import utils
@@ -23,24 +22,14 @@ from shotgun import utils
 
 class TestUtils(base.BaseTestCase):
 
-    @patch('shotgun.utils.iterfiles')
-    @patch('shotgun.utils.os.unlink')
-    def test_remove_matched_files(self, munlink, mfiles):
-        mfiles.return_value = ['/file1.good', '/file2.bad']
-        utils.remove_matched_files('/', ['*.good'])
+    @mock.patch('shotgun.utils.execute')
+    def test_remove_subdir(self, mexecute):
+        utils.remove('/', ['good', '**/*.py'])
+        mexecute.assert_has_calls([
+            mock.call('shopt -s globstar; rm -rf /good', shell=True),
+            mock.call('shopt -s globstar; rm -rf /**/*.py', shell=True)])
 
-        munlink.assert_called_once_with('/file1.good')
-
-    @patch('shotgun.utils.iterfiles')
-    @patch('shotgun.utils.os.unlink')
-    def test_remove_several_files(self, munlink, mfiles):
-        mfiles.return_value = ['/file1.good', '/file2.good']
-        utils.remove_matched_files('/', ['*.good'])
-
-        munlink.assert_has_calls(
-            [call('/file1.good'), call('/file2.good')])
-
-    @patch('shotgun.utils.os.walk')
+    @mock.patch('shotgun.utils.os.walk')
     def test_iterfiles(self, mwalk):
         path = '/root'
         mwalk.return_value = [
@@ -53,7 +42,7 @@ class TestUtils(base.BaseTestCase):
         self.assertEqual(
             result, ['/root/file1', '/root/file2', '/root/sub/file3'])
 
-    @patch('shotgun.utils.execute')
+    @mock.patch('shotgun.utils.execute')
     def test_compress(self, mexecute):
         target = '/path/target'
         level = '-3'

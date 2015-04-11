@@ -37,6 +37,7 @@
                 "see_logs": "See the logs",
                 "copyright": "Copyright © 2013-2015 Mirantis. All rights reserved.",
                 "version": "Version",
+                "username": "Username",
                 "change_password": "Change password",
                 "logout": "Logout",
                 "role_limits": {

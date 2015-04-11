@@ -66,9 +66,9 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             propTypes: {
                 toggle: React.PropTypes.func.isRequired
             },
-            getDefaultProps: function() {
+            getInitialState: function() {
                 return {
-                    clickEventName: 'click.' + (this.displayName || _.uniqueId('outer-click'))
+                    clickEventName: 'click.' + _.uniqueId('outer-click')
                 };
             },
             handleBodyClick: function(e) {
@@ -77,11 +77,11 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
                 }
             },
             componentDidMount: function() {
-                $('html').on(this.props.clickEventName, this.handleBodyClick);
+                $('html').on(this.state.clickEventName, this.handleBodyClick);
                 Backbone.history.on('route', _.partial(this.props.toggle, false), this);
             },
             componentWillUnmount: function() {
-                $('html').off(this.props.clickEventName);
+                $('html').off(this.state.clickEventName);
                 Backbone.history.off('route', null, this);
             }
         }

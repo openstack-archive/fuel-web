@@ -113,47 +113,66 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                     }, this)}
                                 </ul>
                                 <ul className='nav navbar-icons navbar-right'>
-                                    <li className='lang-icon' onClick={this.togglePopover('language')}>
-                                        <div className='lang-text'>{i18n.getLocaleName(i18n.getCurrentLocale())}</div>
-                                        {this.state.languagePopoverVisible &&
-                                            <LanguagePopover toggle={this.togglePopover('language')} />
-                                        }
+                                    <li
+                                        key='language-icon'
+                                        className='language-icon'
+                                        onClick={this.togglePopover('language')}
+                                    >
+                                        <div className='language-text'>{i18n.getLocaleName(i18n.getCurrentLocale())}</div>
                                     </li>
                                     <li
-                                        className={'usage-icon ' + (this.props.statistics.get('unallocated') ? '' : 'no-unallocated')}
+                                        key='statistics-icon'
+                                        className={'statistics-icon ' + (this.props.statistics.get('unallocated') ? '' : 'no-unallocated')}
                                         onClick={this.togglePopover('statistics')}
                                     >
                                         {!!this.props.statistics.get('unallocated') &&
                                             <div className='unallocated'>{this.props.statistics.get('unallocated')}</div>
                                         }
                                         <div className='total'>{this.props.statistics.get('total')}</div>
-                                        {this.state.statisticsPopoverVisible &&
-                                            <StatisticsPopover
-                                                statistics={this.props.statistics}
-                                                toggle={this.togglePopover('statistics')}
-                                            />
-                                        }
                                     </li>
                                     {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
-                                        <li className='user-icon' onClick={this.togglePopover('authentication')}>
-                                            {this.state.authenticationPopoverVisible &&
-                                                <AuthenticationPopover
-                                                    user={this.props.user}
-                                                    toggle={this.togglePopover('authentication')}
-                                                />
-                                            }
-                                        </li>
+                                        <li
+                                            key='user-icon'
+                                            className='user-icon'
+                                            onClick={this.togglePopover('user')}
+                                        ></li>
                                     }
-                                    <li className='notice-icon' onClick={this.togglePopover('notifications')}>
+                                    <li
+                                        key='notifications-icon'
+                                        className='notifications-icon'
+                                        onClick={this.togglePopover('notifications')}
+                                    >
                                         {unreadNotificationsCount ? <span className='badge'>{unreadNotificationsCount}</span> : null}
-                                        {this.state.notificationsPopoverVisible &&
-                                            <NotificationsPopover
-                                                notifications={this.props.notifications}
-                                                displayCount={this.props.notificationsDisplayCount}
-                                                toggle={this.togglePopover('notifications')}
-                                            />
-                                        }
                                     </li>
+
+                                    {this.state.languagePopoverVisible &&
+                                        <LanguagePopover
+                                            key='language-popover'
+                                            toggle={this.togglePopover('language')}
+                                        />
+                                    }
+                                    {this.state.statisticsPopoverVisible &&
+                                        <StatisticsPopover
+                                            key='statistics-popover'
+                                            statistics={this.props.statistics}
+                                            toggle={this.togglePopover('statistics')}
+                                        />
+                                    }
+                                    {this.state.userPopoverVisible &&
+                                        <UserPopover
+                                            key='user-popover'
+                                            user={this.props.user}
+                                            toggle={this.togglePopover('user')}
+                                        />
+                                    }
+                                    {this.state.notificationsPopoverVisible &&
+                                        <NotificationsPopover
+                                            key='notifications-popover'
+                                            notifications={this.props.notifications}
+                                            displayCount={this.props.notificationsDisplayCount}
+                                            toggle={this.togglePopover('notifications')}
+                                        />
+                                    }
                                 </ul>
                             </div>
                         </nav>
@@ -164,65 +183,86 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
     });
 
     var LanguagePopover = React.createClass({
-        changeLocale: function(locale) {
+        changeLocale: function(locale, e) {
+            e.preventDefault();
+            this.props.toggle(false);
             i18n.setLocale(locale);
             app.rootComponent.forceUpdate();
         },
         render: function() {
+            var currentLocale = i18n.getCurrentLocale();
             return (
-                <controls.Popover {...this.props} className='navbar-popover'>
-                    {_.map(i18n.getAvailableLocales(), function(locale) {
-                        return (
-                            <div onClick={_.partial(this.changeLocale, locale)}>
-                                {i18n.getLocaleName(locale)}
-                            </div>
-                        );
-                    }, this)}
+                <controls.Popover {...this.props} className='language-popover'>
+                    <ul className='nav nav-pills nav-stacked'>
+                        {_.map(i18n.getAvailableLocales(), function(locale) {
+                            return (
+                                <li key={locale} className={utils.classNames({active: locale == currentLocale})}>
+                                    <a onClick={_.partial(this.changeLocale, locale)}>
+                                        {i18n.getLocaleName(locale)}
+                                    </a>
+                                </li>
+                            );
+                        }, this)}
+                    </ul>
                 </controls.Popover>
             );
         }
     });
 
     var StatisticsPopover = React.createClass({
-        mixins: [
-            componentMixins.outerClickMixin,
-            componentMixins.backboneMixin('statistics')
-        ],
+        mixins: [componentMixins.backboneMixin('statistics')],
         render: function() {
             return (
-                <controls.Popover {...this.props} className='navbar-popover'>
-                    <div>{this.props.statistics.get('unallocated')}</div>
-                    <div>{this.props.statistics.get('total')}</div>
+                <controls.Popover {...this.props} className='statistics-popover'>
+                    <div className='list-group'>
+                        <li className='list-group-item'>
+                            <span className='badge'>{this.props.statistics.get('unallocated')}</span>
+                            {i18n('navbar.stats.unallocated', {count: this.props.statistics.get('unallocated')})}
+                        </li>
+                        <li className='list-group-item text-green semibold'>
+                            <span className='badge bg-green'>{this.props.statistics.get('total')}</span>
+                            {i18n('navbar.stats.total', {count: this.props.statistics.get('total')})}
+                        </li>
+                    </div>
                 </controls.Popover>
             );
         }
     });
 
-    var AuthenticationPopover = React.createClass({
-        mixins: [
-            componentMixins.outerClickMixin,
-            componentMixins.backboneMixin('user')
-        ],
+    var UserPopover = React.createClass({
+        mixins: [componentMixins.backboneMixin('user')],
         showChangePasswordDialog: function() {
+            this.props.toggle(false);
             dialogs.ChangePasswordDialog.show();
+        },
+        logout: function() {
+            this.props.toggle(false);
+            app.logout();
         },
         render: function() {
             return (
-                <controls.Popover {...this.props} className='navbar-popover'>
-                    <div>{this.props.user.get('username')}</div>
-                    <button onClick={this.showChangePasswordDialog}>{i18n('common.change_password')}</button>
-                    <a href='#logout'>{i18n('common.logout')}</a>
+                <controls.Popover {...this.props} className='user-popover'>
+                    <div className='username'>{i18n('common.username')}:</div>
+                    <h3 className='name'>{this.props.user.get('username')}</h3>
+                    <div className='clearfix'>
+                        <button className='btn btn-default btn-sm pull-left' onClick={this.showChangePasswordDialog}>
+                            <i className='glyphicon glyphicon-user'></i>
+                            {i18n('common.change_password')}
+                        </button>
+                        <button className='btn btn-info btn-sm pull-right' onClick={this.logout}>
+                            <i className='glyphicon glyphicon-off'></i>
+                            {i18n('common.logout')}
+                        </button>
+                    </div>
                 </controls.Popover>
             );
         }
     });
 
     var NotificationsPopover = React.createClass({
-        mixins: [
-            componentMixins.outerClickMixin,
-            componentMixins.backboneMixin('notifications')
-        ],
+        mixins: [componentMixins.backboneMixin('notifications')],
         showNodeInfo: function(id) {
+            this.props.toggle(false);
             var node = new models.Node({id: id});
             node.fetch();
             dialogs.ShowNodeInfoDialog.show({node: node});
@@ -250,7 +290,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             var notificationClasses = {
                     'text-red': notification.get('topic') == 'error',
                     'text-orange': notification.get('topic') == 'warning',
-                    unread: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
+                    semibold: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
                 },
                 iconClass = {
                     error: 'glyphicon-exclamation-sign',
@@ -259,11 +299,12 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 }[notification.get('topic')] || 'glyphicon-info-sign';
             return (
                 <div
+                    key={notification.id}
                     className={'notification ' + utils.classNames(notificationClasses)}
                     onClick={notification.get('node_id') && _.partial(this.showNodeInfo, notification.get('node_id'))}
                 >
                     <i className={'glyphicon ' + iconClass}></i>
-                    <span dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></span>
+                    <p dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></p>
                 </div>
             );
         },
@@ -272,15 +313,9 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             var notifications = this.props.notifications.first(this.props.displayCount);
             return (
                 <controls.Popover {...this.props} className='notifications-popover'>
-                    {_.map(notifications, function(notification, index) {
-                        return [
-                            !!index && <hr />,
-                            this.renderNotification(notification)
-                        ];
-                    }, this)}
+                    {_.map(notifications, this.renderNotification)}
                     {showMore &&
                         <div className='show-more'>
-                            <hr />
                             <a href='#notifications'>{i18n('notifications_popover.view_all_button')}</a>
                         </div>
                     }

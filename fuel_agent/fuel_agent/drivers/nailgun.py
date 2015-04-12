@@ -352,10 +352,7 @@ class Nailgun(object):
         configdrive_scheme.set_profile(profile=data['profile'])
         return configdrive_scheme
 
-    def image_scheme(self, partition_scheme):
-        LOG.debug('--- Preparing image scheme ---')
-        data = self.data
-        image_scheme = objects.ImageScheme()
+    def _get_image_meta(self, data):
         #FIXME(agordeev): this piece of code for fetching additional image
         # meta data should be factored out of this particular nailgun driver
         # into more common and absract data getter which should be able to deal
@@ -380,6 +377,13 @@ class Nailgun(object):
             LOG.debug('Failed to fetch/decode image meta data')
         if raw_image_meta:
             [image_meta.update(img_info) for img_info in raw_image_meta]
+        return image_meta
+
+    def image_scheme(self, partition_scheme):
+        LOG.debug('--- Preparing image scheme ---')
+        data = self.data
+        image_scheme = objects.ImageScheme()
+        image_meta = self._get_image_meta(data)
         # We assume for every file system user may provide a separate
         # file system image. For example if partitioning scheme has
         # /, /boot, /var/lib file systems then we will try to get images

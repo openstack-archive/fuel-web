@@ -266,6 +266,27 @@ class Manager(object):
             md5=md5,
         )
 
+    def do_validate_image(self):
+        LOG.debug('--- Validating images (do_validate_image) ---')
+        for image in self.image_scheme.images:
+            LOG.debug('Validating image: %s' % image.uri)
+            if image.size and image.md5:
+                LOG.debug('Trying to compare image checksum')
+                actual_md5 = utils.calculate_md5(image.target_device,
+                                                 image.size)
+                if actual_md5 == image.md5:
+                    LOG.debug('Checksum matches successfully: md5=%s' %
+                              actual_md5)
+                else:
+                    raise errors.ImageChecksumMismatchError(
+                        'Actual checksum %s mismatches with expected %s for '
+                        'file %s' % (actual_md5, image.md5,
+                                     image.target_device))
+            else:
+                LOG.debug('Skipping image checksum comparing. '
+                          'Ether size or hash have been missed')
+        LOG.debug('--- Validating images END (do_validate_image) ---')
+
     def do_copyimage(self):
         LOG.debug('--- Copying images (do_copyimage) ---')
         for image in self.image_scheme.images:
@@ -291,28 +312,19 @@ class Manager(object):
 
             LOG.debug('Launching image processing chain')
             processing.process()
+        LOG.debug('--- Copying images END (do_copyimage) ---')
 
-            if image.size and image.md5:
-                LOG.debug('Trying to compare image checksum')
-                actual_md5 = utils.calculate_md5(image.target_device,
-                                                 image.size)
-                if actual_md5 == image.md5:
-                    LOG.debug('Checksum matches successfully: md5=%s' %
-                              actual_md5)
-                else:
-                    raise errors.ImageChecksumMismatchError(
-                        'Actual checksum %s mismatches with expected %s for '
-                        'file %s' % (actual_md5, image.md5,
-                                     image.target_device))
-            else:
-                LOG.debug('Skipping image checksum comparing. '
-                          'Ether size or hash have been missed')
-
-            LOG.debug('Extending image file systems')
+    def do_extend_image(self):
+        LOG.debug('--- Extending image (do_extend_image) ---')
+        for image in self.image_scheme.images:
+            LOG.debug('Extending image: %s' % image.uri)
             if image.format in ('ext2', 'ext3', 'ext4', 'xfs'):
                 LOG.debug('Extending %s %s' %
                           (image.format, image.target_device))
                 fu.extend_fs(image.format, image.target_device)
+            else:
+                LOG.debug('Skipping extending image. Unsupported file system.')
+        LOG.debug('--- Extending image END (do_extend_image) ---')
 
     def mount_target(self, chroot):
         LOG.debug('Mounting target file systems')
@@ -417,4 +429,6 @@ class Manager(object):
         self.do_partitioning()
         self.do_configdrive()
         self.do_copyimage()
+        self.do_validate_image()
+        self.do_extend_image()
         self.do_bootloader()

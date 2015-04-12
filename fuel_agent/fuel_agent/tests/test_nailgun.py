@@ -403,6 +403,19 @@ LIST_BLOCK_DEVICES_SAMPLE = [
      'size': 500107862016},
 ]
 
+IMAGE_META_SAMPLE = [
+    {'/': {
+        'container': 'gzip',
+        'filename': 'fakeimage',
+        'format': 'ext4',
+        'md5': 'fakemd5'}},
+    {'/boot': {
+        'container': 'gzip',
+        'filename': 'fakeimage-boot',
+        'format': 'ext2',
+        'md5': 'fakemd5-boot'}}
+]
+
 
 class TestNailgun(test_base.BaseTestCase):
     def setUp(self):

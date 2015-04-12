@@ -20,7 +20,8 @@ from oslotest import base as test_base
 
 from fuel_agent import errors
 from fuel_agent import manager
-from fuel_agent.objects import partition
+from fuel_agent import objects
+from fuel_agent.drivers.nailgun import Nailgun
 from fuel_agent.tests import test_nailgun
 from fuel_agent.utils import artifact_utils as au
 from fuel_agent.utils import fs_utils as fu
@@ -38,10 +39,10 @@ class TestManager(test_base.BaseTestCase):
         super(TestManager, self).setUp()
         self.mgr = manager.Manager(test_nailgun.PROVISION_SAMPLE_DATA)
 
-    @mock.patch('yaml.load')
-    @mock.patch.object(utils, 'init_http_request')
+    @mock.patch.object(Nailgun, '_get_image_meta')
     @mock.patch.object(hu, 'list_block_devices')
-    def test_do_parsing(self, mock_lbd, mock_http_req, mock_yaml):
+    def test_do_parsing(self, mock_lbd, mock_image_meta):
+        mock_image_meta.return_value = {}
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         self.mgr.do_parsing()
         #NOTE(agordeev): there's no need for deeper assertions as all schemes
@@ -50,6 +51,7 @@ class TestManager(test_base.BaseTestCase):
         self.assertFalse(self.mgr.configdrive_scheme is None)
         self.assertFalse(self.mgr.image_scheme is None)
 
+    @mock.patch.object(Nailgun, '_get_image_meta')
     @mock.patch('six.moves.builtins.open')
     @mock.patch.object(os, 'symlink')
     @mock.patch.object(os, 'remove')
@@ -75,7 +77,8 @@ class TestManager(test_base.BaseTestCase):
                              mock_lu_v, mock_lu_l, mock_fu_mf, mock_pvr,
                              mock_vgr, mock_lvr, mock_mdr, mock_exec,
                              mock_os_ld, mock_os_p, mock_os_r, mock_os_s,
-                             mock_open):
+                             mock_open, mock_image_meta):
+        mock_image_meta.return_value = {}
         mock_os_ld.return_value = ['not_a_rule', 'fake.rules']
         mock_os_p.exists.return_value = True
         mock_hu_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
@@ -143,15 +146,15 @@ class TestManager(test_base.BaseTestCase):
             mock.call('xfs', '', '', '/dev/mapper/image-glance')]
         self.assertEqual(mock_fu_mf_expected_calls, mock_fu_mf.call_args_list)
 
+    @mock.patch.object(Nailgun, '_get_image_meta')
     @mock.patch.object(utils, 'calculate_md5')
     @mock.patch('os.path.getsize')
-    @mock.patch('yaml.load')
-    @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(utils, 'execute')
     @mock.patch.object(utils, 'render_and_save')
     @mock.patch.object(hu, 'list_block_devices')
     def test_do_configdrive(self, mock_lbd, mock_u_ras, mock_u_e,
-                            mock_http_req, mock_yaml, mock_get_size, mock_md5):
+                            mock_get_size, mock_md5, mock_image_meta):
+        mock_image_meta.return_value = {}
         mock_get_size.return_value = 123
         mock_md5.return_value = 'fakemd5'
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
@@ -202,147 +205,154 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual('fakemd5', cf_drv_img.md5)
         self.assertEqual(123, cf_drv_img.size)
 
-    @mock.patch('yaml.load')
-    @mock.patch.object(utils, 'init_http_request')
-    @mock.patch.object(partition.PartitionScheme, 'configdrive_device')
+    @mock.patch('fuel_agent.objects.PartitionScheme',
+                **{'configdrive_device.return_value': None})
     @mock.patch.object(utils, 'execute')
     @mock.patch.object(utils, 'render_and_save')
-    @mock.patch.object(hu, 'list_block_devices')
-    def test_do_configdrive_no_configdrive_device(self, mock_lbd, mock_u_ras,
-                                                  mock_u_e, mock_p_ps_cd,
-                                                  mock_http_req, mock_yaml):
-        mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        self.mgr.do_parsing()
-        mock_p_ps_cd.return_value = None
+    def test_do_configdrive_no_configdrive_device(self, mock_u_ras,
+                                                  mock_u_e, mock_p_ps):
+        self.mgr.configdrive_scheme = mock.Mock()
+        self.mgr.partition_scheme = mock_p_ps
         self.assertRaises(errors.WrongPartitionSchemeError,
                           self.mgr.do_configdrive)
 
-    @mock.patch.object(utils, 'calculate_md5')
-    @mock.patch('os.path.getsize')
-    @mock.patch('yaml.load')
-    @mock.patch.object(utils, 'init_http_request')
-    @mock.patch.object(fu, 'extend_fs')
     @mock.patch.object(au, 'GunzipStream')
     @mock.patch.object(au, 'LocalFile')
     @mock.patch.object(au, 'HttpUrl')
     @mock.patch.object(au, 'Chain')
-    @mock.patch.object(utils, 'execute')
-    @mock.patch.object(utils, 'render_and_save')
-    @mock.patch.object(hu, 'list_block_devices')
-    def test_do_copyimage(self, mock_lbd, mock_u_ras, mock_u_e, mock_au_c,
-                          mock_au_h, mock_au_l, mock_au_g, mock_fu_ef,
-                          mock_http_req, mock_yaml, mock_get_size, mock_md5):
+    def test_do_copyimage(self, mock_au_c, mock_au_h, mock_au_l, mock_au_g):
 
         class FakeChain(object):
-            processors = []
+            def __init__(self):
+                self.processors = []
+                # original class has process instance method
+                # which is to be called when chain needs to be processed
+                self.process = mock.Mock()
 
-            def append(self, thing):
-                self.processors.append(thing)
+            def append(self, proc):
+                self.processors.append(proc)
 
-            def process(self):
-                pass
+        class FakeImage(object):
+            def __init__(self, uri, container, target_device):
+                self.uri = uri
+                self.container = container
+                self.target_device = target_device
 
-        mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        mock_au_c.return_value = FakeChain()
-        self.mgr.do_parsing()
-        self.mgr.do_configdrive()
-        self.mgr.do_copyimage()
-        imgs = self.mgr.image_scheme.images
-        self.assertEqual(2, len(imgs))
-        expected_processors_list = []
-        for img in imgs[:-1]:
-            expected_processors_list += [
-                img.uri,
+        class FakeImageScheme(object):
+            images = [
+                FakeImage('http://fake/uri1', 'gzip', '/dev/fake1'),
+                FakeImage('file:///fake/uri2', 'raw', '/dev/fake2')
+            ]
+
+        self.mgr.image_scheme = FakeImageScheme()
+
+        chains = [FakeChain(), FakeChain()]
+        mock_au_c.side_effect = chains
+
+        expected_processors = [
+            [
+                self.mgr.image_scheme.images[0].uri,
                 au.HttpUrl,
                 au.GunzipStream,
-                img.target_device
+                self.mgr.image_scheme.images[0].target_device,
+            ],
+            [
+                self.mgr.image_scheme.images[1].uri,
+                au.LocalFile,
+                self.mgr.image_scheme.images[1].target_device,
             ]
-        expected_processors_list += [
-            imgs[-1].uri,
-            au.LocalFile,
-            imgs[-1].target_device
         ]
-        self.assertEqual(expected_processors_list,
-                         mock_au_c.return_value.processors)
+
+        self.mgr.do_copyimage()
+        self.assertEqual(mock_au_c.call_args_list, [mock.call()] * 2)
+        self.assertEqual(expected_processors, [c.processors for c in chains])
+        [c.process.assert_called_once_with() for c in chains]
+
+
+    @mock.patch.object(fu, 'extend_fs')
+    def test_do_extend_image(self, mock_fu_ef):
+        class FakeImage(object):
+            uri = 'http://fake/uri'
+            target_device = '/dev/fake'
+            format = 'ext4'
+
+        class FakeImageScheme(object):
+            images = [FakeImage()]
+
+        self.mgr.image_scheme = FakeImageScheme()
+
+        self.mgr.do_extend_image()
+        imgs = self.mgr.image_scheme.images
         mock_fu_ef_expected_calls = [
-            mock.call('ext4', '/dev/mapper/os-root')]
+            mock.call('ext4', '/dev/fake')]
         self.assertEqual(mock_fu_ef_expected_calls, mock_fu_ef.call_args_list)
 
     @mock.patch.object(utils, 'calculate_md5')
-    @mock.patch('os.path.getsize')
-    @mock.patch('yaml.load')
-    @mock.patch.object(utils, 'init_http_request')
-    @mock.patch.object(fu, 'extend_fs')
-    @mock.patch.object(au, 'GunzipStream')
-    @mock.patch.object(au, 'LocalFile')
-    @mock.patch.object(au, 'HttpUrl')
-    @mock.patch.object(au, 'Chain')
-    @mock.patch.object(utils, 'execute')
-    @mock.patch.object(utils, 'render_and_save')
-    @mock.patch.object(hu, 'list_block_devices')
-    def test_do_copyimage_md5_matches(self, mock_lbd, mock_u_ras, mock_u_e,
-                                      mock_au_c, mock_au_h, mock_au_l,
-                                      mock_au_g, mock_fu_ef, mock_http_req,
-                                      mock_yaml, mock_get_size, mock_md5):
+    def test_do_validate_image_match(self, mock_md5):
+        mock_md5.return_value = 'fakemd5'
 
-        class FakeChain(object):
-            processors = []
+        class FakeImage(object):
+            uri = 'http://fake/uri'
+            size = 1
+            md5 = 'fakemd5'
+            target_device = '/dev/fake'
 
-            def append(self, thing):
-                self.processors.append(thing)
+        class FakeImageScheme(object):
+            images = [FakeImage()]
 
-            def process(self):
-                pass
-
-        mock_get_size.return_value = 123
-        mock_md5.side_effect = ['fakemd5', 'really_fakemd5', 'fakemd5']
-        mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        mock_au_c.return_value = FakeChain()
-        self.mgr.do_parsing()
-        self.mgr.image_scheme.images[0].size = 1234
-        self.mgr.image_scheme.images[0].md5 = 'really_fakemd5'
-        self.mgr.do_configdrive()
-        self.assertEqual(2, len(self.mgr.image_scheme.images))
-        self.mgr.do_copyimage()
-        expected_md5_calls = [mock.call('/tmp/config-drive.img', 123),
-                              mock.call('/dev/mapper/os-root', 1234),
-                              mock.call('/dev/sda7', 123)]
-        self.assertEqual(expected_md5_calls, mock_md5.call_args_list)
+        self.mgr.image_scheme = FakeImageScheme()
+        mock_md5_expected_calls = []
+        for img in self.mgr.image_scheme.images:
+            mock_md5_expected_calls.append(mock.call(
+                img.target_device, img.size))
+        self.mgr.do_validate_image()
+        self.assertEqual(mock_md5_expected_calls, mock_md5.call_args_list)
 
     @mock.patch.object(utils, 'calculate_md5')
-    @mock.patch('os.path.getsize')
-    @mock.patch('yaml.load')
-    @mock.patch.object(utils, 'init_http_request')
-    @mock.patch.object(fu, 'extend_fs')
-    @mock.patch.object(au, 'GunzipStream')
-    @mock.patch.object(au, 'LocalFile')
-    @mock.patch.object(au, 'HttpUrl')
-    @mock.patch.object(au, 'Chain')
-    @mock.patch.object(utils, 'execute')
-    @mock.patch.object(utils, 'render_and_save')
-    @mock.patch.object(hu, 'list_block_devices')
-    def test_do_copyimage_md5_mismatch(self, mock_lbd, mock_u_ras, mock_u_e,
-                                       mock_au_c, mock_au_h, mock_au_l,
-                                       mock_au_g, mock_fu_ef, mock_http_req,
-                                       mock_yaml, mock_get_size, mock_md5):
+    def test_do_validate_image_mismatch(self, mock_md5):
+        mock_md5.return_value = 'fakemd5'
 
-        class FakeChain(object):
-            processors = []
+        class FakeImage(object):
+            uri = 'http://fake/uri'
+            size = 1
+            md5 = 'fakemd5-mismatch'
+            target_device = '/dev/fake'
 
-            def append(self, thing):
-                self.processors.append(thing)
+        class FakeImageScheme(object):
+            images = [FakeImage()]
 
-            def process(self):
-                pass
-
-        mock_get_size.return_value = 123
-        mock_md5.side_effect = ['fakemd5', 'really_fakemd5', 'fakemd5']
-        mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        mock_au_c.return_value = FakeChain()
-        self.mgr.do_parsing()
-        self.mgr.image_scheme.images[0].size = 1234
-        self.mgr.image_scheme.images[0].md5 = 'fakemd5'
-        self.mgr.do_configdrive()
-        self.assertEqual(2, len(self.mgr.image_scheme.images))
+        self.mgr.image_scheme = FakeImageScheme()
         self.assertRaises(errors.ImageChecksumMismatchError,
-                          self.mgr.do_copyimage)
+                          self.mgr.do_validate_image)
+
+    @mock.patch.object(utils, 'calculate_md5')
+    def test_do_validate_image_size_not_given(self, mock_md5):
+        # If image size is not given,
+        # this image is to be skipped
+        class FakeImage(object):
+            uri = 'http://fake/uri'
+            size = None
+            md5 = 'fakemd5-mismatch'
+            target_device = '/dev/fake'
+
+        class FakeImageScheme(object):
+            images = [FakeImage()]
+
+        self.mgr.image_scheme = FakeImageScheme()
+        self.assertEqual(mock_md5.call_args_list, [])
+
+    @mock.patch.object(utils, 'calculate_md5')
+    def test_do_validate_image_md5_not_given(self, mock_md5):
+        # If image md5 is not given,
+        # this image is to be skipped
+        class FakeImage(object):
+            uri = 'http://fake/uri'
+            size = 1
+            md5 = None
+            target_device = '/dev/fake'
+
+        class FakeImageScheme(object):
+            images = [FakeImage()]
+
+        self.mgr.image_scheme = FakeImageScheme()
+        self.assertEqual(mock_md5.call_args_list, [])

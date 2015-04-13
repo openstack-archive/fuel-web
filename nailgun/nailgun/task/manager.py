@@ -339,6 +339,14 @@ class ApplyChangesTaskManager(TaskManager):
             n for n in network_info["networks"] if n["name"] != "fuelweb_admin"
         ]
 
+        check_repo_connect = supertask.create_subtask(
+            consts.TASK_NAMES.check_networks)
+
+        self._call_silently(
+            check_repo_connect,
+            tasks.CheckNodesToRepositoryConnectionTask,
+        )
+
         check_networks = supertask.create_subtask(
             consts.TASK_NAMES.check_networks)
 

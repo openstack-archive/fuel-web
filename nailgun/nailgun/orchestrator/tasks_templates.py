@@ -204,3 +204,12 @@ def make_download_debian_installer_task(
                         remote_initrd=remote_initrd),
             'timeout': 10 * 60,
             'retries': 1}})
+
+def make_check_repository_connectivity_task(uids):
+    return make_shell_task(uids, {
+        'parameters': {
+            'cwd': '/root',
+            #'cmd': 'wget http://archive.ubuntu.com/ubuntu/dists/trusty/Release',
+            'cmd': 'echo 1 > /root/proof',
+            'timeout': 10 * 60,
+            'retries': 1}})

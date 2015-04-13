@@ -1083,3 +1083,15 @@ class NailgunReceiver(object):
             data = {'status': status, 'progress': progress,
                     'message': '/dump/{0}'.format(dumpfile)}
             objects.Task.update(task, data)
+
+    @classmethod
+    def repo_connection_resp(cls, **kwargs):
+        logger.info(
+            "RPC method repo_connection_resp received: %s" %
+            jsonutils.dumps(kwargs)
+        )
+        task_uuid = kwargs.get('task_uuid')
+        status = kwargs.get('status')
+        progress = kwargs.get('progress')
+        error = kwargs.get('error')
+        msg = kwargs.get('msg')

@@ -1029,3 +1029,28 @@ class GenerateCapacityLogTask(object):
         task.status = 'ready'
         task.progress = '100'
         db().commit()
+
+class CheckNodesToRepositoryConnectionTask(object):
+
+    @classmethod
+    def message(cls, task):
+        rpc_message = make_astute_message(
+            task,
+            "execute_shell",
+            "repo_connection_resp",
+            {
+                "cmd": "echo 1 > /root/proof",
+                "node_ids": [1,2],
+            }
+        )
+        db().commit()
+        return rpc_message
+
+    @classmethod
+    def execute(cls, task):
+        rpc.cast(
+            'naily',
+            cls.message(task),
+            service=True
+        )
+        logger.critical('casted')

@@ -212,6 +212,7 @@ TASK_NAMES = Enum(
     'check_dhcp',
     'verify_network_connectivity',
     'multicast_verification',
+    'check_nodes_repository_connection',
 
     # dump
     'dump',

@@ -24,6 +24,7 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
@@ -481,6 +482,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
                       "admin (PXE), management.",
                       task['message'])
 
+    @fake_tasks()
     def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):
         resp = self.env.cluster_changes_put(self.cluster['id'],
                                             expect_errors=True)

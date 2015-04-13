@@ -213,6 +213,7 @@ TASK_NAMES = Enum(
     'check_dhcp',
     'verify_network_connectivity',
     'multicast_verification',
+    'check_nodes_repository_connection',
 
     # dump
     'dump',
@@ -322,3 +323,17 @@ OSWL_RESOURCE_TYPES = Enum(
 )
 
 ADMIN_GATEWAY_METRIC = 65000
+
+BARRIERS = Enum(
+    Enum(
+        'ubuntu-repo-check',
+        2,
+        names=(
+            'group',
+            'limit'
+        )
+    ),
+    names=(
+        'ubuntu_repo_check'
+    )
+)

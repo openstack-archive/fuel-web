@@ -1295,15 +1295,15 @@ class TestHandlers(BaseIntegrationTest):
         # The first set of args is for deletion task and
         # the second one is for provisioning and deployment.
 
-        # remove_nodes method call [0][0][1]
+        # remove_nodes method call [1][0][1]
         n_rpc_remove = nailgun.task.task.rpc.cast. \
-            call_args_list[0][0][1]['args']['nodes']
+            call_args_list[1][0][1]['args']['nodes']
         self.assertEqual(len(n_rpc_remove), 1)
         self.assertEqual(n_rpc_remove[0]['uid'], self.env.nodes[1].id)
 
         # provision method call [1][0][1][0]
         n_rpc_provision = nailgun.task.manager.rpc.cast. \
-            call_args_list[1][0][1][0]['args']['provisioning_info']['nodes']
+            call_args_list[2][0][1][0]['args']['provisioning_info']['nodes']
         # Nodes will be appended in provision list if
         # they 'pending_deletion' = False and
         # 'status' in ('discover', 'provisioning') or
@@ -1318,7 +1318,7 @@ class TestHandlers(BaseIntegrationTest):
 
         # deploy method call [1][0][1][1]
         n_rpc_deploy = nailgun.task.manager.rpc.cast.call_args_list[
-            1][0][1][1]['args']['deployment_info']
+            2][0][1][1]['args']['deployment_info']
         self.assertEqual(len(n_rpc_deploy), 1)
         self.assertEqual(n_rpc_deploy[0]['uid'], str(self.env.nodes[0].id))
 
@@ -1480,6 +1480,7 @@ class TestHandlers(BaseIntegrationTest):
             'Not enough IP addresses. Public network 172.16.0.0/24 must have '
             'at least 3 IP addresses for the current environment.')
 
+    @fake_tasks()
     def test_occurs_error_not_enough_ip_addresses(self):
         self.env.create(
             cluster_kwargs={},
@@ -1518,6 +1519,7 @@ class TestHandlers(BaseIntegrationTest):
             'Not enough IP addresses. Public network 220.0.1.0/24 must have '
             'at least 3 IP addresses for the current environment.')
 
+    @fake_tasks()
     def test_occurs_error_not_enough_free_space(self):
         meta = self.env.default_metadata()
         meta['disks'] = [{
@@ -1543,6 +1545,7 @@ class TestHandlers(BaseIntegrationTest):
             node_db.human_readable_name)
 
     # TODO(awoodward): Purge multinode
+    @fake_tasks()
     def test_occurs_error_not_enough_controllers_for_multinode(self):
         self.env.create(
             cluster_kwargs={
@@ -1559,6 +1562,7 @@ class TestHandlers(BaseIntegrationTest):
             "Not enough controllers, multinode mode requires at least 1 "
             "controller")
 
+    @fake_tasks()
     def test_occurs_error_not_enough_controllers_for_ha(self):
         self.env.create(
             nodes_kwargs=[
@@ -1572,6 +1576,7 @@ class TestHandlers(BaseIntegrationTest):
             'Not enough controllers, ha_compact '
             'mode requires at least 1 controller')
 
+    @fake_tasks()
     def test_occurs_error_not_enough_osds_for_ceph(self):
         cluster = self.env.create(
             nodes_kwargs=[

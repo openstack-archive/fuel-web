@@ -88,8 +88,9 @@ class TestPutSameJson(base.BaseIntegrationTest):
             cluster, 200
         )
 
+    @patch('nailgun.utils.synchronization.Barrier')
     @patch('nailgun.rpc.cast')
-    def test_cluster_changes(self, mock_rpc):
+    def test_cluster_changes(self, mock_rpc, _):
         cluster = self.http_get(
             'ClusterHandler', {
                 'obj_id': self.cluster.id

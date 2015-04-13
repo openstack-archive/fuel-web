@@ -67,11 +67,12 @@ class TestTaskManagers(BaseIntegrationTest):
             supertask.status,
             (TASK_STATUSES.running, TASK_STATUSES.ready)
         )
-        # we have three subtasks here
+        # we have four subtasks here
+        # check ubuntu repos
         # deletion
         # provision
         # deployment
-        self.assertEqual(len(supertask.subtasks), 3)
+        self.assertEqual(len(supertask.subtasks), 4)
         # provisioning task has less weight then deployment
         provision_task = filter(
             lambda t: t.name == TASK_NAMES.provision, supertask.subtasks)[0]
@@ -141,6 +142,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(al.additional_info["message"], "")
         self.assertEqual(al.additional_info["output"], {})
 
+    @fake_tasks()
     def test_check_before_deployment_with_error(self):
         self.env.create(
             nodes_kwargs=[
@@ -152,7 +154,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         action_logs = objects.ActionLogCollection.all()
 
-        self.assertEqual(action_logs.count(), 3)
+        self.assertEqual(action_logs.count(), 4)
         for al in action_logs:
             self.assertEqual(al.action_type, ACTION_TYPES.nailgun_task)
             if al.additional_info["operation"] == TASK_NAMES.deploy:
@@ -521,8 +523,9 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @fake_tasks()
+    @mock.patch('nailgun.utils.synchronization.Barrier')
     @mock.patch('nailgun.task.manager.tasks.DeletionTask.execute')
-    def test_apply_changes_exception_caught(self, mdeletion_execute):
+    def test_apply_changes_exception_caught(self, mdeletion_execute, _):
         self.env.create(
             nodes_kwargs=[
                 {"pending_deletion": True, "status": NODE_STATUSES.ready},
@@ -556,7 +559,8 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertNotIn(remaining_node.id, to_delete_ids)
 
     @fake_tasks(recover_offline_nodes=False, tick_interval=1)
-    def test_deletion_three_offline_nodes_and_one_online(self):
+    @mock.patch('nailgun.utils.synchronization.Barrier')
+    def test_deletion_three_offline_nodes_and_one_online(self, _):
         cluster = self.env.create(
             nodes_kwargs=[
                 {"online": False, "pending_deletion": True},

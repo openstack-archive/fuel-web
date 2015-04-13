@@ -600,7 +600,8 @@ class EnvironmentManager(object):
                 "Nothing to provision - try creating cluster"
             )
 
-    def launch_deployment(self):
+    @mock.patch('nailgun.utils.synchronization.Barrier')
+    def launch_deployment(self, _):
         if self.clusters:
             resp = self.app.put(
                 reverse(
@@ -878,7 +879,8 @@ class EnvironmentManager(object):
                              networks,
                              expect_errors)
 
-    def cluster_changes_put(self, cluster_id, expect_errors=False):
+    @mock.patch('nailgun.utils.synchronization.Barrier')
+    def cluster_changes_put(self, cluster_id, _, expect_errors=False):
         return self._api_put('ClusterChangesHandler',
                              {'cluster_id': cluster_id},
                              [],

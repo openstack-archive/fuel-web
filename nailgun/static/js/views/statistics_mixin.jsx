@@ -142,7 +142,7 @@ define([
                 type={setting.type}
                 name={settingName}
                 label={setting.label && this.getText(setting.label)}
-                checked={setting.value}
+                checked={!disabled && setting.value}
                 value={setting.value}
                 disabled={disabled}
                 inputClassName={setting.type == 'text' && 'input-xlarge'}

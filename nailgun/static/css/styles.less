@@ -605,7 +605,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   margin-left: auto;
   margin-right: auto;
   color: @base-dark-color + 60%;
-  font-size: 12px;
+  font-size: @base-font-size - 2;
   height: 70px;
   overflow: hidden;
   margin-top: -70px;
@@ -697,7 +697,6 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     font-family: @normal;
     color: @base-text-color;
   }
-
   .deploy-box {
     display: block;
     height: 60px;
@@ -1440,5 +1439,59 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     font-size: @base-font-size - 2;
     font-style: italic;
     margin-left: 27px;
+  }
+}
+
+// wizard styles
+#wizard {
+  &.modal-dialog {
+    width: 830px;
+    height: 485px;
+    .wizard-steps-nav {
+      padding-left: 0;
+      li {
+        cursor: pointer;
+      }
+      .wizard-step {
+        &.available {
+          a {
+            color: @green;
+          }
+        }
+      }
+    }
+  }
+  .release-alert {
+    margin-top: 10px;
+  }
+  label.parameter-box {
+    cursor: pointer;
+    padding-left: 0;
+    margin-top: 5px;
+    .parameter-name {
+      padding-top: 2px;
+    }
+  }
+  .alert-regular {
+    font-size: @base-font-size - 2;
+  }
+  .control-label {
+    padding-left: 0;
+  }
+  .has-error {
+    .release-description,
+    .mode-description,
+    .modal-parameter-description,
+    .help-block {
+      color: @red;
+    }
+  }
+  .release-description,
+  .mode-description,
+  .modal-parameter-description,
+  .help-block {
+    font-size: @base-font-size - 2;
+    color: @gray;
+    line-height: 14px;
   }
 }

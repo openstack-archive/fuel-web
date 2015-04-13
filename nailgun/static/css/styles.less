@@ -228,7 +228,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   height: 22px;
 }
 
-.custom-tumbler input {
+.custom-tumbler input, .custom-tumbler input.form-control {
   overflow: hidden;
   position: absolute;
   filter: alpha(opacity=0);
@@ -1440,5 +1440,56 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     font-size: @base-font-size - 2;
     font-style: italic;
     margin-left: 27px;
+  }
+}
+
+.modal {
+  .modal-body {
+    .label {
+      margin-right: 5px;
+      position: relative;
+      top: -2px;
+    }
+  }
+  .modal-footer {
+    .btn-group {
+      margin-left: 5px;
+    }
+  }
+}
+
+.display-changes-dialog {
+  ul {
+    padding: 10px 10px 10px 25px;
+    margin: 10px 0 0;
+  }
+  hr {
+    margin: 8px 0 12px 0;
+  }
+  i {
+    margin-right: 5px;
+  }
+}
+
+.node-details-popup {
+  #accordion {
+    margin-top: 10px;
+    font-size: @base-font-size - 2;
+    .panel-title {
+      font-size: @base-font-size;
+    }
+    label {
+      text-transform: uppercase;
+      width: 150px;
+      word-break: break-all;
+      font-weight: normal;
+      margin: 0;
+    }
+    .nested-object {
+      border: 1px solid @gray + 80%;
+      border-radius: 3px;
+      margin-top: 3px;
+      padding: 4px;
+    }
   }
 }

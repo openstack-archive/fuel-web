@@ -90,10 +90,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             }
         },
         renderInput: function() {
-            var classes = {
-                'parameter-input': true,
-                'input-append': this.props.toggleable
-            };
+            var classes = {'form-control': true};
             classes[this.props.inputClassName] = this.props.inputClassName;
             var props = {
                     ref: 'input',
@@ -106,21 +103,23 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                 Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,
                 isCheckboxOrRadio = this.isCheckboxOrRadio(),
-                inputWrapperClasses = {'input-wrapper': this.props.type != 'hidden', 'custom-tumbler': isCheckboxOrRadio};
+                inputWrapperClasses = {
+                    'input-group': true,
+                    'input-wrapper': this.props.type != 'hidden',
+                    'custom-tumbler': isCheckboxOrRadio
+                };
             return (
                 <div key='input-wrapper' className={utils.classNames(inputWrapperClasses)}>
                     {input}
+                    {this.props.toggleable &&
+                        <div className='input-group-addon' onClick={this.togglePassword}>
+                            <i className={this.state.visible ? 'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'} />
+                        </div>
+                    }
                     {isCheckboxOrRadio && <span>&nbsp;</span>}
                     {this.props.extraContent}
                 </div>
             );
-        },
-        renderToggleablePasswordAddon: function() {
-            return this.props.toggleable ? (
-                <span key='add-on' className='add-on' onClick={this.togglePassword}>
-                    <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
-                </span>
-            ) : null;
         },
         renderLabel: function(children) {
             var labelClasses = {
@@ -180,10 +179,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
         },
         render: function() {
             return this.renderWrapper([
-                this.renderLabel([
-                    this.renderInput(),
-                    this.renderToggleablePasswordAddon()
-                ]),
+                this.renderLabel(this.renderInput()),
                 this.renderDescription()
             ]);
         }

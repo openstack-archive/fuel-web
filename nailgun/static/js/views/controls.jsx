@@ -37,7 +37,14 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
         },
         renderTooltipIcon: function() {
             return this.props.tooltipText ? (
-                <i key='tooltip' ref='tooltip' className='icon-attention text-warning' data-toggle='tooltip' title={this.props.tooltipText} />
+                <i
+                    key='tooltip'
+                    ref='tooltip'
+                    className='glyphicon glyphicon-warning-sign text-orange'
+                    data-toggle='tooltip'
+                    data-placement='right'
+                    title={this.props.tooltipText}
+                />
             ) : null;
         }
     };

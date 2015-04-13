@@ -46,6 +46,8 @@
 @blue:   #688db4;
 @orange: #bc6e12;
 @gray:   #8c8c8c;
+@yellow-warning: #c09853;
+@light-gray: #888888;
 
 // @bg-color: #394c59;
 @link-color: saturate(lighten(@base-dark-color, 20%), 30%);
@@ -71,6 +73,8 @@
 .semibold {font-family: @semibold;}
 .bold {font-family: @bold;}
 .fat {font-family: @fat;}
+
+.small-font {font-size: 12px;}
 
 @base-font-size: 14px;
 
@@ -605,7 +609,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   margin-left: auto;
   margin-right: auto;
   color: @base-dark-color + 60%;
-  font-size: 12px;
+  .small-font;
   height: 70px;
   overflow: hidden;
   margin-top: -70px;
@@ -1416,4 +1420,59 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   0%   { opacity: 0; }
   50%  { opacity: 1; }
   100% { opacity: 0; }
+}
+
+// wizard styles
+#wizard {
+  @wizard-dialog-width: 830px;
+  @wizard-dialog-height: 485px;
+  &.modal-dialog {
+    width: @wizard-dialog-width;
+    height: @wizard-dialog-height;
+    .wizard-steps-nav {
+      padding-left: 0;
+    }
+    .wizard-step {
+      &.available {
+        a {
+          color: @green;
+        }
+      }
+    }
+  }
+  select[name=release] {
+    border-color: @yellow-warning;
+  }
+  .release-alert {
+    margin-top: 10px;
+  }
+  label.parameter-box {
+    cursor: pointer;
+    padding-left: 0;
+    margin-top: 5px;
+    .parameter-name {
+      padding-top: 2px;
+    }
+  }
+  .alert-regular {
+    .small-font;
+  }
+  .control-label {
+    padding-left: 0;
+  }
+  .release-description,
+  .mode-description,
+  .modal-parameter-description,
+  .help-block {
+    .small-font;
+    color: @light-gray;
+    line-height: 14px;
+  }
+  .error {
+    color: @red;
+    input {
+      border-color: @red;
+      color: @red;
+    }
+  }
 }

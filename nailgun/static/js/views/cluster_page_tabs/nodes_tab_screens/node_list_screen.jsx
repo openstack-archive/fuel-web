@@ -472,7 +472,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     checked={this.props.mode == 'edit' || (availableNodesIds.length && !_.any(availableNodesIds, function(id) {return !this.props.selectedNodeIds[id];}, this))}
                     disabled={this.props.mode == 'edit' || this.props.locked || !availableNodesIds.length}
                     label={i18n('common.select_all')}
-                    wrapperClassName='span2 select-all'
+                    wrapperClassName='select-all pull-right'
                     onChange={_.bind(this.props.selectNodes, this.props, availableNodesIds)}
                 />
             );
@@ -510,24 +510,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             var groups = this.groupNodes();
             return (
-                <div className='node-list'>
-                    {!!groups.length &&
-                        <div className='row-fluid node-list-header'>
-                            <div className='span10' />
-                            {this.renderSelectAllCheckbox()}
-                        </div>
-                    }
-                    <div className='row-fluid'>
+                <div className='node-list row'>
+                    {!!groups.length && <div className='col-xs-12 node-list-header'>{this.renderSelectAllCheckbox()}</div>}
+                    <div className='col-xs-12'>
                         {groups.length ?
-                            <div>
-                                {groups.map(function(group) {
-                                    return <NodeGroup {...this.props}
-                                        key={group[0]}
-                                        label={group[0]}
-                                        nodes={group[1]}
-                                    />;
-                                }, this)}
-                            </div>
+                            groups.map(function(group) {
+                                return <NodeGroup {...this.props} key={group[0]} label={group[0]} nodes={group[1]} />;
+                            }, this)
                         :
                             <div className='alert alert-warning'>{this.getEmptyListWarning()}</div>
                         }
@@ -542,7 +531,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             return (
                 <div className='nodes-group'>
-                    <h4>{this.props.label} ({this.props.nodes.length})</h4>
+                    <div className='row'>
+                        <div className='col-xs-10'>
+                            <h4>{this.props.label} ({this.props.nodes.length})</h4>
+                        </div>
+                        <div className='col-xs-2'>
+                            {this.renderSelectAllCheckbox()}
+                        </div>
+                    </div>
                     <div>
                         {this.props.nodes.map(function(node) {
                             return <Node

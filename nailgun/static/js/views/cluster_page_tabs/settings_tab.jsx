@@ -106,13 +106,35 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }
             return deferred;
         },
+        getHiddenSettings: function() {
+            var hidden = {};
+            var settings = this.props.cluster.get('settings');
+            _.each(settings.attributes, function(group, groupKey) {
+                _.each(group, function(field, fieldKey) {
+                    if (field && field.type != 'hidden') {
+                        return;
+                    }
+                    var key = [groupKey, fieldKey].join('.');
+                    hidden[key] = _.clone(field);
+                });
+            });
+            return hidden;
+        },
+        setHiddenSettings: function(hidden) {
+            var settings = this.props.cluster.get('settings');
+            _.each(hidden, function(value, key) {
+                settings.set(key, value);
+            });
+        },
         loadDefaults: function() {
             var settings = this.props.cluster.get('settings'),
+                hiddenSettings = this.getHiddenSettings(),
                 deferred = settings.fetch({url: _.result(settings, 'url') + '/defaults'});
             if (deferred) {
                 this.setState({actionInProgress: true});
                 deferred
                     .always(_.bind(function() {
+                        this.setHiddenSettings(hiddenSettings);
                         settings.isValid({models: this.state.configModels});
                         this.setState({
                             actionInProgress: false,

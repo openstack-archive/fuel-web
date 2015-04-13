@@ -605,7 +605,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   margin-left: auto;
   margin-right: auto;
   color: @base-dark-color + 60%;
-  font-size: 12px;
+  font-size: @base-font-size - 2;
   height: 70px;
   overflow: hidden;
   margin-top: -70px;
@@ -691,11 +691,6 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
         }
       }
     }
-  }
-
-  h4 {
-    font-family: @normal;
-    color: @base-text-color;
   }
 
   .deploy-box {
@@ -971,7 +966,9 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   .box-sizing;
   margin-bottom: 20px;
   h4 {
+    font-family: @normal;
     margin: 18px 0px;
+    color: @base-text-color;
   }
   .discover {
     background-color: @node-color-unallocated;
@@ -1440,5 +1437,58 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     font-size: @base-font-size - 2;
     font-style: italic;
     margin-left: 27px;
+  }
+}
+
+// wizard styles
+#wizard {
+  &.modal-dialog {
+    width: 830px;
+    height: 485px;
+    .wizard-steps-nav {
+      padding-left: 0;
+      li {
+        cursor: pointer;
+      }
+      .wizard-step {
+        &.available {
+          a {
+            color: @green;
+          }
+        }
+      }
+    }
+  }
+  .release-alert {
+    margin-top: 10px;
+  }
+  label.parameter-box {
+    cursor: pointer;
+    padding-left: 0;
+    margin-top: 5px;
+    .parameter-name {
+      padding-top: 2px;
+    }
+  }
+  .alert-regular {
+    font-size: @base-font-size - 2;
+  }
+  .control-label {
+    padding-left: 0;
+  }
+  .release-description,
+  .mode-description,
+  .modal-parameter-description,
+  .help-block {
+    font-size: @base-font-size - 2;
+    color: @gray;
+    line-height: 14px;
+  }
+  .error {
+    color: @red;
+    input {
+      border-color: @red;
+      color: @red;
+    }
   }
 }

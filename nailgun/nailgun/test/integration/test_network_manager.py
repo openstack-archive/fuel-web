@@ -381,7 +381,7 @@ class TestNetworkManager(BaseIntegrationTest):
 
         self.env.launch_deployment()
         rpc_nodes_provision = nailgun.task.manager.rpc.cast. \
-            call_args_list[0][0][1][0]['args']['provisioning_info']['nodes']
+            call_args_list[1][0][1][0]['args']['provisioning_info']['nodes']
 
         admin_ng_id = self.env.network_manager.get_admin_network_group_id()
         admin_network_range = self.db.query(IPAddrRange).\

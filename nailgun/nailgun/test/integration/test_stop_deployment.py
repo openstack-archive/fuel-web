@@ -84,7 +84,8 @@ class TestStopDeployment(BaseIntegrationTest):
             )
 
     @fake_tasks(recover_nodes=False, tick_interval=1)
-    def test_stop_provisioning(self):
+    @patch('nailgun.utils.synchronization.Barrier')
+    def test_stop_provisioning(self, _):
         provision_task = self.env.launch_provisioning_selected(
             self.node_uids
         )

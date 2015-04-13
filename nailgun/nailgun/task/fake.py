@@ -16,6 +16,7 @@
 
 from itertools import chain
 from itertools import repeat
+import mock
 from random import randrange
 import threading
 import time
@@ -202,7 +203,8 @@ class FakeAmpqThread(FakeThread):
             resp_method = getattr(receiver, self.respond_to)
             for msg in self.message_gen():
                 try:
-                    resp_method(**msg)
+                    with mock.patch('nailgun.utils.synchronization.Barrier'):
+                        resp_method(**msg)
                     db().commit()
                 except Exception as e:
                     db().rollback()
@@ -665,6 +667,17 @@ class FakeCapacityLog(FakeAmpqThread):
         }]
 
 
+class FakeExecuteShell(FakeAmpqThread):
+    def message_gen(self):
+        self.sleep(self.tick_interval)
+        return [{
+            "task_uuid":self.task_uuid,
+            "status":"ready",
+            "progress":100,
+            "msg":[{"uid":"1", "exit code":0}]
+        }]
+
+
 FAKE_THREADS = {
     'native_provision': FakeProvisionThread,
     'image_provision': FakeProvisionThread,
@@ -677,5 +690,6 @@ FAKE_THREADS = {
     'check_dhcp': FakeCheckingDhcpThread,
     'dump_environment': FakeDumpEnvironment,
     'generate_capacity_log': FakeCapacityLog,
-    'multicast_verification': FakeMulticastVerifications
+    'multicast_verification': FakeMulticastVerifications,
+    'execute_shell': FakeExecuteShell,
 }

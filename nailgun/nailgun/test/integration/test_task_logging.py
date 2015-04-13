@@ -93,7 +93,7 @@ class TestTasksLogging(BaseIntegrationTest):
         )
         supertask = self.env.launch_deployment()
 
-        self.assertEqual(len(logger.call_args_list), 6)
+        self.assertEqual(len(logger.call_args_list), 7)
         self.check_task_name_and_sanitized_data(
             -6, logger, consts.TASK_NAMES.check_networks)
         self.check_task_name_and_sanitized_data(
@@ -111,7 +111,7 @@ class TestTasksLogging(BaseIntegrationTest):
         self.env.wait_ready(supertask, 15)
 
         # call for 'deploy' is added
-        self.assertEqual(len(logger.call_args_list), 7)
+        self.assertEqual(len(logger.call_args_list), 8)
         self.check_task_name_and_sanitized_data(
             -1, logger, consts.TASK_NAMES.deploy, one_parameter=True)
 
@@ -225,7 +225,7 @@ class TestTasksLogging(BaseIntegrationTest):
         self.env.wait_ready(supertask, 15)
 
         logs = objects.ActionLogCollection.all()
-        self.assertEqual(5, logs.count())
+        self.assertEqual(6, logs.count())
         for log in logs:
             self.assertIsNotNone(log.end_timestamp)
             self.assertIsNotNone(log.additional_info)

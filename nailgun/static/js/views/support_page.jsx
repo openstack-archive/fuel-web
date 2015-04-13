@@ -214,7 +214,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                 >
                     <p>{i18n('support_page.irc_text')} <strong>#fuel</strong> on <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
                     <p>
-                        <a className='btn' href='https://mirantis.zendesk.com/requests/new' target='_blank'>
+                        <a className='btn' href='http://support.mirantis.com' target='_blank'>
                             {i18n('support_page.contact_support')}
                         </a>
                     </p>

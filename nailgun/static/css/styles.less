@@ -1220,7 +1220,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   }
 }
 
-.filter-group > label {
+.filter-group label {
   font-size: @base-font-size - 2;
 }
 
@@ -1424,4 +1424,23 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   0%   { opacity: 0; }
   50%  { opacity: 1; }
   100% { opacity: 0; }
+}
+
+.node-management-panel {
+  height: 70px;
+  .parameter-name {
+    margin: 0;
+    .label-wrapper {
+      margin-bottom: 5px;
+    }
+    select, input {
+      font-weight: normal;
+    }
+  }
+  .btn-group {
+    margin-left: 5px;
+    i {
+      padding-right: 5px;
+    }
+  }
 }

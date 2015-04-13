@@ -18,6 +18,8 @@ import requests
 
 from six.moves.urllib.parse import urljoin
 
+from oslo.serialization import jsonutils
+
 from nailgun.errors import errors
 from nailgun.settings import settings
 
@@ -183,7 +185,14 @@ class FuelTrackingManager(object):
     def _do_request(cls, url, method="get", data=None, fake=None):
         if not cls.FAKE_MODE:
             try:
-                req = getattr(requests, method)(url, data=data, timeout=10)
+                req = getattr(requests, method)(
+                    url,
+                    data=jsonutils.dumps(data),
+                    timeout=10,
+                    headers={
+                        "Content-Type": "application/json"
+                    }
+                )
             except Exception:
                 raise errors.TrackingError(
                     "Failed to reach external server"

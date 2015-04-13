@@ -66,6 +66,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 settings = cluster.get('settings');
             $.when(settings.fetch({cache: true}), cluster.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
                 this.updateInitialAttributes();
+                this.getHiddenSettings();
                 settings.isValid({models: this.state.configModels});
                 this.setState({loading: false});
             }, this));
@@ -106,6 +107,26 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             }
             return deferred;
         },
+        getHiddenSettings: function() {
+            var hidden = {};
+            var settings = this.props.cluster.get('settings');
+            _.each(settings.attributes, function(group, groupKey) {
+                _.each(group, function(field, fieldKey) {
+                    if (field && field.type != 'hidden') {
+                        return;
+                    }
+                    var key = settings.makePath(groupKey, fieldKey);
+                    hidden[key] = _.clone(field);
+                });
+            });
+            this.hiddenSettings = hidden;
+        },
+        setHiddenSettings: function() {
+            var settings = this.props.cluster.get('settings');
+            _.each(this.hiddenSettings, function(value, key) {
+                settings.set(key, value, {silent: true});
+            });
+        },
         loadDefaults: function() {
             var settings = this.props.cluster.get('settings'),
                 deferred = settings.fetch({url: _.result(settings, 'url') + '/defaults'});
@@ -113,6 +134,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 this.setState({actionInProgress: true});
                 deferred
                     .always(_.bind(function() {
+                        this.setHiddenSettings();
                         settings.isValid({models: this.state.configModels});
                         this.setState({
                             actionInProgress: false,

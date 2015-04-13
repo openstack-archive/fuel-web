@@ -693,6 +693,11 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     }
   }
 
+  h4 {
+    font-family: @normal;
+    color: @base-text-color;
+  }
+
   .deploy-box {
     display: block;
     height: 60px;
@@ -966,9 +971,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   .box-sizing;
   margin-bottom: 20px;
   h4 {
-    font-family: @normal;
     margin: 18px 0px;
-    color: @base-text-color;
   }
   .discover {
     background-color: @node-color-unallocated;
@@ -1416,4 +1419,26 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   0%   { opacity: 0; }
   50%  { opacity: 1; }
   100% { opacity: 0; }
+}
+
+.role-panel {
+  .parameter-name {
+    width: 100%;
+    margin-bottom: 2px;
+    .label-wrapper {
+      padding-top: 2px;
+      color: @base-text-color;
+      i {
+        position: relative;
+        top: -5px;
+        left: 5px;
+      }
+    }
+  }
+  .parameter-description {
+    color: @gray;
+    font-size: @base-font-size - 2;
+    font-style: italic;
+    margin-left: 27px;
+  }
 }

@@ -443,7 +443,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         render: function() {
             var nodesForLimitsCheck = this.getNodesForLimitsCheck();
             return (
-                <div className='role-panel'>
+                <div className='well role-panel'>
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
                     {this.props.cluster.get('release').get('role_models').map(function(role) {
                         if (!role.checkRestrictions(this.state.configModels, 'hide').result) {
@@ -460,9 +460,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     defaultChecked={_.contains(this.state.selectedRoles, name)}
                                     disabled={!this.props.nodes.length || processedRestrictions.result}
                                     tooltipText={!!this.props.nodes.length && processedRestrictions.message}
-                                    wrapperClassName='role-container'
-                                    labelClassName='role-label'
-                                    descriptionClassName='role-description'
                                     onChange={this.onChange}
                                 />
                             );

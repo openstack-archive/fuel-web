@@ -99,3 +99,23 @@ class TestTracking(BaseIntegrationTest):
             resp.json_body["message"],
             "Failed to reach external server"
         )
+
+    def test_tracking_400(self):
+        with mock.patch(
+            'nailgun.utils.tracking.requests.get'
+        ) as mocked_get:
+            mocked_get.return_value = type(
+                'FakeResponse',
+                (),
+                {'status_code': 400}
+            )
+            resp = self.app.get(
+                reverse('FuelRegistrationForm'),
+                expect_errors=True,
+                headers=self.default_headers
+            )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.json_body["message"],
+            "Invalid response code received from external server: 400"
+        )

@@ -72,6 +72,8 @@
 .bold {font-family: @bold;}
 .fat {font-family: @fat;}
 
+.small-font {font-size: 12px;}
+
 @base-font-size: 14px;
 
 @footer-height: 70px;
@@ -605,7 +607,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   margin-left: auto;
   margin-right: auto;
   color: @base-dark-color + 60%;
-  font-size: 12px;
+  .small-font;
   height: 70px;
   overflow: hidden;
   margin-top: -70px;
@@ -1416,4 +1418,54 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   0%   { opacity: 0; }
   50%  { opacity: 1; }
   100% { opacity: 0; }
+}
+
+// wizard styles
+#wizard {
+  &.modal-dialog {
+    width: 830px;
+    height: 485px;
+    .wizard-steps-nav {
+      padding-left: 0;
+    }
+    .wizard-step {
+      &.available {
+        a {
+          color: @green;
+        }
+      }
+    }
+  }
+  .release-alert {
+    margin-top: 10px;
+  }
+  label.parameter-box {
+    cursor: pointer;
+    padding-left: 0;
+    margin-top: 5px;
+    .parameter-name {
+      padding-top: 2px;
+    }
+  }
+  .alert-regular {
+    .small-font;
+  }
+  .control-label {
+    padding-left: 0;
+  }
+  .release-description,
+  .mode-description,
+  .modal-parameter-description,
+  .help-block {
+    .small-font;
+    color: @gray;
+    line-height: 14px;
+  }
+  .error {
+    color: @red;
+    input {
+      border-color: @red;
+      color: @red;
+    }
+  }
 }

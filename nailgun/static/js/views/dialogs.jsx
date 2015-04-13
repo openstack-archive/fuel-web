@@ -73,7 +73,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.setProps(props);
         },
         renderImportantLabel: function() {
-            return <span className='label label-important'>{i18n('common.important')}</span>;
+            return <span className='label label-danger'>{i18n('common.important')}</span>;
         },
         render: function() {
             var classes = {'modal fade': true};
@@ -83,8 +83,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     <div className='modal-dialog'>
                         <div className='modal-content'>
                             <div className='modal-header'>
-                                <button type='button' className='close' onClick={this.close}>&times;</button>
-                                <h3>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h3>
+                                <button type='button' className='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button>
+                                <h4 className='modal-title'>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h4>
                             </div>
                             <div className='modal-body'>
                                 {this.props.error ?
@@ -94,7 +94,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                 : this.renderBody()}
                             </div>
                             <div className='modal-footer'>
-                                {this.renderFooter && !this.props.error ? this.renderFooter() : <button className='btn' onClick={this.close}>{i18n('common.close_button')}</button>}
+                                {this.renderFooter && !this.props.error ?
+                                    this.renderFooter()
+                                :
+                                    <button className='btn btn-default' onClick={this.close} data-dismiss='modal'>{i18n('common.close_button')}</button>
+                                }
                             </div>
                         </div>
                     </div>
@@ -153,15 +157,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 .fail(this.showError);
         },
         renderChangedNodeAmount: function(nodes, dictKey) {
-            return nodes.length ? <div key={dictKey} className='deploy-task-name'>
-                {i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
-            </div> : null;
+            return nodes.length ? <div>{i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}</div> : null;
         },
         renderBody: function() {
             var nodes = this.props.cluster.get('nodes');
             return (
                 <div>
-                    <div className='msg-error'>
+                    <div className='text-red'>
                         {this.renderImportantLabel()}
                         {i18n('dialog.discard_changes.alert_text')}
                     </div>
@@ -176,7 +178,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal' disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='discard' className='btn btn-danger' disabled={this.state.actionInProgress} onClick={this.discardNodeChanges}>{i18n('dialog.discard_changes.discard_button')}</button>
             ]);
         }
@@ -226,9 +228,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 .fail(this.showError);
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
-            return !!nodes.length && <div key={dictKey} className='deploy-task-name'>
-                {i18n(this.ns + dictKey, {count: nodes.length})}
-            </div>;
+            return !!nodes.length && <div>{i18n(this.ns + dictKey, {count: nodes.length})}</div>;
         },
         renderBody: function() {
             var cluster = this.props.cluster,
@@ -236,7 +236,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 settingsLocked = _.contains(['new', 'stopped'], cluster.get('status')),
                 needsRedeployment = cluster.needsRedeployment(),
                 warningClasses = {
-                    'deploy-task-notice': true,
                     'text-error': needsRedeployment || this.state.isInvalid,
                     'text-warning': settingsLocked
                 };
@@ -245,11 +244,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     {(settingsLocked || needsRedeployment || this.state.isInvalid) &&
                         <div>
                             <div className={utils.classNames(warningClasses)}>
-                                <i className='icon-attention' />
+                                <i className='glyphicon glyphicon-warning-sign' />
                                 <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' :
                                     settingsLocked ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
-                            <hr className='slim' />
+                            <hr />
                         </div>
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
@@ -390,7 +389,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 'btn-success': !(this.state.isInvalid || this.state.hasErrors)
             };
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal' disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
                     className={utils.classNames(classes)}
                     disabled={this.state.actionInProgress || this.state.isInvalid}
@@ -415,7 +414,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             return (
-                <div className='msg-error'>
+                <div className='text-red'>
                     {this.renderImportantLabel()}
                     {i18n('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
                 </div>
@@ -423,7 +422,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal' disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy' className='btn stop-deployment-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.stopDeployment}>{i18n('common.stop_button')}</button>
             ]);
         }
@@ -482,7 +481,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal' disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button
                     key='remove'
                     className='btn btn-danger remove-cluster-btn'
@@ -509,7 +508,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             return (
-                <div className='msg-error'>
+                <div className='text-red'>
                     {this.renderImportantLabel()}
                     {i18n('dialog.reset_environment.text')}
                 </div>
@@ -517,7 +516,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal'>{i18n('common.cancel_button')}</button>,
                 <button key='reset' className='btn btn-danger reset-environment-btn' onClick={this.resetEnvironment} disabled={this.state.actionInProgress}>{i18n('common.reset_button')}</button>
             ]);
         }
@@ -543,7 +542,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return (
                 <div>
                     {action == 'update' && this.props.isDowngrade ?
-                        <div className='msg-error'>
+                        <div className='text-red'>
                             {this.renderImportantLabel()}
                             {i18n('dialog.' + action + '_environment.downgrade_warning')}
                         </div>
@@ -561,7 +560,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     'btn-danger': action != 'update'
                 });
             return ([
-                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal'>{i18n('common.cancel_button')}</button>,
                 <button key='reset' className={classes} onClick={this.updateEnvironment} disabled={this.state.actionInProgress}>{i18n('common.' + action + '_button')}</button>
             ]);
         }
@@ -742,7 +741,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <button className='btn btn-edit-disks' onClick={this.goToConfigurationScreen.bind(this, 'disks')}>{i18n('dialog.show_node.disk_configuration_button')}</button>
                         </span>
                     }
-                    <button className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>
+                    <button className='btn btn-default' onClick={this.close} data-dismiss='modal'>{i18n('common.cancel_button')}</button>
                 </div>
             );
         },
@@ -766,7 +765,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderBody: function() {
             var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
             return (
-                <div className='msg-error dismiss-settings-dialog'>
+                <div className='text-red dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
                     {message}
                 </div>
@@ -774,7 +773,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             var verification = !!this.props.verification,
-                buttons = [<button key='stay' className='btn btn-return' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>],
+                buttons = [<button key='stay' className='btn btn-default' onClick={this.close} data-dismiss='modal'>{i18n('dialog.dismiss_settings.stay_button')}</button>],
                 buttonToAdd = <button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>
                     {i18n('dialog.dismiss_settings.leave_button')}
                 </button>;
@@ -793,7 +792,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderBody: function() {
             var message = this.props.defaultMessage;
             return (
-                <div className='msg-error'>
+                <div className='text-red'>
                     {this.renderImportantLabel()}
                     {message}
                 </div>
@@ -801,7 +800,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return [
-                <button key='stay' className='btn btn-return' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='stay' className='btn btn-default' onClick={this.close} data-dismiss='modal'>{i18n('common.cancel_button')}</button>,
                 <button key='delete' className='btn btn-danger btn-delete' onClick={this.proceed}>
                     {i18n('cluster_page.nodes_tab.node.remove')}
                 </button>
@@ -813,11 +812,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         mixins: [dialogMixin],
         getDefaultProps: function() {return {title: i18n('dialog.delete_nodes.title')};},
         renderBody: function() {
-            return (<div className='deploy-task-notice'>{this.renderImportantLabel()} {i18n('dialog.delete_nodes.message')}</div>);
+            return (<div>{this.renderImportantLabel()} {i18n('dialog.delete_nodes.message')}</div>);
         },
         renderFooter: function() {
             return [
-                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal'>{i18n('common.cancel_button')}</button>,
                 <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.actionInProgress}>{i18n('common.delete_button')}</button>
             ];
         },
@@ -896,7 +895,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return [
-                <button key='cancel' className='btn' onClick={this.close} disabled={this.state.actionInProgress}>
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal' disabled={this.state.actionInProgress}>
                     {i18n('common.cancel_button')}
                 </button>,
                 <button key='apply' className='btn btn-success' onClick={this.changePassword}
@@ -1085,7 +1084,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             return [
-                <button key='cancel' className='btn' onClick={this.close}>
+                <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal'>
                     {i18n('common.cancel_button')}
                 </button>,
                 <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.validateRegistrationForm}>
@@ -1197,7 +1196,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div>
                     {!this.state.passwordSent ?
                         <div>
-                            <button key='cancel' className='btn' onClick={this.close}>
+                            <button key='cancel' className='btn btn-default' onClick={this.close} data-dismiss='modal'>
                                 {i18n('common.cancel_button')}
                             </button>
                             <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.retrievePassword}>
@@ -1206,7 +1205,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         </div>
                     :
                         <div>
-                            <button key='close' className='btn' onClick={this.close}>
+                            <button key='close' className='btn btn-default' onClick={this.close} data-dismiss='modal'>
                                 {i18n('common.close_button')}
                             </button>
                         </div>

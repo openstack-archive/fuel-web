@@ -168,7 +168,7 @@ they need to manually synchronize manifests from the Master node and
 run the Puppet process on node again.
 
 Astute also does some additional actions, depending on environment
-configuration, either before the deployment of after successful one.
+configuration, either before the deployment of after successful one:
 
 * Generates and uploads SSH keys that will be needed during deployment.
 * During network verification phase **net_verify.py** script.

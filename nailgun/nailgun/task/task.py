@@ -1045,3 +1045,59 @@ class GenerateCapacityLogTask(object):
         task.status = 'ready'
         task.progress = '100'
         db().commit()
+
+
+class CheckNodesToRepositoryConnectionTask(object):
+    WGET_TIMEOUT = 5
+
+    @classmethod
+    def message(cls, task):
+        ubuntu_repos = cls._get_ubuntu_repos(task)
+        urls = cls._get_test_urls(ubuntu_repos)
+
+        rpc_message = make_astute_message(
+            task,
+            "execute_shell",
+            "repo_connection_resp",
+            {
+                "cmd": cls._get_check_command(urls),
+                "node_ids": cls._get_nodes_to_check(task),
+                "timeout": cls.WGET_TIMEOUT * len(urls),
+            }
+        )
+        db().commit()
+        return rpc_message
+
+    @classmethod
+    def execute(cls, task):
+        rpc.cast(
+            'naily',
+            cls.message(task)
+        )
+
+    @classmethod
+    def _get_nodes_to_check(cls, task):
+        return [n.id for n in db().query(Node).filter_by(cluster=task.cluster)]
+
+    @classmethod
+    def _get_check_command(cls, urls):
+        return ("for i in '{0}'; "
+                "do wget --timeout={1} $i || exit 1; "
+                "done").format("' '".join(urls), cls.WGET_TIMEOUT)
+
+    @classmethod
+    def _get_ubuntu_repos(cls, task):
+        return [r for r
+                in cls._get_repository_list(task)
+                if r['type'] == 'deb']
+
+    @classmethod
+    def _get_repository_list(cls, task):
+        return task.cluster.attributes.editable['repo_setup']['repos']['value']
+
+    @classmethod
+    def _get_test_urls(cls, repos):
+        return map(
+            lambda r: "{0}dists/{1}/Release".format(r['uri'], r['suite']),
+            repos
+        )

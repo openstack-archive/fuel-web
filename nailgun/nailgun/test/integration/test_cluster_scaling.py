@@ -11,12 +11,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import mock
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
-
 
 class TestClusterScaling(BaseIntegrationTest):
     '''Tests to ensure that nailgun supports scaling operations.'''

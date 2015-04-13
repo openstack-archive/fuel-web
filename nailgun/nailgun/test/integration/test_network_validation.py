@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import mock
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
@@ -23,6 +24,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import fake_tasks
 
 
 class TestNetworkChecking(BaseIntegrationTest):
@@ -167,6 +169,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.assertIn("management", task['message'])
         self.assertIn("storage", task['message'])
 
+    @fake_tasks()
     def test_network_checking_fails_if_untagged_intersection(self):
         self.find_net_by_name('management')["vlan_start"] = None
         self.env.nova_networks_put(self.cluster.id, self.nets)
@@ -437,6 +440,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.assertIn("admin (PXE)", task['message'])
         self.assertIn("storage", task['message'])
 
+    @fake_tasks()
     def test_network_checking_fails_if_untagged_intersection(self):
         for n in self.nets['networks']:
             n['vlan_start'] = None

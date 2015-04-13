@@ -1295,15 +1295,15 @@ class TestHandlers(BaseIntegrationTest):
         # The first set of args is for deletion task and
         # the second one is for provisioning and deployment.
 
-        # remove_nodes method call [0][0][1]
+        # remove_nodes method call [1][0][1]
         n_rpc_remove = nailgun.task.task.rpc.cast. \
-            call_args_list[0][0][1]['args']['nodes']
+            call_args_list[1][0][1]['args']['nodes']
         self.assertEqual(len(n_rpc_remove), 1)
         self.assertEqual(n_rpc_remove[0]['uid'], self.env.nodes[1].id)
 
         # provision method call [1][0][1][0]
         n_rpc_provision = nailgun.task.manager.rpc.cast. \
-            call_args_list[1][0][1][0]['args']['provisioning_info']['nodes']
+            call_args_list[2][0][1][0]['args']['provisioning_info']['nodes']
         # Nodes will be appended in provision list if
         # they 'pending_deletion' = False and
         # 'status' in ('discover', 'provisioning') or
@@ -1318,7 +1318,7 @@ class TestHandlers(BaseIntegrationTest):
 
         # deploy method call [1][0][1][1]
         n_rpc_deploy = nailgun.task.manager.rpc.cast.call_args_list[
-            1][0][1][1]['args']['deployment_info']
+            2][0][1][1]['args']['deployment_info']
         self.assertEqual(len(n_rpc_deploy), 1)
         self.assertEqual(n_rpc_deploy[0]['uid'], str(self.env.nodes[0].id))
 

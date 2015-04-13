@@ -35,6 +35,7 @@ import nailgun.rpc as rpc
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper
 from nailgun.utils import mule
+from nailgun.utils import synchronization
 
 
 class TaskManager(object):
@@ -339,8 +340,26 @@ class ApplyChangesTaskManager(TaskManager):
             n for n in network_info["networks"] if n["name"] != "fuelweb_admin"
         ]
 
+        check_repo_connect = supertask.create_subtask(
+            consts.TASK_NAMES.check_networks)
+
         check_networks = supertask.create_subtask(
             consts.TASK_NAMES.check_networks)
+
+        self._call_silently(
+            check_repo_connect,
+            tasks.CheckNodesToRepositoryConnectionTask,
+        )
+
+        synchronization.barrier_by_const(consts.BARRIERS.ubuntu_repo_check)
+        db.refresh(check_repo_connect)
+
+        if check_repo_connect.status == consts.TASK_STATUSES.error:
+            logger.warning(
+                "Checking ubuntu repo connectivity failed: %s",
+                check_repo_connect.message
+            )
+            raise errors.CheckBeforeDeploymentError(check_repo_connect.message)
 
         self._call_silently(
             check_networks,

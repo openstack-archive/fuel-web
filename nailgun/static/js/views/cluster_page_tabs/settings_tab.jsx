@@ -184,6 +184,197 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return (
                 <div key={this.state.key} className={utils.classNames(tabClasses)}>
                     <h3>{i18n('cluster_page.settings_tab.title')}</h3>
+
+                    return (
+
+                        // start new layout
+                <div className="col-xs-12 forms-box">
+                
+                <div className="form-group-name">Access</div>
+                
+                <div className="form-group">
+                    <label>Username</label>
+                    <input type="text" className="form-control" placeholder="Jane Doe" />
+                    <span className="help-block">Administrator Username</span>
+                </div>
+                
+                
+                <div className="form-group">
+                    <label>Password</label>
+                    <div className="input-group">    
+                        <input type="password" className="form-control" placeholder="Jane Doe" />
+                        <div className="input-addon"><i className="glyphicon glyphicon-eye-open"></i></div>
+                    </div>
+                    <span className="help-block">Administrator Password</span>
+                </div>
+                
+                <div className="form-group">
+                    <label>tenant</label>
+                    <input type="text" className="form-control" placeholder="Jane Doe" />
+                    <span className="help-block">Administrator Password</span>
+                </div>
+                
+                <div className="form-group">
+                    <label>email</label>
+                    <input type="text" className="form-control" placeholder="Jane Doe"/>
+                    <span className="help-block">Administrator Password</span>
+                </div>
+                
+            </div>
+            
+            <div className="col-xs-12 forms-box">
+                
+                <div className="form-group-name">Additional Components</div>
+                
+                <div className="form-group">
+                    <label>Username</label>
+                    <input type="text" className="form-control" placeholder="Jane Doe" />
+                    <span className="help-block">In a turpis ut ipsum tincidunt iaculis nec quis libero.</span>
+                </div>
+                
+                <div className="form-group">
+                    <label>Password Internal network gateway</label>
+                    <div className="range-group">
+                        <input type="text" className="form-control" placeholder="Start" />
+                        <input type="text" className="form-control" placeholder="End" />
+                    </div>
+                    <span className="help-block">
+                        <button className="btn btn btn-link"><span className="glyphicon glyphicon-plus-sign"></span></button>
+                        <button className="btn btn btn-link"><span className="glyphicon glyphicon-minus-sign"></span></button>
+                    </span>
+                </div>
+                
+                <div className="checkbox-group">
+                  <label>
+                    <div className="custom-tumbler">
+                        <input type="checkbox" />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    Instal Sahara
+                  </label>
+                    <span className="help-block">If selected, Sahara component will be installed</span>
+                </div>
+                <div className="checkbox-group">
+                  <label>
+                    <div className="custom-tumbler">
+                        <input type="checkbox" />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    Instal Murano <span className="notice text-orange">(The environment contains Telemetry - MongoDB node)</span>
+                  </label>
+                    <span className="help-block">In a turpis ut ipsum tincidunt iaculis nec quis libero. In fringilla ipsum est, id mollis neque porttitor molestie.</span>
+                </div>
+                <div className="checkbox-group">
+                  <label>
+                    <div className="custom-tumbler">
+                        <input type="radio" />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    Instal Nirvano
+                  </label>
+                    <span className="help-block">If selected, Sahara component will be installed</span>
+                </div>
+                
+                <div className="form-group-subname">Hypervisor Type <span className="notice text-orange">(The environment contains Compute node)</span></div>
+                
+                <div className="checkbox-group">
+                  <label>
+                    <div className="custom-tumbler">
+                        <input type="checkbox" />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    Instal Sahara
+                  </label>
+                    <span className="help-block">If selected, Sahara component will be installed</span>
+                </div>
+                
+                <div className="checkbox-group">
+                  <label>
+                    <div className="custom-tumbler">
+                        <input type="checkbox" />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    Instal Sahara
+                  </label>
+                    <span className="help-block">If selected, Sahara component will be installed</span>
+                </div>
+                
+                <div className="form-group">
+                    <label>Public Key</label>
+                    <textarea className="form-control"></textarea>
+                    <span className="help-block">Public key(s) to include in authorized_keys on deployed nodes</span>
+                </div>
+                
+                <div className="checkbox-group">
+                  <label>
+                    <div className="custom-tumbler">
+                        <input type="checkbox" disabled />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    Instal Sahara
+                  </label>
+                    <span className="help-block">If selected, Sahara component will be installed</span>
+                </div>
+                
+            </div>
+            
+            <div className="col-xs-12 forms-box">
+                
+                <div className="form-group-name">Syslog</div>
+                
+                <div className="form-group">
+                    <label>Hostname</label>
+                    <input type="text" className="form-control" placeholder="111" />
+                    <span className="help-block">Remote syslog hostname</span>
+                </div>
+                
+                <div className="form-group">
+                    <label>Port</label>
+                    <input type="text" className="form-control" placeholder=" " />
+                    <span className="help-block">Remote syslog port</span>
+                </div>
+                
+                <div className="form-group-subname">Syslog Transport Protocol</div>
+                
+                <div className="checkbox-group">
+                  <label>
+                    <div className="custom-tumbler">
+                        <input type="radio" checked />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    UDP
+                  </label>
+                </div>
+                
+                <div className="checkbox-group">
+                  <label>
+                    <div className="custom-tumbler">
+                        <input type="radio" />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    TCP
+                  </label>
+                </div>
+                
+                 <div className="form-group">
+                    <label>Username</label>
+                    <div className="custom-tumbler">
+                        <input type="checkbox" />
+                        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                    </div>
+                    <input type="text" className="form-control" placeholder="Jane Doe" disabled />
+                    <span className="help-block">In a turpis ut ipsum tincidunt iaculis nec quis libero.</span>
+                </div>
+                
+                
+                
+            </div>
+
+                   
+
+
+                         // end new layout
+
                     {this.state.loading ?
                         <controls.ProgressBar />
                         :

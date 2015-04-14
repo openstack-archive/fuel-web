@@ -839,7 +839,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </a>
                                 :
                                     <div
-                                        className='icon node-discard-changes-icon'
+                                        className='icon'
                                         title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
                                         onClick={this.discardNodeChanges}
                                     />

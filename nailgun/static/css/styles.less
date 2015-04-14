@@ -656,6 +656,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .title {
       padding: 0px 15px 0px 15px;
       margin-bottom: 10px;
+      margin-top: 0;
       .font-light;
       font-size: @base-font-size + 12;
     }
@@ -928,7 +929,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .node-management-panel {
   height: 70px;
   label {
-    margin: 0;
     font-size: @base-font-size - 2;
     select, input {
       .font-normal;
@@ -1527,6 +1527,149 @@ button, .btn:not(.btn-link) {.font-semibold;}
       padding: 4px;
       position: relative;
       left: -5px;
+    }
+  }
+}
+
+// FORMS
+
+.forms-box {
+  @input-width: 280px;
+  @label-width: 200px;
+  @base-indent: 20px;
+
+  margin-bottom: @base-indent * 2;
+  .form-group-name {
+    padding-bottom: 6px;
+    margin-bottom: @base-indent * 1.5;
+    border-bottom: 1px solid @gray + 50%;
+    color: @base-text-color + 10%;
+    box-sizing: border-box;
+    font-size: @base-font-size + 7px;
+    .font-normal;
+    label {
+      margin-bottom: -3px;
+      .custom-tumbler {
+        margin-right: 8px;
+      }
+    }
+  }
+  .form-group-subname {
+    margin-top: @base-indent * 1.5;
+    margin-bottom: @base-indent;
+    font-size: @base-font-size + 5px;
+    .font-normal;
+  }
+  label {
+    color: @base-text-color;
+    cursor: pointer;
+    box-sizing: border-box;
+    font-weight: 400;
+    .font-semibold;
+  }
+  .help-block {
+    font-size: @base-font-size - 2px;
+    color: @gray + 25%;
+    padding: 0;
+    margin: 0;
+    p {
+      margin-bottom: 5px;
+    }
+  }
+  .form-group {
+    padding: 0 @base-indent / 2;
+    margin-bottom: @base-indent;
+    box-sizing: border-box;
+    label {
+      width: @label-width;
+      float: left;
+      line-height: 2;
+    }
+    input, textarea {
+      float: left;
+      &:focus {
+        color: @blue;
+      }
+    }
+    input, textarea {
+      max-width: @input-width;
+    }
+    textarea {
+      max-width: @input-width * 2;
+    }
+    .input-group {
+      float: left;
+      max-width: @input-width;
+      @input-addon-width: 40px;
+      input {
+        width: @input-width - @input-addon-width;
+      }
+      .input-group-addon {
+        width: @input-addon-width;
+        height: 34px;
+        cursor: pointer;
+        float: left;
+        padding: 8px;
+      }
+    }
+    .help-block {
+      max-width: @page-width - @input-width - @label-width - 90px;
+      float: left;
+      margin-left: 20px;
+      padding-top: 9px;
+      box-sizing: border-box;
+    }
+    &.has-error .help-block {
+      .text-red;
+    }
+    &:after {
+      .clearfix;
+    }
+  }
+  .checkbox-group {
+    padding-left: @base-indent / 2;
+    margin-bottom: @base-indent;
+    .custom-tumbler {
+      margin-top: -2px;
+    }
+    .help-block {
+      display: block;
+      max-width: auto;
+      margin-top: -4px;
+      margin-left: 28px;
+    }
+  }
+  .glyphicon {
+    margin-left: 5px;
+  }
+
+  // custom control styles
+  .repos {
+    .form-inline {
+      margin-bottom: 5px;
+      position: relative;
+    }
+    .form-group {
+      margin: 0;
+      label {
+        width: auto;
+      }
+      .help-block {
+        position: absolute;
+        bottom: 10px;
+        left: @input-width * 2.5 + @base-indent * 4 + 60px;
+      }
+      &.repo-uri .form-control {
+        @repo-uri-width: @input-width * 1.5;
+        width: @repo-uri-width;
+        max-width: @repo-uri-width;
+      }
+      &.repo-priority .form-control {
+        width: @input-width * 0.5;
+      }
+    }
+    .buttons {
+      padding-left: 10px;
     }
   }
 }

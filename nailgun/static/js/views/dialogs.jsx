@@ -903,22 +903,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var ns = 'dialog.change_password.',
                 fields = ['currentPassword', 'newPassword', 'confirmationPassword'],
                 translationKeys = ['current_password', 'new_password', 'confirm_new_password'];
-            return _.map(fields, function(name, index) {
-                return (<controls.Input
-                    key={name}
-                    name={name}
-                    ref={name}
-                    type='password'
-                    label={i18n(ns + translationKeys[index])}
-                    maxLength='50'
-                    onChange={this.handleChange.bind(this, (name == 'currentPassword'))}
-                    onKeyDown={this.handleKeyDown}
-                    disabled={this.state.actionInProgress}
-                    toggleable={name == 'currentPassword'}
-                    defaultValue={this.state[name]}
-                    error={this.getError(name)}
-                />);
-            }, this);
+            return (
+                <div className='forms-box'>
+                    {_.map(fields, function(name, index) {
+                        return <controls.Input
+                            key={name}
+                            name={name}
+                            ref={name}
+                            type='password'
+                            label={i18n(ns + translationKeys[index])}
+                            maxLength='50'
+                            onChange={this.handleChange.bind(this, (name == 'currentPassword'))}
+                            onKeyDown={this.handleKeyDown}
+                            disabled={this.state.actionInProgress}
+                            toggleable={name == 'currentPassword'}
+                            defaultValue={this.state[name]}
+                            error={this.getError(name)}
+                        />;
+                    }, this)}
+                </div>
+            );
         },
         renderFooter: function() {
             return [

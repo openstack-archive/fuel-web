@@ -162,6 +162,16 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return (
                 <div key={this.state.key} className={utils.classNames(tabClasses)}>
                     <h3>{i18n('cluster_page.settings_tab.title')}</h3>
+
+                    return (
+
+                        // new layout should go here
+
+                    );
+
+
+
+
                     {this.state.loading ?
                         <controls.ProgressBar />
                         :

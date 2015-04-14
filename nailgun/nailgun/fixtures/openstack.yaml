@@ -497,7 +497,7 @@
             type: "text"
         neutron_mellanox:
           metadata:
-            toggleable: false
+            toggleable: true
             enabled: true
             label: "Mellanox Neutron components"
             weight: 50

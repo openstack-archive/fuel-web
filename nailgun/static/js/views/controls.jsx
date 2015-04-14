@@ -58,13 +58,9 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             description: React.PropTypes.node,
             disabled: React.PropTypes.bool,
             inputClassName: React.PropTypes.node,
-            labelClassName: React.PropTypes.node,
-            labelWrapperClassName: React.PropTypes.node,
-            descriptionClassName: React.PropTypes.node,
             wrapperClassName: React.PropTypes.node,
             tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool,
-            labelBeforeControl: React.PropTypes.bool,
             onChange: React.PropTypes.func,
             extraContent: React.PropTypes.node
         },
@@ -105,11 +101,11 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                 isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 inputWrapperClasses = {
                     'input-group': this.props.toggleable,
-                    'input-wrapper': this.props.type != 'hidden',
-                    'custom-tumbler': isCheckboxOrRadio
+                    'custom-tumbler': isCheckboxOrRadio,
+                    textarea: this.props.type == 'textarea'
                 };
             return (
-                <div key='input-wrapper' className={utils.classNames(inputWrapperClasses)}>
+                <div key='input-group' className={utils.classNames(inputWrapperClasses)}>
                     {input}
                     {this.props.toggleable &&
                         <div className='input-group-addon' onClick={this.togglePassword}>
@@ -122,55 +118,32 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             );
         },
         renderLabel: function(children) {
-            var labelClasses = {
-                    'parameter-name': true,
-                    'input-append': this.props.toggleable
-                },
-                labelWrapperClasses = {
-                    'label-wrapper': true
-                };
-
-            labelClasses[this.props.labelClassName] = this.props.labelClassName;
-            labelWrapperClasses[this.props.labelWrapperClassName] = this.props.labelWrapperClassName;
-            var labelElement = (
-                    <div className={utils.classNames(labelWrapperClasses)}>
-                        <span>{this.props.label}</span>
-                        {this.renderTooltipIcon()}
-                    </div>
-                ),
-                labelBefore = (!this.isCheckboxOrRadio() || this.props.labelBeforeControl) ? labelElement : null,
-                labelAfter = (this.isCheckboxOrRadio() && !this.props.labelBeforeControl) ? labelElement : null;
-            return this.props.label ? (
-                <label key='label' className={utils.classNames(labelClasses)} htmlFor={this.props.id}>
-                    {labelBefore}
+            return (
+                <label key='label' htmlFor={this.props.id}>
                     {children}
-                    {labelAfter}
+                    {this.props.label}
+                    {this.renderTooltipIcon()}
                 </label>
-            )
-            : children;
+            );
         },
         renderDescription: function() {
-            var error = !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
-                classes = {'parameter-description': true};
-            classes[this.props.descriptionClassName] = this.props.descriptionClassName;
-            return error || this.props.description ? (
-                <div key='description' className={utils.classNames(classes)}>
-                    {error ?
+            return (
+                <span key='description' className='help-block'>
+                    {!_.isUndefined(this.props.error) && !_.isNull(this.props.error) ?
                         this.props.error :
-                        this.props.description.split('\n').map(function(line, index) {
+                        this.props.description && this.props.description.split('\n').map(function(line, index) {
                                 return <p key={index}>{line}</p>;
                             }
                         )
                     }
-                </div>
-            ) : null;
+                </span>
+            );
         },
         renderWrapper: function(children) {
             var isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 classes = {
-                    'parameter-box': true,
-                    'checkbox-or-radio': isCheckboxOrRadio,
-                    clearfix: !isCheckboxOrRadio,
+                    'form-group': !isCheckboxOrRadio,
+                    'checkbox-group': isCheckboxOrRadio,
                     'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
                     disabled: this.props.disabled
                 };
@@ -178,10 +151,16 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             return (<div className={utils.classNames(classes)}>{children}</div>);
         },
         render: function() {
-            return this.renderWrapper([
-                this.renderLabel(this.renderInput()),
-                this.renderDescription()
-            ]);
+            return this.renderWrapper(this.isCheckboxOrRadio() ?
+                [
+                    this.renderLabel(this.renderInput()),
+                    this.renderDescription()
+                ] : [
+                    this.renderLabel(),
+                    this.renderInput(),
+                    this.renderDescription()
+                ]
+            );
         }
     });
 
@@ -191,32 +170,24 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
             label: React.PropTypes.node,
-            labelClassName: React.PropTypes.node,
             tooltipText: React.PropTypes.node
         },
         render: function() {
-            var labelClasses = {'parameter-name': true};
-            labelClasses[this.props.labelClassName] = this.props.labelClassName;
             return (
                 <div className='radio-group'>
                     {this.props.label &&
-                        <label className={utils.classNames(labelClasses)}>
+                        <h4>
                             {this.props.label}
                             {this.renderTooltipIcon()}
-                            <hr />
-                        </label>
+                        </h4>
                     }
                     {_.map(this.props.values, function(value) {
-                        return <controls.Input {...this.props}
-                            key={value.data}
+                        return <controls.Input
+                            {...this.props}
+                            {...value}
                             type='radio'
+                            key={value.data}
                             value={value.data}
-                            defaultChecked={value.defaultChecked}
-                            checked={value.checked}
-                            label={value.label}
-                            description={value.description}
-                            disabled={value.disabled}
-                            tooltipText={value.tooltipText}
                         />;
                     }, this)}
                 </div>

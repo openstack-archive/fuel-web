@@ -107,7 +107,7 @@ casper.then(function() {
     });
     this.loadPage('#cluster/1/settings').waitForSelector('.settings-tab > *');
     this.then(function() {
-        this.test.assertExists('.openstack-settings:not(.changes-locked)', 'Settings Tab is unlocked');
+        this.test.assertExists('input[name=tenant]:not(:disabled)', 'Settings Tab is unlocked');
     });
     // TODO: add "Health Check" Tab checking - it should be locked in this scenario
 });
@@ -148,7 +148,7 @@ casper.then(function() {
     });
     this.loadPage('#cluster/1/settings').waitForSelector('.settings-tab > *');
     this.then(function() {
-        this.test.assertExists('.openstack-settings.changes-locked', 'Settings Tab is Locked');
+        this.test.assertExists('input[name=tenant]:disabled', 'Settings Tab is Locked');
     });
     // TODO: add "Health Check" Tab checking - it should be Unlocked in this scenario
 });

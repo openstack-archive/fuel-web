@@ -74,12 +74,10 @@ class TestDockerUpgrader(BaseTestCase):
 
         self.assertEqual(
             self.upgrader.generate_configs.call_args_list,
-            [mock.call(autostart=False),
-             mock.call(autostart=True)])
+            [mock.call(autostart=True)])
 
         self.called_once(self.upgrader.stop_fuel_containers)
-        self.called_once(self.supervisor_mock.stop_all_services)
-        self.called_once(self.supervisor_mock.restart_and_wait)
+        self.assertEqual(self.supervisor_mock.restart_and_wait.call_count, 2)
         self.called_once(self.upgrader.upgrade_verifier.verify)
         self.called_once(self.version_mock.save_current)
         self.called_once(self.version_mock.switch_to_new)
@@ -157,7 +155,6 @@ class TestDockerUpgrader(BaseTestCase):
             side_effect=mocked_create_container)
         self.upgrader.start_container = mock.MagicMock()
         self.upgrader.run_after_container_creation_command = mock.MagicMock()
-        self.upgrader.start_service_under_supervisor = mock.MagicMock()
 
         self.upgrader.create_and_start_new_containers()
 
@@ -177,8 +174,6 @@ class TestDockerUpgrader(BaseTestCase):
                       privileged=False, links=[],
                       network_mode=None)]
 
-        self.upgrader.start_service_under_supervisor.assert_called_once_with(
-            'docker-id2')
         self.assertEqual(
             self.upgrader.create_container.call_args_list,
             create_container_calls)

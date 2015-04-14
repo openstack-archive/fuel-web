@@ -344,6 +344,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         </div>
                         <div className='col-xs-8'>
                             <div className='control-buttons-box pull-right'>
+                                <div className='label-wrapper'>&nbsp;</div>
                                 {this.props.mode != 'list' ?
                                     <div className='btn-group' role='group'>
                                         <button
@@ -776,7 +777,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var roleClasses = {'text-green': !deployedRoles.length};
 
             var statusClasses = {
-                    'node-status': true
+                    'node-status semibold text-center': true
                 },
                 statusClass = {
                     pending_addition: 'text-green',
@@ -804,24 +805,22 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         <div className='node-name'>
                             <div className={utils.classNames(nameClasses)}>
                                 {this.state.renaming ?
-                                    <p>
-                                        <controls.Input
-                                            ref='name'
-                                            type='text'
-                                            defaultValue={node.get('name')}
-                                            inputClassName='form-control'
-                                            disabled={this.state.actionInProgress}
-                                            onKeyDown={this.onNodeNameInputKeydown}
-                                            autoFocus
-                                        />
-                                    </p>
+                                    <controls.Input
+                                        ref='name'
+                                        type='text'
+                                        defaultValue={node.get('name')}
+                                        inputClassName='form-control'
+                                        disabled={this.state.actionInProgress}
+                                        onKeyDown={this.onNodeNameInputKeydown}
+                                        autoFocus
+                                    />
                                 :
                                     <p title={i18n(ns + 'edit_name')} onClick={!disabled && this.startNodeRenaming}>
                                         {node.get('name') || node.get('mac')}
                                     </p>
                                 }
                             </div>
-                            <div className='role-list'>
+                            <div className='role-list semibold'>
                                 {!!rolesToDisplay.length &&
                                     <ul>
                                         {_.map(this.sortRoles(rolesToDisplay), function(role) {
@@ -839,7 +838,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </a>
                                 :
                                     <div
-                                        className='icon node-discard-changes-icon'
+                                        className='icon'
                                         title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
                                         onClick={this.discardNodeChanges}
                                     />

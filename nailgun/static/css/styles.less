@@ -653,6 +653,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     .title {
       padding: 0px 15px 0px 15px;
       margin-bottom: 10px;
+      margin-top: 0;
       font-family: @light;
       font-size: @base-font-size + 12;
     }
@@ -1548,4 +1549,183 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     color: @gray;
     line-height: 14px;
   }
+}
+
+// FORMS
+@input-base-size: 280px;
+@help-block-size: @page-width - @input-base-size - 200px - 90px;
+
+.forms-box {
+    margin-bottom: 40px;
+    .form-group-name {
+        font-size: @base-font-size + 7px;
+        font-family: @normal;
+        // background-color: @gray + 75%;
+        padding: 0 0 6px 0px;
+        // border-radius: 6px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid @gray + 50%;
+        color: @base-text-color + 10%;
+        .box-sizing;
+        > .custom-tumbler {
+            margin-top: 4px;
+            margin-right: 8px;
+        }
+    }
+    .form-group-subname {
+        font-size: @base-font-size + 5px;
+        font-family: @normal;
+        margin: 30px 0 20px 0px;
+        .notice {
+            font-family: @normal;
+            font-size: @base-font-size - 2px;
+            margin-left: 10px;
+        }
+    }
+    .form-group {
+        display: block;
+        padding: 0px 12px;
+        margin-bottom: 20px;
+        .box-sizing;
+        label {
+            display: block;
+            width: 200px;
+            float: left;
+            padding: 6px 8px 0px 0px;
+            font-family: @semibold;
+            font-weight: 400;
+            color: @base-text-color;
+            text-transform: capitalize;
+            cursor: pointer;
+            .box-sizing;
+        }
+        > input {
+            display: block;
+            max-width: @input-base-size;
+            float: left;
+            &:focus {
+                color: @blue;
+                font-family: @semibold;
+            }
+        }
+        textarea {
+            max-width: @input-base-size + 230px;
+            float: left;
+            &:focus {
+                color: @blue;
+                font-family: @semibold;
+            }
+        }
+        textarea + .help-block{
+            max-width: @help-block-size - 230px;
+            float: left;
+        }
+        .help-block {
+            display: inline;
+            width: @help-block-size;
+            float: left;
+            font-size: @base-font-size - 2px;
+            color: @gray + 25%;
+            margin: 0 0 0 20px;
+            padding-top: 9px;
+            .box-sizing;
+            button {
+                padding: 0;
+            }
+        }
+        > .custom-tumbler {
+            margin: 6px 10px 0 0;
+        }
+        > .custom-tumbler + input {
+            width: @input-base-size - 32px;
+            &:focus {
+                color: @blue;
+                font-family: @semibold;
+            }
+        }
+        .input-group {
+            display: block;
+            float: left;
+            max-width: @input-base-size;
+            input {
+                float: left;
+                width: @input-base-size - 40px !important;
+                &:focus {
+                    color: @blue;
+                    font-family: @semibold;
+                }
+            }
+            .input-addon {
+                display: inline-block;
+                height: 34px;
+                width: 40px;
+                background-color: @gray + 100%;
+                border: 1px solid @gray + 50%;
+                border-left: none;
+                border-radius: 0px 3px 3px 0px;
+                font-family: @semibold;
+                padding: 8px 12px 0px 12px;
+                text-align: center;
+                overflow: hidden;
+                cursor: pointer;
+                &:focus {
+                    color: @blue;
+                    font-family: @semibold;
+                }
+            }
+        }
+        .range-group {
+            display: block;
+            float: left;
+            input {
+                width: @input-base-size;
+                float: left;
+                &:focus {
+                    color: @blue;
+                    font-family: @semibold;
+                }
+            }
+            input + input {
+                margin-left: 20px;
+                &:focus {
+                    color: @blue;
+                    font-family: @semibold;
+                }
+            }
+        }
+        .range-group + .help-block {
+            max-width: @help-block-size - @input-base-size - 20px;
+        }
+        &:after {
+            .clearfix;
+        }
+    }
+    .checkbox-group {
+        padding-left: 10px;
+        margin-bottom: 20px;
+        label {
+            font-family: @semibold;
+            color: @base-text-color;
+            font-weight: 400;
+            cursor: pointer;
+        }
+        .custom-tumbler {
+            margin-top: -2px;
+        }
+        .help-block {
+            display: block;
+            max-width: auto;
+            font-size: @base-font-size - 2px;
+            color: @gray + 25%;
+            margin: 0;
+            padding: 0;
+            margin-top: -4px;
+            margin-left: 28px;
+        }
+        .notice {
+            font-family: @normal;
+            font-size: @base-font-size - 2px;
+            margin-left: 10px;
+        }
+    }
 }

@@ -107,6 +107,7 @@ class SupervisorClient(object):
         current_cfg_path = self.config.supervisor['current_configs_prefix']
 
         utils.symlink(self.supervisor_config_dir, current_cfg_path)
+        self.supervisor.reloadConfig()
 
     def switch_to_previous_configs(self):
         """Switch to previous version of fuel
@@ -116,6 +117,7 @@ class SupervisorClient(object):
         utils.symlink(
             self.previous_supervisor_config_path,
             current_cfg_path)
+        self.supervisor.reloadConfig()
 
     def stop_all_services(self):
         """Stops all processes
@@ -130,7 +132,7 @@ class SupervisorClient(object):
         self.supervisor.restart()
 
         all_processes = utils.wait_for_true(
-            self.get_all_processes_safely,
+            lambda: self.get_all_processes_safely() is not None,
             timeout=self.config.supervisor['restart_timeout'])
 
         logger.debug(u'List of supervisor processes %s', all_processes)

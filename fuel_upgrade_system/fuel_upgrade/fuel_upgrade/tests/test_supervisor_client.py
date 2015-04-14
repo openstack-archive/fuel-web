@@ -43,23 +43,24 @@ class TestSupervisorClient(BaseTestCase):
         self.utils_mock.symlink.assert_called_once_with(
             self.new_version_supervisor_path,
             self.fake_config.supervisor['current_configs_prefix'])
+        self.supervisor.supervisor.reloadConfig.assert_called_once_with()
 
     def test_switch_to_previous_configs(self, os_mock):
         self.supervisor.switch_to_previous_configs()
         self.utils_mock.symlink.assert_called_once_with(
             self.previous_version_supervisor_path,
             self.fake_config.supervisor['current_configs_prefix'])
+        self.supervisor.supervisor.reloadConfig.assert_called_once_with()
 
     def test_stop_all_services(self, _):
         self.supervisor.stop_all_services()
         self.supervisor.supervisor.stopAllProcesses.assert_called_once_with()
 
     def test_restart_and_wait(self, _):
-        self.supervisor.restart_and_wait()
-        self.supervisor.supervisor.restart.assert_called_once_with()
-        self.utils_mock.wait_for_true.assert_called_once_with(
-            self.supervisor.get_all_processes_safely,
-            timeout=600)
+        with mock.patch.object(self.supervisor, 'get_all_processes_safely'):
+            self.supervisor.restart_and_wait()
+            self.supervisor.supervisor.restart.assert_called_once_with()
+            self.supervisor.get_all_processes_safely.assert_called_once_width()
 
     def test_get_all_processes_safely(self, _):
         self.supervisor.get_all_processes_safely()

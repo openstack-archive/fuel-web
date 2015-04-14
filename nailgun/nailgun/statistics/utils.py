@@ -23,6 +23,7 @@ from nailgun.logger import logger
 from nailgun.network import manager
 from nailgun.settings import settings
 from nailgun.statistics import errors
+from nailgun import utils as nailgun_utils
 
 
 WhiteListRule = namedtuple(
@@ -139,3 +140,24 @@ def set_proxy(proxy):
 
 def dithered(medium, interval=(0.9, 1.1)):
     return random.randint(int(medium * interval[0]), int(medium * interval[1]))
+
+
+def get_fuel_release_info():
+    versions = nailgun_utils.get_fuel_release_versions(
+        settings.FUEL_VERSION_FILE)
+    if settings.FUEL_VERSION_KEY not in versions:
+        versions[settings.FUEL_VERSION_KEY] = settings.VERSION
+    return versions[settings.FUEL_VERSION_KEY]
+
+
+def get_installation_version():
+    """Gets fuel release and build_id. Used by adding installation
+    version data into installation_info, action_logs, oswls stats
+    :return: dict with 'release', 'build_id' keys
+    """
+    result = {'release': None, 'build_id': None}
+    release_info = get_fuel_release_info()
+    if isinstance(release_info, dict):
+        result['release'] = release_info.get('release')
+        result['build_id'] = release_info.get('build_id')
+    return result

@@ -17,10 +17,9 @@ from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
-from nailgun.settings import settings
 from nailgun.statistics.utils import get_attr_value
+from nailgun.statistics.utils import get_fuel_release_info
 from nailgun.statistics.utils import WhiteListRule
-from nailgun import utils
 
 
 class InstallationInfo(object):
@@ -109,12 +108,6 @@ class InstallationInfo(object):
         WhiteListRule(('value', 'availability_zones', 'nova_computes',
                        'vsphere_cluster'), 'vmware_az_nova_computes_num', len),
     )
-
-    def fuel_release_info(self):
-        versions = utils.get_fuel_release_versions(settings.FUEL_VERSION_FILE)
-        if settings.FUEL_VERSION_KEY not in versions:
-            versions[settings.FUEL_VERSION_KEY] = settings.VERSION
-        return versions[settings.FUEL_VERSION_KEY]
 
     def get_network_configuration_info(self, cluster):
         network_config = cluster.network_config
@@ -249,7 +242,7 @@ class InstallationInfo(object):
         info = {
             'user_information': self.get_user_info(),
             'master_node_uid': self.get_master_node_uid(),
-            'fuel_release': self.fuel_release_info(),
+            'fuel_release': get_fuel_release_info(),
             'clusters': clusters_info,
             'clusters_num': len(clusters_info),
             'allocated_nodes_num': allocated_nodes_num,

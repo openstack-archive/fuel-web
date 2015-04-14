@@ -30,6 +30,7 @@ from nailgun.settings import settings
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo
 from nailgun.statistics.utils import dithered
+from nailgun.statistics.utils import get_installation_version
 
 
 class StatsSender(object):
@@ -93,7 +94,10 @@ class StatsSender(object):
             logger.info("Send %d action logs records", len(records))
             resp = self.send_data_to_url(
                 url=self.build_collector_url("COLLECTOR_ACTION_LOGS_URL"),
-                data={"action_logs": records}
+                data={
+                    "action_logs": records,
+                    "installation_version": get_installation_version()
+                }
             )
             resp_dict = resp.json()
             if self.is_status_acceptable(resp.status_code,
@@ -162,7 +166,10 @@ class StatsSender(object):
         inst_info = InstallationInfo().get_installation_info()
         resp = self.send_data_to_url(
             url=self.build_collector_url("COLLECTOR_INST_INFO_URL"),
-            data={"installation_structure": inst_info}
+            data={
+                "installation_structure": inst_info,
+                "installation_version": get_installation_version()
+            }
         )
         resp_dict = resp.json()
         if self.is_status_acceptable(resp.status_code, resp_dict["status"]):
@@ -175,7 +182,10 @@ class StatsSender(object):
         if rec_data:
             resp = self.send_data_to_url(
                 url=self.build_collector_url("COLLECTOR_OSWL_INFO_URL"),
-                data={"oswl_stats": rec_data}
+                data={
+                    "oswl_stats": rec_data,
+                    "installation_version": get_installation_version()
+                }
             )
             resp_dict = resp.json()
             if self.is_status_acceptable(resp.status_code,

@@ -21,10 +21,12 @@ import urllib3
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
+from nailgun.objects import ActionLog
 from nailgun.objects import Cluster
 from nailgun.objects import OpenStackWorkloadStats
 from nailgun.settings import settings
 from nailgun.statistics.statsenderd import StatsSender
+from nailgun.statistics import utils
 
 FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
 FEATURE_EXPERIMENTAL = {'feature_groups': ['experimental']}
@@ -292,19 +294,25 @@ class TestStatisticsSender(BaseTestCase):
         sender = StatsSender()
         sender.send_oswl_info()
 
-        obj_data_sent = {'oswl_stats': [{
-            'id': rec_id,
-            'cluster_id': 1,
-            'created_date': dt.date().isoformat(),
-            'updated_time': dt.time().isoformat(),
-            'resource_type': 'vm',
-            'resource_checksum': '',
-            'master_node_uid': None,
-            'resource_data': None,
-        }]}
-        send_data_to_url.assert_called_once_with(
-            url=sender.build_collector_url("COLLECTOR_OSWL_INFO_URL"),
-            data=obj_data_sent)
+        obj_data_sent = {
+            'installation_version': utils.get_installation_version(),
+            'oswl_stats': [{
+                'id': rec_id,
+                'cluster_id': 1,
+                'created_date': dt.date().isoformat(),
+                'updated_time': dt.time().isoformat(),
+                'resource_type': 'vm',
+                'resource_checksum': '',
+                'master_node_uid': None,
+                'resource_data': None,
+            }]
+        }
+        actual_kwargs = send_data_to_url.call_args[1]
+        expected_kwargs = {
+            'url': sender.build_collector_url("COLLECTOR_OSWL_INFO_URL"),
+            'data': obj_data_sent
+        }
+        self.assertDictEqual(expected_kwargs, actual_kwargs)
 
         obj = OpenStackWorkloadStats.get_last_by(
             1, consts.OSWL_RESOURCE_TYPES.vm)
@@ -321,3 +329,48 @@ class TestStatisticsSender(BaseTestCase):
         }
         for status, is_sent in status_vs_sent.iteritems():
             self.check_oswl_data_send_result(send_data_to_url, status, is_sent)
+
+    @patch('nailgun.statistics.statsenderd.StatsSender.send_data_to_url')
+    def test_installation_version_in_request(self, send_data_to_url):
+        sender = StatsSender()
+
+        # Checking installation_version in installation info request
+        sender.send_installation_info()
+        kwargs = send_data_to_url.call_args[1]
+        self.assertIn('installation_version', kwargs['data'])
+        self.assertIn('installation_structure', kwargs['data'])
+
+        # Checking installation_version in action logs request
+        action_log_data = {
+            'action_group': 'test_statsender',
+            'action_name': 'test_statsender',
+            'action_type': consts.ACTION_TYPES.http_request,
+            'additional_info': {},
+            'is_sent': False,
+            'cluster_id': None,
+            'task_uuid': None,
+            'start_timestamp': datetime.datetime.utcnow(),
+            'end_timestamp': datetime.datetime.utcnow()
+        }
+        ActionLog.create(action_log_data)
+        sender.send_action_log()
+        kwargs = send_data_to_url.call_args[1]
+        self.assertIn('installation_version', kwargs['data'])
+        self.assertIn('action_logs', kwargs['data'])
+
+        # Checking installation_version in OSWL request
+        dt = datetime.datetime.utcnow()
+        oswl_data = {
+            'cluster_id': 1,
+            'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
+            'created_date': dt.date(),
+            'updated_time': dt.time(),
+            'resource_checksum': ""
+        }
+        OpenStackWorkloadStats.create(oswl_data)
+        with patch('nailgun.db.sqlalchemy.fixman.settings.'
+                   'OSWL_COLLECT_PERIOD', 0):
+            sender.send_oswl_info()
+        kwargs = send_data_to_url.call_args[1]
+        self.assertIn('installation_version', kwargs['data'])
+        self.assertIn('oswl_stats', kwargs['data'])

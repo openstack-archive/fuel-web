@@ -12,12 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import Mock
-from mock import patch
+import mock
 import os
 
 from nailgun.test.base import BaseTestCase
 
+from nailgun.settings import settings
 from nailgun.statistics import errors
 from nailgun.statistics import utils
 
@@ -38,7 +38,7 @@ class TestUtilsFunctions(BaseTestCase):
 
         # check that proxy old value is restored
         # after exit from context manager w/ and w/o exception
-        with patch.dict("os.environ", expected):
+        with mock.patch.dict("os.environ", expected):
             check_proxy()
             self.assertEqual(os.environ.get("http_proxy"),
                              expected["http_proxy"])
@@ -105,9 +105,9 @@ class TestUtilsFunctions(BaseTestCase):
                           cluster)
 
     def test_get_nested_attr(self):
-        expected_attr = Mock()
-        intermediate_attr = Mock(spec=["expected_attr"])
-        containing_obj = Mock(spec=["intermediate_attr"])
+        expected_attr = mock.Mock()
+        intermediate_attr = mock.Mock(spec=["expected_attr"])
+        containing_obj = mock.Mock(spec=["intermediate_attr"])
 
         intermediate_attr.expected_attr = expected_attr
         containing_obj.intermediate_attr = intermediate_attr
@@ -126,3 +126,31 @@ class TestUtilsFunctions(BaseTestCase):
             self.assertIsNone(
                 utils.get_nested_attr(containing_obj, attr_path)
             )
+
+    def test_get_release_info(self):
+        release_info = utils.get_fuel_release_info()
+        self.assertDictEqual(release_info, settings.VERSION)
+
+    def test_get_installation_version(self):
+        # Checking valid values
+        inst_version = utils.get_installation_version()
+        release_info = utils.get_fuel_release_info()
+        self.assertDictEqual(
+            inst_version,
+            {'release': release_info.get('release'),
+             'build_id': release_info.get('build_id')})
+
+        # Checking empty values
+        with mock.patch('nailgun.statistics.utils.get_fuel_release_info',
+                        return_value={}):
+            inst_version = utils.get_installation_version()
+            self.assertDictEqual(
+                inst_version,
+                {'release': None, 'build_id': None})
+
+        with mock.patch('nailgun.statistics.utils.get_fuel_release_info',
+                        return_value=None):
+            inst_version = utils.get_installation_version()
+            self.assertDictEqual(
+                inst_version,
+                {'release': None, 'build_id': None})

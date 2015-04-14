@@ -29,11 +29,6 @@ from nailgun.statistics.fuel_statistics.installation_info \
 
 class TestInstallationInfo(BaseTestCase):
 
-    def test_release_info(self):
-        info = InstallationInfo()
-        f_info = info.fuel_release_info()
-        self.assertDictEqual(f_info, settings.VERSION)
-
     def test_get_attributes_centos(self):
         self.env.upload_fixtures(['openstack'])
         info = InstallationInfo()

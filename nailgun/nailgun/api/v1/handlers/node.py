@@ -147,7 +147,7 @@ class NodeCollectionHandler(CollectionHandler):
         nodes = self.get_objects_list_or_404(self.collection, node_ids)
 
         task_manager = NodeDeletionTaskManager(cluster_id=nodes[0].cluster_id)
-        task = task_manager.execute(nodes)
+        task = task_manager.execute(nodes, mclient_remove=False)
 
         self.raise_task(task)
 

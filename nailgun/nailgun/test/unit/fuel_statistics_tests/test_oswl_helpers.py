@@ -69,7 +69,6 @@ class TestOSWLHelpers(BaseTestCase):
                     "status": "available",
                     "volume_type": "test_volume",
                     "size": 1,
-                    "os-vol-host-attr:host": "test-node",
                     "snapshot_id": None,
                     "attachments": [
                         {
@@ -190,7 +189,6 @@ class TestOSWLHelpers(BaseTestCase):
                     "status": "available",
                     "volume_type": "test_volume",
                     "size": 1,
-                    "host": "test-node",
                     "snapshot_id": None,
                     "attachments": [
                         {

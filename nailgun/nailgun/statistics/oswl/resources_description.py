@@ -153,7 +153,6 @@ resources_description = {
                     WhiteListRule(("status",), "status", None),
                     WhiteListRule(("volume_type",), "volume_type", None),
                     WhiteListRule(("size",), "size", None),
-                    WhiteListRule(("os-vol-host-attr:host",), "host", None),
                     WhiteListRule(("snapshot_id",), "snapshot_id", None),
                     WhiteListRule(("attachments",), "attachments",
                                   volume_attachments_transform_func),

@@ -143,6 +143,8 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                     if (restriction.action == 'hide') {
                         if (utils.evaluateExpression(restriction.condition, this.configModels).value) {
                             this.panesModel.set(paneName, 'hidden');
+                        } else {
+                            this.panesModel.set(paneName, 'unavailable');
                         }
                     }
                 }, this);

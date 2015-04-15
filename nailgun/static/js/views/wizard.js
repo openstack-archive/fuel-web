@@ -139,6 +139,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         },
         processPaneRestrictions: function() {
             _.each(this.config, function(pane, paneName) {
+                this.panesModel.set(paneName, 'unavailable');
                 _.each((pane.metadata || {}).restrictions, function(restriction) {
                     if (restriction.action == 'hide') {
                         if (utils.evaluateExpression(restriction.condition, this.configModels).value) {

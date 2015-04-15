@@ -319,6 +319,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         refresh: function() {
             this.forceUpdate();
         },
+        validateInterfacesSpeedsForBonding: function(interfaces) {
+            var slaveInterfaces = _.flatten(_.invoke(interfaces, 'getSlaveInterfaces'), true);
+            var speeds = _.invoke(slaveInterfaces, 'get', 'current_speed');
+            // warn if not all speeds are the same or there are interfaces with unknown speed
+            return _.uniq(speeds).length > 1 || !_.compact(speeds).length;
+        },
         render: function() {
             var configureInterfacesTransNS = 'cluster_page.nodes_tab.configure_interfaces.',
                 nodes = this.props.nodes,
@@ -338,7 +344,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                 returnEnabled = !this.state.actionInProgress,
                 loadDefaultsEnabled = !this.state.actionInProgress && !locked,
                 revertChangesEnabled = !this.state.actionInProgress && hasChanges,
-                applyEnabled = !hasErrors && !this.state.actionInProgress && hasChanges;
+                applyEnabled = !hasErrors && !this.state.actionInProgress && hasChanges,
+                newBondWillHaveInvalidSpeeds = bondingPossible &&
+                    this.validateInterfacesSpeedsForBonding(checkedBonds.concat(checkedInterfaces)),
+                existingBondHasInvalidSpeeds = !!interfaces.find(function(ifc) {
+                    return ifc.isBond() && this.validateInterfacesSpeedsForBonding(ifc.getSlaveInterfaces());
+                }, this);
 
             // calculate interfaces speed
             var getIfcSpeed = function(index) {
@@ -370,7 +381,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                         <button className='btn btn-unbond' disabled={!unbondingPossible} onClick={this.unbondInterfaces}>{i18n(configureInterfacesTransNS + 'unbond_button')}</button>
                                     </div>
                                 </div>
-                                <div className='bond-speed-warning alert hide'>{i18n(configureInterfacesTransNS + 'bond_speed_warning')}</div>
+                                {(newBondWillHaveInvalidSpeeds || existingBondHasInvalidSpeeds) &&
+                                    <div className='bond-speed-warning alert'>{i18n(configureInterfacesTransNS + 'bond_speed_warning')}</div>
+                                }
                             </div>
                         }
 

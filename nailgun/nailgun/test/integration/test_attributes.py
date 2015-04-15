@@ -431,6 +431,13 @@ class TestAlwaysEditable(BaseIntegrationTest):
             },
             {
                 'type': 'rpm',
+                'name': 'mos-updates',
+                'uri': 'http://mirror.fuel-infra.org/mos/centos-6/mos6.1/'
+                       'updates',
+                'priority': None,
+            },
+            {
+                'type': 'rpm',
                 'name': 'Auxiliary',
                 'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/auxiliary',
                 'priority': None,

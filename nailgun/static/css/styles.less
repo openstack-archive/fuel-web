@@ -1549,3 +1549,26 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     line-height: 14px;
   }
 }
+
+// Healthcheck tab
+.healthcheck-tab {
+  @padding-top-controls: 23px;
+  .toggle-credentials {
+    padding-top: @padding-top-controls;
+  }
+  .select-all {
+    padding-top: @padding-top-controls / 2;
+    .label-wrapper {
+      padding-top: 2px;
+    }
+  }
+  .healthcheck-col-duration,
+  .healthcheck-col-status {
+    text-align: center;
+  }
+  .healthcheck-name {
+    label {
+      font-weight: normal;
+    }
+  }
+}

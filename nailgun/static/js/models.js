@@ -300,9 +300,6 @@ define([
         needsRedeployment: function() {
             return this.get('nodes').any({pending_addition: false, status: 'error'}) && this.get('status') != 'update_error';
         },
-        availableModes: function() {
-            return ['ha_compact', 'multinode'];
-        },
         fetchRelated: function(related, options) {
             return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));
         },

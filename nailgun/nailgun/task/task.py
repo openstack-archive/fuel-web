@@ -590,14 +590,9 @@ class BaseNetworkVerification(object):
         for n in self.task.cluster.nodes:
             node_json = {'uid': n.id, 'networks': []}
 
-            for nic in n.nic_interfaces:
-                assigned_networks = nic.assigned_networks_list
-                # in case of using bond interface - use networks assigned
-                # to bond
-                if nic.bond:
-                    assigned_networks = nic.bond.assigned_networks_list
+            for iface in n.interfaces:
                 vlans = []
-                for ng in assigned_networks:
+                for ng in iface.assigned_networks_list:
                     # Handle FuelWeb admin network first.
                     if ng.group_id is None:
                         vlans.append(0)
@@ -610,11 +605,10 @@ class BaseNetworkVerification(object):
                         # in case absence of vlans net_probe will
                         # send packages on untagged iface
                         vlans.append(0)
-                if not vlans:
-                    continue
-                node_json['networks'].append(
-                    {'iface': nic.name, 'vlans': vlans}
-                )
+                if vlans:
+                    node_json['networks'].append(
+                        {'iface': iface.name, 'vlans': vlans}
+                    )
             nodes.append(node_json)
 
         return nodes

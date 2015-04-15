@@ -14,7 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
+import mock
+import requests
+
 from oslo.serialization import jsonutils
+from six.moves import zip_longest
 
 from nailgun.test import base
 
@@ -41,48 +47,6 @@ class TestMakeTask(base.BaseTestCase):
             {'parameters': {
                 'data': 'deb http://url / ',
                 'path': '/etc/apt/sources.list.d/plugin_name.list'},
-             'type': 'upload_file',
-             'uids': [1, 2, 3]})
-
-    def test_make_ubuntu_preferences_task(self):
-        result = tasks_templates.make_ubuntu_preferences_task(
-            [1, 2, 3],
-            {
-                'name': 'plugin_name',
-                'type': 'deb',
-                'uri': 'http://url',
-                'suite': '/',
-                'section': '',
-                'priority': 1001
-            })
-        self.assertEqual(
-            result,
-            {'parameters': {
-                'data': 'Package: *\nPin: release a=/\nPin-Priority: 1001',
-                'path': '/etc/apt/preferences.d/plugin_name'},
-             'type': 'upload_file',
-             'uids': [1, 2, 3]})
-
-        result = tasks_templates.make_ubuntu_preferences_task(
-            [1, 2, 3],
-            {
-                'name': 'plugin_name',
-                'type': 'deb',
-                'uri': 'http://url',
-                'suite': 'jessie',
-                'section': 'main universe',
-                'priority': 1004
-            })
-        self.assertEqual(
-            result,
-            {'parameters': {
-                'data': ('Package: *\n'
-                         'Pin: release a=jessie,c=main\n'
-                         'Pin-Priority: 1004\n\n'
-                         'Package: *\n'
-                         'Pin: release a=jessie,c=universe\n'
-                         'Pin-Priority: 1004'),
-                'path': '/etc/apt/preferences.d/plugin_name'},
              'type': 'upload_file',
              'uids': [1, 2, 3]})
 
@@ -238,3 +202,110 @@ class TestMakeTask(base.BaseTestCase):
                     'interval': 1,
                     'cwd': '/',
                 }})
+
+
+class TestMakeUbuntuPreferencesTask(base.BaseTestCase):
+
+    _fake_debian_release = '''
+      Origin: TestOrigin
+      Label: TestLabel
+      Archive: test-archive
+      Codename: testcodename
+    '''
+
+    _re_pin = re.compile('Pin: release (.*)')
+
+    def _check_apt_preferences(self, data, sections, priority):
+        pins = data.split('\n\n')
+
+        # in non-flat repo we have one pin per section
+        if sections:
+            self.assertEqual(len(pins), len(sections))
+
+        # we should have one pin per section
+        for pin, section in zip_longest(pins, sections):
+            conditions = self._re_pin.search(pin).group(1).split(',')
+
+            # check general template
+            self.assertRegexpMatches(
+                data, (
+                    'Package: \*\n'
+                    'Pin: release .*\n'
+                    'Pin-Priority: {0}'.format(priority)
+                ))
+
+            # check pin
+            expected_conditions = [
+                'a=test-archive',
+                'l=TestLabel',
+                'n=testcodename',
+                'o=TestOrigin',
+            ]
+            if section:
+                expected_conditions.append('c={0}'.format(section))
+            self.assertItemsEqual(conditions, expected_conditions)
+
+    @mock.patch('nailgun.utils.debian.requests.get',
+                return_value=mock.Mock(text=_fake_debian_release))
+    def test_make_ubuntu_preferences_task(self, _):
+        result = tasks_templates.make_ubuntu_preferences_task(
+            [1, 2, 3],
+            {
+                'name': 'plugin_name',
+                'type': 'deb',
+                'uri': 'http://url',
+                'suite': 'test-archive',
+                'section': 'main universe',
+                'priority': 1004
+            })
+
+        data = result['parameters'].pop('data')
+        self.assertEqual(
+            result,
+            {'parameters': {'path': '/etc/apt/preferences.d/plugin_name.pref'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
+        self._check_apt_preferences(data, ['main', 'universe'], 1004)
+
+    @mock.patch('nailgun.utils.debian.requests.get',
+                return_value=mock.Mock(text=_fake_debian_release))
+    def test_make_ubuntu_preferences_task_flat(self, _):
+        result = tasks_templates.make_ubuntu_preferences_task(
+            [1, 2, 3],
+            {
+                'name': 'plugin_name',
+                'type': 'deb',
+                'uri': 'http://url',
+                'suite': '/',
+                'section': '',
+                'priority': 1004
+            })
+
+        data = result['parameters'].pop('data')
+        self.assertEqual(
+            result,
+            {'parameters': {'path': '/etc/apt/preferences.d/plugin_name.pref'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
+        self._check_apt_preferences(data, [], 1004)
+
+    @mock.patch('nailgun.utils.debian.requests.get')
+    def test_make_ubuntu_preferences_task_returns_none_if_errors(self, m_get):
+        r = requests.Response()
+        r.status_code = 404
+        m_get.return_value = r
+
+        result = tasks_templates.make_ubuntu_preferences_task(
+            [1, 2, 3],
+            {
+                'name': 'plugin_name',
+                'type': 'deb',
+                'uri': 'http://url',
+                'suite': 'test-archive',
+                'section': 'main universe',
+                'priority': 1004
+            })
+
+        self.assertIsNone(result)

@@ -161,7 +161,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         changeFilter: _.debounce(function(value) {
             this.setState({filter: value});
-        }, 200),
+        }, 200, {leading: true}),
         clearFilter: function() {
             this.setState({filter: ''});
         },

@@ -17,8 +17,12 @@
 import os
 
 from oslo.serialization import jsonutils
+import requests
+import six
 
+from nailgun.logger import logger
 from nailgun.settings import settings
+from nailgun.utils import debian
 
 
 def make_upload_task(uids, data, path):
@@ -38,34 +42,48 @@ def make_ubuntu_sources_task(uids, repo):
 
 
 def make_ubuntu_preferences_task(uids, repo):
-    # TODO(ikalnitsky):
-    # Research how to add host condition to the current pinning.
+    # NOTE(ikalnitsky): In order to implement the propert pinning,
+    # we have to download and parse the repo's "Release" file.
+    # Generally, that's not a good idea to make some HTTP request
+    # from Nailgun, but taking into account that this task
+    # will be executed in uWSGI's mule worker we can skip this
+    # rule, because proper pinning is more valuable thing right now.
 
     template = '\n'.join([
         'Package: *',
-        'Pin: release a={suite},c={section}',
-        'Pin-Priority: {priority}', ])
-
-    template_flat = '\n'.join([
-        'Package: *',
-        'Pin: release a={suite}',
-        'Pin-Priority: {priority}', ])
-
+        'Pin: release {conditions}',
+        'Pin-Priority: {priority}'])
     preferences_content = []
+
+    try:
+        release = debian.get_release_file(repo)
+        release = debian.parse_release_file(release)
+        pin = debian.get_apt_preferences_line(release)
+
+    except requests.exceptions.HTTPError as exc:
+        logger.error("Failed to fetch 'Release' file due to '%s'. "
+                     "The apt preferences won't be applied for repo '%s'.",
+                     six.text_type(exc), repo['name'])
+        return None
+
+    except Exception as exc:
+        logger.error("Failed to parse 'Release' file: %s", six.text_type(exc))
+        return None
+
+    # if sections are detected (non-flat repo) create pinning per
+    # sections; otherwise - create just one pin for the entire repo
     if repo['section']:
         for section in repo['section'].split():
             preferences_content.append(template.format(
-                suite=repo['suite'],
-                section=section,
+                conditions='{0},c={1}'.format(pin, section),
                 priority=repo['priority']))
     else:
-        preferences_content.append(template_flat.format(
-            suite=repo['suite'],
+        preferences_content.append(template.format(
+            conditions=pin,
             priority=repo['priority']))
 
     preferences_content = '\n\n'.join(preferences_content)
     preferences_path = os.path.join('/etc/apt/preferences.d', repo['name'])
-
     return make_upload_task(uids, preferences_content, preferences_path)
 
 

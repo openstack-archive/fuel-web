@@ -53,8 +53,18 @@ class BaseTaskSerializationTest(base.BaseTestCase):
 class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
     TASKS = """"""
 
+    _fake_release = '''
+        Archive: test
+    '''
+
     def setUp(self):
         super(BaseTaskSerializationTestUbuntu, self).setUp()
+
+        self._requests_mock = mock.patch(
+            'nailgun.utils.debian.requests.get',
+            return_value=mock.Mock(text='Archive: test'))
+        self._requests_mock.start()
+
         self.release = self.env.create_release(
             api=False, attributes_metadata=self.env.read_fixtures(
                 ['openstack'])[1]['fields']['attributes_metadata'])
@@ -69,6 +79,10 @@ class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
         self.cluster.deployment_tasks = yaml.load(self.TASKS)
+
+    def tearDown(self):
+        self._requests_mock.stop()
+        super(BaseTaskSerializationTestUbuntu, self).tearDown()
 
 
 class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):

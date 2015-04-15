@@ -24,6 +24,9 @@ from copy import deepcopy
 from itertools import chain
 from random import choice
 
+from six.moves import zip
+from six.moves import zip_longest
+
 from nailgun.logger import logger
 from nailgun.settings import settings
 
@@ -191,3 +194,10 @@ def flatten(array):
     check = lambda x: x if isinstance(x, list) else [x]
 
     return list(chain.from_iterable(check(x) for x in array))
+
+
+def grouper(iterable, n, fillvalue=None):
+    """Collect data into fixed-length chunks or blocks
+    """
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)

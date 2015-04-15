@@ -367,7 +367,7 @@
             weight: 10
           user:
             value: "admin"
-            label: "username"
+            label: "Username"
             description: "Username for Administrator"
             weight: 10
             type: "text"
@@ -376,7 +376,7 @@
               error: "Invalid username"
           email:
             value: "admin@localhost"
-            label: "email"
+            label: "Email"
             description: "Email address for Administrator"
             weight: 40
             type: "text"
@@ -385,7 +385,7 @@
               error: "Invalid email"
           tenant:
             value: "admin"
-            label: "tenant"
+            label: "Tenant"
             description: "Tenant (project) name for Administrator"
             weight: 30
             type: "text"
@@ -394,7 +394,7 @@
               error: "Invalid tenant name"
           password:
             value: "admin"
-            label: "password"
+            label: "Password"
             description: "Password for Administrator"
             weight: 20
             type: "password"

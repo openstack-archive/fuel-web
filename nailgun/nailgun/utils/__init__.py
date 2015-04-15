@@ -24,6 +24,9 @@ from copy import deepcopy
 from itertools import chain
 from random import choice
 
+from six.moves import zip
+from six.moves import zip_longest
+
 from nailgun.logger import logger
 from nailgun.settings import settings
 
@@ -191,3 +194,65 @@ def flatten(array):
     check = lambda x: x if isinstance(x, list) else [x]
 
     return list(chain.from_iterable(check(x) for x in array))
+
+
+def grouper(iterable, n, fillvalue=None):
+    """Collect data into fixed-length chunks or blocks
+    """
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
+
+
+def parse_debian_release_info(content):
+    """Parse Debian repo's Release file content.
+
+    :param content: a Debian's Release file content
+    :returns: a dict with repo's attributes
+    """
+    _multivalued_fields = {
+        'SHA1': ['sha1', 'size', 'name' ],
+        'SHA256': ['sha256', 'size', 'name'],
+        'SHA512': ['sha512', 'size', 'name'],
+        'MD5Sum': ['md5sum', 'size', 'name'],
+    }
+
+    # debian data format is very similiar to yaml, except
+    # multivalued field. so we can parse it just like yaml
+    # and then perform additional transformation for those
+    # fields (we know which ones are multivalues).
+    data = yaml.load(content)
+
+    for attr, columns in six.iteritems(_multivalued_fields):
+        if attr not in data:
+            continue
+
+        values = data[attr].split()
+        data[attr] = []
+
+        for pairs in grouper(values, len(columns)):
+            data[attr].append(dict(zip(columns, pairs)))
+
+    return data
+
+
+def get_apt_preferences_line(deb_release):
+    """Get an APT Preferences line from repo's release information.
+
+    :param deb_release: a Debian's Release content as dict
+    :returns: an apt pinning line as string
+    """
+    _transformations = {
+        'Archive': 'a',
+        'Suite': 'a',       # suite is a synonym for archive
+        'Codename': 'n',
+        'Version': 'v',
+        'Origin': 'o',
+        'Label': 'l',
+    }
+
+    conditions = set()
+    for field, condition in six.iteritems(_transformations):
+        if field in deb_release:
+            conditions.add('{0}={1}'.format(condition, deb_release[field]))
+
+    return ','.join(conditions)

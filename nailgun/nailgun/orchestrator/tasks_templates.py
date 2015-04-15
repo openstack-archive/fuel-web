@@ -17,8 +17,10 @@
 import os
 
 from oslo.serialization import jsonutils
+import requests
 
 from nailgun.settings import settings
+from nailgun import utils
 
 
 def make_upload_task(uids, data, path):
@@ -38,29 +40,46 @@ def make_ubuntu_sources_task(uids, repo):
 
 
 def make_ubuntu_preferences_task(uids, repo):
-    # TODO(ikalnitsky):
-    # Research how to add host condition to the current pinning.
+    # NOTE(ikalnitsky): In order to implement the propert pinning,
+    # we have to download and parse the repo's "Release" file.
+    # Generally, that's not a good idea to make some HTTP request
+    # from Nailgun, but taking into account that this task
+    # will be executed in uWSGI's mule worker we can skip this
+    # rule, because proper pinning is more valuable thing right now.
 
-    template = '\n'.join([
-        'Package: *',
-        'Pin: release a={suite},c={section}',
-        'Pin-Priority: {priority}', ])
+    # We can't use urljoin here because it works pretty bad in cases
+    # when 'uri' doesn't have a trailing slash.
+    release_uri = os.path.join(repo['uri'], 'dists', repo['suite'], 'Release')
 
-    template_flat = '\n'.join([
-        'Package: *',
-        'Pin: release a={suite}',
-        'Pin-Priority: {priority}', ])
+    # in case of flat ubuntu repo we have to use another uri
+    if not repo['section']:
+        # strip leading slash if present, because otherwise os.path.join
+        # will behave wrongly
+        suite = repo['suite']
+        if repo['suite'].startswith('/'):
+            suite = suite[1:]
+        release_uri = os.path.join(repo['uri'], suite, 'Release')
+
+    response = requests.get(release_uri)
+    response.raise_for_status()
 
     preferences_content = []
+    release_info = utils.parse_debian_release_info(response.text)
+    pin = utils.get_apt_preferences_line(release_info)
+    template = '\n'.join([
+        'Package: *',
+        'Pin: release {conditions}',
+        'Pin-Priority: {priority}'])
+
     if repo['section']:
+        # we have to create a separate pin template for each section
         for section in repo['section'].split():
             preferences_content.append(template.format(
-                suite=repo['suite'],
-                section=section,
+                conditions='{0},c={1}'.format(pin, section),
                 priority=repo['priority']))
     else:
-        preferences_content.append(template_flat.format(
-            suite=repo['suite'],
+        preferences_content.append(template.format(
+            conditions=pin,
             priority=repo['priority']))
 
     preferences_content = '\n\n'.join(preferences_content)

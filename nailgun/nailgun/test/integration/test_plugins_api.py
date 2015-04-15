@@ -224,6 +224,12 @@ class TestPrePostHooks(BasePluginTest):
 
     def setUp(self):
         super(TestPrePostHooks, self).setUp()
+
+        self._requests_mock = mock.patch(
+            'nailgun.orchestrator.tasks_serializer.templates.requests.get',
+            return_value=mock.Mock(text='Archive: test'))
+        self._requests_mock.start()
+
         resp = self.create_plugin()
         self.plugin = attr_plugin.wrap_plugin(
             objects.Plugin.get_by_uid(resp.json['id']))
@@ -231,6 +237,10 @@ class TestPrePostHooks(BasePluginTest):
             {'roles': ['controller'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True}])
         self.enable_plugin(self.cluster, self.sample_plugin['name'])
+
+    def tearDown(self):
+        self._requests_mock.stop()
+        super(TestPrePostHooks, self).tearDown()
 
     def test_generate_pre_hooks(self):
         tasks = self.get_pre_hooks(self.cluster).json

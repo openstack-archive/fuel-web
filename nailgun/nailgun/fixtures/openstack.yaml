@@ -931,7 +931,7 @@
       Mode:
         metadata:
           restrictions:
-            - condition: "not ('experimental' in version:feature_groups)"
+            - condition: "true"
               action: "hide"
         mode:
           type: "radio"
@@ -939,8 +939,6 @@
           values:
           - data: "ha_compact"
             label: "cluster.mode.ha_compact"
-          - data: "multinode"
-            label: "cluster.mode.multinode"
       Compute:
         hypervisor:
           type: "radio"

@@ -28,6 +28,23 @@ define([
 
     var models = {};
 
+    // Test regex using regex cache
+    var regexCache = {};
+    function getRegex(regexText) {
+        if (!regexCache[regexText]) {
+            regexCache[regexText] = new RegExp(regexText);
+        }
+        return regexCache[regexText];
+    }
+
+    function testRegexes(regexes, value) {
+        return _.flatten([regexes]).reduce(
+            function(isValid, expression) {
+                return getRegex(expression).test(value) && isValid;
+            },
+            true);
+    }
+
     var superMixin = models.superMixin = {
         _super: function(method, args) {
             var object = this;
@@ -550,7 +567,7 @@ define([
                     }
 
                     if (!(setting.regex || {}).source) return;
-                    if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
+                    if (!testRegexes(setting.regex.source, setting.value)) errors[path] = setting.regex.error;
                 }, this);
             }, this);
             return _.isEmpty(errors) ? null : errors;
@@ -1011,8 +1028,7 @@ define([
                     return !utils.evaluateExpression(restriction.condition, {default: this}).value;
                 }, this);
                 if (hasNoSatisfiedRestrictions) {
-                    var regExp = new RegExp(attributeConfig.regex.source);
-                    if (!this.get(options.paneName + '.' + attribute).match(regExp)) {
+                    if (!testRegexes(attributeConfig.regex.source, this.get(options.paneName + '.' + attribute))) {
                         errors.push({
                             field: attribute,
                             message: i18n(attributeConfig.regex.error)
@@ -1036,7 +1052,7 @@ define([
                 _.each(group, function(setting, settingName) {
                     var path = this.makePath(groupName, settingName);
                     if (!setting.regex || !setting.regex.source) return;
-                    if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
+                    if (!testRegexes(setting.regex.source, setting.value)) errors[path] = setting.regex.error;
                 }, this);
             }, this);
             return _.isEmpty(errors) ? null : errors;

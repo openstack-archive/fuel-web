@@ -38,6 +38,8 @@ runcmd:
 {% if mcollective.enable != 1 %}
  - service mcollective stop
  - chkconfig mcollective off
+{% else %}
+ - chkconfig mcollective on
 {% endif %}
  - iptables -t filter -F INPUT
  - iptables -t filter -F FORWARD

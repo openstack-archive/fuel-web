@@ -119,6 +119,7 @@ NETWORK_INTERFACE_TYPES = Enum(
 )
 
 NETWORK_VIP_TYPES = Enum(
+    'haproxy',
     'vrouter',
 )
 

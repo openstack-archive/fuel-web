@@ -40,8 +40,8 @@
                 "change_password": "Change password",
                 "logout": "Logout",
                 "role_limits": {
-                    "min": "At least __limitValue__ __roleName__ nodes are required (__count__ selected currently).",
-                    "max": "At most __limitValue__ __roleName__ nodes are allowed (__count__ selected currently).",
+                    "min": "At least __limitValue__ __roleName__ nodes are required (__count__ __restricted__ currently).",
+                    "max": "At most __limitValue__ __roleName__ nodes are allowed.",
                     "recommended": "It is recommended to have at least __limitValue__ of __roleName__ nodes (__count__ selected currently)."
                 }
             },

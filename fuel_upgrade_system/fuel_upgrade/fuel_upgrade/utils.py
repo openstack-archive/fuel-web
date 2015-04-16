@@ -31,6 +31,7 @@ from copy import deepcopy
 from distutils.version import StrictVersion
 
 from mako.template import Template
+from six.moves import range
 import yaml
 
 from fuel_upgrade import errors
@@ -750,6 +751,21 @@ def iterfiles_filter(dir_path, file_pattern):
     for file_path in iterfiles(dir_path):
         if fnmatch(file_path, file_pattern):
             yield file_path
+
+
+def normversion(version):
+    """Normalize a given version to have exactly three components.
+
+    :param version: a version to be normalized
+    :returns: a normalized version
+    """
+    components = version.split('.')
+
+    if len(components) < 3:
+        for _ in range(0, 3 - len(components)):
+            components.append('0')
+
+    return '.'.join(components)
 
 
 class VersionedFile(object):

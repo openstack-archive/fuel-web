@@ -593,6 +593,20 @@ class TestVersionedFile(BaseTestCase):
             self.versioned_file.sorted_files(),
             ['/tmp/path.ext.10', '/tmp/path.ext.6'])
 
+    def test_normversion(self):
+        cases = [
+            # (input, output)
+            ('6', '6.0.0'),
+            ('6.0', '6.0.0'),
+            ('6.1', '6.1.0'),
+            ('6.1.0', '6.1.0'),
+            ('6.1.1', '6.1.1'),
+            ('6.1.1.1', '6.1.1.1'),
+        ]
+
+        for input_, output in cases:
+            self.assertEqual(utils.normversion(input_), output)
+
 
 class TestSanitizer(BaseTestCase):
     original = {

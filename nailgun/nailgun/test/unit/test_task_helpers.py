@@ -14,12 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+import web
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
-
 from nailgun import objects
-
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
 from nailgun.task.helpers import TaskHelper
@@ -177,3 +177,66 @@ class TestTaskHelpers(BaseTestCase):
         expected = {}
         actual = TaskHelper.get_task_cache(task)
         self.assertDictEqual(expected, actual)
+
+    def test_prepare_action_log_kwargs_with_web_ctx(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['compute'], 'provisioning': True},
+            ]
+        )
+        cluster = self.env.clusters[0]
+        task = Task(name='provision', cluster_id=cluster.id)
+        self.db.add(task)
+        self.db.flush()
+
+        actor_id = 'xx'
+        with mock.patch.dict(web.ctx,
+                             {'env': {'fuel.action.actor_id': actor_id}}):
+            kwargs = TaskHelper.prepare_action_log_kwargs(task)
+            self.assertIn('actor_id', kwargs)
+            self.assertEqual(actor_id, kwargs['actor_id'])
+
+        with mock.patch.dict(web.ctx, {'env': {}}):
+            kwargs = TaskHelper.prepare_action_log_kwargs(task)
+            self.assertIn('actor_id', kwargs)
+            self.assertIsNone(kwargs['actor_id'])
+
+    def test_prepare_action_log_kwargs_without_web_ctx(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+        )
+        cluster = self.env.clusters[0]
+        deployment_task = Task(name='deployment', cluster_id=cluster.id)
+        self.db.add(deployment_task)
+        self.db.flush()
+
+        # Checking with task without parent
+        kwargs = TaskHelper.prepare_action_log_kwargs(deployment_task)
+        self.assertIn('actor_id', kwargs)
+        self.assertIsNone(kwargs['actor_id'])
+
+        # Checking with empty actor_id in ActionLog
+        al_kwargs = TaskHelper.prepare_action_log_kwargs(deployment_task)
+        al = objects.ActionLog.create(al_kwargs)
+
+        check_task = Task(name='check_before_deployment',
+                          cluster_id=cluster.id,
+                          parent_id=deployment_task.id)
+        self.db.add(check_task)
+        self.db.flush()
+
+        kwargs = TaskHelper.prepare_action_log_kwargs(check_task)
+        self.assertIn('actor_id', kwargs)
+        self.assertIsNone(kwargs['actor_id'])
+
+        # Checking with actor_id is not None in ActionLog
+        actor_id = 'xx'
+        al.actor_id = actor_id
+        self.db.flush()
+
+        kwargs = TaskHelper.prepare_action_log_kwargs(check_task)
+        self.assertIn('actor_id', kwargs)
+        self.assertEqual(actor_id, kwargs['actor_id'])

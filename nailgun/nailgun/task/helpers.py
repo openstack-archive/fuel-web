@@ -18,7 +18,6 @@ import datetime
 import os
 import shutil
 import six
-
 import web
 
 from sqlalchemy import or_
@@ -349,12 +348,10 @@ class TaskHelper(object):
             raise errors.NetworkCheckError(full_err_msg)
 
     @classmethod
-    def prepare_action_log_kwargs(self, task):
+    def prepare_action_log_kwargs(cls, task):
         """Prepares kwargs dict for ActionLog db model class
-
         :param task: task instance to be processed
-        :param nodes: list of nodes to be processed by given task
-        :returns: kwargs dict
+        :returns: kwargs dict for action log creation
         """
         create_kwargs = {
             'task_uuid': task.uuid,
@@ -368,7 +365,24 @@ class TaskHelper(object):
         # actor_id passed from ConnectionMonitor middleware and is
         # needed for binding task execution event with particular
         # actor
-        actor_id = web.ctx.env.get('fuel.action.actor_id')
+        actor_id = None
+        try:
+            actor_id_field = 'fuel.action.actor_id'
+            if hasattr(web.ctx, 'env') and actor_id_field in web.ctx.env:
+                # Fetching actor_id from env context
+                actor_id = web.ctx.env.get(actor_id_field)
+            else:
+                # Fetching actor_id from parent task action log
+                from nailgun import objects  # preventing cycle import error
+
+                if task.parent_id:
+                    parent_task = objects.Task.get_by_uid(task.parent_id)
+                    action_log = objects.ActionLog.get_by_kwargs(
+                        task_uuid=parent_task.uuid,
+                        action_name=parent_task.name)
+                    actor_id = action_log.actor_id
+        except Exception:
+            logger.exception("Extracting of actor_id failed")
         create_kwargs['actor_id'] = actor_id
 
         additional_info = {
@@ -413,6 +427,10 @@ class TaskHelper(object):
 
     @classmethod
     def create_action_log(cls, task):
+        """Creates action log
+        :param task: SqlAlchemy task object
+        :return: SqlAlchemy action_log object
+        """
         from nailgun.objects import ActionLog
 
         try:

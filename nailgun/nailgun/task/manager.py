@@ -172,12 +172,15 @@ class ApplyChangesTaskManager(TaskManager):
             self.__class__,
             '_execute_async',
             self.cluster.id,
-            supertask.id,
+            supertask.id
         )
 
         return supertask
 
     def _execute_async(self, supertask_id):
+        """Function for execute task in the mule
+        :param supertask_id: id of parent task
+        """
         logger.info(u"ApplyChangesTask: execute async starting for task %s",
                     supertask_id)
 
@@ -197,6 +200,9 @@ class ApplyChangesTaskManager(TaskManager):
             db().commit()
 
     def _execute_async_content(self, supertask):
+        """Processes supertask async in mule
+        :param supertask: SqlAlchemy task object
+        """
 
         nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
         nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
@@ -333,6 +339,9 @@ class ApplyChangesTaskManager(TaskManager):
         )
 
     def check_before_deployment(self, supertask):
+        """Performs checks before deployment
+        :param supertask: task SqlAlchemy object
+        """
         # checking admin intersection with untagged
         network_info = self.serialize_network_cfg(self.cluster)
         network_info["networks"] = [

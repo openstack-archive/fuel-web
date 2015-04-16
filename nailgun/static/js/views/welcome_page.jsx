@@ -115,7 +115,7 @@ function(_, i18n, React, componentMixins, statisticsMixin) {
                                     <button {...buttonProps} className='btn btn-large btn-unwanted'>
                                         {i18n(ns + 'connect_later')}
                                     </button>
-                                    <button autoFocus {...buttonProps} onClick={this.connectToMirantis}>
+                                    <button autoFocus className='btn btn-large btn-success' disabled={disabled || this.state.connectionError} onClick={this.connectToMirantis}>
                                         {i18n(ns + 'connect_now')}
                                     </button>
                                 </div>

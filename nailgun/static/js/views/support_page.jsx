@@ -142,7 +142,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     text={i18n('support_page.register_fuel_content')}
                 >
                     <div>
-                        {this.renderRegistrationForm(settings, this.state.actionInProgress, this.state.error)}
+                        {this.renderRegistrationForm(settings, this.state.actionInProgress, this.state.error, this.state.actionInProgress)}
                         <p>
                             <button className='btn registration-link' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
                                 {i18n('support_page.register_fuel_title')}

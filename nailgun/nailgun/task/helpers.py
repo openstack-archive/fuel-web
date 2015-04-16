@@ -18,7 +18,6 @@ import datetime
 import os
 import shutil
 import six
-
 import web
 
 from sqlalchemy import or_
@@ -349,12 +348,12 @@ class TaskHelper(object):
             raise errors.NetworkCheckError(full_err_msg)
 
     @classmethod
-    def prepare_action_log_kwargs(self, task):
+    def prepare_action_log_kwargs(cls, task, web_ctx_env=None):
         """Prepares kwargs dict for ActionLog db model class
-
         :param task: task instance to be processed
-        :param nodes: list of nodes to be processed by given task
-        :returns: kwargs dict
+        :param web_ctx_env: web context environment should be passed into
+        function on async processing in the uwsgi mule
+        :returns: kwargs for action log creation
         """
         create_kwargs = {
             'task_uuid': task.uuid,
@@ -368,7 +367,21 @@ class TaskHelper(object):
         # actor_id passed from ConnectionMonitor middleware and is
         # needed for binding task execution event with particular
         # actor
-        actor_id = web.ctx.env.get('fuel.action.actor_id')
+        if not web_ctx_env:
+            if hasattr(web.ctx, 'env'):
+                # Fetching environment from web context is possible
+                # only if manager and handler works in the same process.
+                # For mule process and async task handling web_ctx_env
+                # should be passed as prepare_action_log_kwargs param
+                web_ctx_env = web.ctx.env
+            else:
+                # This occurs only if we don't pass web_ctx_env param to async
+                # task processing
+                web_ctx_env = {}
+                logger.error("Env not found in web context")
+        actor_id = web_ctx_env.get('fuel.action.actor_id')
+        logger.debug("Actor_id %s extracted from web context environment",
+                     actor_id)
         create_kwargs['actor_id'] = actor_id
 
         additional_info = {
@@ -412,11 +425,18 @@ class TaskHelper(object):
         return sanitize_sub_tree(task_output, white_list)
 
     @classmethod
-    def create_action_log(cls, task):
+    def create_action_log(cls, task, web_ctx_env=None):
+        """Creates action log
+        :param task: SqlAlchemy task object
+        :param web_ctx_env: web context environment should be passed
+        when task processed in uwsgi mule
+        :return:
+        """
         from nailgun.objects import ActionLog
 
         try:
-            create_kwargs = cls.prepare_action_log_kwargs(task)
+            create_kwargs = cls.prepare_action_log_kwargs(
+                task, web_ctx_env=web_ctx_env)
             return ActionLog.create(create_kwargs)
         except Exception as e:
             logger.error("create_action_log failed: %s", six.text_type(e))

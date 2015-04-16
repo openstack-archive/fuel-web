@@ -26,7 +26,7 @@ except ImportError:
 from nailgun.logger import logger
 
 
-def call_task_manager_async(klass, func, cluster_id, *args):
+def call_task_manager_async(klass, func, cluster_id, *args, **kwargs):
     """This function calls a TaskManager's subclass 'klass' asynchronously.
 
     It instantiates a TaskManager instance with given cluster_id.
@@ -37,12 +37,14 @@ def call_task_manager_async(klass, func, cluster_id, *args):
     :param func: name of function to be called
     :param cluster_id:
     :param args: Arguments to pass to the function
+    :param kwargs: Named arguments to pass to the async function. Used for
+    passing web context environment to the mule
     :return:
     """
     if uwsgidecorators:
         logger.debug('MULE STARTING for %s.%s', klass.__name__, func)
     instance = klass(cluster_id=cluster_id)
-    getattr(instance, func)(*args)
+    getattr(instance, func)(*args, **kwargs)
     if uwsgidecorators:
         logger.debug('MULE FINISHED for %s.%s', klass.__name__, func)
 

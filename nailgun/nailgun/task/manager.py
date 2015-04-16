@@ -15,6 +15,7 @@
 #    under the License.
 
 import traceback
+import web
 
 from oslo.serialization import jsonutils
 
@@ -45,7 +46,8 @@ class TaskManager(object):
 
     def _call_silently(self, task, instance, *args, **kwargs):
         # create action_log for task
-        al = TaskHelper.create_action_log(task)
+        al = TaskHelper.create_action_log(
+            task, web_ctx_env=kwargs.pop('web_ctx_env', None))
 
         method = getattr(instance, kwargs.pop('method_name', 'execute'))
         if task.status == consts.TASK_STATUSES.error:
@@ -168,23 +170,32 @@ class ApplyChangesTaskManager(TaskManager):
         db().commit()
         TaskHelper.create_action_log(supertask)
 
+        # Workaround for webpy error with 'can't pickle instancemethod objects'
+        # on copy or passing env into mule function
+        env = web.ctx.get('env', {})
+        web_ctx_env = {'fuel.action.actor_id': env.get('fuel.action.actor_id')}
         mule.call_task_manager_async(
             self.__class__,
             '_execute_async',
             self.cluster.id,
             supertask.id,
+            web_ctx_env=web_ctx_env
         )
 
         return supertask
 
-    def _execute_async(self, supertask_id):
+    def _execute_async(self, supertask_id, web_ctx_env=None):
+        """Function for execute task in the mule
+        :param supertask_id: id of parent task
+        :param web_ctx_env: web context environment required for
+        proper creation of action_log
+        """
         logger.info(u"ApplyChangesTask: execute async starting for task %s",
                     supertask_id)
-
         supertask = objects.Task.get_by_uid(supertask_id)
 
         try:
-            self._execute_async_content(supertask)
+            self._execute_async_content(supertask, web_ctx_env=web_ctx_env)
         except Exception as e:
             logger.exception('Error occurred when running task')
             data = {
@@ -196,7 +207,12 @@ class ApplyChangesTaskManager(TaskManager):
             objects.Task.update(supertask, data)
             db().commit()
 
-    def _execute_async_content(self, supertask):
+    def _execute_async_content(self, supertask, web_ctx_env=None):
+        """Processes supertask async in mule
+        :param supertask: SqlAlchemy task object
+        :param web_ctx_env: web context environment required for
+        proper creation of action_log
+        """
 
         nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
         nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
@@ -209,7 +225,8 @@ class ApplyChangesTaskManager(TaskManager):
         if (not objects.Cluster.get_provisioning_info(self.cluster) and
                 not objects.Cluster.get_deployment_info(self.cluster)):
             try:
-                self.check_before_deployment(supertask)
+                self.check_before_deployment(
+                    supertask, web_ctx_env=web_ctx_env)
             except errors.CheckBeforeDeploymentError:
                 db().commit()
                 return
@@ -228,7 +245,9 @@ class ApplyChangesTaskManager(TaskManager):
             self._call_silently(
                 task_deletion,
                 tasks.DeletionTask,
-                tasks.DeletionTask.get_task_nodes_for_cluster(self.cluster))
+                tasks.DeletionTask.get_task_nodes_for_cluster(self.cluster),
+                web_ctx_env=web_ctx_env
+            )
             # we should have task committed for processing in other threads
             db().commit()
 
@@ -254,7 +273,8 @@ class ApplyChangesTaskManager(TaskManager):
                 task_provision,
                 tasks.ProvisionTask,
                 nodes_to_provision,
-                method_name='message'
+                method_name='message',
+                web_ctx_env=web_ctx_env
             )
 
             task_provision = objects.Task.get_by_uid(
@@ -288,7 +308,8 @@ class ApplyChangesTaskManager(TaskManager):
                 task_deployment,
                 tasks.DeploymentTask,
                 nodes_to_deploy,
-                method_name='message'
+                method_name='message',
+                web_ctx_env=web_ctx_env
             )
 
             task_deployment = objects.Task.get_by_uid(
@@ -332,7 +353,13 @@ class ApplyChangesTaskManager(TaskManager):
             )
         )
 
-    def check_before_deployment(self, supertask):
+    def check_before_deployment(self, supertask, web_ctx_env=None):
+        """Performs checks before deployment
+        :param supertask: task SqlAlchemy object
+        :param web_ctx_env: web context environment required for
+        proper creation of action_log
+        :return:
+        """
         # checking admin intersection with untagged
         network_info = self.serialize_network_cfg(self.cluster)
         network_info["networks"] = [
@@ -346,7 +373,8 @@ class ApplyChangesTaskManager(TaskManager):
             check_networks,
             tasks.CheckNetworksTask,
             data=network_info,
-            check_admin_untagged=True
+            check_admin_untagged=True,
+            web_ctx_env=web_ctx_env
         )
 
         if check_networks.status == consts.TASK_STATUSES.error:
@@ -367,7 +395,8 @@ class ApplyChangesTaskManager(TaskManager):
 
         self._call_silently(
             check_before,
-            tasks.CheckBeforeDeploymentTask
+            tasks.CheckBeforeDeploymentTask,
+            web_ctx_env=web_ctx_env
         )
 
         # if failed to check prerequisites

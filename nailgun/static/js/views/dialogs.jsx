@@ -791,10 +791,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderFooter: function() {
             var buttons = [
-                <button key='stay' className='btn btn-default' onClick={this.close}>{i18n('dialog.dismiss_settings.stay_button')}</button>
+                <button key='stay' className='btn btn-default btn-stay' onClick={this.close}>
+                    {i18n('dialog.dismiss_settings.stay_button')}
+                </button>
             ];
             if (!this.props.verification) buttons.push(
-                <button key='leave' className='btn btn-danger proceed-btn' onClick={this.proceed}>
+                <button key='leave' className='btn btn-danger' onClick={this.proceed}>
                     {i18n('dialog.dismiss_settings.leave_button')}
                 </button>
             );

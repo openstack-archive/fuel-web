@@ -35,7 +35,7 @@ casper.then(function() {
     this.test.assertUrlMatch(/#login/, 'Redirect to login page after logout');
 });
 
-casper.then(casper.authenticate).then(casper.skipWelcomeScreen).loadPage('#clusters').waitForSelector('.cluster-list');
+casper.then(casper.authenticate).then(casper.skipWelcomeScreen).loadPage('#clusters').waitForSelector('.clusters-page');
 
 casper.then(function() {
     var authenticated = this.evaluate(function() {
@@ -45,12 +45,14 @@ casper.then(function() {
             return window.app.keystoneClient.token;
         });
 
-    this.test.assertExists('a[href="#logout"]', 'Logout link exists');
-    this.test.assert(authenticated, 'User is authenticated');
-    this.test.assert(!!token, 'Token is set');
-    this.test.assertSelectorAppears('span.username', 'Username span exists');
+    this.test.assertExists('.navbar-icons .user-icon', 'User icon exists');
+    this.click('.navbar-icons .user-icon');
+    this.test.assertExists('.user-popover .btn-logout', 'Logout button exists');
+    this.test.assertExists('.user-popover .name', 'Username exists');
     // TODO: test for span.username content to be equal to localStorage.getItem('username')
     //       The problem for now is that CasperJS doesn't preserve localStorage for some reason
+    this.test.assert(authenticated, 'User is authenticated');
+    this.test.assert(!!token, 'Token is set');
 });
 
 casper.loadPage('#logout');

@@ -249,7 +249,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                             <i className='glyphicon glyphicon-user'></i>
                             {i18n('common.change_password')}
                         </button>
-                        <button className='btn btn-info btn-sm pull-right' onClick={this.logout}>
+                        <button className='btn btn-info btn-sm pull-right btn-logout' onClick={this.logout}>
                             <i className='glyphicon glyphicon-off'></i>
                             {i18n('common.logout')}
                         </button>

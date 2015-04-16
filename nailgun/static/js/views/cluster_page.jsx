@@ -270,7 +270,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             }, this)}
                         </div>
                     </div>
-                    <div key={tab.url + cluster.id} className='content-box tab-content'>
+                    <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
                         <Tab ref='tab' cluster={cluster} tabOptions={this.props.tabOptions} />
                     </div>
                 </div>
@@ -409,7 +409,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                 </div>
                                 {stoppableTask &&
                                     <button
-                                        className='btn btn-danger btn-xs pull-right'
+                                        className='btn btn-danger btn-xs pull-right stop-deployment-btn'
                                         title={i18n('cluster_page.stop_deployment_button')}
                                         onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
                                     >X</button>
@@ -431,7 +431,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             ),
                             <button
                                 key='deploy-changes'
-                                className='btn btn-primary'
+                                className='btn btn-primary deploy-btn'
                                 disabled={isDeploymentImpossible}
                                 onClick={this.onDeployRequest}
                             >

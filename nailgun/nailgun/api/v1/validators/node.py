@@ -321,8 +321,62 @@ class NodesFilterValidator(BasicValidator):
         return node_ids
 
 
+class ProvisionSelectedNodesValidator(NodesFilterValidator):
+
+    @classmethod
+    def validate_provision(cls, data, cluster):
+        """Check whether provision allowed or not for a given cluster
+
+        :param data: raw json data, usually web.data()
+        :param cluster: cluster instance
+        :returns: loaded json or empty array
+        """
+        if cluster.release.state == consts.RELEASE_STATES.unavailable:
+            raise errors.UnavailableRelease(
+                "Release '{0} {1}' is unavailable!".format(
+                    cluster.release.name, cluster.release.version))
+
+
+class DeploySelectedNodesValidator(NodesFilterValidator):
+
+    @classmethod
+    def validate_nodes_to_deploy(cls, data, nodes, cluster_id):
+        """Check whether nodes that scheduled for deployment are
+        in proper state
+
+        :param data: raw json data, usually web.data(). Is not used here
+        and is needed for mantaining consistency of data validating logic
+        :param nodes: list of node objects state of which to be checked
+        :param cluster_id: id of the cluster for which operation is performed
+        """
+
+        # in some cases (e.g. user tries to deploy single controller node
+        # via CLI or API for ha cluster) there may be situation when not
+        # all nodes scheduled for deployment are provisioned, hence
+        # here we check for such situation
+        not_provisioned_nodes_ids = [
+            n.id for n in nodes
+            if any(
+                [n.pending_addition,
+                 n.needs_reprovision,
+                 n.status == consts.NODE_STATUSES.provisioning]
+            )
+        ]
+
+        if not_provisioned_nodes_ids:
+            err_msg = ("Deployment operation cannot be started as nodes "
+                       "with uids {0} are not provisioned yet for "
+                       "cluster with id {1}."
+                       .format(not_provisioned_nodes_ids, cluster_id))
+
+            raise errors.InvalidData(
+                err_msg,
+                log_message=True
+            )
+
+
 class NodeDeploymentValidator(TaskDeploymentValidator,
-                              NodesFilterValidator):
+                              DeploySelectedNodesValidator):
 
     @classmethod
     def validate_deployment(cls, data, cluster):
@@ -339,19 +393,3 @@ class NodeDeploymentValidator(TaskDeploymentValidator,
             raise errors.InvalidData('Tasks list must be specified.')
 
         return data
-
-
-class ProvisionSelectedNodesValidator(NodesFilterValidator):
-
-    @classmethod
-    def validate_provision(cls, data, cluster):
-        """Check whether provision allowed or not for a given cluster
-
-        :param data: raw json data, usually web.data()
-        :param cluster: cluster instance
-        :returns: loaded json or empty array
-        """
-        if cluster.release.state == consts.RELEASE_STATES.unavailable:
-            raise errors.UnavailableRelease(
-                "Release '{0} {1}' is unavailable!".format(
-                    cluster.release.name, cluster.release.version))

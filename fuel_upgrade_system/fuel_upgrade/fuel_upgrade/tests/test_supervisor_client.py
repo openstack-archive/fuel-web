@@ -43,23 +43,33 @@ class TestSupervisorClient(BaseTestCase):
         self.utils_mock.symlink.assert_called_once_with(
             self.new_version_supervisor_path,
             self.fake_config.supervisor['current_configs_prefix'])
+        self.supervisor.supervisor.reloadConfig.assert_called_once_with()
 
     def test_switch_to_previous_configs(self, os_mock):
         self.supervisor.switch_to_previous_configs()
         self.utils_mock.symlink.assert_called_once_with(
             self.previous_version_supervisor_path,
             self.fake_config.supervisor['current_configs_prefix'])
+        self.supervisor.supervisor.reloadConfig.assert_called_once_with()
 
     def test_stop_all_services(self, _):
         self.supervisor.stop_all_services()
         self.supervisor.supervisor.stopAllProcesses.assert_called_once_with()
 
-    def test_restart_and_wait(self, _):
+    @mock.patch('fuel_upgrade.clients.supervisor_client.SupervisorClient.'
+                'get_all_processes_safely')
+    def test_restart_and_wait(self, _, __):
         self.supervisor.restart_and_wait()
         self.supervisor.supervisor.restart.assert_called_once_with()
-        self.utils_mock.wait_for_true.assert_called_once_with(
-            self.supervisor.get_all_processes_safely,
-            timeout=600)
+
+        timeout = self.utils_mock.wait_for_true.call_args[1]['timeout']
+        self.assertEqual(timeout, 600)
+
+        # since wait_for_true is mocked in all tests, let's check that
+        # callback really calls get_all_processes_safely function
+        callback = self.utils_mock.wait_for_true.call_args[0][0]
+        callback()
+        self.supervisor.get_all_processes_safely.assert_called_once_with()
 
     def test_get_all_processes_safely(self, _):
         self.supervisor.get_all_processes_safely()

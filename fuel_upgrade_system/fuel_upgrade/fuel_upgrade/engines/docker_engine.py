@@ -68,31 +68,25 @@ class DockerUpgrader(UpgradeEngine):
         self.save_db()
         self.save_cobbler_configs()
 
-        # NOTE(akislitsky): fix for bug
-        # https://bugs.launchpad.net/fuel/+bug/1354465
-        # supervisord can restart old container even if it already stopped
-        # and new container start will be failed. We switch configs
-        # before upgrade, so if supervisord will try to start container
-        # it will be new container.
-        self.switch_to_new_configs()
-
-        # Stop all of the services
-        self.supervisor.stop_all_services()
-        self.stop_fuel_containers()
-        # Upload docker images
-        self.upload_images()
-
-        # Generate config with autostart is false
-        # not to run new services on supervisor restart
-        self.generate_configs(autostart=False)
+        # Point to new configs (version.yaml and supervisor configs) and
+        # restart supervisor in order to apply them
         self.version_file.switch_to_new()
-        # Restart supervisor to read new configs
+        self.switch_to_new_configs()
         self.supervisor.restart_and_wait()
-        # Create container and start it under supervisor
+
+        # Stop docker containers (it's safe, since at this time supervisor's
+        # configs are empty.
+        self.stop_fuel_containers()
+
+        # Upload new docker images and create containers
+        self.upload_images()
         self.create_and_start_new_containers()
-        # Update configs in order to start all
-        # services on supervisor restart
+
+        # Generate supervisor configs for new containers and restart
+        # supervisor in order to apply them. Note, supervisor's processes
+        # will be attached to running docker containers automatically.
         self.generate_configs(autostart=True)
+        self.supervisor.restart_and_wait()
 
         # Verify that all services up and running
         self.upgrade_verifier.verify()
@@ -310,10 +304,6 @@ class DockerUpgrader(UpgradeEngine):
             if container.get('after_container_creation_command'):
                 self.run_after_container_creation_command(container)
 
-            if container.get('supervisor_config'):
-                self.start_service_under_supervisor(
-                    self.make_service_name(container['id']))
-
     def run_after_container_creation_command(self, container):
         """Runs command in container with retries in
         case of error
@@ -351,13 +341,6 @@ class DockerUpgrader(UpgradeEngine):
 
         return [port if not isinstance(port, list) else tuple(port)
                 for port in ports]
-
-    def start_service_under_supervisor(self, service_name):
-        """Start service under supervisor
-
-        :param str service_name: name of the service
-        """
-        self.supervisor.start(service_name)
 
     def exec_with_retries(
             self, func, exceptions, message, retries=0, interval=0):

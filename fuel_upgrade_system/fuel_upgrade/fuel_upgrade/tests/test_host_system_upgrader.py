@@ -41,6 +41,8 @@ class TestHostSystemUpgrader(BaseTestCase):
             '/var/www/nailgun/2014.1.1-5.1/centos/x86_64')
         self.called_once(run_puppet_mock)
         self.called_once(update_repo_mock)
+        mock_utils.exec_cmd.assert_called_with(
+            'yum install -v -y fuel-release-9999.0.0')
 
     @mock.patch('fuel_upgrade.engines.host_system.utils')
     def test_update_repo(self, utils_mock):
@@ -58,9 +60,9 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.upgrader.run_puppet()
         utils_mock.exec_cmd.assert_called_once_with(
             'puppet apply -d -v '
-            '/tmp/upgrade_path/puppet/2014.1.1-5.1/modules/nailgun/examples'
+            '/etc/puppet/2014.1.1-5.1/modules/nailgun/examples'
             '/host-upgrade.pp '
-            '--modulepath=/tmp/upgrade_path/puppet/2014.1.1-5.1/modules')
+            '--modulepath=/etc/puppet/2014.1.1-5.1/modules')
 
     @mock.patch(
         'fuel_upgrade.engines.host_system.'

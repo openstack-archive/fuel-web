@@ -27,15 +27,18 @@ Why python based config?
   and it's hard to create variables nesting more than 1
 """
 
-import six
-
 import glob
 import logging
-import yaml
 
 from os.path import basename
 from os.path import exists
 from os.path import join
+
+import six
+import yaml
+
+from fuel_upgrade.utils import normversion
+
 
 logger = logging.getLogger(__name__)
 
@@ -196,19 +199,23 @@ def get_host_system(update_path, new_version):
     :returns: a host-system upgrade settings
     """
     openstack_versions = glob.glob(
-        join(update_path, 'puppet', '[0-9.-]*{0}'.format(new_version)))
+        join(update_path, 'repos', '[0-9.-]*{0}'.format(new_version)))
     openstack_versions = [basename(v) for v in openstack_versions]
     openstack_version = sorted(openstack_versions, reverse=True)[0]
     centos_repo_path = join(
         update_path, 'repos', openstack_version, 'centos/x86_64')
 
     return {
+        'install_packages': [
+            'fuel-release-{0}'.format(normversion(new_version)),
+        ],
+
         'manifest_path': join(
-            update_path, 'puppet', openstack_version,
+            '/etc/puppet', openstack_version,
             'modules/nailgun/examples/host-upgrade.pp'),
 
         'puppet_modules_path': join(
-            update_path, 'puppet', openstack_version, 'modules'),
+            '/etc/puppet', openstack_version, 'modules'),
 
         'repo_config_path': join(
             '/etc/yum.repos.d',
@@ -291,7 +298,7 @@ def config(update_path, admin_password):
     image_prefix = 'fuel/'
 
     # Path to the Docker images to be loaded
-    images = join(update_path, 'images', 'fuel-images.tar')
+    images = '/var/www/nailgun/docker/images/fuel-images.tar'
 
     # Docker containers description section
     container_prefix = 'fuel-core-'
@@ -588,72 +595,5 @@ def config(update_path, admin_password):
 
     # Config for host system upgarde engine
     host_system = get_host_system(update_path, new_version)
-
-    # Config for bootstrap upgrade
-    bootstrap = {
-        'actions': [
-            {
-                'name': 'move',
-                'from': '/var/www/nailgun/bootstrap',
-                'to': '/var/www/nailgun/{0}_bootstrap'.format(from_version),
-                # Don't overwrite backup files
-                'overwrite': False,
-                'undo': [
-                    {
-                        # NOTE(eli): Rollback bootstrap files
-                        # with copy, because in 5.0 version
-                        # we have volumes linking in container
-                        # which doesn't work correctly with symlinks
-                        'name': 'copy',
-                        'from': '/var/www/nailgun/{0}_bootstrap'.format(
-                            from_version),
-                        'to': '/var/www/nailgun/bootstrap',
-                        'undo': [],
-                        'overwrite': True
-                    }
-                ]
-            },
-            {
-                'name': 'symlink',
-                'from': '/var/www/nailgun/{0}_bootstrap'.format(from_version),
-                'to': '/var/www/nailgun/bootstrap',
-                'undo': []
-            },
-            {
-                'name': 'copy',
-                'from': join(update_path, 'bootstrap'),
-                'to': '/var/www/nailgun/{0}_bootstrap'.format(new_version),
-            },
-            {
-                'name': 'symlink',
-                'from': '/var/www/nailgun/{0}_bootstrap'.format(new_version),
-                'to': '/var/www/nailgun/bootstrap',
-                'undo': []
-            }
-        ]}
-
-    targetimages = {
-        'actions': [
-            {
-                'name': 'copy',
-                'from': join(update_path, 'targetimages'),
-                'to': '/var/www/nailgun/{0}_targetimages'.format(new_version),
-            },
-            {
-                'name': 'symlink',
-                'from': '/var/www/nailgun/{0}_targetimages'.format(
-                    new_version),
-                'to': '/var/www/nailgun/targetimages',
-                'undo': [
-                    {
-                        'name': 'symlink_if_src_exists',
-                        'from': '/var/www/nailgun/{0}_targetimages'.format(
-                            from_version),
-                        'to': '/var/www/nailgun/targetimages'
-                    }
-                ]
-            }
-        ]
-    }
 
     return locals()

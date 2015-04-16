@@ -889,30 +889,34 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_vmware_consistency(cls, task):
+        """Checks vmware attributes consistency and proper values
+        """
         attributes = task.cluster.attributes.editable
-        vmware_attributes = task.cluster.vmware_attributes.editable
-        cinder_nodes = filter(
-            lambda node: 'cinder' in node.all_roles,
-            task.cluster.nodes)
+        vmware_attributes = task.cluster.vmware_attributes
+        # Old(< 6.1) clusters haven't vmware support
+        if vmware_attributes:
+            cinder_nodes = filter(
+                lambda node: 'cinder' in node.all_roles,
+                task.cluster.nodes)
 
-        if not cinder_nodes:
-            logger.info('There is no any node with "cinder" role provided')
+            if not cinder_nodes:
+                logger.info('There is no any node with "cinder" role provided')
 
-        models = {
-            'settings': attributes,
-            'default': vmware_attributes,
-            'cluster': task.cluster,
-            'version': settings.VERSION,
-            'networking_parameters': task.cluster.network_config
-        }
+            models = {
+                'settings': attributes,
+                'default': vmware_attributes.editable,
+                'cluster': task.cluster,
+                'version': settings.VERSION,
+                'networking_parameters': task.cluster.network_config
+            }
 
-        errors_msg = VmwareAttributesRestriction.check_data(
-            models=models,
-            metadata=vmware_attributes['metadata'],
-            data=vmware_attributes['value'])
+            errors_msg = VmwareAttributesRestriction.check_data(
+                models=models,
+                metadata=vmware_attributes.editable['metadata'],
+                data=vmware_attributes.editable['value'])
 
-        if errors_msg:
-            raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
+            if errors_msg:
+                raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
 
 
 class DumpTask(object):

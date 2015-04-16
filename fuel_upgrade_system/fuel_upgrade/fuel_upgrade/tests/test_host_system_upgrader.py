@@ -58,9 +58,9 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.upgrader.run_puppet()
         utils_mock.exec_cmd.assert_called_once_with(
             'puppet apply -d -v '
-            '/tmp/upgrade_path/puppet/2014.1.1-5.1/modules/nailgun/examples'
+            '/etc/puppet/2014.1.1-5.1/modules/nailgun/examples'
             '/host-upgrade.pp '
-            '--modulepath=/tmp/upgrade_path/puppet/2014.1.1-5.1/modules')
+            '--modulepath=/etc/puppet/2014.1.1-5.1/modules')
 
     @mock.patch(
         'fuel_upgrade.engines.host_system.'

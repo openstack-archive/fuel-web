@@ -62,6 +62,9 @@ class HostSystemUpgrader(UpgradeEngine):
         #: dst repository path
         self.repo_dst = self.host_system_config['repo_path']['dst']
 
+        #: packages to be installed before running puppet
+        self.packages = self.host_system_config['install_packages']
+
     @property
     def required_free_space(self):
         """Required free space to run upgrade
@@ -79,6 +82,7 @@ class HostSystemUpgrader(UpgradeEngine):
         """
         self.copy_repo()
         self.update_repo()
+        self.install_packages()
         self.run_puppet()
 
     def rollback(self):
@@ -107,6 +111,13 @@ class HostSystemUpgrader(UpgradeEngine):
             self.repo_config_path,
             {'version': self.version,
              'repo_path': self.repo_dst})
+        utils.exec_cmd('yum clean all')
+
+    def install_packages(self):
+        """Install packages for new release
+        """
+        for package in self.packages:
+            utils.exec_cmd('yum install -v -y {0}'.format(package))
 
     def run_puppet(self):
         """Run puppet to upgrade host system

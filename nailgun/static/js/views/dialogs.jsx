@@ -968,13 +968,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidMount: function() {
             var registrationForm = this.props.registrationForm;
             registrationForm.fetch()
-                .done(_.bind(function() {this.setState({loading: false});}, this))
-                .fail(_.bind(function() {
+                .then(null, function() {
                     registrationForm.url = registrationForm.nailgunUrl;
-                    registrationForm.fetch()
-                        .fail(this.showResponseErrors)
-                        .always(_.bind(function() {this.setState({loading: false});}, this));
-                }, this));
+                    return registrationForm.fetch();
+                })
+                .fail(_.bind(function(response) {
+                    this.showResponseErrors(response);
+                    this.setState({connectionError: true});
+                }, this))
+                .always(_.bind(function() {this.setState({loading: false});}, this));
         },
         onChange: function(inputName, value) {
             var registrationForm = this.props.registrationForm,
@@ -1059,7 +1061,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             {error}
                         </div>
                     }
-                    {!this.state.hideRequiredFieldsNotice &&
+                    {!this.state.hideRequiredFieldsNotice && !this.state.connectionError &&
                         <div className='alert'>
                             {i18n('welcome_page.register.required_fields')}
                         </div>
@@ -1093,7 +1095,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <button key='cancel' className='btn' onClick={this.close}>
                     {i18n('common.cancel_button')}
                 </button>,
-                <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.validateRegistrationForm}>
+                <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.loading || this.state.connectionError} onClick={this.validateRegistrationForm}>
                     {i18n('welcome_page.register.create_account')}
                 </button>
             ];
@@ -1118,21 +1120,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidMount: function() {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
             remoteRetrievePasswordForm.fetch()
-                .done(_.bind(function() {
-                    this.setState({
-                        remoteRetrievePasswordForm: remoteRetrievePasswordForm,
-                        loading: false
-                    });
-                }, this))
-                .fail(_.bind(function() {
+                .then(null, function() {
                     remoteRetrievePasswordForm.url = remoteRetrievePasswordForm.nailgunUrl;
-                    remoteRetrievePasswordForm.fetch()
-                        .done(_.bind(function() {
-                            this.setState({remoteRetrievePasswordForm: remoteRetrievePasswordForm});
-                        }, this))
-                        .fail(this.showResponseErrors)
-                        .always(_.bind(function() {this.setState({loading: false});}, this));
-                }, this));
+                    return remoteRetrievePasswordForm.fetch();
+                })
+                .fail(_.bind(function(response) {
+                    this.showResponseErrors(response);
+                    this.setState({connectionError: true});
+                }, this))
+                .always(_.bind(function() {this.setState({loading: false});}, this));
         },
         onChange: function(inputName, value) {
             var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
@@ -1156,11 +1152,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             var ns = 'dialog.retrieve_password.',
-                remoteRetrievePasswordForm = this.state.remoteRetrievePasswordForm;
+                remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
             if (this.state.loading) return <controls.ProgressBar />;
             var error = this.state.error,
                 actionInProgress = this.state.actionInProgress,
-                input = remoteRetrievePasswordForm ? remoteRetrievePasswordForm.attributes.credentials.email : null,
+                input = (remoteRetrievePasswordForm.get('credentials') || {}).email,
                 inputError = remoteRetrievePasswordForm ? (remoteRetrievePasswordForm.validationError || {})['credentials.email'] : null;
             return (
                 <div className='retrieve-password-content'>
@@ -1205,7 +1201,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <button key='cancel' className='btn' onClick={this.close}>
                                 {i18n('common.cancel_button')}
                             </button>
-                            <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.retrievePassword}>
+                            <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.loading || this.state.connectionError} onClick={this.retrievePassword}>
                                 {i18n('dialog.retrieve_password.send_new_password')}
                             </button>
                         </div>

@@ -13,7 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import mock
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
@@ -177,3 +177,29 @@ class TestTaskHelpers(BaseTestCase):
         expected = {}
         actual = TaskHelper.get_task_cache(task)
         self.assertDictEqual(expected, actual)
+
+    def test_prepare_action_log_kwargs(self):
+        cluster = self.create_env([
+            {'roles': ['compute'], 'status': 'provisioning'}])
+
+        task = Task(name='provision', cluster_id=cluster.id)
+        self.db.add(task)
+        self.db.commit()
+
+        with mock.patch('nailgun.logger.logger.error') as l_error:
+            # Checking extracting actor_id from passed env
+            actor_id = 'xx'
+            kwargs = TaskHelper.prepare_action_log_kwargs(
+                task, web_ctx_env={'fuel.action.actor_id': actor_id})
+            self.assertEqual(0, l_error.call_count)
+            self.assertEqual(actor_id, kwargs['actor_id'])
+
+            kwargs = TaskHelper.prepare_action_log_kwargs(
+                task, web_ctx_env={})
+            self.assertEqual(0, l_error.call_count)
+            self.assertIsNone(kwargs['actor_id'])
+
+            # Checking fetching actor_id on empty web.ctx
+            kwargs = TaskHelper.prepare_action_log_kwargs(task)
+            self.assertEqual(1, l_error.call_count)
+            self.assertIsNone(kwargs['actor_id'])

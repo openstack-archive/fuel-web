@@ -28,6 +28,7 @@ from nailgun.api.v1.validators.node import NodesFilterValidator
 
 from nailgun.logger import logger
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.orchestrator import deployment_graph
@@ -264,7 +265,36 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
         nodes_to_deploy = super(
             BaseDeploySelectedNodes, self).get_nodes(cluster)
         if cluster.is_ha_mode:
-            return TaskHelper.nodes_to_deploy_ha(cluster, nodes_to_deploy)
+            nodes_to_deploy = TaskHelper.nodes_to_deploy_ha(
+                cluster,
+                nodes_to_deploy
+            )
+
+        # in some cases (e.g. user tries to deploy single controller node
+        # via CLI or API for ha cluster) there may be situation when not
+        # all nodes scheduled for deployment are provisioned, hence
+        # here we check for such situation
+        not_provisioned_nodes_ids = [
+            n.id for n in nodes_to_deploy
+            if (
+                any([n.pending_addition, n.needs_reprovision])
+                or
+                n.status == consts.NODE_STATUSES.provisioning
+            )
+        ]
+
+        if not_provisioned_nodes_ids:
+            logger.error("Nodes with ids {0} are not provisined yet for "
+                         "cluster {1}."
+                         .format(not_provisioned_nodes_ids,
+                                 cluster.id)
+                         )
+
+            err_msg = ("Deployment operation is not started as nodes "
+                       "with uids {0} are not provisioned yet."
+                       .format(not_provisioned_nodes_ids))
+            raise self.http(409, msg=err_msg)
+
         return nodes_to_deploy
 
 
@@ -277,6 +307,7 @@ class DeploySelectedNodes(BaseDeploySelectedNodes):
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
                * 400 (data validation failed)
+               * 409 (given nodes are not provisioned yet)
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
@@ -293,6 +324,7 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
                * 400 (data validation failed)
+               * 409 (given nodes are not provisioned yet)
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)

@@ -17,8 +17,6 @@
 from mock import patch
 from oslo.serialization import jsonutils
 
-import nailgun
-
 from nailgun import consts
 from nailgun import objects
 
@@ -153,27 +151,54 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         self.cluster = self.env.clusters[0]
-        self.node_uids = [n.uid for n in self.cluster.nodes][:3]
+        self.nodes = [n for n in self.cluster.nodes][:3]
+        self.node_uids = [n.uid for n in self.nodes]
 
     def send_put(self, url, data=None):
         return self.app.put(
             url, jsonutils.dumps(data),
             headers=self.default_headers, expect_errors=True)
 
+    def make_action_url(self, handler_name, node_uids):
+        return reverse(
+            handler_name,
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_orchestrator_uri(node_uids)
+
+    def emulate_nodes_provisioning(self, nodes):
+        for node in nodes:
+            node.status = consts.NODE_STATUSES.provisioned
+            node.pending_addition = False
+
+        self.db.add_all(nodes)
+        self.db.flush()
+
+    def check_deployment_call_made(self, nodes_uids, mcast):
+        args, kwargs = mcast.call_args
+        deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
+        self.assertEqual(len(nodes_uids), len(deployed_uids))
+        self.assertItemsEqual(nodes_uids, deployed_uids)
+
+    def check_resp_declined(self, resp):
+        self.assertEqual(resp.status_code, 400)
+        self.assertRegexpMatches(
+            resp.body,
+            "Deployment operation cannot be started .*"
+        )
+
 
 class TestSelectedNodesAction(BaseSelectedNodesTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_start_provisioning_on_selected_nodes(self, mock_rpc):
-        action_url = reverse(
-            'ProvisionSelectedNodes',
-            kwargs={'cluster_id': self.cluster.id}) + \
-            make_orchestrator_uri(self.node_uids)
-
+    @patch('nailgun.task.task.rpc.cast')
+    def test_start_provisioning_on_selected_nodes(self, mcast):
+        action_url = self.make_action_url(
+            "ProvisionSelectedNodes",
+            self.node_uids
+        )
         self.send_put(action_url)
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = mcast.call_args
         provisioned_uids = [
             n['uid'] for n in args[1]['args']['provisioning_info']['nodes']]
 
@@ -181,10 +206,11 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         self.assertItemsEqual(self.node_uids, provisioned_uids)
 
     def test_start_provisioning_is_unavailable(self):
-        action_url = reverse(
-            'ProvisionSelectedNodes',
-            kwargs={'cluster_id': self.cluster.id}) + \
-            make_orchestrator_uri(self.node_uids)
+        action_url = self.make_action_url(
+            "ProvisionSelectedNodes",
+            self.node_uids
+        )
+
         self.env.releases[0].state = consts.RELEASE_STATES.unavailable
 
         resp = self.send_put(action_url)
@@ -193,23 +219,56 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_start_deployment_on_selected_nodes(self, mock_rpc):
+    @patch('nailgun.task.task.rpc.cast')
+    def test_start_deployment_on_selected_nodes(self, mcast):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+
+        self.emulate_nodes_provisioning(controller_nodes)
+
+        nodes_uids = [n.uid for n in controller_nodes]
+
+        controller_to_deploy = nodes_uids[0]
+
         # if cluster is ha, then DeploySelectedNodes must call
         # TaskHelper.nodes_to_deploy_ha(cluster, nodes) and it must
         # append third controller to the list of nodes which are to deploy
-        node_uids = [n.uid for n in self.cluster.nodes][2:3]
-        action_url = reverse(
-            'DeploySelectedNodes',
-            kwargs={'cluster_id': self.cluster.id}) + \
-            make_orchestrator_uri(node_uids)
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            [controller_to_deploy]
+        )
+        self.send_put(deploy_action_url)
 
-        self.send_put(action_url)
+        self.check_deployment_call_made(nodes_uids, mcast)
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
-        self.assertEqual(3, len(deployed_uids))
-        self.assertItemsEqual(self.node_uids, deployed_uids)
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.task.task.rpc.cast')
+    def test_deployment_of_node_is_forbidden(self, mcast):
+        # cluster is in ha mode so for the sanity of the check
+        # lets operate on non-controller node
+        node_to_deploy = [
+            n for n in self.cluster.nodes if
+            not
+            set(["primary-controller", "controller"])
+            &
+            set(n.roles)
+        ].pop()
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            [node_to_deploy.uid]
+        )
+
+        resp = self.send_put(deploy_action_url)
+        self.check_resp_declined(resp)
+
+        self.emulate_nodes_provisioning([node_to_deploy])
+
+        self.send_put(deploy_action_url)
+
+        self.check_deployment_call_made([node_to_deploy.uid], mcast)
 
 
 class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
@@ -221,31 +280,42 @@ class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
 
     @patch('nailgun.task.task.rpc.cast')
     def test_use_only_certain_tasks(self, mcast):
-        action_url = reverse(
-            'DeploySelectedNodesWithTasks',
-            kwargs={'cluster_id': self.cluster.id}) + \
-            make_orchestrator_uri(self.node_uids)
+        self.emulate_nodes_provisioning(self.nodes)
+
+        action_url = self.make_action_url(
+            "DeploySelectedNodesWithTasks",
+            self.node_uids
+        )
         out = self.send_put(action_url, self.tasks)
         self.assertEqual(out.status_code, 202)
+
         args, kwargs = mcast.call_args
         deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
         deployment_data = args[1]['args']['deployment_info'][0]
         self.assertEqual(deployed_uids, self.node_uids)
         self.assertEqual(len(deployment_data['tasks']), 1)
 
+    def test_deployment_is_forbidden(self):
+        action_url = self.make_action_url(
+            "DeploySelectedNodesWithTasks",
+            self.node_uids
+        )
+        resp = self.send_put(action_url, self.tasks)
+        self.check_resp_declined(resp)
+
     def test_error_raised_on_non_existent_tasks(self):
-        action_url = reverse(
-            'DeploySelectedNodesWithTasks',
-            kwargs={'cluster_id': self.cluster.id}) + \
-            make_orchestrator_uri(self.node_uids)
+        action_url = self.make_action_url(
+            "DeploySelectedNodesWithTasks",
+            self.node_uids
+        )
         out = self.send_put(action_url, self.non_existent)
         self.assertEqual(out.status_code, 400)
 
     def test_error_on_empty_list_tasks(self):
-        action_url = reverse(
-            'DeploySelectedNodesWithTasks',
-            kwargs={'cluster_id': self.cluster.id}) + \
-            make_orchestrator_uri(self.node_uids)
+        action_url = self.make_action_url(
+            "DeploySelectedNodesWithTasks",
+            self.node_uids
+        )
         out = self.send_put(action_url, [])
         self.assertEqual(out.status_code, 400)
 
@@ -255,11 +325,15 @@ class TestDeployMethodVersioning(BaseSelectedNodesTest):
     def assert_deployment_method(self, version, method, mcast):
         self.cluster.release.version = version
         self.db.flush()
-        action_url = reverse(
-            'DeploySelectedNodes',
-            kwargs={'cluster_id': self.cluster.id}) + \
-            make_orchestrator_uri(self.node_uids)
+
+        self.emulate_nodes_provisioning(self.nodes)
+
+        action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            self.node_uids
+        )
         self.send_put(action_url)
+
         deployment_method = mcast.call_args_list[0][0][1]['method']
         self.assertEqual(deployment_method, method)
 

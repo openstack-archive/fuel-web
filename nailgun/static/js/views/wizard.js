@@ -599,8 +599,8 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
                 });
             }
         },
-        render: function() {
-            this.$el.html(this.template());
+        render: function(options) {
+            this.$el.html(this.template(options));
             this.renderCustomElements();
             this.$el.i18n();
             this.handleWarnings();
@@ -701,9 +701,12 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             this.updateConfig(release.get('wizard_metadata'));
         },
         render: function() {
-            this.constructor.__super__.render.call(this);
+            var release = this.wizard.model.get('NameAndRelease.release'),
+                os = release && release.get('operating_system');
+            this.constructor.__super__.render.call(this, {
+                connectivityAlert: os && utils.linebreaks(i18n('dialog.create_cluster_wizard.name_release.' + os + '_connectivity_alert'))
+            });
             if (this.releases.length) {
-                var release = this.wizard.model.get('NameAndRelease.release');
                 if (!release) {
                     this.wizard.model.set('NameAndRelease.release', this.releases.first());
                 } else {

@@ -408,14 +408,12 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     />;
                                 }
                                 return <controls.Input
+                                    {... _.pick(setting, 'type', 'label', 'description')}
                                     key={settingName}
-                                    type={setting.type}
                                     name={settingName}
                                     children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
                                     defaultValue={setting.value}
                                     defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
-                                    label={setting.label}
-                                    description={setting.description}
                                     toggleable={setting.type == 'password'}
                                     error={error}
                                     disabled={isSettingDisabled}

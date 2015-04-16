@@ -229,23 +229,32 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderBody: function() {
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
-                settingsLocked = _.contains(['new', 'stopped'], cluster.get('status')),
+                settingsWillBeLocked = _.contains(['new', 'stopped'], cluster.get('status')),
                 needsRedeployment = cluster.needsRedeployment(),
                 warningClasses = {
                     'deploy-task-notice': true,
                     'text-error': needsRedeployment || this.state.isInvalid,
-                    'text-warning': settingsLocked
+                    'text-warning': settingsWillBeLocked
                 };
             return (
                 <div className='display-changes-dialog'>
-                    {(settingsLocked || needsRedeployment || this.state.isInvalid) &&
+                    {(settingsWillBeLocked || needsRedeployment || this.state.isInvalid) &&
                         <div>
                             <div className={utils.classNames(warningClasses)}>
                                 <i className='icon-attention' />
                                 <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' :
-                                    settingsLocked ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
+                                    settingsWillBeLocked ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
+                            {settingsWillBeLocked &&
+                                <div>
+                                    <div className={utils.classNames(warningClasses)}>
+                                        <i className='icon-attention' />
+                                        <span dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n(this.ns + 'warnings.connectivity_alert')))}} />
+                                    </div>
+                                    <hr className='slim' />
+                                </div>
+                            }
                         </div>
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}

@@ -61,6 +61,26 @@ class ExecuteTestCase(testtools.TestCase):
                           utils.execute,
                           '/usr/bin/env', 'false', check_exit_code=True)
 
+    @mock.patch('fuel_agent.utils.utils.time.sleep')
+    @mock.patch('fuel_agent.utils.utils.subprocess.Popen')
+    def test_execute_ok_on_third_attempts(self, mock_popen, mock_sleep):
+        process = mock.Mock()
+        mock_popen.side_effect = [OSError, ValueError, process]
+        process.communicate.return_value = (None, None)
+        process.returncode = 0
+        utils.execute('/usr/bin/env', 'false', attempts=3)
+        self.assertEqual(2 * [mock.call(CONF.execute_retry_delay)],
+                         mock_sleep.call_args_list)
+
+    @mock.patch('fuel_agent.utils.utils.time.sleep')
+    @mock.patch('fuel_agent.utils.utils.subprocess.Popen')
+    def test_execute_failed(self, mock_popen, mock_sleep):
+        mock_popen.side_effect = OSError
+        self.assertRaises(errors.ProcessExecutionError, utils.execute,
+                          '/usr/bin/env', 'false', attempts=2)
+        self.assertEqual(1 * [mock.call(CONF.execute_retry_delay)],
+                         mock_sleep.call_args_list)
+
     @mock.patch('stevedore.driver.DriverManager')
     def test_get_driver(self, mock_drv_manager):
         mock_drv_manager.return_value = self.drv_manager

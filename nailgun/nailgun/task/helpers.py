@@ -26,7 +26,6 @@ from sqlalchemy.orm import exc
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
@@ -34,6 +33,7 @@ from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.statistics.fuel_statistics.tasks_params_white_lists \
     import task_output_white_list
+from nailgun.utils import logs as logs_utils
 
 
 tasks_names_actions_groups_mapping = {
@@ -61,22 +61,17 @@ class TaskHelper(object):
 
     # TODO(aroma): move it to utils module
     @classmethod
-    def prepare_syslog_dir(cls, node, admin_net_id, prefix=None):
+    def prepare_syslog_dir(cls, node, admin_net_id,
+                           prefix=settings.SYSLOG_DIR):
         logger.debug("Preparing syslog directories for node: %s", node.fqdn)
-        if not prefix:
-            prefix = settings.SYSLOG_DIR
         logger.debug("prepare_syslog_dir prefix=%s", prefix)
 
-        old = os.path.join(prefix, str(node.ip))
-        bak = os.path.join(prefix, "%s.bak" % str(node.fqdn))
-        new = os.path.join(prefix, str(node.fqdn))
-
-        links = map(
-            lambda i: os.path.join(prefix, i.ip_addr),
-            db().query(IPAddr.ip_addr).
-            filter_by(node=node.id).
-            filter_by(network=admin_net_id).all()
-        )
+        log_paths = logs_utils.generate_log_paths_for_node(node, admin_net_id,
+                                                           prefix)
+        links = log_paths['links']
+        old = log_paths['old']
+        bak = log_paths['bak']
+        new = log_paths['new']
 
         logger.debug("prepare_syslog_dir old=%s", old)
         logger.debug("prepare_syslog_dir new=%s", new)

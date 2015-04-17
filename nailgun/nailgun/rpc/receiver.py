@@ -92,7 +92,7 @@ class NailgunReceiver(object):
         def get_node_id(n):
             return n.get('id', int(n.get('uid')))
 
-        Node.delete_by_ids([get_node_id(n) for n in nodes])
+        nodes_to_delete_ids = [get_node_id(n) for n in nodes]
 
         if(len(inaccessible_nodes) > 0):
             inaccessible_node_ids = [
@@ -101,7 +101,17 @@ class NailgunReceiver(object):
             logger.warn(u'Nodes %s not answered by RPC, removing from db',
                         inaccessible_nodes)
 
-            Node.delete_by_ids(inaccessible_node_ids)
+            nodes_to_delete_ids.extend(inaccessible_node_ids)
+
+        for node_id in nodes_to_delete_ids:
+            node = db().query(Node).get(node_id)
+            admin_net_id = objects.Node.get_network_manager(
+                node
+            ).get_admin_network_group_id(node.id)
+
+            TaskHelper.delete_node_logs(node, admin_net_id)
+
+        Node.delete_by_ids(nodes_to_delete_ids)
 
         for node in error_nodes:
             node_db = objects.Node.get_by_uid(node['uid'])

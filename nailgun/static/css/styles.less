@@ -740,12 +740,20 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
 
   .actions-tab {
     .action-item {
-      > .panel {
-        min-height: 215px;
+      .panel {
+        background-color: @tab-color + 20%;
+        border: none;
+        .panel-heading {
+          background-color:  @tab-color + 10%;
+          font-family: @semibold;
+          font-size: @base-font-size + 2px;
+          border-bottom: 1px dotted @white;
+          color: @base-text-color;
+          .text-emboss;
+        }
       }
       .action-body {
         margin-bottom: 10px;
-        font-size: @base-font-size - 1;
         input, select {
           margin-bottom: 10px;
         }

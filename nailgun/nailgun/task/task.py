@@ -45,6 +45,7 @@ from nailgun.orchestrator import stages
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
+from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.zabbix import ZabbixManager
 
@@ -261,7 +262,7 @@ class ProvisionTask(object):
                 node
             ).get_admin_network_group_id(node.id)
 
-            TaskHelper.prepare_syslog_dir(node, admin_net_id)
+            logs_utils.prepare_syslog_dir(node, admin_net_id)
 
         rpc_message = make_astute_message(
             task,

@@ -38,17 +38,17 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing logs tab');
-    this.test.assertSelectorAppears('.filter-bar select[name=source] option', 'Log source selection box appears and is not empty');
-    this.test.assertSelectorAppears('.filter-bar .show-logs-btn:disabled', '"Show logs" button is locked');
+    this.test.assertSelectorAppears('.sticker select[name=source] option', 'Log source selection box appears and is not empty');
+    this.test.assertSelectorAppears('.sticker button:disabled', '"Show logs" button is locked');
     this.then(function() {
-        this.fill('.filter-bar', {'level': 'DEBUG'});
+        this.fill('.sticker', {'level': 'DEBUG'});
     });
-    this.test.assertSelectorAppears('.filter-bar .show-logs-btn:not([disabled])', '"Show logs" button is enabled after "Levels" change');
+    this.test.assertSelectorAppears('.sticker button:not([disabled])', '"Show logs" button is enabled after "Levels" change');
     this.then(function() {
-        this.click('.filter-bar .show-logs-btn');
+        this.click('.sticker button');
     });
-    this.waitForSelector('.table-logs .log-entries > *').then(function() {
-        this.test.assertSelectorHasText('.table-logs .log-entries tr:first-child td:last-child', 'Test Log Entry', 'Log entry appears after clicking "Show logs" button');
+    this.waitForSelector('.log-entries > *').then(function() {
+        this.test.assertSelectorHasText('.log-entries tr:first-child td:last-child', 'Test Log Entry', 'Log entry appears after clicking "Show logs" button');
     });
 });
 

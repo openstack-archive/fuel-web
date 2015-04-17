@@ -54,12 +54,12 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             ];
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
                 elements.unshift(
-                    <RegistrationInfo key='RegistrationInfo' settings={this.props.settings} />,
-                    <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />,
+                    <RegistrationInfo key='RegistrationInfo' settings={this.props.settings} tracking={new models.FuelSettings(_.cloneDeep(this.props.settings.attributes))}/>,
+                    <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} statistics={new models.FuelSettings(_.cloneDeep(this.props.settings.attributes))}/>,
                     <SupportContacts key='SupportContacts' />
                 );
             } else {
-                elements.push(<StatisticsSettings key='StatisticsSettings' settings={this.props.settings} />);
+                elements.push(<StatisticsSettings key='StatisticsSettings' settings={this.props.settings} statistics={new models.FuelSettings(_.cloneDeep(this.props.settings.attributes))}/>);
             }
             return (
                 <div>
@@ -108,13 +108,12 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
     var RegistrationInfo = React.createClass({
         mixins: [
             statisticsMixin,
-            componentMixins.backboneMixin('settings', 'change invalid')
+            componentMixins.backboneMixin('tracking', 'change invalid')
         ],
-        componentWillUnmount: function() {
-            this.clearRegistrationForm();
+        componentWillMount: function() {
+            this.props.tracking.processRestrictions();
         },
         render: function() {
-            var settings = this.props.settings;
             if (this.state.isConnected)
                 return (
                     <SupportPageElement
@@ -124,9 +123,9 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     >
                         <p className='registeredData enable-selection'>
                             {_.map(['name', 'email', 'company'], function(value) {
-                                return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {settings.get('statistics')[value].value}</span>;
-                            })}
-                            <span><b>{i18n('support_page.master_node_uuid')}:</b> {settings.get('master_node_uid')}</span>
+                                return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {this.props.tracking.get('statistics')[value].value}</span>;
+                            }, this)}
+                            <span><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.tracking.get('master_node_uid')}</span>
                         </p>
                         <p>
                             <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
@@ -142,7 +141,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     text={i18n('support_page.register_fuel_content')}
                 >
                     <div>
-                        {this.renderRegistrationForm(settings, this.state.actionInProgress, this.state.error, this.state.actionInProgress)}
+                        {this.renderRegistrationForm(this.props.tracking, this.state.actionInProgress, this.state.error, this.state.actionInProgress)}
                         <p>
                             <button className='btn registration-link' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
                                 {i18n('support_page.register_fuel_title')}
@@ -157,27 +156,15 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
     var StatisticsSettings = React.createClass({
         mixins: [
             statisticsMixin,
-            componentMixins.backboneMixin('settings')
+            componentMixins.backboneMixin('statistics')
         ],
-        getDefaultProps: function() {
-            return {fields: ['send_anonymous_statistic', 'send_user_info']};
-        },
-        componentWillUnmount: function() {
-            // FIXME: this ugly hack because the registration form uses some statistics data
-            // like email, name, company info
-            var initialData = this.initialAttributes.statistics,
-                settings = this.props.settings;
-            _.each(this.props.fields, function(field) {
-                settings.set(settings.makePath('statistics', field, 'value'), initialData[field].value);
-            }, this);
-        },
         render: function() {
-            var statistics = this.props.settings.get('statistics'),
+            var statistics = this.props.statistics.get('statistics'),
                 sortedSettings = _.chain(_.keys(statistics))
                     .without('metadata')
                     .sortBy(function(settingName) {return statistics[settingName].weight;}, this)
                     .value(),
-                initialData = this.initialAttributes.statistics,
+                initialData = this.props.settings.get('statistics'),
                 hasChanges = _.any(this.props.fields, function(field) {
                     return !_.isEqual(initialData[field].value, statistics[field].value);
                 });
@@ -194,7 +181,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                         <button
                             className='btn'
                             disabled={this.state.actionInProgress || !hasChanges}
-                            onClick={_.bind(this.prepareSettingsToSave, this, 'statistics')}
+                            onClick={this.prepareStatisticsToSave}
                         >
                             {i18n('support_page.save_changes')}
                         </button>

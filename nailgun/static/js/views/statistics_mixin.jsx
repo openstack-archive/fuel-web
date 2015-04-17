@@ -29,6 +29,9 @@ define([
         propTypes: {
             settings: React.PropTypes.object.isRequired
         },
+        getDefaultProps: function() {
+            return {fields: ['send_anonymous_statistic', 'send_user_info']};
+        },
         getInitialState: function() {
             var tracking = this.props.settings.get('tracking');
             return {
@@ -43,24 +46,47 @@ define([
         setConnected: function() {
             this.setState({isConnected: true});
         },
-        saveSettings: function(settings) {
-            settings = settings || this.props.settings;
+        saveSettings: function(initialAttributes) {
+            var settings = this.props.settings;
             this.setState({actionInProgress: true});
             return settings.save(null, {patch: true, wait: true, validate: false})
-                .done(this.updateInitialAttributes)
-                .fail(function(response) {
+                .fail(_.bind(function(response) {
+                    if (initialAttributes) settings.set(initialAttributes);
                     utils.showErrorDialog({response: response});
-                })
+                }, this))
                 .always(_.bind(function() {
                     this.setState({actionInProgress: false});
                 }, this));
         },
-        // the following method used on the Support page
-        // to save statistics data separately from registration data
-        prepareSettingsToSave: function(partName) {
-            var tempSettings = new models.FuelSettings(_.cloneDeep(this.initialAttributes));
-            tempSettings.set(this.props.settings.pick(partName));
-            return this.saveSettings(tempSettings);
+        prepareStatisticsToSave: function() {
+            var currentAttributes = _.cloneDeep(this.props.settings.attributes);
+            // We're saving only two checkboxes
+            _.each(this.props.fields, function(field) {
+                var path = this.props.settings.makePath('statistics', field, 'value');
+                this.props.settings.set(path, this.props.statistics.get(path));
+            }, this);
+            return this.saveSettings(currentAttributes);
+        },
+        prepareTrackingToSave: function(response) {
+            var currentAttributes = _.cloneDeep(this.props.settings.attributes),
+                tracking = this.props.tracking;
+            // Saving user contact data to Statistics section
+            _.each(response, function(value, name) {
+                if (name != 'password') {
+                    var path = this.props.settings.makePath('statistics', name, 'value');
+                    this.props.settings.set(path, value);
+                    this.props.tracking.set(path, value);
+                }
+            }, this);
+            // Saving email and password to Tracking section
+            _.each(tracking.get('tracking'), function(data, inputName) {
+                var path = this.props.settings.makePath('tracking', inputName, 'value');
+                this.props.settings.set(path, tracking.get(path));
+            }, this);
+            this.saveSettings(currentAttributes)
+                .done(_.bind(function() {
+                    this.setConnected();
+                }, this));
         },
         showResponseErrors: function(response) {
             var jsonObj,
@@ -75,8 +101,9 @@ define([
         },
         connectToMirantis: function() {
             this.setState({error: null});
-            if (this.props.settings.isValid({models: this.configModels})) {
-                var tracking = this.props.settings.get('tracking'),
+            var settings = this.props.tracking;
+            if (settings.isValid({models: this.configModels})) {
+                var tracking = settings.get('tracking'),
                     remoteLoginForm = this.state.remoteLoginForm;
                 this.setState({actionInProgress: true});
                 _.each(tracking, function(data, inputName) {
@@ -84,28 +111,12 @@ define([
                     remoteLoginForm.set(name, tracking[inputName].value);
                 }, this);
                 remoteLoginForm.save()
-                    .done(this.saveStatisticsData)
+                    .done(this.prepareTrackingToSave)
                     .fail(this.showResponseErrors)
                     .always(_.bind(function() {
                         this.setState({actionInProgress: false});
                     }, this));
             }
-        },
-        saveStatisticsData: function(response) {
-            _.each(response, function(value, name) {
-                if (name != 'password') {
-                    var path = this.props.settings.makePath('statistics', name, 'value');
-                    this.props.settings.set(path, value);
-                }
-            }, this);
-            this.saveSettings()
-                .done(_.bind(function() {
-                    this.updateInitialAttributes();
-                    this.setConnected();
-                }, this))
-                .fail(_.bind(function() {
-                    this.setState({error: i18n('common.error')});
-                }, this));
         },
         checkRestrictions: function(name, action) {
             action = action || 'disable';
@@ -114,28 +125,26 @@ define([
         toggleItemsList: function() {
             this.setState({showItems: !this.state.showItems});
         },
-        updateInitialAttributes: function() {
-            this.initialAttributes = _.cloneDeep(this.props.settings.attributes);
-        },
         componentWillMount: function() {
+            var settings = this.props.statistics || this.props.tracking;
             this.configModels = {
-                fuel_settings: this.props.settings,
+                fuel_settings: settings,
                 version: app.version,
-                default: this.props.settings
+                default: settings
             };
-            this.updateInitialAttributes();
         },
-        getError: function(name) {
-            return (this.props.settings.validationError || {})[this.props.settings.makePath('statistics', name)];
+        getError: function(settings, name) {
+            return (settings.validationError || {})[settings.makePath('statistics', name)];
         },
         getText: function(key) {
             if (_.contains(app.version.get('feature_groups'), 'mirantis')) return i18n(key);
             return i18n(key + '_community');
         },
         renderInput: function(settingName, labelClassName, wrapperClassName, disabledState) {
-            var setting = this.props.settings.get(this.props.settings.makePath('statistics', settingName));
+            var settings = this.props.statistics || this.props.tracking,
+                setting = settings.get(settings.makePath('statistics', settingName));
             if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result || setting.type == 'hidden') return null;
-            var error = this.getError(settingName),
+            var error = this.getError(settings, settingName),
                 disabled = this.checkRestrictions('metadata').result || this.checkRestrictions(settingName).result || disabledState;
             return <controls.Input
                 key={settingName}
@@ -148,7 +157,7 @@ define([
                 inputClassName={setting.type == 'text' && 'input-xlarge'}
                 labelClassName={labelClassName}
                 wrapperClassName={wrapperClassName}
-                onChange={this.onStatisticsSettingChange}
+                onChange={this.onCheckboxChange}
                 error={error && i18n(error)}
             />;
         },
@@ -216,20 +225,21 @@ define([
                 </div>
             );
         },
-        onStatisticsSettingChange: function(name, value) {
-            var path = this.props.settings.makePath('statistics', name, 'value');
-            this.props.settings.set(path, value);
+        onCheckboxChange: function(name, value) {
+            var settings = this.props.statistics || this.props.tracking;
+            settings.set(settings.makePath('statistics', name, 'value'), value);
         },
         onTrackingSettingChange: function(name, value) {
             this.setState({error: null});
-            var path = this.props.settings.makePath('tracking', name);
-            delete (this.props.settings.validationError || {})[path];
-            this.props.settings.set(this.props.settings.makePath(path, 'value'), value);
+            var settings = this.props.tracking;
+            var path = settings.makePath('tracking', name);
+            delete (settings.validationError || {})[path];
+            settings.set(settings.makePath(path, 'value'), value);
         },
         clearRegistrationForm: function() {
             if (!this.state.isConnected) {
-                var settings = this.props.settings,
-                    initialData = this.initialAttributes.tracking;
+                var settings = this.props.tracking,
+                    initialData = this.props.settings.get('tracking');
                 _.each(settings.get('tracking'), function(data, name) {
                     var path = settings.makePath('tracking', name, 'value');
                     settings.set(path, initialData[name].value);
@@ -279,9 +289,10 @@ define([
         showRegistrationDialog: function() {
             dialogs.RegistrationDialog.show({
                 registrationForm: this.state.registrationForm,
-                updateInitialAttributes: _.bind(this.updateInitialAttributes, this),
                 setConnected: _.bind(this.setConnected, this),
-                settings: this.props.settings
+                settings: this.props.settings,
+                tracking: this.props.tracking,
+                saveSettings: _.bind(this.saveSettings, this)
             });
         },
         showRetrievePasswordDialog: function() {

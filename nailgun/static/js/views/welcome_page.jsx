@@ -18,34 +18,43 @@ define(
     'underscore',
     'i18n',
     'react',
+    'models',
     'jsx!component_mixins',
     'jsx!views/statistics_mixin'
 ],
-function(_, i18n, React, componentMixins, statisticsMixin) {
+function(_, i18n, React, models, componentMixins, statisticsMixin) {
     'use strict';
 
     var WelcomePage = React.createClass({
         mixins: [
             statisticsMixin,
-            componentMixins.backboneMixin('settings', 'change invalid')
+            componentMixins.backboneMixin('tracking', 'change invalid')
         ],
         statics: {
             title: i18n('welcome_page.title'),
             hiddenLayout: true,
             fetchData: function() {
                 return app.settings.fetch().then(function() {
-                    return {settings: app.settings};
+                    return {
+                        settings: app.settings,
+                        tracking: new models.FuelSettings(_.cloneDeep(app.settings.attributes))
+                    };
                 });
             }
         },
+        componentWillMount: function() {
+            this.props.tracking.processRestrictions();
+        },
         onStartButtonClick: function() {
             this.clearRegistrationForm();
-            var statistics = this.props.settings.get('statistics');
+            var statistics = this.props.tracking.get('statistics'),
+                currentAttributes = _.cloneDeep(this.props.settings.attributes);
             statistics.user_choice_saved.value = true;
             // locked state is similar to actionInProgress but
             // we want the page isn't unlocked after successful saving
             this.setState({locked: true});
-            this.saveSettings()
+            this.props.settings.set(this.props.tracking.attributes);
+            this.saveSettings(currentAttributes)
                 .done(function() {
                     app.navigate('', {trigger: true});
                 })
@@ -77,12 +86,12 @@ function(_, i18n, React, componentMixins, statisticsMixin) {
                                         {this.state.isConnected ?
                                             <div className='happy-cloud'>
                                                 <div className='cloud-smile' />
-                                                <div>{i18n(ns + 'register.welcome_phrase.thanks')} {this.props.settings.get('statistics').name.value}, {i18n(ns + 'register.welcome_phrase.content')}</div>
+                                                <div>{i18n(ns + 'register.welcome_phrase.thanks')} {this.props.tracking.get('statistics').name.value}, {i18n(ns + 'register.welcome_phrase.content')}</div>
                                             </div>
                                         :
                                             <div>
                                                 <p className='register_installation'>{i18n(ns + 'register.register_installation')}</p>
-                                                {this.renderRegistrationForm(this.props.settings, disabled, this.state.error, this.state.actionInProgress && !this.state.locked)}
+                                                {this.renderRegistrationForm(this.props.tracking, disabled, this.state.error, this.state.actionInProgress && !this.state.locked)}
                                             </div>
                                         }
                                     </div>

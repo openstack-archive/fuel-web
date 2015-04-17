@@ -34,21 +34,14 @@ CONF = cfg.CONF
 
 
 class TestManager(test_base.BaseTestCase):
-    def setUp(self):
-        super(TestManager, self).setUp()
-        self.mgr = manager.Manager(test_nailgun.PROVISION_SAMPLE_DATA)
 
     @mock.patch('yaml.load')
     @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(hu, 'list_block_devices')
-    def test_do_parsing(self, mock_lbd, mock_http_req, mock_yaml):
+    def setUp(self, mock_lbd, mock_http, mock_yaml):
+        super(TestManager, self).setUp()
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        self.mgr.do_parsing()
-        #NOTE(agordeev): there's no need for deeper assertions as all schemes
-        # thoroughly tested in test_nailgun
-        self.assertFalse(self.mgr.partition_scheme is None)
-        self.assertFalse(self.mgr.configdrive_scheme is None)
-        self.assertFalse(self.mgr.image_scheme is None)
+        self.mgr = manager.Manager(test_nailgun.PROVISION_SAMPLE_DATA)
 
     @mock.patch('six.moves.builtins.open')
     @mock.patch.object(os, 'symlink')
@@ -79,7 +72,6 @@ class TestManager(test_base.BaseTestCase):
         mock_os_ld.return_value = ['not_a_rule', 'fake.rules']
         mock_os_p.exists.return_value = True
         mock_hu_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        self.mgr.do_parsing()
         self.mgr.do_partitioning()
         mock_pu_ml_expected_calls = [mock.call('/dev/sda', 'gpt'),
                                      mock.call('/dev/sdb', 'gpt'),
@@ -150,8 +142,7 @@ class TestManager(test_base.BaseTestCase):
         mock_get_size.return_value = 123
         mock_md5.return_value = 'fakemd5'
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        self.mgr.do_parsing()
-        self.assertEqual(1, len(self.mgr.image_scheme.images))
+        self.assertEqual(1, len(self.mgr.driver.image_scheme.images))
         self.mgr.do_configdrive()
         mock_u_ras_expected_calls = [
             mock.call(CONF.nc_template_path,
@@ -187,11 +178,11 @@ class TestManager(test_base.BaseTestCase):
                       '%s/%s' % (CONF.tmp_path, 'user-data'),
                       '%s/%s' % (CONF.tmp_path, 'meta-data'))]
         self.assertEqual(mock_u_e_expected_calls, mock_u_e.call_args_list)
-        self.assertEqual(2, len(self.mgr.image_scheme.images))
-        cf_drv_img = self.mgr.image_scheme.images[-1]
+        self.assertEqual(2, len(self.mgr.driver.image_scheme.images))
+        cf_drv_img = self.mgr.driver.image_scheme.images[-1]
         self.assertEqual('file://%s' % CONF.config_drive_path, cf_drv_img.uri)
         self.assertEqual('/dev/sda7',
-                         self.mgr.partition_scheme.configdrive_device())
+                         self.mgr.driver.partition_scheme.configdrive_device())
         self.assertEqual('iso9660', cf_drv_img.format)
         self.assertEqual('raw', cf_drv_img.container)
         self.assertEqual('fakemd5', cf_drv_img.md5)
@@ -207,7 +198,6 @@ class TestManager(test_base.BaseTestCase):
                                                   mock_u_e, mock_p_ps_cd,
                                                   mock_http_req, mock_yaml):
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        self.mgr.do_parsing()
         mock_p_ps_cd.return_value = None
         self.assertRaises(errors.WrongPartitionSchemeError,
                           self.mgr.do_configdrive)
@@ -239,10 +229,9 @@ class TestManager(test_base.BaseTestCase):
 
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         mock_au_c.return_value = FakeChain()
-        self.mgr.do_parsing()
         self.mgr.do_configdrive()
         self.mgr.do_copyimage()
-        imgs = self.mgr.image_scheme.images
+        imgs = self.mgr.driver.image_scheme.images
         self.assertEqual(2, len(imgs))
         expected_processors_list = []
         for img in imgs[:-1]:
@@ -293,11 +282,10 @@ class TestManager(test_base.BaseTestCase):
         mock_md5.side_effect = ['fakemd5', 'really_fakemd5', 'fakemd5']
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         mock_au_c.return_value = FakeChain()
-        self.mgr.do_parsing()
-        self.mgr.image_scheme.images[0].size = 1234
-        self.mgr.image_scheme.images[0].md5 = 'really_fakemd5'
+        self.mgr.driver.image_scheme.images[0].size = 1234
+        self.mgr.driver.image_scheme.images[0].md5 = 'really_fakemd5'
         self.mgr.do_configdrive()
-        self.assertEqual(2, len(self.mgr.image_scheme.images))
+        self.assertEqual(2, len(self.mgr.driver.image_scheme.images))
         self.mgr.do_copyimage()
         expected_md5_calls = [mock.call('/tmp/config-drive.img', 123),
                               mock.call('/dev/mapper/os-root', 1234),
@@ -334,10 +322,9 @@ class TestManager(test_base.BaseTestCase):
         mock_md5.side_effect = ['fakemd5', 'really_fakemd5', 'fakemd5']
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         mock_au_c.return_value = FakeChain()
-        self.mgr.do_parsing()
-        self.mgr.image_scheme.images[0].size = 1234
-        self.mgr.image_scheme.images[0].md5 = 'fakemd5'
+        self.mgr.driver.image_scheme.images[0].size = 1234
+        self.mgr.driver.image_scheme.images[0].md5 = 'fakemd5'
         self.mgr.do_configdrive()
-        self.assertEqual(2, len(self.mgr.image_scheme.images))
+        self.assertEqual(2, len(self.mgr.driver.image_scheme.images))
         self.assertRaises(errors.ImageChecksumMismatchError,
                           self.mgr.do_copyimage)

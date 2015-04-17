@@ -14,6 +14,7 @@
 
 import math
 import os
+import six
 
 from fuel_agent.drivers import ks_spaces_validator
 from fuel_agent import errors
@@ -69,6 +70,11 @@ class Nailgun(object):
         # has already been added. we need this to
         # get rid of md over all disks for /boot partition.
         self._boot_done = False
+
+        self.partition_scheme = self.parse_partition_scheme()
+        self.configdrive_scheme = self.parse_configdrive_scheme()
+        # parsing image scheme needs partition scheme has been parsed
+        self.image_scheme = self.parse_image_scheme()
 
     def partition_data(self):
         return self.data['ks_meta']['pm_data']['ks_spaces']
@@ -129,7 +135,7 @@ class Nailgun(object):
     def _num_ceph_osds(self):
         return self._get_partition_count('ceph')
 
-    def partition_scheme(self):
+    def parse_partition_scheme(self):
         LOG.debug('--- Preparing partition scheme ---')
         data = self.partition_data()
         ks_spaces_validator.validate(data)
@@ -315,7 +321,7 @@ class Nailgun(object):
             self.data['ks_meta']['pm_data']['kernel_params'])
         return partition_scheme
 
-    def configdrive_scheme(self):
+    def parse_configdrive_scheme(self):
         LOG.debug('--- Preparing configdrive scheme ---')
         data = self.data
         configdrive_scheme = objects.ConfigDriveScheme()
@@ -370,7 +376,7 @@ class Nailgun(object):
         configdrive_scheme.set_profile(profile=data['profile'])
         return configdrive_scheme
 
-    def image_scheme(self, partition_scheme):
+    def parse_image_scheme(self):
         LOG.debug('--- Preparing image scheme ---')
         data = self.data
         image_scheme = objects.ImageScheme()
@@ -403,24 +409,19 @@ class Nailgun(object):
         # /, /boot, /var/lib file systems then we will try to get images
         # for all those mount points. Images data are to be defined
         # at provision.json -> ['ks_meta']['image_data']
-        LOG.debug('Looping over all file systems in partition scheme')
-        for fs in partition_scheme.fss:
-            LOG.debug('Processing fs %s' % fs.mount)
-            if fs.mount not in data['ks_meta']['image_data']:
-                LOG.debug('There is no image for fs %s. Skipping.' % fs.mount)
-                continue
-            image_data = data['ks_meta']['image_data'][fs.mount]
+        LOG.debug('Looping over all images in provision data')
+        for mount_point, image_data in six.iteritems(
+                data['ks_meta']['image_data']):
             LOG.debug('Adding image for fs %s: uri=%s format=%s container=%s' %
-                      (fs.mount, image_data['uri'],
+                      (mount_point, image_data['uri'],
                        image_data['format'], image_data['container']))
             image_scheme.add_image(
                 uri=image_data['uri'],
-                target_device=fs.device,
-                # In the future we will get format and container
-                # from provision.json, but currently it is hard coded.
+                target_device=self.partition_scheme.fs_by_mount(
+                    mount_point).device,
                 format=image_data['format'],
                 container=image_data['container'],
-                size=image_meta.get(fs.mount, {}).get('size'),
-                md5=image_meta.get(fs.mount, {}).get('md5'),
+                size=image_meta.get(mount_point, {}).get('size'),
+                md5=image_meta.get(mount_point, {}).get('md5'),
             )
         return image_scheme

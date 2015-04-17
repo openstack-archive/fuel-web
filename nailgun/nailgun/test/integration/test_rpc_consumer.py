@@ -42,6 +42,16 @@ class TestVerifyNetworks(BaseIntegrationTest):
         super(TestVerifyNetworks, self).setUp()
         self.receiver = rcvr.NailgunReceiver()
 
+    def nodes_message(self, nodes, networks):
+        nodes_message = []
+        for n in nodes:
+            nodes_message.append(
+                {'uid': n.id,
+                 'name': n.name,
+                 'status': n.status,
+                 'networks': networks})
+        return nodes_message
+
     def test_verify_networks_resp(self):
         self.env.create(
             cluster_kwargs={},
@@ -60,8 +70,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                "nodes": [{'uid': node1.id, 'networks': nets},
-                          {'uid': node2.id, 'networks': nets}]
+                "nodes": self.nodes_message((node1, node2), nets)
             }
         }
         self.db.add(task)
@@ -69,8 +78,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets},
-                            {'uid': node2.id, 'networks': nets}]}
+                  'nodes': self.nodes_message((node1, node2), nets)}
+
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
@@ -96,8 +105,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -105,8 +113,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_resp},
-                            {'uid': node2.id, 'networks': nets_resp}]}
+                  'nodes': self.nodes_message((node1, node2), nets_resp)}
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
@@ -139,8 +146,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -148,8 +154,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_resp},
-                            {'uid': node2.id, 'networks': nets_resp}]}
+                  'nodes': self.nodes_message((node1, node2), nets_resp)}
         self.db.delete(node2)
         self.db.commit()
         self.receiver.verify_networks_resp(**kwargs)
@@ -161,11 +166,16 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], "error")
-        error_nodes = [{'uid': node1.id, 'interface': 'eth0',
-                        'name': node1.name, 'absent_vlans': [104],
+        error_nodes = [{'uid': node1.id,
+                        'interface': 'eth0',
+                        'name': node1.name,
+                        'absent_vlans': [104],
                         'mac': node1.interfaces[0].mac},
-                       {'uid': node2.id, 'interface': 'eth0',
-                        'absent_vlans': [104]}]
+                       {'uid': node2.id,
+                        'interface': 'eth0',
+                        'name': node2.name,
+                        'absent_vlans': [104],
+                        'mac': 'unknown'}]
         self.assertEqual(task.get('message'), '')
         self.assertEqual(task['result'], error_nodes)
 
@@ -187,8 +197,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -224,8 +233,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -233,9 +241,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node3.id, 'networks': nets_sent},
-                            {'uid': node2.id, 'networks': nets_sent},
-                            {'uid': node1.id, 'networks': nets_sent}]}
+                  'nodes': self.nodes_message((node1, node2, node3),
+                                              nets_sent)}
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
@@ -263,8 +270,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -279,8 +285,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.db.commit()
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                            {'uid': node2.id, 'networks': []}]}
+                  'nodes': self.nodes_message((node1, node2), [])}
+        kwargs['nodes'][0]['networks'] = nets_sent
         self.receiver.verify_networks_resp(**kwargs)
         self.assertEqual(task.status, "error")
 
@@ -302,8 +308,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -319,12 +324,14 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.db.commit()
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                            {'uid': node2.id, 'networks': []}]}
+                  'nodes': self.nodes_message((node1, node2), [])}
+        kwargs['nodes'][0]['networks'] = nets_sent
         self.receiver.verify_networks_resp(**kwargs)
 
         self.assertEqual(task.status, "error")
         self.assertEqual(task.message, u'DHCP ERROR')
+
+        task.result[0]['absent_vlans'] = sorted(task.result[0]['absent_vlans'])
         self.assertEqual(task.result, [{
             u'absent_vlans': [100, 101, 102, 103, 104],
             u'interface': 'eth0',
@@ -351,9 +358,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent},
-                          {'uid': node3.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2, node3), nets_sent)
             }
         }
         self.db.add(task)
@@ -361,8 +366,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                            {'uid': node2.id, 'networks': nets_sent}]}
+                  'nodes': self.nodes_message((node1, node2),
+                                              nets_sent)}
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
@@ -398,9 +403,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent},
-                          {'uid': node3.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2, node3), nets_sent)
             }
         }
         self.db.add(task)
@@ -408,26 +411,32 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                            {'uid': node2.id, 'networks': []},
-                            {'uid': node3.id, 'networks': nets_sent}]}
+                  'nodes': self.nodes_message((node1, node2, node3),
+                                              nets_sent)}
+        kwargs['nodes'][1]['networks'] = []
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         self.assertEqual(task.message, '')
-        error_nodes = [{'uid': node2.id, 'interface': 'eth0',
-                        'name': node2.name, 'mac': node2.interfaces[0].mac,
+        error_nodes = [{'uid': node2.id,
+                        'interface': 'eth0',
+                        'name': node2.name,
+                        'mac': node2.interfaces[0].mac,
                         'absent_vlans': nets_sent[0]['vlans']},
-                       {'uid': node2.id, 'interface': 'eth1',
-                        'name': node2.name, 'mac': 'unknown',
+                       {'uid': node2.id,
+                        'interface': 'eth1',
+                        'name': node2.name,
+                        'mac': 'unknown',
                         'absent_vlans': nets_sent[1]['vlans']},
-                       {'uid': node2.id, 'interface': 'eth2',
-                        'name': node2.name, 'mac': 'unknown',
+                       {'uid': node2.id,
+                        'interface': 'eth2',
+                        'name': node2.name,
+                        'mac': 'unknown',
                         'absent_vlans': nets_sent[2]['vlans']}
                        ]
 
-        self.assertEqual(task.result, error_nodes)
+        self.assertItemsEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_incomplete_network_data_on_first_node(self):
         """Test verifies that when network data is incomplete on first node
@@ -450,8 +459,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
 
@@ -460,16 +468,20 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': []},
-                            {'uid': node2.id, 'networks': nets_sent}]}
+                  'nodes': self.nodes_message((node1, node2), [])}
+        kwargs['nodes'][1]['networks'] = nets_sent
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         self.assertEqual(task.message, '')
-        error_nodes = [{'uid': node1.id, 'interface': 'eth0',
-                        'name': node1.name, 'mac': node1.interfaces[0].mac,
-                        'absent_vlans': nets_sent[0]['vlans']}]
+        error_nodes = [{'uid': node1.id,
+                        'interface': 'eth0',
+                        'name': node1.name,
+                        'mac': node1.interfaces[0].mac,
+                        'absent_vlans': sorted(nets_sent[0]['vlans'])}]
+        task.result[0]['absent_vlans'] = sorted(task.result[0]['absent_vlans'])
+
         self.assertEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_without_vlans_only(self):
@@ -494,8 +506,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -503,8 +514,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                            {'uid': node2.id, 'networks': nets_sent}]}
+                  'nodes': self.nodes_message((node1, node2), nets_sent)}
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
@@ -532,8 +542,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -541,17 +550,20 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_resp},
-                            {'uid': node2.id, 'networks': nets_resp}]}
+                  'nodes': self.nodes_message((node1, node2), nets_resp)}
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
-        error_nodes = [{'uid': node1.id, 'interface': 'eth0',
-                        'name': node1.name, 'mac': node1.interfaces[0].mac,
+        error_nodes = [{'uid': node1.id,
+                        'interface': 'eth0',
+                        'name': node1.name,
+                        'mac': node1.interfaces[0].mac,
                         'absent_vlans': nets_sent[0]['vlans']},
-                       {'uid': node2.id, 'interface': 'eth0',
-                        'name': node2.name, 'mac': node2.interfaces[0].mac,
+                       {'uid': node2.id,
+                        'interface': 'eth0',
+                        'name': node2.name,
+                        'mac': node2.interfaces[0].mac,
                         'absent_vlans': nets_sent[0]['vlans']}]
         self.assertEqual(task.result, error_nodes)
 
@@ -576,8 +588,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                          {'uid': node2.id, 'networks': nets_sent}]
+                'nodes': self.nodes_message((node1, node2), nets_sent)
             }
         }
         self.db.add(task)
@@ -585,8 +596,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                            {'uid': node2.id, 'networks': nets_sent}]}
+                  'nodes': self.nodes_message((node1, node2), nets_sent)}
         self.receiver.verify_networks_resp(**kwargs)
         self.db.flush()
         self.db.refresh(task)
@@ -617,11 +627,15 @@ class TestVerifyNetworks(BaseIntegrationTest):
                 'nodes': [
                     {
                         'uid': node1.id,
+                        'name': node1.name,
+                        'status': node1.status,
                         'networks': nets_sent,
                         'excluded_networks': nets_excluded
                     },
                     {
                         'uid': node2.id,
+                        'name': node2.name,
+                        'status': node2.status,
                         'networks': nets_sent,
                         'excluded_networks': nets_excluded
                     }
@@ -637,11 +651,15 @@ class TestVerifyNetworks(BaseIntegrationTest):
             'nodes': [
                 {
                     'uid': node1.id,
+                    'name': node1.name,
+                    'status': node1.status,
                     'networks': nets_sent,
                     'excluded_networks': nets_excluded
                 },
                 {
                     'uid': node2.id,
+                    'name': node2.name,
+                    'status': node2.status,
                     'networks': nets_sent,
                     'excluded_networks': nets_excluded
                 }

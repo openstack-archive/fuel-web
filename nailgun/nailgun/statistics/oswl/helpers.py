@@ -112,11 +112,23 @@ class ClientProvider(object):
     @property
     def credentials(self):
         if self._credentials is None:
-            access_data = objects.Cluster.get_editable_attributes(
-                self.cluster
-            )['editable']['workloads_collector']
+            cluster_attrs_editable = \
+                objects.Cluster.get_editable_attributes(
+                    self.cluster
+                )["editable"]
 
-            os_user = access_data["username"]["value"]
+            access_data = cluster_attrs_editable.get(
+                "workloads_collector"
+            )
+
+            if not access_data:
+                # in case there is no section for workloads_collector
+                # in cluster attributes we try to fallback here to
+                # default credential for the cluster. It is not 100%
+                # foolproof as user might have changed them at this time
+                access_data = cluster_attrs_editable["access"]
+
+            os_user = access_data["user"]["value"]
             os_password = access_data["password"]["value"]
             os_tenant = access_data["tenant"]["value"]
 

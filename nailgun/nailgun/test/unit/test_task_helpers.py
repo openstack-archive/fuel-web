@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+import tempfile
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
@@ -177,3 +179,39 @@ class TestTaskHelpers(BaseTestCase):
         expected = {}
         actual = TaskHelper.get_task_cache(task)
         self.assertDictEqual(expected, actual)
+
+    def test_generate_log_paths_for_node(self):
+        cluster = self.create_env([{'roles': ['controller']}])
+        node = cluster.nodes[0]
+        admin_net_id = objects.Node.get_network_manager(
+            node).get_admin_network_group_id(node.id)
+        prefix = "/var/log/remote"
+
+        log_paths = TaskHelper._generate_log_paths_for_node(node, admin_net_id,
+                                                            prefix)
+        self.assertItemsEqual(
+            ['links', 'old', 'bak', 'new'],
+            log_paths.keys())
+
+        self.assertIn(node.ip, log_paths['old'])
+        self.assertIn(node.fqdn, log_paths['bak'])
+        self.assertTrue(log_paths['bak'].endswith('.bak'))
+        self.assertIn(node.fqdn, log_paths['new'])
+
+    def test_delete_node_logs(self):
+        cluster = self.create_env([{'roles': ['controller']}])
+        node = cluster.nodes[0]
+        admin_net_id = objects.Node.get_network_manager(
+            node).get_admin_network_group_id(node.id)
+        prefix = tempfile.mkdtemp()
+
+        log_paths = TaskHelper._generate_log_paths_for_node(node, admin_net_id,
+                                                            prefix)
+
+        paths = [log_paths[k] for k in ('new', 'old', 'bak')]
+        for path in paths:
+            os.mkdir(path)
+
+        TaskHelper.delete_node_logs(node, admin_net_id, prefix)
+
+        self.assertTrue(all(not os.path.exists(path) for path in paths))

@@ -34,35 +34,39 @@ class BuildUtilsTestCase(testtools.TestCase):
 
     @mock.patch.object(utils, 'execute', return_value=(None, None))
     def test_run_debootstrap(self, mock_exec):
-        bu.run_debootstrap('uri', 'suite', 'chroot', 'arch')
+        bu.run_debootstrap('uri', 'suite', 'chroot', 'arch', attempts=2)
         mock_exec.assert_called_once_with('debootstrap', '--verbose',
                                           '--no-check-gpg', '--arch=arch',
-                                          'suite', 'chroot', 'uri')
+                                          'suite', 'chroot', 'uri', attempts=2)
 
     @mock.patch.object(utils, 'execute', return_value=(None, None))
     def test_run_debootstrap_eatmydata(self, mock_exec):
-        bu.run_debootstrap('uri', 'suite', 'chroot', 'arch', eatmydata=True)
+        bu.run_debootstrap('uri', 'suite', 'chroot', 'arch', eatmydata=True,
+                           attempts=2)
         mock_exec.assert_called_once_with('debootstrap', '--verbose',
                                           '--no-check-gpg', '--arch=arch',
                                           '--include=eatmydata', 'suite',
-                                          'chroot', 'uri')
+                                          'chroot', 'uri', attempts=2)
 
     @mock.patch.object(utils, 'execute', return_value=(None, None))
     def test_run_apt_get(self, mock_exec):
-        bu.run_apt_get('chroot', ['package1', 'package2'])
+        bu.run_apt_get('chroot', ['package1', 'package2'], attempts=2)
         mock_exec_expected_calls = [
-            mock.call('chroot', 'chroot', 'apt-get', '-y', 'update'),
+            mock.call('chroot', 'chroot', 'apt-get', '-y', 'update',
+                      attempts=2),
             mock.call('chroot', 'chroot', 'apt-get', '-y', 'install',
-                      'package1 package2')]
+                      'package1 package2', attempts=2)]
         self.assertEqual(mock_exec_expected_calls, mock_exec.call_args_list)
 
     @mock.patch.object(utils, 'execute', return_value=(None, None))
     def test_run_apt_get_eatmydata(self, mock_exec):
-        bu.run_apt_get('chroot', ['package1', 'package2'], eatmydata=True)
+        bu.run_apt_get('chroot', ['package1', 'package2'], eatmydata=True,
+                       attempts=2)
         mock_exec_expected_calls = [
-            mock.call('chroot', 'chroot', 'apt-get', '-y', 'update'),
+            mock.call('chroot', 'chroot', 'apt-get', '-y', 'update',
+                      attempts=2),
             mock.call('chroot', 'chroot', 'eatmydata', 'apt-get', '-y',
-                      'install', 'package1 package2')]
+                      'install', 'package1 package2', attempts=2)]
         self.assertEqual(mock_exec_expected_calls, mock_exec.call_args_list)
 
     @mock.patch.object(os, 'fchmod')

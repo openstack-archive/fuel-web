@@ -16,6 +16,7 @@ import collections
 import glob
 import os
 import re
+import shutil
 import string
 import six
 import yaml
@@ -28,6 +29,24 @@ from six.moves import zip_longest
 
 from nailgun.logger import logger
 from nailgun.settings import settings
+
+
+def remove_silently(path):
+    """Removes an element from file system
+
+    no matter if it's file, folder or symlink. Ignores OSErrors.
+
+    :param path: path
+    """
+    try:
+        if os.path.islink(path):
+            os.unlink(path)
+        elif os.path.isfile(path):
+            os.remove(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+    except OSError as e:
+        logger.exception(e)
 
 
 def dict_merge(a, b):

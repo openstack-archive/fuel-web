@@ -407,7 +407,7 @@
                     "title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
-                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes.",
+                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
                     "reset_environment": "Reset Environment",
                     "reset_environment_description": "Enables you to modify the settings for the environment and redeploy.",
                     "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment.",
@@ -717,7 +717,7 @@
                 "remove_cluster": {
                     "title": "Delete Environment",
                     "incomplete_actions_text": "There are incompleted actions. Removing of the environment may fail and lead to inconsistent state.",
-                    "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes.",
+                    "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
                     "default_text": "Are you sure you want to delete this environment?",
                     "enter_environment_name": "Please type in the name of the environment \"__name__\" to confirm."
                 },

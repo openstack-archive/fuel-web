@@ -182,7 +182,7 @@ class Nailgun(BaseDataDriver):
                     # We need to allocate a journal partition for each ceph OSD
                     # Determine the number of journal partitions we need on
                     # each device
-                    ratio = math.ceil(float(ceph_osds) / ceph_journals)
+                    ratio = int(math.ceil(float(ceph_osds) / ceph_journals))
 
                     # No more than 10GB will be allocated to a single journal
                     # partition

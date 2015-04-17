@@ -77,6 +77,8 @@ LOG = logging.getLogger(__name__)
 
 class Manager(object):
     def __init__(self, data):
+        LOG.debug('--- Initializing with the following data ---\ndata=%s',
+                  data)
         self.driver = utils.get_driver(CONF.data_driver)(data)
         self.partition_scheme = None
         self.configdrive_scheme = None

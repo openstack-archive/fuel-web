@@ -143,6 +143,7 @@ def render_and_save(tmpl_dir, tmpl_names, tmpl_data, file_name):
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(tmpl_dir))
     template = env.get_or_select_template(tmpl_names)
     output = template.render(tmpl_data)
+    LOG.debug('Rendered content for %s:\n%s', file_name, output)
     try:
         with open(file_name, 'w') as f:
             f.write(output)

@@ -823,6 +823,8 @@ class NailgunReceiver(object):
                 status = 'error'
             else:
                 error_nodes = []
+                node_excluded_networks = []
+
                 for node in nodes:
                     cached_nodes_filtered = filter(
                         lambda n: str(n['uid']) == str(node['uid']),
@@ -838,6 +840,20 @@ class NailgunReceiver(object):
                         continue
 
                     cached_node = cached_nodes_filtered[0]
+
+                    # Check if we have excluded interfaces for LACP bonds
+                    excluded_networks = cached_node.get(
+                        'excluded_networks', {})
+                    if excluded_networks:
+                        interfaces = ', '.join(
+                            [net.get('iface') for net in excluded_networks])
+                        node_name = objects.Node.get_by_mac_or_uid(
+                            node_uid=node['uid']).name
+
+                        node_excluded_networks.append({
+                            'node_name': node_name,
+                            'interfaces': interfaces
+                        })
 
                     for cached_network in cached_node['networks']:
                         received_networks_filtered = filter(
@@ -892,19 +908,37 @@ class NailgunReceiver(object):
                 if error_nodes:
                     result = error_nodes
                     status = 'error'
+                elif node_excluded_networks:
+                    interfaces_list = ', '.join(
+                        ['node {0} [{1}]'.format(
+                            item['node_name'], item['interfaces'])
+                            for item in node_excluded_networks])
+                    error_msg = 'Notice: some interfaces were skipped from' \
+                                ' connectivity checking because this version' \
+                                ' of Fuel cannot establish LACP on Bootstrap' \
+                                ' nodes. Only interfaces of successfully' \
+                                ' deployed nodes may be checked with LACP' \
+                                ' enabled. The list of skipped interfaces:' \
+                                ' {0}.'.format(interfaces_list)
+
         else:
             error_msg = (error_msg or
                          'verify_networks_resp: argument "nodes"'
                          ' have incorrect type')
             status = 'error'
             logger.error(error_msg)
+
         if status not in ('ready', 'error'):
-            data = {'status': status, 'progress': progress,
-                    'message': error_msg, 'result': result}
+            data = {
+                'status': status,
+                'progress': progress,
+                'message': error_msg,
+                'result': result
+            }
             objects.Task.update(task, data)
         else:
-            objects.Task.update_verify_networks(task, status, progress,
-                                                error_msg, result)
+            objects.Task.update_verify_networks(
+                task, status, progress, error_msg, result)
 
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 

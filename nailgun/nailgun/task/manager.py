@@ -817,13 +817,12 @@ class VerifyNetworksTaskManager(TaskManager):
             if tasks.CheckDhcpTask.enabled(self.cluster):
                 dhcp_subtask = objects.task.Task.create_subtask(
                     task, name=consts.TASK_NAMES.check_dhcp)
-                verify_task.add_subtask(tasks.CheckDhcpTask(
-                    dhcp_subtask, vlan_ids))
+                verify_task.add_subtask(
+                    tasks.CheckDhcpTask(dhcp_subtask, vlan_ids))
 
             if tasks.MulticastVerificationTask.enabled(self.cluster):
                 multicast = objects.task.Task.create_subtask(
-                    task,
-                    name=consts.TASK_NAMES.multicast_verification)
+                    task, name=consts.TASK_NAMES.multicast_verification)
                 verify_task.add_subtask(
                     tasks.MulticastVerificationTask(multicast))
 

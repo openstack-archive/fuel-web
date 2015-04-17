@@ -338,13 +338,20 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
 
     @property
     def expected_args(self):
-        expected_networks = [{u'vlans': [0, 101, 102], u'iface': u'eth0'},
-                             {u'vlans': [0], u'iface': u'eth1'},
-                             {u'vlans': [0], u'iface': u'eth2'}]
+        expected_networks = [
+            {u'vlans': [0, 101, 102], u'iface': u'eth0'},
+            {u'vlans': [0], u'iface': u'eth1'},
+            {u'vlans': [0], u'iface': u'eth2'}
+        ]
+
         _expected_args = []
         for node in self.env.nodes:
-            _expected_args.append({u'uid': node['id'],
-                                   u'networks': expected_networks})
+            _expected_args.append({
+                u'uid': node['id'],
+                u'networks': expected_networks,
+                u'excluded_networks': []
+            })
+
         return _expected_args
 
     @fake_tasks()
@@ -376,6 +383,41 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             {u'warning': [u"Node '{0}': interface 'ovs-bond0' slave NICs have "
                           u"different or unrecognized speeds".format(
                               self.env.nodes[0].name)]})
+
+    @fake_tasks()
+    def test_network_vcerification_on_bootstrap_nodes_with_lacp_bonds(self):
+        expected_task_args = []
+        for node in self.env.nodes:
+            # Bond interfaces with LACP
+            for bond in node.bond_interfaces:
+                bond.mode = consts.BOND_MODES.l_802_3ad
+            expected_task_args.append({
+                u'uid': node['id'],
+                u'networks': [
+                    {u'vlans': [0, 101, 102], u'iface': u'eth0'}
+                ],
+                u'excluded_networks': [
+                    {u'iface': u'eth1'},
+                    {u'iface': u'eth2'}
+                ]
+            })
+
+        task = self.env.launch_verify_networks()
+        self.assertEqual(task.cache['args']['nodes'], expected_task_args)
+
+    @fake_tasks()
+    def test_network_vcerification_on_deployed_nodes_with_lacp_bonds(self):
+        for node in self.env.nodes:
+            # Bond interfaces with LACP
+            for bond in node.bond_interfaces:
+                bond.mode = consts.BOND_MODES.l_802_3ad
+
+        deployment_task = self.env.launch_deployment()
+        self.env.wait_ready(deployment_task)
+
+        verify_network_task = self.env.launch_verify_networks()
+        self.assertEqual(
+            verify_network_task.cache['args']['nodes'], self.expected_args)
 
 
 class TestVerifyNeutronVlan(BaseIntegrationTest):

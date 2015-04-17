@@ -354,6 +354,23 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
 
         return _expected_args
 
+    @property
+    def expected_args_deployed(self):
+        expected_networks = [
+            {u'vlans': [0, 101, 102], u'iface': u'eth0'},
+            {u'vlans': [0], u'iface': u'ovs-bond0'},
+        ]
+
+        _expected_args = []
+        for node in self.env.nodes:
+            _expected_args.append({
+                u'uid': node['id'],
+                u'networks': expected_networks,
+                u'excluded_networks': []
+            })
+
+        return _expected_args
+
     @fake_tasks()
     def test_network_verification_neutron_with_bonds(self):
         task = self.env.launch_verify_networks()
@@ -417,7 +434,9 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
 
         verify_network_task = self.env.launch_verify_networks()
         self.assertEqual(
-            verify_network_task.cache['args']['nodes'], self.expected_args)
+            verify_network_task.cache['args']['nodes'],
+            self.expected_args_deployed
+        )
 
 
 class TestVerifyNeutronVlan(BaseIntegrationTest):

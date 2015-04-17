@@ -13,9 +13,10 @@
 #    under the License.
 
 import logging
+import os
 
 from shotgun.driver import Driver
-from shotgun.utils import compress
+from shotgun import utils
 
 
 logger = logging.getLogger(__name__)
@@ -28,13 +29,14 @@ class Manager(object):
 
     def snapshot(self):
         logger.debug("Making snapshot")
+        utils.execute("rm -rf {0}".format(os.path.dirname(self.conf.target)))
         for obj_data in self.conf.objects:
             logger.debug("Dumping: %s", obj_data)
             driver = Driver.getDriver(obj_data, self.conf)
             driver.snapshot()
         logger.debug("Archiving dump directory: %s", self.conf.target)
 
-        compress(self.conf.target, self.conf.compression_level)
+        utils.compress(self.conf.target, self.conf.compression_level)
 
         with open(self.conf.lastdump, "w") as fo:
             fo.write("{0}.tar.xz".format(self.conf.target))

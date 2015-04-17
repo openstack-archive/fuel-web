@@ -105,21 +105,18 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                 isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 inputWrapperClasses = {
                     'input-group': this.props.toggleable,
-                    'input-wrapper': this.props.type != 'hidden',
                     'custom-tumbler': isCheckboxOrRadio
                 };
-            return (
-                <div key='input-wrapper' className={utils.classNames(inputWrapperClasses)}>
-                    {input}
-                    {this.props.toggleable &&
-                        <div className='input-group-addon' onClick={this.togglePassword}>
-                            <i className={this.state.visible ? 'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'} />
-                        </div>
-                    }
-                    {isCheckboxOrRadio && <span>&nbsp;</span>}
-                    {this.props.extraContent}
-                </div>
-            );
+            return <div key='input-group' className={utils.classNames(inputWrapperClasses)}>
+                {input}
+                {this.props.toggleable &&
+                    <div className='input-group-addon' onClick={this.togglePassword}>
+                        <i className={this.state.visible ? 'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'} />
+                    </div>
+                }
+                {isCheckboxOrRadio && <span>&nbsp;</span>}
+                {this.props.extraContent}
+            </div>;
         },
         renderLabel: function(children) {
             var labelClasses = {
@@ -169,6 +166,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             var isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 classes = {
                     'parameter-box': true,
+                    'form-group': true,
                     'checkbox-or-radio': isCheckboxOrRadio,
                     clearfix: !isCheckboxOrRadio,
                     'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error),

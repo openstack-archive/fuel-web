@@ -97,6 +97,9 @@
 .text-shadow() {
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
 }
+.text-critical {
+  color: #F00;
+}
 .clearfix() {
   content: " ";
   display: block;
@@ -236,11 +239,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .custom-tumbler input {
   overflow: hidden;
   position: absolute !important;
-  opacity: 0 !important;
   cursor: pointer;
   margin: 5px 0 0 5px;
   width: 22px;
   height: 22px;
+  &, &.form-control {
+    opacity: 0 !important;
+  }
 }
 
 .custom-tumbler input + span {
@@ -915,14 +920,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
   border-radius: 0 8px 8px 8px;
 }
 
-#sticker {
-  width: @page-width - 10;
-  z-index: 999999;
-  height: 80px;
-  overflow: hidden;
-  margin-bottom: 6px;
-  background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 80%,rgba(255,255,255,0) 100%);
-  box-sizing: border-box;
+.sticker label {
+  width: 100%;
 }
 
 .node-management-panel {
@@ -1171,6 +1170,33 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
     }
   }
+}
+
+.log-entries {
+  tr {
+    th {
+      &:first-child {
+        width: 135px;
+      }
+      &:nth-child(2) {
+        width: 50px;
+      }
+    }
+    td {
+      &:first-child, &:nth-child(2) {
+        white-space: nowrap;
+      }
+      &:nth-child(3) {
+        font-family: monospace;
+        white-space: pre-wrap;
+        font-size: 90%;
+      }
+    }
+  }
+}
+
+.control-buttons-box {
+  overflow: hidden;
 }
 
 // CLUSTERS PAGE

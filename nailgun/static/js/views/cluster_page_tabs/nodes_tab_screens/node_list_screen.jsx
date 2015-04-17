@@ -307,7 +307,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 interfaceConflict = _.uniq(this.props.nodes.map(function(node) {return node.resource('interfaces');})).length > 1;
             return (
                 <div className='row'>
-                    <div id='sticker' className='node-management-panel'>
+                    <div className='sticker node-management-panel'>
                         <div className='col-xs-2'>
                             <div className='filter-group'>
                                 <controls.Input

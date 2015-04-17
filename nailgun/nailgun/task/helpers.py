@@ -59,6 +59,46 @@ tasks_names_actions_groups_mapping = {
 
 class TaskHelper(object):
 
+    @classmethod
+    def delete_node_logs(cls, node, admin_net_id, prefix=None):
+        if not prefix:
+            prefix = settings.SYSLOG_DIR
+
+        node_logs = cls._generate_log_paths_for_node(node, admin_net_id,
+                                                     prefix)
+
+        log_paths = node_logs.pop('links') + node_logs.values()
+        logger.debug("Deleting logs for removed environment's nodes")
+
+        for log_path in log_paths:
+            if os.path.exists(log_path):
+                logger.debug('delete_node_logs log_path="%s"', log_path)
+                try:
+                    if os.path.islink(log_path):
+                        os.unlink(log_path)
+                    elif os.path.isfile(log_path):
+                        os.remove(log_path)
+                    elif os.path.isdir(log_path):
+                        shutil.rmtree(log_path)
+                except OSError as e:
+                    logger.exception(e)
+
+    @classmethod
+    def _generate_log_paths_for_node(cls, node, admin_net_id, prefix):
+        links = map(
+            lambda i: os.path.join(prefix, i.ip_addr),
+            db().query(IPAddr.ip_addr).
+            filter_by(node=node.id).
+            filter_by(network=admin_net_id).all()
+        )
+
+        return {
+            'links': links,
+            'old': os.path.join(prefix, str(node.ip)),
+            'bak': os.path.join(prefix, "%s.bak" % str(node.fqdn)),
+            'new': os.path.join(prefix, str(node.fqdn)),
+        }
+
     # TODO(aroma): move it to utils module
     @classmethod
     def prepare_syslog_dir(cls, node, admin_net_id, prefix=None):
@@ -67,16 +107,12 @@ class TaskHelper(object):
             prefix = settings.SYSLOG_DIR
         logger.debug("prepare_syslog_dir prefix=%s", prefix)
 
-        old = os.path.join(prefix, str(node.ip))
-        bak = os.path.join(prefix, "%s.bak" % str(node.fqdn))
-        new = os.path.join(prefix, str(node.fqdn))
-
-        links = map(
-            lambda i: os.path.join(prefix, i.ip_addr),
-            db().query(IPAddr.ip_addr).
-            filter_by(node=node.id).
-            filter_by(network=admin_net_id).all()
-        )
+        log_paths = cls._generate_log_paths_for_node(node, admin_net_id,
+                                                     prefix)
+        links = log_paths['links']
+        old = log_paths['old']
+        bak = log_paths['bak']
+        new = log_paths['new']
 
         logger.debug("prepare_syslog_dir old=%s", old)
         logger.debug("prepare_syslog_dir new=%s", new)

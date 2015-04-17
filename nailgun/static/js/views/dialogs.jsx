@@ -1015,22 +1015,21 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.setState({actionInProgress: true});
             registrationForm.save(registrationForm.attributes, {type: 'POST'})
                 .done(_.bind(function(response) {
-                    var statistics = this.props.settings.get('statistics'),
-                        tracking = this.props.settings.get('tracking');
-                    _.each(['company', 'name', 'email'], function(name) {
-                        statistics[name].value = response[name];
-                    });
-                    _.each(['email', 'password'], function(name) {
-                        tracking[name].value = response[name];
-                    });
-                    this.props.settings.save(null, {patch: true, wait: true, validate: false})
+                    var currentAttributes = _.cloneDeep(this.props.settings.attributes);
+
+                    var collector = function(path) {
+                        return function(name) {
+                            this.props.settings.set(this.props.settings.makePath(path, name, 'value'), response[name]);
+                        };
+                    };
+                    _.each(['company', 'name', 'email'], collector('statistics'), this);
+                    _.each(['email', 'password'], collector('tracking'), this);
+
+                    this.props.saveSettings(currentAttributes)
                         .done(_.bind(function() {
-                            this.props.updateInitialAttributes();
+                            this.props.tracking.set(this.props.settings.attributes);
                             this.props.setConnected();
                             this.close();
-                        }, this))
-                        .fail(_.bind(function() {
-                            this.setState({error: i18n('common.error')});
                         }, this));
                 }, this))
                 .fail(_.bind(function(response) {

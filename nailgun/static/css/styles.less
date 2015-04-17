@@ -36,13 +36,14 @@
 @node-border-color-offline: @base-node-border;
 
 // Other Colors
-@white:  #ffffff;
-@black:  #000000;
-@red:    #c94b4b;
-@green:  #54a854;
-@blue:   #688db4;
-@orange: #bc6e12;
-@gray:   #8c8c8c;
+@white:    #ffffff;
+@black:    #000000;
+@red:      #c94b4b;
+@pure-red: #ff0000;
+@green:    #54a854;
+@blue:     #688db4;
+@orange:   #bc6e12;
+@gray:     #8c8c8c;
 
 @link-color: saturate(lighten(@base-dark-color, 20%), 30%);
 @link-color-hover: saturate(lighten(@base-dark-color, 10%), 15%);
@@ -139,10 +140,11 @@ h1, h2, h3, h4, h5, h6 {
   .font-light;
 }
 
-.text-green  {color: @green;}
-.text-red    {color: @red;}
-.text-blue   {color: @blue;}
-.text-orange {color: @orange;}
+.text-green    {color: @green;}
+.text-red      {color: @red;}
+.text-blue     {color: @blue;}
+.text-orange   {color: @orange;}
+.text-critical {color: @pure-red;}
 
 button, .btn:not(.btn-link) {.font-semibold;}
 
@@ -235,11 +237,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .custom-tumbler input {
   overflow: hidden;
   position: absolute;
-  opacity: 0 !important;
   cursor: pointer;
   margin: 5px 0 0 5px;
   width: 22px;
   height: 22px;
+  &, &.form-control {
+    opacity: 0 !important;
+  }
 }
 
 .custom-tumbler input + span {
@@ -748,6 +752,31 @@ button, .btn:not(.btn-link) {.font-semibold;}
     height: 40px;
   }
 
+  .logs-tab {
+    .log-entries {
+      tr {
+        th {
+          &.col-date {
+            width: 135px;
+          }
+          &.col-level {
+            width: 50px;
+          }
+        }
+        td {
+          &:first-child, &:nth-child(2) {
+            white-space: nowrap;
+          }
+          &:nth-child(3) {
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 90%;
+          }
+        }
+      }
+    }
+  }
+
   .actions-tab {
     .action-item {
       .panel {
@@ -919,14 +948,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
   border-radius: 0 8px 8px 8px;
 }
 
-#sticker {
-  width: @page-width - 10;
-  z-index: 999999;
-  height: 80px;
-  overflow: hidden;
-  margin-bottom: 6px;
-  background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 80%,rgba(255,255,255,0) 100%);
-  box-sizing: border-box;
+.sticker label {
+  width: 100%;
 }
 
 .node-management-panel {
@@ -1174,6 +1197,10 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
     }
   }
+}
+
+.well .form-group {
+  margin-bottom: 0;
 }
 
 // CLUSTERS PAGE

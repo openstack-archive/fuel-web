@@ -128,12 +128,13 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 3)
+        self.assertEqual(len(serialized), 4)
         self.assertEqual(serialized[0]['type'], 'upload_file')
         self.assertEqual(serialized[1]['type'], 'upload_file')
-        self.assertEqual(serialized[2]['type'], 'shell')
-        self.assertEqual(serialized[2]['parameters']['cmd'], 'yum clean all')
-        self.assertItemsEqual(serialized[2]['uids'], self.all_uids)
+        self.assertEqual(serialized[2]['type'], 'upload_file')
+        self.assertEqual(serialized[3]['type'], 'shell')
+        self.assertEqual(serialized[3]['parameters']['cmd'], 'yum clean all')
+        self.assertItemsEqual(serialized[3]['uids'], self.all_uids)
 
     def test_serialize_rados_with_ceph(self):
         task_config = {'id': 'restart_radosgw',

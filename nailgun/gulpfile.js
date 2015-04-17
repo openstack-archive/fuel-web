@@ -50,6 +50,8 @@ var rjsConfig = _.merge(rjs('static/js/config.js'), {
     appDir: 'static',
     optimize: 'uglify2',
     optimizeCss: 'standard',
+    generateSourceMaps: true,
+    preserveLicenseComments: false, // required for generateSourceMaps
     wrapShim: true,
     pragmas: {
         compressed: true
@@ -78,7 +80,9 @@ var indexFilter = filter('index.html');
 var buildResultFilter = filter([
     'index.html',
     'js/main.js',
+    'js/main.js.map',
     'js/libs/bower/requirejs/require.js',
+    'js/libs/bower/requirejs/require.js.map',
     'css/styles.css',
     'favicon.ico',
     'img/**',

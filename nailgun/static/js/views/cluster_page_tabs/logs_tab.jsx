@@ -268,27 +268,32 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             });
         },
         render: function() {
+            var isRemote = this.state.chosenType == 'remote';
             return (
                 <div className='row'>
-                    <div className='filter-bar'>
+                    <div className='sticker'>
                         {this.renderTypeSelect()}
-                        {this.state.chosenType == 'remote' && this.renderNodeSelect()}
+                        {isRemote && this.renderNodeSelect()}
                         {this.renderSourceSelect()}
                         {this.renderLevelSelect()}
-                        <div className='filter-bar-item'>
-                            <button
-                                className='show-logs-btn btn'
-                                onClick={this.handleShowButtonClick}
-                                disabled={!this.state.chosenSourceId || this.state.locked}>
-                                {i18n('cluster_page.logs_tab.show')}
-                            </button>
-                        </div>
+                        {this.renderFilterButton(isRemote)}
                     </div>
                     {this.state.sourcesLoadingState == 'fail' &&
                         <div className='node-sources-error alert alert-error'>{i18n('cluster_page.logs_tab.source_alert')}</div>
                     }
                 </div>
             );
+        },
+        renderFilterButton: function(isRemote) {
+            return <div className={'form-group ' + (isRemote ? 'col-lg-4 col-md-4 col-sm-12' : 'col-lg-6 col-md-6 col-sm-3')}>
+                <label />
+                <button
+                    className='btn pull-right'
+                    onClick={this.handleShowButtonClick}
+                    disabled={!this.state.chosenSourceId || this.state.locked}>
+                    {i18n('cluster_page.logs_tab.show')}
+                </button>
+            </div>;
         },
         renderTypeSelect: function() {
             var types = [['local', 'Fuel Master']];
@@ -298,48 +303,54 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             var typeOptions = types.map(function(type) {
                 return <option value={type[0]} key={type[0]}>{type[1]}</option>;
             });
-            return <controls.Input
-                type='select'
-                labelClassName='filter-bar-label'
-                label={i18n('cluster_page.logs_tab.logs')}
-                value={this.state.chosenType}
-                wrapperClassName='filter-bar-item log-type-filter'
-                name='type'
-                inputClassName='filter-bar-dropdown input-medium'
-                onChange={this.onTypeChange}
-                children={typeOptions}
-            />;
+            return <div className='col-lg-2 col-md-2 col-sm-3'>
+                <controls.Input
+                    type='select'
+                    labelClassName='filter-bar-label'
+                    label={i18n('cluster_page.logs_tab.logs')}
+                    value={this.state.chosenType}
+                    wrapperClassName='filter-bar-item log-type-filter'
+                    name='type'
+                    inputClassName='filter-bar-dropdown input-medium'
+                    onChange={this.onTypeChange}
+                    children={typeOptions}
+                />
+            </div>;
         },
         renderNodeSelect: function() {
             var nodeOptions = this.props.cluster.get('nodes').map(function(node) {
                     return <option value={node.id} key={node.id}>{node.get('name') || node.get('mac')}</option>;
                 }, this);
-            return (<controls.Input
-                type='select'
-                labelClassName='filter-bar-label'
-                label={i18n('cluster_page.logs_tab.node')}
-                value={this.state.chosenNodeId}
-                wrapperClassName='filter-bar-item log-node-filter'
-                name='node'
-                inputClassName='filter-bar-dropdown input-large'
-                onChange={this.onNodeChange}
-                children={nodeOptions}
-            />);
+            return <div className='col-lg-2 col-md-2 col-sm-3'>
+                <controls.Input
+                    type='select'
+                    labelClassName='filter-bar-label'
+                    label={i18n('cluster_page.logs_tab.node')}
+                    value={this.state.chosenNodeId}
+                    wrapperClassName='filter-bar-item log-node-filter'
+                    name='node'
+                    inputClassName='filter-bar-dropdown input-large'
+                    onChange={this.onNodeChange}
+                    children={nodeOptions}
+                />
+            </div>;
         },
         renderSourceSelect: function() {
             var sourceOptions = this.state.chosenType == 'local' ? this.getLocalSources() : this.getRemoteSources();
-            return (<controls.Input
-                type='select'
-                labelClassName='filter-bar-label'
-                label={i18n('cluster_page.logs_tab.source')}
-                value={this.state.chosenSourceId}
-                wrapperClassName='filter-bar-item log-source-filter'
-                name='source'
-                inputClassName='filter-bar-dropdown input-medium'
-                onChange={this.onSourceChange}
-                disabled={!this.state.chosenSourceId}
-                children={sourceOptions}
-            />);
+            return <div className='col-lg-2 col-md-2 col-sm-3'>
+                <controls.Input
+                    type='select'
+                    labelClassName='filter-bar-label'
+                    label={i18n('cluster_page.logs_tab.source')}
+                    value={this.state.chosenSourceId}
+                    wrapperClassName='filter-bar-item log-source-filter'
+                    name='source'
+                    inputClassName='filter-bar-dropdown input-medium'
+                    onChange={this.onSourceChange}
+                    disabled={!this.state.chosenSourceId}
+                    children={sourceOptions}
+                />
+            </div>;
         },
         renderLevelSelect: function() {
             var levelOptions = {};
@@ -348,18 +359,20 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     return <option value={level} key={level}>{level}</option>;
                 }, this);
             }
-            return (<controls.Input
-                type='select'
-                labelClassName='filter-bar-label'
-                label={i18n('cluster_page.logs_tab.min_level')}
-                value={this.state.chosenLevelId}
-                wrapperClassName='filter-bar-item log-level-filter'
-                name='level'
-                inputClassName='filter-bar-dropdown input-medium'
-                onChange={this.onLevelChange}
-                disabled={!this.state.chosenLevelId}
-                children={levelOptions}
-            />);
+            return <div className='col-lg-2 col-md-2 col-sm-3'>
+                <controls.Input
+                    type='select'
+                    labelClassName='filter-bar-label'
+                    label={i18n('cluster_page.logs_tab.min_level')}
+                    value={this.state.chosenLevelId}
+                    wrapperClassName='filter-bar-item log-level-filter'
+                    name='level'
+                    inputClassName='filter-bar-dropdown input-medium'
+                    onChange={this.onLevelChange}
+                    disabled={!this.state.chosenLevelId}
+                    children={levelOptions}
+                />
+            </div>;
         }
     });
 
@@ -372,14 +385,14 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                 tabRows = logsEntries.map(function(entry, i) {
                     var key = logsEntries.length - i;
                     return <tr key={key} className={entry[1].toLowerCase()}>
-                        <td className='nowrap'>{entry[0]}</td>
-                        <td className='nowrap'>{entry[1]}</td>
-                        <td><pre>{entry[2]}</pre></td>
-                        </tr>;
+                        <td>{entry[0]}</td>
+                        <td>{entry[1]}</td>
+                        <td>{entry[2]}</td>
+                    </tr>;
                 });
             }
             return (
-                <table className='table enable-selection table-bordered table-condensed table-logs'>
+                <table className='table log-entries enable-selection'>
                     <thead>
                         <tr>
                             <th>{i18n('cluster_page.logs_tab.date')}</th>
@@ -387,7 +400,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                             <th>{i18n('cluster_page.logs_tab.message')}</th>
                         </tr>
                     </thead>
-                    <tbody className='log-entries'>
+                    <tbody>
                         {tabRows}
                     </tbody>
                     {this.props.showMoreLogsLink &&

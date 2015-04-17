@@ -15,6 +15,7 @@
 #    under the License.
 
 import datetime
+import mock
 import random
 import uuid
 
@@ -1163,8 +1164,16 @@ class TestConsumer(BaseIntegrationTest):
                   'status': 'ready',
                   'nodes': [{'uid': node1.id},
                             {'uid': str(node2.id)}]}
+        with mock.patch(
+            'nailgun.rpc.receiver.logs_utils.delete_node_logs') \
+                as mdelete_node_logs:
+            self.receiver.remove_nodes_resp(**kwargs)
 
-        self.receiver.remove_nodes_resp(**kwargs)
+        self.assertEqual(len(self.env.nodes), mdelete_node_logs.call_count)
+
+        test_nodes = [arg[0][0] for arg in mdelete_node_logs.call_args_list]
+        self.assertItemsEqual(self.env.nodes, test_nodes)
+
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
         nodes_db = self.db.query(Node).all()

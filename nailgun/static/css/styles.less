@@ -236,11 +236,16 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .custom-tumbler input {
   overflow: hidden;
   position: absolute !important;
-  opacity: 0 !important;
   cursor: pointer;
   margin: 5px 0 0 5px;
   width: 22px;
   height: 22px;
+  &, &.form-control {
+    filter: alpha(opacity=0);
+    -moz-opacity: 0;
+    -khtml-opacity: 0;
+    opacity: 0 !important;
+  }
 }
 
 .custom-tumbler input + span {
@@ -925,6 +930,10 @@ button, .btn:not(.btn-link) {.font-semibold;}
   box-sizing: border-box;
 }
 
+.sticker label {
+    width: 100%;
+}
+
 .node-management-panel {
   height: 70px;
   label {
@@ -1171,6 +1180,34 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
     }
   }
+}
+.log-entries {
+    tr {
+        th {
+            &:first-child {
+                width: 135px;
+            }
+            &:nth-child(2) {
+                width: 50px;
+            }
+        }
+        td {
+            &:first-child, &:nth-child(2) {
+                white-space: nowrap;
+            }
+            &:nth-child(3) {
+                font-family: monospace;
+                white-space: pre-wrap;
+                font-size: 90%;
+            }
+        }
+    }
+}
+
+.control-buttons-box {
+  height: 34px;
+  margin-top: 24px;
+  overflow: hidden;
 }
 
 // CLUSTERS PAGE

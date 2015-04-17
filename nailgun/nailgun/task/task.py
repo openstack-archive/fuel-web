@@ -585,47 +585,90 @@ class BaseNetworkVerification(object):
         self.task = task
         self.config = config
 
+    def get_ifaces_on_undeployed_node(self, node, node_json):
+        # Save bonds info to be able to check net-probe results w/o
+        # need to access nodes in DB (node can be deleted before the test is
+        # completed). This info is needed for non-deployed nodes only.
+        bonds = {}
+        for bond in node.bond_interfaces:
+            bonds[bond.name] = [s.name for s in bond.slaves]
+        if bonds:
+            node_json['bonds'] = bonds
+
+        for iface in node.nic_interfaces:
+            assigned_networks = iface.assigned_networks_list
+            # In case of present bond interfaces - collect assigned networks
+            # against bonds slave NICs. We should skip LACP bonds Fuel
+            # do not setup them for network_checker now.
+            if iface.bond:
+                assigned_networks = iface.bond.assigned_networks_list
+
+            vlans = []
+            for ng in assigned_networks:
+                # Handle FuelWeb admin network first.
+                if ng.group_id is None:
+                    vlans.append(0)
+                    continue
+                data_ng = filter(lambda i: i['name'] == ng.name,
+                                 self.config)[0]
+                if data_ng['vlans']:
+                    vlans.extend(data_ng['vlans'])
+                else:
+                    # in case absence of vlans net_probe will
+                    # send packages on untagged iface
+                    vlans.append(0)
+
+            if not vlans:
+                continue
+
+            if iface.bond and iface.bond.mode == consts.BOND_MODES.l_802_3ad:
+                node_json['excluded_networks'].append(
+                    {'iface': iface.name})
+            else:
+                node_json['networks'].append(
+                    {'iface': iface.name, 'vlans': vlans})
+
+    def get_ifaces_on_deployed_node(self, node, node_json):
+        for iface in node.interfaces:
+            # In case of present bond interfaces - collect assigned networks
+            # against bonds themselves. We can check bonds as they are up on
+            # deployed nodes.
+            vlans = []
+            for ng in iface.assigned_networks_list:
+                # Handle FuelWeb admin network first.
+                if ng.group_id is None:
+                    vlans.append(0)
+                    continue
+                data_ng = filter(lambda i: i['name'] == ng.name,
+                                 self.config)[0]
+                if data_ng['vlans']:
+                    vlans.extend(data_ng['vlans'])
+                else:
+                    # in case absence of vlans net_probe will
+                    # send packages on untagged iface
+                    vlans.append(0)
+
+            if vlans:
+                node_json['networks'].append(
+                    {'iface': iface.name, 'vlans': vlans})
+
     def get_message_body(self):
         nodes = []
         for node in self.task.cluster.nodes:
             node_json = {
                 'uid': node.id,
+                'name': node.name,
+                'status': node.status,
                 'networks': [],
-                'excluded_networks': []
+                'excluded_networks': [],
             }
-            for nic in node.nic_interfaces:
-                assigned_networks = nic.assigned_networks_list
-                # in case of using bond interface - use networks assigned
-                # to bond. We should skip LACP bonds because network_checker
-                # can't process it now.
-                if nic.bond:
-                    assigned_networks = nic.bond.assigned_networks_list
 
-                vlans = []
-                for ng in assigned_networks:
-                    # Handle FuelWeb admin network first.
-                    if ng.group_id is None:
-                        vlans.append(0)
-                        continue
-                    data_ng = filter(lambda i: i['name'] == ng.name,
-                                     self.config)[0]
-                    if data_ng['vlans']:
-                        vlans.extend(data_ng['vlans'])
-                    else:
-                        # in case absence of vlans net_probe will
-                        # send packages on untagged iface
-                        vlans.append(0)
-
-                if not vlans:
-                    continue
-
-                if (nic.bond and nic.bond.mode == consts.BOND_MODES.l_802_3ad
-                        and node.status != consts.NODE_STATUSES.ready):
-                    node_json['excluded_networks'].append(
-                        {'iface': nic.name})
-                else:
-                    node_json['networks'].append(
-                        {'iface': nic.name, 'vlans': vlans})
+            # Check bonds on deployed nodes and check bonds slave NICs on
+            # undeployed ones.
+            if node.status == consts.NODE_STATUSES.ready:
+                self.get_ifaces_on_deployed_node(node, node_json)
+            else:
+                self.get_ifaces_on_undeployed_node(node, node_json)
 
             nodes.append(node_json)
 

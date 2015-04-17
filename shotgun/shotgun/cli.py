@@ -40,7 +40,6 @@ def parse_args():
         '--config',
         help='configuration file',
         required=True)
-
     return parser.parse_args()
 
 

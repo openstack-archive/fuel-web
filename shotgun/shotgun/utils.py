@@ -13,7 +13,6 @@
 #    under the License.
 
 import copy
-import fnmatch
 import logging
 import os
 import re
@@ -52,18 +51,17 @@ def iterfiles(path):
             yield os.path.join(root, filename)
 
 
-def remove_matched_files(path, patterns):
-    """Removes files that are matched by provided unix patterns
+def remove(full_dst_path, excludes):
+    """Removes subdirs/files using unixs syntax.
+    full_dst_path is treated as root directory for remove
 
-    :param path: str
-    :param patterns: list with unix file patterns
+    :param full_dst_path: str
+    :param excludes: list with excludes paths/files
     """
-    for file_path in iterfiles(path):
-        for pattern in patterns:
-            if fnmatch.fnmatch(file_path, pattern):
-                logger.debug('Deleting file %s', file_path)
-                os.unlink(file_path)
-                break
+    for exclude in excludes:
+        path = os.path.join(full_dst_path, exclude.lstrip('/'))
+        logger.debug('Deleting %s', path)
+        execute("shopt -s globstar; rm -rf {0}".format(path), shell=True)
 
 
 def compress(target, level, keep_target=False):
@@ -83,7 +81,7 @@ def compress(target, level, keep_target=False):
         execute("rm -r {0}".format(target))
 
 
-def execute(command, to_filename=None, env=None):
+def execute(command, to_filename=None, env=None, shell=False):
     logger.debug("Trying to execute command: %s", command)
     commands = [c.strip() for c in re.split(ur'\|', command)]
     env = env or os.environ
@@ -100,15 +98,15 @@ def execute(command, to_filename=None, env=None):
             # We have to convert to ascii before shlex'ing the command.
             # http://bugs.python.org/issue6988
             encoded_command = c.encode('ascii')
-
             process.append(subprocess.Popen(
-                shlex.split(encoded_command),
+                shlex.split(encoded_command) if not shell else encoded_command,
                 env=env,
                 stdin=(process[-1].stdout if process else None),
                 stdout=(to_file
                         if (len(process) == len(commands) - 1) and to_file
                         else subprocess.PIPE),
-                stderr=(subprocess.PIPE)
+                stderr=(subprocess.PIPE),
+                shell=shell
             ))
         except OSError as e:
             return (1, "", "{0}\n".format(e))

@@ -737,6 +737,10 @@ DUMP:
         path: /etc/cobbler*
       - type: dir
         path: /var/log
+        exclude:
+          - atop/
+      - type: file
+        path: /var/log/atop/atop_current
 
     controller:
       hosts: []

@@ -15,8 +15,6 @@
 #    under the License.
 
 import datetime
-import os
-import shutil
 import six
 import web
 
@@ -25,12 +23,10 @@ from sqlalchemy.orm import exc
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.settings import settings
 from nailgun.statistics.fuel_statistics.tasks_params_white_lists \
     import task_output_white_list
 
@@ -57,71 +53,6 @@ tasks_names_actions_groups_mapping = {
 
 
 class TaskHelper(object):
-
-    # TODO(aroma): move it to utils module
-    @classmethod
-    def prepare_syslog_dir(cls, node, admin_net_id, prefix=None):
-        logger.debug("Preparing syslog directories for node: %s", node.fqdn)
-        if not prefix:
-            prefix = settings.SYSLOG_DIR
-        logger.debug("prepare_syslog_dir prefix=%s", prefix)
-
-        old = os.path.join(prefix, str(node.ip))
-        bak = os.path.join(prefix, "%s.bak" % str(node.fqdn))
-        new = os.path.join(prefix, str(node.fqdn))
-
-        links = map(
-            lambda i: os.path.join(prefix, i.ip_addr),
-            db().query(IPAddr.ip_addr).
-            filter_by(node=node.id).
-            filter_by(network=admin_net_id).all()
-        )
-
-        logger.debug("prepare_syslog_dir old=%s", old)
-        logger.debug("prepare_syslog_dir new=%s", new)
-        logger.debug("prepare_syslog_dir bak=%s", bak)
-        logger.debug("prepare_syslog_dir links=%s", str(links))
-
-        # backup directory if it exists
-        if os.path.isdir(new):
-            logger.debug("New %s already exists. Trying to backup", new)
-            if os.path.islink(bak):
-                logger.debug("Bak %s already exists and it is link. "
-                             "Trying to unlink", bak)
-                os.unlink(bak)
-            elif os.path.isdir(bak):
-                logger.debug("Bak %s already exists and it is directory. "
-                             "Trying to remove", bak)
-                shutil.rmtree(bak)
-            os.rename(new, bak)
-
-        # rename bootstrap directory into fqdn
-        if os.path.islink(old):
-            logger.debug("Old %s exists and it is link. "
-                         "Trying to unlink", old)
-            os.unlink(old)
-        if os.path.isdir(old):
-            logger.debug("Old %s exists and it is directory. "
-                         "Trying to rename into %s", old, new)
-            os.rename(old, new)
-        else:
-            logger.debug("Creating %s", new)
-            os.makedirs(new)
-
-        # creating symlinks
-        for l in links:
-            if os.path.islink(l) or os.path.isfile(l):
-                logger.debug("%s already exists. "
-                             "Trying to unlink", l)
-                os.unlink(l)
-            if os.path.isdir(l):
-                logger.debug("%s already exists and it directory. "
-                             "Trying to remove", l)
-                shutil.rmtree(l)
-            logger.debug("Creating symlink %s -> %s", l, new)
-            os.symlink(str(node.fqdn), l)
-
-        os.system("/usr/bin/pkill -HUP rsyslog")
 
     # TODO(aroma): move this function to utils module
     @classmethod

@@ -39,6 +39,7 @@ from nailgun.logger import logger
 from nailgun.network import connectivity_check
 from nailgun.network import utils as net_utils
 from nailgun.task.helpers import TaskHelper
+from nailgun.utils import logs as logs_utils
 
 
 class NailgunReceiver(object):
@@ -93,7 +94,7 @@ class NailgunReceiver(object):
         def get_node_id(n):
             return n.get('id', int(n.get('uid')))
 
-        Node.delete_by_ids([get_node_id(n) for n in nodes])
+        nodes_to_delete_ids = [get_node_id(n) for n in nodes]
 
         if(len(inaccessible_nodes) > 0):
             inaccessible_node_ids = [
@@ -102,7 +103,13 @@ class NailgunReceiver(object):
             logger.warn(u'Nodes %s not answered by RPC, removing from db',
                         inaccessible_nodes)
 
-            Node.delete_by_ids(inaccessible_node_ids)
+            nodes_to_delete_ids.extend(inaccessible_node_ids)
+
+        for node in objects.NodeCollection.filter_by_id_list(
+                None, nodes_to_delete_ids):
+            logs_utils.delete_node_logs(node)
+
+        Node.delete_by_ids(nodes_to_delete_ids)
 
         for node in error_nodes:
             node_db = objects.Node.get_by_uid(node['uid'])

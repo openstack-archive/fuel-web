@@ -82,7 +82,7 @@ var buildResultFilter = filter([
     'css/styles.css',
     'favicon.ico',
     'img/**',
-    'fonts/**',
+    '**/*.+(ttf|eot|svg|woff|woff2)',
     'plugins/**'
 ]);
 

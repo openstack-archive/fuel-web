@@ -772,13 +772,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
             var nameClasses = {
                 name: true,
-                semibold: !this.state.renaming
+                'font-semibold': !this.state.renaming
             };
 
             var roleClasses = {'text-green': !deployedRoles.length};
 
             var statusClasses = {
-                    'node-status semibold text-center': true
+                    'node-status font-semibold text-center': true
                 },
                 statusClass = {
                     pending_addition: 'text-green',
@@ -821,7 +821,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     </p>
                                 }
                             </div>
-                            <div className='role-list semibold'>
+                            <div className='role-list font-semibold'>
                                 {!!rolesToDisplay.length &&
                                     <ul>
                                         {_.map(this.sortRoles(rolesToDisplay), function(role) {

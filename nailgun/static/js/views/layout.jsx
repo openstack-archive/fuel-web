@@ -219,7 +219,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                             <span className='badge'>{this.props.statistics.get('unallocated')}</span>
                             {i18n('navbar.stats.unallocated', {count: this.props.statistics.get('unallocated')})}
                         </li>
-                        <li className='list-group-item text-green semibold'>
+                        <li className='list-group-item text-green font-semibold'>
                             <span className='badge bg-green'>{this.props.statistics.get('total')}</span>
                             {i18n('navbar.stats.total', {count: this.props.statistics.get('total')})}
                         </li>
@@ -290,7 +290,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             var notificationClasses = {
                     'text-red': notification.get('topic') == 'error',
                     'text-orange': notification.get('topic') == 'warning',
-                    semibold: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
+                    unread: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
                 },
                 iconClass = {
                     error: 'glyphicon-exclamation-sign',

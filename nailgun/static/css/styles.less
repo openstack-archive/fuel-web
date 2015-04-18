@@ -1,5 +1,4 @@
 @import "../js/libs/bower/bootstrap/dist/css/bootstrap.css";
-@import "fonts.less";
 
 // COLOR SETTINGS
 
@@ -58,17 +57,33 @@
 @tab-color-active: @white;
 
 // Fonts and Weight
-@light: 'open sans light', helvetica, arial, tahoma, verdana, sans-serif;
-@normal: 'open sans', helvetica, arial, tahoma, verdana, sans-serif;
-@semibold: 'open sans semibold', helvetica, arial, tahoma, verdana, sans-serif;
-@bold: 'open sans bold', helvetica, arial, tahoma, verdana, sans-serif;
-@fat: 'open sans extrabold', helvetica, arial, tahoma, verdana, sans-serif;
+@import "../js/libs/bower/open-sans-fontface/open-sans.css";
 
-.light {font-family: @light;}
-.normal {font-family: @normal;}
-.semibold {font-family: @semibold;}
-.bold {font-family: @bold;}
-.fat {font-family: @fat;}
+@open-sans-font: 'Open Sans', helvetica, arial, tahoma, verdana, sans-serif;
+
+// Bebas Regular
+@font-face {
+  font-family: 'bebas';
+  src: url('../fonts/bebas_regular.eot');
+  src: url('../fonts/bebas_regular.eot?#iefix') format('embedded-opentype'), url('../fonts/bebas_regular.woff2') format('woff2'), url('../fonts/bebas_regular.woff') format('woff'), url('../fonts/bebas_regular.ttf') format('truetype'), url('../fonts/bebas_regular.svg#bebas_regular') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+// Bebas Bold
+@font-face {
+  font-family: 'bebas bold';
+  src: url('../fonts/bebas-bold.eot');
+  src: url('../fonts/bebas_bold.eot?#iefix') format('embedded-opentype'), url('../fonts/bebas_bold.woff2') format('woff2'), url('../fonts/bebas_bold.woff') format('woff'), url('../fonts/bebas_bold.ttf') format('truetype'), url('../fonts/bebas_bold.svg#bebas_bold') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.font-light {font-weight: 300;}
+.font-normal {font-weight: normal;}
+.font-semibold {font-weight: 600;}
+.font-bold {font-weight: bold;}
+.font-extrabold {font-weight: 800;}
 
 @base-font-size: 14px;
 
@@ -103,7 +118,7 @@
 }
 
 html, body {
-  font-family: @normal;
+  font-family: @open-sans-font;
   font-weight: normal;
   font-size: @base-font-size;
   background-color: @base-dark-color;
@@ -115,8 +130,7 @@ body {
 }
 
 b, strong {
-  font-family: @semibold;
-  font-weight: 400;
+  .font-semibold;
 }
 
 a {
@@ -127,7 +141,7 @@ a {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: @light;
+  .font-light;
 }
 
 .text-green  {color: @green;}
@@ -135,7 +149,7 @@ h1, h2, h3, h4, h5, h6 {
 .text-blue   {color: @blue;}
 .text-orange {color: @orange;}
 
-button, .btn:not(.btn-link) {font-family: @semibold;}
+button, .btn:not(.btn-link) {.font-semibold;}
 
 .btn-transparent {
   border: none;
@@ -186,7 +200,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   margin-left: -60px;
   z-index: 9999999;
   color: @white;
-  font-family: @semibold;
+  .font-semibold;
   .icon {
     width: 20px;
     height: 20px;
@@ -418,13 +432,13 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
         display: block;
         text-align: center;
         font-size: @base-font-size - 4;
-        font-family: @bold;
+        .font-bold;
         margin: 8px 0 0 0;
       }
       .total {
         display: block;
         text-align: center;
-        font-family: @bold;
+        .font-bold;
         font-size: @base-font-size - 4;
         margin: 1px 0 0 0;
       }
@@ -456,7 +470,8 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     max-width: none;
     width: @default-popover-width;
     z-index: 1060;
-    font-family: @normal;
+    font-family: @open-sans-font;
+    .font-normal;
     font-size: @base-font-size - 1px;
     line-height: 1.2;
     background-color: @white;
@@ -506,6 +521,9 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
           width: 90%;
           float: left;
         }
+        &.unread {
+          .font-semibold;
+        }
         &:after {
           .clearfix;
         }
@@ -517,7 +535,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
       }
       .show-more {
         text-align: center;
-        font-family: @semibold;
+        .font-semibold;
         font-size: @base-font-size;
       }
     }
@@ -628,7 +646,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     display: block;
     height: 32px;
     overflow: hidden;
-    font-family: @light;
+    .font-light;
     .text-shadow;
   }
 }
@@ -646,7 +664,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     .title {
       padding: 0px 15px 0px 15px;
       margin-bottom: 10px;
-      font-family: @light;
+      .font-light;
       font-size: @base-font-size + 12;
     }
   }
@@ -687,7 +705,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   }
 
   h4 {
-    font-family: @normal;
+    .font-normal;
     color: @base-text-color;
   }
   .deploy-box {
@@ -726,7 +744,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
       overflow: hidden;
       margin: 3px 10px 0px 10px;
       color: @white;
-      font-family: @light;
+      .font-light;
       font-size: @base-font-size - 2;
     }
   }
@@ -815,12 +833,11 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
         display: block;
         text-align: center;
         line-height: 1;
-        font-family: @semibold;
-        font-weight: normal;
         color: @base-text-color;
         cursor: pointer;
         font-size: @base-font-size - 3;
         margin-top: -6px;
+        .font-semibold;
       }
 
       .icon {
@@ -920,7 +937,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     margin: 0;
     font-size: @base-font-size - 2;
     select, input {
-      font-weight: normal;
+      .font-normal;
     }
   }
   .control-buttons-box {
@@ -946,7 +963,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
       display: inline-block;
       position: relative;
       top: 1px;
-      font-weight: normal;
+      .font-normal;
     }
   }
   .node-list-header .select-all {
@@ -1239,7 +1256,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     }
     .name {
       font-size: @base-font-size + 3;
-      font-family: @semibold;
+      .font-semibold;
       text-decoration: none;
       height: 42px;
       overflow: hidden;
@@ -1272,7 +1289,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
       text-align: center;
       height: 20px;
       padding-top: 6px;
-      font-family: @semibold;
+      .font-semibold;
       .box-sizing;
     }
     &.cluster-disabled,
@@ -1299,7 +1316,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
     text-align: center;
     color: @blue;
     text-decoration: none;
-    font-family: @bold;
+    .font-bold;
     .box-sizing;
     &:hover {
       background: @white url(../img/icons/new-environment.svg) no-repeat center 20px;
@@ -1366,7 +1383,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
   }
   .notification {
     &.unread {
-      font-family: @semibold;
+      .font-semibold;
       cursor: pointer;
     }
     .glyphicon {
@@ -1531,7 +1548,7 @@ button, .btn:not(.btn-link) {font-family: @semibold;}
       text-transform: uppercase;
       width: 150px;
       word-break: break-all;
-      font-weight: normal;
+      .font-normal;
       margin: 0;
     }
     .nested-object {

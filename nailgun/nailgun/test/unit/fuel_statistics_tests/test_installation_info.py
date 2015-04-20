@@ -375,7 +375,7 @@ class TestInstallationInfo(BaseTestCase):
             ('external_mongo', 'mongo_user'), ('syslog', 'syslog_port'),
             ('syslog', 'syslog_server'), ('workloads_collector', 'password'),
             ('workloads_collector', 'tenant'),
-            ('workloads_collector', 'username'), ('zabbix', 'password'),
+            ('workloads_collector', 'user'), ('zabbix', 'password'),
             ('zabbix', 'username'),
             ('common', 'use_vcenter'),  # removed attribute
             ('murano_settings', 'murano_repo_url'),

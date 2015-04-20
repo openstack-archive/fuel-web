@@ -162,23 +162,47 @@ class TestOpenStackClientProvider(BaseTestCase):
                     expected_auth_url)
 
         cluster = self.env.create_cluster(api=False)
+
+        default_access_data = Cluster.get_creds(cluster)
+        default_username = default_access_data["user"]["value"]
+        default_password = default_access_data["password"]["value"]
+        default_tenant = default_access_data["tenant"]["value"]
+
+        expected_default = (default_username, default_password,
+                            default_tenant, expected_auth_url)
+
+        get_host_for_auth_path = ("nailgun.statistics.utils."
+                                  "get_mgmt_ip_of_cluster_controller")
+
+        def check_creds(updated_attrs, expected_creds):
+            Cluster.update_attributes(cluster, updated_attributes)
+            with patch(get_host_for_auth_path,
+                       return_value=expected_auth_host):
+                client_provider = helpers.ClientProvider(cluster)
+                creds = client_provider.credentials
+
+                self.assertEqual(expected_creds, creds)
+
+        updated_attributes = {
+            "editable": {
+                "access": {
+                    "user": {"value": default_username},
+                    "password": {"value": default_password},
+                    "tenant": {"value": default_tenant}
+                }
+            }
+        }
+
+        check_creds(updated_attributes, expected_default)
+
         updated_attributes = {
             "editable": {
                 "workloads_collector": {
-                    "username": {"value": expected_username},
+                    "user": {"value": expected_username},
                     "password": {"value": expected_password},
                     "tenant": {"value": expected_tenant}
                 }
             }
         }
-        Cluster.update_attributes(cluster, updated_attributes)
 
-        get_host_for_auth_path = ("nailgun.statistics.utils."
-                                  "get_mgmt_ip_of_cluster_controller")
-
-        with patch(get_host_for_auth_path,
-                   return_value=expected_auth_host):
-            client_provider = helpers.ClientProvider(cluster)
-            creds = client_provider.credentials
-
-            self.assertEqual(expected, creds)
+        check_creds(updated_attributes, expected)

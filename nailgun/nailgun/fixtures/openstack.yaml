@@ -411,7 +411,7 @@
           enabled:
             value: true
             type: "hidden"
-          username:
+          user:
             value: "workloads_collector"
             type: "text"
           password:

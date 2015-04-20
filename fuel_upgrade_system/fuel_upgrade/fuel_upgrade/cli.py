@@ -163,7 +163,8 @@ def run_upgrade(args):
     hook_manager.run()
 
     # Initialize upgrade manager with engines and checkers
-    upgrade_manager = UpgradeManager(upgraders_to_use, args.no_rollback)
+    upgrade_manager = UpgradeManager(
+        upgraders_to_use, config, args.no_rollback)
     upgrade_manager.run()
 
 

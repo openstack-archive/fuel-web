@@ -39,13 +39,6 @@ class UpgradeEngine(object):
         """Rollback all the changes, generally used in case of failed upgrade.
         """
 
-    @abc.abstractmethod
-    def on_success(self):
-        """Here engine can execute some simple actions,
-        errors during the execution of this action will
-        be ignored and rollback won't be ran
-        """
-
     @abc.abstractproperty
     def required_free_space(self):
         """Required free space for upgarde

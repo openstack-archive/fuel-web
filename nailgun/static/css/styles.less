@@ -846,35 +846,39 @@ button, .btn:not(.btn-link) {.font-semibold;}
         margin-left: auto;
         margin-right: auto;
         margin-top: 0;
+      }
 
-        .tab-icon-sprite-index(@index) {
+      .tab-icon-sprite-index(@index) {
+        .icon {
           background: url(@tab-icons-sprite) no-repeat 0 -@tab-icon-size * @index;
-          &:hover, &.active {
+        }
+        &:hover, &.active {
+          .icon {
             background: url(@tab-icons-sprite) no-repeat -@tab-icon-size -@tab-icon-size * @index;
           }
         }
+      }
 
-        &.nodes {
-          .tab-icon-sprite-index(0);
-        }
-        &.network {
-          .tab-icon-sprite-index(1);
-        }
-        &.settings {
-          .tab-icon-sprite-index(2);
-        }
-        &.logs {
-          .tab-icon-sprite-index(3);
-        }
-        &.healthcheck {
-          .tab-icon-sprite-index(4);
-        }
-        &.actions {
-          .tab-icon-sprite-index(5);
-        }
-        &.vmware {
-          .tab-icon-sprite-index(6);
-        }
+      &.nodes {
+        .tab-icon-sprite-index(0);
+      }
+      &.network {
+        .tab-icon-sprite-index(1);
+      }
+      &.settings {
+        .tab-icon-sprite-index(2);
+      }
+      &.logs {
+        .tab-icon-sprite-index(3);
+      }
+      &.healthcheck {
+        .tab-icon-sprite-index(4);
+      }
+      &.actions {
+        .tab-icon-sprite-index(5);
+      }
+      &.vmware {
+        .tab-icon-sprite-index(6);
       }
     }
   }

@@ -260,10 +260,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                 return (
                                     <a
                                         key={url}
-                                        className={utils.classNames({'cluster-tab': true, active: this.props.activeTab == url})}
+                                        className={url + ' ' + utils.classNames({'cluster-tab': true, active: this.props.activeTab == url})}
                                         href={'#cluster/' + cluster.id + '/' + url}
                                     >
-                                        <div className={'icon ' + url}></div>
+                                        <div className='icon'></div>
                                         <div className='label'>{i18n('cluster_page.tabs.' + url)}</div>
                                     </a>
                                 );

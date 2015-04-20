@@ -45,9 +45,6 @@ class RaiseErrorUpgrader(UpgradeEngine):
     def rollback(self):
         return NotImplemented
 
-    def on_success(self):
-        return NotImplemented
-
     @property
     def required_free_space(self):
         return {}

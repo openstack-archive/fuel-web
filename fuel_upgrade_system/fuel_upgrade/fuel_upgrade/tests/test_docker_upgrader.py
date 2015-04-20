@@ -41,13 +41,9 @@ class TestDockerUpgrader(BaseTestCase):
         self.supervisor_mock = mock.MagicMock()
         self.supervisor_class.return_value = self.supervisor_mock
 
-        self.version_mock = mock.MagicMock()
-
         with mock.patch('fuel_upgrade.engines.docker_engine.utils'):
-            with mock.patch('fuel_upgrade.engines.docker_engine.VersionFile',
-                            return_value=self.version_mock):
-                self.upgrader = DockerUpgrader(self.fake_config)
-                self.upgrader.upgrade_verifier = mock.MagicMock()
+            self.upgrader = DockerUpgrader(self.fake_config)
+            self.upgrader.upgrade_verifier = mock.MagicMock()
 
         self.pg_dump_path = '/var/lib/fuel_upgrade/9999/pg_dump_all.sql'
 
@@ -79,31 +75,15 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(self.upgrader.stop_fuel_containers)
         self.assertEqual(self.supervisor_mock.restart_and_wait.call_count, 2)
         self.called_once(self.upgrader.upgrade_verifier.verify)
-        self.called_once(self.version_mock.save_current)
-        self.called_once(self.version_mock.switch_to_new)
 
     def test_rollback(self):
         self.upgrader.stop_fuel_containers = mock.MagicMock()
-        self.upgrader.switch_version_file_to_previous_version = \
-            mock.MagicMock()
         self.upgrader.rollback()
 
         self.called_times(self.upgrader.stop_fuel_containers, 1)
         self.called_once(self.supervisor_mock.switch_to_previous_configs)
         self.called_once(self.supervisor_mock.stop_all_services)
         self.called_once(self.supervisor_mock.restart_and_wait)
-        self.called_once(self.version_mock.save_current)
-        self.called_once(self.version_mock.switch_to_previous)
-
-    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
-    @mock.patch('fuel_upgrade.engines.docker_engine.glob.glob',
-                return_value=['file1', 'file2'])
-    def test_on_success(self, glob_mock, utils_mock):
-        self.upgrader.on_success()
-        glob_mock.assert_called_once_with(self.fake_config.version_files_mask)
-        self.assertEqual(
-            utils_mock.remove.call_args_list,
-            [mock.call('file1'), mock.call('file2')])
 
     def test_stop_fuel_containers(self):
         non_fuel_images = [

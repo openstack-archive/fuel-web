@@ -102,10 +102,6 @@ class HostSystemUpgrader(UpgradeEngine):
         self.remove_repo_config()
         self.remove_repos()
 
-    def on_success(self):
-        """Do nothing for this engine
-        """
-
     def install_repos(self):
         sources = glob.glob(self.host_system_config['repos']['src'])
         for source in sources:

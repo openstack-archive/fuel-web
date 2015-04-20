@@ -27,7 +27,6 @@ import requests
 from fuel_upgrade.clients import SupervisorClient
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.health_checker import FuelUpgradeVerify
-from fuel_upgrade.version_file import VersionFile
 
 from fuel_upgrade import errors
 from fuel_upgrade import utils
@@ -58,8 +57,6 @@ class DockerUpgrader(UpgradeEngine):
 
         self.from_version = self.config.from_version
         self.supervisor = SupervisorClient(self.config, self.from_version)
-        self.version_file = VersionFile(self.config)
-        self.version_file.save_current()
 
     def upgrade(self):
         """Method with upgarde logic
@@ -68,9 +65,8 @@ class DockerUpgrader(UpgradeEngine):
         self.save_db()
         self.save_cobbler_configs()
 
-        # Point to new configs (version.yaml and supervisor configs) and
-        # restart supervisor in order to apply them
-        self.version_file.switch_to_new()
+        # Point to new supervisor configs and restart supervisor in
+        # order to apply them
         self.switch_to_new_configs()
         self.supervisor.restart_and_wait()
 
@@ -94,38 +90,10 @@ class DockerUpgrader(UpgradeEngine):
     def rollback(self):
         """Method which contains rollback logic
         """
-        self.version_file.switch_to_previous()
         self.supervisor.switch_to_previous_configs()
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.supervisor.restart_and_wait()
-
-    def on_success(self):
-        """Remove saved version files for all upgrades
-
-        NOTE(eli): It solves several problems:
-
-        1. user runs upgrade 5.0 -> 5.1 which fails
-        upgrade system saves version which we upgrade
-        from in file working_dir/5.1/version.yaml.
-        Then user runs upgrade 5.0 -> 5.0.1 which
-        successfully upgraded. Then user runs again
-        upgrade 5.0.1 -> 5.1, but there is saved file
-        working_dir/5.1/version.yaml which contains
-        5.0 version, and upgrade system thinks that
-        it's upgrading from 5.0 version, as result
-        it tries to make database dump from wrong
-        version of container.
-
-        2. without this hack user can run upgrade
-        second time and loose his data, this hack
-        prevents this case because before upgrade
-        checker will use current version instead
-        of saved version to determine version which
-        we run upgrade from.
-        """
-        for version_file in glob.glob(self.config.version_files_mask):
-            utils.remove(version_file)
 
     @property
     def required_free_space(self):

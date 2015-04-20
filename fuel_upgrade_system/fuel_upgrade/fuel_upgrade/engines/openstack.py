@@ -82,10 +82,6 @@ class OpenStackUpgrader(UpgradeEngine):
                 os.path.basename(source))
             utils.remove(destination)
 
-    def on_success(self):
-        """Do nothing for this engine
-        """
-
     def install_versions(self):
         """Copy openstack release versions
         """

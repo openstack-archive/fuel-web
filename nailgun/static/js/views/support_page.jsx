@@ -136,7 +136,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                             <span><b>{i18n('support_page.master_node_uuid')}:</b> {settings.get('master_node_uid')}</span>
                         </p>
                         <p>
-                            <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
+                            <a className='btn btn-default' href='https://software.mirantis.com/account/' target='_blank'>
                                 {i18n('support_page.manage_account')}
                             </a>
                         </p>
@@ -151,7 +151,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     <div>
                         {this.renderRegistrationForm(settings, this.state.actionInProgress, this.state.error, this.state.actionInProgress)}
                         <p>
-                            <button className='btn registration-link' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
+                            <button className='btn btn-default' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
                                 {i18n('support_page.register_fuel_title')}
                             </button>
                         </p>
@@ -221,7 +221,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                 >
                     <p>{i18n('support_page.irc_text')} <strong>#fuel</strong> on <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
                     <p>
-                        <a className='btn' href='http://support.mirantis.com' target='_blank'>
+                        <a className='btn btn-default' href='http://support.mirantis.com' target='_blank'>
                             {i18n('support_page.contact_support')}
                         </a>
                     </p>

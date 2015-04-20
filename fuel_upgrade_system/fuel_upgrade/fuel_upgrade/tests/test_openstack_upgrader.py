@@ -68,9 +68,6 @@ class TestOpenStackUpgrader(BaseTestCase):
         self.called_once(rel)
         self.called_once(ver)
 
-    def test_on_success_does_not_raise_errors(self):
-        self.upgrader.on_success()
-
     @mock.patch('fuel_upgrade.engines.openstack.glob.glob',
                 return_value=['/upgrade/file1.yaml', '/upgrade/file2.yaml'])
     @mock.patch('fuel_upgrade.engines.openstack.utils')

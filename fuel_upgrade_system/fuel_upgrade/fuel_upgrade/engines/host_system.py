@@ -87,10 +87,6 @@ class HostSystemUpgrader(UpgradeEngine):
         """
         self.remove_repo_config()
 
-    def on_success(self):
-        """Do nothing for this engine
-        """
-
     def copy_repo(self):
         """Copy centos repo on the host system.
         We need to make sure that when user

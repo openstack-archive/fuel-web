@@ -22,14 +22,22 @@ from fuel_upgrade.upgrade import UpgradeManager
 
 class TestUpgradeManager(BaseTestCase):
 
-    def default_args(self, **kwargs):
-        fake_config = mock.Mock()
-        fake_config.endpoints = {
-            'nailgun':
-            {'host': '127.0.0.1', 'port': 8000}}
+    def setUp(self):
+        super(TestUpgradeManager, self).setUp()
 
+        self.version_mock = mock.MagicMock()
+        self.version_patcher = mock.patch(
+            'fuel_upgrade.upgrade.VersionFile', return_value=self.version_mock)
+        self.version_patcher.start()
+
+    def tearDown(self):
+        self.version_patcher.stop()
+        super(TestUpgradeManager, self).tearDown()
+
+    def default_args(self, **kwargs):
         default = {
             'upgraders': [mock.Mock()],
+            'config': self.fake_config,
             'no_rollback': False}
 
         default.update(kwargs)
@@ -42,8 +50,13 @@ class TestUpgradeManager(BaseTestCase):
         self.assertRaisesRegexp(
             Exception, 'Upgrade failed', upgrader.run)
 
+        self.called_once(self.version_mock.save_current)
+        self.called_once(self.version_mock.switch_to_new)
+
         engine_mock.upgrade.assert_called_once_with()
         engine_mock.rollback.assert_called_once_with()
+
+        self.called_once(self.version_mock.switch_to_previous)
 
     def test_run_rollback_for_used_engines(self):
         upgrader = UpgradeManager(**self.default_args(
@@ -92,20 +105,31 @@ class TestUpgradeManager(BaseTestCase):
         engine_mock.upgrade.assert_called_once_with()
         self.method_was_not_called(engine_mock.rollback)
 
+        self.called_once(self.version_mock.save_current)
+        self.called_once(self.version_mock.switch_to_new)
+        self.method_was_not_called(self.version_mock.switch_to_previous)
+
     def test_upgrade_run_on_success_methods(self):
-        engines = [mock.Mock(), mock.Mock(), mock.Mock()]
-        upgrader = UpgradeManager(**self.default_args(upgraders=engines))
+        upgrader = UpgradeManager(**self.default_args())
+        upgrader._on_success = mock.Mock()
         upgrader.run()
 
-        for engine in engines:
-            self.called_once(engine.on_success)
+        self.called_once(upgrader._on_success)
 
     def test_upgrade_does_not_fail_if_on_success_method_raise_error(self):
-        error_engine = mock.Mock()
-        error_engine.on_success.side_effect = Exception('error')
-        engines = [mock.Mock(), error_engine, mock.Mock()]
-        upgrader = UpgradeManager(**self.default_args(upgraders=engines))
+        upgrader = UpgradeManager(**self.default_args())
+        upgrader._on_success = mock.Mock()
+        upgrader._on_success.side_effect = Exception('error')
         upgrader.run()
 
-        for engine in engines:
-            self.called_once(engine.on_success)
+    @mock.patch('fuel_upgrade.upgrade.utils')
+    @mock.patch('fuel_upgrade.upgrade.glob.glob',
+                return_value=['file1', 'file2'])
+    def test_on_success(self, glob_mock, utils_mock):
+        upgrader = UpgradeManager(**self.default_args())
+        upgrader._on_success()
+
+        glob_mock.assert_called_once_with(self.fake_config.version_files_mask)
+        self.assertEqual(
+            utils_mock.remove.call_args_list,
+            [mock.call('file1'), mock.call('file2')])

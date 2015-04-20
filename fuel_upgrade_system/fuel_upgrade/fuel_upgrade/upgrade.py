@@ -14,7 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import glob
 import logging
+
+import six
+
+from fuel_upgrade import utils
+from fuel_upgrade.version_file import VersionFile
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +35,18 @@ class UpgradeManager(object):
         in case of exception during execution
     """
 
-    def __init__(self, upgraders, no_rollback=True):
+    def __init__(self, upgraders, config, no_rollback=True):
+        #: an object with configuration context
+        self._config = config
         #: a list of upgraders to use
         self._upgraders = upgraders
         #: a list of used upgraders (needs by rollback feature)
         self._used_upgraders = []
         #: should we make rollback in case of error?
         self._rollback = not no_rollback
+        #: version.yaml manager
+        self._version_file = VersionFile(self._config)
+        self._version_file.save_current()
 
     def run(self):
         """Runs consequentially all registered upgraders.
@@ -42,6 +54,8 @@ class UpgradeManager(object):
         .. note:: in case of exception the `rollback` method will be called
         """
         logger.info('*** START UPGRADING')
+
+        self._version_file.switch_to_new()
 
         for upgrader in self._upgraders:
 
@@ -60,26 +74,42 @@ class UpgradeManager(object):
                 logger.error('*** UPGRADE FAILED')
                 raise
 
-        self._on_success()
+        try:
+            self._on_success()
+        except Exception as exc:
+            logger.exception(
+                'Could not complete on_success actions due to %s',
+                six.text_type(exc))
+
         logger.info('*** UPGRADE DONE SUCCESSFULLY')
 
     def _on_success(self):
-        """Run on_success method for engines,
-        skip method call if there were some errors,
-        because if upgrade succeed we shouldn't
-        fail it.
+        """Do some useful job if upgrade was done successfully.
         """
-        for upgrader in self._upgraders:
-            try:
-                logger.debug(
-                    '%s: run on_success method',
-                    upgrader.__class__.__name__)
-                upgrader.on_success()
-            except Exception as exc:
-                logger.exception(
-                    '%s: skip the engine because failed to '
-                    'execute on_success method: "%s"',
-                    upgrader.__class__.__name__, exc)
+        # Remove saved version files for all upgrades
+        #
+        # NOTE(eli): It solves several problems:
+        #
+        # 1. user runs upgrade 5.0 -> 5.1 which fails
+        # upgrade system saves version which we upgrade
+        # from in file working_dir/5.1/version.yaml.
+        # Then user runs upgrade 5.0 -> 5.0.1 which
+        # successfully upgraded. Then user runs again
+        # upgrade 5.0.1 -> 5.1, but there is saved file
+        # working_dir/5.1/version.yaml which contains
+        # 5.0 version, and upgrade system thinks that
+        # it's upgrading from 5.0 version, as result
+        # it tries to make database dump from wrong
+        # version of container.
+        #
+        # 2. without this hack user can run upgrade
+        # second time and loose his data, this hack
+        # prevents this case because before upgrade
+        # checker will use current version instead
+        # of saved version to determine version which
+        # we run upgrade from.
+        for version_file in glob.glob(self._config.version_files_mask):
+            utils.remove(version_file)
 
     def rollback(self):
         logger.debug('Run rollback')
@@ -88,3 +118,5 @@ class UpgradeManager(object):
             upgrader = self._used_upgraders.pop()
             logger.debug('%s: rollbacking...', upgrader.__class__.__name__)
             upgrader.rollback()
+
+        self._version_file.switch_to_previous()

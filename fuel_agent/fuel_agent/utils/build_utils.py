@@ -19,6 +19,9 @@ import shutil
 import stat
 import tempfile
 
+import six
+import yaml
+
 from oslo.config import cfg
 
 from fuel_agent import errors
@@ -244,6 +247,62 @@ def strip_filename(name):
     return re.sub(r"[^a-zA-Z0-9-_.]*", "", name)
 
 
+def get_release_file(uri, suite, section):
+    """Download repo's Release file, parse it and returns an apt
+    preferences line for this repo.
+
+    :param repo: a repo as dict
+    :returns: a string with apt preferences rules
+    """
+    if section:
+        # We can't use urljoin here because it works pretty bad in
+        # cases when 'uri' doesn't have a trailing slash.
+        download_uri = os.path.join(uri, 'dists', suite, 'Release')
+    else:
+        # Well, we have a flat repo case, so we should download Release
+        # file from a different place. Please note, we have to strip
+        # a leading slash from suite because otherwise the download
+        # link will be wrong.
+        if suite.startswith('/'):
+            suite = suite[1:]
+        download_uri = os.path.join(uri, suite, 'Release')
+
+    response = utils.init_http_request(download_uri)
+    return response.text
+
+
+def parse_release_file(content):
+    """Parse Debian repo's Release file content.
+
+    :param content: a Debian's Release file content
+    :returns: a dict with repo's attributes
+    """
+    _multivalued_fields = {
+        'SHA1': ['sha1', 'size', 'name'],
+        'SHA256': ['sha256', 'size', 'name'],
+        'SHA512': ['sha512', 'size', 'name'],
+        'MD5Sum': ['md5sum', 'size', 'name'],
+    }
+
+    # debian data format is very similiar to yaml, except
+    # multivalued field. so we can parse it just like yaml
+    # and then perform additional transformation for those
+    # fields (we know which ones are multivalues).
+    data = yaml.load(content)
+
+    for attr, columns in six.iteritems(_multivalued_fields):
+        if attr not in data:
+            continue
+
+        values = data[attr].split()
+        data[attr] = []
+
+        for group in utils.grouper(values, len(columns)):
+            data[attr].append(dict(zip(columns, group)))
+
+    return data
+
+
 def add_apt_source(name, uri, suite, section, chroot):
     # NOTE(agordeev): The files have either no or "list" as filename extension
     filename = 'fuel-image-{name}.list'.format(name=strip_filename(name))
@@ -257,23 +316,37 @@ def add_apt_source(name, uri, suite, section, chroot):
         f.write(entry)
 
 
-def add_apt_preference(name, priority, suite, section, chroot):
+def add_apt_preference(name, priority, suite, section, chroot, uri):
     # NOTE(agordeev): The files have either no or "pref" as filename extension
     filename = 'fuel-image-{name}.pref'.format(name=strip_filename(name))
     # NOTE(agordeev): priotity=None means that there's no specific pinning for
     # particular repo and nothing to process.
     # Default system-wide preferences (priority=500) will be used instead.
+
+    _transformations = {
+        'Archive': 'a',
+        'Suite': 'a',       # suite is a synonym for archive
+        'Codename': 'n',
+        'Version': 'v',
+        'Origin': 'o',
+        'Label': 'l',
+    }
+
+    deb_release = parse_release_file(get_release_file(uri, suite, section))
+    conditions = set()
+    for field, condition in six.iteritems(_transformations):
+        if field in deb_release:
+            conditions.add(
+                '{0}={1}'.format(condition, deb_release[field])
+            )
+
     if priority:
-        sections = section.split()
         with open(os.path.join(chroot, DEFAULT_APT_PATH['preferences_dir'],
                                filename), 'w') as f:
             f.write('Package: *\n')
-            if sections:
-                for section in sections:
-                    f.write('Pin: release a={suite},c={section}\n'.format(
-                        suite=suite, section=section))
-            else:
-                f.write('Pin: release a={suite}\n'.format(suite=suite))
+            for s in section.split(" "):
+                f.write('Pin: release ')
+                f.write(', '.join(conditions) + ", c={0}\n".format(s))
             f.write('Pin-Priority: {priority}\n'.format(priority=priority))
 
 

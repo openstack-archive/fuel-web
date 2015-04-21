@@ -620,10 +620,12 @@
                         "alert": "Ceph is not supported in __NameAndRelease.release_name__",
                         "default": "Default",
                         "ceph": "Ceph",
+                        "lvm": "LVM",
+                        "swift": "Swift Object Storage",
                         "cinder": "Cinder",
                         "cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.",
                         "glance": "Glance",
-                        "glance_help": "By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes."
+                        "glance_help": "By default, Glance image service uses Swift object storage. Ceph backend requires two or more Ceph-OSD nodes."
                     },
                     "additional": {
                         "title": "Additional Services",

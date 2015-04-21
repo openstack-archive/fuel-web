@@ -29,6 +29,14 @@ CONF = cfg.CONF
 
 
 class BuildUtilsTestCase(testtools.TestCase):
+
+    _fake_ubuntu_release = '''
+      Origin: TestOrigin
+      Label: TestLabel
+      Archive: test-archive
+      Codename: testcodename
+    '''
+
     def setUp(self):
         super(BuildUtilsTestCase, self).setUp()
 
@@ -289,38 +297,120 @@ class BuildUtilsTestCase(testtools.TestCase):
                          mock_path.join.call_args_list)
 
     @mock.patch.object(os, 'path')
-    def test_add_apt_preference(self, mock_path):
+    @mock.patch('fuel_agent.utils.build_utils.utils.init_http_request',
+                return_value=mock.Mock(text=_fake_ubuntu_release))
+    def test_add_apt_preference(self, mock_get, mock_path):
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:
             file_handle_mock = mock_open.return_value.__enter__.return_value
-            bu.add_apt_preference('name1', 123, 'suite1', 'section1', 'chroot')
-            expected_calls = [
-                mock.call('Package: *\n'),
-                mock.call('Pin: release a=suite1,c=section1\n'),
-                mock.call('Pin-Priority: 123\n')]
-            self.assertEqual(expected_calls,
-                             file_handle_mock.write.call_args_list)
+
+            fake_section = 'section1'
+            bu.add_apt_preference(
+                'name1',
+                123,
+                'test-archive',
+                fake_section,
+                'chroot',
+                'http://test-uri'
+            )
+
+            calls_args = [
+                c[0][0] for c in file_handle_mock.write.call_args_list
+            ]
+
+            self.assertEqual(len(calls_args), 4)
+            self.assertEqual(calls_args[0], 'Package: *\n')
+            self.assertEqual(calls_args[1], 'Pin: release ')
+            self.assertIn("l=TestLabel", calls_args[2])
+            self.assertIn("n=testcodename", calls_args[2])
+            self.assertIn("a=test-archive", calls_args[2])
+            self.assertIn("o=TestOrigin", calls_args[2])
+            self.assertIn("c=section1", calls_args[2])
+            self.assertEqual(calls_args[3], 'Pin-Priority: 123\n')
+
         expected_mock_path_calls = [
+            mock.call('http://test-uri', 'dists', 'test-archive', 'Release'),
             mock.call('chroot', 'etc/apt/preferences.d',
                       'fuel-image-name1.pref')]
         self.assertEqual(expected_mock_path_calls,
                          mock_path.join.call_args_list)
 
     @mock.patch.object(os, 'path')
-    def test_add_apt_preference_multuple_sections(self, mock_path):
+    @mock.patch('fuel_agent.utils.build_utils.utils.init_http_request',
+                return_value=mock.Mock(text=_fake_ubuntu_release))
+    def test_add_apt_preference_multuple_sections(self, mock_get, mock_path):
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:
             file_handle_mock = mock_open.return_value.__enter__.return_value
-            bu.add_apt_preference('name3', 234, 'suite1', 'section2 section3',
-                                  'chroot')
-            expected_calls = [
-                mock.call('Package: *\n'),
-                mock.call('Pin: release a=suite1,c=section2\n'),
-                mock.call('Pin: release a=suite1,c=section3\n'),
-                mock.call('Pin-Priority: 234\n')]
-            self.assertEqual(expected_calls,
-                             file_handle_mock.write.call_args_list)
+            fake_sections = ['section2', 'section3']
+            bu.add_apt_preference('name3', 234, 'test-archive',
+                                  ' '.join(fake_sections),
+                                  'chroot', 'http://test-uri')
+
+            calls_args = [
+                c[0][0] for c in file_handle_mock.write.call_args_list
+            ]
+
+            calls_package = [c for c in calls_args if c == 'Package: *\n']
+            calls_pin = [c for c in calls_args if c == 'Pin: release ']
+            calls_pin_p = [c for c in calls_args if c == 'Pin-Priority: 234\n']
+            first_section = [
+                c for c in calls_args if 'c={0}'.format(fake_sections[0]) in c
+            ]
+            second_section = [
+                c for c in calls_args if 'c={0}'.format(fake_sections[1]) in c
+            ]
+            self.assertEqual(len(calls_package), len(fake_sections))
+            self.assertEqual(len(calls_pin), len(fake_sections))
+            self.assertEqual(len(calls_pin_p), len(fake_sections))
+            self.assertEqual(len(first_section), 1)
+            self.assertEqual(len(second_section), 1)
+
+            for pin_line in calls_args[2::4]:
+                self.assertIn("l=TestLabel", pin_line)
+                self.assertIn("n=testcodename", pin_line)
+                self.assertIn("a=test-archive", pin_line)
+                self.assertIn("o=TestOrigin", pin_line)
+
         expected_mock_path_calls = [
+            mock.call('http://test-uri', 'dists', 'test-archive', 'Release'),
             mock.call('chroot', 'etc/apt/preferences.d',
                       'fuel-image-name3.pref')]
+        self.assertEqual(expected_mock_path_calls,
+                         mock_path.join.call_args_list)
+
+    @mock.patch.object(os, 'path')
+    @mock.patch('fuel_agent.utils.build_utils.utils.init_http_request',
+                return_value=mock.Mock(text=_fake_ubuntu_release))
+    def test_add_apt_preference_no_sections(self, mock_get, mock_path):
+        with mock.patch('six.moves.builtins.open', create=True) as mock_open:
+            file_handle_mock = mock_open.return_value.__enter__.return_value
+
+            bu.add_apt_preference(
+                'name1',
+                123,
+                'test-archive',
+                '',
+                'chroot',
+                'http://test-uri'
+            )
+
+            calls_args = [
+                c[0][0] for c in file_handle_mock.write.call_args_list
+            ]
+
+            self.assertEqual(len(calls_args), 4)
+            self.assertEqual(calls_args[0], 'Package: *\n')
+            self.assertEqual(calls_args[1], 'Pin: release ')
+            self.assertIn("l=TestLabel", calls_args[2])
+            self.assertIn("n=testcodename", calls_args[2])
+            self.assertIn("a=test-archive", calls_args[2])
+            self.assertIn("o=TestOrigin", calls_args[2])
+            self.assertNotIn("c=", calls_args[2])
+            self.assertEqual(calls_args[3], 'Pin-Priority: 123\n')
+
+        expected_mock_path_calls = [
+            mock.call('http://test-uri', 'test-archive', 'Release'),
+            mock.call('chroot', 'etc/apt/preferences.d',
+                      'fuel-image-name1.pref')]
         self.assertEqual(expected_mock_path_calls,
                          mock_path.join.call_args_list)
 

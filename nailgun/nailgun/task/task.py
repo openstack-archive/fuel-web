@@ -655,6 +655,9 @@ class BaseNetworkVerification(object):
     def get_message_body(self):
         nodes = []
         for node in self.task.cluster.nodes:
+            if node.offline:
+                continue
+
             node_json = {
                 'uid': node.id,
                 'name': node.name,

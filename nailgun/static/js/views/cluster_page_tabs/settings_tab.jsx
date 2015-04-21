@@ -205,16 +205,18 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 />;
                             }, this)}
                             <div className='col-xs-12 page-buttons'>
-                                <div className='btn-group well'>
-                                    <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
-                                        {i18n('common.load_defaults_button')}
-                                    </button>
-                                    <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
-                                        {i18n('common.cancel_changes_button')}
-                                    </button>
-                                    <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
-                                        {i18n('common.save_settings_button')}
-                                    </button>
+                                <div className='well clearfix'>
+                                    <div className='btn-group pull-right'>
+                                        <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
+                                            {i18n('common.load_defaults_button')}
+                                        </button>
+                                        <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
+                                            {i18n('common.cancel_changes_button')}
+                                        </button>
+                                        <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
+                                            {i18n('common.save_settings_button')}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

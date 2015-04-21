@@ -1685,10 +1685,49 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 }
 
-.page-buttons .well {
-  width: 100%;
-  text-align: right;
-  .btn {
-    float: none;
+// Disks styles
+.disk-box {
+  .disk-visual {
+    > div {
+      overflow: hidden;
+      > div {
+        padding: 5px;
+        color: @white;
+      }
+    }
+  }
+  .volume-group-error {
+    font-size: @base-font-size - 2px;
+  }
+  .disk-info-box {
+    .form-group {
+      margin-bottom: 0;
+      label {
+        text-transform: capitalize;
+      }
+      p {
+        padding: 0;
+      }
+    }
+  }
+  .disk-utility-box {
+    @disk-form-margin: 5px;
+    .form-group {
+      margin-bottom: @disk-form-margin;
+      .volume-group-flag {
+        display: inline-block;
+        width: 10px;
+      }
+      .volume-group-use-all-allowed-btn button {
+        font-size: @base-font-size - 2px;
+        padding: 0;
+      }
+      .volume-group-size-label {
+        padding: 0;
+      }
+    }
+    .volume-group-error {
+      margin-bottom: @disk-form-margin * 2;
+    }
   }
 }

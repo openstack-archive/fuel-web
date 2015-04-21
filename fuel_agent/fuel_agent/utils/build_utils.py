@@ -60,6 +60,11 @@ bu_opts = [
         default='allow_unsigned_packages',
         help='File where to store apt setting for unsigned packages'
     ),
+    cfg.StrOpt(
+        'force_ipv4_file',
+        default='force_ipv4',
+        help='File where to store apt setting for forcing IPv4 usage'
+    ),
 ]
 
 CONF = cfg.CONF
@@ -155,10 +160,12 @@ def remove_files(chroot, files):
             LOG.debug('Removed file: %s', path)
 
 
-def clean_apt_settings(chroot, allow_unsigned_file=CONF.allow_unsigned_file):
+def clean_apt_settings(chroot, allow_unsigned_file=CONF.allow_unsigned_file,
+                       force_ipv4_file=CONF.force_ipv4_file):
     """Cleans apt settings such as package sources and repo pinning."""
     files = [DEFAULT_APT_PATH['sources_file'],
              DEFAULT_APT_PATH['preferences_file'],
+             os.path.join(DEFAULT_APT_PATH['conf_dir'], force_ipv4_file),
              os.path.join(DEFAULT_APT_PATH['conf_dir'], allow_unsigned_file)]
     remove_files(chroot, files)
     dirs = [DEFAULT_APT_PATH['preferences_dir'],
@@ -370,13 +377,17 @@ def add_apt_preference(name, priority, suite, section, chroot, uri):
             f.write('Pin-Priority: {priority}\n'.format(priority=priority))
 
 
-def pre_apt_get(chroot, allow_unsigned_file=CONF.allow_unsigned_file):
+def pre_apt_get(chroot, allow_unsigned_file=CONF.allow_unsigned_file,
+                force_ipv4_file=CONF.force_ipv4_file):
     """It must be called prior run_apt_get."""
     clean_apt_settings(chroot)
     # NOTE(agordeev): allow to install packages without gpg digest
     with open(os.path.join(chroot, DEFAULT_APT_PATH['conf_dir'],
                            allow_unsigned_file), 'w') as f:
         f.write('APT::Get::AllowUnauthenticated 1;\n')
+    with open(os.path.join(chroot, DEFAULT_APT_PATH['conf_dir'],
+                           force_ipv4_file), 'w') as f:
+        f.write('Acquire::ForceIPv4 "true";\n')
 
 
 def containerize(filename, container, chunk_size=CONF.data_chunk_size):

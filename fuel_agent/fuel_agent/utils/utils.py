@@ -27,6 +27,9 @@ import requests
 import stevedore.driver
 import urllib3
 
+from six.moves import zip
+from six.moves import zip_longest
+
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 
@@ -212,3 +215,10 @@ def makedirs_if_not_exists(path, mode=0o755):
     """
     if not os.path.isdir(path):
         os.makedirs(path, mode=mode)
+
+
+def grouper(iterable, n, fillvalue=None):
+    """Collect data into fixed-length chunks or blocks
+    """
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)

@@ -654,7 +654,12 @@ class BaseNetworkVerification(object):
 
     def get_message_body(self):
         nodes = []
+        offline_nodes = 0
         for node in self.task.cluster.nodes:
+            if node.offline:
+                offline_nodes += 1
+                continue
+
             node_json = {
                 'uid': node.id,
                 'name': node.name,
@@ -672,7 +677,10 @@ class BaseNetworkVerification(object):
 
             nodes.append(node_json)
 
-        return nodes
+        return {
+            'nodes': nodes,
+            'offline': offline_nodes
+        }
 
     def get_message(self):
         nodes = self.get_message_body()
@@ -680,9 +688,7 @@ class BaseNetworkVerification(object):
             self.task,
             self.task.name,
             '{0}_resp'.format(self.task.name),
-            {
-                'nodes': nodes
-            }
+            nodes
         )
         return message
 

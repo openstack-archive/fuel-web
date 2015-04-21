@@ -427,12 +427,14 @@ class TestManager(test_base.BaseTestCase):
                       priority=None,
                       suite='trusty',
                       section='fakesection',
-                      chroot='/tmp/imgdir'),
+                      chroot='/tmp/imgdir',
+                      uri='http://fakeubuntu'),
             mock.call(name='mos',
                       priority=1000,
                       suite='mosX.Y',
                       section='fakesection',
-                      chroot='/tmp/imgdir')],
+                      chroot='/tmp/imgdir',
+                      uri='http://fakemos')],
             mock_bu.add_apt_preference.call_args_list)
         mock_utils.makedirs_if_not_exists.assert_called_once_with(
             '/tmp/imgdir/proc')

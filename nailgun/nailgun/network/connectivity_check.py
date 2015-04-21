@@ -101,3 +101,10 @@ def check_received_data(cached, received):
             errors.append(error)
 
     return errors
+
+
+def append_message(original, appendix):
+    """Append message to output string with a delimiter.
+    No delimiter is added if any of strings is empty.
+    """
+    return '\n'.join(filter(None, (original, appendix)))

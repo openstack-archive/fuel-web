@@ -123,11 +123,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             self.assertIn('"storage"', task.message)
         self.assertEqual(mocked_rpc.called, False)
 
-    @fake_tasks()
-    def test_verify_networks_less_than_2_nodes_error(self):
-        self.db.delete(self.env.nodes[0])
-        self.db.commit()
-
+    def check_verify_networks_less_than_2_online_nodes_error(self):
         resp = self.app.get(
             reverse(
                 'NovaNetworkConfigurationHandler',
@@ -140,8 +136,41 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         task = self.env.launch_verify_networks(nets)
         self.db.refresh(task)
         self.assertEqual(task.status, consts.TASK_STATUSES.error)
-        error_msg = 'At least two nodes are required to be in ' \
+        error_msg = 'At least two online nodes are required to be in ' \
                     'the environment for network verification.'
+        self.assertEqual(task.message, error_msg)
+
+    @fake_tasks()
+    def test_verify_networks_1_node_error(self):
+        self.db.delete(self.env.nodes[0])
+        self.db.flush()
+        self.check_verify_networks_less_than_2_online_nodes_error()
+
+    @fake_tasks()
+    def test_verify_networks_1_online_node_error(self):
+        self.env.nodes[0].online = False
+        self.db.flush()
+        self.check_verify_networks_less_than_2_online_nodes_error()
+
+    @fake_tasks()
+    def test_verify_networks_offline_nodes_notice(self):
+        self.env.create_node(api=True,
+                             cluster_id=self.env.clusters[0].id,
+                             online=False)
+        resp = self.app.get(
+            reverse(
+                'NovaNetworkConfigurationHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}
+            ),
+            headers=self.default_headers
+        )
+        nets = resp.json_body
+
+        task = self.env.launch_verify_networks(nets)
+        self.assertEqual(task.cache['args']['offline'], 1)
+        self.env.wait_ready(task, 30)
+        error_msg = 'Notice: 1 node(s) were offline during connectivity ' \
+                    'check so they were skipped from the check.'
         self.assertEqual(task.message, error_msg)
 
     @fake_tasks()
@@ -153,7 +182,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         )
         for status in blocking_statuses:
             cluster_db.status = status
-            self.db.commit()
+            self.db.flush()
 
             resp = self.app.get(
                 reverse(

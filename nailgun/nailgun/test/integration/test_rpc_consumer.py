@@ -70,7 +70,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                "nodes": self.nodes_message((node1, node2), nets)
+                "nodes": self.nodes_message((node1, node2), nets),
+                "offline": 0,
             }
         }
         self.db.add(task)
@@ -85,6 +86,46 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
         self.assertEqual(task.message, '')
+
+    def test_verify_networks_error_and_notice_are_concatenated(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False},
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node1, node2 = self.env.nodes
+        nets = [{'iface': 'eth0', 'vlans': range(100, 105)}]
+
+        task = Task(
+            name="verify_networks",
+            cluster_id=cluster_db.id
+        )
+        task.cache = {
+            "args": {
+                "nodes": self.nodes_message((node1, node2), nets),
+                "offline": 2,
+            }
+        }
+        self.db.add(task)
+        self.db.flush()
+
+        custom_error = 'CustomError'
+        kwargs = {'task_uuid': task.uuid,
+                  'status': 'error',
+                  'nodes': self.nodes_message((node1, node2), nets),
+                  'error': custom_error}
+
+        self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
+        self.db.refresh(task)
+        self.assertEqual(task.status, "error")
+        offline_notice = 'Notice: 2 node(s) were offline during connectivity' \
+                         ' check so they were skipped from the check.'
+        self.assertEqual(task.message,
+                         '\n'.join((custom_error, offline_notice)))
 
     def test_verify_networks_resp_error(self):
         self.env.create(
@@ -105,7 +146,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -146,7 +188,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -197,7 +240,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -233,7 +277,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -270,7 +315,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -308,7 +354,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -358,7 +405,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2, node3), nets_sent)
+                'nodes': self.nodes_message((node1, node2, node3), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -403,7 +451,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2, node3), nets_sent)
+                'nodes': self.nodes_message((node1, node2, node3), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -459,7 +508,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
 
@@ -506,7 +556,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -542,7 +593,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -588,7 +640,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
         )
         task.cache = {
             "args": {
-                'nodes': self.nodes_message((node1, node2), nets_sent)
+                'nodes': self.nodes_message((node1, node2), nets_sent),
+                'offline': 0,
             }
         }
         self.db.add(task)
@@ -639,7 +692,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
                         'networks': nets_sent,
                         'excluded_networks': nets_excluded
                     }
-                ]
+                ],
+                'offline': 0,
             }
         }
         self.db.add(task)

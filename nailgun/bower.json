@@ -18,7 +18,8 @@
     "cocktail": "0.5.7",
     "i18next": "1.7.1",
     "backbone-deep-model": "0.10.4",
-    "less": "2.4.0"
+    "less": "2.4.0",
+    "jquery-ui": "~1.11.4"
   },
   "overrides": {
     "jquery": {
@@ -45,6 +46,14 @@
     },
     "backbone-deep-model": {
       "main": "distribution/deep-model.js"
+    },
+    "jquery-ui": {
+      "main": [
+        "ui/sortable.js",
+        "ui/core.js",
+        "ui/mouse.js",
+        "ui/widget.js"
+      ]
     }
   },
   "ignore": [

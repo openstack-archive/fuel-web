@@ -862,18 +862,20 @@ class NailgunReceiver(object):
                 if error_nodes:
                     result = error_nodes
                     status = 'error'
-                elif node_excluded_networks:
-                    interfaces_list = ', '.join(
-                        ['node {0} [{1}]'.format(
-                            item['node_name'], item['interfaces'])
-                            for item in node_excluded_networks])
-                    error_msg = 'Notice: some interfaces were skipped from' \
-                                ' connectivity checking because this version' \
-                                ' of Fuel cannot establish LACP on Bootstrap' \
-                                ' nodes. Only interfaces of successfully' \
-                                ' deployed nodes may be checked with LACP' \
-                                ' enabled. The list of skipped interfaces:' \
-                                ' {0}.'.format(interfaces_list)
+                else:
+                    # notices must not rewrite error messages
+                    if node_excluded_networks:
+                        error_msg = connectivity_check.append_message(
+                            error_msg,
+                            connectivity_check.get_excluded_networks_message(
+                                node_excluded_networks)
+                        )
+                    if task.cache['args']['offline'] > 0:
+                        error_msg = connectivity_check.append_message(
+                            error_msg,
+                            connectivity_check.get_offline_nodes_message(
+                                task.cache['args']['offline'])
+                        )
 
         else:
             error_msg = (error_msg or

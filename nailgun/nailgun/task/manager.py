@@ -766,10 +766,10 @@ class VerifyNetworksTaskManager(TaskManager):
             cluster=self.cluster
         )
 
-        if len(self.cluster.nodes) < 2:
+        if sum(1 for n in self.cluster.nodes if n.online) < 2:
             task.status = consts.TASK_STATUSES.error
             task.progress = 100
-            task.message = ('At least two nodes are required to be '
+            task.message = ('At least two online nodes are required to be '
                             'in the environment for network verification.')
             db().add(task)
             db().commit()
@@ -778,7 +778,7 @@ class VerifyNetworksTaskManager(TaskManager):
         if len(self.cluster.node_groups) > 1:
             task.status = consts.TASK_STATUSES.error
             task.progress = 100
-            task.message = ('Network verfiication is disabled for '
+            task.message = ('Network verification is disabled for '
                             'environments containing more than one node '
                             'group.')
             db().add(task)

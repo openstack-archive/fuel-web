@@ -440,7 +440,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
                 'type': 'rpm',
                 'name': 'Auxiliary',
                 'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/auxiliary',
-                'priority': None,
+                'priority': 15,
             },
         ])
 

@@ -76,6 +76,7 @@ function process_options {
 
 # settings
 ROOT=$(dirname `readlink -f $0`)
+NAILGUN_ROOT=$ROOT/nailgun
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
@@ -94,8 +95,8 @@ SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
 UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
 NAILGUN_PORT=${NAILGUN_PORT:-8003}
 TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
-NAILGUN_CHECK_URL=${NAILGUN_CHECK_URL:-"http://0.0.0.0:$NAILGUN_PORT/api/version"}
-NAILGUN_START_MAX_WAIT_TIME=${NAILGUN_START_MAX_WAIT_TIME:-5}
+NAILGUN_CHECK_PATH=${NAILGUN_CHECK_PATH:-"/api/version"}
+NAILGUN_MAX_WAIT_TIME=${NAILGUN_MAX_WAIT_TIME:-10}
 ARTIFACTS=${ARTIFACTS:-`pwd`/test_run}
 TEST_WORKERS=${TEST_WORKERS:-0}
 mkdir -p $ARTIFACTS
@@ -310,24 +311,17 @@ function run_webui_tests {
     dropdb $config
     syncdb $config true
 
-    pid=`run_server $SERVER_PORT $server_log $config` || \
+    run_server $SERVER_PORT $server_log $config || \
       { echo 'Failed to start Nailgun'; return 1; }
 
-    if [ "$pid" -ne "0" ]; then
-      SERVER_PORT=$SERVER_PORT \
-      ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
-      if [ $? -ne 0 ]; then
-        result=1
-        break
-      fi
-
-      kill $pid
-      wait $pid 2> /dev/null
-    else
-      cat $server_log
+    SERVER_PORT=$SERVER_PORT \
+    ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
+    if [ $? -ne 0 ]; then
       result=1
       break
     fi
+
+    kill_server $SERVER_PORT
 
   done
 
@@ -477,57 +471,93 @@ function dropdb {
 # Arguments:
 #
 #   $1 -- server port
-#   $2 -- path to log file
-#   $3 -- path to the server config
 #
-# Returns: a server pid, that you have to close manually
-function run_server {
-  local SERVER_PORT=$1
-  local SERVER_LOG=$2
-  local SERVER_SETTINGS=$3
-
-  local RUN_SERVER="\
-    python manage.py run \
-      --port=$SERVER_PORT \
-      --config=$SERVER_SETTINGS \
-      --fake-tasks \
-      --fake-tasks-tick-count=80 \
-      --fake-tasks-tick-interval=1"
-
-  pushd $ROOT/nailgun >> /dev/null
+# Sends SIGING to running Nailgun
+function kill_server() {
+  local server_port=$1
 
   # kill old server instance if exists
-  local pid=`lsof -ti tcp:$SERVER_PORT`
-  if [ -n "$pid" ]; then
+  local pid=$(lsof -ti tcp:$server_port)
+  if [[ -n "$pid" ]]; then
     kill $pid
-    sleep 5
+    wait $pid
   fi
+}
+
+
+# Arguments:
+#
+#   $1 -- server port
+#   $1 -- path to log file
+#   $2 -- path to the server config
+#
+# Returns: a server pid, that you have to close manually
+function run_server() {
+  local server_port=$1
+  local server_log=$2
+  local server_config=$3
+
+  local run_server_cmd="\
+    python manage.py run \
+    --port=$server_port \
+    --config=$server_config \
+    --fake-tasks \
+    --fake-tasks-tick-count=80 \
+    --fake-tasks-tick-interval=1"
+
+  kill_server $server_port
 
   # run new server instance
-  tox -evenv -- $RUN_SERVER >> $SERVER_LOG 2>&1 &
+  pushd $NAILGUN_ROOT > /dev/null
+  tox -evenv -- $run_server_cmd >> $server_log 2>&1 &
+  if [[ $? -ne 0 ]]; then
+    echo "CRITICAL: Nailgun failed to start."
+    echo "          Server log is stored in $server_log"
+    return 1
+  fi
+  popd > /dev/null
 
   # wait for server availability
   which curl > /dev/null
-  ret=$?
-  if [ $ret -eq 0 ]; then
 
-    local num_retries=$[$NAILGUN_START_MAX_WAIT_TIME * 10]
+  if [[ $? -eq 0 ]]; then
+    local num_retries=$((NAILGUN_MAX_WAIT_TIME * 10))
+    local check_url="http://0.0.0.0:${server_port}${NAILGUN_CHECK_PATH}"
+    local i=0
 
-    for i in $(seq 1 $num_retries); do
-      local http_code=`curl -s -w %{http_code} -o /dev/null $NAILGUN_CHECK_URL`
-      if [ "$http_code" == "200" ]; then break; fi
+    while true; do
+      # Fail if number of retries exeeded
+      if [[ $i -gt $((num_retries + 1)) ]]; then
+
+        # Report, if Nailgun failed to start before the timeout.
+        echo "CRITICAL: Nailgun failed to start before the timeout."
+        echo "          It's possible to increase waiting time by settings the required"
+        echo "          number of seconds in NAILGUN_MAX_WAIT_TIME environment variable."
+
+        return 1
+      fi
+
+      local http_code=$(curl -s -w %{http_code} -o /dev/null $check_url)
+
+      if [[ "$http_code" = "200" ]]; then return 0; fi
+
       sleep 0.1
+      i=$((i + 1))
     done
+
+    kill_server $server_port
+    return 1;
+
   else
-    sleep 5
+    echo "WARNING: Cannot check whether Nailgun is running bacause curl is not available."
+    echo "         Waiting $NAILGUN_MAX_WAIT_TIME in order to let it start properly."
+    echo "         It's possible to increase waiting time by settings the required number of"
+    echo "         seconds in NAILGUN_MAX_WAIT_TIME environment variable."
+    sleep $NAILGUN_MAX_WAIT_TIME
+    lsof -ti tcp:$server_port
+
+    return $?
   fi
-  popd >> /dev/null
-
-  pid=`lsof -ti tcp:$SERVER_PORT`
-  local nailgun_launched=$?
-  echo $pid
-
-  return $nailgun_launched
 }
 
 function prepare_artifacts {

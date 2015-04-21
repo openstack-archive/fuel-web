@@ -151,11 +151,12 @@ class BuildUtilsTestCase(testtools.TestCase):
     @mock.patch.object(bu, 'remove_files')
     @mock.patch.object(bu, 'clean_dirs')
     def test_clean_apt_settings(self, mock_dirs, mock_files):
-        bu.clean_apt_settings('chroot', 'unsigned')
+        bu.clean_apt_settings('chroot', 'unsigned', 'force_ipv4')
         mock_dirs.assert_called_once_with(
             'chroot', ['etc/apt/preferences.d', 'etc/apt/sources.list.d'])
         mock_files.assert_called_once_with(
             'chroot', ['etc/apt/sources.list', 'etc/apt/preferences',
+                       'etc/apt/apt.conf.d/%s' % 'force_ipv4',
                        'etc/apt/apt.conf.d/%s' % 'unsigned'])
 
     @mock.patch.object(os, 'path')
@@ -424,11 +425,18 @@ class BuildUtilsTestCase(testtools.TestCase):
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:
             file_handle_mock = mock_open.return_value.__enter__.return_value
             bu.pre_apt_get('chroot')
-            file_handle_mock.write.assert_called_once_with(
-                'APT::Get::AllowUnauthenticated 1;\n')
+            expected_calls = [
+                mock.call('APT::Get::AllowUnauthenticated 1;\n'),
+                mock.call('Acquire::ForceIPv4 "true";\n')]
+            self.assertEqual(expected_calls,
+                             file_handle_mock.write.call_args_list)
         mock_clean.assert_called_once_with('chroot')
-        mock_path.join.assert_called_once_with('chroot', 'etc/apt/apt.conf.d',
-                                               CONF.allow_unsigned_file)
+        expected_join_calls = [
+            mock.call('chroot', 'etc/apt/apt.conf.d',
+                      CONF.allow_unsigned_file),
+            mock.call('chroot', 'etc/apt/apt.conf.d',
+                      CONF.force_ipv4_file)]
+        self.assertEqual(expected_join_calls, mock_path.join.call_args_list)
 
     @mock.patch('gzip.open')
     @mock.patch.object(os, 'remove')

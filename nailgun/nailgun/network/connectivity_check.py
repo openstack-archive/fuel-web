@@ -101,3 +101,26 @@ def check_received_data(cached, received):
             errors.append(error)
 
     return errors
+
+
+def get_excluded_networks_message(excluded_networks):
+    interfaces_list = ', '.join(
+        ['node {0} [{1}]'.format(item['node_name'], item['interfaces'])
+         for item in excluded_networks])
+    return 'Notice: some interfaces were skipped from connectivity checking ' \
+           'because this version of Fuel cannot establish LACP on Bootstrap ' \
+           'nodes. Only interfaces of successfully deployed nodes may be ' \
+           'checked with LACP enabled. The list of skipped interfaces: ' \
+           '{0}.'.format(interfaces_list)
+
+
+def get_offline_nodes_message(offline_nodes_count):
+    return 'Notice: {0} node(s) were offline during connectivity check so ' \
+           'they were skipped from the check.'.format(offline_nodes_count)
+
+
+def append_message(original, appendix):
+    """Append message to output string with a delimiter.
+    No delimiter is added if any of strings is empty.
+    """
+    return '\n'.join(filter(None, (original, appendix)))

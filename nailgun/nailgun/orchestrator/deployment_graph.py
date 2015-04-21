@@ -148,8 +148,8 @@ class DeploymentGraph(nx.DiGraph):
     def topology(self):
         return map(lambda t: self.node[t], nx.topological_sort(self))
 
-    def make_void_task(self, task):
-        """Make some task in graph simple void
+    def make_skipped_task(self, task):
+        """Make some task in graph skipped
 
         We can not just remove node because it also stores edges, that connects
         graph in correct order
@@ -162,7 +162,7 @@ class DeploymentGraph(nx.DiGraph):
                 'Task: %s', task)
             return
 
-        task['type'] = consts.ORCHESTRATOR_TASK_TYPES.void
+        task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
 
     def only_tasks(self, task_ids):
         """Leave only tasks that are specified in request.
@@ -174,7 +174,7 @@ class DeploymentGraph(nx.DiGraph):
 
         for task in self.node.values():
             if task['id'] not in task_ids:
-                self.make_void_task(task)
+                self.make_skipped_task(task)
 
     def find_subgraph(self, start=None, end=None):
         """Find subgraph by provided start and end endpoints

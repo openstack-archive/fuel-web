@@ -22,7 +22,6 @@ define(function() {
         paths: {
             jquery: 'js/libs/bower/jquery/jquery',
             'jquery-cookie': 'js/libs/bower/jquery-cookie/jquery.cookie',
-            'jquery-timeout': 'js/libs/custom/jquery.timeout',
             'jquery-ui': 'js/libs/custom/jquery-ui-1.10.2.custom',
             'jquery-autoNumeric': 'js/libs/bower/autoNumeric/autoNumeric',
             utils: 'js/utils',
@@ -63,12 +62,6 @@ define(function() {
             'expression/parser': {
                 exports: 'parser'
             },
-            stickit: {
-                deps: ['backbone']
-            },
-            deepModel: {
-                deps: ['backbone']
-            },
             coccyx: {
                 deps: ['backbone', 'underscore'],
                 exports: 'Coccyx'
@@ -82,12 +75,6 @@ define(function() {
             i18next: {
                 deps: ['jquery'],
                 exports: 'i18n'
-            },
-            'jquery-cookie': {
-                deps: ['jquery']
-            },
-            'jquery-timeout': {
-                deps: ['jquery']
             },
             'jquery-ui': {
                 deps: ['jquery']

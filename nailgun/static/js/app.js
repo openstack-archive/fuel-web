@@ -41,7 +41,6 @@ define(
     'stickit',
     'routefilter',
     'bootstrap',
-    'jquery-timeout',
     'less!/static/css/styles',
     'backbone-lodash-monkeypatch'
 

@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], function($, _, dispatcher, React) {
+define(['underscore', 'dispatcher', 'react', 'react.backbone'], function(_, dispatcher, React) {
     'use strict';
 
     return {
@@ -34,7 +34,7 @@ define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], functi
                 scheduleDataFetch: function() {
                     var shouldDataBeFetched = !_.isFunction(this.shouldDataBeFetched) || this.shouldDataBeFetched();
                     if (this.isMounted() && !this.activeTimeout && shouldDataBeFetched) {
-                        this.activeTimeout = $.timeout(updateInterval).done(this.startPolling);
+                        this.activeTimeout = _.delay(this.startPolling, updateInterval);
                     }
                 },
                 startPolling: function(force) {
@@ -45,9 +45,7 @@ define(['jquery', 'underscore', 'dispatcher', 'react', 'react.backbone'], functi
                     }
                 },
                 stopPolling: function() {
-                    if (this.activeTimeout) {
-                        this.activeTimeout.clear();
-                    }
+                    if (this.activeTimeout) clearTimeout(this.activeTimeout);
                     delete this.activeTimeout;
                 },
                 componentDidMount: function() {

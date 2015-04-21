@@ -552,12 +552,14 @@ class Manager(object):
             LOG.debug('Adding repository preference: '
                       'name={name}, priority={priority}'.format(
                           name=repo.name, priority=repo.priority))
-            bu.add_apt_preference(
-                name=repo.name,
-                priority=repo.priority,
-                suite=repo.suite,
-                section=repo.section,
-                chroot=chroot)
+            if repo.priority is not None:
+                bu.add_apt_preference(
+                    name=repo.name,
+                    priority=repo.priority,
+                    suite=repo.suite,
+                    section=repo.section,
+                    chroot=chroot,
+                    uri=repo.uri)
 
             metadata.setdefault('repos', []).append({
                 'type': 'deb',

@@ -1705,6 +1705,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
       &.repo-priority .form-control {
         width: @input-width * 0.5;
       }
+      .form-control-static {
+        display: inline;
+      }
     }
     .buttons {
       padding: @base-indent * 0.5 0 0 @base-indent * 0.5;
@@ -1712,10 +1715,87 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 }
 
-.page-buttons .well {
-  width: 100%;
-  text-align: right;
-  .btn {
-    float: none;
+// Disks styles
+.disk-box {
+  label {
+    .font-semibold;
   }
+  .disk-visual {
+    @disk-visual-block-height: 50px;
+    @disk-visual-block-padding: 4px;
+    height: @disk-visual-block-height;
+    color: @white;
+    .text-shadow;
+    .font-semibold;
+    div {
+      overflow: hidden;
+    }
+    .volume-group {
+      position: relative;
+      > div {
+        padding: @disk-visual-block-padding;
+        > div {
+          height: @disk-visual-block-height / 2 - @disk-visual-block-padding;
+        }
+      }
+      .close-btn {
+        position: absolute;
+        top: 0;
+        right: @disk-visual-block-padding;
+        cursor: pointer;
+        font-size: @base-font-size + 2px;
+        .font-bold;
+      }
+      &[data-volume=unallocated] {
+        background: linear-gradient(to bottom, #aaa 0%, #ddd 100%);
+      }
+    }
+  }
+  .disk-details {
+    background: @gray + 90%;
+    border: 1px solid @gray + 20%;
+    .disk-info-box {
+      .form-group {
+        margin-bottom: 0;
+        label {
+          text-transform: capitalize;
+        }
+        p {
+          padding: 0;
+        }
+      }
+    }
+    .disk-utility-box {
+      @disk-form-margin: 5px;
+      .form-group {
+        margin-bottom: @disk-form-margin;
+        .volume-group-flag {
+          display: inline-block;
+          width: 10px;
+        }
+        .volume-group-use-all-allowed-btn button {
+          font-size: @base-font-size - 4px;
+          padding: 0;
+          text-transform: uppercase;
+        }
+        .volume-group-size-label {
+          padding: 0;
+        }
+        .volume-group-input {
+          padding-right: @disk-form-margin;
+        }
+        label, .volume-group-use-all-allowed-btn, .volume-group-size-label {
+          padding-top: 6px;
+        }
+      }
+      .volume-group-error {
+        font-size: @base-font-size - 2px;
+        margin: 0 @disk-form-margin * 2 @disk-form-margin * 2;
+      }
+    }
+  }
+}
+
+.page-buttons {
+  margin-top: 30px;
 }

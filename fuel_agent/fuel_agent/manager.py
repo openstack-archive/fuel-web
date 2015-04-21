@@ -557,7 +557,8 @@ class Manager(object):
                 priority=repo.priority,
                 suite=repo.suite,
                 section=repo.section,
-                chroot=chroot)
+                chroot=chroot,
+                uri=repo.uri)
 
             metadata.setdefault('repos', []).append({
                 'type': 'deb',

@@ -124,26 +124,26 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
         },
         render: function() {
             return (
-                <div className='wrapper'>
-                    <h3>{i18n('cluster_page.logs_tab.title')}</h3>
-                    <LogFilterBar
-                        cluster={this.props.cluster}
-                        tabOptions={this.props.tabOptions}
-                        onShowButtonClick={this.onShowButtonClick} />
-                    {this.state.loading == 'fail' &&
-                        <div className='logs-fetch-error alert alert-error'>{i18n('cluster_page.logs_tab.log_alert')}</div>
-                    }
-                    {this.state.loading == 'loading' &&
-                        <div className='row row-fluid'>
-                            <controls.ProgressBar />
-                        </div>
-                    }
-                    {this.state.logsEntries &&
-                        <LogsTable
-                            logsEntries={this.state.logsEntries}
-                            showMoreLogsLink={this.state.showMoreLogsLink}
-                            onShowMoreClick={this.onShowMoreClick} />
-                    }
+                <div className='row'>
+                    <div className='title'>{i18n('cluster_page.logs_tab.title')}</div>
+                    <div className='col-xs-12'>
+                        <LogFilterBar
+                            cluster={this.props.cluster}
+                            tabOptions={this.props.tabOptions}
+                            onShowButtonClick={this.onShowButtonClick} />
+                        {this.state.loading == 'fail' &&
+                            <div className='logs-fetch-error alert alert-danger'>
+                                {i18n('cluster_page.logs_tab.log_alert')}
+                            </div>
+                        }
+                        {this.state.loading == 'loading' && <controls.ProgressBar />}
+                        {this.state.logsEntries &&
+                            <LogsTable
+                                logsEntries={this.state.logsEntries}
+                                showMoreLogsLink={this.state.showMoreLogsLink}
+                                onShowMoreClick={this.onShowMoreClick} />
+                        }
+                    </div>
                 </div>
             );
         }
@@ -279,7 +279,9 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                         {this.renderFilterButton(isRemote)}
                     </div>
                     {this.state.sourcesLoadingState == 'fail' &&
-                        <div className='node-sources-error alert alert-error'>{i18n('cluster_page.logs_tab.source_alert')}</div>
+                        <div className='node-sources-error alert alert-danger'>
+                            {i18n('cluster_page.logs_tab.source_alert')}
+                        </div>
                     }
                 </div>
             );
@@ -316,7 +318,6 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     value={this.state.chosenType}
                     wrapperClassName='filter-bar-item log-type-filter'
                     name='type'
-                    inputClassName='filter-bar-dropdown input-medium'
                     onChange={this.onTypeChange}
                     children={typeOptions}
                 />
@@ -334,7 +335,6 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     value={this.state.chosenNodeId}
                     wrapperClassName='filter-bar-item log-node-filter'
                     name='node'
-                    inputClassName='filter-bar-dropdown input-large'
                     onChange={this.onNodeChange}
                     children={nodeOptions}
                 />
@@ -350,7 +350,6 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     value={this.state.chosenSourceId}
                     wrapperClassName='filter-bar-item log-source-filter'
                     name='source'
-                    inputClassName='filter-bar-dropdown input-medium'
                     onChange={this.onSourceChange}
                     disabled={!this.state.chosenSourceId}
                     children={sourceOptions}
@@ -372,7 +371,6 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     value={this.state.chosenLevelId}
                     wrapperClassName='filter-bar-item log-level-filter'
                     name='level'
-                    inputClassName='filter-bar-dropdown input-medium'
                     onChange={this.onLevelChange}
                     disabled={!this.state.chosenLevelId}
                     children={levelOptions}
@@ -424,12 +422,12 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     {this.props.showMoreLogsLink &&
                         <tfoot className='entries-skipped-msg'>
                             <tr>
-                                <td colSpan='3'>
+                                <td colSpan='3' className='text-center'>
                                     <span>{i18n('cluster_page.logs_tab.bottom_text')}</span>:
                                     {
                                         [100, 500, 1000, 5000].map(
                                             function(count) {
-                                                return <span className='show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}> {count} </span>;
+                                                return <button className='btn btn-link show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}>{count} </button>;
                                             },
                                             this
                                         )
@@ -446,3 +444,4 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
 
     return LogsTab;
 });
+    .log-entries {

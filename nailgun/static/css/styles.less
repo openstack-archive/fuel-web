@@ -709,8 +709,24 @@ button, .btn:not(.btn-link) {.font-semibold;}
     height: 60px;
     overflow: hidden;
     padding-right: 0px;
-    padding-top: 20px;
+    padding-top: 16px;
     box-sizing: border-box;
+    .deploy-btn {
+      height: 38px;
+      padding: 0 16px 2px;
+      box-shadow: inset 0 0 0 0 rgba(255,255,255,0);
+      border: 0;
+      border-radius: 5px;
+      background-image: linear-gradient(to bottom, #1b7fa7, #11759d);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.20);
+      &:hover {
+          background-image: linear-gradient(to bottom, #1b7fa7 + 10%, #11759d + 10%);
+        }
+      &:active {
+          background-image: linear-gradient(to top, #1b7fa7 - 20%, #11759d - 20%);
+          box-shadow: 0 0 0 rgba(0,0,0,0);
+        }
+      }
   }
   .deploy-icon {
     position: relative;
@@ -1718,4 +1734,66 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .btn {
     float: none;
   }
+}
+
+
+// BUTTONS
+
+.btn-default {
+    background-image: linear-gradient(to bottom, @gray + 30%, @gray + 20%);
+    border-color: @gray + 20%;
+    color: @white;
+    .text-shadow;
+    &:hover {
+      background-image: linear-gradient(to bottom, @gray + 20%, @gray + 10%);
+      color: @white;
+    }
+    &:disabled {
+        background-image: linear-gradient(to bottom, @gray + 80%, @gray + 70%);
+        border: 1px solid @gray + 70%;
+        color: @gray + 10%;
+        opacity: 1;
+        .text-emboss;
+    }
+}
+.btn-success {
+    background-image: linear-gradient(to bottom, @green, @green - 10%);
+    border-color: @green - 10%;
+    .text-shadow;
+    &:hover {
+      background-image: linear-gradient(to bottom, @green - 10%, @green - 20%);
+    }
+}
+.btn-primary {
+    background-image: linear-gradient(to bottom, @blue, @blue - 10%);
+    border-color: @blue - 10%;
+    .text-shadow;
+    &:hover {
+      background-image: linear-gradient(to bottom, @blue - 10%, @blue - 20%);
+    }
+}
+.btn-warning {
+    background-image: linear-gradient(to bottom, @orange, @orange - 10%);
+    border-color: @orange - 10%;
+    .text-shadow;
+    &:hover {
+      background-image: linear-gradient(to bottom, @orange - 10%, @orange - 20%);
+    }
+}
+.btn-danger {
+    box-shadow: inset 0 0 0 0 rgba(255,255,255,0);
+    background-image: linear-gradient(to bottom, @red, @red - 10%);
+    border-color: @red - 10%;
+    .text-shadow;
+    &:hover {
+      background-image: linear-gradient(to bottom, @red - 10%, @red - 20%);
+    }
+}
+.btn-info {
+    background-image: linear-gradient(to bottom, @blue + 40%, @blue + 30%);
+    border-color: @blue + 30%;
+    .text-shadow;
+    &:hover {
+      background-image: linear-gradient(to bottom, @blue + 30%, @blue + 20%);
+    }
 }

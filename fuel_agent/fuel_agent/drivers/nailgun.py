@@ -68,6 +68,10 @@ class Nailgun(BaseDataDriver):
     def __init__(self, data):
         super(Nailgun, self).__init__(data)
 
+        # this var states whether boot partition
+        # was already allocated on first matching volume
+        # or not
+        self._boot_partition_done = False
         # this var is used as a flag that /boot fs
         # has already been added. we need this to
         # get rid of md over all disks for /boot partition.
@@ -213,11 +217,15 @@ class Nailgun(BaseDataDriver):
                                 prt.set_guid(volume['partition_guid'])
                     continue
 
-                if volume['type'] in ('partition', 'pv', 'raid'):
+                if volume['type'] in ('partition', 'pv', 'raid') \
+                        and 'mount' in volume \
+                        and volume['mount'] not in ('none', '/boot') \
+                        and not self._boot_partition_done:
                     LOG.debug('Adding partition on disk %s: size=%s' %
                               (disk['name'], volume['size']))
                     prt = parted.add_partition(size=volume['size'])
                     LOG.debug('Partition name: %s' % prt.name)
+                    self._boot_partition_done = True
 
                 if volume['type'] == 'partition':
                     if 'partition_guid' in volume:

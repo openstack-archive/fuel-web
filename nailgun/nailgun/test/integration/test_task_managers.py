@@ -137,7 +137,8 @@ class TestTaskManagers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
 
-        action_logs = objects.ActionLogCollection.all()
+        action_logs = objects.ActionLogCollection.filter_by(
+            None, action_type=ACTION_TYPES.nailgun_task)
 
         self.assertEqual(action_logs.count(), 3)
         for al in action_logs:

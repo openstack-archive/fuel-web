@@ -602,7 +602,7 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             this.$('.form-group.has-error').removeClass('has-error');
             this.$('.parameter-description').removeClass('hide');
             this.$('.validation-error').addClass('hide');
-            this.$('.has-error .help-block').html('');
+            this.$('.help-block').html('');
         },
         render: function(options) {
             this.$el.html(this.template(options));

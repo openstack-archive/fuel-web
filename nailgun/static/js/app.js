@@ -24,7 +24,6 @@ define(
     'utils',
     'jsx!views/layout',
     'coccyx',
-    'js/coccyx_mixins',
     'models',
     'keystone_client',
     'jsx!views/root',
@@ -45,7 +44,7 @@ define(
     'backbone-lodash-monkeypatch'
 
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -67,14 +66,6 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
                 $('body').addClass('safari');
             }
-
-            // add deferred-related mixins
-            _.extend(Backbone.View.prototype, coccyxMixins);
-
-            // reject deferreds on view teardown
-            Coccyx.addTearDownCallback(function() {
-                this.rejectRegisteredDeferreds();
-            });
 
             // remove stickit bindings on teardown
             Coccyx.addTearDownCallback(function() {

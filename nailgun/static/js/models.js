@@ -448,32 +448,6 @@ define([
         },
         findTask: function(filters) {
             return this.filterTasks(filters)[0];
-        },
-        bindToView: function(view, filters, bindCallback, addCallback, removeCallback) {
-            bindCallback = _.bind(bindCallback, view);
-            addCallback = _.bind(addCallback || view.render, view);
-            removeCallback = _.bind(removeCallback || view.render, view);
-            function taskMatchesFilters(task) {
-                return _.any(filters, task.match, task);
-            }
-            function onTaskAdd(task) {
-                if (taskMatchesFilters(task)) {
-                    bindCallback(task);
-                    addCallback();
-                }
-            }
-            function onTaskRemove(task) {
-                if (taskMatchesFilters(task)) {
-                    removeCallback();
-                }
-            }
-            this.each(function(task) {
-                if (taskMatchesFilters(task)) {
-                    bindCallback(task);
-                }
-            });
-            this.on('add', onTaskAdd, view);
-            this.on('remove', onTaskRemove, view);
         }
     });
 

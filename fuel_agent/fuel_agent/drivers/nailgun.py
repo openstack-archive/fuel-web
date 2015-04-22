@@ -68,6 +68,10 @@ class Nailgun(BaseDataDriver):
     def __init__(self, data):
         super(Nailgun, self).__init__(data)
 
+        # this var states whether boot partition
+        # was already allocated on first matching volume
+        # or not
+        self._boot_partition_done = False
         # this var is used as a flag that /boot fs
         # has already been added. we need this to
         # get rid of md over all disks for /boot partition.
@@ -149,6 +153,14 @@ class Nailgun(BaseDataDriver):
 
         LOG.debug('Looping over all disks in provision data')
         for disk in self.ks_disks:
+            # skipping disk if there are no volumes with size >0
+            # to be allocated on it which are not boot partitions
+            if all((
+                v["size"] <= 0
+                for v in disk["volumes"]
+                if v["type"] != "boot" and v.get("mount") != "/boot"
+            )):
+                continue
             LOG.debug('Processing disk %s' % disk['name'])
             LOG.debug('Adding gpt table on disk %s' % disk['name'])
             parted = partition_scheme.add_parted(
@@ -214,10 +226,14 @@ class Nailgun(BaseDataDriver):
                     continue
 
                 if volume['type'] in ('partition', 'pv', 'raid'):
-                    LOG.debug('Adding partition on disk %s: size=%s' %
-                              (disk['name'], volume['size']))
-                    prt = parted.add_partition(size=volume['size'])
-                    LOG.debug('Partition name: %s' % prt.name)
+                    if volume.get('mount') != '/boot' \
+                            or not self._boot_partition_done:
+                        LOG.debug('Adding partition on disk %s: size=%s' %
+                                  (disk['name'], volume['size']))
+                        prt = parted.add_partition(size=volume['size'])
+                        LOG.debug('Partition name: %s' % prt.name)
+                    if volume.get('mount') == '/boot':
+                        self._boot_partition_done = True
 
                 if volume['type'] == 'partition':
                     if 'partition_guid' in volume:

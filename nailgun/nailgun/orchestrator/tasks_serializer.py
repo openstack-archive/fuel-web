@@ -186,7 +186,11 @@ class UploadMOSRepo(GenericRolesHook):
                 yield templates.make_ubuntu_sources_task(uids, repo)
 
                 if repo.get('priority'):
-                    yield templates.make_ubuntu_preferences_task(uids, repo)
+                    # do not add preferences task to task list if we can't
+                    # complete it (e.g. can't retrieve or parse Release file)
+                    task = templates.make_ubuntu_preferences_task(uids, repo)
+                    if task is not None:
+                        yield task
             yield templates.make_apt_update_task(uids)
 
 

@@ -151,13 +151,17 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
             elif operating_system == consts.RELEASE_OS.ubuntu:
                 repo = self.get_ubuntu_repo(plugin)
 
-                repo_tasks.extend([
+                repo_tasks.append(
                     self.serialize_task(
                         plugin,
-                        templates.make_ubuntu_sources_task(uids, repo)),
-                    self.serialize_task(
-                        plugin,
-                        templates.make_ubuntu_preferences_task(uids, repo))])
+                        templates.make_ubuntu_sources_task(uids, repo)))
+
+                # do not add preferences task to task list if we can't
+                # complete it (e.g. can't retrieve or parse Release file)
+                task = self.serialize_task(
+                    plugin, templates.make_ubuntu_preferences_task(uids, repo))
+                if task is not None:
+                    repo_tasks.append(task)
 
                 # apt-get update executed after every additional source.list
                 # to be able understand what plugin source.list caused error

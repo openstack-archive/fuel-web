@@ -58,9 +58,12 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             description: React.PropTypes.node,
             disabled: React.PropTypes.bool,
             inputClassName: React.PropTypes.node,
+            labelClassName: React.PropTypes.node,
+            labelWrapperClassName: React.PropTypes.node,
             wrapperClassName: React.PropTypes.node,
             tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool,
+            labelBeforeControl: React.PropTypes.bool,
             onChange: React.PropTypes.func,
             extraContent: React.PropTypes.node
         },
@@ -118,13 +121,32 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             );
         },
         renderLabel: function(children) {
-            return (
-                <label key='label' htmlFor={this.props.id}>
+            var labelClasses = {
+                    'parameter-name': true,
+                    'input-append': this.props.toggleable
+                },
+                labelWrapperClasses = {
+                    'label-wrapper': true
+                };
+
+            labelClasses[this.props.labelClassName] = this.props.labelClassName;
+            labelWrapperClasses[this.props.labelWrapperClassName] = this.props.labelWrapperClassName;
+            var labelElement = (
+                    <div className={utils.classNames(labelWrapperClasses)}>
+                        <span>{this.props.label}</span>
+                        {this.renderTooltipIcon()}
+                    </div>
+                ),
+                labelBefore = (!this.isCheckboxOrRadio() || this.props.labelBeforeControl) ? labelElement : null,
+                labelAfter = (this.isCheckboxOrRadio() && !this.props.labelBeforeControl) ? labelElement : null;
+            return this.props.label ? (
+                <label key='label' className={utils.classNames(labelClasses)} htmlFor={this.props.id}>
+                    {labelBefore}
                     {children}
-                    {this.props.label}
-                    {this.renderTooltipIcon()}
+                    {labelAfter}
                 </label>
-            );
+            )
+            : children;
         },
         renderDescription: function() {
             return (

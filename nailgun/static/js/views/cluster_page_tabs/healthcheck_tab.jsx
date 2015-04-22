@@ -73,16 +73,20 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
             var cluster = this.props.cluster,
                 ostf = cluster.get('ostf') || this.state.ostf;
             return (
-                <div className='wrapper'>
-                    <h3 className='span6 healthcheck-title'>{i18n('cluster_page.healthcheck_tab.title')}</h3>
+                <div className='wrapper healthcheck-tab'>
+                    <div className='row'>
+                        <h3 className='col-xs-12 healthcheck-title'>
+                            {i18n('cluster_page.healthcheck_tab.title')}
+                        </h3>
+                    </div>
                     {this.state.loadingFailure ?
-                        <div className='cleared'>
+                        <div className='cleared row'>
                             <div className='alert error-message alert-error'>
                                 {i18n('cluster_page.healthcheck_tab.not_available_alert')}
                             </div>
                         </div>
                     : !this.state.loaded ?
-                        <div className='row-fluid'><div className='span12'><controls.ProgressBar /></div></div>
+                        <div className='row-fluid'><div className='col-xs-12'><controls.ProgressBar /></div></div>
                     :
                         <HealthcheckTabContent
                             ref='content'
@@ -213,12 +217,14 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                 hasRunningTests = !!this.props.testruns.where({status: 'running'}).length;
             return (
                 <div>
-                    <div className='row-fluid page-sub-title'>
-                        <div className='span2 ostf-controls'>
+                    <div className='page-sub-title col-xs-12'>
+                        <div className='ostf-controls col-xs-offset-4 col-xs-5'>
                             {!disabledState &&
-                                <div className='toggle-credentials pull-right' onClick={this.toggleCredentials}>
-                                    <i className={this.state.credentialsVisible ? 'icon-minus-circle' : 'icon-plus-circle'}></i>
-                                    <div>{i18n('cluster_page.healthcheck_tab.provide_credentials')}</div>
+                                <div className='toggle-credentials' onClick={this.toggleCredentials}>
+                                    <div className='col-xs-1'>
+                                        <span className={(this.state.credentialsVisible ? 'glyphicon-minus' : 'glyphicon-plus') + ' glyphicon'} aria-hidden='true'></span>
+                                    </div>
+                                    <div className='col-xs-8'>{i18n('cluster_page.healthcheck_tab.provide_credentials')}</div>
                                 </div>
                             }
                         </div>
@@ -228,11 +234,11 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                             onChange={this.handleSelectAllClick}
                             checked={this.getNumberOfCheckedTests() == this.props.tests.length}
                             disabled={disabledState || hasRunningTests}
-                            labelClassName='checkbox pull-right'
+                            labelClassName='checkbox pull-right col-xs-12'
                             label={i18n('common.select_all')}
-                            wrapperClassName='span2 ostf-controls select-all'
+                            wrapperClassName='col-xs-2 ostf-controls select-all'
                         />
-                        <div className='span2 ostf-controls'>
+                        <div className='ostf-controls'>
                             {hasRunningTests ?
                                 (<button className='btn btn-danger pull-right action-btn stop-tests-btn'
                                     disabled={disabledState || this.state.actionInProgress}
@@ -251,19 +257,21 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         </div>
                     </div>
                     {(this.props.cluster.get('status') == 'new') &&
-                        <div className='row-fluid'>
-                            <div className='span12'>
-                                <div className='alert'>{i18n('cluster_page.healthcheck_tab.deploy_alert')}</div>
+                        <div className='row-fluid col-xs-12'>
+                            <div>
+                                <div className='alert alert-warning'>{i18n('cluster_page.healthcheck_tab.deploy_alert')}</div>
                             </div>
                         </div>
                     }
-                    <HealthcheckCredentials
-                        key='credentials'
-                        visible={this.state.credentialsVisible}
-                        credentials={this.state.credentials}
-                        onInputChange={this.handleInputChange}
-                        disabled={disabledState || hasRunningTests}
-                    />
+                    <div>
+                        <HealthcheckCredentials
+                            key='credentials'
+                            visible={this.state.credentialsVisible}
+                            credentials={this.state.credentials}
+                            onInputChange={this.handleInputChange}
+                            disabled={disabledState || hasRunningTests}
+                        />
+                    </div>
                     <div className='testsets' key='testsets'>
                         <div>
                             {this.props.testsets.map(_.bind(function(testset) {
@@ -291,9 +299,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         render: function() {
             var inputFields = ['user', 'password', 'tenant'];
             return (
-                <div className='healthcheck credentials collapse'>
+                <div className='healthcheck credentials collapse col-xs-12'>
                     <div className='fieldset-group wrapper'>
-                        <div className='healthcheck-group'>
+                        <div className='healthcheck-group well'>
                             <div className='clearfix note'>
                                 {i18n('cluster_page.healthcheck_tab.credentials_description')}
                             </div>
@@ -353,14 +361,14 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                                         checked={this.props.testset.get('checked')}
                                     />
                                 </th>
-                                <th>
+                                <th className='col-xs-7'>
                                     <label className='testset-name' htmlFor={'testset-checkbox-' + this.props.testset.id}>
                                         {this.props.testset.get('name')}
                                     </label>
                                 </th>
-                                <th className='healthcheck-col-duration'>{i18n('cluster_page.healthcheck_tab.expected_duration')}</th>
-                                <th className='healthcheck-col-duration'>{i18n('cluster_page.healthcheck_tab.actual_duration')}</th>
-                                <th className='healthcheck-col-status'>{i18n('cluster_page.healthcheck_tab.status')}</th>
+                                <th className='healthcheck-col-duration col-xs-2'>{i18n('cluster_page.healthcheck_tab.expected_duration')}</th>
+                                <th className='healthcheck-col-duration col-xs-2'>{i18n('cluster_page.healthcheck_tab.actual_duration')}</th>
+                                <th className='healthcheck-col-status col-xs-1'>{i18n('cluster_page.healthcheck_tab.status')}</th>
                             </tr>
                         </thead>
                         <tbody>

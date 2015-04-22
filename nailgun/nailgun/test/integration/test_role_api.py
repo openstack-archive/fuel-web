@@ -101,6 +101,19 @@ class TestRoleApi(BaseRoleTest):
             self.release.id, role['name'], expect_errors=True)
         self.assertEqual(delete_resp.status_code, 400)
 
+    def test_delete_pending_assigned_role(self):
+        role = self.env.create_role(self.release.id, self.role_data).json
+        self.env.create(
+            nodes_kwargs=[
+                {'pending_roles': [role['name']], 'pending_addition': True},
+            ],
+            cluster_kwargs={'release_id': self.release.id},
+        )
+
+        delete_resp = self.env.delete_role(
+            self.release.id, role['name'], expect_errors=True)
+        self.assertEqual(delete_resp.status_code, 400)
+
     def test_get_role(self):
         self.env.create_role(self.release.id, self.role_data)
         role = self.env.get_role(self.release.id, self.role_data['name'])

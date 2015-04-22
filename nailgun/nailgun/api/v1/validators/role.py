@@ -23,7 +23,7 @@ class RoleValidator(BasicValidator):
 
     @classmethod
     def validate_delete(cls, instance):
-        if instance.nodes:
+        if instance.nodes or instance.pending_nodes:
             raise errors.CannotDelete(
                 "Can't delete roles that is assigned to some node."
             )

@@ -224,7 +224,8 @@ class TestTasksLogging(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, 15)
 
-        logs = objects.ActionLogCollection.all()
+        logs = objects.ActionLogCollection.filter_by(
+            None, action_type=consts.ACTION_TYPES.nailgun_task)
         self.assertEqual(5, logs.count())
         for log in logs:
             self.assertIsNotNone(log.end_timestamp)

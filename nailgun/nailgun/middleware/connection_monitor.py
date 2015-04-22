@@ -148,9 +148,9 @@ class ConnectionMonitorMiddleware(object):
                 # save actor_id in env for further processing
                 env['fuel.action.actor_id'] = actor_id
 
-                create_kwargs['start_timestamp'] = datetime.datetime.now()
+                create_kwargs['start_timestamp'] = datetime.datetime.utcnow()
                 response = self.app(env, save_headers_start_response)
-                create_kwargs['end_timestamp'] = datetime.datetime.now()
+                create_kwargs['end_timestamp'] = datetime.datetime.utcnow()
 
                 # since responce is iterator to avoid its exhaustion in
                 # analysing process we make two copies of it: one to be

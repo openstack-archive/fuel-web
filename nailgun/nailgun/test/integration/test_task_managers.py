@@ -133,7 +133,8 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.create_cluster()
         self.env.delete_environment()
 
-        al = self.db.query(models.ActionLog).first()
+        al = objects.ActionLogCollection.filter_by(
+            None, action_type=consts.ACTION_TYPES.nailgun_task).first()
 
         self.assertIsNotNone(al.end_timestamp)
         self.assertEqual(al.additional_info["ended_with_status"],
@@ -150,9 +151,10 @@ class TestTaskManagers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
 
-        action_logs = objects.ActionLogCollection.all()
+        action_logs = objects.ActionLogCollection.filter_by(
+            None, action_type=consts.ACTION_TYPES.nailgun_task).all()
 
-        self.assertEqual(action_logs.count(), 3)
+        self.assertEqual(len(action_logs), 3)
         for al in action_logs:
             self.assertEqual(al.action_type, ACTION_TYPES.nailgun_task)
             if al.additional_info["operation"] == TASK_NAMES.deploy:

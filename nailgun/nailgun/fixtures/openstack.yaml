@@ -1245,7 +1245,7 @@
               - type: "rpm"
                 name: "Auxiliary"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/auxiliary"
-                priority: null
+                priority: 15
       generated:
         cobbler:
           profile:

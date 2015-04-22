@@ -22,7 +22,7 @@ define(function() {
         paths: {
             jquery: 'js/libs/bower/jquery/jquery',
             'jquery-cookie': 'js/libs/bower/jquery-cookie/jquery.cookie',
-            'jquery-ui': 'js/libs/custom/jquery-ui-1.10.2.custom',
+            'jquery-ui': 'js/libs/bower/jquery-ui/ui',
             'jquery-autoNumeric': 'js/libs/bower/autoNumeric/autoNumeric',
             utils: 'js/utils',
             expression: 'js/expression',

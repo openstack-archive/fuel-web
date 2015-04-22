@@ -26,7 +26,7 @@ define(
     'jsx!views/dialogs',
     'jsx!views/controls',
     'jsx!component_mixins',
-    'jquery-ui'
+    'jquery-ui/sortable'
 ],
 function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins) {
     'use strict';

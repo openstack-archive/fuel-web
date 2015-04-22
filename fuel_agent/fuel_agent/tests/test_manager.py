@@ -90,12 +90,12 @@ class TestManager(test_base.BaseTestCase):
             mock.call('/dev/sda', 65660, 65680, 'primary'),
             mock.call('/dev/sdb', 1, 25, 'primary'),
             mock.call('/dev/sdb', 25, 225, 'primary'),
-            mock.call('/dev/sdb', 225, 425, 'primary'),
-            mock.call('/dev/sdb', 425, 65396, 'primary'),
+            # mock.call('/dev/sdb', 225, 425, 'primary'),
+            mock.call('/dev/sdb', 225, 65196, 'primary'),
             mock.call('/dev/sdc', 1, 25, 'primary'),
             mock.call('/dev/sdc', 25, 225, 'primary'),
-            mock.call('/dev/sdc', 225, 425, 'primary'),
-            mock.call('/dev/sdc', 425, 65396, 'primary')]
+            # mock.call('/dev/sdc', 225, 425, 'primary'),
+            mock.call('/dev/sdc', 225, 65196, 'primary')]
         self.assertEqual(mock_pu_mp_expected_calls, mock_pu_mp.call_args_list)
 
         mock_pu_spf_expected_calls = [mock.call('/dev/sda', 1, 'bios_grub'),
@@ -111,13 +111,13 @@ class TestManager(test_base.BaseTestCase):
         mock_lu_p_expected_calls = [
             mock.call('/dev/sda5', metadatasize=28, metadatacopies=2),
             mock.call('/dev/sda6', metadatasize=28, metadatacopies=2),
-            mock.call('/dev/sdb4', metadatasize=28, metadatacopies=2),
-            mock.call('/dev/sdc4', metadatasize=28, metadatacopies=2)]
+            mock.call('/dev/sdb3', metadatasize=28, metadatacopies=2),
+            mock.call('/dev/sdc3', metadatasize=28, metadatacopies=2)]
         self.assertEqual(mock_lu_p_expected_calls, mock_lu_p.call_args_list)
 
         mock_lu_v_expected_calls = [mock.call('os', '/dev/sda5'),
                                     mock.call('image', '/dev/sda6',
-                                              '/dev/sdb4', '/dev/sdc4')]
+                                              '/dev/sdb3', '/dev/sdc3')]
         self.assertEqual(mock_lu_v_expected_calls, mock_lu_v.call_args_list)
 
         mock_lu_l_expected_calls = [mock.call('os', 'root', 15360),

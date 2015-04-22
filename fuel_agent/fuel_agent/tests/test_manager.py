@@ -441,13 +441,18 @@ class TestManager(test_base.BaseTestCase):
             '/tmp/imgdir', packages=['fakepackage1', 'fakepackage2'])
         mock_bu.do_post_inst.assert_called_once_with('/tmp/imgdir')
         signal_calls = mock_bu.send_signal_to_chrooted_processes.call_args_list
-        self.assertEqual([mock.call('/tmp/imgdir', signal.SIGTERM),
-                          mock.call('/tmp/imgdir', signal.SIGKILL)],
+        self.assertEqual(2 * [mock.call('/tmp/imgdir', signal.SIGTERM),
+                              mock.call('/tmp/imgdir', signal.SIGKILL)],
                          signal_calls)
-        mock_sleep.assert_called_once_with(2)
-        mock_fu.umount_fs.assert_called_once_with('/tmp/imgdir/proc')
-        mock_umount_target.assert_called_once_with('/tmp/imgdir', pseudo=False)
-        self.assertEqual([mock.call('/dev/loop0'), mock.call('/dev/loop1')],
+        self.assertEqual([mock.call(2), mock.call(10)],
+                         mock_sleep.call_args_list)
+        self.assertEqual(2 * [mock.call('/tmp/imgdir/proc')],
+                         mock_fu.umount_fs.call_args_list)
+        self.assertEqual(2 * [mock.call('/tmp/imgdir', pseudo=False)],
+                         mock_umount_target.call_args_list)
+        self.assertEqual([mock.call('/dev/loop0'), mock.call('/dev/loop1'),
+                          mock.call('/dev/loop0', check_exit_code=False),
+                          mock.call('/dev/loop1', check_exit_code=False)],
                          mock_bu.deattach_loop.call_args_list)
         self.assertEqual([mock.call('/tmp/img'), mock.call('/tmp/img-boot')],
                          mock_bu.shrink_sparse_file.call_args_list)

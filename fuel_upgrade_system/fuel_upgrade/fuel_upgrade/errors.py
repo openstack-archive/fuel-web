@@ -77,10 +77,6 @@ class WrongVersionError(FuelUpgradeException):
     pass
 
 
-class UnsupportedActionTypeError(FuelUpgradeException):
-    pass
-
-
 class NailgunIsNotRunningError(FuelUpgradeException):
     pass
 

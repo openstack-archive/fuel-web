@@ -802,9 +802,9 @@ define([
                 if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {
                     idRangeErrors[0] = i18n(ns + 'invalid_id_start');
                 } else if (!utils.isNaturalNumber(idEnd) || idEnd < 2 || idEnd > maxId) {
-                    idRangeErrors[1] = i18n('invalid_id_end');
+                    idRangeErrors[1] = i18n(ns + 'invalid_id_end');
                 } else if (idStart > idEnd) {
-                    idRangeErrors[0] = idRangeErrors[1] = i18n('invalid_id_range');
+                    idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'invalid_id_range');
                 } else if (segmentation == 'vlan') {
                     _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
                         if (utils.validateVlanRange(idStart, idEnd, vlan)) {

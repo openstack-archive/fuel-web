@@ -1719,3 +1719,32 @@ button, .btn:not(.btn-link) {.font-semibold;}
     float: none;
   }
 }
+
+
+// Healthcheck tab
+.healthcheck-tab {
+  @padding-top-controls: 23px;
+  .toggle-credentials {
+    padding-top: @padding-top-controls;
+    cursor: pointer;
+  }
+  .select-all {
+    padding-top: @padding-top-controls / 2;
+  }
+  .credentials {
+    .note {
+      margin-bottom: 10px;
+    }
+  }
+  .healthcheck-table {
+    th,
+    tr {
+      vertical-align: middle;
+    }
+  }
+  .healthcheck-name {
+    label {
+      font-weight: normal;
+    }
+  }
+}

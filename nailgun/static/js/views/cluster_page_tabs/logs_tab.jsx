@@ -424,12 +424,12 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
                     {this.props.showMoreLogsLink &&
                         <tfoot className='entries-skipped-msg'>
                             <tr>
-                                <td colSpan='3'>
+                                <td colSpan='3' className='text-center'>
                                     <span>{i18n('cluster_page.logs_tab.bottom_text')}</span>:
                                     {
                                         [100, 500, 1000, 5000].map(
                                             function(count) {
-                                                return <span className='show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}> {count} </span>;
+                                                return <button className='btn btn-link show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}>{count} </button>;
                                             },
                                             this
                                         )

@@ -521,12 +521,35 @@ def upgrade_networks_metadata_to_6_1(networks_meta, _bonding_metadata):
 
     nets = [k for k, v in six.iteritems(networks_meta) if v.get('networks')]
     for network in chain(*[networks_meta[net]['networks'] for net in nets]):
-        if network.get('assign_vip'):
-            network['vips'] = [consts.NETWORK_VIP_TYPES.haproxy]
-
-        del network['assign_vip']
+        network = create_default_vips(network)
 
     return networks_meta
+
+
+def upgrade_node_groups_metadata_6_0_to_6_1(connection):
+    select_query = text("SELECT id, meta FROM network_groups")
+    update_query = text("UPDATE network_groups SET meta = :meta "
+                        "WHERE id = :id")
+
+    net_groups = connection.execute(select_query)
+
+    for ng in net_groups:
+        updated_meta = create_default_vips(jsonutils.loads(ng[1]))
+        connection.execute(
+            update_query,
+            id=ng[0],
+            meta=jsonutils.dumps(updated_meta)
+        )
+
+
+def create_default_vips(network):
+    if "assign_vip" in network:
+        if network["assign_vip"]:
+            network["vips"] = [consts.NETWORK_VIP_TYPES.haproxy]
+
+        del network["assign_vip"]
+
+    return network
 
 
 def upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection):

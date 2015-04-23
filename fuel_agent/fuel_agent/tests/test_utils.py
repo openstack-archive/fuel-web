@@ -180,3 +180,33 @@ class ExecuteTestCase(testtools.TestCase):
         utils.makedirs_if_not_exists('/fake/path')
         mock_isdir.assert_called_once_with('/fake/path')
         self.assertEqual(mock_makedirs.mock_calls, [])
+
+    @mock.patch('fuel_agent.utils.utils.os', create=True)
+    def test_guess_filename(self, mock_os):
+        mock_os.listdir.return_value = ['file1', 'file2', 'file3']
+        filename = utils.guess_filename('/some/path', '^file2.*')
+        self.assertEqual(filename, 'file2')
+        mock_os.listdir.assert_called_once_with('/some/path')
+
+    @mock.patch('fuel_agent.utils.utils.os', create=True)
+    def test_guess_filename_not_found(self, mock_os):
+        mock_os.listdir.return_value = ['file1', 'file2', 'file3']
+        filename = utils.guess_filename('/some/path', '^file4.*')
+        self.assertIsNone(filename)
+        mock_os.listdir.assert_called_once_with('/some/path')
+
+    @mock.patch('fuel_agent.utils.utils.os', create=True)
+    def test_guess_filename_not_exact_match(self, mock_os):
+        mock_os.listdir.return_value = ['file1', 'file2', 'file3']
+        filename = utils.guess_filename('/some/path', '^file.*')
+        # by default files are sorted in backward direction
+        self.assertEqual(filename, 'file3')
+        mock_os.listdir.assert_called_once_with('/some/path')
+
+    @mock.patch('fuel_agent.utils.utils.os', create=True)
+    def test_guess_filename_not_exact_match_forward_sort(self, mock_os):
+        mock_os.listdir.return_value = ['file1', 'file2', 'file3']
+        filename = utils.guess_filename('/some/path', '^file.*', reverse=False)
+        # by default files are sorted in backward direction
+        self.assertEqual(filename, 'file1')
+        mock_os.listdir.assert_called_once_with('/some/path')

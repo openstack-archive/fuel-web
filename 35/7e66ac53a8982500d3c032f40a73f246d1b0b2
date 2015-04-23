@@ -1,0 +1,12 @@
+Verified+2: Jenkins
+Code-Review+1: Nikolay Markov <nmarkov@mirantis.com>
+Code-Review+1: Dmitry Shulyak <dshulyak@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Workflow+1: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Code-Review+1: Artem Panchenko <apanchenko@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 23 Apr 2015 14:03:57 +0000
+Reviewed-on: https://review.openstack.org/173957
+Project: stackforge/fuel-web
+Branch: refs/heads/master

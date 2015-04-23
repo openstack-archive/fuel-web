@@ -1809,3 +1809,60 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .page-buttons {
   margin-top: 30px;
 }
+
+// Healthcheck tab
+.healthcheck-tab {
+  @padding-top-controls: 13px;
+  .toggle-credentials {
+    padding-top: @padding-top-controls;
+    cursor: pointer;
+  }
+  .select-all {
+    padding-top: @padding-top-controls;
+    margin-left: 24px;
+  }
+  .credentials {
+    .note {
+      margin-bottom: 10px;
+    }
+  }
+  .stop-tests-btn {
+    margin-right: 30px;
+  }
+  .healthcheck-table {
+    tr {
+      td {
+        &.healthcheck-name,
+        &.healthcheck-col-duration,
+        &.healthcheck-col-status {
+          padding-top: @padding-top-controls;
+        }
+        label {
+          font-weight: normal;
+          line-height: 35px;
+        }
+      }
+      th {
+        // this style and color to be discussed
+        background-color: @node-color-offline;
+        &.healthcheck-name,
+        &.healthcheck-col-duration,
+        &.healthcheck-col-status {
+          line-height: 25px;
+        }
+      }
+    }
+    .custom-tumbler {
+      margin: 0;
+      span {
+        margin-top: @padding-top-controls;
+      }
+    }
+    tbody {
+      .healthcheck-col-duration,
+      .healthcheck-col-status {
+        text-align: center;
+      }
+    }
+  }
+}

@@ -74,6 +74,7 @@ class Nailgun(BaseDataDriver):
         self._boot_done = False
 
         self.partition_scheme = self.parse_partition_scheme()
+        self.grub = self.parse_grub()
         self.configdrive_scheme = self.parse_configdrive_scheme()
         # parsing image scheme needs partition scheme has been parsed
         self.image_scheme = self.parse_image_scheme()
@@ -317,10 +318,6 @@ class Nailgun(BaseDataDriver):
                             fs_type=volume.get('file_system', 'xfs'),
                             fs_label=self._getlabel(volume.get('disk_label')))
 
-        LOG.debug('Appending kernel parameters: %s' %
-                  self.data['ks_meta']['pm_data']['kernel_params'])
-        partition_scheme.append_kernel_params(
-            self.data['ks_meta']['pm_data']['kernel_params'])
         return partition_scheme
 
     def parse_configdrive_scheme(self):
@@ -377,6 +374,19 @@ class Nailgun(BaseDataDriver):
         LOG.debug('Setting configdrive profile %s' % data['profile'])
         configdrive_scheme.set_profile(profile=data['profile'])
         return configdrive_scheme
+
+    def parse_grub(self):
+        LOG.debug('--- Parse grub settings ---')
+        grub = objects.Grub()
+        LOG.debug('Appending kernel parameters: %s',
+                  self.data['ks_meta']['pm_data']['kernel_params'])
+        grub.append_kernel_params(
+            self.data['ks_meta']['pm_data']['kernel_params'])
+        if 'centos' in self.data['profile'].lower() and \
+                not self.data['ks_meta'].get('kernel_lt'):
+            LOG.debug('Prefered kernel version is 2.6')
+            grub.kernel_regexp = r'^vmlinuz-2\.6.*'
+        return grub
 
     def parse_image_scheme(self):
         LOG.debug('--- Preparing image scheme ---')

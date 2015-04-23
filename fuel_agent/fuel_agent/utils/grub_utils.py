@@ -83,22 +83,38 @@ def guess_grub1_datadir(chroot='', arch='x86_64'):
             return '/usr/share/grub/' + d
 
 
-def guess_kernel(chroot=''):
-    for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
-        # We assume kernel name is always starts with vmlinuz.
-        # We use the newest one.
-        if filename.startswith('vmlinuz'):
-            return filename
-    raise errors.GrubUtilsError('Error while trying to find kernel: not found')
+def guess_kernel(chroot='', regexp=None):
+    """Tries to guess kernel by regexp
+    :param chroot: Path to chroot
+    :param regexp: (String) Regular expression (must have python syntax).
+    Default is r'^vmlinuz.*'
+    """
+    kernel = utils.guess_filename(
+        path=os.path.join(chroot, 'boot'),
+        regexp=(regexp or r'^vmlinuz.*'))
+
+    if kernel:
+        return kernel
+
+    raise errors.GrubUtilsError('Error while trying to find kernel: '
+                                'regexp=%s', regexp)
 
 
-def guess_initrd(chroot=''):
-    for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
-        # We assume initrd starts either with initramfs or initrd.
-        if filename.startswith('initramfs') or \
-                filename.startswith('initrd'):
-            return filename
-    raise errors.GrubUtilsError('Error while trying to find initrd: not found')
+def guess_initrd(chroot='', regexp=None):
+    """Tries to guess kernel by regexp
+    :param chroot: Path to chroot
+    :param regexp: (String) Regular expression (must have python syntax).
+    Default is r'^(initrd|initramfs).*'
+    """
+    initrd = utils.guess_filename(
+        path=os.path.join(chroot, 'boot'),
+        regexp=(regexp or r'^(initrd|initramfs).*'))
+
+    if initrd:
+        return initrd
+
+    raise errors.GrubUtilsError('Error while trying to find initrd: '
+                                'regexp=%s', regexp)
 
 
 def grub1_install(install_devices, boot_device, chroot=''):

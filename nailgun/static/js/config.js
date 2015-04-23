@@ -60,26 +60,38 @@ define(function() {
         },
         shim: {
             'expression/parser': {
+                // non-AMD module; gulp-jison supports generation of AMD
+                // modules, but they have broken stacktrace
                 exports: 'parser'
             },
             coccyx: {
+                // non-AMD module
                 deps: ['backbone', 'underscore'],
                 exports: 'Coccyx'
             },
             classnames: {
+                // non-AMD module
                 exports: 'classNames'
             },
             bootstrap: {
+                // non-AMD module, relies on global jQuery
                 deps: ['jquery']
             },
             i18next: {
+                // non-AMD module, relies on global jQuery; there is AMD
+                // version, but we still use i18n var in lodash templates,
+                // so we should use non-AMD version until we get rid of
+                // Backbone.View's completely
                 deps: ['jquery'],
                 exports: 'i18n'
             },
-            'jquery-ui': {
-                deps: ['jquery']
+            deepModel: {
+                // even though deepmodel uses AMD format, it uses _.mixin
+                // before define() call
+                deps: ['underscore']
             },
             'jquery-autoNumeric': {
+                // non-AMD module, relies on global jQuery
                 deps: ['jquery']
             }
         },

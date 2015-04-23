@@ -83,21 +83,37 @@ def guess_grub1_datadir(chroot='', arch='x86_64'):
             return '/usr/share/grub/' + d
 
 
-def guess_kernel(chroot=''):
+def guess_kernel(kernel_regex={}, chroot=''):
     for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
-        # We assume kernel name is always starts with vmlinuz.
-        # We use the newest one.
-        if filename.startswith('vmlinuz'):
-            return filename
+        kernel_name = kernel_regex.get('kernel_name')
+        kernel_version = kernel_regex.get('kernel_version')
+        if kernel_name is not None and kernel_version is not None:
+           if filename.startswith(initrd_name):
+               m = re.search(kernel_version, filename)
+               if m is not None:
+                   return filename
+        else:
+            # We assume kernel name is always starts with vmlinuz.
+            # We use the newest one.
+            if filename.startswith('vmlinuz'):
+               return filename
     raise errors.GrubUtilsError('Error while trying to find kernel: not found')
 
 
-def guess_initrd(chroot=''):
+def guess_initrd(initrd_regex={}, chroot=''):
     for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
-        # We assume initrd starts either with initramfs or initrd.
-        if filename.startswith('initramfs') or \
-                filename.startswith('initrd'):
-            return filename
+        initrd_name = initrd_regex.get('initrd_name')
+        kernel_version = initrd_regex.get('kernel_version')
+        if initrd_name is not None and kernel_version is not None:
+           if filename.startswith(initrd_name):
+               m = re.search(kernel_version, filename)
+               if m is not None:
+                   return filename
+        else:
+            # We assume initrd starts either with initramfs or initrd.
+            if filename.startswith('initramfs') or \
+                    filename.startswith('initrd'):
+               return filename
     raise errors.GrubUtilsError('Error while trying to find initrd: not found')
 
 

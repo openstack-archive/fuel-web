@@ -264,7 +264,7 @@ supports-register-dump: yes
         # look at kernel/Documentation/devices.txt
         mock_breport.return_value = {}
         valid_majors = [3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105,
-                        106, 107, 108, 109, 110, 111, 202, 252, 253]
+                        106, 107, 108, 109, 110, 111, 202, 252, 253, 259]
         for major in (set(range(1, 261)) - set(valid_majors)):
             uspec = {
                 'MAJOR': str(major)
@@ -280,25 +280,69 @@ supports-register-dump: yes
         }
         self.assertFalse(hu.is_disk('/dev/fake', bspec=bspec))
 
+    @mock.patch('fuel_agent.utils.hardware_utils.utils.execute')
+    def test_get_block_devices_from_udev_db(self, mock_exec):
+        mock_exec.return_value = ("""P: /devices/virtual/block/loop0
+N: loop0
+E: DEVNAME=/dev/loop0
+E: DEVPATH=/devices/virtual/block/loop0
+E: DEVTYPE=disk
+E: SUBSYSTEM=block
+
+P: /devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0/block/sda
+N: sda
+S: disk/by-id/wwn-0x5000c5004008ac0f
+S: disk/by-path/pci-0000:00:1f.2-scsi-0:0:0:0
+E: DEVNAME=/dev/sda
+E: DEVTYPE=disk
+E: ID_ATA=1
+E: SUBSYSTEM=block
+E: UDEV_LOG=3
+
+P: /devices/pci:00/:00:04.0/misc/nvme0
+N: nvme0
+E: DEVNAME=/dev/nvme0
+E: DEVPATH=/devices/pci:00/:00:04.0/misc/nvme0
+E: MAJOR=10
+E: MINOR=57
+E: SUBSYSTEM=misc
+
+P: /devices/pci:00/:00:04.0/block/nvme0n1
+N: nvme0n1
+E: DEVNAME=/dev/nvme0n1
+E: DEVPATH=/devices/pci:00/:00:04.0/block/nvme0n1
+E: DEVTYPE=disk
+E: MAJOR=259
+E: MINOR=0
+E: SUBSYSTEM=block
+E: USEC_INITIALIZED=87744
+
+P: /devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0/block/sda
+N: sda
+S: disk/by-id/wwn-0x5000c5004008ac0f
+S: disk/by-path/pci-0000:00:1f.2-scsi-0:0:0:0
+E: DEVNAME=/dev/sda1
+E: DEVTYPE=partition
+E: ID_ATA=1
+E: SUBSYSTEM=block
+E: UDEV_LOG=3""", '')
+
+        self.assertEqual(['/dev/sda', '/dev/nvme0n1', '/dev/sda1'],
+                         hu.get_block_devices_from_udev_db())
+
+    @mock.patch.object(hu, 'get_block_devices_from_udev_db')
     @mock.patch.object(hu, 'is_disk')
     @mock.patch.object(hu, 'extrareport')
     @mock.patch.object(hu, 'blockdevreport')
     @mock.patch.object(hu, 'udevreport')
-    @mock.patch.object(utils, 'execute')
-    def test_list_block_devices(self, mock_exec, mock_ureport, mock_breport,
-                                mock_ereport, mock_isdisk):
+    def test_list_block_devices(self, mock_ureport, mock_breport, mock_ereport,
+                                mock_isdisk, mock_get_devs):
         # should run blockdev --report command
         # in order to get a list of block devices
         # should call report methods to get device info
         # should call is_disk method to filter out
         # those block devices which are not disks
-        mock_exec.return_value = (
-            'RO    RA   SSZ   BSZ   StartSec            Size   Device\n'
-            'rw   256   512  4096          0    320072933376   /dev/fake\n'
-            'rw   256   512  4096       2048      7998537728   /dev/fake1\n'
-            'rw   256   512   512          0      1073741312   /dev/sr0\n',
-            ''
-        )
+        mock_get_devs.return_value = ['/dev/fake', '/dev/fake1', '/dev/sr0']
 
         def isdisk_side_effect(arg, uspec=None, bspec=None):
             if arg == '/dev/fake':
@@ -312,15 +356,11 @@ supports-register-dump: yes
 
         expected = [{
             'device': '/dev/fake',
-            'startsec': '0',
-            'size': 320072933376,
             'uspec': {'key0': 'value0'},
             'bspec': {'key1': 'value1'},
             'espec': {'key2': 'value2'}
         }]
         self.assertEqual(hu.list_block_devices(), expected)
-        mock_exec.assert_called_once_with('blockdev', '--report',
-                                          check_exit_code=[0])
         self.assertEqual(mock_ureport.call_args_list, [mock.call('/dev/fake'),
                          mock.call('/dev/fake1'), mock.call('/dev/sr0')])
         self.assertEqual(mock_breport.call_args_list, [mock.call('/dev/fake'),

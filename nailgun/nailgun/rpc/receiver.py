@@ -36,6 +36,7 @@ from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.logger import logger
+from nailgun.network import connectivity_check
 from nailgun.network import utils as net_utils
 from nailgun.task.helpers import TaskHelper
 
@@ -843,67 +844,20 @@ class NailgunReceiver(object):
 
                     # Check if we have excluded interfaces for LACP bonds
                     excluded_networks = cached_node.get(
-                        'excluded_networks', {})
+                        'excluded_networks', [])
                     if excluded_networks:
                         interfaces = ', '.join(
                             [net.get('iface') for net in excluded_networks])
-                        node_name = objects.Node.get_by_mac_or_uid(
-                            node_uid=node['uid']).name
 
                         node_excluded_networks.append({
-                            'node_name': node_name,
+                            'node_name': cached_node['name'],
                             'interfaces': interfaces
                         })
 
-                    for cached_network in cached_node['networks']:
-                        received_networks_filtered = filter(
-                            lambda n: n['iface'] == cached_network['iface'],
-                            node.get('networks', [])
-                        )
+                    errors = connectivity_check.check_received_data(
+                        cached_node, node)
 
-                        if received_networks_filtered:
-                            received_network = received_networks_filtered[0]
-                            absent_vlans = list(
-                                set(cached_network['vlans']) -
-                                set(received_network['vlans'])
-                            )
-                        else:
-                            logger.warning(
-                                "verify_networks_resp: arguments don't contain"
-                                " data for interface: uid=%s iface=%s",
-                                node['uid'], cached_network['iface']
-                            )
-                            absent_vlans = cached_network['vlans']
-
-                        if absent_vlans:
-                            data = {'uid': node['uid'],
-                                    'interface': cached_network['iface'],
-                                    'absent_vlans': absent_vlans}
-                            node_db = db().query(Node).get(node['uid'])
-                            if node_db:
-                                data['name'] = node_db.name
-                                db_nics = filter(
-                                    lambda i:
-                                    i.name == cached_network['iface'],
-                                    node_db.interfaces
-                                )
-                                if db_nics:
-                                    data['mac'] = db_nics[0].mac
-                                else:
-                                    logger.warning(
-                                        "verify_networks_resp: can't find "
-                                        "interface %r for node %r in DB",
-                                        cached_network['iface'], node_db.id
-                                    )
-                                    data['mac'] = 'unknown'
-                            else:
-                                logger.warning(
-                                    "verify_networks_resp: can't find node "
-                                    "%r in DB",
-                                    node['uid']
-                                )
-
-                            error_nodes.append(data)
+                    error_nodes.extend(errors)
 
                 if error_nodes:
                     result = error_nodes

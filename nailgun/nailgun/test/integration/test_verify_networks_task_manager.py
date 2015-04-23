@@ -343,11 +343,36 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             {u'vlans': [0], u'iface': u'eth1'},
             {u'vlans': [0], u'iface': u'eth2'}
         ]
+        expected_bonds = {
+            u'ovs-bond0': [u'eth1', u'eth2']
+        }
 
         _expected_args = []
         for node in self.env.nodes:
             _expected_args.append({
                 u'uid': node['id'],
+                u'name': node['name'],
+                u'status': node['status'],
+                u'networks': expected_networks,
+                u'bonds': expected_bonds,
+                u'excluded_networks': []
+            })
+
+        return _expected_args
+
+    @property
+    def expected_args_deployed(self):
+        expected_networks = [
+            {u'vlans': [0, 101, 102], u'iface': u'eth0'},
+            {u'vlans': [0], u'iface': u'ovs-bond0'},
+        ]
+
+        _expected_args = []
+        for node in self.env.nodes:
+            _expected_args.append({
+                u'uid': node['id'],
+                u'name': node['name'],
+                u'status': node['status'],
                 u'networks': expected_networks,
                 u'excluded_networks': []
             })
@@ -385,7 +410,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
                               self.env.nodes[0].name)]})
 
     @fake_tasks()
-    def test_network_vcerification_on_bootstrap_nodes_with_lacp_bonds(self):
+    def test_network_verification_on_bootstrap_nodes_with_lacp_bonds(self):
         expected_task_args = []
         for node in self.env.nodes:
             # Bond interfaces with LACP
@@ -393,9 +418,12 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
                 bond.mode = consts.BOND_MODES.l_802_3ad
             expected_task_args.append({
                 u'uid': node['id'],
+                u'name': node['name'],
+                u'status': node['status'],
                 u'networks': [
                     {u'vlans': [0, 101, 102], u'iface': u'eth0'}
                 ],
+                u'bonds': {u'ovs-bond0': [u'eth1', u'eth2']},
                 u'excluded_networks': [
                     {u'iface': u'eth1'},
                     {u'iface': u'eth2'}
@@ -417,7 +445,9 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
 
         verify_network_task = self.env.launch_verify_networks()
         self.assertEqual(
-            verify_network_task.cache['args']['nodes'], self.expected_args)
+            verify_network_task.cache['args']['nodes'],
+            self.expected_args_deployed
+        )
 
 
 class TestVerifyNeutronVlan(BaseIntegrationTest):

@@ -15,12 +15,15 @@
 #    under the License.
 
 
-import mock
+import itertools
 import os
+import textwrap
 
+import mock
 import six
 
 from fuel_upgrade.tests.base import BaseTestCase
+from fuel_upgrade.tests.base import FakeFile
 
 from fuel_upgrade.pre_upgrade_hooks.base import PreUpgradeHookBase
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_1_to_any_fix_host_system_repo \
@@ -49,6 +52,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf \
     import FixDhcrelayConf
 from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_monitor \
     import FixDhcrelayMonitor
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_fix_version_in_supervisor \
+    import SetFixedVersionInSupervisor
 from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers \
     import RecreateNailgunInPriveleged
 
@@ -784,7 +789,7 @@ class TestRecreateNailgunInPriveleged(TestPreUpgradeHooksBase):
                 'fuel/nailgun_0')])
 
 
-class FixDhcrelayConf(TestPreUpgradeHooksBase):
+class TestFixDhcrelayConf(TestPreUpgradeHooksBase):
 
     HookClass = FixDhcrelayConf
 
@@ -833,7 +838,7 @@ class FixDhcrelayConf(TestPreUpgradeHooksBase):
             'supervisorctl stop dhcrelay_monitor')
 
 
-class FixDhcrelayMontitor(TestPreUpgradeHooksBase):
+class TestFixDhcrelayMontitor(TestPreUpgradeHooksBase):
 
     HookClass = FixDhcrelayMonitor
 
@@ -859,3 +864,75 @@ class FixDhcrelayMontitor(TestPreUpgradeHooksBase):
             'templates/dhcrelay_monitor', mock_copy.call_args[0][0])
         self.assertEqual(
             '/usr/local/bin/dhcrelay_monitor', mock_copy.call_args[0][1])
+
+
+class TestSetFixedVersionInSupervisor(TestPreUpgradeHooksBase):
+
+    _module = 'fuel_upgrade.pre_upgrade_hooks.' \
+              'from_any_to_6_1_fix_version_in_supervisor'
+
+    _supervisor_conf = textwrap.dedent('''\
+        [program:docker-astute]
+        command=dockerctl start astute --attach
+        numprocs=1
+        numprocs_start=0
+        priority=30
+        autostart=true
+        autorestart=true
+    ''')
+
+    _supervisor_conf_patched = textwrap.dedent('''\
+        [program:docker-astute]
+        command=docker start -a fuel-core-6.0.1-astute
+        numprocs=1
+        numprocs_start=0
+        priority=30
+        autostart=true
+        autorestart=true
+    ''')
+
+    HookClass = SetFixedVersionInSupervisor
+
+    def test_is_required_returns_true(self):
+        hook = self.get_hook({'from_version': '6.0'})
+        self.assertTrue(hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        hook = self.get_hook({'from_version': '6.1'})
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch('{0}.utils.safe_exec_cmd'.format(_module))
+    @mock.patch('{0}.os.path.exists'.format(_module),
+                side_effect=itertools.chain([True], itertools.repeat(False)))
+    def test_run_patches(self, _, m_exec):
+
+        f_read = FakeFile(self._supervisor_conf)
+        f_write = FakeFile()
+
+        with mock.patch('{0}.open'.format(self._module)) as m_open:
+            hook = self.get_hook({'from_version': '6.0.1'})
+
+            m_open.side_effect = [f_read, f_write]
+            hook.run()
+
+            m_open.assert_has_calls([
+                mock.call('/etc/supervisord.d/6.0.1/astute.conf',
+                          'rt', encoding='utf-8'),
+                mock.call('/etc/supervisord.d/6.0.1/astute.conf',
+                          'wt', encoding='utf-8')])
+
+        self.assertEquals(f_write.getvalue(), self._supervisor_conf_patched)
+        m_exec.assert_called_once_with('supervisorctl update')
+
+    @mock.patch('{0}.utils.safe_exec_cmd'.format(_module))
+    @mock.patch('{0}.os.path.exists'.format(_module),
+                return_value=False)
+    def test_run_do_not_patch(self, _, m_exec):
+
+        with mock.patch('{0}.open'.format(self._module)) as m_open:
+            hook = self.get_hook({'from_version': '6.0.1'})
+            hook.run()
+
+            self.assertEqual(m_open.call_count, 0)
+
+        m_exec.assert_called_once_with('supervisorctl update')

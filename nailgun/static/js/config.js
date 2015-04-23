@@ -76,6 +76,11 @@ define(function() {
                 deps: ['jquery'],
                 exports: 'i18n'
             },
+            deepModel: {
+                // even though deepmodel uses AMD format, it uses _.mixin
+                // before define() call
+                deps: ['underscore']
+            },
             'jquery-ui': {
                 deps: ['jquery']
             },

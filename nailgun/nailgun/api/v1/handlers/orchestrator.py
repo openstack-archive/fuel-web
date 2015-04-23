@@ -23,6 +23,7 @@ from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.graph import GraphVisualizationValidator
+from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
@@ -255,6 +256,7 @@ class ProvisionSelectedNodes(SelectedNodesBase):
 
 class BaseDeploySelectedNodes(SelectedNodesBase):
 
+    validator = DeploySelectedNodesValidator
     task_manager = DeploymentTaskManager
 
     def get_default_nodes(self, cluster):
@@ -264,7 +266,14 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
         nodes_to_deploy = super(
             BaseDeploySelectedNodes, self).get_nodes(cluster)
         if cluster.is_ha_mode:
-            return TaskHelper.nodes_to_deploy_ha(cluster, nodes_to_deploy)
+            nodes_to_deploy = TaskHelper.nodes_to_deploy_ha(
+                cluster,
+                nodes_to_deploy
+            )
+
+        self.checked_data(self.validator.validate_nodes_to_deploy,
+                          nodes=nodes_to_deploy, cluster_id=cluster.id)
+
         return nodes_to_deploy
 
 

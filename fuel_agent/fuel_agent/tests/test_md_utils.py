@@ -30,6 +30,45 @@ else:
 
 class TestMdUtils(test_base.BaseTestCase):
 
+    def test_mddetail_parse_raise_unexpected_output(self):
+        self.assertRaises(errors.MDDetailsUnexpectedOutput,
+                          mu.mddetail_parse, 'unexpected_output')
+
+    @mock.patch('fuel_agent.utils.md_utils.utils.execute')
+    def test_mddisplay_nostate_detail(self, mock_exec):
+        mock_exec.return_value = (
+            """/dev/md127:
+        Version : imsm
+     Raid Level : container
+  Total Devices : 2
+
+Working Devices : 2
+
+
+           UUID : 46a4fc60:21554de1:1edfad0f:c137ddac
+  Member Arrays :
+
+    Number   Major   Minor   RaidDevice
+
+       0       8        0        -        /dev/sda
+       1       8       16        -        /dev/sdb""",
+            ''
+        )
+
+        expected = [{
+            'Raid Level': 'container',
+            'UUID': '46a4fc60:21554de1:1edfad0f:c137ddac',
+            'Version': 'imsm',
+            'devices': ['/dev/sda', '/dev/sdb'],
+            'name': '/dev/md127',
+        }]
+
+        mds = mu.mddisplay(['/dev/md127'])
+        mock_exec.assert_called_once_with(
+            'mdadm', '--detail', '/dev/md127', check_exit_code=[0])
+
+        self.assertItemsEqual(expected, mds)
+
     @mock.patch.object(utils, 'execute')
     def test_mddisplay(self, mock_exec):
         # should read file /proc/mdstat

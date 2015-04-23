@@ -388,6 +388,7 @@ class Manager(object):
 
         grub_version = gu.guess_grub_version(chroot=chroot)
         boot_device = self.driver.partition_scheme.boot_device(grub_version)
+        kernel = self.driver.kernel_scheme.kernel
         install_devices = [d.name for d in self.driver.partition_scheme.parteds
                            if d.install_bootloader]
 
@@ -395,7 +396,8 @@ class Manager(object):
         kernel_params += ' root=UUID=%s ' % mount2uuid['/']
 
         if grub_version == 1:
-            gu.grub1_cfg(kernel_params=kernel_params, chroot=chroot)
+            gu.grub1_cfg(kernel.kernel_name, kernel.initrd_name,
+                         kernel_params=kernel_params, chroot=chroot)
             gu.grub1_install(install_devices, boot_device, chroot=chroot)
         else:
             gu.grub2_cfg(kernel_params=kernel_params, chroot=chroot)

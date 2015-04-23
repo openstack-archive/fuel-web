@@ -977,6 +977,16 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .label-wrapper {
     margin-bottom: 5px;
   }
+  .filter-group {
+    input[name=filter] {
+      padding-right: 22px;
+    }
+    .btn-clear-filter {
+      position: absolute;
+      bottom: 21px;
+      right: 24px;
+    }
+  }
 }
 
 // NODE LIST
@@ -1436,24 +1446,34 @@ button, .btn:not(.btn-link) {.font-semibold;}
 }
 
 .role-panel {
-  .parameter-name {
-    width: 100%;
-    margin-bottom: 2px;
-    .label-wrapper {
+  .checkbox-group {
+    label {
+      width: 100%;
+      margin-bottom: 2px;
       padding-top: 2px;
       color: @base-text-color;
+      cursor: pointer;
+      .custom-tumbler {
+        top: -1px;
+      }
       .glyphicon {
+        .text-orange;
         position: relative;
         top: -5px;
         left: 5px;
       }
     }
-  }
-  .parameter-description {
-    color: @gray;
-    font-size: @base-font-size - 2;
-    font-style: italic;
-    margin-left: 27px;
+    &.disabled {
+      label {
+        cursor: default;
+      }
+    }
+    .help-block {
+      color: @gray;
+      font-size: @base-font-size - 2;
+      margin-left: 28px;
+      margin-top: 0;
+    }
   }
 }
 
@@ -1685,7 +1705,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
       margin-left: 28px;
     }
   }
-  .glyphicon {
+  .tooltip-icon {
+    .text-orange;
     margin-left: 5px;
     font-size: @base-font-size + 2px;
   }

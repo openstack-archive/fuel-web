@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import hardware_utils as hu
@@ -22,7 +24,9 @@ LOG = logging.getLogger(__name__)
 
 def mddetail_parse(output):
     md = {}
-    h, v = output.split('Number   Major   Minor   RaidDevice State')
+    # NOTE(agordeev): Somethimes 'State' column is missing
+    h, _, v = re.split("\s+Number\s+Major\s+Minor\s+RaidDevice\s+(State\s+)?",
+                       output)
     for line in h.split('\n'):
         line = line.strip()
         if not line:
@@ -60,6 +64,7 @@ def mddisplay(names=None):
         try:
             output = utils.execute('mdadm', '--detail', mdname,
                                    check_exit_code=[0])[0]
+            LOG.debug('mdadm --detail %s output:\n%s', mdname, output)
             md.update(mddetail_parse(output))
         except errors.ProcessExecutionError as exc:
             LOG.debug(exc)

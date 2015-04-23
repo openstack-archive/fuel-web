@@ -91,6 +91,10 @@ class MDRemovingError(BaseError):
     pass
 
 
+class MDDetailsUnexpectedOutput(BaseError):
+    pass
+
+
 class WrongConfigDriveDataError(BaseError):
     pass
 

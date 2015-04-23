@@ -30,6 +30,63 @@ else:
 
 class TestMdUtils(test_base.BaseTestCase):
 
+    def test_mddetail_parse_raise_unexpected_output(self):
+        self.assertRaises(errors.MDDetailsUnexpectedOutput,
+                          mu.mddetail_parse, 'unexpected_output')
+
+    @mock.patch.object(utils, 'execute')
+    def test_mddisplay_nostate_detail(self, mock_exec):
+        # should read file /proc/mdstat
+        # should get detailed description for all md devices
+        # should return list of dicts representing md devices
+
+        mock_open_data = """Personalities : [raid1]
+md0 : active raid1 loop5[1] loop4[0]
+      102272 blocks super 1.2 [2/2] [UU]
+
+unused devices: <none>
+
+
+        """
+        mock_open = mock.mock_open(read_data=mock_open_data)
+        patcher = mock.patch(OPEN_FUNCTION_NAME, new=mock_open)
+        patcher.start()
+
+        mock_exec.return_value = (
+            """/dev/md127:
+        Version : imsm
+     Raid Level : container
+  Total Devices : 2
+
+Working Devices : 2
+
+
+           UUID : 46a4fc60:21554de1:1edfad0f:c137ddac
+  Member Arrays :
+
+    Number   Major   Minor   RaidDevice
+
+       0       8        0        -        /dev/sda
+       1       8       16        -        /dev/sdb""",
+            ''
+        )
+
+        expected = [{
+            'Raid Level': 'container',
+            'UUID': '46a4fc60:21554de1:1edfad0f:c137ddac',
+            'Version': 'imsm',
+            'devices': ['/dev/sda', '/dev/sdb'],
+            'name': '/dev/md0',
+        }]
+
+        mds = mu.mddisplay()
+        mock_exec.assert_called_once_with(
+            'mdadm', '--detail', '/dev/md0', check_exit_code=[0])
+
+        key = lambda x: x['name']
+        self.assertEqual(sorted(expected, key=key), sorted(mds, key=key))
+        patcher.stop()
+
     @mock.patch.object(utils, 'execute')
     def test_mddisplay(self, mock_exec):
         # should read file /proc/mdstat

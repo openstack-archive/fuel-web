@@ -240,6 +240,12 @@ class interfaces(urwid.WidgetWrap):
                                              "subnet as IP address")
             except (BadIPException, Exception) as e:
                 errors.append(e)
+            self.parent.footer.set_text("Scanning for duplicate IP address..")
+            if responses["ipaddr"] > 0:
+                if network.duplicateIPExists(responses["ipaddr"],
+                                             self.activeiface):
+                    errors.append("Duplicate host found with IP {0}.".format(
+                        responses["ipaddr"]))
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
             self.log.error("Errors: %s %s" % (len(errors), errors))

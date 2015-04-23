@@ -212,3 +212,15 @@ def makedirs_if_not_exists(path, mode=0o755):
     """
     if not os.path.isdir(path):
         os.makedirs(path, mode=mode)
+
+
+def guess_filename(path, regexp, reverse=True):
+    """Tries to find a file by regexp in a given path
+
+    :param path: Directory where to look for a file
+    :param regexp: (String) Regular expression (must have python syntax)
+    :param reverse: (Bool) If True, sort files in backward direction.
+    """
+    for filename in sorted(os.listdir(path), reverse=reverse):
+        if re.search(regexp, filename):
+            return filename

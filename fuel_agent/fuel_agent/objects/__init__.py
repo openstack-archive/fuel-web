@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from fuel_agent.objects.bootloader import Grub
 from fuel_agent.objects.configdrive import ConfigDriveCommon
 from fuel_agent.objects.configdrive import ConfigDriveMcollective
 from fuel_agent.objects.configdrive import ConfigDrivePuppet
@@ -34,7 +35,7 @@ from fuel_agent.objects.repo import Repo
 __all__ = [
     'Partition', 'Pv', 'Vg', 'Lv', 'Md', 'Fs', 'PartitionScheme',
     'ConfigDriveCommon', 'ConfigDrivePuppet', 'ConfigDriveMcollective',
-    'ConfigDriveScheme', 'Image', 'ImageScheme',
+    'ConfigDriveScheme', 'Image', 'ImageScheme', 'Grub',
     'OperatingSystem', 'Ubuntu',
     'Repo', 'DEBRepo',
     'Loop',

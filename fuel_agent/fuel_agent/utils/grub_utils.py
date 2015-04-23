@@ -83,21 +83,29 @@ def guess_grub1_datadir(chroot='', arch='x86_64'):
             return '/usr/share/grub/' + d
 
 
-def guess_kernel(chroot=''):
+def guess_kernel(chroot='', kernel_regex=None):
     for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
-        # We assume kernel name is always starts with vmlinuz.
-        # We use the newest one.
-        if filename.startswith('vmlinuz'):
-            return filename
+        if kernel_regex:
+            if filename.startswith(kernel_regex):
+                return filename
+        else:
+            # We assume kernel name is always starts with vmlinuz.
+            # We use the newest one.
+            if filename.startswith('vmlinuz'):
+                return filename
     raise errors.GrubUtilsError('Error while trying to find kernel: not found')
 
 
-def guess_initrd(chroot=''):
+def guess_initrd(chroot='', initrd_regex=None):
     for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
-        # We assume initrd starts either with initramfs or initrd.
-        if filename.startswith('initramfs') or \
-                filename.startswith('initrd'):
-            return filename
+        if initrd_regex:
+            if filename.startswith(initrd_regex):
+                return filename
+        else:
+            # We assume initrd starts either with initramfs or initrd.
+            if filename.startswith('initramfs') or \
+                    filename.startswith('initrd'):
+                return filename
     raise errors.GrubUtilsError('Error while trying to find initrd: not found')
 
 

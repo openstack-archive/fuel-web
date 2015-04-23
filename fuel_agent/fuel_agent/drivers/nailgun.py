@@ -74,6 +74,7 @@ class Nailgun(BaseDataDriver):
         self._boot_done = False
 
         self.partition_scheme = self.parse_partition_scheme()
+        self.kernel_scheme = self.parse_kernel_scheme()
         self.configdrive_scheme = self.parse_configdrive_scheme()
         # parsing image scheme needs partition scheme has been parsed
         self.image_scheme = self.parse_image_scheme()
@@ -377,6 +378,13 @@ class Nailgun(BaseDataDriver):
         LOG.debug('Setting configdrive profile %s' % data['profile'])
         configdrive_scheme.set_profile(profile=data['profile'])
         return configdrive_scheme
+
+    def parse_kernel_scheme(self):
+        LOG.debug('--- Checking kernel version ---')
+        data = self.data
+        kernel = objects.KernelScheme()
+        kernel.set_kernel(data['ks_meta'].get('kernel_lt'))
+        return kernel
 
     def parse_image_scheme(self):
         LOG.debug('--- Preparing image scheme ---')

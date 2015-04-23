@@ -20,8 +20,10 @@ from fuel_agent.utils import utils
 # Please take a look at the linux kernel documentation
 # https://github.com/torvalds/linux/blob/master/Documentation/devices.txt.
 # KVM virtio volumes have major number 252 in CentOS, but 253 in Ubuntu.
+# NOTE(agordeev): nvme devices also have a major number of 259
+# (only in 2.6 kernels)
 VALID_MAJORS = (3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108, 109,
-                110, 111, 202, 252, 253)
+                110, 111, 202, 252, 253, 259)
 
 # We are only interested in getting these
 # properties from udevadm report
@@ -239,6 +241,23 @@ def extrareport(dev):
     return spec
 
 
+def get_block_devices_from_udev_db():
+    devs = []
+    output = utils.execute('udevadm', 'info', '--export-db')[0]
+    for device in output.split('\n\n'):
+        # NOTE(agordeev): add only disks or their partitions
+        if 'SUBSYSTEM=block' in device and ('DEVTYPE=disk' in device or
+                                            'DEVTYPE=partition' in device):
+            for line in device.split('\n'):
+                if line.startswith('E: DEVNAME='):
+                    d = line.split()[1].split('=')[1]
+                    if not any(os.path.basename(d).startswith(n)
+                               for n in ('nbd', 'ram', 'loop')):
+                        devs.append(line.split()[1].split('=')[1])
+                    break
+    return devs
+
+
 def list_block_devices(disks=True):
     """Gets list of block devices, tries to guess which of them are disks
     and returns list of dicts representing those disks.
@@ -246,16 +265,8 @@ def list_block_devices(disks=True):
     :returns: A list of dict representing disks available on a node.
     """
     bdevs = []
-
-    report = utils.execute('blockdev', '--report', check_exit_code=[0])[0]
-    lines = [line.split() for line in report.splitlines() if line]
-
-    startsec_idx = lines[0].index('StartSec')
-    device_idx = lines[0].index('Device')
-    size_idx = lines[0].index('Size')
-
-    for line in lines[1:]:
-        device = line[device_idx]
+    devs = get_block_devices_from_udev_db()
+    for device in devs:
         uspec = udevreport(device)
         bspec = blockdevreport(device)
         espec = extrareport(device)
@@ -266,8 +277,6 @@ def list_block_devices(disks=True):
 
         bdev = {
             'device': device,
-            'startsec': line[startsec_idx],
-            'size': int(line[size_idx]),
             'uspec': uspec,
             'bspec': bspec,
             'espec': espec

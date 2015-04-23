@@ -83,21 +83,37 @@ def guess_grub1_datadir(chroot='', arch='x86_64'):
             return '/usr/share/grub/' + d
 
 
-def guess_kernel(chroot=''):
+def guess_kernel(kernel_regex={}, chroot=''):
     for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
-        # We assume kernel name is always starts with vmlinuz.
-        # We use the newest one.
-        if filename.startswith('vmlinuz'):
-            return filename
+        kernel_name = kernel_regex.get('kernel_name')
+        kernel_version = kernel_regex.get('kernel_version')
+        if kernel_name is not None and kernel_version is not None:
+           if filename.startswith(initrd_name):
+               m = re.search(kernel_version, filename)
+               if m is not None:
+                   return filename
+        else:
+            # We assume kernel name is always starts with vmlinuz.
+            # We use the newest one.
+            if filename.startswith('vmlinuz'):
+               return filename
     raise errors.GrubUtilsError('Error while trying to find kernel: not found')
 
 
-def guess_initrd(chroot=''):
+def guess_initrd(initrd_regex={}, chroot=''):
     for filename in sorted(os.listdir(chroot + '/boot'), reverse=True):
-        # We assume initrd starts either with initramfs or initrd.
-        if filename.startswith('initramfs') or \
-                filename.startswith('initrd'):
-            return filename
+        initrd_name = initrd_regex.get('initrd_name')
+        kernel_version = initrd_regex.get('kernel_version')
+        if initrd_name is not None and kernel_version is not None:
+           if filename.startswith(initrd_name):
+               m = re.search(kernel_version, filename)
+               if m is not None:
+                   return filename
+        else:
+            # We assume initrd starts either with initramfs or initrd.
+            if filename.startswith('initramfs') or \
+                    filename.startswith('initrd'):
+               return filename
     raise errors.GrubUtilsError('Error while trying to find initrd: not found')
 
 
@@ -178,22 +194,6 @@ def grub1_cfg(kernel=None, initrd=None,
         kernel = guess_kernel(chroot=chroot)
     if not initrd:
         initrd = guess_initrd(chroot=chroot)
-
-    config = """
-default=0
-timeout=5
-title Default ({kernel})
-    kernel /{kernel} {kernel_params}
-    initrd /{initrd}
-    """.format(kernel=kernel, initrd=initrd,
-               kernel_params=kernel_params)
-    with open(chroot + '/boot/grub/grub.conf', 'wb') as f:
-        f.write(config)
-
-
-def grub2_install(install_devices, chroot=''):
-    grub_install = guess_grub_install(chroot=chroot)
-    for install_device in install_devices:
         cmd = [grub_install, install_device]
         if chroot:
             cmd[:0] = ['chroot', chroot]

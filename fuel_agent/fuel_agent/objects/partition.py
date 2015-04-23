@@ -191,7 +191,6 @@ class PartitionScheme(object):
         self.vgs = []
         self.lvs = []
         self.fss = []
-        self.kernel_params = ''
 
     def add_parted(self, **kwargs):
         parted = Parted(**kwargs)
@@ -355,6 +354,3 @@ class PartitionScheme(object):
             for prt in parted.partitions:
                 if prt.configdrive:
                     return prt.name
-
-    def append_kernel_params(self, kernel_params):
-        self.kernel_params += ' ' + kernel_params

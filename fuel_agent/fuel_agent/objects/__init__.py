@@ -19,6 +19,7 @@ from fuel_agent.objects.configdrive import ConfigDriveScheme
 from fuel_agent.objects.device import Loop
 from fuel_agent.objects.image import Image
 from fuel_agent.objects.image import ImageScheme
+from fuel_agent.objects.bootloader import Grub
 from fuel_agent.objects.operating_system import OperatingSystem
 from fuel_agent.objects.operating_system import Ubuntu
 from fuel_agent.objects.partition import Fs
@@ -34,7 +35,7 @@ from fuel_agent.objects.repo import Repo
 __all__ = [
     'Partition', 'Pv', 'Vg', 'Lv', 'Md', 'Fs', 'PartitionScheme',
     'ConfigDriveCommon', 'ConfigDrivePuppet', 'ConfigDriveMcollective',
-    'ConfigDriveScheme', 'Image', 'ImageScheme',
+    'ConfigDriveScheme', 'Image', 'ImageScheme', 'Grub',
     'OperatingSystem', 'Ubuntu',
     'Repo', 'DEBRepo',
     'Loop',

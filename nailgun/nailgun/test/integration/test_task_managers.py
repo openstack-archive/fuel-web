@@ -697,3 +697,42 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.assertRaises(
             errors.InvalidData, manager_.execute, cluster_db.nodes)
+
+    @fake_tasks()
+    def test_apply_changes_handle_controller_removing(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+            ]
+        )
+        cluster = self.env.clusters[0]
+        controllers = filter(lambda x: 'controller' in x.roles, cluster.nodes)
+        m = manager.ApplyChangesTaskManager(cluster.id)
+
+        n_delete = []
+        n_deploy = []
+        m._handle_controller_removing(n_delete, n_deploy)
+        self.assertItemsEqual([], n_delete)
+        self.assertItemsEqual([], n_deploy)
+
+        n_delete = controllers
+        n_deploy = []
+        m._handle_controller_removing(n_delete, n_deploy)
+        self.assertItemsEqual(controllers, n_delete)
+        self.assertItemsEqual([], n_deploy)
+
+        n_delete = controllers[:1]
+        n_deploy = []
+        m._handle_controller_removing(n_delete, n_deploy)
+        self.assertItemsEqual(controllers[:1], n_delete)
+        self.assertItemsEqual(controllers[1:], n_deploy)
+
+        n_delete = controllers[:1]
+        n_deploy = controllers[2:]
+        m._handle_controller_removing(n_delete, n_deploy)
+        self.assertItemsEqual(controllers[:1], n_delete)
+        self.assertItemsEqual(controllers[1:], n_deploy)

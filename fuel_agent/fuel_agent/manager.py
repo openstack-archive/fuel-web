@@ -386,19 +386,27 @@ class Manager(object):
                 'blkid', '-o', 'value', '-s', 'UUID', fs.device,
                 check_exit_code=[0])[0].strip()
 
-        grub_version = gu.guess_grub_version(chroot=chroot)
-        boot_device = self.driver.partition_scheme.boot_device(grub_version)
+        grub = self.driver.grub
+
+        grub.version = gu.guess_grub_version(chroot=chroot)
+        boot_device = self.driver.partition_scheme.boot_device(grub.version)
         install_devices = [d.name for d in self.driver.partition_scheme.parteds
                            if d.install_bootloader]
 
-        kernel_params = self.driver.partition_scheme.kernel_params
-        kernel_params += ' root=UUID=%s ' % mount2uuid['/']
+        grub.append_kernel_params(' root=UUID=%s ' % mount2uuid['/'])
 
-        if grub_version == 1:
-            gu.grub1_cfg(kernel_params=kernel_params, chroot=chroot)
+        kernel = grub.kernel_name or \
+            gu.guess_kernel(chroot=chroot, regexp=grub.kernel_regexp)
+        initrd = grub.initrd_name or \
+            gu.guess_initrd(chroot=chroot, regexp=grub.initrd_regexp)
+
+        if grub.version == 1:
+            gu.grub1_cfg(kernel=kernel, initrd=initrd,
+                         kernel_params=grub.kernel_params, chroot=chroot)
             gu.grub1_install(install_devices, boot_device, chroot=chroot)
         else:
-            gu.grub2_cfg(kernel_params=kernel_params, chroot=chroot)
+            gu.grub2_cfg(kernel=kernel, initrd=initrd,
+                         kernel_params=grub.kernel_params, chroot=chroot)
             gu.grub2_install(install_devices, chroot=chroot)
 
         # FIXME(agordeev) There's no convenient way to perfrom NIC remapping in

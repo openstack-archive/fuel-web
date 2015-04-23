@@ -236,3 +236,15 @@ def grouper(iterable, n, fillvalue=None):
     """
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
+
+
+def guess_filename(path, regexp, reverse=True):
+    """Tries to find a file by regexp in a given path
+
+    :param path: Directory where to look for a file
+    :param regexp: (String) Regular expression (must have python syntax)
+    :param reverse: (Bool) If True, sort files in backward direction.
+    """
+    for filename in sorted(os.listdir(path), reverse=reverse):
+        if re.search(regexp, filename):
+            return filename

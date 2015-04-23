@@ -124,6 +124,14 @@ def prepare():
             'ip_addr': '192.168.0.2',
         }])
 
+    db.execute(
+        meta.tables['network_groups'].insert(),
+        [{
+            'name': 'public',
+            'release': releaseid,
+            'meta': jsonutils.dumps({'assign_vip': True})
+        }])
+
     db.commit()
 
 
@@ -154,6 +162,16 @@ class TestVipTypesMigration(base.BaseAlembicMigrationTest):
 
         nova_network = networks_meta['nova_network']['networks'][0]
         self.assertIsNone(nova_network.get('vips'))
+
+    def test_default_vips_added_to_net_groups_meta(self):
+        network_groups_table = self.meta.tables['network_groups']
+
+        meta = db.execute(
+            sa.select([network_groups_table.c.meta])
+        ).first()[0]
+
+        vips = jsonutils.loads(meta).get('vips')
+        self.assertEqual(vips, [consts.NETWORK_VIP_TYPES.haproxy])
 
 
 class TestRepoMetadataToRepoSetup(base.BaseAlembicMigrationTest):

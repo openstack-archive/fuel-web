@@ -205,20 +205,40 @@ class TestGrubUtils(test_base.BaseTestCase):
         self.assertEqual(gu.guess_grub_install('/target'),
                          '/usr/sbin/grub2-install')
 
-    @mock.patch.object(os, 'listdir')
-    def test_guess_kernel(self, mock_listdir):
-        mock_listdir.return_value = ['1', '2', 'vmlinuz-version', '3']
+    @mock.patch('fuel_agent.utils.grub_utils.utils.guess_filename')
+    def test_guess_kernel(self, mock_guess):
+        mock_guess.return_value = 'vmlinuz-version'
         self.assertEqual(gu.guess_kernel('/target'), 'vmlinuz-version')
-        mock_listdir.return_value = ['1', '2', '3']
+        mock_guess.assert_called_once_with(
+            path='/target/boot', regexp=r'^vmlinuz.*')
+        mock_guess.reset_mock()
+
+        mock_guess.return_value = 'vmlinuz-version'
+        self.assertEqual(gu.guess_kernel('/target', r'^vmlinuz-version.*'),
+                         'vmlinuz-version')
+        mock_guess.assert_called_once_with(
+            path='/target/boot', regexp=r'^vmlinuz-version.*')
+        mock_guess.reset_mock()
+
+        mock_guess.return_value = None
         self.assertRaises(errors.GrubUtilsError, gu.guess_kernel, '/target')
 
-    @mock.patch.object(os, 'listdir')
-    def test_guess_initrd(self, mock_listdir):
-        mock_listdir.return_value = ['1', '2', 'initramfs-version', '3']
-        self.assertEqual(gu.guess_initrd('/target'), 'initramfs-version')
-        mock_listdir.return_value = ['1', '2', 'initrd-version', '3']
+    @mock.patch('fuel_agent.utils.grub_utils.utils.guess_filename')
+    def test_guess_initrd(self, mock_guess):
+        mock_guess.return_value = 'initrd-version'
         self.assertEqual(gu.guess_initrd('/target'), 'initrd-version')
-        mock_listdir.return_value = ['1', '2', '3']
+        mock_guess.assert_called_once_with(
+            path='/target/boot', regexp=r'^(initrd|initramfs).*')
+        mock_guess.reset_mock()
+
+        mock_guess.return_value = 'initramfs-version'
+        self.assertEqual(gu.guess_initrd('/target', r'^initramfs-version.*'),
+                         'initramfs-version')
+        mock_guess.assert_called_once_with(
+            path='/target/boot', regexp=r'^initramfs-version.*')
+        mock_guess.reset_mock()
+
+        mock_guess.return_value = None
         self.assertRaises(errors.GrubUtilsError, gu.guess_initrd, '/target')
 
     @mock.patch.object(gu, 'grub1_stage1')

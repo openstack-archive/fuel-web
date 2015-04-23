@@ -119,6 +119,8 @@ class Manager(object):
                                        os.path.basename(CONF.udev_empty_rule))
         with open(empty_rule_path, 'w') as f:
             f.write('#\n')
+            f.flush()
+            os.fsync(f.fileno())
         LOG.debug("Enabling udev's rules blacklisting")
         for rule in os.listdir(CONF.udev_rules_lib_dir):
             dst = os.path.join(CONF.udev_rules_dir, rule)

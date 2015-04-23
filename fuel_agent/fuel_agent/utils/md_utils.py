@@ -22,7 +22,17 @@ LOG = logging.getLogger(__name__)
 
 def mddetail_parse(output):
     md = {}
-    h, v = output.split('Number   Major   Minor   RaidDevice State')
+    normal_header = 'Number   Major   Minor   RaidDevice State'
+    nostate_header = 'Number   Major   Minor   RaidDevice'
+    actual_header = None
+    if normal_header in output:
+        actual_header = normal_header
+    elif nostate_header in output:
+        actual_header = nostate_header
+    else:
+        raise errors.MDDetailsUnexpectedOutput(
+            'Unexpected mdadm --detail output:\n%s' % output)
+    h, v = output.split(actual_header)
     for line in h.split('\n'):
         line = line.strip()
         if not line:
@@ -60,6 +70,7 @@ def mddisplay(names=None):
         try:
             output = utils.execute('mdadm', '--detail', mdname,
                                    check_exit_code=[0])[0]
+            LOG.debug('mdadm --detail %s output:\n%s', mdname, output)
             md.update(mddetail_parse(output))
         except errors.ProcessExecutionError as exc:
             LOG.debug(exc)

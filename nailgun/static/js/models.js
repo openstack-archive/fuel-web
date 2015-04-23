@@ -521,7 +521,7 @@ define([
                     }
 
                     if (!(setting.regex || {}).source) return;
-                    if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
+                    if (!setting.value.toString().match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
                 }, this);
             }, this);
             return _.isEmpty(errors) ? null : errors;

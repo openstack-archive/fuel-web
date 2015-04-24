@@ -843,8 +843,8 @@ define([
             } else {
                 var idRangeErrors = ['', ''];
                 var segmentation = attrs.networking_parameters.get('segmentation_type');
-                var idRangeAttr = segmentation == 'gre' ? 'gre_id_range' : 'vlan_range';
-                var maxId = segmentation == 'gre' ? 65535 : 4094;
+                var idRangeAttr = segmentation == 'vlan' ? 'vlan_range' : 'gre_id_range';
+                var maxId = segmentation == 'vlan' ? 4094 : 65535;
                 var idRange = attrs.networking_parameters.get(idRangeAttr);
                 var idStart = Number(idRange[0]), idEnd = Number(idRange[1]);
                 if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {

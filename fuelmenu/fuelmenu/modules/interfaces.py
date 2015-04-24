@@ -259,6 +259,13 @@ class interfaces(urwid.WidgetWrap):
         self.parent.footer.set_text("Applying changes... (May take up to 20s)")
         puppetclasses = []
 
+        # Call l23network class as requisite for l23network::ifconfig
+        # use_ovs prevents bonding kernel module from being loaded
+        l23network = {'type': "class",
+                      'class': "l23network",
+                      'params': {'use_ovs': 'True'}}
+        puppetclasses.append(l23network)
+
         #If there is a gateway configured in /etc/sysconfig/network, unset it
         expr = '^GATEWAY=.*'
         replace.replaceInFile("/etc/sysconfig/network", expr, "")

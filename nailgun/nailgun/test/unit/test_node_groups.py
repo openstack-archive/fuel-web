@@ -116,3 +116,19 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
         self.assertEquals(resp.status_code, 403)
+
+    def test_nodegroup_tun_segmentation_type(self):
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider='neutron',
+            net_segment_type='tun'
+        )
+        resp = self.app.post(
+            reverse('NodeGroupCollectionHandler'),
+            json.dumps({'cluster_id': cluster['id'], 'name': 'test_ng'}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEquals(resp.status_code, 201)
+        self.assertEquals(resp.json_body['cluster'], cluster['id'])

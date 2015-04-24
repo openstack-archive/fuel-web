@@ -15,6 +15,8 @@
 #    under the License.
 
 import mock
+from netaddr import IPAddress
+from netaddr import IPNetwork
 import six
 import yaml
 
@@ -29,6 +31,8 @@ from nailgun.orchestrator import stages
 from nailgun.test import base
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
+from nailgun.test.integration.test_orchestrator_serializer import \
+    TestNeutronOrchestratorSerializer61
 
 
 class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
@@ -722,3 +726,245 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
             'type': 'puppet',
             'uids': [self.cluster.nodes[0].uid],
         }])
+
+
+class TestNeutronOrchestratorSerializer70(TestNeutronOrchestratorSerializer61):
+
+    def create_env(self, segment_type, nodes_count=3, ctrl_count=1,
+                   nic_count=2):
+        cluster = self.env.create(
+            release_kwargs={'version': '2015.1-7.0'},
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'net_provider': 'neutron',
+                'net_segment_type': segment_type}
+        )
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=ctrl_count,
+            if_count=nic_count,
+            roles=['controller', 'cinder'],
+            pending_addition=True,
+            cluster_id=cluster['id'])
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=nodes_count - ctrl_count,
+            if_count=nic_count,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=cluster['id'])
+
+        cluster_db = self.db.query(models.Cluster).get(cluster['id'])
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
+                                                      segment_type)
+        objects.Cluster.set_primary_roles(cluster_db, cluster_db.nodes)
+        self.db.flush()
+        return cluster_db
+
+    def test_tun_schema(self):
+        cluster = self.create_env(segment_type='tun')
+        self.add_nics_properties(cluster)
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            node_db = objects.Node.get_by_uid(node['uid'])
+            is_public = objects.Node.should_have_public(node_db)
+            scheme = node['network_scheme']
+            self.assertEqual(
+                set(scheme.keys()),
+                set(['version', 'provider', 'interfaces',
+                     'endpoints', 'roles', 'transformations'])
+            )
+            self.assertEqual(scheme['version'], '1.1')
+            self.assertEqual(scheme['provider'], 'lnx')
+            self.assertEqual(
+                scheme['interfaces'],
+                {'eth0': {'mtu': 1500,
+                          'vendor_specific': {
+                              'disable_offloading': True}},
+                 'eth1': {}}
+            )
+            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-mesh'])
+            role_dict = {'storage': 'br-storage',
+                         'management': 'br-mgmt',
+                         'fw-admin': 'br-fw-admin',
+                         'neutron/mesh': 'br-mesh'}
+            if is_public:
+                br_set.update(['br-ex', 'br-floating'])
+                role_dict.update({'ex': 'br-ex',
+                                  'neutron/floating': 'br-floating'})
+            self.assertEqual(
+                set(scheme['endpoints'].keys()),
+                br_set
+            )
+            self.check_ep_format(scheme['endpoints'])
+            self.check_gateways(node_db, scheme, is_public)
+            self.assertEqual(
+                scheme['roles'],
+                role_dict
+            )
+            transformations = [
+                {'action': 'add-br',
+                 'name': 'br-fw-admin'},
+                {'action': 'add-br',
+                 'name': 'br-mgmt'},
+                {'action': 'add-br',
+                 'name': 'br-storage'},
+                {'action': 'add-br',
+                 'name': 'br-ex'},
+                {'action': 'add-br',
+                 'name': 'br-floating',
+                 'provider': 'ovs'},
+                {'action': 'add-patch',
+                 'mtu': 65000,
+                 'bridges': ['br-floating', 'br-ex'],
+                 'provider': 'ovs'},
+                {'action': 'add-br',
+                 'name': 'br-mesh'},
+                {'action': 'add-port',
+                 'bridge': 'br-fw-admin',
+                 'name': 'eth0'},
+                {'action': 'add-port',
+                 'bridge': 'br-storage',
+                 'name': 'eth0.102'},
+                {'action': 'add-port',
+                 'bridge': 'br-mgmt',
+                 'name': 'eth0.101'},
+                {'action': 'add-port',
+                 'bridge': 'br-mesh',
+                 'name': 'eth0.103'},
+                {'action': 'add-port',
+                 'bridge': 'br-ex',
+                 'name': 'eth1'},
+            ]
+            if not is_public:
+                # exclude all 'br-ex' and 'br-floating' objects
+                transformations = transformations[:3] + transformations[6:-1]
+            self.assertEqual(
+                scheme['transformations'],
+                transformations
+            )
+
+    def test_tun_with_bond(self):
+        cluster = self.create_env(segment_type='tun', ctrl_count=3,
+                                  nic_count=3)
+        for node in cluster.nodes:
+            self.move_network(node.id, 'storage', 'eth0', 'eth1')
+            self.env.make_bond_via_api(
+                'lnx_bond',
+                '',
+                ['eth1', 'eth2'],
+                node.id,
+                bond_properties={
+                    'mode': consts.BOND_MODES.l_802_3ad,
+                    'xmit_hash_policy': consts.BOND_XMIT_HASH_POLICY.layer2,
+                    'lacp_rate': consts.BOND_LACP_RATES.slow,
+                    'type__': consts.BOND_TYPES.linux
+                },
+                interface_properties={
+                    'mtu': 9000
+                })
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        for node in facts:
+            transformations = [
+                {'action': 'add-br',
+                 'name': 'br-fw-admin'},
+                {'action': 'add-br',
+                 'name': 'br-mgmt'},
+                {'action': 'add-br',
+                 'name': 'br-storage'},
+                {'action': 'add-br',
+                 'name': 'br-ex'},
+                {'action': 'add-br',
+                 'name': 'br-floating',
+                 'provider': 'ovs'},
+                {'action': 'add-patch',
+                 'mtu': 65000,
+                 'bridges': ['br-floating', 'br-ex'],
+                 'provider': 'ovs'},
+                {'action': 'add-br',
+                 'name': 'br-mesh'},
+                {'action': 'add-port',
+                 'bridge': 'br-fw-admin',
+                 'name': 'eth0'},
+                {'action': 'add-port',
+                 'bridge': 'br-mgmt',
+                 'name': 'eth0.101'},
+                {'action': 'add-port', 'bridge': 'br-mesh', 'name':
+                    'eth0.103'},
+                {'action': 'add-bond',
+                 'bridge': 'br-ex',
+                 'name': 'lnx_bond',
+                 'mtu': 9000,
+                 'interfaces': ['eth1', 'eth2'],
+                 'bond_properties': {'mode': '802.3ad',
+                                     'xmit_hash_policy': 'layer2',
+                                     'lacp_rate': 'slow'},
+                 'interface_properties': {'mtu': 9000}},
+                {'action': 'add-port',
+                 'bridge': 'br-storage',
+                 'name': 'lnx_bond.102'},
+            ]
+            self.assertEqual(
+                node['network_scheme']['transformations'],
+                transformations
+            )
+
+    def test_tun_with_multi_groups(self):
+        cluster = self.create_env(segment_type='tun', ctrl_count=3)
+
+        resp = self.env.create_node_group()
+        group_id = resp.json_body['id']
+
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=3,
+            if_count=2,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=cluster.id,
+            group_id=group_id)
+
+        nets = self.env.neutron_networks_get(cluster.id).json_body
+        nets_w_gw = {'management': '199.99.20.0/24',
+                     'storage': '199.98.20.0/24',
+                     'fuelweb_admin': '199.97.20.0/24',
+                     'private': '199.95.20.0/24',
+                     'public': '199.96.20.0/24'}
+        for net in nets['networks']:
+            if net['name'] in nets_w_gw.keys():
+                if net['group_id'] == group_id:
+                    net['cidr'] = nets_w_gw[net['name']]
+                    net['ip_ranges'] = [[
+                        str(IPAddress(IPNetwork(net['cidr']).first + 2)),
+                        str(IPAddress(IPNetwork(net['cidr']).first + 253)),
+                    ]]
+                net['gateway'] = str(
+                    IPAddress(IPNetwork(net['cidr']).first + 1))
+        resp = self.env.neutron_networks_put(cluster.id, nets)
+        self.assertEqual(resp.status_code, 200)
+
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes, 'tun')
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+
+        for node in facts:
+            node_db = objects.Node.get_by_uid(node['uid'])
+            is_public = objects.Node.should_have_public(node_db)
+            endpoints = node['network_scheme']['endpoints']
+            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-mesh'])
+            if is_public:
+                br_set.add('br-ex')
+                # floating network won't have routes
+                self.assertEqual(endpoints['br-floating'], {'IP': 'none'})
+                endpoints.pop('br-floating')
+            self.assertEqual(
+                set(endpoints.keys()),
+                br_set
+            )
+            for name, descr in six.iteritems(endpoints):
+                self.assertTrue(set(['IP', 'routes']) <= set(descr.keys()))
+                self.assertEqual(len(descr['routes']), 1)
+                for route in descr['routes']:
+                    self.assertEqual(set(['net', 'via']), set(route.keys()))

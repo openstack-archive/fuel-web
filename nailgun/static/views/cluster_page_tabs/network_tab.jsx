@@ -860,7 +860,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         render: function() {
             var networkParameters = this.props.networkConfiguration.get('networking_parameters'),
                 manager = networkParameters.get('net_manager'),
-                idRangePrefix = networkParameters.get('segmentation_type') == 'gre' ? 'gre_id' : 'vlan',
+                idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id',
                 ns = 'cluster_page.network_tab.networking_parameters.';
 
             return (

@@ -41,9 +41,14 @@
 @red:      #c94b4b;
 @pure-red: #ff0000;
 @green:    #54a854;
-@blue:     #688db4;
+@blue:     #4e85aa; //#688db4;
 @orange:   #bc6e12;
 @gray:     #8c8c8c;
+
+@alert-success-bg: #cae8c6;
+@alert-info-bg:    #c1d4e1;
+@alert-warning-bg: #f2e0b9;
+@alert-danger-bg:  #e8c6c6;
 
 @link-color: saturate(lighten(@base-dark-color, 20%), 30%);
 @link-color-hover: saturate(lighten(@base-dark-color, 10%), 15%);
@@ -1830,4 +1835,142 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .page-buttons {
   margin-top: 30px;
+}
+
+// ALERTS
+.alert {
+  border-radius: 3px;
+}
+
+.deploy-alert-success,
+.deploy-alert-info,
+.deploy-alert-warning,
+.deploy-alert-danger {
+  background: @base-dark-color - 20%;
+  border: none;
+  font-weight: 400;
+  font-size: @base-font-size - 1px;
+  .text-shadow;
+  .close {
+    opacity: 1;
+    text-shadow: 0 0;
+    &:hover {
+      opacity: .7;
+    } 
+  }
+  strong {
+    font-weight: 700;
+    font-size: @base-font-size + 2px;
+    line-height: 1px;
+  }
+  a {
+    color: @link-color + 40%;
+    font-size: @base-font-size - 1px;
+    &:hover {
+      color: @link-color + 20%;
+    }
+  }
+}
+
+.deploy-alert-success {
+  color: @green;
+  .close {
+    color: @green;
+  }
+  strong {
+    color: @green;
+  }
+}
+
+.deploy-alert-info {
+  color: @blue;
+  .close {
+    color: @blue;
+  }
+  strong {
+    color: @blue;
+  }
+}
+
+.deploy-alert-warning {
+  color: @orange;
+  .close {
+    color: @orange;
+  }
+  strong {
+    color: @orange;
+  }
+}
+.deploy-alert-danger {
+  color: @red;
+  .close {
+    color: @red;
+  }
+  strong {
+    color: @red;
+  }
+}
+
+.alert-success,
+.alert-info,
+.alert-warning,
+.alert-danger {
+  border: none;
+  font-weight: 400;
+  strong {
+    font-weight: 700;
+    font-size: @base-font-size + 4px;
+    line-height: 1px;
+  }  
+}
+
+.alert-success {
+  background-color: @alert-success-bg;
+  color: @green;
+  strong {
+  color: @green;
+  }
+}
+
+.alert-info {
+  background-color: @alert-info-bg;
+  color: @blue;
+  strong {
+    color: @blue;
+  }
+}
+
+.alert-warning {
+  background-color: @alert-warning-bg;
+  color: @orange;
+  strong {
+    color: @orange;
+  }
+}
+.alert-danger {
+  background-color: @alert-danger-bg;
+  color: @red;
+  strong {
+    font-size: @base-font-size + 4px;
+    color: @red;
+  }
+}
+
+.text-success {
+  color: @green;
+}
+.text-info {
+  color: @blue;
+}
+.text-warning {
+  color: @orange;
+}
+.text-danger {
+  color: @red;
+}
+
+.modal-title {
+  font-size: @base-font-size + 6px;
+  font-weight: 400;
+  color: @base-text-color;
 }

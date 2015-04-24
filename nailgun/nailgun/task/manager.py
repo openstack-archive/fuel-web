@@ -73,8 +73,15 @@ class TaskManager(object):
                     'progress': 100,
                     'message': err}
             objects.Task.update(task, data)
-
+            # NOTE(romcheg): Flushing the data is required to unlock
+            # tasks in order to temporary fix issues with
+            # the deadlock detection query in tests and let the tests pass.
+            # TODO(akislitsky): Get rid of this flush as soon as
+            # task locking issues are resolved.
+            db().flush()
             TaskHelper.update_action_log(task, al)
+
+            db().commit()
 
     def check_running_task(self, task_name):
         current_tasks = db().query(Task).filter_by(

@@ -722,7 +722,7 @@
                 },
                 "stop_deployment": {
                     "title": "Stop Deployment",
-                    "text": "Are you sure you want to stop this deployment? Any progress will be lost and nodes will be reset to their pre-deployment state.",
+                    "text": "Are you sure you want to stop this deployment? Resetting the environment may be required to successfully finish the deployment after stopping.",
                     "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state.",
                     "stop_deployment_error": {
                         "title": "Stop Deployment Error",
@@ -1750,7 +1750,6 @@
                 },
                 "stop_deployment": {
                     "title": "デプロイ停止",
-                    "text": "デプロイを停止してもよろしいですか？ノードのデプロイ進行状況が失われ、それらのノードは、デプロイ前の状態にリセットされます。",
                     "provisioning_warning": "デプロイを停止してもよろしいですか？まだプロビジョニングされていないノード上の任意の進行状況が失われ、それらのノードは、デプロイ前の状態にリセットされます。"
                 },
                 "reset_environment": {

@@ -376,7 +376,7 @@
             neutron_vlan_range: true
             configurable: false
           - name: "private"
-            seg_type: "gre"
+            seg_type: "tun"
             cidr: "192.168.2.0/24"
             vlan_start: 103
             use_gateway: false
@@ -1175,14 +1175,14 @@
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_segment_type": "vlan"
-            - data: "neutron-gre"
-              label: "dialog.create_cluster_wizard.network.neutr_gre"
-              description: "dialog.create_cluster_wizard.network.neutr_gre_description"
+            - data: "neutron-tun"
+              label: "dialog.create_cluster_wizard.network.neutr_tun"
+              description: "dialog.create_cluster_wizard.network.neutr_tun_description"
               restrictions:
                 - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
               bind:
                 - "cluster:net_provider": "neutron"
-                - "cluster:net_segment_type": "gre"
+                - "cluster:net_segment_type": "tun"
             - data: "nova-network"
               label: "dialog.create_cluster_wizard.network.nova_network"
               description: "dialog.create_cluster_wizard.network.nova_network_description"

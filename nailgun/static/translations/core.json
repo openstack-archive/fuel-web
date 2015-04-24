@@ -697,14 +697,14 @@
                         "description": "Choose the private (guest) network configuration. The choice you make here cannot be changed after you finish the wizard. More information see the ",
                         "description_link": "Mirantis OpenStack Planning Guide for Network Topology",
                         "release_alert": "Neutron is not supported in __NameAndRelease.release_name__",
-                        "hypervisor_alert": "Neutron with VLAN or GRE segmentation is not available with __Compute.vcenter__ as a selected compute option.",
+                        "hypervisor_alert": "Neutron with VLAN or TUN segmentation is not available with __Compute.vcenter__ as a selected compute option.",
                         "nove_network_vcenter_alert": "Legacy Networking (nova-network) requires __Compute.vcenter__ to be a selected compute option.",
                         "nova_network": "(DEPRECATED) Legacy Networking (nova-network)",
                         "nova_network_description": "This option is only available if you use VMware vCenter. Note that OpenStack is moving to deprecate nova-network in upcoming releases.",
-                        "neutr_gre": "Neutron with GRE segmentation",
-                        "neutr_gre_description": "The networking equipment must support GRE segmentation. This option supports up to 65535 networks.",
                         "neutr_vlan": "Neutron with VLAN segmentation (default)",
-                        "neutr_vlan_description": "The networking equipment must be configured for VLAN segmentation. This option supports up to 4095 networks."
+                        "neutr_vlan_description": "The networking equipment must be configured for VLAN segmentation. This option supports up to 4095 networks.",
+                        "neutr_tun": "Neutron with tunneling segmentation",
+                        "neutr_tun_description": "By default VXLAN tunnels will be used (can be changed to GRE via Fuel CLI).The networking equipment must support VXLAN segmentation. This option supports millions of tenant data networks."
                     },
                     "storage": {
                         "title": "Storage Backends",
@@ -1301,7 +1301,7 @@
                         "title": "网络",
                         "release_alert": "__releaseName__不支持Neutron",
                         "nova_network": "Nova-Network",
-                        "neutr_gre": "Neutron GRE",
+                        "neutr_tun": "Neutron TUN",
                         "neutr_vlan": "Neutron VLAN"
                     },
                     "storage": {
@@ -2012,11 +2012,11 @@
                         "description": "プライベート（ゲスト）ネットワーク構成を選択します。ここで選択したものはウィザード終了後に変更することはできません。詳細については次を参照してください",
                         "description_link": "Mirantis OpenStackプランニングガイド ネットワークトポロジー編",
                         "release_alert": "__NameAndRelease.release_name__ ではNeutronがサポートされません",
-                        "hypervisor_alert": "VLANまたはGREセグメンテーションとNeutronはコンピュートオプションとして __Compute.vcenter__ では使用できません。",
+                        "hypervisor_alert": "VLANまたはTUNセグメンテーションとNeutronはコンピュートオプションとして __Compute.vcenter__ では使用できません。",
                         "nova_network": "(非推奨)レガシーネットワーキング(nova-network)",
                         "nova_network_description": "VMware vCenterを使用するか、パブリックとフローティングIPのアドレスが異なるサブネットが必要な場合は、このオプションを選択してください。 OpenStackでは、今後のリリースでnova-networkが非推奨になることに注意してください。",
-                        "neutr_gre": "Neutron(GREセグメンテーション)",
-                        "neutr_gre_description": "ネットワーク機器がGREセグメンテーションをサポートしている必要があります。このオプションは、65535までのネットワークをサポートします。",
+                        "neutr_tun": "Neutron(TUNセグメンテーション)",
+                        "neutr_tun_description": "ネットワーク機器がTUNセグメンテーションをサポートしている必要があります。このオプションは、65535までのネットワークをサポートします。",
                         "neutr_vlan": "Neutron(VLANセグメンテーション)-デフォルト",
                         "neutr_vlan_description": "ネットワーク機器がVLANセグメンテーション用に設定されている必要があります。このオプションは、4095までのネットワークをサポートします。"
                     },
@@ -2566,7 +2566,7 @@
                         "title": "네트워크",
                         "alert": "Neutron와 __releaseName__에서는 지원되지 않습니다.",
                         "nova_network": "Nova-Network",
-                        "neutr_gre": "GRE를 사용하는 Neutron",
+                        "neutr_tun": "TUN를 사용하는 Neutron",
                         "neutr_vlan": "VLAN을 사용하는 Neutron"
                     },
                     "storage": {

@@ -32,6 +32,7 @@ from sqlalchemy.dialects import postgresql as psql
 from alembic import op
 from oslo.serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
 from nailgun.utils.migration import drop_enum
@@ -93,6 +94,7 @@ def upgrade():
     extend_nic_model_upgrade()
     upgrade_cluster_ui_settings()
     upgrade_cluster_bond_settings()
+    extend_segmentation_type()
 
 
 def downgrade():
@@ -287,6 +289,18 @@ def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
     op.drop_column('plugins', 'network_roles_metadata')
+
+
+def extend_segmentation_type():
+
+    segmentation_type_old = ('vlan', 'gre')
+    segmentation_type_new = consts.NEUTRON_SEGMENT_TYPES
+
+    upgrade_enum('neutron_config',
+                 'segmentation_type',
+                 'segmentation_type',
+                 segmentation_type_old,
+                 segmentation_type_new)
 
 
 def upgrade_node_roles_metadata():

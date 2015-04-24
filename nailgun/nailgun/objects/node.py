@@ -905,7 +905,7 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_ips(instances, 'management')
             netmanager.assign_ips(instances, 'public')
             netmanager.assign_ips(instances, 'storage')
-            if nst == consts.NEUTRON_SEGMENT_TYPES.gre:
+            if nst == consts.NEUTRON_SEGMENT_TYPES.tun:
                 netmanager.assign_ips(instances, 'private')
             netmanager.assign_admin_ips(instances)
 

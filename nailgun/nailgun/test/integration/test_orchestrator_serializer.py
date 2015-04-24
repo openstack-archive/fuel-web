@@ -1000,8 +1000,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 transformations
             )
 
-    def test_gre_schema(self):
-        cluster = self.create_env(segment_type='gre')
+    def test_tun_schema(self):
+        cluster = self.create_env(segment_type='tun')
         self.add_nics_properties(cluster)
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
@@ -1085,8 +1085,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 transformations
             )
 
-    def test_gre_with_bond(self):
-        cluster = self.create_env(segment_type='gre', ctrl_count=3,
+    def test_tun_with_bond(self):
+        cluster = self.create_env(segment_type='tun', ctrl_count=3,
                                   nic_count=3)
         for node in cluster.nodes:
             self.move_network(node.id, 'storage', 'eth0', 'eth1')
@@ -1152,8 +1152,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 transformations
             )
 
-    def test_gre_with_multi_groups(self):
-        cluster = self.create_env(segment_type='gre', ctrl_count=3)
+    def test_tun_with_multi_groups(self):
+        cluster = self.create_env(segment_type='tun', ctrl_count=3)
 
         resp = self.env.create_node_group()
         group_id = resp.json_body['id']
@@ -1185,7 +1185,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes, 'gre')
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes, 'tun')
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -1808,7 +1808,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertEqual(len(need_public_nodes_count), 4 if assign else 1)
 
     def test_neutron_l3_gateway(self):
-        cluster = self.create_env('ha_compact', 'gre')
+        cluster = self.create_env('ha_compact', 'tun')
         test_gateway = "192.168.111.255"
         public_ng = self.db.query(NetworkGroup).filter(
             NetworkGroup.name == 'public'
@@ -1828,13 +1828,13 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             test_gateway
         )
 
-    def test_gre_segmentation(self):
-        cluster = self.create_env('ha_compact', 'gre')
+    def test_tun_segmentation(self):
+        cluster = self.create_env('ha_compact', 'tun')
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
             self.assertEqual(
-                fact['quantum_settings']['L2']['segmentation_type'], 'gre')
+                fact['quantum_settings']['L2']['segmentation_type'], 'tun')
             self.assertEqual(
                 'br-prv' in fact['network_scheme']['endpoints'], False)
             self.assertEqual(
@@ -1842,7 +1842,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_gw_added_but_default_gw_is_ex_or_admin(self):
         self.new_env_release_version = '2014.2.-6.0'
-        cluster = self.create_env('ha_compact', 'gre')
+        cluster = self.create_env('ha_compact', 'tun')
 
         networks = objects.Cluster.get_default_group(cluster).networks
         for net in networks:
@@ -1912,7 +1912,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         """
         return yaml.load(meta)
 
-    def _create_cluster_for_vlan_splinters(self, segment_type='gre'):
+    def _create_cluster_for_vlan_splinters(self, segment_type='tun'):
         meta = {
             'interfaces': [
                 {'name': 'eth0', 'mac': self.env.generate_random_mac()},
@@ -2030,8 +2030,8 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
             self.assertEqual(L2_attrs['vlan_splinters'], 'off')
             self.assertNotIn('trunks', L2_attrs)
 
-    def test_hard_vlan_splinters_in_gre(self):
-        cluster = self._create_cluster_for_vlan_splinters('gre')
+    def test_hard_vlan_splinters_in_tun(self):
+        cluster = self._create_cluster_for_vlan_splinters('tun')
         editable_attrs = self._make_data_copy(cluster.attributes.editable)
 
         editable_attrs['vlan_splinters']['metadata']['enabled'] = True
@@ -2349,7 +2349,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
         super(TestNSXOrchestratorSerializer, self).setUp()
         self.cluster = self.create_env('ha_compact')
 
-    def create_env(self, mode, segment_type='gre'):
+    def create_env(self, mode, segment_type='tun'):
         cluster = self.env.create(
             cluster_kwargs={
                 'mode': mode,
@@ -2403,7 +2403,7 @@ class BaseDeploymentSerializer(BaseIntegrationTest):
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'},
+                'net_segment_type': 'tun'},
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'pending_addition': True,
@@ -2565,7 +2565,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
     def setUp(self):
         super(TestDeploymentAttributesSerialization61, self).setUp()
         self.cluster = self.create_env('ha_compact')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'gre')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'tun')
         self.serializer = DeploymentHASerializer61(self.cluster)
 
     @mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
@@ -2612,7 +2612,7 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
     def setUp(self):
         super(TestDeploymentHASerializer61, self).setUp()
         self.cluster = self.create_env('ha_compact')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'gre')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'tun')
         self.serializer = DeploymentHASerializer61(self.cluster)
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
@@ -2688,7 +2688,7 @@ class TestSerializeInterfaceDriversData(BaseIntegrationTest):
 
     def _create_cluster_for_interfaces(self, driver_mapping={},
                                        bus_mapping={},
-                                       segment_type='gre'):
+                                       segment_type='tun'):
         meta = {
             'interfaces': [
                 {'name': 'eth0', 'mac': self.env.generate_random_mac(),

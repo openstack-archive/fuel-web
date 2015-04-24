@@ -31,7 +31,7 @@ class NodeGroupOperationsLoadTest(base.BaseUnitLoadTestCase):
         cls.cluster = cls.env.create_cluster(
             api=False,
             net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
-            net_segment_type=consts.NEUTRON_SEGMENT_TYPES.gre,
+            net_segment_type=consts.NEUTRON_SEGMENT_TYPES.tun,
         )
         cls.group = cls.env.create_node_group()
 

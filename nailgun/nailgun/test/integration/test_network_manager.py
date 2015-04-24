@@ -167,7 +167,7 @@ class TestNetworkManager(BaseIntegrationTest):
             cluster_kwargs={
                 'api': False,
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'tun'
             },
             nodes_kwargs=[{}, {}]
         )
@@ -205,7 +205,7 @@ class TestNetworkManager(BaseIntegrationTest):
             cluster_kwargs={
                 'api': False,
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'tun'
             },
             nodes_kwargs=[{}, {}]
         )
@@ -465,11 +465,11 @@ class TestNeutronManager(BaseIntegrationTest):
             else:
                 self.fail("NIC is not found")
 
-    def test_gre_get_default_nic_assignment(self):
+    def test_tun_get_default_nic_assignment(self):
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'},
+                'net_segment_type': 'tun'},
             nodes_kwargs=[
                 {'api': True,
                  'pending_addition': True}

@@ -320,7 +320,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'tun'
             },
             nodes_kwargs=[
                 {'api': True,

@@ -247,7 +247,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         super(TestNeutronNetworkConfigurationHandlerMultinode, self).setUp()
         cluster = self.env.create_cluster(api=True,
                                           net_provider='neutron',
-                                          net_segment_type='gre',
+                                          net_segment_type='tun',
                                           mode='ha_compact'
                                           )
         self.cluster = self.db.query(Cluster).get(cluster['id'])
@@ -414,7 +414,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
+                            'net_segment_type': 'tun'},
             release_kwargs={'networks_metadata': net_meta, 'api': False},
             nodes_kwargs=[{"pending_addition": True}]
         )

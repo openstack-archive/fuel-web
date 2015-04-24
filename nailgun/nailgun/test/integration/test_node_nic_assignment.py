@@ -540,10 +540,10 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
         self.env.create_cluster(api=True)
         self.create_node_and_check_assignment()
 
-    def test_neutron_gre_public_network_assigned_to_second_nic_by_name(self):
+    def test_neutron_tun_public_network_assigned_to_second_nic_by_name(self):
         self.env.create_cluster(api=True,
                                 net_provider='neutron',
-                                net_segment_type='gre')
+                                net_segment_type='tun')
         self.create_node_and_check_assignment()
 
     def test_neutron_vlan_public_network_assigned_to_second_nic_by_name(self):
@@ -566,7 +566,7 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
         self.env.create(
             cluster_kwargs={
                 "net_provider": "neutron",
-                "net_segment_type": "gre"
+                "net_segment_type": "tun"
             },
             nodes_kwargs=[
                 {"api": True, "pending_addition": True, 'meta': meta}

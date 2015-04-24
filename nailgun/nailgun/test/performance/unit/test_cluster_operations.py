@@ -297,7 +297,7 @@ class ClusterNeutronOperationsLoadTest(base.BaseUnitLoadTestCase):
         cls.cluster = cls.env.create_cluster(
             api=True,
             net_provider='neutron',
-            net_segment_type='gre',
+            net_segment_type='tun',
             mode='ha_compact')
         cls.env.create_nodes(cls.NODES_NUM, cluster_id=cls.cluster['id'])
 

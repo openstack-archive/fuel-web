@@ -30,7 +30,7 @@ class TestNodeGroups(BaseIntegrationTest):
         self.cluster = self.env.create_cluster(
             api=False,
             net_provider='neutron',
-            net_segment_type='gre'
+            net_segment_type='tun'
         )
 
     def test_nodegroup_creation(self):
@@ -55,7 +55,7 @@ class TestNodeGroups(BaseIntegrationTest):
             cluster_kwargs={
                 'api': True,
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'tun'
             },
             nodes_kwargs=[{
                 'roles': [],

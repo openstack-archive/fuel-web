@@ -102,7 +102,7 @@ class TestNetworkModels(BaseIntegrationTest):
         self.db.delete(cluster.network_config)
         kw = {
             "net_l23_provider": "ovs",
-            "segmentation_type": "gre",
+            "segmentation_type": "tun",
             "vlan_range": [1000, 1030],
             "gre_id_range": [2, 65534],
             "base_mac": "fa:16:3e:00:00:00",

@@ -391,7 +391,7 @@ class TestHandlers(BaseIntegrationTest):
             },
             cluster_kwargs={
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'tun'
             },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -410,7 +410,7 @@ class TestHandlers(BaseIntegrationTest):
         # openstack.yaml so we have to remove it from the 5.1.1 and 6.0 tests.
         private_nets = self.db.query(NetworkGroup).filter_by(name='private')
         for p in private_nets:
-            if p['meta'].get('seg_type') == consts.NEUTRON_SEGMENT_TYPES.gre:
+            if p['meta'].get('seg_type') == consts.NEUTRON_SEGMENT_TYPES.tun:
                 self.db.delete(p)
                 self.db.flush()
 
@@ -460,7 +460,7 @@ class TestHandlers(BaseIntegrationTest):
 
         L2 = {
             "base_mac": "fa:16:3e:00:00:00",
-            "segmentation_type": "gre",
+            "segmentation_type": "tun",
             "phys_nets": {},
             "tunnel_id_ranges": "2:65535"
         }
@@ -487,7 +487,7 @@ class TestHandlers(BaseIntegrationTest):
                 'shared': False,
                 'L2': {
                     'router_ext': False,
-                    'network_type': 'gre',
+                    'network_type': 'tun',
                     'physnet': None,
                     'segment_id': None},
                 'L3': {
@@ -840,7 +840,7 @@ class TestHandlers(BaseIntegrationTest):
             },
             cluster_kwargs={
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'tun'
             },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -859,7 +859,7 @@ class TestHandlers(BaseIntegrationTest):
         # openstack.yaml so we have to remove it from the 5.1.1 and 6.0 tests.
         private_nets = self.db.query(NetworkGroup).filter_by(name='private')
         for p in private_nets:
-            if p['meta'].get('seg_type') == consts.NEUTRON_SEGMENT_TYPES.gre:
+            if p['meta'].get('seg_type') == consts.NEUTRON_SEGMENT_TYPES.tun:
                 self.db.delete(p)
                 self.db.flush()
 
@@ -907,7 +907,7 @@ class TestHandlers(BaseIntegrationTest):
 
         L2 = {
             "base_mac": "fa:16:3e:00:00:00",
-            "segmentation_type": "gre",
+            "segmentation_type": "tun",
             "phys_nets": {},
             "tunnel_id_ranges": "2:65535"
         }
@@ -934,7 +934,7 @@ class TestHandlers(BaseIntegrationTest):
                 'shared': False,
                 'L2': {
                     'router_ext': False,
-                    'network_type': 'gre',
+                    'network_type': 'tun',
                     'physnet': None,
                     'segment_id': None},
                 'L3': {
@@ -1356,11 +1356,11 @@ class TestHandlers(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
-    def test_deploy_multinode_neutron_gre_w_custom_public_ranges(self,
+    def test_deploy_multinode_neutron_tun_w_custom_public_ranges(self,
                                                                  mocked_rpc):
         self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
+                            'net_segment_type': 'tun'},
             nodes_kwargs=[{"pending_addition": True},
                           {"pending_addition": True},
                           {"pending_addition": True},
@@ -1402,11 +1402,11 @@ class TestHandlers(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
-    def test_deploy_ha_neutron_gre_w_custom_public_ranges(self, mocked_rpc):
+    def test_deploy_ha_neutron_tun_w_custom_public_ranges(self, mocked_rpc):
         self.env.create(
             cluster_kwargs={'mode': 'ha_compact',
                             'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
+                            'net_segment_type': 'tun'},
             nodes_kwargs=[{"pending_addition": True},
                           {"pending_addition": True},
                           {"pending_addition": True},
@@ -1446,10 +1446,10 @@ class TestHandlers(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
-    def test_deploy_neutron_gre_w_changed_public_cidr(self, mocked_rpc):
+    def test_deploy_neutron_tun_w_changed_public_cidr(self, mocked_rpc):
         self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
+                            'net_segment_type': 'tun'},
             nodes_kwargs=[{"pending_addition": True},
                           {"pending_addition": True}]
         )
@@ -1487,7 +1487,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_deploy_neutron_error_not_enough_ip_addresses(self, mocked_rpc):
         self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
+                            'net_segment_type': 'tun'},
             nodes_kwargs=[{"pending_addition": True},
                           {"pending_addition": True},
                           {"pending_addition": True}]

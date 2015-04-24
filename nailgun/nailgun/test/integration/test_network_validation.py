@@ -392,10 +392,10 @@ class TestNovaHandlers(TestNetworkChecking):
         self.update_nova_networks_success(self.cluster.id, self.nets)
 
 
-class TestNeutronHandlersGre(TestNetworkChecking):
+class TestNeutronHandlersTun(TestNetworkChecking):
 
     def setUp(self):
-        super(TestNeutronHandlersGre, self).setUp()
+        super(TestNeutronHandlersTun, self).setUp()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
@@ -403,7 +403,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'tun'
             },
             nodes_kwargs=[
                 {'api': True,

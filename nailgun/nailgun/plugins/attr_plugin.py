@@ -184,8 +184,9 @@ class ClusterAttributesPluginBase(object):
         version = release.version
 
         release_info = filter(
-            lambda r: (r['os'] == os and
-                       r['version'] == version),
+            lambda r: (
+                r['os'] == os and
+                self._is_release_version_compatible(version, r['version'])),
             self.plugin.releases)
 
         return release_info[0]

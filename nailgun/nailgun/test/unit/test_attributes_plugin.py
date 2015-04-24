@@ -88,6 +88,7 @@ class TestPluginBase(base.BaseTestCase):
         """Should return 1st plugin release info which matches
            provided release.
         """
+        self.cluster.release.version = '2014.2.2-6.0.1'
         release = self.attr_plugin.get_release_info(self.cluster.release)
         self.assertEqual(release, self.plugin_metadata['releases'][0])
 

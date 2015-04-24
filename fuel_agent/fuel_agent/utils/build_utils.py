@@ -47,6 +47,11 @@ bu_opts = [
         default=7,
         help='System-wide major number for loop device'
     ),
+    cfg.IntOpt(
+        'fetch_packages_attempts',
+        default=10,
+        help='Maximum allowed debootstrap/apt-get attempts to execute'
+    ),
     cfg.StrOpt(
         'allow_unsigned_file',
         default='allow_unsigned_packages',
@@ -68,19 +73,19 @@ ROOT_PASSWORD = '$6$IInX3Cqo$5xytL1VZbZTusOewFnG6couuF0Ia61yS3rbC6P5YbZP2TYcl'\
                 'wHqMq9e3Tg8rvQxhxSlBXP1DZhdUamxdOBXK0.'
 
 
-def run_debootstrap(uri, suite, chroot, arch='amd64', eatmydata=False):
+def run_debootstrap(uri, suite, chroot, arch='amd64', eatmydata=False,
+                    attempts=CONF.fetch_packages_attempts):
     """Builds initial base system.
 
     debootstrap builds initial base system which is capable to run apt-get.
     debootstrap is well known for its glithcy resolving of package dependecies,
     so the rest of packages will be installed later by run_apt_get.
     """
-    # TODO(agordeev): do retry!
     cmds = ['debootstrap', '--verbose', '--no-check-gpg', '--arch=%s' % arch,
             suite, chroot, uri]
     if eatmydata:
         cmds.insert(4, '--include=eatmydata')
-    stdout, stderr = utils.execute(*cmds)
+    stdout, stderr = utils.execute(*cmds, attempts=attempts)
     LOG.debug('Running deboostrap completed.\nstdout: %s\nstderr: %s', stdout,
               stderr)
 
@@ -92,7 +97,8 @@ def set_apt_get_env():
     os.environ['LC_ALL'] = os.environ['LANG'] = os.environ['LANGUAGE'] = 'C'
 
 
-def run_apt_get(chroot, packages, eatmydata=False):
+def run_apt_get(chroot, packages, eatmydata=False,
+                attempts=CONF.fetch_packages_attempts):
     """Runs apt-get install <packages>.
 
     Unlike debootstrap, apt-get has a perfect package dependecies resolver
@@ -101,15 +107,14 @@ def run_apt_get(chroot, packages, eatmydata=False):
     dpkg/apt-get tools. It's dangerous, but could decrease package install
     time in X times.
     """
-    # TODO(agordeev): do retry!
     cmds = ['chroot', chroot, 'apt-get', '-y', 'update']
-    stdout, stderr = utils.execute(*cmds)
+    stdout, stderr = utils.execute(*cmds, attempts=attempts)
     LOG.debug('Running apt-get update completed.\nstdout: %s\nstderr: %s',
               stdout, stderr)
     cmds = ['chroot', chroot, 'apt-get', '-y', 'install', ' '.join(packages)]
     if eatmydata:
         cmds.insert(2, 'eatmydata')
-    stdout, stderr = utils.execute(*cmds)
+    stdout, stderr = utils.execute(*cmds, attempts=attempts)
     LOG.debug('Running apt-get install completed.\nstdout: %s\nstderr: %s',
               stdout, stderr)
 

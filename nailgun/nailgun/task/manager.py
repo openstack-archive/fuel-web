@@ -73,6 +73,7 @@ class TaskManager(object):
                     'progress': 100,
                     'message': err}
             objects.Task.update(task, data)
+            db().commit()
 
             TaskHelper.update_action_log(task, al)
 

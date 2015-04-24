@@ -129,14 +129,14 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                         title={i18n('support_page.product_registered_title')}
                         text={i18n('support_page.product_registered_content')}
                     >
-                        <p className='registeredData enable-selection'>
+                        <div className='registeredData enable-selection'>
                             {_.map(['name', 'email', 'company'], function(value) {
-                                return <span key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {this.props.tracking.get('statistics')[value].value}</span>;
+                                return <div key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {this.props.tracking.get('statistics')[value].value}</div>;
                             }, this)}
-                            <span><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.tracking.get('master_node_uid')}</span>
-                        </p>
+                            <div><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.tracking.get('master_node_uid')}</div>
+                        </div>
                         <p>
-                            <a className='btn registration-link' href='https://software.mirantis.com/account/' target='_blank'>
+                            <a className='btn btn-default' href='https://software.mirantis.com/account/' target='_blank'>
                                 {i18n('support_page.manage_account')}
                             </a>
                         </p>
@@ -151,7 +151,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     <div className='tracking'>
                         {this.renderRegistrationForm(this.props.tracking, this.state.actionInProgress, this.state.error, this.state.actionInProgress)}
                         <p>
-                            <button className='btn registration-link' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
+                            <button className='btn btn-default' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
                                 {i18n('support_page.register_fuel_title')}
                             </button>
                         </p>
@@ -181,19 +181,21 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                     className='img-statistics'
                     title={i18n('support_page.send_statistics_title')}
                 >
-                    {this.renderIntro()}
-                    <div className='statistics-settings'>
-                        {_.map(sortedSettings, this.renderInput, this)}
+                    <div className='tracking'>
+                        {this.renderIntro()}
+                        <div className='statistics-settings'>
+                            {_.map(sortedSettings, function(name) {return this.renderInput(name);}, this)}
+                        </div>
+                        <p>
+                            <button
+                                className='btn btn-default'
+                                disabled={this.state.actionInProgress || !hasChanges}
+                                onClick={this.prepareStatisticsToSave}
+                            >
+                                {i18n('support_page.save_changes')}
+                            </button>
+                        </p>
                     </div>
-                    <p>
-                        <button
-                            className='btn btn-default'
-                            disabled={this.state.actionInProgress || !hasChanges}
-                            onClick={this.prepareStatisticsToSave}
-                        >
-                            {i18n('support_page.save_changes')}
-                        </button>
-                    </p>
                 </SupportPageElement>
             );
         }
@@ -209,7 +211,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                 >
                     <p>{i18n('support_page.irc_text')} <strong>#fuel</strong> on <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
                     <p>
-                        <a className='btn' href='http://support.mirantis.com' target='_blank'>
+                        <a className='btn btn-default' href='http://support.mirantis.com' target='_blank'>
                             {i18n('support_page.contact_support')}
                         </a>
                     </p>

@@ -242,7 +242,6 @@ define([
                     .value();
             return (
                 <div>
-                    {showProgressBar && <controls.ProgressBar />}
                     {error &&
                         <div className='text-red'>
                             <i className='glyphicon glyphicon-warning-sign' />
@@ -250,6 +249,7 @@ define([
                         </div>
                     }
                     <div className='connection-form'>
+                        {showProgressBar && <controls.ProgressBar />}
                         {_.map(sortedFields, function(inputName) {
                             return <controls.Input
                                 ref={inputName}

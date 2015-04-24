@@ -22,6 +22,8 @@ from nailgun.test import base
 
 from nailgun.orchestrator.plugins_serializers import \
     BasePluginDeploymentHooksSerializer
+from nailgun.orchestrator.plugins_serializers import \
+    PluginsPreDeploymentHooksSerializer
 
 
 class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
@@ -180,3 +182,45 @@ class TestTasksDeploymentOrder(base.BaseTestCase):
              'pre_deployment/100.0',
              'pre_deployment/+100',
              'pre_deployment/100'])
+
+
+class TestPluginsPreDeploymentHooksSerializer(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestPluginsPreDeploymentHooksSerializer, self).setUp()
+        self.cluster = mock.Mock()
+        self.cluster.release.operating_system = 'ubuntu'
+        self.nodes = [
+            {'id': 1, 'role': 'controller'},
+            {'id': 2, 'role': 'compute'}
+        ]
+        self.hook = PluginsPreDeploymentHooksSerializer(
+            self.cluster,
+            self.nodes)
+        self.plugins = [mock.Mock()]
+
+    @mock.patch(
+        'nailgun.orchestrator.plugins_serializers.get_uids_for_tasks',
+        return_value=[1, 2])
+    @mock.patch(
+        'nailgun.orchestrator.plugins_serializers.'
+        'templates.make_ubuntu_sources_task',
+        return_value={'task_type': 'ubuntu_sources_task',
+                      'parameters': {}})
+    @mock.patch(
+        'nailgun.orchestrator.plugins_serializers.'
+        'templates.make_ubuntu_preferences_task',
+        return_value=None)
+    @mock.patch(
+        'nailgun.orchestrator.plugins_serializers.'
+        'templates.make_apt_update_task',
+        return_value={'task_type': 'apt_update_task',
+                      'parameters': {}})
+    def test_create_repositories_ubuntu_does_not_generate_prefences_if_none(
+            self, _, __, ___, ____):
+        self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
+        tasks = self.hook.create_repositories(self.plugins)
+        self.assertItemsEqual(
+            map(lambda t: t['task_type'], tasks),
+            ['ubuntu_sources_task',
+             'apt_update_task'])

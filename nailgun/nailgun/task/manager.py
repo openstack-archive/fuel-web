@@ -73,8 +73,10 @@ class TaskManager(object):
                     'progress': 100,
                     'message': err}
             objects.Task.update(task, data)
-
+            db().flush()
             TaskHelper.update_action_log(task, al)
+
+            db().commit()
 
     def check_running_task(self, task_name):
         current_tasks = db().query(Task).filter_by(

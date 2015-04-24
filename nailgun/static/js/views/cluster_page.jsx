@@ -245,12 +245,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     </div>
                     <DeploymentResult cluster={cluster} />
                     {release.get('state') == 'unavailable' &&
-                        <div className='alert alert-warning'>
+                        <div className='alert deploy-alert alert-warning'>
                             {i18n('cluster_page.unavailable_release', {name: release.get('name')})}
                         </div>
                     }
                     {cluster.get('is_customized') &&
-                        <div className='alert alert-warning'>
+                        <div className='alert deploy-alert alert-warning'>
                             {i18n('cluster_page.cluster_was_modified_from_cli')}
                         </div>
                     }
@@ -334,7 +334,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 summary = delimited.shift(),
                 details = delimited.join('\n\n'),
                 classes = {
-                    alert: true,
+                    'alert deploy-alert': true,
                     'alert-danger': error,
                     'alert-success': !error
                 };

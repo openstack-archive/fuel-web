@@ -726,3 +726,33 @@ class TestExtensionsField(base.BaseAlembicMigrationTest):
 
         self.assertEqual(list(cluster_result)[0], ['volume_manager'])
         self.assertEqual(list(release_result)[0], ['volume_manager'])
+
+
+class TestTunSegmentType(base.BaseAlembicMigrationTest):
+
+    def test_tun_segment_type_added(self):
+        result = db.execute(
+            self.meta.tables['networking_configs'].insert(),
+            [{
+                'cluster_id': None,
+                'dns_nameservers': ['8.8.8.8'],
+                'floating_ranges': [],
+                'configuration_template': None,
+            }])
+        db.execute(
+            self.meta.tables['neutron_config'].insert(),
+            [{
+                'id': result.inserted_primary_key[0],
+                'vlan_range': [],
+                'gre_id_range': [],
+                'base_mac': '00:00:00:00:00:00',
+                'internal_cidr': '10.10.10.00/24',
+                'internal_gateway': '10.10.10.01',
+                'segmentation_type': 'tun',
+                'net_l23_provider': 'ovs'
+            }])
+        types = db.execute(
+            sa.select(
+                [self.meta.tables['neutron_config'].c.segmentation_type])).\
+            fetchall()
+        self.assertIn(('tun',), types)

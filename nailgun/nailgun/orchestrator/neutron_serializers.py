@@ -444,7 +444,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 }
             }
         }
-        if cluster.network_config.segmentation_type == 'gre':
+        if cluster.network_config.segmentation_type in ('gre', 'tun'):
             res["tunnel_id_ranges"] = utils.join_range(
                 cluster.network_config.gre_id_range)
         elif cluster.network_config.segmentation_type == 'vlan':
@@ -609,7 +609,7 @@ class NeutronNetworkDeploymentSerializer61(
                 provider='ovs',
                 mtu=65000))
 
-        elif node.cluster.network_config.segmentation_type == 'gre':
+        elif node.cluster.network_config.segmentation_type in ('gre', 'tun'):
             transformations.append(
                 cls.add_bridge('br-mesh'))
 
@@ -684,7 +684,7 @@ class NeutronNetworkDeploymentSerializer61(
         if is_public:
             netgroup_mapping.append(('public', 'br-ex'))
 
-        if node.cluster.network_config.segmentation_type == 'gre':
+        if node.cluster.network_config.segmentation_type in ('gre', 'tun'):
             netgroup_mapping.append(('private', 'br-mesh'))
             attrs['endpoints']['br-mesh'] = {}
             attrs['roles']['neutron/mesh'] = 'br-mesh'

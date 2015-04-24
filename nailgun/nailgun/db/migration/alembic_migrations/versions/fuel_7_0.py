@@ -94,6 +94,7 @@ def upgrade():
     upgrade_cluster_ui_settings()
     upgrade_cluster_bond_settings()
     extensions_field_upgrade()
+    extend_segmentation_type()
 
 
 def downgrade():
@@ -289,6 +290,18 @@ def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
     op.drop_column('plugins', 'network_roles_metadata')
+
+
+def extend_segmentation_type():
+
+    segmentation_type_old = ('vlan', 'gre')
+    segmentation_type_new = ('vlan', 'gre', 'tun')
+
+    upgrade_enum('neutron_config',
+                 'segmentation_type',
+                 'segmentation_type',
+                 segmentation_type_old,
+                 segmentation_type_new)
 
 
 def upgrade_node_roles_metadata():

@@ -69,7 +69,7 @@ define([
         },
         checkRestrictions: function(models, action, path) {
             path = path || 'restrictions';
-            var restrictions = this.expandedRestrictions[path];
+            var restrictions = (this.expandedRestrictions || {})[path];
             if (action) restrictions = _.where(restrictions, {action: action});
             var satisfiedRestrictions = _.filter(restrictions, function(restriction) {
                 return new Expression(restriction.condition, models).evaluate();

@@ -41,9 +41,14 @@
 @red:      #c94b4b;
 @pure-red: #ff0000;
 @green:    #54a854;
-@blue:     #688db4;
+@blue:     #4e85aa; //#688db4;
 @orange:   #bc6e12;
 @gray:     #8c8c8c;
+
+@alert-success-bg: #cae8c6;
+@alert-info-bg:    #c1d4e1;
+@alert-warning-bg: #f2e0b9;
+@alert-danger-bg:  #e8c6c6;
 
 @link-color: saturate(lighten(@base-dark-color, 20%), 30%);
 @link-color-hover: saturate(lighten(@base-dark-color, 10%), 15%);
@@ -140,10 +145,10 @@ h1, h2, h3, h4, h5, h6 {
   .font-light;
 }
 
-.text-green    {color: @green;}
-.text-red      {color: @red;}
-.text-blue     {color: @blue;}
-.text-orange   {color: @orange;}
+.text-green, .text-success {color: @green;}
+.text-red, .text-danger {color: @red;}
+.text-blue, .text-info {color: @blue;}
+.text-orange, .text-warning {color: @orange;}
 .text-critical {color: @pure-red;}
 
 button, .btn:not(.btn-link) {.font-semibold;}
@@ -221,6 +226,61 @@ button, .btn:not(.btn-link) {.font-semibold;}
   min-height: 100%;
   &:after {
     .clearfix;
+  }
+}
+
+// ALERTS
+
+.alert {
+  border-radius: 3px;
+  border: none;
+  strong {
+    font-size: @base-font-size + 4px;
+    line-height: 1px;
+  }
+}
+
+.alert-success {
+  background-color: @alert-success-bg;
+  &, .close {color: @green;}
+}
+
+.alert-info {
+  background-color: @alert-info-bg;
+  &, .close {color: @blue;}
+}
+
+.alert-warning {
+  background-color: @alert-warning-bg;
+  &, .close {color: @orange;}
+}
+
+.alert-danger {
+  background-color: @alert-danger-bg;
+  &, .close {color: @red;}
+}
+
+.deploy-alert {
+  background: @base-dark-color - 20%;
+  font-size: @base-font-size - 1px;
+  .text-shadow;
+  .close {
+    opacity: 1;
+    text-shadow: 0 0;
+    &:hover {
+      opacity: .7;
+    }
+  }
+  strong {
+    font-size: @base-font-size + 2px;
+    line-height: 1px;
+  }
+  a {
+    color: @link-color + 40%;
+    font-size: @base-font-size - 1px;
+    &:hover {
+      color: @link-color + 20%;
+    }
   }
 }
 
@@ -1540,6 +1600,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
 }
 
 .modal {
+  .modal-title {
+    font-size: @base-font-size + 6px;
+    color: @base-text-color;
+    .font-normal;
+  }
   .modal-body {
     span.label {
       margin-right: 5px;

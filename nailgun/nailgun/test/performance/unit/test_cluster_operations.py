@@ -19,6 +19,7 @@ import unittest2 as unittest
 from oslo.serialization import jsonutils
 from random import randint
 
+from nailgun import consts
 from nailgun.test.base import fake_tasks
 from nailgun.test.performance import base
 
@@ -229,11 +230,19 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
     @fake_tasks()
     @base.evaluate_unit_performance
     def test_put_stop_deployment(self):
+        # simulate provisioned nodes so deploy will not be blocked
+        for node in self.env.nodes:
+            node.pending_addition = False
+            node.status = consts.NODE_STATUSES.provisioned
+
+        self.env.db.flush()
+
         self.put_handler(
             'DeploySelectedNodes',
             [],
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
+
         func = functools.partial(
             self.put_handler,
             'ClusterStopDeploymentHandler',

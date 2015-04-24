@@ -668,6 +668,94 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 // PAGES
 
+.welcome-page {
+  @vertical-offset: 20px;
+  padding: 40px;
+  > div {
+    background-color: @white;
+    border-radius: 10px;
+    padding: 10px 30px 30px 30px;
+    box-sizing: border-box;
+    > div {text-align: center;}
+    h1 {margin-bottom: @vertical-offset;}
+    .notice {color:@gray;}
+    .happy-cloud {
+      padding: 30px;
+      .cloud-smile {
+        width: 146px;
+        height: 108px;
+        background-image: url(../img/cloud-smile.png);
+        background-repeat: no-repeat;
+        margin: 0 auto;
+        + div {margin-top: @vertical-offset;}
+      }
+      span {color: @green - 30%;}
+    }
+    .welcome-checkbox-box {
+      text-align: center;
+      padding-top: @vertical-offset;
+    }
+    .welcome-button-box {
+      margin: @vertical-offset 0;
+      .btn-lg {
+        font-size: @base-font-size;
+        margin: 2px 0;
+      }
+    }
+    .register-trial {
+      padding: @vertical-offset 10px 4px 10px;
+      margin: 0px -30px 10px -30px;
+      background-color: @gray + 100%;
+    }
+  }
+}
+
+.tracking {
+  @vertical-offset: 20px;
+  .checkbox-group label, .form-group label {.font-semibold;}
+  .text-red {
+    margin-bottom: 15px;
+    font-style: italic;
+    .glyphicon {margin-right: 10px;}
+  }
+  .help-block {font-style: italic;}
+  .statistics-disclaimer-box {
+    background-color: @gray + 80%;
+    border: 1px solid @gray + 40%;
+    overflow-y: auto;
+    padding: 20px;
+    margin-bottom: 16px;
+    text-align: left;
+    height: 300px;
+    max-height: 300px;
+    box-sizing: border-box;
+    p { margin-bottom: 10px; }
+    ul { margin-bottom: @vertical-offset; }
+  }
+  .connection-form {
+    width: 300px;
+    margin: 0 auto;
+    text-align: left;
+    help-block {text-align: right;}
+    .links-container {
+      min-height: 20px;
+      margin: 15px 0 15px;
+    }
+    .btn-link {padding: 0;}
+  }
+  &.registration-form {
+    padding: 15px;
+    .form-inline {margin-left: 0;}
+    .form-inline div {padding: 0 7px 0 0;}
+    .form-group {
+      vertical-align: top;
+      input {width: 100%;}
+      select {width: 100%;}
+    }
+    .checkbox-group {margin-top: @vertical-offset;}
+  }
+}
+
 .cluster-page {
   .page-title {
     .title-node-count {

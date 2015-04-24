@@ -37,7 +37,6 @@ define([
             return {
                 isConnected: !!(tracking.email.value && tracking.password.value),
                 actionInProgress: false,
-                showItems: false,
                 remoteLoginForm: new models.MirantisLoginForm(),
                 registrationForm: new models.MirantisRegistrationForm(),
                 remoteRetrievePasswordForm: new models.MirantisRetrievePasswordForm()
@@ -116,9 +115,6 @@ define([
         checkRestrictions: function(name, action) {
             action = action || 'disable';
             return this.props.settings.checkRestrictions(this.configModels, action, this.props.settings.makePath('statistics', name));
-        },
-        toggleItemsList: function() {
-            this.setState({showItems: !this.state.showItems});
         },
         componentWillMount: function() {
             var model = this.props.statistics || this.props.tracking;
@@ -208,13 +204,11 @@ define([
                 <div>
                     <div className='statistics-text-box'>
                         <div className={utils.classNames({notice: isMirantisIso})}>{this.getText(ns + 'help_to_improve')}</div>
-                        <button className='btn-link' onClick={this.toggleItemsList}>{i18n(ns + 'learn_whats_collected')}</button>
-                        {this.state.showItems &&
-                            <div className='statistics-disclaimer-box'>
-                                <p>{i18n(ns + 'statistics_includes_full')}</p>
-                                {_.map(lists, this.renderList)}
-                            </div>
-                        }
+                        <button className='btn-link' data-toggle='collapse' data-target='.statistics-disclaimer-box'>{i18n(ns + 'learn_whats_collected')}</button>
+                        <div className='collapse statistics-disclaimer-box'>
+                            <p>{i18n(ns + 'statistics_includes_full')}</p>
+                            {_.map(lists, this.renderList)}
+                        </div>
                     </div>
                 </div>
             );
@@ -250,8 +244,8 @@ define([
                 <div>
                     {showProgressBar && <controls.ProgressBar />}
                     {error &&
-                        <div className='error'>
-                            <i className='icon-attention'></i>
+                        <div className='text-red'>
+                            <i className='glyphicon glyphicon-warning-sign' />
                             {error}
                         </div>
                     }
@@ -268,10 +262,10 @@ define([
                             />;
                         }, this)}
                         <div className='links-container'>
-                            <button className='btn btn-link create-account' onClick={this.showRegistrationDialog}>
+                            <button className='btn btn-link create-account pull-left' onClick={this.showRegistrationDialog}>
                                 {i18n('welcome_page.register.create_account')}
                             </button>
-                            <button className='btn btn-link retrive-password' onClick={this.showRetrievePasswordDialog}>
+                            <button className='btn btn-link retrive-password pull-right' onClick={this.showRetrievePasswordDialog}>
                                 {i18n('welcome_page.register.retrieve_password')}
                             </button>
                         </div>

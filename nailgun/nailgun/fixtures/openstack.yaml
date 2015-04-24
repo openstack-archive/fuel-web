@@ -974,16 +974,12 @@
             - data: "neutron-vlan"
               label: "dialog.create_cluster_wizard.network.neutr_vlan"
               description: "dialog.create_cluster_wizard.network.neutr_vlan_description"
-              restrictions:
-                - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_segment_type": "vlan"
             - data: "neutron-gre"
               label: "dialog.create_cluster_wizard.network.neutr_gre"
               description: "dialog.create_cluster_wizard.network.neutr_gre_description"
-              restrictions:
-                - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_segment_type": "gre"

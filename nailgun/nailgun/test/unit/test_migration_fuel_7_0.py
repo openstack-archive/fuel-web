@@ -726,3 +726,10 @@ class TestExtensionsField(base.BaseAlembicMigrationTest):
 
         self.assertEqual(list(cluster_result)[0], ['volume_manager'])
         self.assertEqual(list(release_result)[0], ['volume_manager'])
+
+class TestTunSegmentType(base.BaseAlembicMigrationTest):
+
+    def test_tune_segment_type_added(self):
+        segm_types = self.meta.tables[
+            'neutron_config'].c.segmentation_type.enums
+        self.assertIn('tun', segm_types)

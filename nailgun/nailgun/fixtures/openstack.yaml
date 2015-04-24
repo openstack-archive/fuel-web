@@ -967,6 +967,14 @@
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_segment_type": "gre"
+            - data: "neutron-vxlan"
+              label: "dialog.create_cluster_wizard.network.neutr_vxlan"
+              description: "dialog.create_cluster_wizard.network.neutr_vxlan_description"
+              restrictions:
+                - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
+              bind:
+                - "cluster:net_provider": "neutron"
+                - "cluster:net_segment_type": "vxlan"
             - data: "nova-network"
               label: "dialog.create_cluster_wizard.network.nova_network"
               description: "dialog.create_cluster_wizard.network.nova_network_description"

@@ -26,10 +26,11 @@ class NodeGroupValidator(BasicValidator):
         data = cls.validate_json(data)
         cluster = objects.Cluster.get_by_uid(data['cluster_id'])
         if (cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network
-                or cluster.network_config.segmentation_type !=
-                consts.NEUTRON_SEGMENT_TYPES.gre):
+                or cluster.network_config.segmentation_type ==
+                consts.NEUTRON_SEGMENT_TYPES.vlan):
             raise errors.NotAllowed(
-                "Node groups can only be created when using Neutron GRE."
+                "Node groups can only be created when using Neutron tunneling "
+                "segmentation type."
             )
 
         return data

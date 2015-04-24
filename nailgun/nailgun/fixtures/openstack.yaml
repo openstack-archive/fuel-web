@@ -389,6 +389,16 @@
             render_addr_mask: "private"
             map_priority: 2
             configurable: true
+          - name: "private"
+            seg_type: "tun"
+            cidr: "192.168.2.0/24"
+            vlan_start: 103
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "private"
+            map_priority: 2
+            configurable: true
         config:
           vlan_range: [1000, 1030]
           gre_id_range: [2, 65535]
@@ -1203,14 +1213,14 @@
               bind:
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_segment_type": "vlan"
-            - data: "neutron-gre"
-              label: "dialog.create_cluster_wizard.network.neutr_gre"
-              description: "dialog.create_cluster_wizard.network.neutr_gre_description"
+            - data: "neutron-tun"
+              label: "dialog.create_cluster_wizard.network.neutr_tun"
+              description: "dialog.create_cluster_wizard.network.neutr_tun_description"
               restrictions:
                 - "Compute.vcenter == true": "dialog.create_cluster_wizard.network.hypervisor_alert"
               bind:
                 - "cluster:net_provider": "neutron"
-                - "cluster:net_segment_type": "gre"
+                - "cluster:net_segment_type": "tun"
             - data: "nova-network"
               label: "dialog.create_cluster_wizard.network.nova_network"
               description: "dialog.create_cluster_wizard.network.nova_network_description"

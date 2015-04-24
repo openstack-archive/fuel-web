@@ -42,7 +42,8 @@ def puppetApply(classes):
     log = logging
     log.info("Puppet start")
 
-    command = ["puppet", "apply", "-d", "-v", "--logdest", "/tmp/puppet.log"]
+    command = ["puppet", "apply", "-d", "-v", "--logdest",
+               "/var/log/puppet/fuelmenu-puppet.log"]
     input = []
     for cls in classes:
         if cls['type'] == "resource":

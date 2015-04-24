@@ -97,6 +97,7 @@ def upgrade():
     upgrade_cluster_bond_settings()
     extensions_field_upgrade()
     set_deployable_false_for_old_releases()
+    extend_segmentation_type()
 
 
 def downgrade():
@@ -113,6 +114,7 @@ def downgrade():
     extend_ip_addrs_model_downgrade()
     downgrade_task_names()
     vms_conf_downgrade()
+    extend_segmentation_type_downgrade()
 
     op.execute('UPDATE clusters SET name=LEFT(name, 50)')
     op.alter_column('clusters', 'name', type_=sa.VARCHAR(50))
@@ -330,6 +332,30 @@ def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
     op.drop_column('plugins', 'network_roles_metadata')
+
+
+def extend_segmentation_type():
+
+    segmentation_type_old = ('vlan', 'gre')
+    segmentation_type_new = ('vlan', 'gre', 'tun')
+
+    upgrade_enum('neutron_config',
+                 'segmentation_type',
+                 'segmentation_type',
+                 segmentation_type_old,
+                 segmentation_type_new)
+
+
+def extend_segmentation_type_downgrade():
+
+    segmentation_type_old = ('vlan', 'gre')
+    segmentation_type_new = ('vlan', 'gre', 'tun')
+
+    upgrade_enum('neutron_config',
+                 'segmentation_type',
+                 'segmentation_type',
+                 segmentation_type_new,
+                 segmentation_type_old)
 
 
 def upgrade_node_roles_metadata():

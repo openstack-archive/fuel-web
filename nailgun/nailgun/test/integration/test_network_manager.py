@@ -479,6 +479,18 @@ class TestNeutronManager(BaseIntegrationTest):
 
         self.check_networks_assignment(self.env.nodes[0])
 
+    def test_tun_get_default_nic_assignment(self):
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'tun'},
+            nodes_kwargs=[
+                {'api': True,
+                 'pending_addition': True}
+            ])
+
+        self.check_networks_assignment(self.env.nodes[0])
+
     def test_vlan_get_default_nic_assignment(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(

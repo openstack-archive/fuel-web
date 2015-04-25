@@ -1831,3 +1831,81 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .page-buttons {
   margin-top: 30px;
 }
+
+// Healthcheck tab
+.healthcheck-tab {
+  @padding-top-controls: 13px;
+  .healthcheck-controls {
+    margin: 2px 0 @padding-top-controls 0;
+    padding-bottom: 0;
+    .toggle-credentials {
+      margin-right: 10px;
+      .provide-credentials {
+        padding-left: 5px;
+      }
+    }
+    .select-all {
+      margin-top: @padding-top-controls;
+    }
+    .btn {
+      margin-top: 8px;
+      margin-bottom: 15px;
+    }
+  }
+  .credentials {
+    .alert {
+      margin-left: -15px;
+      margin-right: -15px;
+    }
+  }
+  .healthcheck-table {
+    tr {
+      td {
+        &.healthcheck-name,
+        &.healthcheck-col-duration,
+        &.healthcheck-col-status {
+          padding-top: @padding-top-controls;
+        }
+        label {
+          font-weight: normal;
+          line-height: 35px;
+        }
+      }
+      th {
+        .font-semibold;
+        text-align: center;
+        &.healthcheck-name {
+          text-align: left;
+        }
+
+        &.healthcheck-name,
+        &.healthcheck-col-duration,
+        &.healthcheck-col-status {
+          line-height: 25px;
+
+        }
+        .custom-tumbler {
+          span {
+            margin-top: @padding-top-controls + 5;
+            cursor: pointer;
+          }
+        }
+      }
+    }
+    .custom-tumbler {
+      margin: 0;
+      span {
+        margin-top: @padding-top-controls;
+      }
+    }
+    tbody {
+      .healthcheck-col-duration,
+      .healthcheck-col-status {
+        text-align: center;
+        .glyphicon {
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+}

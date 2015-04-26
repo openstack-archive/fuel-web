@@ -153,7 +153,7 @@ Setup for Web UI Tests
     sudo add-apt-repository ppa:chris-lea/node.js
     sudo apt-get update
     sudo apt-get install nodejs
-    sudo npm install -g gulp
+    sudo npm install -g gulp phantomjs
     cd nailgun
     npm install
 

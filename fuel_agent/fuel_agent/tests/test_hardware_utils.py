@@ -287,6 +287,7 @@ N: loop0
 E: DEVNAME=/dev/loop0
 E: DEVPATH=/devices/virtual/block/loop0
 E: DEVTYPE=disk
+E: MAJOR=7
 E: SUBSYSTEM=block
 
 P: /devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0/block/sda
@@ -296,6 +297,7 @@ S: disk/by-path/pci-0000:00:1f.2-scsi-0:0:0:0
 E: DEVNAME=/dev/sda
 E: DEVTYPE=disk
 E: ID_ATA=1
+E: MAJOR=8
 E: SUBSYSTEM=block
 E: UDEV_LOG=3
 
@@ -317,6 +319,13 @@ E: MINOR=0
 E: SUBSYSTEM=block
 E: USEC_INITIALIZED=87744
 
+P: /devices/pci0000:00/0000:00:1c.1/target16:0:0/16:0:0:0/block/sr0
+E: DEVTYPE=disk
+E: MAJOR=11
+E: MINOR=0
+E: SEQNUM=4400
+E: SUBSYSTEM=block
+
 P: /devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0/block/sda
 N: sda
 S: disk/by-id/wwn-0x5000c5004008ac0f
@@ -325,6 +334,7 @@ E: DEVNAME=/dev/sda1
 E: DEVTYPE=partition
 E: ID_ATA=1
 E: SUBSYSTEM=block
+E: MAJOR=8
 E: UDEV_LOG=3""", '')
 
         self.assertEqual(['/dev/sda', '/dev/nvme0n1', '/dev/sda1'],

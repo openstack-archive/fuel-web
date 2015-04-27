@@ -870,6 +870,10 @@
           fixed_key:
             generator: "hexstring"
             generator_arg: "64"
+        horizon:
+          secret_key:
+            generator: "hexstring"
+            generator_arg: "64"
         base_syslog:
           syslog_server:
             generator: "ip"

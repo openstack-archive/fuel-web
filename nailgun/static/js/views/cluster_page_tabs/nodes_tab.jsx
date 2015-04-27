@@ -77,8 +77,11 @@ function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, E
         },
         componentWillReceiveProps: function(newProps) {
             var newScreen = newProps.tabOptions[0] || 'list';
-            this.checkScreen(newScreen);
-            this.changeScreen(newScreen, newProps.tabOptions.slice(1));
+            // check that screen changed
+            if (newScreen != this.state.screen) {
+                this.checkScreen(newScreen);
+                this.changeScreen(newScreen, newProps.tabOptions.slice(1));
+            }
         },
         render: function() {
             var Screen = this.getAvailableScreens()[this.state.screen];

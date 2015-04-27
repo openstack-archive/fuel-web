@@ -249,6 +249,12 @@ def get_block_devices_from_udev_db():
         if 'SUBSYSTEM=block' in device and ('DEVTYPE=disk' in device or
                                             'DEVTYPE=partition' in device):
             for line in device.split('\n'):
+                if line.startswith('E: MAJOR='):
+                    major = int(line.split()[1].split('=')[1])
+                    if major not in VALID_MAJORS:
+                        # NOTE(agordeev): filter out cd/dvd drives and other
+                        # block devices in which fuel-agent aren't interested
+                        continue
                 if line.startswith('E: DEVNAME='):
                     d = line.split()[1].split('=')[1]
                     if not any(os.path.basename(d).startswith(n)

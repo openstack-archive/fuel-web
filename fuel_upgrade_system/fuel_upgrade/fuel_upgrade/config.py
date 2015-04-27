@@ -202,8 +202,6 @@ def get_host_system(update_path, new_version):
         join(update_path, 'repos', '[0-9.-]*{0}'.format(new_version)))
     openstack_versions = [basename(v) for v in openstack_versions]
     openstack_version = sorted(openstack_versions, reverse=True)[0]
-    centos_repo_path = join(
-        update_path, 'repos', openstack_version, 'centos/x86_64')
 
     return {
         'install_packages': [
@@ -221,10 +219,13 @@ def get_host_system(update_path, new_version):
             '/etc/yum.repos.d',
             '{0}_nailgun.repo'.format(new_version)),
 
-        'repo_path': {
-            'src': centos_repo_path,
-            'dst': join(
-                '/var/www/nailgun', openstack_version, 'centos/x86_64')}}
+        'repos': {
+            'src': join(update_path, 'repos', '[0-9.-]*'),
+            'dst': join('/var', 'www', 'nailgun')},
+
+        'repo_master': join(
+            '/var/www/nailgun', openstack_version, 'centos/x86_64'),
+    }
 
 
 def config(update_path, admin_password):
@@ -584,10 +585,6 @@ def config(update_path, admin_password):
         'puppets': {
             'src': join(update_path, 'puppet', '[0-9.-]*'),
             'dst': join('/etc', 'puppet')},
-
-        'repos': {
-            'src': join(update_path, 'repos', '[0-9.-]*'),
-            'dst': join('/var', 'www', 'nailgun')},
 
         'release_versions': {
             'src': join(update_path, 'release_versions', '*.yaml'),

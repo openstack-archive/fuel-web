@@ -151,7 +151,9 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
 
     var LogFilterBar = React.createClass({
         getInitialState: function() {
-            var options = this.props.tabOptions[0] ? utils.deserializeTabOptions(this.props.tabOptions.join('/')) : this.props.cluster.get('log_options') || {};
+            // FIXME(vkramskikh): we need to get rid of log_options - there
+            // should be single source of truth: tabOptions/URL parameters
+            var options = this.props.tabOptions[0] ? utils.deserializeTabOptions(_.compact(this.props.tabOptions).join('/')) : this.props.cluster.get('log_options') || {};
             return {
                 chosenType: options.type || 'local',
                 chosenNodeId: options.node || null,

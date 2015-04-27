@@ -53,7 +53,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             logout: 'logout',
             welcome: 'welcome',
             clusters: 'listClusters',
-            'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
+            'cluster/:id(/)(:tab)(/)(:opt1)(/)(:opt2)': 'showCluster',
             releases: 'listReleases',
             notifications: 'showNotifications',
             support: 'showSupportPage',

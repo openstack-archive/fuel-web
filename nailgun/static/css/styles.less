@@ -112,6 +112,21 @@
   visibility: hidden;
 }
 
+// ICONS
+
+.glyphicon-warning-sign {
+  content: none;
+  width: 16px;
+  height: 16px;
+  background: url(../img/icons/icons-sprite.svg) -52px -132px no-repeat;
+  &:before {
+    content: none;
+  }
+  &:after {
+    content: none;
+  }
+}
+
 // BASE SETTINGS
 
 :focus {
@@ -1856,7 +1871,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     padding-left: @base-indent / 2;
     margin-bottom: @base-indent;
     .custom-tumbler {
-      margin-top: -2px;
+      margin-top: -1px;
     }
     .help-block {
       display: block;

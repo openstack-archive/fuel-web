@@ -57,14 +57,11 @@ class TestOpenStackUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
     @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_repos')
-    @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_puppets')
-    def test_upgrade(self, pup, rep, rel, ver):
+    def test_upgrade(self, pup, rel, ver):
         self.upgrader.upgrade()
 
         self.called_once(pup)
-        self.called_once(rep)
         self.called_once(rel)
         self.called_once(ver)
 
@@ -101,18 +98,15 @@ class TestOpenStackUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
     @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_repos')
-    @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_puppets')
-    def test_upgrade_with_errors(self, pup, rep, rel):
+    def test_upgrade_with_errors(self, pup, rel):
         class MyException(Exception):
             pass
 
-        rep.side_effect = MyException('Folder does no exist')
+        pup.side_effect = MyException('Folder does no exist')
         self.assertRaises(MyException, self.upgrader.upgrade)
 
         self.called_once(pup)
-        self.called_once(rep)
         self.method_was_not_called(rel)
 
     @mock.patch(
@@ -120,14 +114,11 @@ class TestOpenStackUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_puppets')
     @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_repos')
-    @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_releases')
-    def test_rollback(self, rel, rep, pup, ver):
+    def test_rollback(self, rel, pup, ver):
         self.upgrader.rollback()
 
         self.called_once(rel)
-        self.called_once(rep)
         self.called_once(pup)
         self.called_once(ver)
 
@@ -154,30 +145,6 @@ class TestOpenStackUpgrader(BaseTestCase):
         remove.assert_has_calls([
             mock.call('/etc/puppet/one'),
             mock.call('/etc/puppet/two')])
-
-    @mock.patch('fuel_upgrade.engines.openstack.utils.copy')
-    @mock.patch('fuel_upgrade.engines.openstack.glob.glob')
-    def test_install_repos(self, glob, copy):
-        glob.return_value = ['one', 'two']
-        self.upgrader.install_repos()
-
-        self.called_times(copy, 2)
-
-        copy.assert_has_calls([
-            mock.call('one', '/var/www/nailgun/one'),
-            mock.call('two', '/var/www/nailgun/two')])
-
-    @mock.patch('fuel_upgrade.engines.openstack.utils.remove')
-    @mock.patch('fuel_upgrade.engines.openstack.glob.glob')
-    def test_remove_repos(self, glob, remove):
-        glob.return_value = ['one', 'two']
-        self.upgrader.remove_repos()
-
-        self.called_times(remove, 2)
-
-        remove.assert_has_calls([
-            mock.call('/var/www/nailgun/one'),
-            mock.call('/var/www/nailgun/two')])
 
     @mock.patch(
         'fuel_upgrade.utils.iterfiles_filter',
@@ -293,5 +260,4 @@ class TestOpenStackUpgrader(BaseTestCase):
         result = self.upgrader.required_free_space
         self.assertEqual(result, {
             '/etc/puppet': 84,
-            '/var/www/nailgun': 84,
         })

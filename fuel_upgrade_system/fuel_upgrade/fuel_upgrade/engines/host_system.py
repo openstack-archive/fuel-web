@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import glob
 import os
 
 from fuel_upgrade.engines.base import UpgradeEngine
@@ -56,12 +57,6 @@ class HostSystemUpgrader(UpgradeEngine):
         #: path to repository config
         self.repo_config_path = self.host_system_config['repo_config_path']
 
-        #: src repository path
-        self.repo_src = self.host_system_config['repo_path']['src']
-
-        #: dst repository path
-        self.repo_dst = self.host_system_config['repo_path']['dst']
-
         #: packages to be installed before running puppet
         self.packages = self.host_system_config['install_packages']
 
@@ -69,18 +64,23 @@ class HostSystemUpgrader(UpgradeEngine):
     def required_free_space(self):
         """Required free space to run upgrade
 
-        Requires only several megabytes for
-        repo config.
+        Requires a lot of disk spaces for new repos and repo config.
 
         :returns: dict where key is path to directory
-                  and value is required free space
+                  and value is required free space in megabytes
         """
-        return {self.repo_config_path: 10}
+        sources = glob.glob(self.host_system_config['repos']['src'])
+        repos_size = sum(map(utils.dir_size, sources))
+
+        return {
+            self.host_system_config['repos']['dst']: repos_size,
+            self.repo_config_path: 10,
+        }
 
     def upgrade(self):
         """Run host system upgrade process
         """
-        self.copy_repo()
+        self.install_repos()
         self.update_repo()
         self.install_packages()
         self.run_puppet()
@@ -90,18 +90,27 @@ class HostSystemUpgrader(UpgradeEngine):
         is yum config
         """
         self.remove_repo_config()
+        self.remove_repos()
 
     def on_success(self):
         """Do nothing for this engine
         """
 
-    def copy_repo(self):
-        """Copy centos repo on the host system.
-        We need to make sure that when user
-        removes temporary files after upgrade
-        his repo path is valid.
-        """
-        utils.copy(self.repo_src, self.repo_dst)
+    def install_repos(self):
+        sources = glob.glob(self.host_system_config['repos']['src'])
+        for source in sources:
+            destination = os.path.join(
+                self.host_system_config['repos']['dst'],
+                os.path.basename(source))
+            utils.copy(source, destination)
+
+    def remove_repos(self):
+        sources = glob.glob(self.host_system_config['repos']['src'])
+        for source in sources:
+            destination = os.path.join(
+                self.host_system_config['repos']['dst'],
+                os.path.basename(source))
+            utils.remove(destination)
 
     def update_repo(self):
         """Add new centos repository
@@ -110,7 +119,7 @@ class HostSystemUpgrader(UpgradeEngine):
             self.repo_template_path,
             self.repo_config_path,
             {'version': self.version,
-             'repo_path': self.repo_dst})
+             'repo_path': self.host_system_config['repo_master']})
         utils.exec_cmd('yum clean all')
 
     def install_packages(self):

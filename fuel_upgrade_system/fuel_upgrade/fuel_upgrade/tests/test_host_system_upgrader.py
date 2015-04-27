@@ -28,17 +28,18 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.upgrader = HostSystemUpgrader(self.fake_config)
 
     @mock.patch(
+        'fuel_upgrade.engines.host_system.HostSystemUpgrader.install_repos')
+    @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.update_repo')
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.run_puppet')
     @mock.patch(
         'fuel_upgrade.engines.host_system.utils')
-    def test_upgrade(self, mock_utils, run_puppet_mock, update_repo_mock):
+    def test_upgrade(self, mock_utils, run_puppet_mock, update_repo_mock,
+                     install_repos_mock):
         self.upgrader.upgrade()
 
-        mock_utils.copy.assert_called_once_with(
-            '/tmp/upgrade_path/repos/2014.1.1-5.1/centos/x86_64',
-            '/var/www/nailgun/2014.1.1-5.1/centos/x86_64')
+        self.called_once(install_repos_mock)
         self.called_once(run_puppet_mock)
         self.called_once(update_repo_mock)
         mock_utils.exec_cmd.assert_called_with(
@@ -65,11 +66,14 @@ class TestHostSystemUpgrader(BaseTestCase):
             '--modulepath=/etc/puppet/2014.1.1-5.1/modules')
 
     @mock.patch(
+        'fuel_upgrade.engines.host_system.HostSystemUpgrader.remove_repos')
+    @mock.patch(
         'fuel_upgrade.engines.host_system.'
         'HostSystemUpgrader.remove_repo_config')
-    def test_rollback(self, remove_repo_config_mock):
+    def test_rollback(self, remove_repo_config_mock, remove_repos_mock):
         self.upgrader.rollback()
         self.called_once(remove_repo_config_mock)
+        self.called_once(remove_repos_mock)
 
     def test_on_success_does_not_raise_exceptions(self):
         self.upgrader.on_success()
@@ -80,7 +84,39 @@ class TestHostSystemUpgrader(BaseTestCase):
         utils_mock.remove_if_exists.assert_called_once_with(
             '/etc/yum.repos.d/9999_nailgun.repo')
 
-    def test_required_free_space(self):
+    @mock.patch('fuel_upgrade.engines.host_system.utils.copy')
+    @mock.patch('fuel_upgrade.engines.host_system.glob.glob')
+    def test_install_repos(self, glob, copy):
+        glob.return_value = ['one', 'two']
+        self.upgrader.install_repos()
+
+        self.called_times(copy, 2)
+
+        copy.assert_has_calls([
+            mock.call('one', '/var/www/nailgun/one'),
+            mock.call('two', '/var/www/nailgun/two')])
+
+    @mock.patch('fuel_upgrade.engines.host_system.utils.remove')
+    @mock.patch('fuel_upgrade.engines.host_system.glob.glob')
+    def test_remove_repos(self, glob, remove):
+        glob.return_value = ['one', 'two']
+        self.upgrader.remove_repos()
+
+        self.called_times(remove, 2)
+
+        remove.assert_has_calls([
+            mock.call('/var/www/nailgun/one'),
+            mock.call('/var/www/nailgun/two')])
+
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.utils.os.path.isdir',
+        return_value=True)
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.utils.dir_size', return_value=42)
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.glob.glob', return_value=['1', '2'])
+    def test_required_free_space(self, _, __, ___):
         self.assertEqual(
             self.upgrader.required_free_space,
-            {'/etc/yum.repos.d/9999_nailgun.repo': 10})
+            {'/etc/yum.repos.d/9999_nailgun.repo': 10,
+             '/var/www/nailgun': 84})

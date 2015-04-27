@@ -14,7 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import glob
 import os
+
+import six
 
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade import utils
@@ -56,12 +59,6 @@ class HostSystemUpgrader(UpgradeEngine):
         #: path to repository config
         self.repo_config_path = self.host_system_config['repo_config_path']
 
-        #: src repository path
-        self.repo_src = self.host_system_config['repo_path']['src']
-
-        #: dst repository path
-        self.repo_dst = self.host_system_config['repo_path']['dst']
-
         #: packages to be installed before running puppet
         self.packages = self.host_system_config['install_packages']
 
@@ -75,12 +72,25 @@ class HostSystemUpgrader(UpgradeEngine):
         :returns: dict where key is path to directory
                   and value is required free space
         """
-        return {self.repo_config_path: 10}
+
+        spaces = {
+            self.host_system_config['repos']['dst']:
+            glob.glob(self.host_system_config['repos']['src'])}
+
+        for dst, srcs in six.iteritems(spaces):
+            size = 0
+            for src in srcs:
+                size += utils.dir_size(src)
+            spaces[dst] = size
+
+        spaces[self.repo_config_path] = 10
+
+        return spaces
 
     def upgrade(self):
         """Run host system upgrade process
         """
-        self.copy_repo()
+        self.install_repos()
         self.update_repo()
         self.install_packages()
         self.run_puppet()
@@ -90,18 +100,27 @@ class HostSystemUpgrader(UpgradeEngine):
         is yum config
         """
         self.remove_repo_config()
+        self.remove_repos()
 
     def on_success(self):
         """Do nothing for this engine
         """
 
-    def copy_repo(self):
-        """Copy centos repo on the host system.
-        We need to make sure that when user
-        removes temporary files after upgrade
-        his repo path is valid.
-        """
-        utils.copy(self.repo_src, self.repo_dst)
+    def install_repos(self):
+        sources = glob.glob(self.host_system_config['repos']['src'])
+        for source in sources:
+            destination = os.path.join(
+                self.host_system_config['repos']['dst'],
+                os.path.basename(source))
+            utils.copy(source, destination)
+
+    def remove_repos(self):
+        sources = glob.glob(self.host_system_config['repos']['src'])
+        for source in sources:
+            destination = os.path.join(
+                self.host_system_config['repos']['dst'],
+                os.path.basename(source))
+            utils.remove(destination)
 
     def update_repo(self):
         """Add new centos repository
@@ -110,7 +129,7 @@ class HostSystemUpgrader(UpgradeEngine):
             self.repo_template_path,
             self.repo_config_path,
             {'version': self.version,
-             'repo_path': self.repo_dst})
+             'repo_path': self.host_system_config['repo_master']})
         utils.exec_cmd('yum clean all')
 
     def install_packages(self):

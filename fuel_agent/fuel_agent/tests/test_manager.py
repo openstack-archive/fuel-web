@@ -337,12 +337,11 @@ class TestManager(test_base.BaseTestCase):
     @mock.patch('fuel_agent.manager.open',
                 create=True, new_callable=mock.mock_open)
     @mock.patch('fuel_agent.manager.tempfile.mkdtemp')
-    @mock.patch('fuel_agent.manager.time.sleep')
     @mock.patch('fuel_agent.manager.yaml.safe_dump')
     @mock.patch.object(manager.Manager, 'mount_target')
     @mock.patch.object(manager.Manager, 'umount_target')
     def test_do_build_image(self, mock_umount_target, mock_mount_target,
-                            mock_yaml_dump, mock_sleep, mock_mkdtemp,
+                            mock_yaml_dump, mock_mkdtemp,
                             mock_open, mock_shutil_move, mock_os,
                             mock_utils, mock_fu, mock_bu):
 
@@ -381,6 +380,8 @@ class TestManager(test_base.BaseTestCase):
                     'fakemd5_raw_boot', 'fakemd5_gzip_boot']
         mock_utils.calculate_md5.side_effect = md5_side
         mock_bu.containerize.side_effect = ['/tmp/img.gz', '/tmp/img-boot.gz']
+        mock_bu.stop_chrooted_processes.side_effect = [
+            False, True, False, True]
 
         self.mgr.do_build_image()
         self.assertEqual(
@@ -450,14 +451,21 @@ class TestManager(test_base.BaseTestCase):
         mock_bu.run_apt_get.assert_called_once_with(
             '/tmp/imgdir', packages=['fakepackage1', 'fakepackage2'])
         mock_bu.do_post_inst.assert_called_once_with('/tmp/imgdir')
-        signal_calls = mock_bu.send_signal_to_chrooted_processes.call_args_list
-        self.assertEqual([mock.call('/tmp/imgdir', signal.SIGTERM),
-                          mock.call('/tmp/imgdir', signal.SIGKILL)],
+        signal_calls = mock_bu.stop_chrooted_processes.call_args_list
+        self.assertEqual(2 * [mock.call('/tmp/imgdir', signal=signal.SIGTERM),
+                              mock.call('/tmp/imgdir', signal=signal.SIGKILL)],
                          signal_calls)
-        mock_sleep.assert_called_once_with(2)
-        mock_fu.umount_fs.assert_called_once_with('/tmp/imgdir/proc')
-        mock_umount_target.assert_called_once_with('/tmp/imgdir', pseudo=False)
-        self.assertEqual([mock.call('/dev/loop0'), mock.call('/dev/loop1')],
+        self.assertEqual(
+            [mock.call('/tmp/imgdir/proc', try_lazy_umount=False),
+             mock.call('/tmp/imgdir/proc')],
+            mock_fu.umount_fs.call_args_list)
+        self.assertEqual(
+            [mock.call('/tmp/imgdir', try_lazy_umount=False, pseudo=False),
+             mock.call('/tmp/imgdir', pseudo=False)],
+            mock_umount_target.call_args_list)
+        self.assertEqual([mock.call('/dev/loop0'), mock.call('/dev/loop1'),
+                          mock.call('/dev/loop0', check_exit_code=False),
+                          mock.call('/dev/loop1', check_exit_code=False)],
                          mock_bu.deattach_loop.call_args_list)
         self.assertEqual([mock.call('/tmp/img'), mock.call('/tmp/img-boot')],
                          mock_bu.shrink_sparse_file.call_args_list)

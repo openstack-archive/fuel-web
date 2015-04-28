@@ -150,6 +150,37 @@ class TestAttributes(BaseIntegrationTest):
         attrs.editable.pop('foo')
         self.assertNotEqual(attrs.editable, {})
 
+    def test_failing_attributes_put(self):
+        cluster_id = self.env.create_cluster(api=True)['id']
+        resp = self.app.get(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster_id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster_id}),
+            params=jsonutils.dumps({
+                'editable': {
+                    'storage': {
+                        'osd_pool_size': {
+                            'description': 'desc',
+                            'label': 'OSD Pool Size',
+                            'type': 'text',
+                            'value': True,
+                            'weight': 80,
+                        },
+                    },
+                },
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+
     def test_get_default_attributes(self):
         cluster = self.env.create_cluster(api=True)
         release = self.db.query(Release).get(

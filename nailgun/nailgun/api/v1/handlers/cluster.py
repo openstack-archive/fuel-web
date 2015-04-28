@@ -163,7 +163,7 @@ class ClusterAttributesHandler(BaseHandler):
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
-        data = self.checked_data()
+        data = self.checked_data(cluster=cluster)
 
         # if cluster is locked we have to check which attributes
         # we want to change and block an entire operation if there

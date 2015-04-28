@@ -499,7 +499,7 @@ class EnvironmentManager(object):
             'attributes': {
                 '{0}_text'.format(kwargs.get('plugin_name', 'plugin_name')): {
                     'value': kwargs.get('value', 'value'),
-                    'type': kwargs.get('type', 'type'),
+                    'type': kwargs.get('type', 'text'),
                     'description': kwargs.get('description', 'description'),
                     'weight': kwargs.get('weight', 25),
                     'label': kwargs.get('label', 'label')}}}

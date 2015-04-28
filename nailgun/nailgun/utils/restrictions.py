@@ -260,11 +260,10 @@ class AttributesRestriction(RestrictionMixin):
                     # TODO(apopovych): handle restriction message
                     return
                 else:
-                    attr_regex = data.get('regex', {})
-                    if attr_regex:
-                        pattern = re.compile(attr_regex.get('source'))
-                        if not pattern.match(data.get('value')):
-                            yield attr_regex.get('error')
+                    regex_error = cls.validate_regex(data)
+                    if regex_error is not None:
+                        yield regex_error
+
                     for key, value in six.iteritems(data):
                         if key not in ['restrictions', 'regex']:
                             for err in find_errors(value):
@@ -275,6 +274,18 @@ class AttributesRestriction(RestrictionMixin):
                         yield err
 
         return list(find_errors())
+
+    @staticmethod
+    def validate_regex(data):
+        attr_regex = data.get('regex', {})
+        if attr_regex:
+            value = data.get('value')
+            if not isinstance(value, basestring):
+                return ('Value {0} is of invalid type, cannot check '
+                        'regexp'.format(value))
+            pattern = re.compile(attr_regex.get('source'))
+            if not pattern.search(value):
+                return attr_regex.get('error')
 
 
 class VmwareAttributesRestriction(RestrictionMixin):

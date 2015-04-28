@@ -4,6 +4,7 @@
 
 // Base Settings
 @page-width: 1170px;
+@input-width: 280px;
 
 // Base Palette
 @base-dark-color:  #394c59;
@@ -1766,7 +1767,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 // FORMS
 
 .forms-box {
-  @input-width: 280px;
   @label-width: 200px;
   @base-indent: 20px;
 
@@ -2077,6 +2077,318 @@ button, .btn:not(.btn-link) {.font-semibold;}
           vertical-align: middle;
         }
       }
+    }
+  }
+}
+
+
+// Networks tab
+.network-tab {
+  @top-offset: 10px;
+  .network-section-wrapper {
+    margin-left: -10px;
+  }
+  .nova-managers {
+    margin-left: -20px;
+  }
+  .network-managers {
+    margin: 10px;
+  }
+  .networks-table {
+    margin-top: 15px;
+  }
+  .has-error {
+    input {
+      .text-danger;
+    }
+  }
+  .form-group {
+    select, input {
+      width: @input-width;
+    }
+  }
+  // range
+  .range,
+  .multiple-values {
+    .rows-container {
+      margin-top: -@top-offset;
+    }
+    .range-row-header {
+      font-weight: bold;
+      font-size: @base-font-size - 2;
+      margin-left: 197px;
+      div {
+        float: left;
+        width: @input-width + 47;
+      }
+    }
+    label {
+      width: 190px;
+      padding-top: @top-offset;
+    }
+    &.mini {
+      .range-row-header {
+        div {
+          width: 167px;
+        }
+      }
+      .range-row {
+        margin-top: -50px;
+        padding-left: 7px;
+        input {
+          width: 132px;
+        }
+        .validation-error {
+          margin-top: 19px;
+          span {
+            margin-left: 6px;
+          }
+        }
+        .form-group {
+          margin-top: 0;
+          width: 145px;
+          margin-left: 5px;
+        }
+      }
+    }
+    &.ip_ranges {
+      .ip-ranges-rows {
+        .rows-container {
+        }
+      }
+    }
+    &.dns_nameservers {
+      margin-left: -10px;
+      label {
+        margin-left: 0;
+      }
+      .dns_nameservers-row {
+        .range-row {
+          &.first {
+            margin-top: -50px;
+          }
+          padding-bottom: 0;
+          padding-top: 0;
+          .glyphicon {
+            margin-top: @top-offset + 5;
+          }
+        }
+        .validation-error {
+          margin-top: 18px;
+          span {
+            font-size: @base-font-size - 2;
+            margin-left: 10px;
+          }
+        }
+      }
+    }
+    &.vlan-id-range {
+      margin-bottom: @top-offset;
+    }
+    .range-row {
+      .glyphicon {
+        margin-left: -7px;
+        margin-right: -3px;
+      }
+      .form-group {
+        margin-bottom: 0;
+        float: left;
+        padding-left: 2px;
+      }
+      &.offset-bottom {
+        margin-bottom:@top-offset;
+      }
+      &.offset-left {
+        margin-left: 198px;
+      }
+      &.padding-left {
+        padding-left: 12px;
+      }
+      .validation-error {
+        margin-top: 9px;
+        span {
+          font-size: @base-font-size - 2;
+          margin-left: -30px;
+        }
+      }
+      .ip-ranges-control {
+        float: left;
+        .ip-ranges-add {
+          margin-left: 10px;
+        }
+      }
+    }
+  }
+  .range {
+    .range-row {
+      .form-group {
+        margin-top: -@top-offset;
+      }
+    }
+    .no-controls {
+      width: 330px;
+    }
+  }
+  // vlan tag control
+  .vlan-tagging {
+    height: 90px;
+    &.fixed_networks_vlan_start {
+      height: 40px;
+    }
+    > label.vlan-tag-label {
+      width: 200px;
+    }
+    label {
+      width: auto;
+    }
+    input[type=text] {
+      margin-left: -40px;
+      width: 248px;
+    }
+    .checkbox-group {
+      padding-left: 0;
+      margin-bottom: 0;
+      margin-left: 200px;
+      label span {
+        padding-right: 0;
+        .custom-tumbler {
+          margin-left: 77px;
+          margin-right: 0;
+          input {
+            width: auto;
+          }
+        }
+      }
+    }
+  }
+
+  // Verification Block
+  // -------------------------
+  .verification-control {
+    // Verification block mixin
+    .connect-stop-mixin(@width, @height, @margin-left) {
+      display: inline-block;
+      width: @width;
+      height: @height;
+      margin-left: @margin-left;
+      overflow: hidden;
+    }
+
+    .connect-size {
+      width: 140px;
+      height: 40px;
+    }
+
+    @connect-url-1: url(../img/connect_1_anim.gif);
+    @connect-url-2: url(../img/connect_2_anim.gif);
+    @connect-url-3: url(../img/connect_3_anim.gif);
+
+    @connect-height: 62px;
+    @connect-width: 124px;
+
+    .verification-box {
+      display: block;
+      margin: 10px 0px;
+      position: relative;
+      .alert {
+        clear: left;
+        margin-bottom: 0px;
+        margin-top: 10px;
+        padding: 8px 35px 10px 14px;
+        width: 100%;
+      }
+    }
+    .verification-network-placeholder {
+      float: left;
+      width: 590px;
+      margin-bottom: 25px;
+    }
+    .verification-text-placeholder {
+      display: block;
+      float: left;
+      margin-left: 20px;
+      li:first-of-type {
+        font-weight: bold;
+      }
+      li {
+        list-style: none outside none;
+        margin: 2px 0 8px 0;
+        line-height: 17px;
+      }
+    }
+    .verification-result-table {
+      clear: both;
+      padding-top: 10px;
+      td:last-child {
+        width: 400px;
+        word-break: break-all;
+      }
+    }
+    .verification-router {
+      display: block;
+      width: 200px;
+      height: 58px;
+      margin-left: 190px;
+      background: url(../img/router.png) no-repeat top left;
+    }
+    .verification-node-1 {
+      display: inline-block;
+      .connect-size;
+    }
+    .verification-node-2, .verification-node-3 {
+      display: inline-block;
+      .connect-size;
+      margin-left: 76px;
+    }
+    .verification-node-1, .verification-node-2, .verification-node-3 {
+      background: url(../img/node-small.png) no-repeat top left;
+    }
+    .connect-1-stop, .connect-1-success, .connect-1-error {
+      .connect-stop-mixin(176px, @connect-height, @connect-height);
+    }
+    .connect-1-stop {
+      background:@connect-url-1 no-repeat top left;
+    }
+    .connect-1-success {
+      background: @connect-url-1 no-repeat 0px -@connect-height;
+    }
+    .connect-1-error {
+      background: @connect-url-1 no-repeat 0px -@connect-width;
+    }
+    .connect-2-stop, .connect-2-success, .connect-2-error {
+      .connect-stop-mixin(8px, @connect-height, 49px);
+    }
+    .connect-2-stop {
+      background: @connect-url-2 no-repeat top left;
+    }
+    .connect-2-success {
+      background: @connect-url-2 no-repeat 0px -@connect-height;
+    }
+    .connect-2-error {
+      background: @connect-url-2 no-repeat 0px -@connect-width;
+    }
+    .connect-3-stop, .connect-3-success, .connect-3-error {
+      .connect-stop-mixin(176px, @connect-height, 49px);
+    }
+    .connect-3-stop {
+      background: @connect-url-3 no-repeat top left;
+    }
+    .connect-3-success {
+      background: @connect-url-3 no-repeat 0px -@connect-height;
+    }
+    .connect-3-error {
+      background: @connect-url-3 no-repeat 0px -@connect-width;
+    }
+    .router-box {
+      display: block;
+      height: 58px;
+      overflow: hidden;
+    }
+    .animation-box {
+      display: block;
+      height: @connect-height;
+      margin-top: -9px;
+      overflow: hidden;
     }
   }
 }

@@ -18,6 +18,7 @@
 Handlers dealing with clusters
 """
 
+import copy
 import traceback
 
 from nailgun.api.v1.handlers.base import BaseHandler
@@ -164,6 +165,11 @@ class ClusterAttributesHandler(BaseHandler):
             raise self.http(500, "No attributes found!")
 
         data = self.checked_data()
+
+        attrs = copy.copy(
+            objects.Cluster.get_updated_editable_attributes(cluster, data)
+        )
+        self.validator.validate_attributes(attrs)
 
         # if cluster is locked we have to check which attributes
         # we want to change and block an entire operation if there

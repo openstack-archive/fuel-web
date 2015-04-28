@@ -228,33 +228,29 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             var cluster = this.props.cluster,
-                nodes = cluster.get('nodes'),
-                settingsWillBeLocked = _.contains(['new', 'stopped'], cluster.get('status')),
-                needsRedeployment = cluster.needsRedeployment(),
-                warningClasses = {
-                    'deploy-task-notice': true,
-                    'text-error': needsRedeployment || this.state.isInvalid,
-                    'text-warning': settingsWillBeLocked
-                };
+                nodes = cluster.get('nodes');
             return (
                 <div className='display-changes-dialog'>
-                    {(settingsWillBeLocked || needsRedeployment || this.state.isInvalid) &&
+                    {(this.state.isInvalid || cluster.needsRedeployment()) ?
                         <div>
-                            <div className={utils.classNames(warningClasses)}>
+                            <div className='deploy-task-notice text-error'>
                                 <i className='icon-attention' />
-                                <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' :
-                                    settingsWillBeLocked ? 'locked_settings_alert' : 'redeployment_needed'))}</span>
+                                <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' : 'redeployment_needed'))}</span>
                             </div>
                             <hr className='slim' />
-                            {settingsWillBeLocked &&
-                                <div>
-                                    <div className={utils.classNames(warningClasses)}>
-                                        <i className='icon-attention' />
-                                        <span dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n(this.ns + 'warnings.connectivity_alert')))}} />
-                                    </div>
-                                    <hr className='slim' />
-                                </div>
-                            }
+                        </div>
+                    : _.contains(['new', 'stopped'], cluster.get('status')) &&
+                        <div>
+                            <div className='deploy-task-notice text-warning'>
+                                <i className='icon-attention' />
+                                <span>{i18n(this.ns + 'locked_settings_alert')}</span>
+                            </div>
+                            <hr className='slim' />
+                            <div className='deploy-task-notice text-warning'>
+                                <i className='icon-attention' />
+                                <span dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n(this.ns + 'warnings.connectivity_alert')))}} />
+                            </div>
+                            <hr className='slim' />
                         </div>
                     }
                     {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}

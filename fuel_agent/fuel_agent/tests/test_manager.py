@@ -361,7 +361,9 @@ class TestManager(test_base.BaseTestCase):
         self.mgr.driver.operating_system = objects.Ubuntu(
             repos=[
                 objects.DEBRepo('ubuntu', 'http://fakeubuntu',
-                                'trusty', 'fakesection'),
+                                'trusty', 'fakesection', priority=900),
+                objects.DEBRepo('ubuntu_zero', 'http://fakeubuntu_zero',
+                                'trusty', 'fakesection', priority=None),
                 objects.DEBRepo('mos', 'http://fakemos',
                                 'mosX.Y', 'fakesection', priority=1000)],
             packages=['fakepackage1', 'fakepackage2'])
@@ -414,23 +416,33 @@ class TestManager(test_base.BaseTestCase):
                       suite='trusty',
                       section='fakesection',
                       chroot='/tmp/imgdir'),
+            mock.call(name='ubuntu_zero',
+                      uri='http://fakeubuntu_zero',
+                      suite='trusty',
+                      section='fakesection',
+                      chroot='/tmp/imgdir'),
             mock.call(name='mos',
                       uri='http://fakemos',
                       suite='mosX.Y',
                       section='fakesection',
                       chroot='/tmp/imgdir')],
             mock_bu.add_apt_source.call_args_list)
+
+        # we don't call add_apt_preference for ubuntu_zero
+        # because it has priority == None
         self.assertEqual([
             mock.call(name='ubuntu',
-                      priority=None,
+                      priority=900,
                       suite='trusty',
                       section='fakesection',
-                      chroot='/tmp/imgdir'),
+                      chroot='/tmp/imgdir',
+                      uri='http://fakeubuntu'),
             mock.call(name='mos',
                       priority=1000,
                       suite='mosX.Y',
                       section='fakesection',
-                      chroot='/tmp/imgdir')],
+                      chroot='/tmp/imgdir',
+                      uri='http://fakemos')],
             mock_bu.add_apt_preference.call_args_list)
         mock_utils.makedirs_if_not_exists.assert_called_once_with(
             '/tmp/imgdir/proc')

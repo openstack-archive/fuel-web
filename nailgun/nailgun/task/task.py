@@ -585,7 +585,7 @@ class BaseNetworkVerification(object):
         self.task = task
         self.config = config
 
-    def get_ifaces_on_undeployed_node(self, node, node_json):
+    def get_ifaces_on_undeployed_node(self, node, node_json, has_public):
         # Save bonds info to be able to check net-probe results w/o
         # need to access nodes in DB (node can be deleted before the test is
         # completed). This info is needed for non-deployed nodes only.
@@ -609,6 +609,9 @@ class BaseNetworkVerification(object):
                 if ng.group_id is None:
                     vlans.append(0)
                     continue
+                if ng.name == consts.NETWORKS.public and not has_public:
+                    continue
+
                 data_ng = filter(lambda i: i['name'] == ng.name,
                                  self.config)[0]
                 if data_ng['vlans']:
@@ -628,7 +631,7 @@ class BaseNetworkVerification(object):
                 node_json['networks'].append(
                     {'iface': iface.name, 'vlans': vlans})
 
-    def get_ifaces_on_deployed_node(self, node, node_json):
+    def get_ifaces_on_deployed_node(self, node, node_json, has_public):
         for iface in node.interfaces:
             # In case of present bond interfaces - collect assigned networks
             # against bonds themselves. We can check bonds as they are up on
@@ -639,6 +642,9 @@ class BaseNetworkVerification(object):
                 if ng.group_id is None:
                     vlans.append(0)
                     continue
+                if ng.name == consts.NETWORKS.public and not has_public:
+                    continue
+
                 data_ng = filter(lambda i: i['name'] == ng.name,
                                  self.config)[0]
                 if data_ng['vlans']:
@@ -654,7 +660,14 @@ class BaseNetworkVerification(object):
 
     def get_message_body(self):
         nodes = []
+        nodes_w_public = []
         offline_nodes = 0
+        for node in self.task.cluster.nodes:
+            if node.online and objects.Node.should_have_public(node):
+                nodes_w_public.append(node.id)
+        if len(nodes_w_public) < 2:
+            # don't check public VLANs if there is the only node with public
+            nodes_w_public = []
         for node in self.task.cluster.nodes:
             if node.offline:
                 offline_nodes += 1
@@ -668,12 +681,13 @@ class BaseNetworkVerification(object):
                 'excluded_networks': [],
             }
 
+            has_public = node.id in nodes_w_public
             # Check bonds on deployed nodes and check bonds slave NICs on
             # undeployed ones.
             if node.status == consts.NODE_STATUSES.ready:
-                self.get_ifaces_on_deployed_node(node, node_json)
+                self.get_ifaces_on_deployed_node(node, node_json, has_public)
             else:
-                self.get_ifaces_on_undeployed_node(node, node_json)
+                self.get_ifaces_on_undeployed_node(node, node_json, has_public)
 
             nodes.append(node_json)
 

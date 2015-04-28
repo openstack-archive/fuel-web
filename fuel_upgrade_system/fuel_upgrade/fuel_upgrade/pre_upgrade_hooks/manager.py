@@ -41,6 +41,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_conf \
     import FixDhcrelayConf
 from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_dhcrelay_monitor \
     import FixDhcrelayMonitor
+from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_fix_version_in_supervisor \
+    import SetFixedVersionInSupervisor
 from fuel_upgrade.pre_upgrade_hooks.from_any_to_6_1_recreate_containers \
     import RecreateNailgunInPriveleged
 
@@ -69,6 +71,7 @@ class PreUpgradeHookManager(object):
         RecreateNailgunInPriveleged,
         FixDhcrelayConf,
         FixDhcrelayMonitor,
+        SetFixedVersionInSupervisor,
     ]
 
     def __init__(self, upgraders, config):

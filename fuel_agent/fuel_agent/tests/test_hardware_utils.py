@@ -321,6 +321,7 @@ E: USEC_INITIALIZED=87744
 
 P: /devices/pci0000:00/0000:00:1c.1/target16:0:0/16:0:0:0/block/sr0
 E: DEVTYPE=disk
+E: DEVNAME=/dev/sr0
 E: MAJOR=11
 E: MINOR=0
 E: SEQNUM=4400

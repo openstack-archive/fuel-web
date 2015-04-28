@@ -722,7 +722,7 @@
                 },
                 "stop_deployment": {
                     "title": "Stop Deployment",
-                    "text": "Are you sure you want to stop this deployment? Any progress will be lost and nodes will be reset to their pre-deployment state.",
+                    "text": "Are you sure you want to stop this deployment? Successful deployment may NOT be possible unless you completely reset the environment. Use with caution!",
                     "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state.",
                     "stop_deployment_error": {
                         "title": "Stop Deployment Error",
@@ -731,7 +731,7 @@
                 },
                 "reset_environment": {
                     "title": "Reset Environment",
-                    "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state. Disk and interface configuration will also be reset to default."
+                    "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state. Disk and interface configuration will also be reset to defaults."
                 },
                 "update_environment": {
                     "title": "Update Environment",

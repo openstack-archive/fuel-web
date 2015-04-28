@@ -13,12 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.serialization import jsonutils
+import yaml
+
 from nailgun.api.v1.validators.cluster import AttributesValidator
 from nailgun.errors import errors
 from nailgun.test.base import BaseTestCase
 
 
 class TestAttributesValidator(BaseTestCase):
+    def yaml2json(self, y):
+        return jsonutils.dumps(yaml.load(y))
+
     def test_generated_attributes_validation(self):
         self.assertRaises(errors.InvalidData,
                           AttributesValidator.validate,
@@ -29,13 +35,230 @@ class TestAttributesValidator(BaseTestCase):
                           AttributesValidator.validate,
                           '{"editable": "name"}')
 
+    def test_missing_type(self):
+        attrs = '''
+            editable:
+              storage:
+                osd_pool_size:
+                  description: desc
+                  label: OSD Pool Size
+                  value: 'x'
+                  weight: 80
+        '''
+
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          self.yaml2json(attrs))
+
+    def test_missing_value(self):
+        attrs = '''
+            editable:
+              storage:
+                osd_pool_size:
+                  description: desc
+                  label: OSD Pool Size
+                  type: checkbox
+                  weight: 80
+        '''
+
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          self.yaml2json(attrs))
+
+    def test_invalid_regexp(self):
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: text
+              value: '212a'
+              regex:
+                error: Invalid
+                source: ^\d+$
+              weight: 80
+        '''
+
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          self.yaml2json(attrs))
+
+    def test_checkbox_value(self):
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: checkbox
+              value: true
+              weight: 80
+        '''
+
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate,
+                             self.yaml2json(attrs))
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: checkbox
+              value: 'x'
+              weight: 80
+        '''
+
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          self.yaml2json(attrs))
+
+    def test_custom_repo_configuration_value(self):
+        attrs = '''
+        editable:
+          storage:
+            repos:
+              description: desc
+              type: custom_repo_configuration
+              value:
+              - name: ubuntu
+                priority: null
+                section: main universe multiverse
+                suite: trusty
+                type: deb
+                uri: http://archive.ubuntu.com/ubuntu/
+              - name: ubuntu-updates
+                priority: null
+                section: main universe multiverse
+                suite: trusty-updates
+                type: deb
+                uri: http://archive.ubuntu.com/ubuntu/
+        '''
+
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate,
+                             self.yaml2json(attrs))
+
+    def test_password_value(self):
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: password
+              value: '2'
+              weight: 80
+        '''
+
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate,
+                             self.yaml2json(attrs))
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: password
+              value: 2
+              weight: 80
+        '''
+
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          self.yaml2json(attrs))
+
+    def test_radio_value(self):
+        attrs = '''
+        editable:
+          storage:
+            syslog_transport:
+              label: Syslog transport protocol
+              type: radio
+              value: tcp
+              values:
+              - data: udp
+                description: ''
+                label: UDP
+              - data: tcp
+                description: ''
+                label: TCP
+              weight: 3
+        '''
+
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate,
+                             self.yaml2json(attrs))
+
+    def test_text_value(self):
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: text
+              value: '2'
+              weight: 80
+        '''
+
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate,
+                             self.yaml2json(attrs))
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: text
+              value: 2
+              weight: 80
+        '''
+
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          self.yaml2json(attrs))
+
+    def test_textarea_value(self):
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: textarea
+              value: '2'
+              weight: 80
+        '''
+
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate,
+                             self.yaml2json(attrs))
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: textarea
+              value: 2
+              weight: 80
+        '''
+
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          self.yaml2json(attrs))
+
     def test_valid_attributes(self):
         valid_attibutes = [
-            '{"editable": {"name":"test"}}',
-            '{"name":"test"}'
+            '{editable: {name: test}}',
+            '{name: test}',
         ]
 
         for attributes in valid_attibutes:
             self.assertNotRaises(errors.InvalidData,
                                  AttributesValidator.validate,
-                                 attributes)
+                                 self.yaml2json(attributes))

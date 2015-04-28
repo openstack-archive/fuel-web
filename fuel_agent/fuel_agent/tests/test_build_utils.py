@@ -253,8 +253,9 @@ class BuildUtilsTestCase(testtools.TestCase):
 
     @mock.patch.object(utils, 'execute')
     def test_deattach_loop(self, mock_exec):
-        bu.deattach_loop('loop')
-        mock_exec.assert_called_once_with('losetup', '-d', 'loop')
+        bu.deattach_loop('loop', check_exit_code='Fake')
+        mock_exec.assert_called_once_with('losetup', '-d', 'loop',
+                                          check_exit_code='Fake')
 
     @mock.patch.object(hu, 'parse_simple_kv')
     @mock.patch.object(utils, 'execute')

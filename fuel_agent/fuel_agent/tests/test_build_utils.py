@@ -14,6 +14,7 @@
 
 import os
 import shutil
+import signal
 import testtools
 
 import mock
@@ -176,30 +177,42 @@ class BuildUtilsTestCase(testtools.TestCase):
         mock_clean.assert_called_once_with('chroot')
         mock_path.join.assert_called_once_with('chroot', 'etc/shadow')
 
+    @mock.patch('fuel_agent.utils.build_utils.time.sleep')
     @mock.patch.object(os, 'kill')
     @mock.patch.object(os, 'readlink', return_value='chroot')
     @mock.patch.object(utils, 'execute')
-    def test_send_signal_to_chrooted_processes(self, mock_exec, mock_link,
-                                               mock_kill):
-        mock_exec.return_value = ('kernel   951  1641  1700  1920  3210  4104',
-                                  '')
-        bu.send_signal_to_chrooted_processes('chroot', 'signal')
-        mock_exec.assert_called_once_with('fuser', '-v', 'chroot',
-                                          check_exit_code=False)
+    def test_stop_chrooted_processes(self, mock_exec, mock_link,
+                                     mock_kill, mock_sleep):
+        mock_exec.side_effect = [
+            ('kernel   951  1641  1700  1920  3210  4104', ''),
+            ('kernel   951  1641  1700', ''),
+            ('', '')]
+        mock_exec_expected_calls = \
+            [mock.call('fuser', '-v', 'chroot', check_exit_code=False)] * 3
+
+        bu.stop_chrooted_processes('chroot', signal=signal.SIGTERM)
+        self.assertEqual(mock_exec_expected_calls, mock_exec.call_args_list)
+
         expected_mock_link_calls = [
             mock.call('/proc/951/root'),
             mock.call('/proc/1641/root'),
             mock.call('/proc/1700/root'),
             mock.call('/proc/1920/root'),
             mock.call('/proc/3210/root'),
-            mock.call('/proc/4104/root')]
+            mock.call('/proc/4104/root'),
+            mock.call('/proc/951/root'),
+            mock.call('/proc/1641/root'),
+            mock.call('/proc/1700/root')]
         expected_mock_kill_calls = [
-            mock.call(951, 'signal'),
-            mock.call(1641, 'signal'),
-            mock.call(1700, 'signal'),
-            mock.call(1920, 'signal'),
-            mock.call(3210, 'signal'),
-            mock.call(4104, 'signal')]
+            mock.call(951, signal.SIGTERM),
+            mock.call(1641, signal.SIGTERM),
+            mock.call(1700, signal.SIGTERM),
+            mock.call(1920, signal.SIGTERM),
+            mock.call(3210, signal.SIGTERM),
+            mock.call(4104, signal.SIGTERM),
+            mock.call(951, signal.SIGTERM),
+            mock.call(1641, signal.SIGTERM),
+            mock.call(1700, signal.SIGTERM)]
         self.assertEqual(expected_mock_link_calls, mock_link.call_args_list)
         self.assertEqual(expected_mock_kill_calls, mock_kill.call_args_list)
 
@@ -256,8 +269,13 @@ class BuildUtilsTestCase(testtools.TestCase):
 
     @mock.patch.object(utils, 'execute')
     def test_deattach_loop(self, mock_exec):
-        bu.deattach_loop('loop')
-        mock_exec.assert_called_once_with('losetup', '-d', 'loop')
+        mock_exec.return_value = ('/dev/loop0: [fd03]:130820 (/dev/loop0)', '')
+        bu.deattach_loop('/dev/loop0', check_exit_code='Fake')
+        mock_exec_expected_calls = [
+            mock.call('losetup', '-a'),
+            mock.call('losetup', '-d', '/dev/loop0', check_exit_code='Fake')
+        ]
+        self.assertEqual(mock_exec.call_args_list, mock_exec_expected_calls)
 
     @mock.patch.object(hu, 'parse_simple_kv')
     @mock.patch.object(utils, 'execute')

@@ -16,8 +16,10 @@ import gzip
 import os
 import re
 import shutil
+import signal as sig
 import stat
 import tempfile
+import time
 
 import six
 import yaml
@@ -143,13 +145,23 @@ def suppress_services_start(chroot):
         os.fchmod(f.fileno(), 0o755)
 
 
-def clean_dirs(chroot, dirs):
+def clean_dirs(chroot, dirs, delete=False):
+    """Method is used to clean directories content
+    or remove directories themselfs.
+
+    :param chroot: Root directory where to look for subdirectories
+    :param dirs: List of directories to clean/remove (Relative to chroot)
+    :param delete: (Boolean) If True, directories will be removed
+    (Default: False)
+    """
     for d in dirs:
         path = os.path.join(chroot, d)
         if os.path.isdir(path):
+            LOG.debug('Removing dir: %s', path)
             shutil.rmtree(path)
-            os.makedirs(path)
-            LOG.debug('Removed dir: %s', path)
+            if not delete:
+                LOG.debug('Creating empty dir: %s', path)
+                os.makedirs(path)
 
 
 def remove_files(chroot, files):
@@ -192,17 +204,56 @@ def do_post_inst(chroot):
     clean_apt_settings(chroot)
 
 
-def send_signal_to_chrooted_processes(chroot, signal):
-    """Sends signal to all processes, which are running inside of chroot."""
-    for p in utils.execute('fuser', '-v', chroot,
-                           check_exit_code=False)[0].split():
-        try:
-            pid = int(p)
-            if os.readlink('/proc/%s/root' % pid) == chroot:
-                LOG.debug('Sending %s to chrooted process %s', signal, pid)
-                os.kill(pid, signal)
-        except (OSError, ValueError):
-            LOG.warning('Skipping non pid %s from fuser output' % p)
+def stop_chrooted_processes(chroot, signal=sig.SIGTERM,
+                            attempts=10, attempts_delay=2):
+    """Sends signal to all processes, which are running inside chroot.
+    It tries several times until all processes die. If at some point there
+    are no running processes found, it returns True.
+
+    :param chroot: Process root directory.
+    :param signal: Which signal to send to processes. It must be either
+    SIGTERM or SIGKILL. (Default: SIGTERM)
+    :param attempts: Number of attempts (Default: 10)
+    :param attempts_delay: Delay between attempts (Default: 2)
+    """
+
+    if signal not in (sig.SIGTERM, sig.SIGKILL):
+        raise ValueError('Signal must be either SIGTERM or SIGKILL')
+
+    def get_running_processes():
+        return utils.execute(
+            'fuser', '-v', chroot, check_exit_code=False)[0].split()
+
+    for i in six.moves.range(attempts):
+        running_processes = get_running_processes()
+        if not running_processes:
+            LOG.debug('There are no running processes in %s ', chroot)
+            return True
+        for p in running_processes:
+            try:
+                pid = int(p)
+                if os.readlink('/proc/%s/root' % pid) == chroot:
+                    LOG.debug('Sending %s to chrooted process %s', signal, pid)
+                    os.kill(pid, signal)
+            except (OSError, ValueError) as e:
+                LOG.warning('Exception while sending signal to '
+                            'process: %s. Skipping it.', e)
+
+        # First of all, signal delivery is asynchronous.
+        # Just because the signal has been sent doesn't
+        # mean the kernel will deliver it instantly
+        # (the target process might be uninterruptible at the moment).
+        # Secondly, exiting might take a while (the process might have
+        # some data to fsync, etc)
+        LOG.debug('Attempt %s. Waiting for %s seconds', i + 1, attempts_delay)
+        time.sleep(attempts_delay)
+
+    running_processes = get_running_processes()
+    if running_processes:
+        LOG.warning('Looks like some processes still are running: %s',
+                    ' '.join(running_processes))
+        return False
+    return True
 
 
 def get_free_loop_device(
@@ -243,8 +294,17 @@ def attach_file_to_loop(filename, loop):
     utils.execute('losetup', loop, filename)
 
 
-def deattach_loop(loop):
-    utils.execute('losetup', '-d', loop)
+def deattach_loop(loop, check_exit_code=[0]):
+    LOG.debug('Trying to figure out if loop device %s is attached', loop)
+    output = utils.execute('losetup', '-a')[0]
+    for line in output.split('\n'):
+        # output lines are assumed to have the following format
+        # /dev/loop0: [fd03]:130820 (/dev/loop0)
+        if loop == line.split(':')[0]:
+            LOG.debug('Loop device %s seems to be attached. '
+                      'Trying to detach.', loop)
+            utils.execute('losetup', '-d', loop,
+                          check_exit_code=check_exit_code)
 
 
 def shrink_sparse_file(filename):

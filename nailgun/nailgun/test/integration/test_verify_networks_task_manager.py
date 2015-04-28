@@ -502,12 +502,14 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                 {
                     'api': True,
                     'pending_addition': True,
-                    'meta': meta1
+                    'meta': meta1,
+                    'roles': ['controller'],
                 },
                 {
                     'api': True,
                     'pending_addition': True,
-                    'meta': meta2
+                    'meta': meta2,
+                    'roles': ['compute'],
                 }]
         )
 
@@ -551,3 +553,66 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                 if net['iface'] == priv_nics[node['uid']]:
                     self.assertTrue(vlan_rng <= set(net['vlans']))
                     break
+
+    @fake_tasks()
+    def test_network_verification_parameters_w_one_node_having_public(self):
+        # Decrease VLAN range and set public VLAN
+        resp = self.env.neutron_networks_get(self.env.clusters[0].id)
+        nets = resp.json_body
+        nets['networking_parameters']['vlan_range'] = [1000, 1004]
+        for net in nets['networks']:
+            if net['name'] == 'public':
+                net['vlan_start'] = 333
+        resp = self.env.neutron_networks_put(self.env.clusters[0].id, nets)
+        self.assertEqual(resp.status_code, 200)
+        task = resp.json_body
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
+
+        task = self.env.launch_verify_networks()
+        # Public VLANs are not being checked on both nodes
+        for n in xrange(2):
+            self.assertEqual(
+                task.cache['args']['nodes'][n]['networks'],
+                [{'vlans': [0, 101, 102, 1000, 1001, 1002, 1003, 1004],
+                  'iface': 'eth0'}])
+        self.env.wait_ready(task, 30)
+
+    @fake_tasks()
+    def test_network_verification_parameters_w_two_nodes_having_public(self):
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=1,
+            if_count=3,
+            api=True,
+            pending_addition=True,
+            roles=['controller'],
+            cluster_id=self.env.clusters[0].id)
+        # Decrease VLAN range and set public VLAN
+        resp = self.env.neutron_networks_get(self.env.clusters[0].id)
+        nets = resp.json_body
+        nets['networking_parameters']['vlan_range'] = [1000, 1004]
+        for net in nets['networks']:
+            if net['name'] == 'public':
+                net['vlan_start'] = 333
+        resp = self.env.neutron_networks_put(self.env.clusters[0].id, nets)
+        self.assertEqual(resp.status_code, 200)
+        task = resp.json_body
+        self.assertEqual(task['status'], consts.TASK_STATUSES.ready)
+
+        task = self.env.launch_verify_networks()
+        eth0_vlans = {'iface': 'eth0',
+                      'vlans': [0, 101, 102, 1000, 1001, 1002, 1003, 1004]}
+        eth1_vlans = {'iface': 'eth1',
+                      'vlans': [333]}
+        # There is public VLAN on 1st controller node
+        self.assertEqual(
+            task.cache['args']['nodes'][0]['networks'],
+            [eth0_vlans, eth1_vlans])
+        # There is no public VLAN on compute node
+        self.assertEqual(
+            task.cache['args']['nodes'][1]['networks'],
+            [eth0_vlans])
+        # There is public VLAN on 2nd controller node
+        self.assertEqual(
+            task.cache['args']['nodes'][2]['networks'],
+            [eth0_vlans, eth1_vlans])
+        self.env.wait_ready(task, 30)

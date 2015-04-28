@@ -511,6 +511,26 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
     @fake_tasks()
+    @mock.patch.object(DeletionTask, 'execute')
+    def test_deletion_task_w_check_ceph(self, mdeletion_execute):
+        cluster = self.env.create_cluster()
+        cluster_id = cluster['id']
+        self.env.create_node(
+            api=False,
+            cluster_id=cluster['id'],
+            pending_addition=False,
+            pending_deletion=True,
+            status=NODE_STATUSES.ready,
+            roles=['controller'])
+
+        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        manager_.execute()
+
+        self.assertEqual(mdeletion_execute.call_count, 1)
+        kwargs = mdeletion_execute.call_args[1]
+        self.assertEqual(kwargs['check_ceph'], True)
+
+    @fake_tasks()
     def test_no_changes_no_cry(self):
         self.env.create(
             nodes_kwargs=[

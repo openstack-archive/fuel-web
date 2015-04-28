@@ -405,7 +405,18 @@ class DeletionTask(object):
         return remaining_nodes
 
     @classmethod
-    def execute(cls, task, nodes=None, respond_to='remove_nodes_resp'):
+    def execute(cls, task, nodes=None, respond_to='remove_nodes_resp',
+                check_ceph=False):
+        """Call remote Astute method to remove nodes from a cluster
+
+        :param task: Task object
+        :param nodes: List of nodes to delete
+        :param respond_to: RPC method which receives data from remote method
+        :param check_ceph: Boolean flag to tell Astute to run (or not run)
+            checks to prevent deletion of OSD nodes. If True this task will
+            fail if a node to be deleted has Ceph data on it. This flag must
+            be False if deleting all nodes.
+        """
         logger.debug("DeletionTask.execute(task=%s, nodes=%s)",
                      task.uuid, nodes)
         task_uuid = task.uuid
@@ -457,6 +468,7 @@ class DeletionTask(object):
             respond_to,
             {
                 'nodes': nodes_to_delete,
+                'check_ceph': check_ceph,
                 'engine': {
                     'url': settings.COBBLER_URL,
                     'username': settings.COBBLER_USER,

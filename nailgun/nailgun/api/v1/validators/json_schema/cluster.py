@@ -17,6 +17,7 @@
 from nailgun import consts
 
 from nailgun.api.v1.validators.json_schema import base_types
+from nailgun.api.v1.validators.json_schema import role
 
 
 # TODO(@ikalnitsky): add `required` properties to all needed objects
@@ -59,6 +60,80 @@ collection_schema = {
     "description": "Serialized Cluster collection",
     "type": "object",
     "items": single_schema["properties"]
+}
+
+attribute_schema = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'title': 'Schema for single editable attribute',
+    'type': 'object',
+    'properties': {
+        'type': {
+            'enum': [
+                'checkbox',
+                'custom_repo_configuration',
+                'hidden',
+                'password',
+                'radio',
+                'text',
+                'textarea',
+            ]
+        },
+        #'value': None,  # custom validation depending on type
+        'restrictions': role.RESTRICTIONS,
+        'weight': {
+            'type': 'integer',
+            'minimum': 0,
+        },
+    },
+    'required': ['type', 'value'],
+}
+
+# Additional properties definitions for 'attirbute_schema'
+# depending on 'type' property
+# (note that for example 'radio' can have 'value' and 'values'
+# properties)
+attribute_type_schemas = {
+    'checkbox': {'value': {'type': 'boolean'}},
+    'custom_repo_configuration': {
+        'value': {
+            'type': 'array',
+            'minItems': 1,
+            'items': [
+                {
+                    'type': 'object',
+                    'properties': {
+                        'name': {'type': 'string'},
+                        'priority': {'type': ['integer', 'null']},
+                        'section': {'type': 'string'},
+                        'suite': {'type': 'string'},
+                        'type': {'type': 'string'},
+                        'uri': {'type': 'string'},
+                    }
+                }
+            ],
+        },
+    },
+    'password': {'value': {'type': 'string'}},
+    'radio': {
+        'value': {
+            'type': 'string',
+        },
+        'values': {
+            'type': 'array',
+            'minItems': 1,
+            'items': [
+                {
+                    'type': 'object',
+                    'properties': {
+                        'data': {'type': 'string'},
+                        'description': {'type': 'string'},
+                    },
+                },
+            ],
+        },
+    },
+    'text': {'value': {'type': 'string'}},
+    'textarea': {'value': {'type': 'string'}},
 }
 
 vmware_attributes_schema = {

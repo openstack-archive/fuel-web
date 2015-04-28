@@ -13,9 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+import re
+
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.json_schema import cluster_schema
+from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
 from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
 
 from nailgun.errors import errors
@@ -118,6 +121,7 @@ class ClusterValidator(BasicValidator):
 
 
 class AttributesValidator(BasicValidator):
+
     @classmethod
     def validate(cls, data):
         d = cls.validate_json(data)
@@ -131,7 +135,74 @@ class AttributesValidator(BasicValidator):
                 "Editable attributes should be a dictionary",
                 log_message=True
             )
+
         return d
+
+    @classmethod
+    def validate_attributes(cls, data):
+        """Validate 'editable' attributes"""
+        if 'editable' in data:
+            for attrs in data['editable'].values():
+                if not isinstance(attrs, dict):
+                    continue
+                for attr_name, attr in attrs.items():
+                    cls.validate_attribute(attr_name, attr)
+
+        return data
+
+    @classmethod
+    def validate_attribute(cls, attr_name, attr):
+        """Validates a single attribute from settings.yaml.
+
+        Dict is of this form:
+
+        description: <description>
+        label: <label>
+        restrictions:
+          - <restriction>
+          - <restriction>
+          - ...
+        type: <type>
+        value: <value>
+        weight: <weight>
+        regex:
+          error: <error message>
+          source: <regexp source>
+
+        We validate that 'value' corresponds to 'type' according to
+        attribute_type_schemas mapping in json_schema/cluster.py.
+        If regex is present, we additionally check that the provided string
+        value matches the regexp.
+
+        :param attr:
+        :return: attribute or raise InvalidData exception
+        """
+
+        if not isinstance(attr, dict):
+            return attr
+
+        if 'type' not in attr and 'value' not in attr:
+            return attr
+
+        schema = copy.deepcopy(cluster_schema.attribute_schema)
+        type_ = attr.get('type')
+        if type_:
+            value_schema = cluster_schema.attribute_type_schemas.get(type_)
+            if value_schema:
+                schema['properties'].update(value_schema)
+
+        try:
+            cls.validate_schema(attr, schema)
+        except errors.InvalidData as e:
+            raise errors.InvalidData('[{}] {}'.format(attr_name, e.message))
+
+        pattern = attr.get('regex', {}).get('source')
+        if pattern and not re.match(pattern, attr['value']):
+            raise errors.InvalidData(
+                '[{}] Regexp pattern "{}" not matched for value ""'.format(
+                    attr_name, pattern, attr['value']
+                )
+            )
 
 
 class ClusterChangesValidator(BaseDefferedTaskValidator):

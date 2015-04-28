@@ -1232,7 +1232,7 @@
           repos:
             type: "custom_repo_configuration"
             extra_priority: null
-            description: "To create a local repository mirror on the Fuel master node, please follow the instructions provided by running \"create_mirror --help\" on the Fuel master node.\nPlease make sure your Fuel master node has internet access before attempting to create a mirror.\nFor more detail, please refer to the documentation (https://www.mirantis.com/openstack-documentation/)."
+            description: "To create a local repository mirror on the Fuel master node, please follow the instructions provided by running \"fuel-createmirror --help\" on the Fuel master node.\nPlease make sure your Fuel master node has internet access before attempting to create a mirror.\nFor more detail, please refer to the documentation (https://www.mirantis.com/openstack-documentation/)."
             value:
               - type: "rpm"
                 name: "mos"
@@ -1281,7 +1281,7 @@
           repos:
             type: "custom_repo_configuration"
             extra_priority: null
-            description: "Please note, the first repo will be considered as Ubuntu mirror and that fact will be used during provisioning procedure.\nTo create a local repository mirror on the Fuel master node, please follow the instructions provided by running \"create_mirror --help\" on the Fuel master node.\nPlease make sure your Fuel master node has internet access before attempting to create a mirror.\nFor more detail, please refer to the documentation (https://www.mirantis.com/openstack-documentation/)."
+            description: "Please note, the first repo will be considered as Ubuntu mirror and that fact will be used during provisioning procedure.\nTo create a local repository mirror on the Fuel master node, please follow the instructions provided by running \"fuel-createmirror --help\" on the Fuel master node.\nPlease make sure your Fuel master node has internet access before attempting to create a mirror.\nFor more detail, please refer to the documentation (https://www.mirantis.com/openstack-documentation/)."
             value:
               - type: "deb"
                 name: "ubuntu"

@@ -157,10 +157,10 @@ h1, h2, h3, h4, h5, h6 {
   .font-light;
 }
 
-.text-green, .text-success {color: @green;}
-.text-red, .text-danger {color: @red;}
-.text-blue, .text-info {color: @blue;}
-.text-orange, .text-warning {color: @orange;}
+.text-success {color: @green;}
+.text-danger {color: @red;}
+.text-info {color: @blue;}
+.text-warning {color: @orange;}
 .text-critical {color: @pure-red;}
 
 button, .btn:not(.btn-link) {.font-semibold;}
@@ -785,7 +785,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .tracking {
   @vertical-offset: 20px;
   .checkbox-group label, .form-group label {.font-semibold;}
-  .text-red {
+  .text-danger {
     margin-bottom: 15px;
     font-style: italic;
     .glyphicon {margin-right: 10px;}
@@ -1623,7 +1623,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         top: -1px;
       }
       .glyphicon {
-        .text-orange;
+        .text-warning;
         position: relative;
         top: -5px;
         left: 5px;
@@ -1858,7 +1858,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       max-width: @help-block-width - @input-width;
     }
     &.has-error .help-block {
-      .text-red;
+      .text-danger;
     }
     &:after {
       .clearfix;
@@ -1878,7 +1878,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
   .tooltip-icon {
-    .text-orange;
+    .text-warning;
     margin-left: 5px;
     font-size: @base-font-size + 2px;
   }

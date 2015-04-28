@@ -303,7 +303,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                 </li>
                                 <li>
                                     <b>{i18n('cluster_page.environment_status')}: </b>
-                                    <span className={_.contains(['error', 'update_error'], cluster.get('status')) ? 'text-red' : ''}>
+                                    <span className={_.contains(['error', 'update_error'], cluster.get('status')) ? 'text-danger' : ''}>
                                         {i18n('cluster.status.' + cluster.get('status'))}
                                     </span>
                                 </li>

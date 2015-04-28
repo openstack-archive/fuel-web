@@ -370,7 +370,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                 disabled={this.props.locked || !this.props.nodes.length}
                                                 onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                                             >
-                                                {disksConflict && <i className='glyphicon glyphicon-warning-sign text-red' />}
+                                                {disksConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
                                                 {i18n('dialog.show_node.disk_configuration_button')}
                                             </button>
                                             {!this.props.nodes.any({status: 'error'}) &&
@@ -379,7 +379,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                     disabled={this.props.locked || !this.props.nodes.length}
                                                     onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
                                                 >
-                                                    {interfaceConflict && <i className='glyphicon glyphicon-warning-sign text-red' />}
+                                                    {interfaceConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
                                                     {i18n('dialog.show_node.network_configuration_button')}
                                                 </button>
                                             }
@@ -775,19 +775,19 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 'font-semibold': !this.state.renaming
             };
 
-            var roleClasses = {'text-green': !deployedRoles.length};
+            var roleClasses = {'text-success': !deployedRoles.length};
 
             var statusClasses = {
                     'node-status font-semibold text-center': true
                 },
                 statusClass = {
-                    pending_addition: 'text-green',
-                    pending_deletion: 'text-orange',
-                    error: 'text-red',
-                    ready: 'text-blue',
-                    provisioning: 'text-blue',
-                    deploying: 'text-green',
-                    provisioned: 'text-blue'
+                    pending_addition: 'text-success',
+                    pending_deletion: 'text-warning',
+                    error: 'text-danger',
+                    ready: 'text-info',
+                    provisioning: 'text-info',
+                    deploying: 'text-success',
+                    provisioned: 'text-info'
                 }[status];
             statusClasses[statusClass] = true;
 

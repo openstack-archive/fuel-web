@@ -243,7 +243,7 @@ define([
             return (
                 <div>
                     {error &&
-                        <div className='text-red'>
+                        <div className='text-danger'>
                             <i className='glyphicon glyphicon-warning-sign' />
                             {error}
                         </div>

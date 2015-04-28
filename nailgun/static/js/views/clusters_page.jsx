@@ -146,7 +146,7 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
                                 <div key='ram-value' className='value'>{nodes.resources('ram') ? utils.showMemorySize(nodes.resources('ram')) : '?GB'}</div>
                             ]}
                         </div>
-                        <div className='status text-blue'>
+                        <div className='status text-info'>
                             {deploymentTask ?
                                 <div className='progress'>
                                     <div
@@ -159,8 +159,8 @@ function($, _, i18n, React, models, utils, dispatcher, componentMixins, wizard) 
                                 </div>
                             :
                                 <span className={utils.classNames({
-                                    'text-red': status == 'error' || status == 'update_error',
-                                    'text-green': status == 'operational'
+                                    'text-danger': status == 'error' || status == 'update_error',
+                                    'text-success': status == 'operational'
                                 })}>
                                     {i18n('cluster.status.' + status, {defaultValue: status})}
                                 </span>

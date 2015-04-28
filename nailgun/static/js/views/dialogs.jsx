@@ -169,7 +169,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var nodes = this.props.cluster.get('nodes');
             return (
                 <div>
-                    <div className='text-red'>
+                    <div className='text-danger'>
                         {this.renderImportantLabel()}
                         {i18n('dialog.discard_changes.alert_text')}
                     </div>
@@ -429,7 +429,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             return (
-                <div className='text-red'>
+                <div className='text-danger'>
                     {this.renderImportantLabel()}
                     {i18n('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
                 </div>
@@ -475,7 +475,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var clusterName = this.props.cluster.get('name');
             return (
                 <div>
-                    <div className='text-red'>
+                    <div className='text-danger'>
                         {this.renderImportantLabel()}
                         {this.getText()}
                     </div>
@@ -525,7 +525,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             return (
-                <div className='text-red'>
+                <div className='text-danger'>
                     {this.renderImportantLabel()}
                     {i18n('dialog.reset_environment.text')}
                 </div>
@@ -559,7 +559,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return (
                 <div>
                     {action == 'update' && this.props.isDowngrade ?
-                        <div className='text-red'>
+                        <div className='text-danger'>
                             {this.renderImportantLabel()}
                             {i18n('dialog.' + action + '_environment.downgrade_warning')}
                         </div>
@@ -789,7 +789,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         renderBody: function() {
             var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
             return (
-                <div className='text-red dismiss-settings-dialog'>
+                <div className='text-danger dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
                     {message}
                 </div>
@@ -824,7 +824,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         renderBody: function() {
             return (
-                <div className='text-red'>
+                <div className='text-danger'>
                     {this.renderImportantLabel()}
                     {this.props.defaultMessage}
                 </div>
@@ -845,7 +845,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         getDefaultProps: function() {return {title: i18n('dialog.delete_nodes.title')};},
         renderBody: function() {
             return (
-                <div className='text-red'>
+                <div className='text-danger'>
                     {this.renderImportantLabel()}
                     {i18n('dialog.delete_nodes.message')}
                 </div>
@@ -1088,7 +1088,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className='registration-form tracking'>
                     {actionInProgress && <controls.ProgressBar />}
                     {error &&
-                        <div className='text-red'>
+                        <div className='text-danger'>
                             <i className='glyphicon glyphicon-warning-sign' />
                             {error}
                         </div>
@@ -1204,7 +1204,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                         <div>
                             {actionInProgress && <controls.ProgressBar />}
                             {error &&
-                                <div className='text-red'>
+                                <div className='text-danger'>
                                     <i className='glyphicon glyphicon-warning-sign' />
                                     {error}
                                 </div>

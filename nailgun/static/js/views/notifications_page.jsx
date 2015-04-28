@@ -90,8 +90,8 @@ function(i18n, React, utils, models, dialogs, componentMixins) {
         render: function() {
             var notification = this.props.notification,
                 notificationClasses = {
-                    'text-red': notification.get('topic') == 'error',
-                    'text-orange': notification.get('topic') == 'warning',
+                    'text-danger': notification.get('topic') == 'error',
+                    'text-warning': notification.get('topic') == 'warning',
                     unread: notification.get('status') == 'unread'
                 },
                 iconClass = {

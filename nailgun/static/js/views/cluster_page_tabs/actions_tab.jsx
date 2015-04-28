@@ -134,7 +134,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                             maxLength='50'
                             valueLink={valueLink}/>
                         {this.state.error &&
-                            <div className='text-red'>
+                            <div className='text-danger'>
                                 {this.state.error}
                             </div>
                         }
@@ -179,7 +179,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                         <div className='action-item-description'>
                             {i18n('cluster_page.actions_tab.' + this.getDescriptionKey())}
                         </div>
-                        {!isLocked && <div className='text-red action-item-description'>{i18n('cluster_page.actions_tab.reset_environment_warning')}</div>}
+                        {!isLocked && <div className='text-danger action-item-description'>{i18n('cluster_page.actions_tab.reset_environment_warning')}</div>}
                     </div>
                     <button
                         className='btn btn-danger reset-environment-btn'
@@ -201,7 +201,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
             return (
                 <Action title={i18n('cluster_page.actions_tab.delete_environment')}>
                     <div className='action-body'>
-                        <div className='action-item-description text-red'>
+                        <div className='action-item-description text-danger'>
                             {i18n('cluster_page.actions_tab.alert_delete')}
                         </div>
                     </div>

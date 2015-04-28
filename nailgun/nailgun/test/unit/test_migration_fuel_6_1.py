@@ -320,3 +320,13 @@ class TestVmwareMigration(base.BaseAlembicMigrationTest):
                 "type": "hidden"
             }
         )
+
+
+class TestOldReleasesAreNotDeployable(base.BaseAlembicMigrationTest):
+
+    def test_old_releases_are_not_deployable(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.is_deployable]))
+
+        for row in result:
+            self.assertFalse(row['is_deployable'])

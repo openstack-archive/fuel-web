@@ -1585,7 +1585,7 @@ class TestHandlers(BaseIntegrationTest):
             params=jsonutils.dumps({
                 'editable': {
                     'storage': {'volumes_ceph': {'value': True},
-                                'osd_pool_size': {'value': 3}}}}),
+                                'osd_pool_size': {'value': '3'}}}}),
             headers=self.default_headers)
 
         task = self.env.launch_deployment()
@@ -1628,7 +1628,7 @@ class TestHandlers(BaseIntegrationTest):
             params=jsonutils.dumps({
                 'editable': {
                     'storage': {'volumes_ceph': {'value': True},
-                                'osd_pool_size': {'value': 1}}}}),
+                                'osd_pool_size': {'value': '1'}}}}),
             headers=self.default_headers)
 
         task = self.env.launch_deployment()

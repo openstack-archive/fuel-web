@@ -13,15 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.json_schema import cluster_schema
+from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
 from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
 
 from nailgun.errors import errors
 
-from nailgun.objects import ClusterCollection
-from nailgun.objects import Release
+from nailgun import objects
+from nailgun.utils import restrictions
 
 
 class ClusterValidator(BasicValidator):
@@ -50,13 +52,13 @@ class ClusterValidator(BasicValidator):
 
         release_id = d.get("release", d.get("release_id"))
         if release_id:
-            if not Release.get_by_uid(release_id):
+            if not objects.Release.get_by_uid(release_id):
                 raise errors.InvalidData(
                     "Invalid release ID", log_message=True)
         pend_release_id = d.get("pending_release_id")
         if pend_release_id:
-            pend_release = Release.get_by_uid(pend_release_id,
-                                              fail_if_not_found=True)
+            pend_release = objects.Release.get_by_uid(pend_release_id,
+                                                      fail_if_not_found=True)
             if not release_id:
                 if not instance:
                     raise errors.InvalidData(
@@ -65,7 +67,7 @@ class ClusterValidator(BasicValidator):
                         log_message=True
                     )
                 release_id = instance.release_id
-            curr_release = Release.get_by_uid(release_id)
+            curr_release = objects.Release.get_by_uid(release_id)
 
             if not cls._can_update_release(curr_release, pend_release):
                 raise errors.InvalidData(
@@ -87,7 +89,8 @@ class ClusterValidator(BasicValidator):
                 u"Release ID is required", log_message=True)
 
         if "name" in d:
-            if ClusterCollection.filter_by(None, name=d["name"]).first():
+            if objects.ClusterCollection.filter_by(
+                    None, name=d["name"]).first():
                 raise errors.AlreadyExists(
                     "Environment with this name already exists",
                     log_message=True
@@ -100,9 +103,11 @@ class ClusterValidator(BasicValidator):
         d = cls._validate_common(data, instance=instance)
 
         if "name" in d:
-            query = ClusterCollection.filter_by_not(None, id=instance.id)
+            query = objects.ClusterCollection.filter_by_not(
+                None, id=instance.id)
 
-            if ClusterCollection.filter_by(query, name=d["name"]).first():
+            if objects.ClusterCollection.filter_by(
+                    query, name=d["name"]).first():
                 raise errors.AlreadyExists(
                     "Environment with this name already exists",
                     log_message=True
@@ -118,8 +123,9 @@ class ClusterValidator(BasicValidator):
 
 
 class AttributesValidator(BasicValidator):
+
     @classmethod
-    def validate(cls, data):
+    def validate(cls, data, cluster=None):
         d = cls.validate_json(data)
         if "generated" in d:
             raise errors.InvalidData(
@@ -131,7 +137,79 @@ class AttributesValidator(BasicValidator):
                 "Editable attributes should be a dictionary",
                 log_message=True
             )
+
+        attrs = d
+        if cluster is not None:
+            attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
+
+        cls.validate_editable_attributes(attrs)
+
         return d
+
+    @classmethod
+    def validate_editable_attributes(cls, data):
+        """Validate 'editable' attributes."""
+        for attrs in data.get('editable', {}).values():
+            if not isinstance(attrs, dict):
+                continue
+            for attr_name, attr in attrs.items():
+                cls.validate_attribute(attr_name, attr)
+
+        return data
+
+    @classmethod
+    def validate_attribute(cls, attr_name, attr):
+        """Validates a single attribute from settings.yaml.
+
+        Dict is of this form:
+
+        description: <description>
+        label: <label>
+        restrictions:
+          - <restriction>
+          - <restriction>
+          - ...
+        type: <type>
+        value: <value>
+        weight: <weight>
+        regex:
+          error: <error message>
+          source: <regexp source>
+
+        We validate that 'value' corresponds to 'type' according to
+        attribute_type_schemas mapping in json_schema/cluster.py.
+        If regex is present, we additionally check that the provided string
+        value matches the regexp.
+
+        :param attr_name: Name of the attribute being checked
+        :param attr: attribute value
+        :return: attribute or raise InvalidData exception
+        """
+
+        if not isinstance(attr, dict):
+            return attr
+
+        if 'type' not in attr and 'value' not in attr:
+            return attr
+
+        schema = copy.deepcopy(cluster_schema.attribute_schema)
+        type_ = attr.get('type')
+        if type_:
+            value_schema = cluster_schema.attribute_type_schemas.get(type_)
+            if value_schema:
+                schema['properties'].update(value_schema)
+
+        try:
+            cls.validate_schema(attr, schema)
+        except errors.InvalidData as e:
+            raise errors.InvalidData('[{0}] {1}'.format(attr_name, e.message))
+
+        # Validate regexp only if some value is present
+        # Otherwise regexp might be invalid
+        if attr['value']:
+            regex_err = restrictions.AttributesRestriction.validate_regex(attr)
+            if regex_err is not None:
+                raise errors.InvalidData('[{0}] {1}'.format(attr_name, regex_err))
 
 
 class ClusterChangesValidator(BaseDefferedTaskValidator):

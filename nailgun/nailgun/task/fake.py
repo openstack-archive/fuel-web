@@ -496,24 +496,12 @@ class FakeResetEnvironmentThread(FakeThread):
 class FakeVerificationThread(FakeThread):
     def run(self):
         super(FakeVerificationThread, self).run()
-        receiver = NailgunReceiver
+        resp_method = getattr(NailgunReceiver, self.respond_to)
         kwargs = {
             'task_uuid': self.task_uuid,
             'progress': 0,
             'status': 'running'
         }
-
-        tick_count = int(settings.FAKE_TASKS_TICK_COUNT)
-        tick_interval = int(settings.FAKE_TASKS_TICK_INTERVAL)
-        low_tick_count = tick_count - 20
-        if low_tick_count < 0:
-            low_tick_count = 0
-
-        resp_method = getattr(receiver, self.respond_to)
-        kwargs['progress'] = 0
-        timeout = 30
-        timer = time.time()
-        ready = False
 
         # some kinda hack for debugging in fake tasks:
         # verification will fail if you specified 404 as VLAN id in any net
@@ -522,26 +510,15 @@ class FakeVerificationThread(FakeThread):
                 if 404 in iface['vlans']:
                     iface['vlans'] = list(set(iface['vlans']) ^ set([404]))
 
-        while not ready and not self.stoprequest.isSet():
-            kwargs['progress'] += randrange(
-                low_tick_count,
-                tick_count
-            )
-            if kwargs['progress'] >= 100:
-                kwargs['progress'] = 100
-                kwargs['nodes'] = self.data['args']['nodes']
-                kwargs['status'] = 'ready'
-                ready = True
-            try:
-                resp_method(**kwargs)
-                db().commit()
-            except Exception as e:
-                db().rollback()
-                raise e
-
-            if time.time() - timer > timeout:
-                raise Exception("Timeout exceed")
-            self.sleep(tick_interval)
+        kwargs['progress'] = 100
+        kwargs['nodes'] = self.data['args']['nodes']
+        kwargs['status'] = 'ready'
+        try:
+            resp_method(**kwargs)
+            db().commit()
+        except Exception as e:
+            db().rollback()
+            raise e
 
 
 class FakeMulticastVerifications(FakeAmpqThread):
@@ -617,9 +594,9 @@ class FakeCheckingDhcpThread(FakeAmpqThread):
         nodes = [{'uid': '90',
                   'status': 'ready',
                   'data': [{'mac': mac,
-                           'server_id': '10.20.0.20',
-                           'yiaddr': '10.20.0.133',
-                           'iface': 'eth0'}]},
+                            'server_id': '10.20.0.20',
+                            'yiaddr': '10.20.0.133',
+                            'iface': 'eth0'}]},
                  {'uid': '91',
                   'status': 'ready',
                   'data': [{'mac': mac,

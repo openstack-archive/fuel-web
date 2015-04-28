@@ -30,8 +30,9 @@ class TestClusterValidator(BaseTestCase):
 
     def test_cluster_exists_validation(self):
         with nested(
-            patch('nailgun.api.v1.validators.cluster.ClusterCollection'),
-            patch('nailgun.api.v1.validators.cluster.Release')
+            patch('nailgun.api.v1.validators.cluster.objects.'
+                  'ClusterCollection'),
+            patch('nailgun.api.v1.validators.cluster.objects.Release')
         ) as (cc, r):
             r.get_by_uid.return_value = 'release'
             cc.filter_by.return_value.first.return_value = 'cluster'
@@ -41,10 +42,10 @@ class TestClusterValidator(BaseTestCase):
     def test_cluster_non_exists_validation(self):
         with nested(
             patch(
-                'nailgun.api.v1.validators.cluster.ClusterCollection',
+                'nailgun.api.v1.validators.cluster.objects.ClusterCollection',
                 Mock()
             ),
-            patch('nailgun.api.v1.validators.cluster.Release', Mock())
+            patch('nailgun.api.v1.validators.cluster.objects.Release', Mock())
         ) as (cc, r):
             try:
                 cc.filter_by.return_value.first.return_value = None
@@ -57,7 +58,7 @@ class TestClusterValidator(BaseTestCase):
 
     def test_release_exists_validation(self):
         with patch(
-            'nailgun.api.v1.validators.cluster.ClusterCollection',
+            'nailgun.api.v1.validators.cluster.objects.ClusterCollection',
             Mock()
         ) as cc:
             cc.filter_by.return_value.first.return_value = None
@@ -65,7 +66,8 @@ class TestClusterValidator(BaseTestCase):
                               ClusterValidator.validate, self.cluster_data)
 
     def test_release_non_exists_validation(self):
-        with patch('nailgun.api.v1.validators.cluster.Release', Mock()) as r:
+        with patch('nailgun.api.v1.validators.cluster.objects.Release',
+                   Mock()) as r:
             try:
                 r.get_by_uuid.return_value = None
                 ClusterValidator.validate(self.cluster_data)

@@ -292,7 +292,21 @@ class Cluster(NailgunObject):
     def get_editable_attributes(cls, instance):
         attrs = cls.get_attributes(instance)
         editable = attrs.editable
+
         return {'editable': editable}
+
+    @classmethod
+    def get_updated_editable_attributes(cls, instance, data):
+        """Same as get_editable_attributes but also merges given data.
+
+        :param instance: Cluster object
+        :param data: dict
+        :return: dict
+        """
+        return dict_merge(
+            cls.get_editable_attributes(instance)['editable'],
+            data.get('editable', {})
+        )
 
     @classmethod
     def get_network_manager(cls, instance=None):

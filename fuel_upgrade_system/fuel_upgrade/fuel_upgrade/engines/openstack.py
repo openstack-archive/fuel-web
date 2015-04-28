@@ -35,7 +35,6 @@ class OpenStackUpgrader(UpgradeEngine):
 
     The class is designed to do the following tasks:
 
-    * install repos in the system
     * install manifests in the system
     * add new releases to nailgun's database
     * add notification about new releases
@@ -55,13 +54,11 @@ class OpenStackUpgrader(UpgradeEngine):
         self._reset_state()
 
         self.install_puppets()
-        self.install_repos()
         self.install_releases()
         self.install_versions()
 
     def rollback(self):
         self.remove_releases()
-        self.remove_repos()
         self.remove_puppets()
         self.remove_versions()
 
@@ -82,26 +79,6 @@ class OpenStackUpgrader(UpgradeEngine):
         for source in sources:
             destination = os.path.join(
                 self.config.openstack['puppets']['dst'],
-                os.path.basename(source))
-            utils.remove(destination)
-
-    def install_repos(self):
-        logger.info('Installing repositories...')
-
-        sources = glob.glob(self.config.openstack['repos']['src'])
-        for source in sources:
-            destination = os.path.join(
-                self.config.openstack['repos']['dst'],
-                os.path.basename(source))
-            utils.copy(source, destination)
-
-    def remove_repos(self):
-        logger.info('Removing repositories...')
-
-        sources = glob.glob(self.config.openstack['repos']['src'])
-        for source in sources:
-            destination = os.path.join(
-                self.config.openstack['repos']['dst'],
                 os.path.basename(source))
             utils.remove(destination)
 
@@ -245,10 +222,7 @@ class OpenStackUpgrader(UpgradeEngine):
     def required_free_space(self):
         spaces = {
             self.config.openstack['puppets']['dst']:
-            glob.glob(self.config.openstack['puppets']['src']),
-
-            self.config.openstack['repos']['dst']:
-            glob.glob(self.config.openstack['repos']['src'])}
+            glob.glob(self.config.openstack['puppets']['src']), }
 
         for dst, srcs in six.iteritems(spaces):
             size = 0

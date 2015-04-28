@@ -58,12 +58,20 @@ def mount_bind(chroot, path, path2=None):
                   check_exit_code=[0])
 
 
-def umount_fs(fs_mount):
+def umount_fs(fs_mount, try_lazy_umount=False):
     try:
+        utils.execute('mountpoint', '-q', fs_mount, check_exit_code=[0])
+    except errors.ProcessExecutionError:
+        LOG.warning('%s is not a mountpoint, skipping umount', fs_mount)
+    else:
         LOG.debug('Trying to umount {0}'.format(fs_mount))
-        utils.execute('umount', fs_mount, check_exit_code=[0])
-    except errors.ProcessExecutionError as e:
-        LOG.warning('Error while umounting {0} '
-                    'exc={1}'.format(fs_mount, e.message))
-        LOG.debug('Trying lazy umounting {0}'.format(fs_mount))
-        utils.execute('umount', '-l', fs_mount, check_exit_code=[0])
+        try:
+            utils.execute('umount', fs_mount, check_exit_code=[0])
+        except errors.ProcessExecutionError as e:
+            if try_lazy_umount:
+                LOG.warning('Error while umounting {0} '
+                            'exc={1}'.format(fs_mount, e.message))
+                LOG.debug('Trying lazy umounting {0}'.format(fs_mount))
+                utils.execute('umount', '-l', fs_mount, check_exit_code=[0])
+            else:
+                raise

@@ -143,12 +143,13 @@ def suppress_services_start(chroot):
         os.fchmod(f.fileno(), 0o755)
 
 
-def clean_dirs(chroot, dirs):
+def clean_dirs(chroot, dirs, delete=False):
     for d in dirs:
         path = os.path.join(chroot, d)
         if os.path.isdir(path):
             shutil.rmtree(path)
-            os.makedirs(path)
+            if not delete:
+                os.makedirs(path)
             LOG.debug('Removed dir: %s', path)
 
 
@@ -235,8 +236,8 @@ def attach_file_to_loop(filename, loop):
     utils.execute('losetup', loop, filename)
 
 
-def deattach_loop(loop):
-    utils.execute('losetup', '-d', loop)
+def deattach_loop(loop, check_exit_code=[0]):
+    utils.execute('losetup', '-d', loop, check_exit_code=check_exit_code)
 
 
 def shrink_sparse_file(filename):

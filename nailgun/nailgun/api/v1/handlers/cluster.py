@@ -165,6 +165,9 @@ class ClusterAttributesHandler(BaseHandler):
 
         data = self.checked_data()
 
+        attrs = objects.Cluster.get_updated_editable_attributes(cluster, data)
+        self.validator.validate_attributes(attrs)
+
         # if cluster is locked we have to check which attributes
         # we want to change and block an entire operation if there
         # one with always_editable=False.

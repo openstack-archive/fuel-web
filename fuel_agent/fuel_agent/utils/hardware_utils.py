@@ -248,13 +248,15 @@ def get_block_devices_from_udev_db():
         # NOTE(agordeev): add only disks or their partitions
         if 'SUBSYSTEM=block' in device and ('DEVTYPE=disk' in device or
                                             'DEVTYPE=partition' in device):
-            for line in device.split('\n'):
+            # NOTE(agordeev): it has to be sorted in order
+            # to find MAJOR property prior DEVNAME property.
+            for line in sorted(device.split('\n'), reverse=True):
                 if line.startswith('E: MAJOR='):
                     major = int(line.split()[1].split('=')[1])
                     if major not in VALID_MAJORS:
                         # NOTE(agordeev): filter out cd/dvd drives and other
                         # block devices in which fuel-agent aren't interested
-                        continue
+                        break
                 if line.startswith('E: DEVNAME='):
                     d = line.split()[1].split('=')[1]
                     if not any(os.path.basename(d).startswith(n)

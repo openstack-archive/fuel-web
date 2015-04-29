@@ -90,7 +90,7 @@ class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 16)
+        self.assertEqual(len(serialized), 17)
         self.assertEqual(serialized[0]['type'], 'shell')
         self.assertEqual(
             serialized[0]['parameters']['cmd'], '> /etc/apt/sources.list')
@@ -308,7 +308,7 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
         self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 19)
+        self.assertEqual(len(tasks), 20)
         tasks_tests = [('shell', ['master']),
                        ('shell', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),

@@ -44,13 +44,6 @@ write_files:
      path: /etc/nailgun-agent/config.yaml
  -   content: target
      path: /etc/nailgun_systemtype
- -   content: APT::Get::AllowUnauthenticated 1;
-     path: /etc/apt/apt.conf.d/02mirantis-allow-unsigned
-
-
-apt_sources:
- - source: deb http://{{ MASTER_IP }}:8080/ubuntu/fuelweb/x86_64 trusty main
-
 
 mcollective:
   conf:

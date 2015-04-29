@@ -287,24 +287,27 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             return {unreadNotificationsIds: []};
         },
         renderNotification: function(notification) {
-            var notificationClasses = {
-                    'text-danger': notification.get('topic') == 'error',
-                    'text-warning': notification.get('topic') == 'warning',
+            var topic = notification.get('topic'),
+                nodeId = notification.get('node_id'),
+                notificationClasses = {
+                    notification: true,
+                    'text-danger': topic == 'error',
+                    'text-warning': topic == 'warning',
+                    clickable: nodeId,
                     unread: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
                 },
                 iconClass = {
                     error: 'glyphicon-exclamation-sign',
                     warning: 'glyphicon-warning-sign',
                     discover: 'glyphicon-bell'
-                }[notification.get('topic')] || 'glyphicon-info-sign';
+                }[topic] || 'glyphicon-info-sign';
             return (
-                <div
-                    key={notification.id}
-                    className={'notification ' + utils.classNames(notificationClasses)}
-                    onClick={notification.get('node_id') && _.partial(this.showNodeInfo, notification.get('node_id'))}
-                >
+                <div key={notification.id} className={utils.classNames(notificationClasses)}>
                     <i className={'glyphicon ' + iconClass}></i>
-                    <p dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></p>
+                    <p
+                        dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}
+                        onClick={nodeId && _.partial(this.showNodeInfo, nodeId)}
+                    />
                 </div>
             );
         },

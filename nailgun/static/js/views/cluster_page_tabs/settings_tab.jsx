@@ -231,15 +231,27 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return this.props.settings.checkRestrictions(this.props.configModels, action, path);
         },
         processRestrictions: function(groupName, settingName) {
+            var result = false,
+                messages = [];
+
             var restrictionsCheck = this.checkRestrictions('disable', this.props.makePath(groupName, settingName)),
                 dependentRoles = this.checkDependentRoles(groupName, settingName),
-                dependentSettings = this.checkDependentSettings(groupName, settingName),
-                messages = [];
+                dependentSettings = this.checkDependentSettings(groupName, settingName);
+
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
             if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
             if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
+
+            // FIXME: hack for #1442475 to lock images_ceph in env with controllers
+            if (settingName == 'images_ceph') {
+                if (_.contains(_.flatten(this.props.cluster.get('nodes').pluck('pending_roles')), 'controller')) {
+                    result = true;
+                    messages.push(i18n('cluster_page.settings_tab.images_ceph_warning'));
+                }
+            }
+
             return {
-                result: restrictionsCheck.result || !!dependentRoles.length || !!dependentSettings.length,
+                result: result || restrictionsCheck.result || !!dependentRoles.length || !!dependentSettings.length,
                 message: messages.join(' ')
             };
         },

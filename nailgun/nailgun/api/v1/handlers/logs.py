@@ -198,32 +198,32 @@ class LogEntryCollectionHandler(BaseHandler):
 
     @content
     def GET(self):
-        """Receives following parameters:
+        """Return log entries.
 
-        - *date_before* - get logs before this date
-        - *date_after* - get logs after this date
-        - *source* - source of logs
-        - *node* - node id (for getting node logs)
-        - *level* - log level (all levels showed by default)
-        - *to* - number of entries
-        - *max_entries* - max number of entries to load
+        :query date_before: get logs before this date
+        :query date_after: get logs after this date
+        :query source: source of logs
+        :query node: node id (for getting node logs)
+        :query level: log level (all levels showed by default)
+        :query to: number of entries
+        :query max_entries: max number of entries to load
 
         :returns: Collection of log entries, log file size
-            and if there are new entries.
-        :http:
-            * 200 (OK)
-            * 400 (invalid *date_before* value)
-            * 400 (invalid *date_after* value)
-            * 400 (invalid *source* value)
-            * 400 (invalid *node* value)
-            * 400 (invalid *level* value)
-            * 400 (invalid *to* value)
-            * 400 (invalid *max_entries* value)
-            * 404 (log file not found)
-            * 404 (log files dir not found)
-            * 404 (node not found)
-            * 500 (node has no assigned ip)
-            * 500 (invalid regular expression in config)
+                  and if there are new entries.
+
+        :statuscode 200: OK
+        :statuscode 400: invalid *date_before* value
+        :statuscode 400: invalid *date_after* value
+        :statuscode 400: invalid *source* value
+        :statuscode 400: invalid *node* value
+        :statuscode 400: invalid *level* value
+        :statuscode 400: invalid *to* value
+        :statuscode 400: invalid *max_entries* value
+        :statuscode 404: log file not found
+        :statuscode 404: log files dir not found
+        :statuscode 404: node not found
+        :statuscode 500: node has no assigned ip
+        :statuscode 500: invalid regular expression in config
         """
         data = self.read_and_validate_data()
 
@@ -379,12 +379,20 @@ class LogEntryCollectionHandler(BaseHandler):
 class LogPackageHandler(BaseHandler):
     """Log package handler
     """
+
     @content
     def PUT(self):
-        """:returns: JSONized Task object.
-        :http: * 200 (task successfully executed)
-               * 400 (data validation failed)
-               * 404 (cluster not found in db)
+        """Dump environment snapshot from given config.
+
+        For input object see nailgun/task/task.py DumpTask.conf.
+
+        See LogPackageDefaultConfig for default config for snapshot.
+
+        :returns: Task
+
+        :statuscode 200: task successfully executed
+        :statuscode 400: data validation failed
+        :statuscode 404: cluster not found in db
         """
         try:
             conf = jsonutils.loads(web.data()) if web.data() else None
@@ -399,11 +407,14 @@ class LogPackageHandler(BaseHandler):
 
 
 class LogPackageDefaultConfig(BaseHandler):
+    """Log package default config handler
+    """
 
     @content
     def GET(self):
         """Generates default config for snapshot
-        :http: * 200
+
+        :statuscode 200: OK
         """
         return DumpTask.conf()
 
@@ -414,8 +425,11 @@ class LogSourceCollectionHandler(BaseHandler):
 
     @content
     def GET(self):
-        """:returns: Collection of log sources (from settings)
-        :http: * 200 (OK)
+        """Return LOGS settings.
+
+        :returns: Collection of log sources (from settings)
+
+        :statuscode 200: OK
         """
         return settings.LOGS
 
@@ -426,9 +440,12 @@ class LogSourceByNodeCollectionHandler(BaseHandler):
 
     @content
     def GET(self, node_id):
-        """:returns: Collection of log sources by node (from settings)
-        :http: * 200 (OK)
-               * 404 (node not found in db)
+        """Get log sources for node specified by `node_id`.
+
+        :returns: Collection of log sources by node (from settings)
+
+        :statuscode 200: OK
+        :statuscode 404: node not found in DB
         """
         node = self.get_object_or_404(objects.Node, node_id)
 

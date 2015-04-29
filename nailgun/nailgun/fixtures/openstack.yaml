@@ -722,7 +722,7 @@
                 label: "Image"
                 description: "Copying pre-built images on a disk."
               - data: "cobbler"
-                label: "Classic (use anaconda or debian-installer)"
+                label: "(DEPRECATED) Classic (use anaconda or debian-installer)"
                 description: "Install from scratch using anaconda or debian-installer."
         external_dns:
           metadata:

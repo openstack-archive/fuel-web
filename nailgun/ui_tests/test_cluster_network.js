@@ -22,7 +22,7 @@ casper.then(function() {
     this.test.comment('Testing cluster networks: layout rendered');
     this.test.assertEvalEquals(function() {return $('.checkbox-group input[name=net_provider]').length}, 2, 'Network manager options are presented');
     this.test.assertExists('input[value=FlatDHCPManager]:checked', 'Flat DHCP manager is chosen');
-    this.test.assertEvalEquals(function() {return $('.networks-table legend').length}, 3, 'All networks are presented');
+    this.test.assertEvalEquals(function() {return $('.networks-table h3').length}, 3, 'All networks are presented');
     this.test.assertDoesntExist('.verify-networks-btn:disabled', 'Verify networks button is enabled');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled');
 });
@@ -68,7 +68,7 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Testing cluster networks: verification');
     this.click('.verify-networks-btn:not(:disabled)');
-    this.test.assertSelectorAppears('.connect-3-error',
+    this.test.assertSelectorAppears('.connect-3.error',
         ' At least two nodes are required to be in the environment for network verification.', 10000);
 });
 

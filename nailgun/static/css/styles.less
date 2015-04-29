@@ -4,6 +4,7 @@
 
 // Base Settings
 @page-width: 1170px;
+@default-input-width: 280px;
 
 // Base Palette
 @base-dark-color:  #394c59;
@@ -1766,7 +1767,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 // FORMS
 
 .forms-box {
-  @input-width: 280px;
   @label-width: 200px;
   @base-indent: 20px;
 
@@ -1826,17 +1826,17 @@ button, .btn:not(.btn-link) {.font-semibold;}
       float: left;
     }
     input, textarea, select {
-      max-width: @input-width;
+      max-width: @default-input-width;
     }
     textarea {
-      max-width: @input-width * 2;
+      max-width: @default-input-width * 2;
     }
     .input-group {
       float: left;
-      max-width: @input-width;
+      max-width: @default-input-width;
       @input-addon-width: 40px;
       input {
-        width: @input-width - @input-addon-width;
+        width: @default-input-width - @input-addon-width;
       }
       .input-group-addon {
         width: @input-addon-width;
@@ -1846,7 +1846,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         padding: 8px;
       }
     }
-    @help-block-width: @page-width - @input-width - @label-width - 90px;
+    @help-block-width: @page-width - @default-input-width - @label-width - 90px;
     .help-block {
       max-width: @help-block-width;
       float: left;
@@ -1855,7 +1855,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       box-sizing: border-box;
     }
     .textarea + .help-block {
-      max-width: @help-block-width - @input-width;
+      max-width: @help-block-width - @default-input-width;
     }
     &.has-error .help-block {
       .text-danger;
@@ -1898,15 +1898,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .help-block {
         position: absolute;
         bottom: 10px;
-        left: @input-width * 2.5 + @base-indent * 4 + 60px;
+        left: @default-input-width * 2.5 + @base-indent * 4 + 60px;
       }
       &.repo-uri .form-control {
-        @repo-uri-width: @input-width * 1.5;
+        @repo-uri-width: @default-input-width * 1.5;
         width: @repo-uri-width;
         max-width: @repo-uri-width;
       }
       &.repo-priority .form-control {
-        width: @input-width * 0.5;
+        width: @default-input-width * 0.5;
       }
       .form-control-static {
         display: inline;
@@ -2242,6 +2242,327 @@ button, .btn:not(.btn-link) {.font-semibold;}
           vertical-align: middle;
         }
       }
+    }
+  }
+}
+
+// Networks tab
+.network-tab {
+  @base-indent: 10px;
+  .network-section-wrapper {
+    margin-left: -@base-indent;
+  }
+  .nova-managers {
+    margin-left: -@base-indent * 2;
+  }
+  .network-managers {
+    margin: @base-indent;
+  }
+  .networks-table {
+    margin-top: @base-indent * 1.5;
+  }
+  .form-group {
+    select, input {
+      // needed here because in form-control general style we have max-width
+      // and it is not suffient here
+      width: @default-input-width;
+    }
+  }
+  // range
+  .range,
+  .multiple-values {
+    .rows-container {
+      margin-top: -@base-indent;
+    }
+    .range-row-header {
+      font-weight: bold;
+      font-size: @base-font-size - 2;
+      margin-left: 197px;
+      div {
+        float: left;
+        // needed here to place label on correct places over ranges
+        width: @default-input-width + 47;
+      }
+    }
+    label {
+      // needed here to control the situation with loong label
+      width: 190px;
+      padding-top: @base-indent;
+    }
+    &.mini {
+      .range-row-header {
+        div {
+          // needed here to place label on correct places over ranges
+          width: 167px;
+        }
+      }
+      .range-row {
+        margin-top: -50px;
+        padding-left: 7px;
+        input {
+          // mini range requires special style
+          width: 130px;
+        }
+        .validation-error {
+          margin-top: 19px;
+          span {
+            margin-left: 6px;
+          }
+        }
+        .form-group {
+          margin-top: 0;
+          // mini range requires special style
+          width: 145px;
+          margin-left: @base-indent / 2;
+        }
+      }
+    }
+    &.dns_nameservers {
+      margin-left: -@base-indent;
+      label {
+        margin-left: 0;
+      }
+      .dns_nameservers-row {
+        .range-row {
+          &.first {
+            margin-top: -50px;
+          }
+          padding-bottom: 0;
+          padding-top: 0;
+          .glyphicon {
+            margin-top: @base-indent + 5;
+          }
+        }
+        .validation-error {
+          margin-top: 18px;
+          span {
+            font-size: @base-font-size - 2;
+            margin-left: 10px;
+          }
+        }
+        .ip-ranges-control {
+          margin-top: -@base-indent * 1.5;
+        }
+      }
+    }
+    &.vlan-id-range {
+      margin-bottom: @base-indent;
+    }
+    .range-row {
+      .glyphicon {
+        margin-left: -7px;
+        margin-right: -3px;
+      }
+      .form-group {
+        margin-bottom: 0;
+        float: left;
+        padding-left: 2px;
+      }
+      &.offset-bottom {
+        margin-bottom: @base-indent;
+      }
+      &.offset-left {
+        margin-left: 198px;
+      }
+      &.padding-left {
+        padding-left: 12px;
+      }
+      .validation-error {
+        margin-top: 9px;
+        span {
+          font-size: @base-font-size - 2;
+          margin-left: -@base-indent * 3;
+        }
+      }
+      .ip-ranges-control {
+        float: left;
+        .ip-ranges-add {
+          margin-left: @base-indent;
+        }
+      }
+    }
+  }
+  .range {
+    .range-row {
+      .form-group {
+        margin-top: -@base-indent;
+      }
+    }
+    .no-controls {
+      // to pul validation error closer to inputs
+      width: 330px;
+    }
+  }
+  // vlan tag control
+  .vlan-tagging {
+    height: 90px;
+    &.fixed_networks_vlan_start {
+      height: 40px;
+    }
+    > label.vlan-tag-label {
+      // needed to preserve style of title which is overridedn below
+      width: 200px;
+    }
+    label {
+      // which is overridedn here for hiding label
+      width: auto;
+    }
+    input[type=text] {
+      margin-left: -40px;
+      // to fit the width of other controls
+      width: 248px;
+    }
+    .checkbox-group {
+      padding-left: 0;
+      margin-bottom: 0;
+      margin-left: 200px;
+      label span {
+        padding-right: 0;
+      }
+      .custom-tumbler {
+        input[type='checkbox'] {
+          // to pul cursor pointer only to checkbox
+          width: auto;
+        }
+      }
+    }
+  }
+
+  // Verification Block
+  // -------------------------
+  .verification-control {
+    // Verification block mixin
+    .connect-stop-mixin(@width, @height, @margin-left) {
+      display: inline-block;
+      width: @width;
+      height: @height;
+      margin-left: @margin-left;
+      overflow: hidden;
+    }
+
+    .connect-size {
+      width: 140px;
+      height: 40px;
+    }
+
+    @connect-url-1: url(../img/connect_1_anim.gif);
+    @connect-url-2: url(../img/connect_2_anim.gif);
+    @connect-url-3: url(../img/connect_3_anim.gif);
+
+    @connect-height: 62px;
+    @connect-width: 124px;
+
+    .verification-box {
+      display: block;
+      margin: @base-indent 0;
+      position: relative;
+      .alert {
+        clear: left;
+        margin-bottom: 0;
+        margin-top: @base-indent;
+        padding: 8px 35px @base-indent 14px;
+        width: 100%;
+      }
+    }
+    .verification-network-placeholder {
+      float: left;
+      margin-bottom: 25px;
+    }
+    .verification-text-placeholder {
+      display: block;
+      float: left;
+      margin-left: @base-indent * 2;
+      li:first-of-type {
+        font-weight: bold;
+      }
+      li {
+        list-style: none outside none;
+        margin: 2px 0 8px 0;
+        line-height: 17px;
+      }
+    }
+    .verification-result-table {
+      clear: both;
+      padding-top: 10px;
+      td:last-child {
+        word-break: break-all;
+      }
+    }
+    .verification-router {
+      display: block;
+      // needed for image
+      width: 200px;
+      height: 58px;
+      margin-left: 190px;
+      background: url(../img/router.png) no-repeat top left;
+    }
+
+    .verification-node-1 {
+      display: inline-block;
+      .connect-size;
+    }
+    .verification-node-2, .verification-node-3 {
+      .verification-node-1;
+      margin-left: 76px;
+    }
+    .verification-node-1, .verification-node-2, .verification-node-3 {
+      background: url(../img/node-small.png) no-repeat top left;
+    }
+
+    .generate-verification-node(@number-of-iterations, @index: 1) when (@index =< @number-of-iterations) {
+      .verification-node-@{index} {
+        background: url(../img/node-small.png) no-repeat top left;
+      }
+      .generate-verification-node(@number-of-iterations, (@index + 1));
+    }
+
+    .generate-connect(@number-of-iterations, @position-horizontal, @position-vertical, @index: 1) when (@index =< @number-of-iterations) {
+      &.connect-@{index} {
+        background-image: url('../img/connect_@{index}_anim.gif');
+        background-position: @position-horizontal @position-vertical;
+        background-repeat: no-repeat;
+      }
+      .generate-connect(@number-of-iterations, @position-horizontal, @position-vertical, (@index + 1));
+    }
+
+    .generate-verification-node(3);
+
+    .error,
+    .success,
+    .stop {
+      &.connect-1 {
+        .connect-stop-mixin(176px, @connect-height, @connect-height);
+      }
+      &.connect-2 {
+        .connect-stop-mixin(8px, @connect-height, 49px);
+      }
+      &.connect-3 {
+        .connect-stop-mixin(176px, @connect-height, 49px);
+      }
+    }
+
+    .success {
+      .generate-connect(3, 0, -@connect-height);
+    }
+
+    .stop {
+      .generate-connect(3, top, left);
+    }
+
+    .error {
+      .generate-connect(3, 0, -@connect-width);
+    }
+
+    .router-box {
+      display: block;
+      height: 58px;
+      overflow: hidden;
+    }
+    .animation-box {
+      display: block;
+      height: @connect-height;
+      margin-top: -9px;
+      overflow: hidden;
     }
   }
 }

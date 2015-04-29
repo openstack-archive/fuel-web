@@ -294,6 +294,23 @@ button, .btn:not(.btn-link) {.font-semibold;}
       color: @link-color + 20%;
     }
   }
+  .task-result-details {
+    @deployment-result-indent: 5px;
+    margin-top: @deployment-result-indent;
+    .btn-link {
+      padding: 0;
+      color: @link-color;
+      font-size: @base-font-size - 1px;
+    }
+    pre {
+      background: none;
+      border: none;
+      padding: @deployment-result-indent * 2 0 @deployment-result-indent;
+      margin: 0;
+      line-height: 0.6;
+      .text-success;
+    }
+  }
 }
 
 // CUSTOM CHECKBOX/RADIOBUTTON

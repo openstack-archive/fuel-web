@@ -345,14 +345,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     <br />
                     <span dangerouslySetInnerHTML={{__html: utils.urlify(summary)}} />
                     {details &&
-                        <span>
+                        <div className='task-result-details'>
                             {!this.state.collapsed &&
                                 <pre dangerouslySetInnerHTML={{__html: utils.urlify(details)}} />
                             }
-                            <button className='btn-link' onClick={this.toggleCollapsed}>
+                            <button className='btn btn-link' onClick={this.toggleCollapsed}>
                                 {i18n('cluster_page.' + (this.state.collapsed ? 'show' : 'hide') + '_details_button')}
                             </button>
-                        </span>
+                        </div>
                     }
                 </div>
             );

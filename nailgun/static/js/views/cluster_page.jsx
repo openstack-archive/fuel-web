@@ -213,6 +213,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         },
         componentWillMount: function() {
             this.checkTab();
+
+            // FIXME: hack for #1442475 to lock images_ceph in env with controllers
+            this.props.cluster.updateRoleList();
+            this.props.cluster.get('nodes').on('add remove change:roles change:pending_roles', this.props.cluster.updateRoleList, this.props.cluster);
+
             this.props.cluster.on('change:release_id', function() {
                 var release = new models.Release({id: this.props.cluster.get('release_id')});
                 release.fetch().done(_.bind(function() {

@@ -800,6 +800,7 @@
             type: "checkbox"
             restrictions:
               - "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
+              - "'controller' in cluster:roles": "Ceph RBD for images (Glance) can not be added to environment with already allocated controllers"
           images_vcenter:
             value: false
             label: "VMWare vCenter/ESXi datastore for images (Glance)"

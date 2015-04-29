@@ -87,6 +87,12 @@ def make_ubuntu_preferences_task(uids, repo):
     return make_upload_task(uids, preferences_content, preferences_path)
 
 
+def make_ubuntu_apt_disable_ipv6(uids):
+    config_content = 'Acquire::ForceIPv4 "true";\n'
+    config_path = '/etc/apt/apt.conf.d/05disable-ipv6'
+    return make_upload_task(uids, config_content, config_path)
+
+
 def make_ubuntu_unauth_repos_task(uids):
     # NOTE(kozhukalov): This task is to allow installing packages
     # from unauthenticated repositories. Apt has special

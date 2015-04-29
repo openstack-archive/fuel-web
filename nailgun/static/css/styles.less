@@ -574,7 +574,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .popover-layout(@index: 0);
       .notification {
         border-bottom: 1px solid @gray + 80%;
-        padding-bottom: 4px;
+        padding-bottom: 14px;
         margin-bottom: 10px;
         box-sizing: border-box;
         .glyphicon {
@@ -587,6 +587,17 @@ button, .btn:not(.btn-link) {.font-semibold;}
           display: block;
           width: 90%;
           float: left;
+          margin: 0;
+        }
+        &.clickable {
+          p {
+            color: @link-color;
+            cursor: pointer;
+            &:hover {
+              text-decoration: underline;
+              color: @link-color-hover;
+            }
+          }
         }
         &.unread {
           .font-semibold;

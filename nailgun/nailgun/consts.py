@@ -320,5 +320,3 @@ OSWL_RESOURCE_TYPES = Enum(
     'cluster_stats',
     'image',
 )
-
-ADMIN_GATEWAY_METRIC = 65000

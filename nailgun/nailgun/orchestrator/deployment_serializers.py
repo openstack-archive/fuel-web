@@ -1238,16 +1238,8 @@ class NeutronNetworkDeploymentSerializer61(
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:
-            # only HA mode is supported in 6.1 so we have VIPs always
-            attrs['endpoints']['br-mgmt']['gateway'] = \
-                nm.assign_vips_for_net_groups(node.cluster)[
-                    'management_vrouter_vip']
-        # Additional GW is set to admin. It's required for nodes which are
-        # deployed before VIPs are up and in case of multiple L2 segments.
-        gw = nm.get_default_gateway(node.id)
-        attrs['endpoints']['br-fw-admin']['gateway'] = gw
-        attrs['endpoints']['br-fw-admin']['gateway-metric'] = \
-            consts.ADMIN_GATEWAY_METRIC
+            gw = nm.get_default_gateway(node.id)
+            attrs['endpoints']['br-fw-admin']['gateway'] = gw
 
         # Fill up interfaces.
         for iface in node.nic_interfaces:

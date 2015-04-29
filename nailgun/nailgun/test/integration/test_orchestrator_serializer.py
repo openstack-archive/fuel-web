@@ -729,12 +729,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             gw = nm.get_node_network_by_netname(node, 'public')['gateway']
             self.assertEqual(ep['br-ex']['gateway'], gw)
         else:
-            gw = nm.assign_vips_for_net_groups(node.cluster)[
-                'management_vrouter_vip']
-            self.assertEqual(ep['br-mgmt']['gateway'], gw)
-        self.assertIn('gateway', ep['br-fw-admin'])
-        self.assertEqual(ep['br-fw-admin']['gateway-metric'],
-                         consts.ADMIN_GATEWAY_METRIC)
+            gw = nm.get_default_gateway(node.id)
+            self.assertEqual(ep['br-fw-admin']['gateway'], gw)
 
     def test_vlan_schema(self):
         cluster = self.create_env(segment_type='vlan')

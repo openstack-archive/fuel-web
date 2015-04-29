@@ -322,7 +322,7 @@ class NodeNICInterface(Base):
         ForeignKey('nodes.id', ondelete="CASCADE"),
         nullable=False)
     name = Column(String(128), nullable=False)
-    mac = Column(LowercaseString(17), nullable=False)
+    mac = Column(LowercaseString(59), nullable=False)
     max_speed = Column(Integer)
     current_speed = Column(Integer)
     assigned_networks_list = relationship(

@@ -4,6 +4,7 @@
 
 // Base Settings
 @page-width: 1170px;
+@default-input-width: 280px;
 
 // Base Palette
 @base-dark-color:  #394c59;
@@ -1766,7 +1767,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 // FORMS
 
 .forms-box {
-  @input-width: 280px;
   @label-width: 200px;
   @base-indent: 20px;
 
@@ -1826,17 +1826,17 @@ button, .btn:not(.btn-link) {.font-semibold;}
       float: left;
     }
     input, textarea, select {
-      max-width: @input-width;
+      max-width: @default-input-width;
     }
     textarea {
-      max-width: @input-width * 2;
+      max-width: @default-input-width * 2;
     }
     .input-group {
       float: left;
-      max-width: @input-width;
+      max-width: @default-input-width;
       @input-addon-width: 40px;
       input {
-        width: @input-width - @input-addon-width;
+        width: @default-input-width - @input-addon-width;
       }
       .input-group-addon {
         width: @input-addon-width;
@@ -1846,7 +1846,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         padding: 8px;
       }
     }
-    @help-block-width: @page-width - @input-width - @label-width - 90px;
+    @help-block-width: @page-width - @default-input-width - @label-width - 90px;
     .help-block {
       max-width: @help-block-width;
       float: left;
@@ -1855,7 +1855,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       box-sizing: border-box;
     }
     .textarea + .help-block {
-      max-width: @help-block-width - @input-width;
+      max-width: @help-block-width - @default-input-width;
     }
     &.has-error .help-block {
       .text-danger;
@@ -1898,15 +1898,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .help-block {
         position: absolute;
         bottom: 10px;
-        left: @input-width * 2.5 + @base-indent * 4 + 60px;
+        left: @default-input-width * 2.5 + @base-indent * 4 + 60px;
       }
       &.repo-uri .form-control {
-        @repo-uri-width: @input-width * 1.5;
+        @repo-uri-width: @default-input-width * 1.5;
         width: @repo-uri-width;
         max-width: @repo-uri-width;
       }
       &.repo-priority .form-control {
-        width: @input-width * 0.5;
+        width: @default-input-width * 0.5;
       }
       .form-control-static {
         display: inline;
@@ -2242,6 +2242,306 @@ button, .btn:not(.btn-link) {.font-semibold;}
           vertical-align: middle;
         }
       }
+    }
+  }
+}
+
+// Networks tab
+.network-tab {
+  @base-indent: 10px;
+  .network-section-wrapper {
+    margin-left: -@base-indent;
+  }
+  .nova-managers {
+    margin-left: -@base-indent * 2;
+  }
+  .network-managers {
+    margin: @base-indent;
+  }
+  .networks-table {
+    margin-top: @base-indent * 1.5;
+  }
+  .form-group {
+    select, input {
+      width: @default-input-width;
+    }
+  }
+  // range
+  .range,
+  .multiple-values {
+    .rows-container {
+      margin-top: -@base-indent;
+    }
+    .range-row-header {
+      font-weight: bold;
+      font-size: @base-font-size - 2;
+      margin-left: 197px;
+      div {
+        float: left;
+        width: @default-input-width + 47;
+      }
+    }
+    label {
+      width: 190px;
+      padding-top: @base-indent;
+    }
+    &.mini {
+      .range-row-header {
+        div {
+          width: 167px;
+        }
+      }
+      .range-row {
+        margin-top: -50px;
+        padding-left: 7px;
+        input {
+          width: 130px;
+        }
+        .validation-error {
+          margin-top: 19px;
+          span {
+            margin-left: 6px;
+          }
+        }
+        .form-group {
+          margin-top: 0;
+          width: 145px;
+          margin-left: @base-indent / 2;
+        }
+      }
+    }
+    &.dns_nameservers {
+      margin-left: -@base-indent;
+      label {
+        margin-left: 0;
+      }
+      .dns_nameservers-row {
+        .range-row {
+          &.first {
+            margin-top: -50px;
+          }
+          padding-bottom: 0;
+          padding-top: 0;
+          .glyphicon {
+            margin-top: @base-indent + 5;
+          }
+        }
+        .validation-error {
+          margin-top: 18px;
+          span {
+            font-size: @base-font-size - 2;
+            margin-left: 10px;
+          }
+        }
+        .ip-ranges-control {
+          margin-top: -@base-indent * 1.5;
+        }
+      }
+    }
+    &.vlan-id-range {
+      margin-bottom: @base-indent;
+    }
+    .range-row {
+      .glyphicon {
+        margin-left: -7px;
+        margin-right: -3px;
+      }
+      .form-group {
+        margin-bottom: 0;
+        float: left;
+        padding-left: 2px;
+      }
+      &.offset-bottom {
+        margin-bottom: @base-indent;
+      }
+      &.offset-left {
+        margin-left: 198px;
+      }
+      &.padding-left {
+        padding-left: 12px;
+      }
+      .validation-error {
+        margin-top: 9px;
+        span {
+          font-size: @base-font-size - 2;
+          margin-left: -@base-indent * 3;
+        }
+      }
+      .ip-ranges-control {
+        float: left;
+        .ip-ranges-add {
+          margin-left: @base-indent;
+        }
+      }
+    }
+  }
+  .range {
+    .range-row {
+      .form-group {
+        margin-top: -@base-indent;
+      }
+    }
+    .no-controls {
+      width: 330px;
+    }
+  }
+  // vlan tag control
+  .vlan-tagging {
+    height: 90px;
+    &.fixed_networks_vlan_start {
+      height: 40px;
+    }
+    > label.vlan-tag-label {
+      width: 200px;
+    }
+    label {
+      width: auto;
+    }
+    input[type=text] {
+      margin-left: -40px;
+      width: 248px;
+    }
+    .checkbox-group {
+      padding-left: 0;
+      margin-bottom: 0;
+      margin-left: 200px;
+      label span {
+        padding-right: 0;
+      }
+      .custom-tumbler {
+        input[type='checkbox'] {
+          width: auto;
+        }
+      }
+    }
+  }
+
+  // Verification Block
+  // -------------------------
+  .verification-control {
+    // Verification block mixin
+    .connect-stop-mixin(@width, @height, @margin-left) {
+      display: inline-block;
+      width: @width;
+      height: @height;
+      margin-left: @margin-left;
+      overflow: hidden;
+    }
+
+    .connect-size {
+      width: 140px;
+      height: 40px;
+    }
+
+    @connect-url-1: url(../img/connect_1_anim.gif);
+    @connect-url-2: url(../img/connect_2_anim.gif);
+    @connect-url-3: url(../img/connect_3_anim.gif);
+
+    @connect-height: 62px;
+    @connect-width: 124px;
+
+    .verification-box {
+      display: block;
+      margin: @base-indent 0px;
+      position: relative;
+      .alert {
+        clear: left;
+        margin-bottom: 0px;
+        margin-top: @base-indent;
+        padding: 8px 35px @base-indent 14px;
+        width: 100%;
+      }
+    }
+    .verification-network-placeholder {
+      float: left;
+      margin-bottom: 25px;
+    }
+    .verification-text-placeholder {
+      display: block;
+      float: left;
+      margin-left: @base-indent * 2;
+      li:first-of-type {
+        font-weight: bold;
+      }
+      li {
+        list-style: none outside none;
+        margin: 2px 0 8px 0;
+        line-height: 17px;
+      }
+    }
+    .verification-result-table {
+      clear: both;
+      padding-top: 10px;
+      td:last-child {
+        word-break: break-all;
+      }
+    }
+    .verification-router {
+      display: block;
+      width: 200px;
+      height: 58px;
+      margin-left: 190px;
+      background: url(../img/router.png) no-repeat top left;
+    }
+
+    .verification-node-1 {
+      display: inline-block;
+      .connect-size;
+    }
+    .verification-node-2, .verification-node-3 {
+      display: inline-block;
+      .connect-size;
+      margin-left: 76px;
+    }
+    .verification-node-1, .verification-node-2, .verification-node-3 {
+      background: url(../img/node-small.png) no-repeat top left;
+    }
+    .connect-1-stop, .connect-1-success, .connect-1-error {
+      .connect-stop-mixin(176px, @connect-height, @connect-height);
+    }
+    .connect-1-stop {
+      background:@connect-url-1 no-repeat top left;
+    }
+    .connect-1-success {
+      background: @connect-url-1 no-repeat 0px -@connect-height;
+    }
+    .connect-1-error {
+      background: @connect-url-1 no-repeat 0px -@connect-width;
+    }
+    .connect-2-stop, .connect-2-success, .connect-2-error {
+      .connect-stop-mixin(8px, @connect-height, 49px);
+    }
+    .connect-2-stop {
+      background: @connect-url-2 no-repeat top left;
+    }
+    .connect-2-success {
+      background: @connect-url-2 no-repeat 0px -@connect-height;
+    }
+    .connect-2-error {
+      background: @connect-url-2 no-repeat 0px -@connect-width;
+    }
+    .connect-3-stop, .connect-3-success, .connect-3-error {
+      .connect-stop-mixin(176px, @connect-height, 49px);
+    }
+    .connect-3-stop {
+      background: @connect-url-3 no-repeat top left;
+    }
+    .connect-3-success {
+      background: @connect-url-3 no-repeat 0px -@connect-height;
+    }
+    .connect-3-error {
+      background: @connect-url-3 no-repeat 0px -@connect-width;
+    }
+    .router-box {
+      display: block;
+      height: 58px;
+      overflow: hidden;
+    }
+    .animation-box {
+      display: block;
+      height: @connect-height;
+      margin-top: -9px;
+      overflow: hidden;
     }
   }
 }

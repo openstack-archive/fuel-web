@@ -575,7 +575,7 @@
                         "name": "Name",
                         "release_label": "OpenStack Release",
                         "existing_environment": "Environment with name \"__name__\" already exists",
-                        "Ubuntu_connectivity_alert": "By default, Ubuntu packages will be fetched from Canonical repositories. Please make sure your Fuel master node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment.",
+                        "Ubuntu_connectivity_alert": "By default, packages will be fetched from external repositories. Please make sure your Fuel master node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment.",
                         "CentOS_connectivity_alert": "Please make sure your Fuel master node has internet access.\nTo specify alternate repositories, or to create a local mirror, please check the Settings tab before deployment."
                     },
                     "mode": {

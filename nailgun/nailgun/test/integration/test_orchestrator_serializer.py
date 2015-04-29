@@ -2369,6 +2369,17 @@ class BaseDeploymentSerializer(BaseIntegrationTest):
             result['vcenter']['computes'][0]['vc_cluster'],
             "cluster1")
 
+        # Be sure that "$" was converted to "$$"
+        self.assertEqual(
+            result['vcenter']['computes'][2]['vc_user'],
+            "user$$")
+        self.assertEqual(
+            result['vcenter']['computes'][2]['vc_password'],
+            "pass$$word")
+        self.assertEqual(
+            result['vcenter']['computes'][2]['datastore_regex'],
+            "^openstack-[0-9]$$")
+
         self.assertTrue(result['use_vcenter'])
         self.assertEqual(result['vcenter']['esxi_vlan_interface'], "eth0")
 

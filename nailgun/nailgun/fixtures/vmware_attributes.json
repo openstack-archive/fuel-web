@@ -158,13 +158,13 @@
                 {
                     "az_name": "Zone 2",
                     "vcenter_host": "1.2.3.6",
-                    "vcenter_username": "user",
-                    "vcenter_password": "pass",
+                    "vcenter_username": "user$",
+                    "vcenter_password": "pass$word",
                     "nova_computes": [
                         {
                             "vsphere_cluster": "cluster1",
                             "service_name": "Compute 4",
-                            "datastore_regex": ""
+                            "datastore_regex": "^openstack-[0-9]$"
                         },
                         {
                             "vsphere_cluster": "",

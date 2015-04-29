@@ -305,6 +305,12 @@ define([
         },
         isAvailableForSettingsChanges: function() {
             return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').where({status: 'ready'}).length);
+        },
+        updateRoleList: function() {
+            var nodes = this.get('nodes');
+            this.set({
+                roles: _.chain(nodes.pluck('roles')).union(nodes.pluck('pending_roles')).flatten().uniq().compact().value()
+            });
         }
     });
 

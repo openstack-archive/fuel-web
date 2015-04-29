@@ -2369,6 +2369,11 @@ class BaseDeploymentSerializer(BaseIntegrationTest):
             result['vcenter']['computes'][0]['vc_cluster'],
             "cluster1")
 
+        # Be sure that "pass$word" was converted to "pass$$word"
+        self.assertEqual(
+            result['vcenter']['computes'][1]['vc_password'],
+            "pass$$word")
+
         self.assertTrue(result['use_vcenter'])
         self.assertEqual(result['vcenter']['esxi_vlan_interface'], "eth0")
 

@@ -638,7 +638,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         startNodeRenaming: function(e) {
             e.preventDefault();
             $('html').on(this.state.eventNamespace, _.bind(function(e) {
-                if ($(e.target).hasClass('node-name')) {
+                if ($(e.target).hasClass('node-name-input')) {
                     e.preventDefault();
                 } else {
                     this.endNodeRenaming();
@@ -770,11 +770,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 };
             logoClasses[manufacturer.toLowerCase()] = manufacturer;
 
-            var nameClasses = {
-                name: true,
-                'font-semibold': !this.state.renaming
-            };
-
             var roleClasses = {'text-success': !deployedRoles.length};
 
             var statusClasses = {
@@ -790,7 +785,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     provisioned: 'text-info'
                 }[status];
             statusClasses[statusClass] = true;
-
             return (
                 <div className={utils.classNames(nodePanelClasses)}>
                     <label className='node-box'>
@@ -804,13 +798,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         />
                         <div className={utils.classNames(logoClasses)} />
                         <div className='node-name'>
-                            <div className={utils.classNames(nameClasses)}>
+                            <div className='name'>
                                 {this.state.renaming ?
                                     <controls.Input
                                         ref='name'
                                         type='text'
                                         defaultValue={node.get('name')}
-                                        inputClassName='form-control'
+                                        inputClassName='form-control node-name-input'
                                         disabled={this.state.actionInProgress}
                                         onKeyDown={this.onNodeNameInputKeydown}
                                         autoFocus

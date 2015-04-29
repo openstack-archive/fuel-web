@@ -776,7 +776,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
     .register-trial {
       padding: @vertical-offset 10px 4px 10px;
-      margin: 0px -30px 10px -30px;
+      margin: 0 -30px 7px;
       background-color: @gray + 100%;
     }
   }
@@ -1262,16 +1262,22 @@ button, .btn:not(.btn-link) {.font-semibold;}
               border-bottom: 1px dotted @base-text-color + #444444;
               font-size: @base-font-size + 1;
               .text-emboss;
+              .font-semibold;
               &:hover {
                 color: @link-color-hover;
                 border-bottom-color: @link-color-hover;
               }
             }
-            input {
-              height: 60%;
-              width: 80%;
-              font-size: @base-font-size - 2;
-              padding: 0 4px;
+            .form-group {
+              label {
+                display: none;
+              }
+              .node-name-input {
+                height: 60%;
+                width: 80%;
+                font-size: @base-font-size - 2;
+                padding: 0 4px;
+              }
             }
           }
           .role-list {
@@ -1564,6 +1570,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
       margin-top: 0px;
     }
     > div {margin-bottom: 15px;}
+    .snapshot button {
+      margin-right: 10px;
+    }
   }
   .connection-form {margin: 0;}
   .statistics-text-box button {
@@ -1727,8 +1736,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .display-changes-dialog {
   .validation-result ul {
-    padding: 10px 10px 10px 25px;
     margin: 10px 0 0;
+    list-style-type: none;
+    li {
+      margin-bottom: 15px;
+      line-height: 1.1;
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
   }
   hr {
     margin: 8px 0 12px 0;

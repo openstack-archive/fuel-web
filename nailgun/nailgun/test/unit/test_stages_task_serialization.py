@@ -308,7 +308,7 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
         self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 19)
+        self.assertEqual(len(tasks), 20)
         tasks_tests = [('shell', ['master']),
                        ('shell', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),

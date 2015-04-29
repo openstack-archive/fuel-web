@@ -103,7 +103,7 @@ casper.then(function() {
     this.test.assertEvalEquals(function() {return $('.node.ready').length}, 0, 'Number of ready nodes is correct');
     this.loadPage('#cluster/1/network').waitForSelector('.network-tab > *');
     this.then(function() {
-        this.test.assertExists('.network-settings:not(.changes-locked)', 'Network Tab is unlocked');
+        this.test.assertExists('.network-tab .row:not(.changes-locked)', 'Network Tab is unlocked');
     });
     this.loadPage('#cluster/1/settings').waitForSelector('.settings-tab > *');
     this.then(function() {
@@ -144,7 +144,7 @@ casper.then(function() {
     this.test.comment('Testing Tabs locking after deployment finished completely');
     this.loadPage('#cluster/1/network').waitForSelector('.network-tab > *');
     this.then(function() {
-        this.test.assertExists('.network-settings.changes-locked', 'Network Tab is Locked');
+        this.test.assertExists('.network-tab .row.changes-locked', 'Network Tab is Locked');
     });
     this.loadPage('#cluster/1/settings').waitForSelector('.settings-tab > *');
     this.then(function() {

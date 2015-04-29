@@ -134,3 +134,11 @@ class GrubUtilsError(BaseError):
 
 class FsUtilsError(BaseError):
     pass
+
+
+class HttpUrlConnectionError(BaseError):
+    pass
+
+
+class HttpUrlInvalidContentLength(BaseError):
+    pass

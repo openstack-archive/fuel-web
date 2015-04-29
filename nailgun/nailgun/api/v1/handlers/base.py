@@ -244,6 +244,16 @@ class BaseHandler(object):
 
         raise self.http(status, objects.Task.to_json(task))
 
+    if settings.DEVELOPMENT:
+        def OPTIONS(self):
+            self.cors_headers()
+
+    @staticmethod
+    def cors_headers():
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        web.header('Access-Control-Allow-Headers', 'X-Auth-Token')
+
 
 def content_json(func, cls, *args, **kwargs):
     json_resp = lambda data: (

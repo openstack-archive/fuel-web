@@ -56,7 +56,7 @@ class NeutronConfig(NetworkingConfig):
 
     vlan_range = Column(JSON, default=[])
     gre_id_range = Column(JSON, default=[])
-    base_mac = Column(LowercaseString(17), nullable=False)
+    base_mac = Column(LowercaseString(59), nullable=False)
     internal_cidr = Column(String(25))
     internal_gateway = Column(String(25))
 

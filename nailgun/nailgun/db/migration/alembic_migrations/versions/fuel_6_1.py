@@ -301,8 +301,68 @@ def upgrade_schema():
         'plugins',
         sa.Column('homepage', sa.Text(), nullable=True))
 
+    # Mac lengths
+    op.alter_column(
+        'neutron_config',
+        'base_mac',
+        existing_type=fields.LowercaseString(length=17),
+        type_=fields.LowercaseString(length=59),
+        existing_nullable=False
+    )
+    op.alter_column(
+        'node_bond_interfaces',
+        'mac',
+        existing_type=fields.LowercaseString(length=17),
+        type_=fields.LowercaseString(length=59),
+        existing_nullable=True
+    )
+    op.alter_column(
+        'node_nic_interfaces',
+        'mac',
+        existing_type=fields.LowercaseString(length=17),
+        type_=fields.LowercaseString(length=59),
+        existing_nullable=False
+    )
+    op.alter_column(
+        'nodes',
+        'mac',
+        existing_type=fields.LowercaseString(length=17),
+        type_=fields.LowercaseString(length=59),
+        existing_nullable=False
+    )
+
 
 def downgrade_schema():
+    # Mac lengths
+    op.alter_column(
+        'nodes',
+        'mac',
+        existing_type=fields.LowercaseString(length=59),
+        type_=fields.LowercaseString(length=17),
+        existing_nullable=False
+    )
+    op.alter_column(
+        'node_nic_interfaces',
+        'mac',
+        existing_type=fields.LowercaseString(length=59),
+        type_=fields.LowercaseString(length=17),
+        existing_nullable=False
+    )
+    op.alter_column(
+        'node_bond_interfaces',
+        'mac',
+        existing_type=fields.LowercaseString(length=59),
+        type_=fields.LowercaseString(length=17),
+        existing_nullable=True
+    )
+    op.alter_column(
+        'neutron_config',
+        'base_mac',
+        existing_type=fields.LowercaseString(length=59),
+        type_=fields.LowercaseString(length=17),
+        existing_nullable=False
+    )
+
     # Add interface properties
     op.drop_column('node_bond_interfaces', 'interface_properties')
     op.drop_column('node_nic_interfaces', 'interface_properties')

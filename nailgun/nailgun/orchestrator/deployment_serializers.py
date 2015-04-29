@@ -73,12 +73,16 @@ class VmwareDeploymentSerializerMixin(object):
             network = vmware_attributes.get('network', {})
 
             for zone in availability_zones:
+
+                # Disable variable interpolation if password contains $ (dollar sign).
+                vc_password = zone.get('vc_password').replace('$', '$$')
+
                 for compute in zone.get('nova_computes', {}):
                     compute_item = {
                         'availability_zone_name': zone.get('az_name', ''),
                         'vc_host': zone.get('vcenter_host', ''),
                         'vc_user': zone.get('vcenter_username', ''),
-                        'vc_password': zone.get('vcenter_password', ''),
+                        'vc_password': vc_password,
                         'service_name': compute.get('service_name', ''),
                         'vc_cluster': compute.get('vsphere_cluster', ''),
                         'datastore_regex': compute.get('datastore_regex', '')
@@ -90,7 +94,7 @@ class VmwareDeploymentSerializerMixin(object):
                     'availability_zone_name': zone.get('az_name', ''),
                     'vc_host': zone.get('vcenter_host', ''),
                     'vc_user': zone.get('vcenter_username', ''),
-                    'vc_password': zone.get('vcenter_password', '')
+                    'vc_password': vcenter_password
                 }
                 cinder_instances.append(cinder_item)
 
@@ -109,10 +113,12 @@ class VmwareDeploymentSerializerMixin(object):
                 }
 
             if glance_instance:
+                escaped_password = glance_instance.get('vcenter_password', '').replace('$', '$$')
+
                 vmware_data['glance'] = {
                     'vc_host': glance_instance.get('vcenter_host', ''),
                     'vc_user': glance_instance.get('vcenter_username', ''),
-                    'vc_password': glance_instance.get('vcenter_password', ''),
+                    'vc_password': escaped_password,
                     'vc_datacenter': glance_instance.get('datacenter', ''),
                     'vc_datastore': glance_instance.get('datastore', '')
                 }

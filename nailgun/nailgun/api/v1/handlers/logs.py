@@ -200,30 +200,30 @@ class LogEntryCollectionHandler(BaseHandler):
     def GET(self):
         """Receives following parameters:
 
-        - *date_before* - get logs before this date
-        - *date_after* - get logs after this date
-        - *source* - source of logs
-        - *node* - node id (for getting node logs)
-        - *level* - log level (all levels showed by default)
-        - *to* - number of entries
-        - *max_entries* - max number of entries to load
+        :query date_before: get logs before this date
+        :query date_after: get logs after this date
+        :query source: source of logs
+        :query node: node id (for getting node logs)
+        :query level: log level (all levels showed by default)
+        :query to: number of entries
+        :query max_entries: max number of entries to load
 
         :returns: Collection of log entries, log file size
-            and if there are new entries.
-        :http:
-            * 200 (OK)
-            * 400 (invalid *date_before* value)
-            * 400 (invalid *date_after* value)
-            * 400 (invalid *source* value)
-            * 400 (invalid *node* value)
-            * 400 (invalid *level* value)
-            * 400 (invalid *to* value)
-            * 400 (invalid *max_entries* value)
-            * 404 (log file not found)
-            * 404 (log files dir not found)
-            * 404 (node not found)
-            * 500 (node has no assigned ip)
-            * 500 (invalid regular expression in config)
+                  and if there are new entries.
+
+        :statuscode 200: OK
+        :statuscode 400: invalid *date_before* value
+        :statuscode 400: invalid *date_after* value
+        :statuscode 400: invalid *source* value
+        :statuscode 400: invalid *node* value
+        :statuscode 400: invalid *level* value
+        :statuscode 400: invalid *to* value
+        :statuscode 400: invalid *max_entries* value
+        :statuscode 404: log file not found
+        :statuscode 404: log files dir not found
+        :statuscode 404: node not found
+        :statuscode 500: node has no assigned ip
+        :statuscode 500: invalid regular expression in config
         """
         data = self.read_and_validate_data()
 

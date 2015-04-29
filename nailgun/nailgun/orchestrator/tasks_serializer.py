@@ -182,6 +182,7 @@ class UploadMOSRepo(GenericRolesHook):
             # This task is to allow installing packages from
             # unauthenticated repositories.
             yield templates.make_ubuntu_unauth_repos_task(uids)
+            yield templates.make_ubuntu_apt_disable_ipv6(uids)
             for repo in repos:
                 yield templates.make_ubuntu_sources_task(uids, repo)
 

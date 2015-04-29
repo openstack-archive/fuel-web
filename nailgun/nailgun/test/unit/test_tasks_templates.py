@@ -50,6 +50,16 @@ class TestMakeTask(base.BaseTestCase):
              'type': 'upload_file',
              'uids': [1, 2, 3]})
 
+    def test_make_ubuntu_apt_disable_ipv6(uids):
+        result = tasks_templates.make_ubuntu_unauth_repos_task([1, 2, 3])
+        self.assertEqual(
+            result,
+            {'parameters': {
+                'data': 'APT::Get::AllowUnauthenticated 1;\n',
+                'path': '/etc/apt/apt.conf.d/05disable-ipv6'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
     def test_make_ubuntu_unauth_repos_task(self):
         result = tasks_templates.make_ubuntu_unauth_repos_task([1, 2, 3])
         self.assertEqual(

@@ -106,6 +106,8 @@ from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
 from nailgun.api.v1.handlers.master_node_settings \
     import MasterNodeSettingsHandler
 
+from nailgun.api.v1.handlers.docs import DocsHandler
+
 urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
@@ -262,6 +264,9 @@ urls = (
 
     r'/settings/?$',
     MasterNodeSettingsHandler,
+
+    r'/docs/?$',
+    DocsHandler,
 )
 
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]
@@ -277,4 +282,5 @@ def public_urls():
     return {r'/nodes/?$': ['POST'],
             r'/nodes/agent/?$': ['PUT'],
             r'/version/?$': ['GET'],
+            r'/docs/?$': ['GET', 'OPTIONS'],
             }

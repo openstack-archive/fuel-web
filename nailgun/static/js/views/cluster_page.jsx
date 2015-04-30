@@ -406,13 +406,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                         {/* FIXME(vkramskikh): there needs to be name of the task */}
                                         {/*i18n('cluster_page.' + taskName, {defaultValue: ''})*/}
                                     </div>
+                                    <div className="deploy-status">Deploy Status</div>
                                 </div>
                                 {stoppableTask &&
                                     <button
                                         className='btn btn-danger btn-xs pull-right stop-deployment-btn'
                                         title={i18n('cluster_page.stop_deployment_button')}
                                         onClick={_.partial(this.showDialog, dialogs.StopDeploymentDialog)}
-                                    >X</button>
+                                    ><i className="glyphicon glyphicon-remove"></i></button>
                                 }
                                 {!infiniteTask &&
                                     <div className='deploy-percents pull-right'>{taskProgress + '%'}</div>

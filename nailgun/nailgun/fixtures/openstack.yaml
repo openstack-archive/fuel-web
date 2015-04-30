@@ -87,8 +87,6 @@
               recommended: 3
               message: "At least 3 MongoDB nodes are recommended for HA deployment."
         restrictions:
-          - condition: "cluster:status == 'operational'"
-            message: "MongoDB node can not be added to an operational environment."
           - condition: "settings:additional_components.ceilometer.value == false"
             message: "Ceilometer should be enabled."
           - condition: "settings:additional_components.mongo.value == true"

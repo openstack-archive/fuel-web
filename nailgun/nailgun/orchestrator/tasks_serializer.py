@@ -178,6 +178,7 @@ class UploadMOSRepo(GenericRolesHook):
                     'cmd': '> /etc/apt/sources.list',
                     'timeout': 10
                 }})
+            yield templates.make_ubuntu_apt_disable_ipv6(uids)
             # NOTE(kozhukalov):
             # This task is to allow installing packages from
             # unauthenticated repositories.

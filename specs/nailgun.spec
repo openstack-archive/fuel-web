@@ -1,6 +1,6 @@
 %define name nailgun
 %define version 6.1.0
-%define release 1
+%{!?release: %define release 1}
 
 Summary: Nailgun package
 Name: %{name}
@@ -112,7 +112,7 @@ rm -rf $RPM_BUILD_ROOT
 
 Summary:   Nailgun startup agent
 Version:   %{version}
-Release:   1
+Release:   %{release}
 License:   GPLv2
 BuildRoot: %{_tmppath}/%{name}-%{version}
 URL:       http://mirantis.com
@@ -271,7 +271,7 @@ Fuel-agent package
 %package -n fencing-agent
 Summary:   Fencing agent
 Version:   %{version}
-Release:   1
+Release:   %{release}
 License:   GPLv2
 BuildRoot: %{_tmppath}/%{name}-%{version}
 URL:       http://mirantis.com

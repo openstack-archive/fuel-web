@@ -1,6 +1,6 @@
 %define name nailgun
 %define version 6.1.0
-%define release 1
+%{!?release: %define release 1}
 
 Summary: Nailgun package
 Name: %{name}

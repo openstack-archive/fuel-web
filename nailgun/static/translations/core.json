@@ -541,6 +541,7 @@
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
+                "deployment_status": "Deploying",
                 "deployment_mode": "Deployment Mode",
                 "show_details_button": "Show additional information",
                 "hide_details_button": "Hide additional information",

@@ -144,7 +144,7 @@ casper.then(function() {
     this.test.comment('Testing Tabs locking after deployment finished completely');
     this.loadPage('#cluster/1/network').waitForSelector('.network-tab > *');
     this.then(function() {
-        this.test.assertExists('.network-settings.changes-locked', 'Network Tab is Locked');
+        this.test.assertExists('.network-tab .changes-locked', 'Network Tab is Locked');
     });
     this.loadPage('#cluster/1/settings').waitForSelector('.settings-tab > *');
     this.then(function() {

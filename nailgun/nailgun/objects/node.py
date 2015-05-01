@@ -792,9 +792,9 @@ class NodeCollection(NailgunCollection):
         db().flush()
 
     @classmethod
-    def prepare_for_deployment(cls, instances):
+    def prepare_for_deployment(cls, instances, nst=''):
         """Prepare environment for deployment,
-        assign management, public, storage ips
+        assign management, public, storage, private ips
         """
         cls.update_slave_nodes_fqdn(instances)
 
@@ -804,6 +804,8 @@ class NodeCollection(NailgunCollection):
             netmanager.assign_ips(instances, 'management')
             netmanager.assign_ips(instances, 'public')
             netmanager.assign_ips(instances, 'storage')
+            if nst == 'gre':
+                netmanager.assign_ips(instances, 'private')
             netmanager.assign_admin_ips(instances)
 
     @classmethod

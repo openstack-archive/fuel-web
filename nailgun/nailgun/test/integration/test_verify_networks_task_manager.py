@@ -339,7 +339,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
     @property
     def expected_args(self):
         expected_networks = [
-            {u'vlans': [0, 101, 102], u'iface': u'eth0'},
+            {u'vlans': [0, 101, 102, 103], u'iface': u'eth0'},
             {u'vlans': [0], u'iface': u'eth1'},
             {u'vlans': [0], u'iface': u'eth2'}
         ]
@@ -357,6 +357,8 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
     @fake_tasks()
     def test_network_verification_neutron_with_bonds(self):
         task = self.env.launch_verify_networks()
+        #print task.cache['args']['nodes']
+        #print self.expected_args
         self.assertEqual(task.cache['args']['nodes'], self.expected_args)
         self.env.wait_ready(task, 30)
 
@@ -394,7 +396,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             expected_task_args.append({
                 u'uid': node['id'],
                 u'networks': [
-                    {u'vlans': [0, 101, 102], u'iface': u'eth0'}
+                    {u'vlans': [0, 101, 102, 103], u'iface': u'eth0'}
                 ],
                 u'excluded_networks': [
                     {u'iface': u'eth1'},

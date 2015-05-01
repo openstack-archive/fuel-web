@@ -130,7 +130,7 @@ class EnvironmentManager(object):
         os = kwargs.get(
             'operating_system', consts.RELEASE_OS.centos)
         version = kwargs.get(
-            'version', '{0}-5.1'.format(randint(0, 100000000)))
+            'version', '{0}-6.1'.format(randint(0, 100000000)))
 
         # NOTE(ikalnitsky): In order to do not read each time openstack.yaml
         # we're reading it once and then look for needed release.

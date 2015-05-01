@@ -339,7 +339,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
     @property
     def expected_args(self):
         expected_networks = [
-            {u'vlans': [0, 101, 102], u'iface': u'eth0'},
+            {u'vlans': [0, 101, 102, 103], u'iface': u'eth0'},
             {u'vlans': [0], u'iface': u'eth1'},
             {u'vlans': [0], u'iface': u'eth2'}
         ]
@@ -394,7 +394,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             expected_task_args.append({
                 u'uid': node['id'],
                 u'networks': [
-                    {u'vlans': [0, 101, 102], u'iface': u'eth0'}
+                    {u'vlans': [0, 101, 102, 103], u'iface': u'eth0'}
                 ],
                 u'excluded_networks': [
                     {u'iface': u'eth1'},

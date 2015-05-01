@@ -1147,6 +1147,9 @@ class NeutronNetworkDeploymentSerializer61(
                 transformations.append(cls.add_patch(
                     bridges=['br-prv', 'br-aux'],
                     provider='ovs'))
+        elif node.cluster.network_config.segmentation_type == 'gre':
+            transformations.append(
+                cls.add_bridge('br-mesh'))
 
         # Add ports and bonds.
         for iface in node.interfaces:
@@ -1219,6 +1222,11 @@ class NeutronNetworkDeploymentSerializer61(
         if is_public:
             netgroup_mapping.append(('public', 'br-ex'))
 
+        if node.cluster.network_config.segmentation_type == 'gre':
+            netgroup_mapping.append(('private', 'br-mesh'))
+            attrs['endpoints']['br-mesh'] = {}
+            attrs['roles']['neutron/mesh'] = 'br-mesh'
+
         netgroups = {}
         nets_by_ifaces = defaultdict(list)
         for ngname, brname in netgroup_mapping:
@@ -1275,8 +1283,6 @@ class NeutronNetworkDeploymentSerializer61(
                     'br_name': 'br-aux',
                     'vlan_id': None
                 })
-        elif node.cluster.network_config.segmentation_type == 'gre':
-            attrs['roles']['neutron/mesh'] = 'br-mgmt'
 
         attrs['transformations'] = cls.generate_transformations(
             node, nm, nets_by_ifaces, is_public, prv_base_ep)
@@ -1296,7 +1302,7 @@ class NeutronNetworkDeploymentSerializer61(
         endpoints = network_scheme.get('endpoints', {})
         bonds_map = dict((b.name, b) for b in node.bond_interfaces)
         net_name_mapping = {'ex': 'public'}
-        managed_networks = ['public', 'storage', 'management']
+        managed_networks = ['public', 'storage', 'management', 'private']
 
         # Add interfaces drivers data
         for iface in node.nic_interfaces:
@@ -1819,7 +1825,8 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode
     """
     objects.Cluster.set_primary_roles(cluster, nodes)
-    objects.NodeCollection.prepare_for_deployment(cluster.nodes)
+    nst = cluster.network_config.get('segmentation_type')
+    objects.NodeCollection.prepare_for_deployment(cluster.nodes, nst)
     serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
 
     return serializer.serialize(

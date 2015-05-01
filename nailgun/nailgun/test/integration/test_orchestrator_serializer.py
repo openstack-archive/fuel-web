@@ -690,7 +690,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             cluster_id=cluster['id'])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
+                                                      segment_type)
         objects.Cluster.set_primary_roles(cluster_db, cluster_db.nodes)
         self.db.flush()
         return cluster_db
@@ -907,11 +908,11 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                               'disable_offloading': True}},
                  'eth1': {}}
             )
-            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin'])
+            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-mesh'])
             role_dict = {'storage': 'br-storage',
                          'management': 'br-mgmt',
                          'fw-admin': 'br-fw-admin',
-                         'neutron/mesh': 'br-mgmt'}
+                         'neutron/mesh': 'br-mesh'}
             if is_public:
                 br_set.update(['br-ex', 'br-floating'])
                 role_dict.update({'ex': 'br-ex',
@@ -941,6 +942,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 {'action': 'add-patch',
                  'bridges': ['br-floating', 'br-ex'],
                  'provider': 'ovs'},
+                {'action': 'add-br',
+                 'name': 'br-mesh'},
                 {'action': 'add-port',
                  'bridge': 'br-fw-admin',
                  'name': 'eth0'},
@@ -951,12 +954,15 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                  'bridge': 'br-mgmt',
                  'name': 'eth0.101'},
                 {'action': 'add-port',
+                 'bridge': 'br-mesh',
+                 'name': 'eth0.103'},
+                {'action': 'add-port',
                  'bridge': 'br-ex',
-                 'name': 'eth1'}
+                 'name': 'eth1'},
             ]
             if not is_public:
                 # exclude all 'br-ex' and 'br-floating' objects
-                transformations = transformations[:3] + transformations[6:9]
+                transformations = transformations[:3] + transformations[6:-1]
             self.assertEqual(
                 scheme['transformations'],
                 transformations
@@ -1000,12 +1006,16 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 {'action': 'add-patch',
                  'bridges': ['br-floating', 'br-ex'],
                  'provider': 'ovs'},
+                {'action': 'add-br',
+                 'name': 'br-mesh'},
                 {'action': 'add-port',
                  'bridge': 'br-fw-admin',
                  'name': 'eth0'},
                 {'action': 'add-port',
                  'bridge': 'br-mgmt',
                  'name': 'eth0.101'},
+                {'action': 'add-port', 'bridge': 'br-mesh', 'name':
+                    'eth0.103'},
                 {'action': 'add-bond',
                  'bridge': 'br-ex',
                  'name': 'lnx_bond',
@@ -1042,6 +1052,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         nets_w_gw = {'management': '199.99.20.0/24',
                      'storage': '199.98.20.0/24',
                      'fuelweb_admin': '199.97.20.0/24',
+                     'private': '199.95.20.0/24',
                      'public': '199.96.20.0/24'}
         for net in nets['networks']:
             if net['name'] in nets_w_gw.keys():

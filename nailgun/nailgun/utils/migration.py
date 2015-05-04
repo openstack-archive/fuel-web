@@ -598,3 +598,18 @@ def upgrade_cluster_attributes_6_0_to_6_1(connection):
             update_query,
             editable=jsonutils.dumps(attributes),
             attr_id=attr_id)
+
+
+def upgrade_cluster_vmware_attributes_6_0_to_6_1(connection):
+    select_query = text(
+        """SELECT id FROM clusters WHERE id NOT IN (
+           SELECT id FROM vmware_attributes);""")
+    update_query = text(
+        """INSERT INTO vmware_attributes (cluster_id, editable) VALUES
+           (:cluster_id, NULL);""")
+
+    for cluster_id, in connection.execute(select_query):
+        connection.execute(
+            update_query,
+            cluster_id=cluster_id
+        )

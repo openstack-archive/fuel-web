@@ -2294,11 +2294,14 @@ button, .btn:not(.btn-link) {.font-semibold;}
 // Networks tab
 .network-tab {
   @base-indent: 10px;
+  .forms-box {
+    margin-left: 16px;
+  }
   .network-section-wrapper {
     margin-left: -@base-indent;
   }
   .nova-managers {
-    margin-left: -@base-indent * 2;
+    margin-left: -@base-indent / 2;
   }
   .network-managers {
     margin: @base-indent;
@@ -2316,11 +2319,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .range-row-header {
       font-weight: bold;
       font-size: @base-font-size - 2;
-      margin-left: @default-label-width + 13px;
+      margin-left: @default-label-width + 14px;
       div {
         float: left;
         // needed here to place label on correct places over ranges
-        width: @default-input-width + 22;
+        width: @default-input-width + 20;
       }
     }
     label {
@@ -2365,8 +2368,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
     &.dns_nameservers {
       margin-bottom: 0;
-      padding-left: @base-indent * 1.5;
-      margin-top: -@base-indent * 2;
+      padding-left: 0;
+      margin-left: 0;
+      margin-top: -@base-indent * 3;
       label {
         margin-left: 0;
       }
@@ -2404,9 +2408,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
         }
       }
     }
-    &.vlan-id-range {
-      margin-bottom: @base-indent;
-    }
+    //&.vlan-id-range {
+    //  margin-bottom: -@base-indent;
+    //}
     .range-row {
       .glyphicon {
         margin-left: -7px;
@@ -2483,6 +2487,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
         }
       }
     }
+  }
+  .neutron-l2-3-config {
+    margin-bottom: @base-indent * 3;
   }
 
   // Verification Block

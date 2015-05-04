@@ -38,6 +38,7 @@ from nailgun.utils.migration import \
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping
 from nailgun.utils.migration import upgrade_attributes_metadata_6_0_to_6_1
 from nailgun.utils.migration import upgrade_cluster_attributes_6_0_to_6_1
+from nailgun.utils.migration import upgrade_cluster_vmware_attributes_6_0_to_6_1
 from nailgun.utils.migration import upgrade_enum
 from nailgun.utils.migration import upgrade_master_node_settings_6_0_to_6_1
 from nailgun.utils.migration import upgrade_network_groups_metadata_6_0_to_6_1
@@ -426,6 +427,7 @@ def upgrade_data():
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)
     upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection)
     upgrade_cluster_attributes_6_0_to_6_1(connection)
+    upgrade_cluster_vmware_attributes_6_0_to_6_1(connection)
     upgrade_vip_types_6_0_to_6_1(connection)
     upgrade_network_groups_metadata_6_0_to_6_1(connection)
 

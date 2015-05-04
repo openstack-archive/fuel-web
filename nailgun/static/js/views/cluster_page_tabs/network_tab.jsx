@@ -229,7 +229,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                     [attribute || '', this.props.autoIncreaseWith ? (attribute + this.props.autoIncreaseWith - 1 || '') : ''] :
                     attribute,
                 wrapperClasses = {
-                    'form-group range col-xs-12': true,
+                    'form-group range col-xs-12 row': true,
                     mini: this.props.mini
                 },
                 rowsContainerClasses = {
@@ -249,7 +249,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             <div>{i18n(ns + 'range_end')}</div>
                         </div>
                     }
-                    <div className='row col-xs-12'>
+                    <div className='col-xs-12'>
                         <label>
                             {this.props.label}
                         </label>
@@ -264,7 +264,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                         <div className={rowClasses} key={index}>
                                             <controls.Input
                                                 {...this.getRangeProps()}
-                                                error={(rangeError.start || verificationError) && ''}
+                                                error={(rangeError.start || verificationError) ? '' : null}
                                                 value={range[0]}
                                                 onChange={_.partialRight(this.onRangeChange, attributeName, index)}
                                                 ref={'start' + index}
@@ -273,7 +273,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                             />
                                             <controls.Input
                                                 {...this.getRangeProps(true)}
-                                                error={rangeError.end && ''}
+                                                error={rangeError.end ? '' : null}
                                                 value={range[1]}
                                                 onChange={_.partialRight(this.onRangeChange, attributeName, index)}
                                                 onFocus={_.partial(this.autoCompleteIPRange, rangeError && rangeError.start, range[0])}
@@ -823,7 +823,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return (
                 <div className='col-xs-12 forms-box'>
                     <h3 className='networks'>{i18n('network.' + network.get('name'))}</h3>
-                    <div className={'network-section-wrapper ' + network.get('name')}>
+                    <div className={'network-section-wrapper row ' + network.get('name')}>
                         {(networkConfig.notation == ipRangesLabel) &&
                             <Range
                                 {...this.composeProps(ipRangesLabel, true)}
@@ -874,7 +874,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             <h3 className='networks'>
                                 {i18n(ns + 'nova_configuration')}
                             </h3>
-                            <div className='network-section-wrapper'>
+                            <div className='network-section-wrapper row'>
                                 {this.renderInput('fixed_networks_cidr')}
                                 {(manager == 'VlanManager') ?
                                     <div>
@@ -910,7 +910,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         <div>
                             <div className='forms-box col-xs-12'>
                                 <h3 className='networks'>{i18n(ns + 'l2_configuration')}</h3>
-                                <div className='network-section-wrapper'>
+                                <div className='network-section-wrapper row'>
                                     <Range
                                         {...this.composeProps(idRangePrefix + '_range', true)}
                                         wrapperClassName='clearfix'
@@ -924,7 +924,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                             </div>
                             <div className='forms-box col-xs-12 network-sub-wrapper'>
                                 <h3 className='networks'>{i18n(ns + 'l3_configuration')}</h3>
-                                <div className='network-section-wrapper'>
+                                <div className='network-section-wrapper row'>
                                     {this.renderInput('internal_cidr')}
                                     {this.renderInput('internal_gateway')}
                                 </div>

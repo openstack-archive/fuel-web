@@ -138,6 +138,9 @@ class InstallationInfo(object):
             release = cluster.release
             nodes_num = NodeCollection.filter_by(
                 None, cluster_id=cluster.id).count()
+            vmware_attributes_editable = None
+            if cluster.vmware_attributes:
+                vmware_attributes_editable = cluster.vmware_attributes.editable
             cluster_info = {
                 'id': cluster.id,
                 'nodes_num': nodes_num,
@@ -153,7 +156,7 @@ class InstallationInfo(object):
                 'attributes': self.get_attributes(cluster.attributes.editable,
                                                   self.attributes_white_list),
                 'vmware_attributes': self.get_attributes(
-                    cluster.vmware_attributes.editable,
+                    vmware_attributes_editable,
                     self.vmware_attributes_white_list
                 ),
                 'net_provider': cluster.net_provider,

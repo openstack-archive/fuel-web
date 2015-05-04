@@ -119,6 +119,7 @@ define([
             }
         },
         showErrorDialog: function(options) {
+            options = options || {};
             var dialogs = require('jsx!views/dialogs'); // avoid circular dependencies
             options.message = options.response ? utils.getResponseText(options.response) :
                 options.message || i18n('dialog.error_dialog.warning');

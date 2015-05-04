@@ -173,11 +173,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             this.setValue(attribute, valuesToSet, {isInteger: this.props.integerValue});
         },
         addRange: function(attribute, rowIndex) {
-            var newValue = _.clone(this.getModel().get(attribute));
+            var newValue = _.clone(this.getModel().get(attribute)),
+                emptyIndex;
             newValue.push(['', '']);
             this.setValue(attribute, newValue);
+            emptyIndex = _.findIndex(newValue, ['', '']);
             this.setState({
-                elementToFocus: 'start' + (rowIndex + 1)
+                elementToFocus: 'start' + (emptyIndex > rowIndex ? emptyIndex : rowIndex + 1)
             });
         },
         removeRange: function(attribute, rowIndex) {
@@ -379,11 +381,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             this.setValue(attribute, valueToSet);
         },
         addValue: function(attribute, index) {
-            var newValue = _.clone(this.getModel().get(attribute));
+            var newValue = _.clone(this.getModel().get(attribute)),
+                emptyIndex;
             newValue.push('');
             this.setValue(attribute, newValue);
+            emptyIndex = _.findIndex(newValue, _.isEmpty);
             this.setState({
-                elementToFocus: 'input' + (index + 1)
+                elementToFocus: 'row' + (emptyIndex > index ? emptyIndex : index + 1)
             });
         },
         removeValue: function(attribute, index) {
@@ -391,7 +395,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             newValue.splice(index, 1);
             this.setValue(attribute, newValue);
             this.setState({
-                elementToFocus: 'input' + _.min([newValue.length - 1, index])
+                elementToFocus: 'row' + _.min([newValue.length - 1, index])
             });
         },
         render: function() {
@@ -406,7 +410,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                         {_.map(values, function(value, index) {
                             var inputError = errors && errors[index];
                             return (
-                                <div className='range-row autocomplete clearfix' key={this.props.name + index}>
+                                <div className='range-row clearfix' key={this.props.name + index}>
                                     <controls.Input
                                         type='text'
                                         disabled={this.props.disabled}
@@ -414,7 +418,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                         error={(inputError || verificationError) && ''}
                                         value={value}
                                         onChange={_.partialRight(this.onChange, index)}
-                                        ref={'input' + index}
+                                        ref={'row' + index}
                                         placeholder={inputError ? '' : this.props.placeholder}
                                     />
                                     <div>

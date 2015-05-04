@@ -67,6 +67,10 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
                 $('body').addClass('safari');
             }
 
+            window.onerror = function() {
+                utils.showErrorDialog({});
+            };
+
             // remove stickit bindings on teardown
             Coccyx.addTearDownCallback(function() {
                 this.unstickit();

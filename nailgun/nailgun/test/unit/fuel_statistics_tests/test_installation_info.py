@@ -22,6 +22,7 @@ from nailgun.db.sqlalchemy.models import cluster as cluster_model
 from nailgun.db.sqlalchemy.models import plugins
 from nailgun.objects import Cluster
 from nailgun.objects import ReleaseCollection
+from nailgun.objects import VmwareAttributes
 from nailgun.settings import settings
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo
@@ -85,6 +86,28 @@ class TestInstallationInfo(BaseTestCase):
         for attrs in variants:
             result = info.get_attributes(attrs, info.attributes_white_list)
             self.assertDictEqual({}, result)
+
+    def test_clusters_info_no_vmware_attributes_exception(self):
+        self.env.upload_fixtures(['openstack'])
+        info = InstallationInfo()
+        release = ReleaseCollection.filter_by(None, operating_system='CentOS')
+        nodes_params = [
+            {'roles': ['compute']},
+            {'roles': ['compute']},
+            {'roles': ['controller']}
+        ]
+        self.env.create(
+            cluster_kwargs={
+                'release_id': release[0].id,
+                'mode': consts.CLUSTER_MODES.ha_full,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
+            nodes_kwargs=nodes_params
+        )
+        self.env.create_node({'status': consts.NODE_STATUSES.discover})
+        cluster = self.env.clusters[0]
+        VmwareAttributes.delete(cluster.vmware_attributes)
+        self.env.db.flush()
+        self.assertNotRaises(AttributeError, info.get_clusters_info)
 
     def test_clusters_info(self):
         self.env.upload_fixtures(['openstack'])

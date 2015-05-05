@@ -27,6 +27,7 @@ require 'yaml'
 require 'ipaddr'
 require 'rethtool'
 require 'digest'
+require 'timeout'
 
 unless Process.euid == 0
   puts "You must be root"
@@ -142,8 +143,22 @@ class NodeAgent
       @api_url = "http://#{@api_ip}:#{@api_default_port}/api"
     end
 
-    @os = Ohai::System.new()
-    @os.all_plugins
+    @os = ohai_system_info
+  end
+
+  def ohai_system_info
+    Timeout::timeout(30) do
+      os = Ohai::System.new()
+      os.all_plugins
+      os
+    end
+  rescue Timeout::Error
+    # When one of disks is broken, do not collect data about block devices
+    # More details: https://bugs.launchpad.net/fuel/+bug/1396086
+    Ohai::Config[:disabled_plugins]=['linux::block_device', 'linux::filesystem']
+    os = Ohai::System.new()
+    os.all_plugins
+    os
   end
 
   def put
@@ -254,34 +269,36 @@ class NodeAgent
     end
 
     begin
-      @logger.debug("Trying to find block devices")
-      (@os[:block_device] or {} rescue {}).each do |bname, binfo|
-        @logger.debug("Found block device: #{bname}")
-        @logger.debug("Block device info: #{binfo.inspect}")
-        if physical_data_storage_devices.map{|d| d[:name]}.include?(bname) && binfo
-          @logger.debug("Block device seems to be physical data storage: #{bname}")
-          block = physical_data_storage_devices.select{|d| d[:name] == bname}[0]
-          if block[:removable] =~ /^1$/ && ! REMOVABLE_VENDORS.include?(binfo[:vendor])
-            next
-          end
-          dname = bname.gsub(/!/, '/')
+      Timeout::timeout(30) do
+        @logger.debug("Trying to find block devices")
+        (@os[:block_device] or {} rescue {}).each do |bname, binfo|
+          @logger.debug("Found block device: #{bname}")
+          @logger.debug("Block device info: #{binfo.inspect}")
+          if physical_data_storage_devices.map{|d| d[:name]}.include?(bname) && binfo
+            @logger.debug("Block device seems to be physical data storage: #{bname}")
+            block = physical_data_storage_devices.select{|d| d[:name] == bname}[0]
+            if block[:removable] =~ /^1$/ && ! REMOVABLE_VENDORS.include?(binfo[:vendor])
+              next
+            end
+            dname = bname.gsub(/!/, '/')
 
-          # 512 bytes is the size of one sector by default
-          block_size = 512
-          fn = "/sys/block/#{bname}/queue/logical_block_size"
-          block_size = File.read(fn).to_i if File.exist? fn
-          block_size = 512 if block_size == 0
-          detailed_meta[:disks] << {
-            :name => dname,
-            :model => binfo[:model],
-            :size => (binfo[:size].to_i * block_size),
-            :disk => block[:disk],
-            :extra => block[:extra],
-            :removable => block[:removable]
-          }
+            # 512 bytes is the size of one sector by default
+            block_size = 512
+            fn = "/sys/block/#{bname}/queue/logical_block_size"
+            block_size = File.read(fn).to_i if File.exist? fn
+            block_size = 512 if block_size == 0
+            detailed_meta[:disks] << {
+              :name => dname,
+              :model => binfo[:model],
+              :size => (binfo[:size].to_i * block_size),
+              :disk => block[:disk],
+              :extra => block[:extra],
+              :removable => block[:removable]
+            }
+          end
         end
+        @logger.debug("Detailed meta disks: #{detailed_meta[:disks].inspect}")
       end
-      @logger.debug("Detailed meta disks: #{detailed_meta[:disks].inspect}")
     rescue Exception => e
       @logger.error("Error '#{e.message}' in gathering disks metadata: #{e.backtrace}")
     end

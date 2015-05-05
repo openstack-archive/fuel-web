@@ -29,7 +29,8 @@ define(
 function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, dialogs) {
     'use strict';
 
-    var components = {};
+    var components = {},
+        ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
     components.Navbar = React.createClass({
         mixins: [
@@ -145,7 +146,9 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                             className='notifications-icon'
                                             onClick={this.togglePopover('notifications')}
                                         >
-                                            {unreadNotificationsCount ? <span className='badge'>{unreadNotificationsCount}</span> : null}
+                                            <ReactCSSTransitionGroup transitionName='badge-animation'>
+                                                {unreadNotificationsCount && <span key={unreadNotificationsCount} className='badge'>{unreadNotificationsCount}</span>}
+                                            </ReactCSSTransitionGroup>
                                         </li>
 
                                         {this.state.languagePopoverVisible &&

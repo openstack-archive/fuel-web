@@ -30,7 +30,7 @@ class TestFixture(BaseIntegrationTest):
 
     def test_upload_working(self):
         check = self.db.query(Node).all()
-        self.assertEqual(len(list(check)), 8)
+        self.assertEqual(len(list(check)), 50)
 
     def test_json_fixture(self):
         data = '''[{

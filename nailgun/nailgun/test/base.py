@@ -390,10 +390,100 @@ class EnvironmentManager(object):
         return ng
 
     def default_metadata(self):
-        item = self.find_item_by_pk_model(
-            self.read_fixtures(("sample_environment",)),
-            1, 'nailgun.node')
-        return item.get('fields').get('meta')
+        return {
+            "cpu": {
+                "real": 2,
+                "total": 24,
+                "spec": [
+                    {
+                        "model": "Intel(R) Xeon(R) CPU E5-2620 0 @ 2.00GHz",
+                        "frequency": 2001
+                    }
+                ] * 24
+            },
+            "interfaces": [
+                {
+                    "mac": "00:25:90:6a:b1:10",
+                    "max_speed": 1000,
+                    "name": "eth0",
+                    "current_speed": 1000,
+                    "driver": "igb",
+                    "bus_info": "0000:01:00.0"
+                },
+                {
+                    "mac": "00:25:90:6a:b1:11",
+                    "max_speed": 1000,
+                    "name": "eth1",
+                    "current_speed": None,
+                    "ip": "10.20.0.3",
+                    "driver": "igb",
+                    "bus_info": "0000:02:00.0"
+                }
+            ],
+            "disks": [
+                {
+                    "model": "TOSHIBA MK1002TS",
+                    "name": "sda",
+                    "disk": "sda",
+                    "size": 1000204886016
+                },
+                {
+                    "model": "TOSHIBA MK1002TS",
+                    "name": "sdb",
+                    "disk": "sdb",
+                    "size": 1000204886016
+                },
+                {
+                    "model": "TOSHIBA MK1002TS",
+                    "name": "sdc",
+                    "disk": "sdc",
+                    "size": 1000204886016
+                },
+                {
+                    "model": "TOSHIBA MK1002TS",
+                    "name": "sdd",
+                    "disk": "sdd",
+                    "size": 1000204886016
+                },
+                {
+                    "model": "Virtual Floppy0",
+                    "name": "sde",
+                    "disk": "sde",
+                    "size": 0
+                },
+                {
+                    "model": "Virtual HDisk0",
+                    "name": "sdf",
+                    "disk": "sdf",
+                    "size": 0
+                }
+            ],
+            "system": {
+                "product": "X9DRW",
+                "family": "To be filled by O.E.M.",
+                "fqdn": "srv08-srt.srt.mirantis.net",
+                "version": "0123456789",
+                "serial": "0123456789",
+                "manufacturer": "Supermicro"
+            },
+            "memory": {
+                "slots": 1,
+                "total": 137455730688,
+                "maximum_capacity": 274894684160,
+                "devices": [
+                    {
+                        "frequency": 1333,
+                        "type": "DDR3",
+                        "size": 8589934592
+                    }
+                ] * 16 + [
+                    {
+                        "type": "Flash",
+                        "size": 16777216
+                    }
+                ]
+            }
+        }
 
     def generate_random_mac(self):
         mac = [randint(0x00, 0x7f) for _ in xrange(6)]

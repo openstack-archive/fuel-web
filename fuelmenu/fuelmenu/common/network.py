@@ -13,6 +13,7 @@
 # under the License.
 
 from fuelmenu.common.errors import BadIPException
+from fuelmenu.common.errors import NetworkException
 
 import netaddr
 import subprocess
@@ -87,3 +88,13 @@ def duplicateIPExists(ip, iface):
         return False
     else:
         return True
+
+
+def upIface(iface):
+    noout = open('/dev/null', 'w')
+    result = subprocess.call(["ifconfig", iface, "up"], stdout=noout,
+                             stderr=noout)
+    if result == 0:
+        return True
+    else:
+        raise NetworkException("Failed to up interface {0}".format(iface))

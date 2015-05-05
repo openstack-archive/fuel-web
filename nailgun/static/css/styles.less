@@ -490,6 +490,20 @@ button, .btn:not(.btn-link) {.font-semibold;}
       font-size: @base-font-size;
       letter-spacing: 1px;
       box-sizing: border-box;
+
+      // Notification badge animation
+      // FIXME: prefixes are needed for webkit browsers. Added here for tests and should be removed before merge
+      opacity: 0;
+      transition: opacity 0.5s, transform 0.5s;
+      -webkit-transition: opacity 1s, -webkit-transform 0.5s;
+      transition-timing-function: cubic-bezier(0.250, 0.250, 0.350, 1.420);
+      -webkit-transition-timing-function: cubic-bezier(0.250, 0.250, 0.350, 1.420);
+      &.visible {
+        opacity: 1;
+        transform: rotate(360deg);
+        -webkit-transform: rotate(360deg);
+      }
+
     }
 
     .navbar-icon-sprite-index(@index) {

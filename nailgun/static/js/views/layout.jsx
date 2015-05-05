@@ -142,7 +142,9 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                         className='notifications-icon'
                                         onClick={this.togglePopover('notifications')}
                                     >
-                                        {unreadNotificationsCount ? <span className='badge'>{unreadNotificationsCount}</span> : null}
+                                        <span className={utils.classNames({badge: true, visible: unreadNotificationsCount})}>
+                                            {unreadNotificationsCount}
+                                        </span>
                                     </li>
 
                                     {this.state.languagePopoverVisible &&

@@ -699,3 +699,54 @@ class TestNailgun(test_base.BaseTestCase):
         for disk, part in enumerate((-2, -1, -1)):
             self.assertEqual(CEPH_DATA['partition_guid'],
                              p_scheme.parteds[disk].partitions[part].guid)
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_grub_centos_26(self, mock_lbd, mock_http_req, mock_yaml):
+        data = PROVISION_SAMPLE_DATA.copy()
+        data['profile'] = 'centos'
+        data['ks_meta']['kernel_lt'] = 0
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        self.drv = nailgun.Nailgun(data)
+        self.assertEqual(self.drv.grub.kernel_params,
+                         ' ' + data['ks_meta']['pm_data']['kernel_params'])
+        self.assertEqual(self.drv.grub.kernel_regexp, r'^vmlinuz-2\.6.*')
+        self.assertEqual(self.drv.grub.initrd_regexp, r'^initramfs-2\.6.*')
+        self.assertIsNone(self.drv.grub.version)
+        self.assertIsNone(self.drv.grub.kernel_name)
+        self.assertIsNone(self.drv.grub.initrd_name)
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_grub_centos_lt(self, mock_lbd, mock_http_req, mock_yaml):
+        data = PROVISION_SAMPLE_DATA.copy()
+        data['profile'] = 'centos'
+        data['ks_meta']['kernel_lt'] = 1
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        self.drv = nailgun.Nailgun(data)
+        self.assertEqual(self.drv.grub.kernel_params,
+                         ' ' + data['ks_meta']['pm_data']['kernel_params'])
+        self.assertIsNone(self.drv.grub.kernel_regexp)
+        self.assertIsNone(self.drv.grub.initrd_regexp)
+        self.assertIsNone(self.drv.grub.version)
+        self.assertIsNone(self.drv.grub.kernel_name)
+        self.assertIsNone(self.drv.grub.initrd_name)
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_grub_ubuntu(self, mock_lbd, mock_http_req, mock_yaml):
+        data = PROVISION_SAMPLE_DATA.copy()
+        data['profile'] = 'ubuntu'
+        data['ks_meta']['kernel_lt'] = 0
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        self.drv = nailgun.Nailgun(data)
+        self.assertEqual(self.drv.grub.kernel_params,
+                         ' ' + data['ks_meta']['pm_data']['kernel_params'])
+        self.assertIsNone(self.drv.grub.version)
+        self.assertIsNone(self.drv.grub.kernel_regexp)
+        self.assertIsNone(self.drv.grub.initrd_regexp)
+        self.assertIsNone(self.drv.grub.kernel_name)
+        self.assertIsNone(self.drv.grub.initrd_name)

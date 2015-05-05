@@ -365,7 +365,7 @@ class Manager(object):
             with open(mtab_path, 'wb') as f:
                 f.write(mtab)
 
-    # TODO(kozhukalov): write tests
+    # TODO(kozhukalov): write tests for this method
     def umount_target(self, chroot, pseudo=True):
         LOG.debug('Umounting target file systems')
         if pseudo:
@@ -377,6 +377,8 @@ class Manager(object):
                 continue
             fu.umount_fs(chroot + fs.mount)
 
+    # TODO(kozhukalov): write tests for this method
+    # https://bugs.launchpad.net/fuel/+bug/1449609
     def do_bootloader(self):
         LOG.debug('--- Installing bootloader (do_bootloader) ---')
         chroot = '/tmp/target'
@@ -388,19 +390,27 @@ class Manager(object):
                 'blkid', '-o', 'value', '-s', 'UUID', fs.device,
                 check_exit_code=[0])[0].strip()
 
-        grub_version = gu.guess_grub_version(chroot=chroot)
-        boot_device = self.driver.partition_scheme.boot_device(grub_version)
+        grub = self.driver.grub
+
+        grub.version = gu.guess_grub_version(chroot=chroot)
+        boot_device = self.driver.partition_scheme.boot_device(grub.version)
         install_devices = [d.name for d in self.driver.partition_scheme.parteds
                            if d.install_bootloader]
 
-        kernel_params = self.driver.partition_scheme.kernel_params
-        kernel_params += ' root=UUID=%s ' % mount2uuid['/']
+        grub.append_kernel_params('root=UUID=%s ' % mount2uuid['/'])
 
-        if grub_version == 1:
-            gu.grub1_cfg(kernel_params=kernel_params, chroot=chroot)
+        kernel = grub.kernel_name or \
+            gu.guess_kernel(chroot=chroot, regexp=grub.kernel_regexp)
+        initrd = grub.initrd_name or \
+            gu.guess_initrd(chroot=chroot, regexp=grub.initrd_regexp)
+
+        if grub.version == 1:
+            gu.grub1_cfg(kernel=kernel, initrd=initrd,
+                         kernel_params=grub.kernel_params, chroot=chroot)
             gu.grub1_install(install_devices, boot_device, chroot=chroot)
         else:
-            gu.grub2_cfg(kernel_params=kernel_params, chroot=chroot)
+            gu.grub2_cfg(kernel=kernel, initrd=initrd,
+                         kernel_params=grub.kernel_params, chroot=chroot)
             gu.grub2_install(install_devices, chroot=chroot)
 
         # FIXME(agordeev) There's no convenient way to perfrom NIC remapping in

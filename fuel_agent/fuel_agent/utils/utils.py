@@ -236,3 +236,27 @@ def grouper(iterable, n, fillvalue=None):
     """
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
+
+
+def guess_filename(path, regexp, sort=True, reverse=True):
+    """Tries to find a file by regexp in a given path.
+
+    This method is supposed to be mostly used for looking up
+    for available kernel files which are usually 'vmlinuz-X.Y.Z-foo'.
+    In order to find the newest one we can sort files in backward
+    direction (by default).
+
+    :param path: Directory where to look for a file
+    :param regexp: (String) Regular expression (must have python syntax)
+    :param sort: (Bool) If True (by default), sort files before looking up.
+    It can be necessary when regexp does not unambiguously correspond to file.
+    :param reverse: (Bool) If True (by default), sort files
+    in backward direction.
+    """
+    filenames = os.listdir(path)
+    if sort:
+        filenames = sorted(filenames, reverse=reverse)
+    for filename in filenames:
+        if re.search(regexp, filename):
+            return filename
+    return None

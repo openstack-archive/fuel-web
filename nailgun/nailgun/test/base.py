@@ -991,7 +991,7 @@ class BaseIntegrationTest(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseIntegrationTest, cls).setUpClass()
-        nailgun.task.task.DeploymentTask._prepare_syslog_dir = mock.Mock()
+        nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
 
     def _wait_for_threads(self):
         # wait for fake task thread termination
@@ -1017,7 +1017,7 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
         cls.app = app.TestApp(build_app(db_driver=test_db_driver).wsgifunc(
             ConnectionMonitorMiddleware, NailgunFakeKeystoneAuthMiddleware))
         syncdb()
-        nailgun.task.task.DeploymentTask._prepare_syslog_dir = mock.Mock()
+        nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
 
 
 class BaseUnitTest(TestCase):

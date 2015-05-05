@@ -29,7 +29,8 @@ define(
 function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, dialogs) {
     'use strict';
 
-    var components = {};
+    var components = {},
+        ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
     components.Navbar = React.createClass({
         mixins: [
@@ -141,12 +142,20 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                                             ></li>
                                         }
                                         <li
-                                            key='notifications-icon'
-                                            className='notifications-icon'
-                                            onClick={this.togglePopover('notifications')}
-                                        >
-                                            {unreadNotificationsCount ? <span className='badge'>{unreadNotificationsCount}</span> : null}
-                                        </li>
+                                            key='user-icon'
+                                            className='user-icon'
+                                            onClick={this.togglePopover('user')}
+                                        ></li>
+                                    }
+                                    <li
+                                        key='notifications-icon'
+                                        className='notifications-icon'
+                                        onClick={this.togglePopover('notifications')}
+                                    >
+                                        <ReactCSSTransitionGroup transitionName='badge-animation'>
+                                            {unreadNotificationsCount && <span key={unreadNotificationsCount} className='badge'>{unreadNotificationsCount}</span>}
+                                        </ReactCSSTransitionGroup>
+                                    </li>
 
                                         {this.state.languagePopoverVisible &&
                                             <LanguagePopover

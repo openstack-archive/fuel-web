@@ -588,7 +588,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     cursor: pointer;
     user-select: none;
     box-sizing: border-box;
-    > .badge {
+    .badge {
       position: absolute;
       top: 0;
       right: 0;
@@ -602,7 +602,20 @@ button, .btn:not(.btn-link) {.font-semibold;}
       letter-spacing: 1px;
       box-sizing: border-box;
     }
-
+    .badge-animation-enter {
+      opacity: 0;
+      transition: opacity .8s ease-in;
+      &.badge-animation-enter-active {
+        opacity: 1;
+      }
+    }
+    .badge-animation-leave {
+      opacity: 1;
+      transition: opacity .5s ease-in;
+      &.badge-animation-leave-active {
+        opacity: 0;
+      }
+    }
     .navbar-icon-sprite-index(@index) {
       @icon-sprite-img: "../img/icons/header-icons-sprite.svg";
       background: url(@icon-sprite-img) no-repeat 0 -@navbar-icon-size * @index;

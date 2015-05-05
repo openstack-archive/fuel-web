@@ -242,6 +242,8 @@ class interfaces(urwid.WidgetWrap):
                 errors.append(e)
             self.parent.footer.set_text("Scanning for duplicate IP address..")
             if len(responses["ipaddr"]) > 0:
+                if self.netsettings[self.activeiface]['link'] != "UP":
+                    network.upIface(self.activeiface)
                 if network.duplicateIPExists(responses["ipaddr"],
                                              self.activeiface):
                     errors.append("Duplicate host found with IP {0}.".format(

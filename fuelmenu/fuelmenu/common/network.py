@@ -87,3 +87,13 @@ def duplicateIPExists(ip, iface):
         return False
     else:
         return True
+
+
+def upIface(iface):
+    noout = open('/dev/null', 'w')
+    result = subprocess.call(["ifconfig", iface, "up"], stdout=noout,
+                             stderr=noout)
+    if result == 0:
+        return True
+    else:
+        return False

@@ -1330,7 +1330,7 @@
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"
                 suite: "auxiliary"
                 section: "main restricted"
-                priority: 1050
+                priority: 1150
       generated:
         repo_setup:
           installer_kernel:

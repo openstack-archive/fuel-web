@@ -88,7 +88,6 @@ NAILGUN_ROOT=$ROOT/nailgun
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
-CASPERJS="./node_modules/.bin/casperjs"
 GULP="./node_modules/.bin/gulp"
 LINTUI="${GULP} lint"
 
@@ -310,7 +309,7 @@ function run_ui_unit_tests {
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_ui_func_tests {
   local SERVER_PORT=$UI_SERVER_PORT
-  local TESTS_DIR=$ROOT/nailgun/ui_tests
+  local TESTS_DIR=$ROOT/nailgun/static/tests/functional
   local TESTS=$TESTS_DIR/test_*.js
   local artifacts=$ARTIFACTS/ui_func
   local config=$artifacts/test.yaml
@@ -346,9 +345,18 @@ function run_ui_func_tests {
     run_server $SERVER_PORT $server_log $config || \
       { echo 'Failed to start Nailgun'; return 1; }
 
-    SERVER_PORT=$SERVER_PORT \
-    ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
-    if [ $? -ne 0 ]; then
+    if [ "$pid" -ne "0" ]; then
+      SERVER_PORT=$SERVER_PORT \
+      ${GULP} functional-tests --suites=$testcase
+      if [ $? -ne 0 ]; then
+        result=1
+        break
+      fi
+
+      kill $pid
+      wait $pid 2> /dev/null
+    else
+      cat $server_log
       result=1
       break
     fi

@@ -14,5 +14,9 @@
 # under the License.
 
 
+class NetworkException(Exception):
+    pass
+
+
 class BadIPException(Exception):
     pass

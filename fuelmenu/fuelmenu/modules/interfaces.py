@@ -17,6 +17,7 @@ import dhcp_checker.api
 import dhcp_checker.utils
 from fuelmenu.common import dialog
 from fuelmenu.common.errors import BadIPException
+from fuelmenu.common.errors import NetworkException
 from fuelmenu.common.modulehelper import ModuleHelper
 from fuelmenu.common import network
 from fuelmenu.common import puppet
@@ -242,6 +243,12 @@ class interfaces(urwid.WidgetWrap):
                 errors.append(e)
             self.parent.footer.set_text("Scanning for duplicate IP address..")
             if len(responses["ipaddr"]) > 0:
+                if self.netsettings[self.activeiface]['link'].upper() != "UP":
+                    try:
+                        network.upIface(self.activeiface)
+                    except NetworkException as e:
+                        errors.append("Cannot activate {0} to check for "
+                                      "duplicate IP.".format(self.activeiface))
                 if network.duplicateIPExists(responses["ipaddr"],
                                              self.activeiface):
                     errors.append("Duplicate host found with IP {0}.".format(

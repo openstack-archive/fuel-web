@@ -200,3 +200,8 @@ def grouper(iterable, n, fillvalue=None):
     """
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
+
+def join_range(r):
+    """Converts (1, 2) -> "1:2"
+    """
+    return ":".join(map(str, r)) if r else None

@@ -25,7 +25,8 @@ class TestGetSerializer(BaseUnitTest):
     """
 
     @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.extract_env_version',
+        'nailgun.orchestrator.deployment_serializers.utils.'
+        'extract_env_version',
         return_value='5.0')
     def test_retreiving_ha_for_5_0(self, _):
         cluster = mock.MagicMock(is_ha_mode=True)
@@ -34,7 +35,8 @@ class TestGetSerializer(BaseUnitTest):
             ds.DeploymentHASerializer50)
 
     @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.extract_env_version',
+        'nailgun.orchestrator.deployment_serializers.utils.'
+        'extract_env_version',
         return_value='5.0')
     def test_retreiving_multinode_for_5_0(self, _):
         cluster = mock.MagicMock(is_ha_mode=False)
@@ -43,7 +45,8 @@ class TestGetSerializer(BaseUnitTest):
             ds.DeploymentMultinodeSerializer50)
 
     @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.extract_env_version',
+        'nailgun.orchestrator.deployment_serializers.utils.'
+        'extract_env_version',
         return_value='5.1')
     def test_retreiving_ha_for_5_1(self, _):
         cluster = mock.MagicMock(is_ha_mode=True)
@@ -52,7 +55,8 @@ class TestGetSerializer(BaseUnitTest):
             ds.DeploymentHASerializer51)
 
     @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.extract_env_version',
+        'nailgun.orchestrator.deployment_serializers.utils.'
+        'extract_env_version',
         return_value='5.1')
     def test_retreiving_multinode_for_5_1(self, _):
         cluster = mock.MagicMock(is_ha_mode=False)
@@ -61,7 +65,8 @@ class TestGetSerializer(BaseUnitTest):
             ds.DeploymentMultinodeSerializer51)
 
     @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.extract_env_version',
+        'nailgun.orchestrator.deployment_serializers.utils.'
+        'extract_env_version',
         return_value='9999.0')
     def test_unsupported_serializer(self, _):
         cluster = mock.MagicMock(is_ha_mode=True)

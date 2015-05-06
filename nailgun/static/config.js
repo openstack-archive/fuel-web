@@ -41,7 +41,8 @@ define(function() {
             i18next: 'vendor/bower/i18next/release/i18next-1.7.1',
             deepModel: 'vendor/custom/deep-model',
             lessLibrary: 'vendor/bower/less/dist/less',
-            'require-css': 'vendor/bower/require-css'
+            'require-css': 'vendor/bower/require-css',
+            'es5': 'vendor/custom/bind-polyfill'
         },
         shim: {
             'expression/parser': {
@@ -78,6 +79,10 @@ define(function() {
             'jquery-autoNumeric': {
                 // non-AMD module, relies on global jQuery
                 deps: ['jquery']
+            },
+            'react': {
+                // ES5 shim to imitate bind method in phantomjs
+                deps: ['es5']
             }
         },
         map: {

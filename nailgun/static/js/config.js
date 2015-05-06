@@ -56,7 +56,8 @@ define(function() {
             views: 'js/views',
             view_mixins: 'js/view_mixins',
             component_mixins: 'js/component_mixins',
-            controls: 'js/views/controls'
+            controls: 'js/views/controls',
+            'es5-shim': 'js/libs/bower/es5-shim/es5-shim',
         },
         shim: {
             'expression/parser': {
@@ -93,6 +94,9 @@ define(function() {
             'jquery-autoNumeric': {
                 // non-AMD module, relies on global jQuery
                 deps: ['jquery']
+            },
+            react: {
+                deps: ['es5-shim']
             }
         },
         map: {

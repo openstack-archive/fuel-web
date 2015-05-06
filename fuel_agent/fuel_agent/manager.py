@@ -409,8 +409,9 @@ class Manager(object):
                          kernel_params=grub.kernel_params, chroot=chroot)
             gu.grub1_install(install_devices, boot_device, chroot=chroot)
         else:
-            gu.grub2_cfg(kernel=kernel, initrd=initrd,
-                         kernel_params=grub.kernel_params, chroot=chroot)
+            # TODO(kozhukalov): implement which kernel to use by default
+            # Currently only grub1_cfg accepts kernel and initrd parameters.
+            gu.grub2_cfg(kernel_params=grub.kernel_params, chroot=chroot)
             gu.grub2_install(install_devices, chroot=chroot)
 
         # FIXME(agordeev) There's no convenient way to perfrom NIC remapping in

@@ -496,12 +496,6 @@ class FakeResetEnvironmentThread(FakeThread):
 class FakeVerificationThread(FakeThread):
     def run(self):
         super(FakeVerificationThread, self).run()
-        resp_method = getattr(NailgunReceiver, self.respond_to)
-        kwargs = {
-            'task_uuid': self.task_uuid,
-            'progress': 0,
-            'status': 'running'
-        }
 
         # some kinda hack for debugging in fake tasks:
         # verification will fail if you specified 404 as VLAN id in any net
@@ -510,11 +504,21 @@ class FakeVerificationThread(FakeThread):
                 if 404 in iface['vlans']:
                     iface['vlans'] = list(set(iface['vlans']) ^ set([404]))
 
-        kwargs['progress'] = 100
-        kwargs['nodes'] = self.data['args']['nodes']
-        kwargs['status'] = 'ready'
+        # we have to execute subtasks too, just like astute does. otherwise
+        # we will have "running" subtasks in the database.
+        for subtask in self.data.get('subtasks', []):
+            thread = FAKE_THREADS[subtask['method']](data=subtask)
+            thread.start()
+            thread.join()
+
+        resp_method = getattr(NailgunReceiver, self.respond_to)
         try:
-            resp_method(**kwargs)
+            resp_method(
+                task_uuid=self.task_uuid,
+                progress=100,
+                status='ready',
+                nodes=self.data['args']['nodes'],
+            )
             db().commit()
         except Exception as e:
             db().rollback()

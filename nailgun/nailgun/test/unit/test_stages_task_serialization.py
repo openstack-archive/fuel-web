@@ -176,11 +176,17 @@ class TestHooksSerializers(BaseTaskSerializationTest):
 
     @mock.patch.object(deployment_serializers.NetworkDeploymentSerializer,
                        'update_nodes_net_info')
-    @mock.patch.object(deployment_serializers, 'get_nodes_not_for_deletion')
     @mock.patch.object(objects.Node, 'all_roles')
-    def test_upload_nodes_info(self, m_roles, m_get_nodes, m_update_nodes):
+    def test_upload_nodes_info(self, m_roles, m_update_nodes):
+        # mark one node as ready so we can test for duplicates
+        self.env.nodes[0].status = consts.NODE_STATUSES.ready
+        self.db.flush()
+        # add one node that will not be deployed
+        discovered_node = self.env.create_node(
+            roles=['compute'], cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.discover)
+
         m_roles.return_value = ['role_1', ]
-        m_get_nodes.return_value = self.nodes
         m_update_nodes.side_effect = lambda cluster, nodes: nodes
 
         self.cluster.release.version = '2014.1.1-6.1'
@@ -203,12 +209,46 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         serialized_task = serialized_tasks[0]
         self.assertEqual(serialized_task['type'], 'upload_file')
         self.assertItemsEqual(serialized_task['uids'], self.all_uids)
+        self.assertNotIn(discovered_node.uid, self.all_uids)
         self.assertEqual(serialized_task['parameters']['path'], dst)
 
         serialized_nodes = yaml.safe_load(
             serialized_task['parameters']['data'])
         serialized_uids = [n['uid'] for n in serialized_nodes['nodes']]
         self.assertItemsEqual(serialized_uids, self.all_uids)
+        self.assertNotIn(discovered_node.uid, serialized_uids)
+
+    def test_update_hosts(self):
+        # mark one node as ready so we can test for duplicates
+        self.env.nodes[0].status = consts.NODE_STATUSES.ready
+        self.db.flush()
+        # add one node that will not be deployed
+        discovered_node = self.env.create_node(
+            roles=['compute'], cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.discover)
+
+        task_config = {
+            'id': 'upload_nodes_info',
+            'type': 'puppet',
+            'role': '*',
+            'parameters': {
+                'puppet_manifest': '/puppet/modules/modular/hosts/hosts.pp',
+                'puppet_modules': '/puppet/modules',
+                'timeout': 3600,
+                'cwd': '/',
+            },
+        }
+
+        task = tasks_serializer.UpdateHosts(
+            task_config, self.cluster, self.nodes)
+        serialized_tasks = list(task.serialize())
+        self.assertEqual(len(serialized_tasks), 1)
+
+        serialized_task = serialized_tasks[0]
+        self.assertEqual(serialized_task['type'], 'puppet')
+        self.assertItemsEqual(serialized_task['uids'], self.all_uids)
+        self.assertNotIn(discovered_node.uid, self.all_uids)
+        self.assertNotIn(discovered_node.uid, serialized_task['uids'])
 
     def test_copy_keys(self):
         task_config = {

@@ -508,7 +508,6 @@ class Node(NailgunObject):
             "pending_addition": True,
             "pending_deletion": False,
         }
-        cls.update_volumes(instance)
         cls.update(instance, node_data)
         cls.move_roles_to_pending_roles(instance)
         # when node reseted to discover:

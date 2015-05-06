@@ -177,7 +177,7 @@ class Cluster(NailgunObject):
         :returns: Cluster instance
         """
 
-        #TODO(enchantner): fix this temporary hack in clients
+        # TODO(enchantner): fix this temporary hack in clients
         if "release_id" not in data:
             release_id = data.pop("release", None)
             data["release_id"] = release_id
@@ -345,7 +345,7 @@ class Cluster(NailgunObject):
             )
         )
 
-        #TODO(enchantner): check if node belongs to cluster
+        # TODO(enchantner): check if node belongs to cluster
         ex_chs = db().query(models.ClusterChanges).filter_by(
             cluster=instance,
             name=changes_type
@@ -365,6 +365,14 @@ class Cluster(NailgunObject):
             ch.node_id = node_id
         db().add(ch)
         db().flush()
+
+    @classmethod
+    def get_nodes_not_for_deletion(cls, cluster):
+        """All clusters nodes except nodes for deletion."""
+        return db().query(models.Node).filter(
+            models.Node.cluster == cluster,
+            False == models.Node.pending_deletion  # noqa
+        ).order_by(models.Node.id)
 
     @classmethod
     def clear_pending_changes(cls, instance, node_id=None):
@@ -424,7 +432,7 @@ class Cluster(NailgunObject):
         """
 
         # TODO(NAME): sepatate nodes
-        #for deletion and addition by set().
+        # for deletion and addition by set().
         new_nodes = []
         if nodes_ids:
             new_nodes = db().query(models.Node).filter(
@@ -483,16 +491,18 @@ class Cluster(NailgunObject):
         """
         nics_db = db().query(
             models.NodeNICInterface.node_id,
-            models.NodeNICInterface.name).filter(
-                models.NodeNICInterface.node.has(cluster_id=instance.id),
-                models.NodeNICInterface.assigned_networks_list.any(name=net)
-            )
+            models.NodeNICInterface.name
+        ).filter(
+            models.NodeNICInterface.node.has(cluster_id=instance.id),
+            models.NodeNICInterface.assigned_networks_list.any(name=net)
+        )
         bonds_db = db().query(
             models.NodeBondInterface.node_id,
-            models.NodeBondInterface.name).filter(
-                models.NodeBondInterface.node.has(cluster_id=instance.id),
-                models.NodeBondInterface.assigned_networks_list.any(name=net)
-            )
+            models.NodeBondInterface.name
+        ).filter(
+            models.NodeBondInterface.node.has(cluster_id=instance.id),
+            models.NodeBondInterface.assigned_networks_list.any(name=net)
+        )
         return nics_db.union(bonds_db)
 
     @classmethod

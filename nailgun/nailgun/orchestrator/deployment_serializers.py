@@ -21,7 +21,6 @@ from copy import deepcopy
 from itertools import groupby
 
 from netaddr import IPNetwork
-from sqlalchemy import and_
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
@@ -38,16 +37,8 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.settings import settings
-from nailgun.utils import dict_merge
-from nailgun.utils import extract_env_version
+from nailgun import utils
 from nailgun.volumes import manager as volume_manager
-
-
-def get_nodes_not_for_deletion(cluster):
-    """All clusters nodes except nodes for deletion."""
-    return db().query(Node).filter(
-        and_(Node.cluster == cluster,
-             False == Node.pending_deletion)).order_by(Node.id)
 
 
 class VmwareDeploymentSerializerMixin(object):
@@ -125,7 +116,7 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def update_nodes_net_info(cls, cluster, nodes):
         """Adds information about networks to each node."""
-        for node in get_nodes_not_for_deletion(cluster):
+        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
             netw_data = node.network_data
             addresses = {}
             for net in node.cluster.network_groups:
@@ -924,13 +915,13 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             group_id=Cluster.get_default_group(cluster).id,
             name='public'
         ).first()
-        join_range = lambda r: (":".join(map(str, r)) if r else None)
+
         return {
             "L3": {
                 "subnet": public_cidr,
                 "gateway": public_gw,
                 "nameservers": [],
-                "floating": join_range(
+                "floating": utils.join_range(
                     cluster.network_config.floating_ranges[0]),
                 "enable_dhcp": False
             },
@@ -974,7 +965,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def generate_l2(cls, cluster):
-        join_range = lambda r: (":".join(map(str, r)) if r else None)
         res = {
             "base_mac": cluster.network_config.base_mac,
             "segmentation_type": cluster.network_config.segmentation_type,
@@ -986,12 +976,13 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             }
         }
         if cluster.network_config.segmentation_type == 'gre':
-            res["tunnel_id_ranges"] = join_range(
+            res["tunnel_id_ranges"] = utils.join_range(
                 cluster.network_config.gre_id_range)
         elif cluster.network_config.segmentation_type == 'vlan':
             res["phys_nets"]["physnet2"] = {
                 "bridge": "br-prv",
-                "vlan_range": join_range(cluster.network_config.vlan_range)
+                "vlan_range": utils.join_range(
+                    cluster.network_config.vlan_range)
             }
 
         # Set non-default ml2 configurations
@@ -1318,14 +1309,13 @@ class NeutronNetworkDeploymentSerializer61(
 
         if node.cluster.network_config.segmentation_type == 'vlan':
             private_ep = endpoints[network_mapping['neutron/private']]
-            join_range = lambda r: (":".join(map(str, r)) if r else None)
             netgroup = nm.get_node_network_by_netname(node, 'private')
             phys = cls.get_phy_interfaces(bonds_map, netgroup)
             if 'vendor_specific' not in private_ep:
                 private_ep['vendor_specific'] = {}
             private_ep['vendor_specific']['phy_interfaces'] = phys
-            private_ep['vendor_specific']['vlans'] = \
-                join_range(node.cluster.network_config.vlan_range)
+            private_ep['vendor_specific']['vlans'] = utils.join_range(
+                node.cluster.network_config.vlan_range)
 
         return network_scheme
 
@@ -1362,8 +1352,10 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         """Method generates facts which
         through an orchestrator passes to puppet
         """
+        def keyfunc(node):
+            return bool(node.replaced_deployment_info)
+
         serialized_nodes = []
-        keyfunc = lambda node: bool(node.replaced_deployment_info)
         for customized, node_group in groupby(nodes, keyfunc):
             if customized and not ignore_customized:
                 serialized_nodes.extend(
@@ -1380,7 +1372,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         self.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
         self.set_tasks(nodes)
-        return [dict_merge(node, common_attrs) for node in nodes]
+        return [utils.dict_merge(node, common_attrs) for node in nodes]
 
     def serialize_customized(self, cluster, nodes):
         serialized = []
@@ -1400,7 +1392,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             self.previous_release(cluster), 'version', None)
         attrs['openstack_version'] = release.version
         attrs['fuel_version'] = cluster.fuel_version
-        attrs['nodes'] = self.node_list(get_nodes_not_for_deletion(cluster))
+        attrs['nodes'] = self.node_list(
+            objects.Cluster.get_nodes_not_for_deletion(cluster))
 
         for node in attrs['nodes']:
             if node['role'] in 'cinder':
@@ -1410,7 +1403,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
 
         net_serializer = self.get_net_provider_serializer(cluster)
         net_common_attrs = net_serializer.get_common_attrs(cluster, attrs)
-        attrs = dict_merge(attrs, net_common_attrs)
+        attrs = utils.dict_merge(attrs, net_common_attrs)
 
         return attrs
 
@@ -1798,7 +1791,7 @@ def get_serializer_for_cluster(cluster):
         },
     }
 
-    env_version = extract_env_version(cluster.release.version)
+    env_version = utils.extract_env_version(cluster.release.version)
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
     for version, serializers in six.iteritems(serializers_map):
         if env_version.startswith(version):

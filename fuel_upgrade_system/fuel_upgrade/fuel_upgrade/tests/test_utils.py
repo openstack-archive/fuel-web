@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+import requests
 import StringIO
 import subprocess
 import urllib2
@@ -30,6 +31,7 @@ from fuel_upgrade.utils import create_dir_if_not_exists
 from fuel_upgrade.utils import exec_cmd
 from fuel_upgrade.utils import exec_cmd_iterator
 from fuel_upgrade.utils import get_request
+from fuel_upgrade.utils import http_retry
 from fuel_upgrade.utils import sanitize
 from fuel_upgrade.utils import topological_sorting
 from fuel_upgrade.utils import wait_for_true
@@ -685,3 +687,61 @@ class TestSanitizer(BaseTestCase):
             sanitize(self.original, ['password', 'token'], mask='XXX'),
             self.expected_custom_mask
         )
+
+
+@mock.patch('fuel_upgrade.utils.time.sleep')
+class TestHttpRetry(BaseTestCase):
+
+    def _get_http_error(self, error_code):
+        response = mock.Mock(status_code=error_code)
+        return requests.HTTPError(response=response)
+
+    def test_do_not_retry_on_not_interesting_errors(self, msleep):
+        method = mock.Mock(
+            side_effect=self._get_http_error(404),
+            __name__='fn')
+        wrapped_method = http_retry(status_codes=[500])(method)
+
+        self.assertRaises(requests.HTTPError, wrapped_method)
+        self.called_once(method)
+        self.method_was_not_called(msleep)
+
+    def test_do_retry_on_interesting_errors(self, msleep):
+        method = mock.Mock(
+            side_effect=self._get_http_error(500),
+            __name__='fn')
+        wrapped_method = http_retry(status_codes=[500], attempts=13)(method)
+
+        self.assertRaises(requests.HTTPError, wrapped_method)
+        self.called_times(method, 13)
+        self.called_times(msleep, 12)
+
+    def test_do_sleep_on_attempts(self, msleep):
+        method = mock.Mock(
+            side_effect=self._get_http_error(500),
+            __name__='fn')
+        wrapped_method = http_retry(
+            status_codes=[500], attempts=2, interval=42)(method)
+
+        self.assertRaises(requests.HTTPError, wrapped_method)
+        msleep.assert_called_once_with(42)
+
+    def test_decorated_method_use_arguments(self, _):
+        method = mock.Mock(__name__='fn')
+        wrapped_method = http_retry(status_codes=[500])(method)
+
+        wrapped_method(42, 'test')
+
+        method.assert_called_once_with(42, 'test')
+
+    def test_stop_retrying_if_success(self, msleep):
+        method = mock.Mock(
+            side_effect=[self._get_http_error(500), 'return value'],
+            __name__='fn')
+        wrapped_method = http_retry(status_codes=[500], attempts=13)(method)
+
+        result = wrapped_method()
+
+        self.assertEqual(result, 'return value')
+        self.called_times(method, 2)
+        self.called_once(msleep)

@@ -19,9 +19,7 @@
     "i18next": "1.7.1",
     "backbone-deep-model": "0.10.4",
     "less": "2.4.0",
-    "jquery-ui": "~1.11.4"
-  },
-  "devDependencies": {
+    "jquery-ui": "~1.11.4",
     "es5-shim": "4.1.0"
   },
   "overrides": {

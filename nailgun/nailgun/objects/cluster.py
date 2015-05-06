@@ -792,6 +792,30 @@ class Cluster(NailgunObject):
         attributes = cls.get_attributes(instance).editable
         return attributes.get('common', {}).get('use_vcenter', {}).get('value')
 
+    @staticmethod
+    def adjust_nodes_lists_on_controller_removing(instance, nodes_to_delete,
+                                                  nodes_to_deploy):
+        """In case of deleting controller(s) adds other controller(s)
+        to nodes_to_deploy
+        :param instance: instance of SqlAlchemy cluster
+        :param nodes_to_delete: list of nodes to be deleted
+        :param nodes_to_deploy: list of nodes to be deployed
+        :return:
+        """
+        if instance is None:
+            return
+
+        controllers_ids_to_delete = set([n.id for n in nodes_to_delete
+                                         if 'controller' in n.all_roles])
+        if controllers_ids_to_delete:
+            ids_to_deploy = set([n.id for n in nodes_to_deploy])
+            controllers_to_deploy = set(
+                filter(lambda n: (n.id not in controllers_ids_to_delete
+                                  and n.id not in ids_to_deploy
+                                  and 'controller' in n.all_roles),
+                       instance.nodes))
+            nodes_to_deploy.extend(controllers_to_deploy)
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

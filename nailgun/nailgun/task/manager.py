@@ -217,6 +217,9 @@ class ApplyChangesTaskManager(TaskManager):
         nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
         nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
 
+        objects.Cluster.adjust_nodes_lists_on_controller_removing(
+            self.cluster, nodes_to_delete, nodes_to_deploy)
+
         task_messages = []
         # Run validation if user didn't redefine
         # provisioning and deployment information
@@ -991,23 +994,23 @@ class NodeDeletionTaskManager(TaskManager):
                     [node.id for node in invalid_nodes], cluster_id)
             )
 
-    def execute(self, nodes, mclient_remove=True):
+    def execute(self, nodes_to_delete, mclient_remove=True):
         cluster_id = None
         if hasattr(self, 'cluster'):
             cluster_id = self.cluster.id
             objects.TaskCollection.lock_cluster_tasks(cluster_id)
 
         logger.info("Trying to execute node deletion task with nodes %s",
-                    ', '.join(str(node.id) for node in nodes))
+                    ', '.join(str(node.id) for node in nodes_to_delete))
 
-        self.verify_nodes_with_cluster(nodes)
-        objects.NodeCollection.lock_nodes(nodes)
+        self.verify_nodes_with_cluster(nodes_to_delete)
+        objects.NodeCollection.lock_nodes(nodes_to_delete)
 
         if cluster_id is None:
             # DeletionTask operates on cluster's nodes.
             # Nodes that are not in cluster are simply deleted.
 
-            Node.delete_by_ids([n.id for n in nodes])
+            Node.delete_by_ids([n.id for n in nodes_to_delete])
             db().flush()
 
             task = Task(name=consts.TASK_NAMES.node_deletion,
@@ -1021,15 +1024,45 @@ class NodeDeletionTaskManager(TaskManager):
         task = Task(name=consts.TASK_NAMES.node_deletion,
                     cluster=self.cluster)
         db().add(task)
-        for node in nodes:
+        for node in nodes_to_delete:
             objects.Node.update(node,
                                 {'status': consts.NODE_STATUSES.removing})
         db().flush()
+
+        nodes_to_deploy = []
+        objects.Cluster.adjust_nodes_lists_on_controller_removing(
+            self.cluster, nodes_to_delete, nodes_to_deploy)
+
+        if nodes_to_deploy:
+            objects.NodeCollection.lock_nodes(nodes_to_deploy)
+            # updating nodes
+            objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_deploy)
+            logger.debug("There are nodes to deploy: %s",
+                         " ".join([n.fqdn for n in nodes_to_deploy]))
+            task_deployment = task.create_subtask(
+                consts.TASK_NAMES.deployment)
+
+            deployment_message = self._call_silently(
+                task_deployment,
+                tasks.DeploymentTask,
+                nodes_to_deploy,
+                method_name='message'
+            )
+            db().flush()
+
+            # if failed to generate task message for orchestrator
+            # then task is already set to error
+            if task_deployment.status == consts.TASK_STATUSES.error:
+                return task_deployment
+
+            rpc.cast('naily', [deployment_message])
+
+        db().commit()
 
         self._call_silently(
             task,
             tasks.DeletionTask,
             nodes=tasks.DeletionTask.prepare_nodes_for_task(
-                nodes, mclient_remove=mclient_remove))
+                nodes_to_delete, mclient_remove=mclient_remove))
 
         return task

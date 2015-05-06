@@ -719,3 +719,126 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.assertRaises(
             errors.InvalidData, manager_.execute, cluster_db.nodes)
+
+    def test_adjust_nodes_lists_on_controller_removing(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+            ]
+        )
+        cluster = self.env.clusters[0]
+        controllers = filter(lambda x: 'controller' in x.roles, cluster.nodes)
+        m = manager.ApplyChangesTaskManager(cluster.id)
+
+        n_delete = []
+        n_deploy = []
+        m._adjust_nodes_lists_on_controller_removing(n_delete, n_deploy)
+        self.assertItemsEqual([], n_delete)
+        self.assertItemsEqual([], n_deploy)
+
+        n_delete = controllers
+        n_deploy = []
+        m._adjust_nodes_lists_on_controller_removing(n_delete, n_deploy)
+        self.assertItemsEqual(controllers, n_delete)
+        self.assertItemsEqual([], n_deploy)
+
+        n_delete = controllers[:1]
+        n_deploy = []
+        m._adjust_nodes_lists_on_controller_removing(n_delete, n_deploy)
+        self.assertItemsEqual(controllers[:1], n_delete)
+        self.assertItemsEqual(controllers[1:], n_deploy)
+
+        n_delete = controllers[:1]
+        n_deploy = controllers[2:]
+        m._adjust_nodes_lists_on_controller_removing(n_delete, n_deploy)
+        self.assertItemsEqual(controllers[:1], n_delete)
+        self.assertItemsEqual(controllers[1:], n_deploy)
+
+    def test_adjust_nodes_lists_on_controller_removing_no_cluster(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']}
+            ]
+        )
+        cluster = self.env.clusters[0]
+
+        m = manager.ApplyChangesTaskManager(None)
+        for node in cluster.nodes:
+            self.assertIn('controller', node.roles)
+        m._adjust_nodes_lists_on_controller_removing(cluster.nodes, [])
+        self.assertNotRaises(AttributeError,
+                             m._adjust_nodes_lists_on_controller_removing,
+                             cluster.nodes, [])
+
+    @fake_tasks()
+    def test_deployment_on_controller_removal_via_apply_changes(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'pending_deletion': True},
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['compute'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['compute'],
+                 'status': consts.NODE_STATUSES.ready},
+            ]
+        )
+
+        cluster = self.env.clusters[0]
+        expected_nodes_to_deploy = filter(lambda n: 'controller' in n.roles
+                                                    and not n.pending_deletion,
+                                          cluster.nodes)
+
+        with mock.patch('nailgun.task.task.DeploymentTask.message') as \
+                mocked_task:
+            self.env.launch_deployment()
+            _, actual_nodes_to_deploy = mocked_task.call_args[0]
+            self.assertItemsEqual(expected_nodes_to_deploy,
+                                  actual_nodes_to_deploy)
+
+    @fake_tasks()
+    def test_deployment_on_controller_removal_via_node_deletion(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['compute'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['compute'],
+                 'status': consts.NODE_STATUSES.ready},
+            ]
+        )
+
+        cluster = self.env.clusters[0]
+        controllers = filter(lambda n: 'controller' in n.roles
+                                       and not n.pending_deletion,
+                             cluster.nodes)
+        controller_to_delete = controllers[0]
+        expected_nodes_to_deploy = controllers[1:]
+
+        with mock.patch('nailgun.task.task.DeploymentTask.message') as \
+                mocked_task:
+            with mock.patch('nailgun.rpc.cast'):
+                resp = self.app.delete(
+                    reverse(
+                        'NodeHandler',
+                        kwargs={'obj_id': controller_to_delete.id}),
+                    headers=self.default_headers
+                )
+                _, actual_nodes_to_deploy = mocked_task.call_args[0]
+                self.assertItemsEqual(expected_nodes_to_deploy,
+                                      actual_nodes_to_deploy)
+                self.assertEqual(202, resp.status_code)

@@ -252,8 +252,9 @@ class UploadNodesInfo(GenericRolesHook):
     identity = 'upload_nodes_info'
 
     def serialize(self):
-        nodes = deployment_serializers.get_nodes_not_for_deletion(
-            self.cluster)
+        nodes = set(node for node in self.cluster.nodes
+                    if node.status == consts.NODE_STATUSES.ready)
+        nodes.update(self.nodes)
         uids = [n.uid for n in nodes]
 
         serialized_nodes = self._serialize_nodes(nodes)
@@ -281,8 +282,9 @@ class UpdateHosts(GenericRolesHook):
     identity = 'update_hosts'
 
     def serialize(self):
-        nodes = deployment_serializers.get_nodes_not_for_deletion(
-            self.cluster)
+        nodes = set(node for node in self.cluster.nodes
+                    if node.status == consts.NODE_STATUSES.ready)
+        nodes.update(self.nodes)
         uids = [n.uid for n in nodes]
         yield templates.make_puppet_task(uids, self.task)
 

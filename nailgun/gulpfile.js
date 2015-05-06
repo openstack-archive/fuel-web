@@ -158,7 +158,7 @@ function runIntern(params) {
     return function() {
         var baseDir = 'static';
         var runner = './node_modules/.bin/intern-runner';
-        var browser = params.browser || argv.browser || 'phantomjs';
+        var browser = params.browser || argv.browser || 'firefox';
         var options = [['config', 'tests/intern-' + browser + '.js']];
         var suiteOptions = [];
         ['suites', 'functionalSuites'].forEach(function(suiteType) {
@@ -182,9 +182,17 @@ function runIntern(params) {
 }
 
 gulp.task('intern:unit', runIntern({suites: argv.suites || 'static/tests/unit/**/*.js'}));
+gulp.task('intern:functional', runIntern({functionalSuites: argv.suites || 'static/tests/functional/**/test_*.js'}));
 
 gulp.task('unit-tests', function(cb) {
     runSequence('selenium', 'intern:unit', function(err) {
+        shutdownSelenium();
+        cb(err);
+    });
+});
+
+gulp.task('functional-tests', function(cb) {
+    runSequence('selenium', 'intern:functional', function(err) {
         shutdownSelenium();
         cb(err);
     });

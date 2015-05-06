@@ -16,12 +16,13 @@
 
 define(['./intern'], function(config) {
     'use strict';
+
     config.environments = [{
         browserName: 'phantomjs',
         'phantomjs.binary.path': 'node_modules/phantomjs/lib/phantom/bin/phantomjs'
     }];
-    config.loader.shim.react = {
-        deps: ['tests/bower/es5-shim/es5-shim']
-    };
+
+    config.reporters = ['console'];
+
     return config;
 });

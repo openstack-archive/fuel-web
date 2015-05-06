@@ -31,7 +31,7 @@ define(['config'], function(config) {
             'host-node': 'requirejs',
             'host-browser': '/vendor/bower/requirejs/require.js'
         },
-        // A regular expression matching URLs to files that should not be included in code coverage analysis
+        grep: /^/,
         excludeInstrumentation: /^/,
         loader: config
     };

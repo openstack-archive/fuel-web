@@ -66,10 +66,13 @@ class Cluster(Base):
                                   backref=backref("cluster"),
                                   cascade="all,delete",
                                   uselist=False)
-    grouping = Column(
-        Enum(*consts.CLUSTER_GROUPING, name='cluster_grouping'),
+    ui_settings = Column(
+        JSON,
         nullable=False,
-        default=consts.CLUSTER_GROUPING.roles
+        default={
+            "view_mode": consts.NODE_VIEW_MODES.standard,
+            "grouping": consts.CLUSTER_GROUPING.roles
+        }
     )
     name = Column(Unicode(50), unique=True, nullable=False)
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)

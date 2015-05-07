@@ -993,6 +993,21 @@ class BaseIntegrationTest(BaseTestCase):
         super(BaseIntegrationTest, cls).setUpClass()
         nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
 
+        resp_mock = mock.Mock()
+        resp_mock.status_code = 200
+        resp_mock.url = ''
+        responses_mock = mock.Mock(return_value=[resp_mock])
+        cls.patcher = mock.patch(
+            'nailgun.task.task.CheckRepositoryConnectionTask._get_responses',
+            new=responses_mock
+        )
+        cls.patcher.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(BaseIntegrationTest, cls).tearDownClass()
+        cls.patcher.stop()
+
     def _wait_for_threads(self):
         # wait for fake task thread termination
         import threading

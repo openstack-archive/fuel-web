@@ -17,6 +17,7 @@
 import json
 
 from fuel_upgrade.clients import KeystoneClient
+from fuel_upgrade.utils import http_retry
 
 
 class NailgunClient(object):
@@ -39,6 +40,7 @@ class NailgunClient(object):
         #: keystone credentials for authentification
         self.keystone_client = KeystoneClient(**keystone_credentials)
 
+    @http_retry(status_codes=[500, 502])
     def get_releases(self):
         """Returns a list with all releases.
         """
@@ -49,6 +51,7 @@ class NailgunClient(object):
             r.raise_for_status()
         return r.json()
 
+    @http_retry(status_codes=[500, 502])
     def create_release(self, release):
         """Add a new release to nailgun database.
 
@@ -63,6 +66,7 @@ class NailgunClient(object):
 
         return r.json()
 
+    @http_retry(status_codes=[500, 502])
     def remove_release(self, release_id):
         """Remove release from Nailgun with a given ID.
 
@@ -80,6 +84,7 @@ class NailgunClient(object):
         # so we don't want to parse a response as json
         return r.text
 
+    @http_retry(status_codes=[500, 502])
     def create_notification(self, notification):
         """Add a new notification to nailgun database.
 
@@ -93,6 +98,7 @@ class NailgunClient(object):
             r.raise_for_status()
         return r.json()
 
+    @http_retry(status_codes=[500, 502])
     def remove_notification(self, notification_id):
         """Remove notification from Nailgun with a given ID.
 
@@ -110,6 +116,7 @@ class NailgunClient(object):
         # so we don't want to parse a response as json
         return r.text
 
+    @http_retry(status_codes=[500, 502])
     def get_tasks(self):
         """Retrieve list of tasks from nailgun
 
@@ -130,6 +137,7 @@ class NailgunClient(object):
         """
         return self.keystone_client.request
 
+    @http_retry(status_codes=[500, 502])
     def put_deployment_tasks(self, release, tasks):
         """Update deployment tasks for certain release
 

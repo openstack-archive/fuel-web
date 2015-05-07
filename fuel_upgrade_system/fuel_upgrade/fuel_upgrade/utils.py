@@ -15,6 +15,7 @@
 #    under the License.
 
 from fnmatch import fnmatch
+import functools
 import glob
 import io
 import json
@@ -31,6 +32,7 @@ from copy import deepcopy
 from distutils.version import StrictVersion
 
 from mako.template import Template
+import requests
 from six.moves import range
 import yaml
 
@@ -823,3 +825,41 @@ class VersionedFile(object):
         return filter(
             lambda f: file_extension(f).isdigit(),
             glob.glob(self._pattern.format('*')))
+
+
+class http_retry(object):
+    """Retry entire method if it raises HTTP error with specific status code.
+
+    :param status_codes: retry if one of the status codes was raised
+    :param count: a number of attempts
+    :param interval: an interval between attempts in seconds
+    """
+
+    def __init__(self, status_codes, attempts=3, interval=2):
+        self._status_codes = status_codes
+        self._attempts = attempts
+        self._interval = interval
+
+    def __call__(self, fn):
+        @functools.wraps(fn)
+        def _wrapped(*args, **kwargs):
+            for attempt in range(1, self._attempts + 1):
+                try:
+                    return fn(*args, **kwargs)
+                except requests.HTTPError as exc:
+                    logger.exception(
+                        'HTTP request ends with %d (attempt %d/%d)',
+                        exc.response.status_code, attempt, self._attempts)
+
+                    # we should stop perform retries if
+                    #   - status_code is not interesting for us
+                    #   - it's the last attempt
+                    if any([
+                        exc.response.status_code not in self._status_codes,
+                        attempt == self._attempts,
+                    ]):
+                        raise
+
+                time.sleep(self._interval)
+
+        return _wrapped

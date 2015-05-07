@@ -217,9 +217,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
-                .always(this.close)
-                .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
-                .fail(this.showError);
+                .done(function() {
+                    this.close();
+                    dispatcher.trigger('deploymentTaskStarted');
+                }.bind(this))
+                .fail(function(response) {
+                    this.showError(response);
+                }.bind(this));
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
             return !!nodes.length && <div key={dictKey} className='deploy-task-name'>

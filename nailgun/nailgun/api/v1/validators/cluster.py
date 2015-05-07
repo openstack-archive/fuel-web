@@ -219,16 +219,16 @@ class ClusterChangesValidator(BaseDefferedTaskValidator):
 
     @classmethod
     def validate(cls, cluster):
-        if not (settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP):
-            if not cluster.release.deployment_tasks:
-                # 6.1 is the last version in which empty deployment_tasks
-                # won't cause deploy failure
-                if (StrictVersion(cluster.release.fuel_version) >=
-                        StrictVersion('6.1')):
-                    raise errors.NoDeploymentTasks(
-                        "No deployment tasks found in the database. "
-                        "Please upload them. If you're operating from fuel "
-                        "master node, please check '/etc/puppet' directory.")
+    # if not (settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP):
+        if not cluster.release.deployment_tasks:
+            # 6.1 is the last version in which empty deployment_tasks
+            # won't cause deploy failure
+            if (StrictVersion(cluster.release.fuel_version) >=
+                    StrictVersion('6.1')):
+                raise errors.NoDeploymentTasks(
+                    "No deployment tasks found in the database. "
+                    "Please upload them. If you're operating from fuel "
+                    "master node, please check '/etc/puppet' directory.")
 
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
 

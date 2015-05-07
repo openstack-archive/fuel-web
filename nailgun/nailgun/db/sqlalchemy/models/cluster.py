@@ -71,6 +71,11 @@ class Cluster(Base):
         nullable=False,
         default=consts.CLUSTER_GROUPING.roles
     )
+    view_mode = Column(
+        Enum(*consts.CLUSTER_VIEW_MODES, name='cluster_view_mode'),
+        nullable=False,
+        default=consts.CLUSTER_VIEW_MODES.standard
+    )
     name = Column(Unicode(50), unique=True, nullable=False)
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
     pending_release_id = Column(Integer, ForeignKey('releases.id'))

@@ -227,23 +227,9 @@ class StatsSender(object):
 
         logger.info("OpenStack workload info is sent")
 
-    def must_send_stats(self):
-        try:
-            stat_settings = getattr(
-                objects.MasterNodeSettings.get_one(), "settings", {}
-            ).get("statistics", {})
-            return stat_settings.get("user_choice_saved", {}).\
-                get("value", False) and \
-                stat_settings.get("send_anonymous_statistic", {}). \
-                get("value", False)
-        except (AttributeError, TypeError) as e:
-            logger.exception(
-                "Get statistics settings failed: %s", six.text_type(e))
-            return False
-
     def send_stats_once(self):
         try:
-            if self.must_send_stats():
+            if objects.MasterNodeSettings.must_send_stats():
                 if self.ping_collector():
                     self.send_action_log()
                     self.send_installation_info()

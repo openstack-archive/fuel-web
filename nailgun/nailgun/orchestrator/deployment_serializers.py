@@ -1425,6 +1425,12 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         attrs['fuel_version'] = cluster.fuel_version
         attrs['nodes'] = self.node_list(get_nodes_not_for_deletion(cluster))
 
+        # Adding params to workloads_collector
+        if 'workloads_collector' not in attrs:
+            attrs['workloads_collector'] = {}
+        attrs['workloads_collector']['create_user'] = \
+            objects.MasterNodeSettings.must_send_stats()
+
         for node in attrs['nodes']:
             if node['role'] in 'cinder':
                 attrs['use_cinder'] = True

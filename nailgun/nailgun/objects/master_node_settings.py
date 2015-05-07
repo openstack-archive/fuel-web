@@ -12,15 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-from nailgun.objects.base import NailgunObject
-from nailgun.objects.serializers.master_node_settings \
-    import MasterNodeSettingsSerializer
+import six
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import MasterNodeSettings
-
 from nailgun.errors import errors
+from nailgun import logger
+from nailgun.objects.base import NailgunObject
+from nailgun.objects.serializers.master_node_settings \
+    import MasterNodeSettingsSerializer
 
 
 class MasterNodeSettings(NailgunObject):
@@ -73,3 +73,18 @@ class MasterNodeSettings(NailgunObject):
 
         super(MasterNodeSettings, cls).update(instance, data)
         return instance
+
+    @classmethod
+    def must_send_stats(cls):
+        try:
+            stat_settings = getattr(
+                cls.get_one(), "settings", {}
+            ).get("statistics", {})
+            return stat_settings.get("user_choice_saved", {}).\
+                get("value", False) and \
+                stat_settings.get("send_anonymous_statistic", {}). \
+                get("value", False)
+        except (AttributeError, TypeError) as e:
+            logger.exception(
+                "Get statistics settings failed: %s", six.text_type(e))
+            return False

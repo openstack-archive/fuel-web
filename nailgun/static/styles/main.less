@@ -1220,6 +1220,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
       right: 24px;
     }
   }
+  .view-mode-switcher {
+    padding-right: 0;
+    .btn-group label {
+      width: auto;
+      font-size: @base-font-size;
+    }
+  }
 }
 
 // NODE LIST
@@ -1240,10 +1247,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
   .nodes-group {
     @node-indent: 20px;
+    @node-height: 58px;
+    @node-inner-height: @node-height - 6;
+    @node-border-radius: 4px;
+    @node-button-size: 40px;
 
     border: 1px solid @gray + 80%;
-    border-radius: 6px;
+    border-radius: @node-border-radius;
     padding: @node-indent;
+    padding-bottom: 0;
     margin-bottom: @node-indent;
     box-sizing: border-box;
 
@@ -1252,25 +1264,16 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
 
     .node {
-      @node-height: 58px;
-      @node-inner-height: @node-height - 6;
-      @node-button-size: 40px;
-
       height: @node-height;
-      margin-bottom: @node-indent / 3;
+      margin-bottom: 5px;
       overflow: hidden;
-      padding: 2px;
+      padding: 2px 2px 0;
       font-size: @base-font-size - 2;
       border: 1px solid @base-node-border;
-      border-radius: 4px;
+      border-radius: @node-border-radius;
       box-shadow: inset 0 0 0 1px @white;
       background-color: @base-node-color;
       box-sizing: border-box;
-      &:hover {
-        background-color: @base-node-color - 10%;
-        border-color: @base-node-border - 10%;
-        box-shadow: inset 0 0 0 2px @white;
-      }
 
       &.discover {
         background-color: @node-color-discover;
@@ -1316,7 +1319,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
           }
         }
 
-        .check-box {
+        .checkbox-group {
           width: @node-inner-height;
           border-right: 1px dotted @base-node-color - 60%;
           .custom-tumbler {
@@ -1329,68 +1332,27 @@ button, .btn:not(.btn-link) {.font-semibold;}
           .name {
             height: 32px;
             padding-top: 8px;
-            p {
-              display: inline;
-              line-height: 1px;
-              border-bottom: 1px dotted @base-text-color + #444444;
-              font-size: @base-font-size + 1;
-              .text-emboss;
-              .font-semibold;
-              &:hover {
-                color: @link-color-hover;
-                border-bottom-color: @link-color-hover;
-              }
-            }
             .form-group {
               label {
                 display: none;
               }
-              .node-name-input {
-                height: 60%;
+              input {
                 width: 80%;
-                font-size: @base-font-size - 2;
-                padding: 0 4px;
               }
             }
           }
-          .role-list {
-            font-size: @base-font-size - 4;
-            text-transform: uppercase;
-            color: @gray;
-            ul {
-              padding: 0;
-              li {
-                display: inline-block;
-                float: left;
-                margin-right: 3px;
-                &:after {
-                  content: "·";
-                  margin-left: 3px;
-                  color: @gray;
-                }
-                &:last-child:after {
-                  content: "";
-                }
-              }
+          p {
+            display: inline;
+            line-height: 1px;
+            border-bottom: 1px dotted @base-text-color + #444444;
+            font-size: @base-font-size + 1;
+            .text-emboss;
+            .font-semibold;
+            &:hover {
+              color: @link-color-hover;
+              border-bottom-color: @link-color-hover;
             }
           }
-        }
-
-        .manufacturer-logo {
-          width: @node-inner-height;
-
-          .node-logo(@manufacturer) {
-            background: url("../img/logos/@{manufacturer}-logo.svg") no-repeat top left;
-          }
-          &.cisco {.node-logo(cisco);}
-          &.vbox {.node-logo(vbox);}
-          &.vmware {.node-logo(vmware);}
-          &.hp {.node-logo(hp);}
-          &.xen {.node-logo(xen);}
-          &.openvz {.node-logo(openvz);}
-          &.kvm {.node-logo(kvm);}
-          &.supermicro {.node-logo(supermicro);}
-          &.qemu {.node-logo(qemu);}
         }
 
         .node-action {
@@ -1418,13 +1380,17 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
         .node-status {
           width: 20%;
+          text-align: center;
+          .font-semibold;
           .node-text-mixin;
           span {
             display: inline-block;
             text-transform: uppercase;
           }
           .node-remove-button {
+            font-size: @base-font-size - 2;
             margin-left: 5px;
+            padding: 0 5px;
           }
           .progress-bar {
             min-width: 32px;
@@ -1454,6 +1420,302 @@ button, .btn:not(.btn-link) {.font-semibold;}
           }
         }
       }
+    }
+
+    /* override node styles for compact panel */
+    .compact-node {
+      @compact-node-indent: 5px;
+
+      width: 20%;
+      float: left;
+      position: relative;
+      padding: 0;
+      padding-right: @compact-node-indent;
+
+      .unavailable .node-box {
+        cursor: default;
+      }
+
+      .node {
+        height: @node-height * 1.25;
+
+        .node-box > div {
+          float: none;
+        }
+
+        .node-name{
+          height: 18px;
+          word-break: break-all;
+          p {
+            border: none;
+          }
+        }
+
+        .node-box-inner {
+          height: @node-height * 0.75;
+          padding: @compact-node-indent;
+          .node-name {
+            width: auto;
+            p:hover {
+              color: @base-text-color;
+            }
+          }
+          .node-status {
+            width: auto;
+            padding: 0;
+            text-align: left;
+            .progress {
+              margin: 2px 0;
+              height: 12px;
+            }
+          }
+        }
+
+        .node-buttons {
+          float: left;
+          height: 100%;
+          width: 23px;
+          i.glyphicon {
+            font-size: @base-font-size + 4;
+          }
+        }
+
+        .node-hardware {
+          @node-hardware-height: 25px;
+          height: @node-hardware-height;
+          padding: 0;
+          margin: 0;
+          text-align: center;
+          border-top: 1px dashed @gray + 40%;
+          overflow: hidden;
+          .font-semibold;
+          p {
+            margin: 0;
+            padding: 4px 0;
+            display: block;
+            &.btn-link {
+              font-size: @base-font-size - 2;
+              text-decoration: none;
+            }
+          }
+          &:hover {
+            /* toggle More Info label */
+            p:not(.btn-link) {
+              margin-top: -@node-hardware-height;
+            }
+          }
+        }
+
+        /* lighten compact node panel color on hover */
+        &:not(.unavailable) {
+          .lighten-node-panel(@color) {
+            &, & + .node-hardware {
+              background-color: @color + 10%;
+            }
+          }
+
+          & .node-box-inner:hover {
+            .lighten-node-panel(@base-node-color)
+          }
+          &.discover .node-box-inner:hover {
+            .lighten-node-panel(@node-color-discover-hover)
+          }
+          &.error .node-box-inner:hover {
+            .lighten-node-panel(@node-color-error)
+          }
+          &.pending_addition .node-box-inner:hover {
+            .lighten-node-panel(@node-color-pending_addition)
+          }
+          &.offline .node-box-inner:hover {
+            .lighten-node-panel(@node-color-offline)
+          }
+          &.selected .node-box-inner:hover {
+            .lighten-node-panel(@node-color-selected)
+          }
+        }
+
+      }
+
+      .node-popover {
+        top: -@node-height;
+        left: -25%;
+        background: @base-node-color + 15%;
+        border-radius: @node-border-radius;
+        width: 150%;
+        max-width: none;
+        display: block;
+
+        .arrow, .help-block {
+          display: none;
+        }
+
+        .popover-content {
+          padding: 0;
+          > div > div {
+            padding: @compact-node-indent * 2;
+            border-bottom: 1px dashed @gray + 40%;
+            &:last-child {
+              border: none;
+            }
+            &.hardware-info {
+              padding-top: 0;
+              padding-bottom: 0;
+            }
+          }
+        }
+
+        .node-name {
+          .font-bold;
+          .checkbox-group {
+            label {
+              margin: 0;
+            }
+          }
+          .name {
+            width: 90%;
+            label {
+              display: none;
+              margin: 0;
+            }
+            .form-group {
+              position: relative;
+              top: 1px;
+              margin: 0;
+            }
+            p {
+              border-bottom: 1px dotted @base-text-color + #444444;
+              cursor: pointer;
+              display: inline;
+              &:hover {
+                color: @link-color-hover;
+                border-bottom-color: @link-color-hover;
+              }
+            }
+          }
+        }
+
+        .role-list {
+          li {
+            color: @base-text-color;
+          }
+        }
+
+        .hardware-info {
+          .manufacturer-logo {
+            height: 50px;
+            float: left;
+          }
+          .node-hardware {
+            float: left;
+            font-size: @base-font-size - 2;
+            padding: 17px 0 0;
+            .font-semibold;
+            color: @base-text-color + 50%;
+            > span {
+              margin-right: @compact-node-indent * 2;
+            }
+          }
+        }
+
+        .node-stats {
+          @node-icon-width: 28px;
+          .font-semibold;
+          .glyphicon {
+            float: left;
+            width: @node-icon-width;
+            color: @gray;
+            top: 4px;
+            left: 2px;
+            + div {
+              margin-left: @node-icon-width;
+            }
+          }
+          .role-list {
+            font-size: @base-font-size - 2;
+            margin-bottom: @compact-node-indent;
+            ul {
+              margin: 0;
+              margin-left: @node-icon-width;
+            }
+          }
+          .node-status {
+            text-transform: uppercase;
+            font-size: @base-font-size - 2;
+            span {
+              padding-right: @compact-node-indent;
+            }
+            .btn {
+              padding: 2px 5px 0;
+              margin: 0 2px 2px;
+              margin-left: 0;
+              color: @white;
+              .font-bold;
+              .text-shadow;
+              font-size: @base-font-size - 4;
+              background: @blue;
+              line-height: 1.5;
+              text-transform: uppercase;
+            }
+          }
+          .progress {
+            margin: 0;
+          }
+        }
+      }
+    }
+
+    .node-name-input {
+      height: 20px;
+      font-size: @base-font-size - 2;
+      padding: 0 4px;
+      border-radius: 3px;
+      .font-normal;
+    }
+
+    .manufacturer-logo {
+      width: @node-inner-height;
+
+      .node-logo(@manufacturer) {
+        background: url("../img/logos/@{manufacturer}-logo.svg") no-repeat top left;
+      }
+      &.cisco {.node-logo(cisco);}
+      &.vbox {.node-logo(vbox);}
+      &.vmware {.node-logo(vmware);}
+      &.hp {.node-logo(hp);}
+      &.xen {.node-logo(xen);}
+      &.openvz {.node-logo(openvz);}
+      &.kvm {.node-logo(kvm);}
+      &.supermicro {.node-logo(supermicro);}
+      &.qemu {.node-logo(qemu);}
+    }
+
+    .role-list {
+      font-size: @base-font-size - 4;
+      text-transform: uppercase;
+      color: @gray;
+      .font-semibold;
+      ul {
+        padding: 0;
+        li {
+          display: inline-block;
+          float: left;
+          margin-right: 5px;
+          &:after {
+            content: "·";
+            margin-left: 3px;
+            color: @gray;
+          }
+          &:last-child:after {
+            content: "";
+          }
+        }
+      }
+    }
+  }
+
+  &.compact .nodes-group {
+    > .row:not(.node-group-header) {
+      margin-right: -20px;
     }
   }
 }

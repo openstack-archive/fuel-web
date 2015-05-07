@@ -373,7 +373,8 @@ class TestHandlers(BaseIntegrationTest):
                          'ipaddr',
                          'IP',
                          'tasks',
-                         'priority'])
+                         'priority',
+                         'workloads_collector'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -810,7 +811,8 @@ class TestHandlers(BaseIntegrationTest):
                          'ipaddr',
                          'IP',
                          'tasks',
-                         'priority'])
+                         'priority',
+                         'workloads_collector'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -1265,7 +1267,8 @@ class TestHandlers(BaseIntegrationTest):
                          'ipaddr',
                          'IP',
                          'tasks',
-                         'priority'])
+                         'priority',
+                         'workloads_collector'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

@@ -191,9 +191,7 @@ class TestStatisticsSender(BaseTestCase):
         self.assertEqual(sleep.call_count, 1)
         dithered.assert_called_with(0)
 
-        with patch.object(ss,
-                          'must_send_stats',
-                          fn):
+        with patch('nailgun.objects.MasterNodeSettings.must_send_stats', fn):
             ss.send_stats_once()
         # one more call with COLLECTOR_PING_INTERVAL value
         self.assertEqual(sleep.call_count, 2)

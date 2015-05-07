@@ -24,7 +24,6 @@ from nailgun import objects
 
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo
-from nailgun.statistics.statsenderd import StatsSender
 
 
 class TestMasterNodeSettingsHandler(BaseIntegrationTest):
@@ -155,7 +154,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
         self.assertEqual(404, resp.status_code)
 
     def test_stats_sending_enabled(self):
-        self.assertEqual(StatsSender().must_send_stats(), False)
+        self.assertEqual(objects.MasterNodeSettings.must_send_stats(), False)
 
         resp = self.app.get(
             reverse("MasterNodeSettingsHandler"),
@@ -171,7 +170,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
             params=jsonutils.dumps(data)
         )
         self.assertEqual(200, resp.status_code)
-        self.assertTrue(StatsSender().must_send_stats())
+        self.assertTrue(objects.MasterNodeSettings.must_send_stats())
 
         # emulate user disabled statistics sending
         data["settings"]["statistics"]["send_anonymous_statistic"]["value"] = \
@@ -182,7 +181,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
             params=jsonutils.dumps(data)
         )
         self.assertEqual(200, resp.status_code)
-        self.assertFalse(StatsSender().must_send_stats())
+        self.assertFalse(objects.MasterNodeSettings.must_send_stats())
 
     def test_user_contacts_info_disabled_while_not_confirmed_by_user(self):
         self.assertDictEqual(

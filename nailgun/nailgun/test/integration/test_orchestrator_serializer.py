@@ -2455,11 +2455,32 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
                               'enabled',
                               'password',
                               'metadata',
-                              'tenant']))
+                              'tenant',
+                              'create_user']))
         self.assertEqual(oswl_user['user'], 'workloads_collector')
         self.assertEqual(oswl_user['enabled'], True)
         self.assertEqual(len(oswl_user['password']), 8)
         self.assertEqual(oswl_user['tenant'], 'services')
+        self.assertEqual(oswl_user['create_user'], False)
+
+    @mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
+                return_value=True)
+    def test_serialize_workloads_collector_user_opted_in(self, _):
+        oswl_user = self.serializer.get_common_attrs(
+            self.env.clusters[0]
+        )['workloads_collector']
+        self.assertEqual(set(oswl_user.keys()),
+                         set(['user',
+                              'enabled',
+                              'password',
+                              'metadata',
+                              'tenant',
+                              'create_user']))
+        self.assertEqual(oswl_user['user'], 'workloads_collector')
+        self.assertEqual(oswl_user['enabled'], True)
+        self.assertEqual(len(oswl_user['password']), 8)
+        self.assertEqual(oswl_user['tenant'], 'services')
+        self.assertEqual(oswl_user['create_user'], True)
 
 
 class TestDeploymentHASerializer61(BaseDeploymentSerializer):

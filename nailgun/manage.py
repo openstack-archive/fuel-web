@@ -92,8 +92,8 @@ def load_db_parsers(subparsers):
     )
     subparsers.add_parser(
         'loaddefault',
-        help='load data from default fixtures '
-             '(settings.FIXTURES_TO_IPLOAD)'
+        help='load data from default fixtures (settings.FIXTURES_TO_UPLOAD) '
+             'and apply fake deployment tasks for all releases in database'
     )
 
 
@@ -179,6 +179,8 @@ def action_loaddefault(params):
 
     logger.info("Uploading fixture...")
     fixman.upload_fixtures()
+    logger.info("Applying fake deployment tasks to all releases...")
+    fixman.load_fake_deployment_tasks()
     logger.info("Done")
 
 
@@ -270,7 +272,7 @@ def action_run(params):
 
     if params.authentication_method:
         auth_method = params.authentication_method
-        settings.AUTH.update({'AUTHENTICATION_METHOD' : auth_method})
+        settings.AUTH.update({'AUTHENTICATION_METHOD': auth_method})
 
     if params.config_file:
         settings.update_from_file(params.config_file)

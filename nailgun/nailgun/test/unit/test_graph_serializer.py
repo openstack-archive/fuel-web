@@ -224,7 +224,7 @@ class TestLegacyGraphSerialized(base.BaseTestCase):
         super(TestLegacyGraphSerialized, self).setUp()
         self.cluster = mock.Mock()
         self.cluster.deployment_tasks = yaml.load(
-            graph_configuration.DEPLOYMENT_CURRENT)
+            graph_configuration.DEPLOYMENT_51_60)
         self.graph = deployment_graph.AstuteGraph(self.cluster)
 
     def test_serialized_with_tasks_and_priorities(self):

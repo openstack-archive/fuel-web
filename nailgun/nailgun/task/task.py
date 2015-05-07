@@ -18,6 +18,7 @@ from copy import deepcopy
 from distutils.version import StrictVersion
 
 import netaddr
+import requests
 import six
 
 from sqlalchemy import func
@@ -81,10 +82,6 @@ def fake_cast(queue, messages, **kwargs):
             thread = make_thread(m, join_to=thread)
     else:
         make_thread(messages)
-
-
-if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
-    rpc.cast = fake_cast
 
 
 class DeploymentTask(object):
@@ -1118,3 +1115,43 @@ class GenerateCapacityLogTask(object):
         task.status = 'ready'
         task.progress = '100'
         db().commit()
+
+
+class CheckRepositoryConnectionTask(object):
+    @classmethod
+    def execute(cls, task):
+        failed_repositories = cls._get_failed_repositories(task)
+
+        if len(failed_repositories) > 0:
+            error_message = ("Connection to following repositories"
+                             " could not be established: {0}").format(
+                                 ', '.join(failed_repositories))
+
+            raise errors.CheckBeforeDeploymentError(error_message)
+
+        task.status = 'ready'
+        task.progress = '100'
+        db().commit()
+
+    @classmethod
+    def _get_failed_repositories(cls, task):
+        repos = cls._get_repository_list(task)
+        urls = [r['uri'] for r in repos]
+
+        responses = cls._get_responses(urls)
+        failed_responses = filter(lambda x: x.status_code != 200, responses)
+        return [r.url for r in failed_responses]
+
+    @classmethod
+    def _get_repository_list(cls, task):
+        return task.cluster.attributes.editable['repo_setup']['repos']['value']
+
+    @classmethod
+    def _get_responses(cls, urls):
+        return map(requests.get, urls)
+
+
+if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
+    rpc.cast = fake_cast
+    CheckRepositoryConnectionTask._get_failed_repositories = classmethod(
+        lambda *args: [])

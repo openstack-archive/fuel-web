@@ -178,6 +178,14 @@ def do_post_inst(chroot):
     utils.execute('sed', '-i',
                   's%root:[\*,\!]%root:' + ROOT_PASSWORD + '%',
                   os.path.join(chroot, 'etc/shadow'))
+    # NOTE(agordeev): backport from bash-script:
+    # in order to prevent the later puppet workflow outage, puppet service
+    # should be disabled on a node startup.
+    # Being enabled by default, sometimes it leads to puppet service hanging
+    # and recognizing the deployment as failed.
+    # TODO(agordeev): take care of puppet service for other distros, once
+    # fuel-agent will be capable of building images for them too.
+    utils.execute('chroot', chroot, 'update-rc.d', 'puppet', 'disable')
     # NOTE(agordeev): remove custom policy-rc.d which is needed to disable
     # execution of post/pre-install package hooks and start of services
     remove_files(chroot, ['usr/sbin/policy-rc.d'])

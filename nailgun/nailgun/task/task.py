@@ -18,6 +18,7 @@ from copy import deepcopy
 from distutils.version import StrictVersion
 
 import netaddr
+import requests
 import six
 
 from sqlalchemy import func
@@ -1118,3 +1119,47 @@ class GenerateCapacityLogTask(object):
         task.status = 'ready'
         task.progress = '100'
         db().commit()
+
+
+class CheckRepositoryConnectionTask(object):
+    @classmethod
+    def execute(cls, task):
+        repos = cls._get_repository_list(task)
+        repos_with_test_url = cls._add_test_urls(repos)
+        urls = [r['test_url'] for r in repos_with_test_url]
+
+        responses = map(requests.get, urls)
+        failed_responses = filter(lambda x: x.status_code != 200, responses)
+        failed_urls = [r.url for r in failed_responses]
+        failed_repositories = [
+            repo['uri'] for repo
+            in repos_with_test_url
+            if repo['test_url'] in failed_urls]
+
+        if len(failed_repositories) > 0:
+            error_message = ("Connection to following repositories"
+                             " could not be established: {0}").format(
+                                 ', '.join(failed_repositories))
+
+            raise errors.CheckBeforeDeploymentError(error_message)
+
+    @classmethod
+    def _get_repository_list(cls, task):
+        return task.cluster.attributes.editable['repo_setup']['repos']['value']
+
+    @classmethod
+    def _add_test_urls(cls, repos):
+        return map(
+            cls._add_test_url,
+            repos
+        )
+
+    @classmethod
+    def _add_test_url(cls, r):
+        if r['type'] == 'deb':
+            url = "{0}/dists/{1}/Release".format(
+                r['uri'].rstrip('/'), r['suite'])
+        elif r['type'] == 'rpm':
+            url = "{0}/repodata/repomd.xml".format(r['uri'].rstrip('/'))
+        r['test_url'] = url
+        return r

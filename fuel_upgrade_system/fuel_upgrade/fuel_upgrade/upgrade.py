@@ -22,6 +22,8 @@ import six
 from fuel_upgrade import utils
 from fuel_upgrade.version_file import VersionFile
 
+from fuel_upgrade.engines.host_system import HostSystemUpgrader
+
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +116,19 @@ class UpgradeManager(object):
     def rollback(self):
         logger.debug('Run rollback')
 
+        # because of issue #1452378 [1], we have to perform HostSystem's
+        # rollback before others. so, move it to the end of list.
+        #
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1452378
+        hostsystem = next((
+            upgrader for upgrader in self._used_upgraders
+            if isinstance(upgrader, HostSystemUpgrader)),
+            None)
+        if hostsystem is not None:
+            self._used_upgraders.remove(hostsystem)
+            self._used_upgraders.append(hostsystem)
+
+        # do rollback in reverse order for all the upgraders
         while self._used_upgraders:
             upgrader = self._used_upgraders.pop()
             logger.debug('%s: rollbacking...', upgrader.__class__.__name__)

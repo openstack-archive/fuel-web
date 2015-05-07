@@ -1178,6 +1178,13 @@ button, .btn:not(.btn-link) {.font-semibold;}
       right: 24px;
     }
   }
+  .view-mode-switcher {
+    padding-right: 0;
+    .btn-group label {
+      width: auto;
+      font-size: @base-font-size;
+    }
+  }
 }
 
 // NODE LIST
@@ -1198,6 +1205,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
   .nodes-group {
     @node-indent: 20px;
+    @node-height: 58px;
+    @node-inner-height: @node-height - 6;
 
     border: 1px solid @gray + 80%;
     border-radius: 6px;
@@ -1210,8 +1219,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
 
     .node {
-      @node-height: 58px;
-      @node-inner-height: @node-height - 6;
       @node-button-size: 40px;
 
       height: @node-height;
@@ -1287,18 +1294,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
           .name {
             height: 32px;
             padding-top: 8px;
-            p {
-              display: inline;
-              line-height: 1px;
-              border-bottom: 1px dotted @base-text-color + #444444;
-              font-size: @base-font-size + 1;
-              .text-emboss;
-              .font-semibold;
-              &:hover {
-                color: @link-color-hover;
-                border-bottom-color: @link-color-hover;
-              }
-            }
             .form-group {
               label {
                 display: none;
@@ -1311,44 +1306,18 @@ button, .btn:not(.btn-link) {.font-semibold;}
               }
             }
           }
-          .role-list {
-            font-size: @base-font-size - 4;
-            text-transform: uppercase;
-            color: @gray;
-            ul {
-              padding: 0;
-              li {
-                display: inline-block;
-                float: left;
-                margin-right: 3px;
-                &:after {
-                  content: "·";
-                  margin-left: 3px;
-                  color: @gray;
-                }
-                &:last-child:after {
-                  content: "";
-                }
-              }
+          p {
+            display: inline;
+            line-height: 1px;
+            border-bottom: 1px dotted @base-text-color + #444444;
+            font-size: @base-font-size + 1;
+            .text-emboss;
+            .font-semibold;
+            &:hover {
+              color: @link-color-hover;
+              border-bottom-color: @link-color-hover;
             }
           }
-        }
-
-        .manufacturer-logo {
-          width: @node-inner-height;
-
-          .node-logo(@manufacturer) {
-            background: url("../img/logos/@{manufacturer}-logo.svg") no-repeat top left;
-          }
-          &.cisco {.node-logo(cisco);}
-          &.vbox {.node-logo(vbox);}
-          &.vmware {.node-logo(vmware);}
-          &.hp {.node-logo(hp);}
-          &.xen {.node-logo(xen);}
-          &.openvz {.node-logo(openvz);}
-          &.kvm {.node-logo(kvm);}
-          &.supermicro {.node-logo(supermicro);}
-          &.qemu {.node-logo(qemu);}
         }
 
         .node-action {
@@ -1404,6 +1373,150 @@ button, .btn:not(.btn-link) {.font-semibold;}
           background: url(@common-icons-sprite) no-repeat 0 0;
           &:hover {
             background: url(@common-icons-sprite) no-repeat -@node-button-size 0;
+          }
+        }
+      }
+    }
+
+    .compact-node {
+      @compact-node-indent: 5px;
+      padding: 0 @compact-node-indent;
+      position: relative;
+      .node {
+        height: @node-height * 1.25;
+        .node-box > div {
+          float: none;
+        }
+        .node-box-inner {
+          height: @node-height * 0.75;
+          padding: @compact-node-indent;
+          .node-name {
+            width: auto;
+            p:hover {
+              color: @base-text-color;
+            }
+          }
+          .node-status {
+            width: auto;
+            padding: 0;
+            text-align: left;
+          }
+        }
+        .node-hardware {
+          height: auto;
+          padding: @compact-node-indent 0 0;
+          margin: 0;
+          text-align: left;
+          border-top: 1px solid @gray + 40%;
+        }
+        .node-buttons {
+            float: left;
+            height: 100%;
+            width: 30px;
+            > .btn-link {
+              padding: 0;
+              position: relative;
+              top: -3px;
+              left: 5px;
+            }
+            > i.glyphicon {
+              font-size: @base-font-size + 4px;
+            }
+          }
+      }
+      .node-popover {
+        position: absolute;
+        top: @node-height * 1.25 + 2px;
+        left: 10px;
+        z-index: 1000;
+        background: @white;
+        border-radius: @compact-node-indent * 2;
+        padding: @compact-node-indent * 2;
+        border: 1px solid @gray;
+        width: 400px;
+        .manufacturer-logo {
+          height: 59px;
+          float: left;
+        }
+        .node-name {
+          float: left;
+          .font-bold;
+          padding-top: 15px;
+          width: 70%;
+          label {
+            display: none;
+          }
+          .form-group {
+            position: relative;
+            top: -6px;
+            margin: 0;
+          }
+          p {
+            border-bottom: 1px dotted @base-text-color + #444444;
+            cursor: pointer;
+            display: inline;
+            &:hover {
+              color: @link-color-hover;
+              border-bottom-color: @link-color-hover;
+            }
+          }
+        }
+        .role-list {
+          clear: both;
+          float: none;
+        }
+        .node-popover-buttons {
+          margin: 15px 0 5px;
+          button {
+            display: inline-block;
+            margin-right: 5px;
+          }
+        }
+        .node-hardware > span {
+          display: block;
+        }
+        .node-status {
+          text-align: left;
+          text-transform: uppercase;
+          margin: 10px 0;
+        }
+      }
+    }
+
+    .manufacturer-logo {
+      width: @node-inner-height;
+
+      .node-logo(@manufacturer) {
+        background: url("../img/logos/@{manufacturer}-logo.svg") no-repeat top left;
+      }
+      &.cisco {.node-logo(cisco);}
+      &.vbox {.node-logo(vbox);}
+      &.vmware {.node-logo(vmware);}
+      &.hp {.node-logo(hp);}
+      &.xen {.node-logo(xen);}
+      &.openvz {.node-logo(openvz);}
+      &.kvm {.node-logo(kvm);}
+      &.supermicro {.node-logo(supermicro);}
+      &.qemu {.node-logo(qemu);}
+    }
+
+    .role-list {
+      font-size: @base-font-size - 4;
+      text-transform: uppercase;
+      color: @gray;
+      ul {
+        padding: 0;
+        li {
+          display: inline-block;
+          float: left;
+          margin-right: 3px;
+          &:after {
+            content: "·";
+            margin-left: 3px;
+            color: @gray;
+          }
+          &:last-child:after {
+            content: "";
           }
         }
       }

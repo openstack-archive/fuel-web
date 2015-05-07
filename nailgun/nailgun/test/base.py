@@ -49,6 +49,7 @@ from nailgun.db import syncdb
 
 from nailgun.logger import logger
 
+from nailgun.db.sqlalchemy.fixman import load_fake_deployment_tasks
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import NodeAttributes
@@ -165,6 +166,8 @@ class EnvironmentManager(object):
             )
         else:
             release = Release.create(release_data)
+            if kwargs.get('deployment_tasks') is None:
+                load_fake_deployment_tasks(release, commit=False)
             db().commit()
             self.releases.append(release)
         return release

@@ -617,8 +617,6 @@ class BaseNetworkVerification(object):
                 if ng.group_id is None:
                     vlans.append(0)
                     continue
-                if ng.name == consts.NETWORKS.public and not has_public:
-                    continue
 
                 data_ng = filter(lambda i: i['name'] == ng.name,
                                  self.config)[0]

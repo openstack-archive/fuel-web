@@ -171,9 +171,11 @@ class ApplyChangesTaskManager(TaskManager):
             db().rollback()
             raise errors.WrongNodeStatus("No changes to deploy")
 
+        db().flush()
+        TaskHelper.create_action_log(supertask)
+
         # we should have task committed for processing in other threads
         db().commit()
-        TaskHelper.create_action_log(supertask)
 
         mule.call_task_manager_async(
             self.__class__,
@@ -231,19 +233,21 @@ class ApplyChangesTaskManager(TaskManager):
 
         if nodes_to_delete:
             objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
+            objects.NodeCollection.lock_nodes(nodes_to_delete)
             # For more accurate progress calculation
             task_weight = 0.4
             task_deletion = supertask.create_subtask(
                 consts.TASK_NAMES.node_deletion,
                 weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
+            # we should have task committed for processing in other threads
+            db().commit()
 
             self._call_silently(
                 task_deletion,
                 tasks.DeletionTask,
                 tasks.DeletionTask.get_task_nodes_for_cluster(self.cluster),
                 check_ceph=True)
-            # we should have task committed for processing in other threads
             db().commit()
 
         if nodes_to_provision:
@@ -270,6 +274,7 @@ class ApplyChangesTaskManager(TaskManager):
                 nodes_to_provision,
                 method_name='message'
             )
+            db().commit()
 
             task_provision = objects.Task.get_by_uid(
                 task_provision.id,
@@ -305,6 +310,7 @@ class ApplyChangesTaskManager(TaskManager):
                 method_name='message'
             )
 
+            db().commit()
             task_deployment = objects.Task.get_by_uid(
                 task_deployment.id,
                 fail_if_not_found=True,

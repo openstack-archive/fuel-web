@@ -988,6 +988,11 @@ class BaseTestCase(TestCase):
 
 
 class BaseIntegrationTest(BaseTestCase):
+
+    def tearDown(self):
+        self._wait_for_threads()
+        super(BaseIntegrationTest, self).tearDown()
+
     @classmethod
     def setUpClass(cls):
         super(BaseIntegrationTest, cls).setUpClass()

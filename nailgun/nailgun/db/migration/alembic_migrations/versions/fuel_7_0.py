@@ -31,6 +31,7 @@ import sqlalchemy as sa
 from alembic import op
 from oslo.serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
 from nailgun.utils.migration import drop_enum
@@ -52,9 +53,11 @@ def upgrade():
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
     migrate_volumes_into_extension_upgrade()
+    upgrade_cluster_ui_settings()
 
 
 def downgrade():
+    downgrade_cluster_ui_settings()
     migrate_volumes_into_extension_downgrade()
     extend_plugin_model_downgrade()
     extend_ip_addrs_model_downgrade()
@@ -218,3 +221,30 @@ def migrate_volumes_into_extension_downgrade():
     op.add_column(
         'node_attributes',
         sa.Column('volumes', fields.JSON(), nullable=True))
+
+
+def upgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'ui_settings',
+            fields.JSON(),
+            server_default='{"view_mode": "standard", "grouping": "roles"}',
+            nullable=False
+        )
+    )
+    op.drop_column('clusters', 'grouping')
+
+
+def downgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'grouping',
+            sa.Enum(
+                'roles', 'hardware', 'both', name='cluster_grouping'),
+            nullable=False,
+            default=consts.CLUSTER_GROUPING.roles
+        )
+    )
+    op.drop_column('clusters', 'ui_settings')

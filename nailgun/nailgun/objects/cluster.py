@@ -49,6 +49,24 @@ from nailgun.utils import dict_merge
 from nailgun.utils import traverse
 
 
+CLUSTER_UI_SETTING = {
+    "type": "object",
+    "required": ["view_mode", "grouping"],
+    "properties": {
+        "view_mode": {
+            "type": "string",
+            "description": "View mode of cluster nodes",
+            "enum": list(consts.NODE_VIEW_MODES)
+        },
+        "grouping": {
+            "type": "string",
+            "description": "Grouping mode of cluster nodes",
+            "enum": list(consts.CLUSTER_GROUPING)
+        }
+    }
+}
+
+
 class Attributes(NailgunObject):
     """Cluster attributes object
     """
@@ -150,10 +168,7 @@ class Cluster(NailgunObject):
                 "type": "string",
                 "enum": list(consts.CLUSTER_NET_PROVIDERS)
             },
-            "grouping": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_GROUPING)
-            },
+            "ui_settings": CLUSTER_UI_SETTING,
             "release_id": {"type": "number"},
             "pending_release_id": {"type": "number"},
             "replaced_deployment_info": {"type": "object"},

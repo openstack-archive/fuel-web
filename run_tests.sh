@@ -453,6 +453,7 @@ function syncdb {
 
   if [[ $# -ne 0 && $defaults = true ]]; then
     NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddefault > /dev/null
+    NAILGUN_CONFIG=$config tox -evenv -- python manage.py loadfakedeploymenttasks > /dev/null
   fi
 
   popd >> /dev/null

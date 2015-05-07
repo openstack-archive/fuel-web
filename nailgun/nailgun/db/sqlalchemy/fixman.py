@@ -39,6 +39,29 @@ def capitalize_model_name(model_name):
     return ''.join(map(lambda s: s.capitalize(), model_name.split('_')))
 
 
+def load_fake_deployment_tasks(release=None, commit=True):
+    """Load fake deployment tasks for release
+
+    :param release: Release instance, if None: applying to all releases in db
+    :param commit: boolean
+    """
+    fxtr_path = os.path.join(get_fixtures_paths()[1], 'deployment_tasks.yaml')
+    with open(fxtr_path) as f:
+        deployment_tasks = yaml.load(f)
+
+    if release:
+        release.deployment_tasks = deployment_tasks
+    else:
+        releases = db().query(models.Release).all()
+        for rel in releases:
+            rel.deployment_tasks = deployment_tasks
+
+    if commit:
+        db().commit()
+
+    return deployment_tasks
+
+
 def template_fixture(fileobj, **kwargs):
     if not kwargs.get('settings'):
         kwargs["settings"] = settings
@@ -183,11 +206,15 @@ def upload_fixture(fileobj, loader=None):
             db().commit()
 
 
-def upload_fixtures():
-    fixtures_paths = [
+def get_fixtures_paths():
+    return [
         '/etc/nailgun/fixtures',
         os.path.join(os.path.dirname(__file__), '..', '..', 'fixtures')
     ]
+
+
+def upload_fixtures():
+    fixtures_paths = get_fixtures_paths()
     for orig_path in settings.FIXTURES_TO_UPLOAD:
         if os.path.isabs(orig_path):
             path = orig_path

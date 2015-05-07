@@ -38,6 +38,7 @@ default_messages = {
     "CheckBeforeDeploymentError": "Pre-Deployment check wasn't successful",
     "DeploymentAlreadyStarted": "Deployment already started",
     "DeploymentNotRunning": "Deployment is not running",
+    "NoDeploymentTasks": "Deployment tasks not found for specific release in the database",
     "DeletionAlreadyStarted": "Environment removal already started",
     "StopAlreadyRunning": "Stopping deployment already initiated",
     "FailedProvisioning": "Failed to start provisioning",

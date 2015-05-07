@@ -229,6 +229,7 @@ Running Nailgun in Fake Mode
 
     ./manage.py syncdb
     ./manage.py loaddefault # It loads all basic fixtures listed in settings.yaml
+    ./manage.py loadfakedeploymenttasks  # Loads fake deployment tasks
     ./manage.py loaddata nailgun/fixtures/sample_environment.json  # Loads fake nodes
 
 #. Start application in "fake" mode, when no real calls to orchestrator

@@ -205,7 +205,7 @@ def get_host_system(update_path, new_version):
 
     return {
         'install_packages': [
-            'fuel-release-{0}'.format(normversion(new_version)),
+            'fuel-{0}'.format(normversion(new_version)),
         ],
 
         'manifest_path': join(

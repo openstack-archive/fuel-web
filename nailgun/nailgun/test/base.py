@@ -25,6 +25,7 @@ import os
 import re
 import time
 import uuid
+import yaml
 
 from datetime import datetime
 from functools import partial
@@ -149,6 +150,13 @@ class EnvironmentManager(object):
             'description': u"release_desc" + version,
             'roles': self.get_default_roles(),
         })
+
+        if kwargs.get('deployment_tasks') is None:
+            deployment_tasks_yaml = next(
+                self.fxtr_paths_by_names(('deployment_tasks',)))
+            with open(deployment_tasks_yaml) as f:
+                deployment_tasks = yaml.load(f)
+            kwargs.update({'deployment_tasks': deployment_tasks})
 
         if kwargs:
             release_data.update(kwargs)

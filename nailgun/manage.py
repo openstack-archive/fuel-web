@@ -93,7 +93,7 @@ def load_db_parsers(subparsers):
     subparsers.add_parser(
         'loaddefault',
         help='load data from default fixtures '
-             '(settings.FIXTURES_TO_IPLOAD)'
+             '(settings.FIXTURES_TO_UPLOAD)'
     )
 
 

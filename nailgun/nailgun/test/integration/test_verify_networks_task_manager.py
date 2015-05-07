@@ -576,7 +576,9 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
             self.assertEqual(
                 task.cache['args']['nodes'][n]['networks'],
                 [{'vlans': [0, 101, 102, 1000, 1001, 1002, 1003, 1004],
-                  'iface': 'eth0'}])
+                  'iface': 'eth0'},
+                 {'vlans': [333],
+                  'iface': 'eth1'}])
         self.env.wait_ready(task, 30)
 
     @fake_tasks()
@@ -609,10 +611,10 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         self.assertEqual(
             task.cache['args']['nodes'][0]['networks'],
             [eth0_vlans, eth1_vlans])
-        # There is no public VLAN on compute node
+        # There is public VLAN on compute node
         self.assertEqual(
             task.cache['args']['nodes'][1]['networks'],
-            [eth0_vlans])
+            [eth0_vlans, eth1_vlans])
         # There is public VLAN on 2nd controller node
         self.assertEqual(
             task.cache['args']['nodes'][2]['networks'],

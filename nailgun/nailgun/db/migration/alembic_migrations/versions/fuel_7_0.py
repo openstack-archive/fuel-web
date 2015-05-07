@@ -25,6 +25,7 @@ Create Date: 2015-06-24 12:08:04.838393
 revision = '1e50a4903910'
 down_revision = '37608259013'
 
+from nailgun import consts
 from nailgun.utils.migration import drop_enum
 
 
@@ -51,9 +52,11 @@ def upgrade():
     extend_node_model_upgrade()
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
+    upgrade_cluster_ui_settings()
 
 
 def downgrade():
+    downgrade_cluster_ui_settings()
     extend_plugin_model_downgrade()
     extend_ip_addrs_model_downgrade()
     extend_node_model_downgrade()
@@ -172,3 +175,30 @@ def upgrade_node_roles_metadata():
             update_query,
             id=id,
             roles_metadata=jsonutils.dumps(roles_metadata))
+
+
+def upgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'ui_settings',
+            fields.JSON(),
+            server_default='{"view_mode": "standard", "grouping": "roles"}',
+            nullable=False
+        )
+    )
+    op.drop_column('clusters', 'grouping')
+
+
+def downgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'grouping',
+            sa.Enum(
+                'roles', 'hardware', 'both', name='cluster_grouping'),
+            nullable=False,
+            default=consts.CLUSTER_GROUPING.roles
+        )
+    )
+    op.drop_column('clusters', 'ui_settings')

@@ -322,7 +322,14 @@ define([
             return _.isEmpty(errors) ? null : errors;
         },
         groupings: function() {
-            return {roles: i18n('cluster_page.nodes_tab.roles'), hardware: i18n('cluster_page.nodes_tab.hardware_info'), both: i18n('cluster_page.nodes_tab.roles_and_hardware_info')};
+            return {
+                roles: i18n('cluster_page.nodes_tab.roles'),
+                hardware: i18n('cluster_page.nodes_tab.hardware_info'),
+                both: i18n('cluster_page.nodes_tab.roles_and_hardware_info')
+            };
+        },
+        viewModes: function() {
+            return ['standard', 'compact'];
         },
         task: function(filter1, filter2) {
             var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};

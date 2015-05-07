@@ -366,7 +366,8 @@
                         "discard_addition": "Discard Addition",
                         "discard_deletion": "Discard Deletion",
                         "view_logs": "View Logs",
-                        "edit_name": "Edit Name"
+                        "edit_name": "Edit Name",
+                        "more_info": "More Info"
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",
@@ -717,7 +718,8 @@
                 },
                 "delete_nodes": {
                     "title": "Delete Nodes",
-                    "message": "Are you sure you want to delete the selected nodes?"
+                    "message": "Are you sure you want to delete the selected node?",
+                    "message_plural": "Are you sure you want to delete the selected nodes?"
                 },
                 "discard_changes": {
                     "title": "Discard Changes",

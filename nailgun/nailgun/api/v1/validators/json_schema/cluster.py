@@ -19,6 +19,22 @@ from nailgun import consts
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import role
 
+CLUSTER_UI_SETTING = {
+    "type": "object",
+    "required": ["view_mode", "grouping"],
+    "properties": {
+        "view_mode": {
+            "type": "string",
+            "description": "View mode of cluster nodes",
+            "enum": list(consts.NODE_VIEW_MODES)
+        },
+        "grouping": {
+            "type": "string",
+            "description": "Grouping mode of cluster nodes",
+            "enum": list(consts.CLUSTER_GROUPING)
+        }
+    }
+}
 
 # TODO(@ikalnitsky): add `required` properties to all needed objects
 single_schema = {
@@ -41,10 +57,7 @@ single_schema = {
             "type": "string",
             "enum": list(consts.CLUSTER_NET_PROVIDERS)
         },
-        "grouping": {
-            "type": "string",
-            "enum": list(consts.CLUSTER_GROUPING)
-        },
+        "ui_settings": CLUSTER_UI_SETTING,
         "release_id": {"type": "number"},
         "pending_release_id": base_types.NULLABLE_ID,
         "replaced_deployment_info": {"type": "object"},

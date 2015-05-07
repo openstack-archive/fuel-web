@@ -217,6 +217,7 @@ class ClusterChangesValidator(BaseDefferedTaskValidator):
 
     @classmethod
     def validate(cls, cluster):
+        cls.validate_release(cluster=cluster)
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
 
 

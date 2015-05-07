@@ -93,7 +93,11 @@ def load_db_parsers(subparsers):
     subparsers.add_parser(
         'loaddefault',
         help='load data from default fixtures '
-             '(settings.FIXTURES_TO_IPLOAD)'
+             '(settings.FIXTURES_TO_UPLOAD)'
+    )
+    subparsers.add_parser(
+        'loadfakedeploymenttasks',
+        help="load fake deployment tasks for all releases in database",
     )
 
 
@@ -170,6 +174,15 @@ def action_loaddata(params):
     logger.info("Uploading fixture...")
     with open(params.fixture, "r") as fileobj:
         fixman.upload_fixture(fileobj)
+    logger.info("Done")
+
+
+def action_loadfakedeploymenttasks(params):
+    from nailgun.db.sqlalchemy import fixman
+    from nailgun.logger import logger
+
+    logger.info("Applying fake deployment tasks to all releases...")
+    fixman.load_fake_deployment_tasks()
     logger.info("Done")
 
 
@@ -270,7 +283,7 @@ def action_run(params):
 
     if params.authentication_method:
         auth_method = params.authentication_method
-        settings.AUTH.update({'AUTHENTICATION_METHOD' : auth_method})
+        settings.AUTH.update({'AUTHENTICATION_METHOD': auth_method})
 
     if params.config_file:
         settings.update_from_file(params.config_file)

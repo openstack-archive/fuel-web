@@ -13,6 +13,7 @@ fysom==1.0.11
 iso8601==0.1.9
 jsonschema==2.3.0
 kombu==3.0.16
+mock==1.0
 netaddr>=0.7.10
 oslo.config>=1.2.1
 oslo.serialization>=1.0.0

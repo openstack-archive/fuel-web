@@ -77,6 +77,7 @@ def execute(*cmd, **kwargs):
     commands = [c.strip() for c in re.split(ur'\|', command)]
     env = os.environ
     env['PATH'] = '/bin:/usr/bin:/sbin:/usr/sbin'
+    env['LC_ALL'] = env['LANG'] = env['LANGUAGE'] = kwargs.pop('language', 'C')
     attempts = kwargs.pop('attempts', 1)
     check_exit_code = kwargs.pop('check_exit_code', [0])
     ignore_exit_code = False

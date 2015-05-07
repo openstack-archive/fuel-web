@@ -274,6 +274,8 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
         self.checked_data(self.validator.validate_nodes_to_deploy,
                           nodes=nodes_to_deploy, cluster_id=cluster.id)
 
+        self.checked_data(self.validator.validate_release, cluster=cluster)
+
         return nodes_to_deploy
 
 

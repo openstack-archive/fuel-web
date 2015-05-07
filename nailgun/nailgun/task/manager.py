@@ -365,6 +365,21 @@ class ApplyChangesTaskManager(TaskManager):
             n for n in network_info["networks"] if n["name"] != "fuelweb_admin"
         ]
 
+        check_repo_connect = supertask.create_subtask(
+            consts.TASK_NAMES.check_networks)
+
+        self._call_silently(
+            check_repo_connect,
+            tasks.CheckRepositoryConnectionTask,
+        )
+
+        if check_repo_connect.status == consts.TASK_STATUSES.error:
+            logger.warning(
+                "Checking connectivity to repositories failed: %s",
+                check_repo_connect.message
+            )
+            raise errors.CheckBeforeDeploymentError(check_repo_connect.message)
+
         check_networks = supertask.create_subtask(
             consts.TASK_NAMES.check_networks)
 

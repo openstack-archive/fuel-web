@@ -149,10 +149,7 @@ class Cluster(NailgunObject):
                 "type": "string",
                 "enum": list(consts.CLUSTER_NET_PROVIDERS)
             },
-            "grouping": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_GROUPING)
-            },
+            "ui_settings": {"type": "object"},
             "release_id": {"type": "number"},
             "pending_release_id": {"type": "number"},
             "replaced_deployment_info": {"type": "object"},

@@ -163,7 +163,6 @@ class BaseHandler(object):
         try:
             data = kwargs.pop('data', web.data())
             method = validate_method or cls.validator.validate
-
             valid_data = method(data, **kwargs)
         except (
             errors.InvalidInterfacesInfo,
@@ -185,6 +184,7 @@ class BaseHandler(object):
         except (
             errors.InvalidData,
             errors.NodeOffline,
+            errors.NoDeploymentTasks,
             errors.UnavailableRelease,
             errors.CannotDelete
         ) as exc:
@@ -547,6 +547,7 @@ class DeferredTaskHandler(BaseHandler):
             raise self.http(409, exc.message)
         except (
             errors.DeploymentNotRunning,
+            errors.NoDeploymentTasks,
             errors.WrongNodeStatus,
             errors.UnavailableRelease,
         ) as exc:

@@ -113,6 +113,11 @@ NODE_GROUPS = Enum(
     'default'
 )
 
+NODE_VIEW_MODES = Enum(
+    'standard',
+    'compact'
+)
+
 NETWORK_INTERFACE_TYPES = Enum(
     'ether',
     'bond'

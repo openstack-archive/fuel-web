@@ -51,6 +51,7 @@ def upgrade():
     extend_node_model_upgrade()
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
+    upgrade_cluster_ui_settings()
 
 
 def downgrade():
@@ -64,6 +65,8 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+
+    downgrade_cluster_ui_settings()
 
 
 def extend_node_model_upgrade():
@@ -172,3 +175,29 @@ def upgrade_node_roles_metadata():
             update_query,
             id=id,
             roles_metadata=jsonutils.dumps(roles_metadata))
+
+
+def upgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'ui_settings',
+            fields.JSON(),
+            server_default='{"view_mode": "standard", "grouping": "roles"}',
+            nullable=False
+        )
+    )
+    op.drop_column('clusters', 'grouping')
+
+
+def downgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'grouping',
+            sa.Enum(
+                'roles', 'hardware', 'both', name='cluster_grouping'),
+            nullable=False
+        )
+    )
+    op.drop_column('clusters', 'ui_settings')

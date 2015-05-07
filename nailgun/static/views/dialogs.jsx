@@ -895,7 +895,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return (
                 <div className='text-danger'>
                     {this.renderImportantLabel()}
-                    {i18n('dialog.delete_nodes.message')}
+                    {i18n('dialog.delete_nodes.message', {count: this.props.nodes.length})}
                 </div>
             );
         },

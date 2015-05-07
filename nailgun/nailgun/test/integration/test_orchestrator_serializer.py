@@ -2457,7 +2457,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
                               'metadata',
                               'tenant',
                               'create_user']))
-        self.assertEqual(oswl_user['user'], 'workloads_collector')
+        self.assertEqual(oswl_user['user'], 'fuel_stats_user')
         self.assertEqual(oswl_user['enabled'], True)
         self.assertEqual(len(oswl_user['password']), 8)
         self.assertEqual(oswl_user['tenant'], 'services')
@@ -2476,7 +2476,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
                               'metadata',
                               'tenant',
                               'create_user']))
-        self.assertEqual(oswl_user['user'], 'workloads_collector')
+        self.assertEqual(oswl_user['user'], 'fuel_stats_user')
         self.assertEqual(oswl_user['enabled'], True)
         self.assertEqual(len(oswl_user['password']), 8)
         self.assertEqual(oswl_user['tenant'], 'services')

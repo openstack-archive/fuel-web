@@ -412,7 +412,7 @@
             value: true
             type: "hidden"
           user:
-            value: "workloads_collector"
+            value: "fuel_stats_user"
             type: "text"
           password:
             value:

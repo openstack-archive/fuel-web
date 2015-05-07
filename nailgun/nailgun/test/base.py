@@ -992,6 +992,7 @@ class BaseIntegrationTest(BaseTestCase):
     def setUpClass(cls):
         super(BaseIntegrationTest, cls).setUpClass()
         nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
+        nailgun.task.task.CheckRepositoryConnectionTask = mock.Mock()
 
     def _wait_for_threads(self):
         # wait for fake task thread termination

@@ -16,7 +16,7 @@
 
 #(dshulyak) temporary, this config will be moved to fuel-library
 #until we will stabilize our api
-DEPLOYMENT_CURRENT = """
+DEPLOYMENT_51_60 = """
 
 - id: deploy_start
   type: stage

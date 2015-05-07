@@ -290,6 +290,33 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             "[{0}] marked for deletion".format(marked_for_deletion.id),
             resp.body)
 
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.task.task.rpc.cast')
+    def test_deployment_of_node_no_deployment_tasks(self, mcast):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+
+        self.emulate_nodes_provisioning(controller_nodes)
+
+        node_to_deploy = self.cluster.nodes[0]
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            [node_to_deploy.uid]
+        )
+        # overwriting default made in EnvironmentManager
+        self.cluster.release.deployment_tasks = []
+
+        resp = self.send_put(deploy_action_url)
+        resp_msg = jsonutils.loads(resp.body)['message']
+
+        self.assertFalse(mcast.called)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("Deployment tasks not found", resp_msg)
+        self.assertIn(self.cluster.release.name, resp_msg)
+
 
 class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
 
@@ -353,7 +380,6 @@ class TestDeployMethodVersioning(BaseSelectedNodesTest):
             self.node_uids
         )
         self.send_put(action_url)
-
         deployment_method = mcast.call_args_list[0][0][1]['method']
         self.assertEqual(deployment_method, method)
 

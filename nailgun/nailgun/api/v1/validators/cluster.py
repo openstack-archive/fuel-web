@@ -14,11 +14,13 @@
 #    under the License.
 
 import copy
+from distutils.version import StrictVersion
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
 from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
+from nailgun import consts
 
 from nailgun.errors import errors
 
@@ -217,6 +219,15 @@ class ClusterChangesValidator(BaseDefferedTaskValidator):
 
     @classmethod
     def validate(cls, cluster):
+        if not (cluster.deployment_tasks or cluster.release.deployment_tasks):
+            if (StrictVersion(cluster.release.fuel_version) >=
+                    StrictVersion(consts.FUEL_GRANULAR_DEPLOY)):
+                raise errors.NoDeploymentTasks(
+                    "No deployment tasks found for '{0}' in the database. "
+                    "Please upload them. If you're operating from fuel "
+                    "master node, please check '/etc/puppet' "
+                    "directory.".format(cluster.release.name))
+
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
 
 

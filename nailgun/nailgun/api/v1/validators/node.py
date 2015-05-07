@@ -345,7 +345,7 @@ class DeploySelectedNodesValidator(NodesFilterValidator):
         in proper state
 
         :param data: raw json data, usually web.data(). Is not used here
-        and is needed for mantaining consistency of data validating logic
+        and is needed for maintaining consistency of data validating logic
         :param nodes: list of node objects state of which to be checked
         :param cluster_id: id of the cluster for which operation is performed
         """

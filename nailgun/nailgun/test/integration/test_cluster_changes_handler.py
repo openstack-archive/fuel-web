@@ -1618,6 +1618,25 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
 
+    def test_occurs_error_no_deployment_tasks_for_release(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}],
+            release_kwargs={
+                'version': "2014.2.2-6.1",
+                'deplyment_tasks': [],
+            },
+        )
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}),
+            headers=self.default_headers,
+            expect_errors=True)
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("No deployment tasks found", resp.body)
+
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_enough_osds_for_ceph(self):
         cluster = self.env.create(

@@ -333,7 +333,6 @@ class TestDeployMethodVersioning(BaseSelectedNodesTest):
             self.node_uids
         )
         self.send_put(action_url)
-
         deployment_method = mcast.call_args_list[0][0][1]['method']
         self.assertEqual(deployment_method, method)
 

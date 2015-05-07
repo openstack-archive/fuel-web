@@ -14,11 +14,13 @@
 #    under the License.
 
 import copy
+from distutils.version import StrictVersion
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
 from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
+from nailgun.settings import settings
 
 from nailgun.errors import errors
 
@@ -217,6 +219,17 @@ class ClusterChangesValidator(BaseDefferedTaskValidator):
 
     @classmethod
     def validate(cls, cluster):
+        if not (settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP):
+            if not cluster.release.deployment_tasks:
+                # 6.1 is the last version in which empty deployment_tasks
+                # won't cause deploy failure
+                if (StrictVersion(cluster.release.fuel_version) >=
+                        StrictVersion('6.1')):
+                    raise errors.NoDeploymentTasks(
+                        "No deployment tasks found in the database. "
+                        "Please upload them. If you're operating from fuel "
+                        "master node, please check '/etc/puppet' directory.")
+
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
 
 

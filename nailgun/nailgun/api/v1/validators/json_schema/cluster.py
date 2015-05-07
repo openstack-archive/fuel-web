@@ -45,6 +45,10 @@ single_schema = {
             "type": "string",
             "enum": list(consts.CLUSTER_GROUPING)
         },
+        "view_mode": {
+            "type": "string",
+            "enum": list(consts.CLUSTER_VIEW_MODES)
+        },
         "release_id": {"type": "number"},
         "pending_release_id": base_types.NULLABLE_ID,
         "replaced_deployment_info": {"type": "object"},

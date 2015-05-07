@@ -78,6 +78,11 @@ CLUSTER_GROUPING = Enum(
     'both'
 )
 
+CLUSTER_VIEW_MODES = Enum(
+    'standard',
+    'compact'
+)
+
 CLUSTER_NET_PROVIDERS = Enum(
     'nova_network',
     'neutron'

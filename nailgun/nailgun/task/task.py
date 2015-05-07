@@ -635,7 +635,7 @@ class BaseNetworkVerification(object):
             if iface.bond and iface.bond.mode == consts.BOND_MODES.l_802_3ad:
                 node_json['excluded_networks'].append(
                     {'iface': iface.name})
-            else:
+            elif vlan:
                 node_json['networks'].append(
                     {'iface': iface.name, 'vlans': vlans})
 

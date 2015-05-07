@@ -346,7 +346,7 @@ class TestInstallationInfo(BaseTestCase):
             'tasks', 'cluster_changes', 'nodegroups', 'pending_release_id',
             'releases', 'replaced_provisioning_info', 'notifications',
             'deployment_tasks', 'name', 'replaced_deployment_info',
-            'grouping'
+            'ui_settings'
         )
         for field in remove_fields:
             cluster_schema.pop(field)

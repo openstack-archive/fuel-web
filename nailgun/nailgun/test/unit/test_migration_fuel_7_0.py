@@ -19,6 +19,7 @@ from oslo.serialization import jsonutils
 import six
 import sqlalchemy as sa
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -94,6 +95,18 @@ def prepare():
             'is_deployable': True,
         }])
     releaseid = result.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['clusters'].insert(),
+        [{
+            'name': 'test_env',
+            'release_id': releaseid,
+            'mode': 'ha_compact',
+            'status': 'new',
+            'net_provider': 'neutron',
+            'grouping': 'roles',
+            'fuel_version': '6.1',
+        }])
 
     result = db.execute(
         meta.tables['nodes'].insert(),
@@ -536,3 +549,25 @@ class TestSchemalessRoles(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['releases'].c.network_roles_metadata]))
         # check attributes_metadata value is empty
         self.assertEqual(jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
+    def test_grouping_field_removed(self):
+        clusters_table = self.meta.tables['clusters']
+        self.assertNotIn('grouping', clusters_table.c)
+
+    def test_ui_settings_field_exists_and_has_default_value(self):
+        clusters_table = self.meta.tables['clusters']
+        self.assertIn('ui_settings', clusters_table.c)
+
+        ui_settings = jsonutils.loads(
+            db.execute(
+                sa.select([clusters_table.c.ui_settings])
+            ).fetchone()[0]
+        )
+        self.assertItemsEqual(
+            ui_settings['view_mode'],
+            consts.NODE_VIEW_MODES.standard)
+        self.assertItemsEqual(
+            ui_settings['grouping'],
+            consts.CLUSTER_GROUPING.roles)

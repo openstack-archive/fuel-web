@@ -86,9 +86,11 @@ def upgrade():
     upgrade_task_names()
     vms_conf_upgrade()
     extend_nic_model_upgrade()
+    upgrade_cluster_ui_settings()
 
 
 def downgrade():
+    downgrade_cluster_ui_settings()
     extend_nic_model_downgrade()
     extend_releases_model_downgrade()
     migrate_volumes_into_extension_downgrade()
@@ -433,6 +435,7 @@ def node_roles_as_plugin_downgrade():
     op.drop_column('nodes', 'roles')
 
 
+<<<<<<< HEAD
 def extend_releases_model_downgrade():
     op.drop_column('releases', 'network_roles_metadata')
 
@@ -461,3 +464,30 @@ def extend_nic_model_upgrade():
 
 def extend_nic_model_downgrade():
     op.drop_column('node_nic_interfaces', 'pxe')
+
+
+def upgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'ui_settings',
+            fields.JSON(),
+            server_default='{"view_mode": "standard", "grouping": "roles"}',
+            nullable=False
+        )
+    )
+    op.drop_column('clusters', 'grouping')
+
+
+def downgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'grouping',
+            sa.Enum(
+                'roles', 'hardware', 'both', name='cluster_grouping'),
+            nullable=False,
+            default=consts.CLUSTER_GROUPING.roles
+        )
+    )
+    op.drop_column('clusters', 'ui_settings')

@@ -241,6 +241,7 @@
             },
             "cluster_page": {
                 "tabs": {
+                    "dashboard": "Dasboard",
                     "nodes": "Nodes",
                     "network": "Networks",
                     "settings": "Settings",

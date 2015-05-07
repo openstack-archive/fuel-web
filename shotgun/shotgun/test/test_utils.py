@@ -1,3 +1,5 @@
+# coding: utf-8
+
 #    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -101,3 +103,10 @@ class TestCCStringIO(base.BaseTestCase):
 
         self.assertEqual(ccstring.getvalue(), buffer)
         self.assertEqual(writer.getvalue(), '')
+
+    def test_non_ascii_output_with_unicode(self):
+        ccstring = utils.CCStringIO()
+        ccstring.write('привет')
+        ccstring.write(u'test')
+
+        self.assertEqual(ccstring.getvalue(), 'приветtest')

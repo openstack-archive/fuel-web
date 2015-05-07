@@ -307,9 +307,10 @@ class Command(Driver):
             self.target_path)))
         with open(self.target_path, "w") as f:
             f.write("===== COMMAND =====: {0}\n".format(self.cmdname))
-            f.write("===== RETURN CODE =====: {0}\n".format(
-                str(out.return_code)))
+            f.write("===== RETURN CODE =====: {0}\n".format(out.return_code))
             f.write("===== STDOUT =====:\n")
-            f.write(str(out.stdout))
+            if out.stdout:
+                f.write(out.stdout)
             f.write("\n===== STDERR =====:\n")
-            f.write(str(out.stderr))
+            if out.stderr:
+                f.write(out.stderr)

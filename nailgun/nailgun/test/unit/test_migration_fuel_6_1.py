@@ -106,6 +106,7 @@ def prepare():
             'status': 'new',
             'net_provider': 'neutron',
             'grouping': 'roles',
+            'view_mode': 'standard',
             'fuel_version': '6.0',
         }])
     clusterid = result.inserted_primary_key[0]

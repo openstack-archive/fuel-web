@@ -34,6 +34,7 @@ from nailgun.utils.migration import drop_enum
 ENUMS = (
     'bond_mode',
     'cluster_grouping',
+    'cluster_view_modes',
     'cluster_mode',
     'cluster_net_manager',
     'cluster_status',
@@ -109,6 +110,9 @@ def upgrade():
                         nullable=False),
                     sa.Column('grouping', sa.Enum(
                         'roles', 'hardware', 'both', name='cluster_grouping'),
+                        nullable=False),
+                    sa.Column('view_mode', sa.Enum(
+                        'standard', 'compact', name='cluster_view_modes'),
                         nullable=False),
                     sa.Column('name', sa.Unicode(length=50), nullable=False),
                     sa.Column('release_id', sa.Integer(), nullable=False),

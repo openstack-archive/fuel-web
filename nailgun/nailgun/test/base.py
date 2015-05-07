@@ -997,6 +997,24 @@ class BaseIntegrationTest(BaseTestCase):
     def setUpClass(cls):
         super(BaseIntegrationTest, cls).setUpClass()
         nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
+        cls._set_up_check_repo_patcher()
+
+    @classmethod
+    def _set_up_check_repo_patcher(cls):
+        resp_mock = mock.Mock()
+        resp_mock.status_code = 200
+        resp_mock.url = ''
+        responses_mock = mock.Mock(return_value=[resp_mock])
+        cls.patcher = mock.patch(
+            'nailgun.task.task.CheckRepositoryConnectionTask._get_responses',
+            new=responses_mock
+        )
+        cls.patcher.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(BaseIntegrationTest, cls).tearDownClass()
+        cls.patcher.stop()
 
     def _wait_for_threads(self):
         # wait for fake task thread termination
@@ -1023,6 +1041,7 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
             ConnectionMonitorMiddleware, NailgunFakeKeystoneAuthMiddleware))
         syncdb()
         nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
+        cls._set_up_check_repo_patcher()
 
 
 class BaseUnitTest(TestCase):

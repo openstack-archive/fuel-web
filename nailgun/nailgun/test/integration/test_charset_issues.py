@@ -42,10 +42,11 @@ class TestCharsetIssues(BaseIntegrationTest):
         self.assertEqual(supertask.name, 'deploy')
         self.assertIn(supertask.status, ('running', 'ready'))
         # we have three subtasks here
+        # repo connectivity check
         # deletion
         # provision
         # deployment
-        self.assertEqual(len(supertask.subtasks), 3)
+        self.assertEqual(len(supertask.subtasks), 4)
 
         self.env.wait_for_nodes_status(self.env.nodes, 'provisioning')
         self.env.wait_ready(supertask, 60)

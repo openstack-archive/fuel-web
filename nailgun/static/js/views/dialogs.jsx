@@ -217,8 +217,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/changes', type: 'PUT'})
-                .always(this.close)
-                .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
+                .done(function() {
+                    this.close();
+                    dispatcher.trigger('deploymentTaskStarted');
+                }.bind(this))
                 .fail(this.showError);
         },
         renderChangedNodesAmount: function(nodes, dictKey) {
@@ -408,8 +410,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.setState({actionInProgress: true});
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/stop_deployment', type: 'PUT'})
-                .always(this.close)
-                .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
+                .done(function() {
+                    this.close();
+                    dispatcher.trigger('deploymentTaskStarted');
+                }.bind(this))
                 .fail(_.bind(function(response) {
                     this.showError(response, i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
                 }, this));
@@ -441,11 +445,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         removeCluster: function() {
             this.setState({actionInProgress: true});
             this.props.cluster.destroy({wait: true})
-                .always(this.close)
                 .done(function() {
+                    this.close();
                     dispatcher.trigger('updateNodeStats updateNotifications');
                     app.navigate('#clusters', {trigger: true});
-                })
+                }.bind(this))
                 .fail(this.showError);
         },
         showConfirmationForm: function() {
@@ -504,8 +508,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             dispatcher.trigger('deploymentTasksUpdated');
             var task = new models.Task();
             task.save({}, {url: _.result(this.props.cluster, 'url') + '/reset', type: 'PUT'})
-                .always(this.close)
-                .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'))
+                .done(function() {
+                    this.close();
+                    dispatcher.trigger('deploymentTaskStarted');
+                }.bind(this))
                 .fail(this.showError);
         },
         renderBody: function() {
@@ -531,13 +537,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             this.setState({actionInProgress: true});
             var cluster = this.props.cluster;
             cluster.save({pending_release_id: this.props.pendingReleaseId || cluster.get('release_id')}, {patch: true, wait: true})
-                .always(this.close)
                 .fail(this.showError)
-                .done(_.bind(function() {
+                .done(function() {
+                    this.close();
                     dispatcher.trigger('deploymentTasksUpdated');
                     (new models.Task()).save({}, {url: _.result(cluster, 'url') + '/update', type: 'PUT'})
                         .done(_.bind(dispatcher.trigger, dispatcher, 'deploymentTaskStarted'));
-                }, this));
+                }.bind(this));
         },
         renderBody: function() {
             var action = this.props.action;

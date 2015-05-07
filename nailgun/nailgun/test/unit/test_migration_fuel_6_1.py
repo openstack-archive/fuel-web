@@ -105,7 +105,10 @@ def prepare():
             'mode': 'ha_compact',
             'status': 'new',
             'net_provider': 'neutron',
-            'grouping': 'roles',
+            'ui_settings': {
+                'view_mode': 'standard',
+                'grouping': 'roles'
+            },
             'fuel_version': '6.0',
         }])
     clusterid = result.inserted_primary_key[0]

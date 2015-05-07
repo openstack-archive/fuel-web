@@ -44,13 +44,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         getInitialState: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
+                uiSettings = cluster.get('ui_settings'),
                 roles = cluster.get('release').get('roles'),
                 selectedRoles = this.props.nodes.length ? _.filter(roles, function(role) {
                     return !this.props.nodes.any(function(node) {return !node.hasRole(role);});
                 }, this) : [];
             return {
                 filter: '',
-                grouping: this.props.mode == 'add' ? 'hardware' : cluster.get('grouping'),
+                grouping: this.props.mode == 'add' ? 'hardware' : uiSettings.grouping,
+                viewMode: uiSettings.view_mode,
                 selectedNodeIds: this.props.nodes.reduce(function(result, node) {
                     result[node.id] = this.props.mode == 'edit';
                     return result;
@@ -145,7 +147,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         changeGrouping: function(name, value) {
             this.setState({grouping: value});
-            this.props.cluster.save({grouping: value}, {patch: true, wait: true});
+            this.changeUISettings('grouping', value);
+        },
+        changeViewMode: function(e) {
+            var newMode = $(e.currentTarget).find('input:checked').val();
+            this.setState({viewMode: newMode});
+            this.changeUISettings('view_mode', newMode);
+        },
+        changeUISettings: function(name, value) {
+            var uiSettings = this.props.cluster.get('ui_settings');
+            uiSettings[name] = value;
+            this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true});
         },
         revertChanges: function() {
             this.props.nodes.each(function(node) {
@@ -181,6 +193,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         cluster={cluster}
                         grouping={this.state.grouping}
                         changeGrouping={this.changeGrouping}
+                        viewMode={this.state.viewMode}
+                        changeViewMode={this.changeViewMode}
                         filter={this.state.filter}
                         filtering={this.state.filtering}
                         changeFilter={this.changeFilter}
@@ -202,7 +216,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         nodes={nodes.filter(function(node) {
                             return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.state.filter.toLowerCase());
                         }, this)}
-                        {... _.pick(this.state, 'grouping', 'selectedNodeIds', 'selectedRoles')}
+                        {... _.pick(this.state, 'grouping', 'viewMode', 'selectedNodeIds', 'selectedRoles')}
                         {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
                         locked={locked}
                         selectNodes={this.selectNodes}
@@ -279,9 +293,34 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     return roleConflict || !_.isEqual(sampleNode.resource('disks'), node.resource('disks'));
                 }),
                 interfaceConflict = _.uniq(this.props.nodes.map(function(node) {return node.resource('interfaces');})).length > 1;
+
             return (
                 <div className='row'>
                     <div className='sticker node-management-panel'>
+                        <div className='col-xs-1 view-mode-switcher'>
+                            <div className='label-wrapper'>&nbsp;</div>
+                            <div className='btn-group' data-toggle='buttons'>
+                                {_.map(['standard', 'compact'], function(mode) {
+                                    return (
+                                        <label
+                                            key={mode + '-view'}
+                                            className={utils.classNames({
+                                                'btn btn-default': true,
+                                                active: mode == this.props.viewMode
+                                            })}
+                                            onClick={this.props.changeViewMode}
+                                        >
+                                            <input type='radio' name='view_mode' value={mode} />
+                                            <i className={utils.classNames({
+                                                glyphicon: true,
+                                                'glyphicon-th-list': mode == 'standard',
+                                                'glyphicon-th': mode == 'compact'
+                                            })} />
+                                        </label>
+                                    );
+                                }, this)}
+                            </div>
+                        </div>
                         <div className='col-xs-2'>
                             <div className='filter-group'>
                                 <controls.Input
@@ -316,7 +355,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 }
                             </div>
                         </div>
-                        <div className='col-xs-8'>
+                        <div className='col-xs-7'>
                             <div className='control-buttons-box pull-right'>
                                 <div className='label-wrapper'>&nbsp;</div>
                                 {this.props.mode != 'list' ?
@@ -466,7 +505,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     name={name}
                                     label={role.get('label')}
                                     description={role.get('description')}
-                                    сhecked={_.contains(this.props.selectedRoles, name)}
+                                    checked={_.contains(this.props.selectedRoles, name)}
                                     disabled={!this.props.nodes.length || processedRestrictions.result}
                                     tooltipText={!!this.props.nodes.length && processedRestrictions.message}
                                     onChange={this.props.selectRoles}
@@ -579,15 +618,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             {this.renderSelectAllCheckbox()}
                         </div>
                     </div>
-                    <div>
+                    <div className='row'>
                         {this.props.nodes.map(function(node) {
                             return <Node
                                 key={node.id}
                                 node={node}
                                 checked={this.props.mode == 'edit' || this.props.selectedNodeIds[node.id]}
+                                viewMode={this.props.viewMode}
                                 cluster={this.props.cluster}
                                 locked={this.props.mode == 'edit' || this.props.locked || _.contains(nodesWithRestrictionsIds, node.id)}
-                                onNodeSelection={_.bind(this.props.selectNodes, this.props, [node.id])}
+                                onNodeSelection={this.props.mode != 'edit' && _.bind(this.props.selectNodes, this.props, [node.id])}
                             />;
                         }, this)}
                     </div>
@@ -601,7 +641,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return {
                 renaming: false,
                 actionInProgress: false,
-                eventNamespace: 'click.editnodename' + this.props.node.id
+                eventNamespace: 'click.editnodename' + this.props.node.id,
+                extendedView: false
             };
         },
         componentWillUnmount: function() {
@@ -723,18 +764,36 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
         },
+        showCompactNodePopover: function() {
+            this.timer = setTimeout(function() {
+                this.setState({extendedView: !this.state.extendedView});
+            }.bind(this), 500);
+        },
+        clearNodeExtendedViewTimeout: function() {
+            if (this.timer) clearTimeout(this.timer);
+            //if (this.state.extendedView) this.setState({
+            //    extendedView: false,
+            //    renaming: false
+            //});
+        },
+        onNodeSelection: function(name, value) {
+            if (this.timer) clearTimeout(this.timer);
+            this.props.onNodeSelection(name, value);
+        },
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
                 node = this.props.node,
+                isSelectable = node.isSelectable(),
                 deployedRoles = node.get('roles'),
-                rolesToDisplay = deployedRoles.length ? deployedRoles : node.get('pending_roles'),
-                nodeProgess = _.max([node.get('progress'), 3]),
-                status = this.calculateNodeViewStatus();
+                nodeProgress = _.max([node.get('progress'), 3]),
+                status = this.calculateNodeViewStatus(),
+                roles = this.sortRoles(deployedRoles.length ? deployedRoles : node.get('pending_roles'));
 
             // compose classes
             var nodePanelClasses = {
                 node: true,
-                selected: this.props.checked
+                selected: this.props.checked,
+                'col-xs-12': this.props.viewMode != 'compact'
             };
             nodePanelClasses[status] = status;
 
@@ -747,7 +806,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var roleClasses = {'text-success': !deployedRoles.length};
 
             var statusClasses = {
-                    'node-status font-semibold text-center': true
+                    'node-status': true
                 },
                 statusClass = {
                     pending_addition: 'text-success',
@@ -759,6 +818,142 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     provisioned: 'text-info'
                 }[status];
             statusClasses[statusClass] = true;
+
+            if (this.props.viewMode == 'compact') return (
+                <div className='compact-node'>
+                    <div className={utils.classNames(nodePanelClasses)}>
+                        <label className='node-box' onClick={isSelectable && this.onNodeSelection.bind(this, null, !this.props.checked)}>
+                            <div className='node-box-inner clearfix'>
+                                <div className='node-buttons'>
+                                    {this.props.checked && <i className='glyphicon glyphicon-ok' />}
+                                </div>
+                                <div className='node-name'>
+                                    <p>{node.get('name') || node.get('mac')}</p>
+                                </div>
+                                <div className={utils.classNames(statusClasses)}>
+                                    {_.contains(['provisioning', 'deploying'], status) ?
+                                        <div className='progress'>
+                                            <div
+                                                className='progress-bar'
+                                                role='progressbar'
+                                                style={{width: nodeProgress + '%'}}
+                                            />
+                                        </div>
+                                    :
+                                        <div>
+                                            <span>{i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div
+                                className='node-hardware'
+                                onMouseEnter={this.showCompactNodePopover}
+                                onMouseLeave={!this.state.extendedView && this.clearNodeExtendedViewTimeout}
+                            >
+                                <span>{node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})</span>/
+                                <span>{node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}</span>/
+                                <span>{node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}</span>
+                            </div>
+                        </label>
+                    </div>
+                    {this.state.extendedView &&
+                        <div className='node-popover' onMouseLeave={this.clearNodeExtendedViewTimeout}>
+                            <div className='node-name clearfix'>
+                                <controls.Input
+                                    type='checkbox'
+                                    name={node.id}
+                                    checked={this.props.checked}
+                                    disabled={!isSelectable}
+                                    onChange={this.props.onNodeSelection}
+                                    wrapperClassName='pull-left'
+                                />
+                                <div className='name pull-left'>
+                                    {this.state.renaming ?
+                                        <controls.Input
+                                            ref='name'
+                                            type='text'
+                                            defaultValue={node.get('name')}
+                                            inputClassName='form-control node-name-input'
+                                            disabled={this.state.actionInProgress}
+                                            onKeyDown={this.onNodeNameInputKeydown}
+                                            autoFocus
+                                        />
+                                    :
+                                        <p title={i18n(ns + 'edit_name')} onClick={this.startNodeRenaming}>
+                                            {node.get('name') || node.get('mac')}
+                                        </p>
+                                    }
+                                </div>
+                            </div>
+                            <div className='node-stats'>
+                                {!!roles.length &&
+                                    <div className='role-list'>
+                                        <i className='glyphicon glyphicon-pushpin' />
+                                        <ul className='clearfix'>
+                                            {_.map(roles, function(role) {
+                                                return <li key={node.id + role} className={utils.classNames(roleClasses)}>{role}</li>;
+                                            })}
+                                        </ul>
+                                    </div>
+                                }
+                                <div className={utils.classNames(statusClasses)}>
+                                    <i className='glyphicon glyphicon-time' />
+                                    {_.contains(['provisioning', 'deploying'], status) ?
+                                        <div>
+                                            <span>
+                                                {i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
+                                            </span>
+                                            <a className='btn' href={this.getNodeLogsLink()}>
+                                                {i18n(ns + 'view_logs')}
+                                            </a>
+                                            <div className='progress'>
+                                                <div className='progress-bar' role='progressbar' style={{width: nodeProgress + '%'}}>
+                                                    {nodeProgress + '%'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    :
+                                        <div>
+                                            <span>
+                                                {i18n(ns + 'status.' + status, {os: this.props.cluster.get('release').get('operating_system') || 'OS'})}
+                                            </span>
+                                            {status == 'offline' &&
+                                                <button onClick={this.removeNode} className='btn node-remove-button'>
+                                                    {i18n(ns + 'remove')}
+                                                </button>
+                                            }
+                                            {!!node.get('cluster') &&
+                                                (node.hasChanges() ?
+                                                    <button className='btn' onClick={this.discardNodeChanges}>
+                                                        {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
+                                                    </button>
+                                                :
+                                                    <a className='btn' href={this.getNodeLogsLink()}>
+                                                        {i18n(ns + 'view_logs')}
+                                                    </a>
+                                                )
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div className='hardware-info clearfix'>
+                                <div className={utils.classNames(logoClasses)} />
+                                <div className='node-hardware'>
+                                    <span>{i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})</span>
+                                    <span>{i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}</span>
+                                    <span>{i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}</span>
+                                </div>
+                            </div>
+                            <div className='node-popover-buttons'>
+                                <button className='btn btn-default' onClick={this.showNodeDetails}>Details</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            );
+
             return (
                 <div className={utils.classNames(nodePanelClasses)}>
                     <label className='node-box'>
@@ -766,7 +961,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             type='checkbox'
                             name={node.id}
                             checked={this.props.checked}
-                            disabled={!node.isSelectable() || this.state.actionInProgress}
+                            disabled={!isSelectable}
                             onChange={this.props.onNodeSelection}
                             wrapperClassName='check-box'
                         />
@@ -790,9 +985,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 }
                             </div>
                             <div className='role-list font-semibold'>
-                                {!!rolesToDisplay.length &&
+                                {!!roles.length &&
                                     <ul>
-                                        {_.map(this.sortRoles(rolesToDisplay), function(role) {
+                                        {_.map(roles, function(role) {
                                             return <li key={node.id + role} className={utils.classNames(roleClasses)}>{role}</li>;
                                         })}
                                     </ul>
@@ -820,9 +1015,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     <div
                                         className='progress-bar'
                                         role='progressbar'
-                                        style={{width: nodeProgess + '%'}}
+                                        style={{width: nodeProgress + '%'}}
                                     >
-                                        {nodeProgess + '%'}
+                                        {nodeProgress + '%'}
                                     </div>
                                 </div>
                             :

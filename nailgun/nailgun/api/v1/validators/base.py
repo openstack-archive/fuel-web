@@ -19,6 +19,7 @@ from jsonschema.exceptions import ValidationError
 from oslo.serialization import jsonutils
 
 from nailgun.errors import errors
+from nailgun import objects
 
 
 class BasicValidator(object):
@@ -90,6 +91,21 @@ class BasicValidator(object):
             # jsonschema has no base class for exceptions, so we don't know
             # about internal attributes with error description.
             raise errors.InvalidData(str(exc))
+
+    @classmethod
+    def validate_release(cls, data=None, cluster=None):
+        """Validate if deployment tasks are present in db
+
+        :param cluster: Cluster instance
+        :raises NoDeploymentTasks:
+        """
+        if (cluster and objects.Release.is_granular_enabled(cluster.release)
+                and not objects.Cluster.get_deployment_tasks(cluster)):
+            raise errors.NoDeploymentTasks(
+                "Deployment tasks not found for '{0}' release in the "
+                "database. Please upload them. If you're operating "
+                "from Fuel Master node, please check '/etc/puppet' "
+                "directory.".format(cluster.release.name))
 
 
 class BaseDefferedTaskValidator(BasicValidator):

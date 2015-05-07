@@ -15,7 +15,6 @@
 #    under the License.
 
 from copy import deepcopy
-from distutils.version import StrictVersion
 
 import netaddr
 import requests
@@ -125,10 +124,9 @@ class DeploymentTask(object):
         :param cluster: Cluster db object
         :returns: string - deploy/granular_deploy
         """
-        if (StrictVersion(cluster.release.fuel_version) <
-                StrictVersion(consts.FUEL_GRANULAR_DEPLOY)):
-            return 'deploy'
-        return 'granular_deploy'
+        if objects.Release.is_granular_enabled(cluster.release):
+            return 'granular_deploy'
+        return 'deploy'
 
     @classmethod
     def message(cls, task, nodes, deployment_tasks=None):

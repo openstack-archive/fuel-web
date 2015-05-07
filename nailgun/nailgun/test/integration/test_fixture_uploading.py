@@ -15,10 +15,11 @@
 #    under the License.
 
 import cStringIO
+import os
 from oslo.serialization import jsonutils
 import yaml
 
-from nailgun.db.sqlalchemy.fixman import upload_fixture
+from nailgun.db.sqlalchemy import fixman
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.test.base import BaseIntegrationTest
@@ -32,6 +33,17 @@ class TestFixture(BaseIntegrationTest):
         check = self.db.query(Node).all()
         self.assertEqual(len(list(check)), 8)
 
+    def test_load_fake_deployment_tasks(self):
+        fxtr_path = os.path.join(fixman.get_base_fixtures_path(),
+                                 'deployment_tasks.yaml')
+        with open(fxtr_path) as f:
+            deployment_tasks = yaml.load(f)
+
+        fixman.load_fake_deployment_tasks()
+
+        for rel in self.db.query(Release).all():
+            self.assertEqual(rel.deployment_tasks, deployment_tasks)
+
     def test_json_fixture(self):
         data = '''[{
             "pk": 2,
@@ -44,7 +56,7 @@ class TestFixture(BaseIntegrationTest):
             }
         }]'''
 
-        upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
+        fixman.upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
         check = self.db.query(Release).filter(
             Release.name == u"JSONFixtureRelease"
         )
@@ -66,7 +78,7 @@ class TestFixture(BaseIntegrationTest):
     operating_system: CentOS
 '''
 
-        upload_fixture(cStringIO.StringIO(data), loader=yaml)
+        fixman.upload_fixture(cStringIO.StringIO(data), loader=yaml)
         check = self.db.query(Release).filter(
             Release.name == u"YAMLFixtureRelease"
         )
@@ -88,7 +100,7 @@ class TestFixture(BaseIntegrationTest):
                 "roles": ["controller", "compute", "cinder", "ceph-osd"]
             }
         }]'''
-        upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
+        fixman.upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
         rel = self.db.query(Release).filter(
             Release.name == u"CustomFixtureRelease1"
         ).all()
@@ -107,7 +119,7 @@ class TestFixture(BaseIntegrationTest):
                 "roles": ["compute", "ceph-osd", "controller", "cinder"]
             }
         }]'''
-        upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
+        fixman.upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
         rel = self.db.query(Release).filter(
             Release.name == u"CustomFixtureRelease2"
         ).all()
@@ -126,7 +138,7 @@ class TestFixture(BaseIntegrationTest):
                 "roles": ["compute", "cinder", "controller", "cinder"]
             }
         }]'''
-        upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
+        fixman.upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
         rel = self.db.query(Release).filter(
             Release.name == u"CustomFixtureRelease3"
         ).all()

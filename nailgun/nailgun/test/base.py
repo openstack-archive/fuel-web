@@ -436,19 +436,19 @@ class EnvironmentManager(object):
 
     def _add_interfaces_to_node(self, node_id, count=1):
         interfaces = []
-        node = self.db.query(Node).get(node_id)
+        node = self.db.query(Node.model).get(node_id)
         networks_to_assign = \
             list(node.cluster.network_groups) if node.cluster else []
 
         for i in xrange(count):
-            interface = NodeNICInterface({
-                'node_id': node_id,
-                'name': 'eth{0}'.format(i),
-                'mac': self.generate_random_mac(),
-                'current_speed': 100,
-                'max_speed': 1000,
-                'assigned_networks': networks_to_assign
-            })
+            interface = NodeNICInterface(
+                node_id=node_id,
+                name='eth{0}'.format(i),
+                mac=self.generate_random_mac(),
+                current_speed=100,
+                max_speed=1000,
+                assigned_networks=networks_to_assign
+            )
             self.db.add(interface)
             self.db.commit()
 

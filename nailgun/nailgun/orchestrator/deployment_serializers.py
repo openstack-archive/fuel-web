@@ -301,7 +301,7 @@ class NetworkDeploymentSerializer(object):
         return bond
 
     @classmethod
-    def add_patch(cls, bridges, provider=None):
+    def add_patch(cls, bridges, provider=None, mtu=None):
         """Add patch to schema
         Patch connects two bridges listed in 'bridges'.
         OVS bridge must go first in 'bridges'.
@@ -313,6 +313,8 @@ class NetworkDeploymentSerializer(object):
         }
         if provider:
             patch['provider'] = provider
+        if mtu:
+            patch['mtu'] = mtu
         return patch
 
 
@@ -1162,15 +1164,16 @@ class NeutronNetworkDeploymentSerializer61(
         if node.cluster.network_config.segmentation_type == 'vlan':
             transformations.append(
                 cls.add_bridge('br-prv', provider='ovs'))
-            if prv_base_ep:
-                transformations.append(cls.add_patch(
-                    bridges=['br-prv', prv_base_ep],
-                    provider='ovs'))
-            else:
-                transformations.append(cls.add_bridge('br-aux'))
-                transformations.append(cls.add_patch(
-                    bridges=['br-prv', 'br-aux'],
-                    provider='ovs'))
+
+            if not prv_base_ep:
+                prv_base_ep = 'br-aux'
+                transformations.append(cls.add_bridge(prv_base_ep))
+
+            transformations.append(cls.add_patch(
+                bridges=['br-prv', prv_base_ep],
+                provider='ovs',
+                mtu=65000))
+
         elif node.cluster.network_config.segmentation_type == 'gre':
             transformations.append(
                 cls.add_bridge('br-mesh'))

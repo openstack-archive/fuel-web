@@ -733,12 +733,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             gw = nm.get_default_gateway(node.id)
             self.assertEqual(ep['br-fw-admin']['gateway'], gw)
 
-    def test_vlan_schema(self):
-        cluster = self.create_env(segment_type='vlan')
-        self.add_nics_properties(cluster)
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+    def check_vlan_schema(self, facts, transformations):
         for node in facts:
             node_db = objects.Node.get_by_uid(node['uid'])
             is_public = objects.Node.should_have_public(node_db)
@@ -776,47 +771,126 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 scheme['roles'],
                 role_dict
             )
-            transformations = [
-                {'action': 'add-br',
-                 'name': 'br-fw-admin'},
-                {'action': 'add-br',
-                 'name': 'br-mgmt'},
-                {'action': 'add-br',
-                 'name': 'br-storage'},
-                {'action': 'add-br',
-                 'name': 'br-ex'},
-                {'action': 'add-br',
-                 'name': 'br-floating',
-                 'provider': 'ovs'},
-                {'action': 'add-patch',
-                 'bridges': ['br-floating', 'br-ex'],
-                 'provider': 'ovs'},
-                {'action': 'add-br',
-                 'name': 'br-prv',
-                 'provider': 'ovs'},
-                {'action': 'add-patch',
-                 'bridges': ['br-prv', 'br-fw-admin'],
-                 'provider': 'ovs'},
-                {'action': 'add-port',
-                 'bridge': 'br-fw-admin',
-                 'name': 'eth0'},
-                {'action': 'add-port',
-                 'bridge': 'br-storage',
-                 'name': 'eth0.102'},
-                {'action': 'add-port',
-                 'bridge': 'br-mgmt',
-                 'name': 'eth0.101'},
-                {'action': 'add-port',
-                 'bridge': 'br-ex',
-                 'name': 'eth1'}
-            ]
+
+            transformations_ = transformations
             if not is_public:
                 # exclude all 'br-ex' and 'br-floating' objects
-                transformations = transformations[:3] + transformations[6:11]
+                transformations_ = [
+                    t for t in transformations if all([
+                        t.get('name') not in ('br-ex', 'br-floating'),
+                        t.get('bridge') not in ('br-ex', 'br-floating'),
+                        'br-ex' not in t.get('bridges', []),
+                        'br-floating' not in t.get('bridges', []),
+                    ])]
+
             self.assertEqual(
                 scheme['transformations'],
-                transformations
+                transformations_
             )
+
+    def test_vlan_schema(self):
+        cluster = self.create_env(segment_type='vlan')
+        self.add_nics_properties(cluster)
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+
+        self.check_vlan_schema(facts, [
+            {'action': 'add-br',
+             'name': 'br-fw-admin'},
+            {'action': 'add-br',
+             'name': 'br-mgmt'},
+            {'action': 'add-br',
+             'name': 'br-storage'},
+            {'action': 'add-br',
+             'name': 'br-ex'},
+            {'action': 'add-br',
+             'name': 'br-floating',
+             'provider': 'ovs'},
+            {'action': 'add-patch',
+             'bridges': ['br-floating', 'br-ex'],
+             'provider': 'ovs'},
+            {'action': 'add-br',
+             'name': 'br-prv',
+             'provider': 'ovs'},
+            {'action': 'add-patch',
+             'mtu': 65000,
+             'bridges': ['br-prv', 'br-fw-admin'],
+             'provider': 'ovs'},
+            {'action': 'add-port',
+             'bridge': 'br-fw-admin',
+             'name': 'eth0'},
+            {'action': 'add-port',
+             'bridge': 'br-storage',
+             'name': 'eth0.102'},
+            {'action': 'add-port',
+             'bridge': 'br-mgmt',
+             'name': 'eth0.101'},
+            {'action': 'add-port',
+             'bridge': 'br-ex',
+             'name': 'eth1'},
+        ])
+
+    def test_vlan_schema_with_br_aux(self):
+        cluster = self.create_env(segment_type='vlan')
+        self.add_nics_properties(cluster)
+
+        # move all networks to first interface and assign private network
+        # to second one
+        for node in cluster.nodes:
+            interfaces = node.interfaces
+            interfaces[0].assigned_networks_list.extend(
+                interfaces[1].assigned_networks_list)
+            private_net = next((
+                net for net in interfaces[0].assigned_networks_list
+                if net.name == 'private'))
+            interfaces[0].assigned_networks_list.remove(private_net)
+            interfaces[1].assigned_networks_list = [private_net]
+        self.db.flush()
+
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+        self.check_vlan_schema(facts, [
+            {'action': 'add-br',
+             'name': 'br-fw-admin'},
+            {'action': 'add-br',
+             'name': 'br-mgmt'},
+            {'action': 'add-br',
+             'name': 'br-storage'},
+            {'action': 'add-br',
+             'name': 'br-ex'},
+            {'action': 'add-br',
+             'name': 'br-floating',
+             'provider': 'ovs'},
+            {'action': 'add-patch',
+             'bridges': ['br-floating', 'br-ex'],
+             'provider': 'ovs'},
+            {'action': 'add-br',
+             'name': 'br-prv',
+             'provider': 'ovs'},
+            {'action': 'add-br',
+             'name': 'br-aux'},
+            {'action': 'add-patch',
+             'mtu': 65000,
+             'bridges': ['br-prv', 'br-aux'],
+             'provider': 'ovs'},
+            {'action': 'add-port',
+             'bridge': 'br-fw-admin',
+             'name': 'eth0'},
+            {'action': 'add-port',
+             'bridge': 'br-ex',
+             'name': 'eth0'},
+            {'action': 'add-port',
+             'bridge': 'br-storage',
+             'name': 'eth0.102'},
+            {'action': 'add-port',
+             'bridge': 'br-mgmt',
+             'name': 'eth0.101'},
+            {'action': 'add-port',
+             'bridge': 'br-aux',
+             'name': 'eth1'},
+        ])
 
     def test_vlan_with_bond(self):
         cluster = self.create_env(segment_type='vlan', ctrl_count=3,
@@ -856,6 +930,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                  'name': 'br-prv',
                  'provider': 'ovs'},
                 {'action': 'add-patch',
+                 'mtu': 65000,
                  'bridges': ['br-prv', 'br-fw-admin'],
                  'provider': 'ovs'},
                 {'action': 'add-port',

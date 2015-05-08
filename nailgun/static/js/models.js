@@ -213,6 +213,17 @@ define([
         }
     };
 
+    models.Plugin = BaseModel.extend({
+        constructorName: 'Plugin',
+        urlRoot: '/api/plugins'
+    });
+
+    models.Plugins = BaseCollection.extend({
+        constructorName: 'Plugins',
+        model: models.Plugin,
+        url: '/api/plugins'
+    });
+
     models.Role = BaseModel.extend(restrictionMixin).extend({
         constructorName: 'Role'
     });

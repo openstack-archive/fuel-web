@@ -32,6 +32,7 @@ define(
     'jsx!views/cluster_page',
     'jsx!views/clusters_page',
     'jsx!views/releases_page',
+    'jsx!views/plugins_page',
     'jsx!views/notifications_page',
     'jsx!views/support_page',
     'jsx!views/capacity_page',
@@ -44,7 +45,7 @@ define(
     'backbone-lodash-monkeypatch'
 
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -55,6 +56,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             clusters: 'listClusters',
             'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
             releases: 'listReleases',
+            plugins: 'listPlugins',
             notifications: 'showNotifications',
             support: 'showSupportPage',
             capacity: 'showCapacityPage',
@@ -224,6 +226,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         },
         listReleases: function() {
             this.loadPage(ReleasesPage);
+        },
+        listPlugins: function() {
+            this.loadPage(PluginsPage);
         },
         showNotifications: function() {
             this.loadPage(NotificationsPage);

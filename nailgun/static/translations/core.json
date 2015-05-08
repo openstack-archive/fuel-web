@@ -234,6 +234,18 @@
                     "not_available": "Not available"
                 }
             },
+            "plugins_page": {
+                "title": "Plugins",
+                "name": "Name",
+                "version": "Version",
+                "type": "Type",
+                "provider": "Provider",
+                "certified": "Certified",
+                "actions": "Actions",
+                "no_plugins": "There are no plugins installed.",
+                "install_plugin": "Install Plugin",
+                "remove_plugin": "Remove"
+            },
             "clusters_page": {
                 "title": "My OpenStack Environments",
                 "create_cluster_text": "New OpenStack Environment",

@@ -156,7 +156,8 @@ class UploadMOSRepo(GenericRolesHook):
     identity = 'upload_core_repos'
 
     def get_uids(self):
-        return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
+        q_nodes = objects.Cluster.get_nodes_not_for_deletion(self.cluster)
+        return get_uids_for_roles(q_nodes, consts.ALL_ROLES)
 
     def serialize(self):
         uids = self.get_uids()
@@ -200,7 +201,8 @@ class RsyncPuppet(GenericRolesHook):
     identity = 'rsync_core_puppet'
 
     def get_uids(self):
-        return get_uids_for_roles(self.nodes, consts.ALL_ROLES)
+        q_nodes = objects.Cluster.get_nodes_not_for_deletion(self.cluster)
+        return get_uids_for_roles(q_nodes, consts.ALL_ROLES)
 
     def serialize(self):
         src_path = self.task['parameters']['src'].format(
@@ -225,6 +227,10 @@ class GenerateKeys(GenericRolesHook):
 class CopyKeys(GenericRolesHook):
 
     identity = 'copy_keys'
+
+    def get_uids(self):
+        q_nodes = objects.Cluster.get_nodes_not_for_deletion(self.cluster)
+        return get_uids_for_roles(q_nodes, consts.ALL_ROLES)
 
     def serialize(self):
         for file_path in self.task['parameters']['files']:

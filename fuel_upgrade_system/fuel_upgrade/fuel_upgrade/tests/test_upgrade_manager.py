@@ -16,6 +16,7 @@
 
 import mock
 
+from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.tests.base import BaseTestCase
 from fuel_upgrade.upgrade import UpgradeManager
 
@@ -121,6 +122,28 @@ class TestUpgradeManager(BaseTestCase):
         upgrader._on_success = mock.Mock()
         upgrader._on_success.side_effect = Exception('error')
         upgrader.run()
+
+    def test_hostsystem_rollback_is_first(self):
+        args = self.default_args()
+
+        hostsystem = HostSystemUpgrader(args['config'])
+        hostsystem.upgrade = mock.Mock()
+        hostsystem.rollback = mock.Mock()
+
+        def check_call():
+            hostsystem.rollback.assert_called_once_with()
+
+        # there's no way to check call order of different mocks, so
+        # let's use this trick - check that all mock calls were
+        # after hostsystem rollback call.
+        args['upgraders'] = [
+            hostsystem,
+            mock.Mock(rollback=mock.Mock(side_effect=check_call)),
+            mock.Mock(rollback=mock.Mock(side_effect=check_call))]
+
+        upgrader = UpgradeManager(**args)
+        upgrader._used_upgraders = args['upgraders']
+        upgrader.rollback()
 
     @mock.patch('fuel_upgrade.upgrade.utils')
     @mock.patch('fuel_upgrade.upgrade.glob.glob',

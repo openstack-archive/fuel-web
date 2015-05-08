@@ -82,11 +82,13 @@ class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
 
 
 class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
+
     def test_create_repo_ubuntu(self):
         task_config = {'id': 'upload_mos_repos',
                        'type': 'upload_file',
                        'role': '*'}
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
+
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
@@ -113,8 +115,25 @@ class TestHooksSerializersUbuntu(BaseTaskSerializationTestUbuntu):
         self.assertEqual(serialized[16]['parameters']['cmd'], 'apt-get update')
         self.assertItemsEqual(serialized[3]['uids'], self.all_uids)
 
+    def test_create_repo_ubuntu_with_pending_node_deletion(self):
+        task_config = {'id': 'upload_mos_repos',
+                       'type': 'upload_file',
+                       'role': '*'}
+        self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
+
+        new_node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'],
+            pending_deletion=True
+        )
+
+        task = tasks_serializer.UploadMOSRepo(
+            task_config, self.cluster, self.nodes + [new_node])
+        serialized = list(task.serialize())
+        self.assertNotIn(new_node.uid, serialized[3]['uids'])
 
 class TestHooksSerializers(BaseTaskSerializationTest):
+
 
     def test_sync_puppet(self):
         task_config = {'id': 'rsync_mos_puppet',
@@ -129,6 +148,23 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         self.assertIn(
             self.cluster.release.version,
             serialized['parameters']['src'])
+
+    def test_sync_puppet_with_node_deletion(self):
+        new_node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'],
+            pending_deletion=True
+        )
+
+        task_config = {'id': 'rsync_mos_puppet',
+                       'type': 'sync',
+                       'role': '*',
+                       'parameters': {'src': '/etc/puppet/{OPENSTACK_VERSION}',
+                                      'dst': '/etc/puppet'}}
+        task = tasks_serializer.RsyncPuppet(
+            task_config, self.cluster, self.nodes + [new_node])
+        serialized = next(task.serialize())
+        self.assertNotIn(new_node.uid, serialized['uids'])
 
     def test_create_repo_centos(self):
         """Verify that repository is created with correct metadata."""
@@ -272,6 +308,30 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             'dst': '/var/lib/astute/nova.key'})
         self.assertItemsEqual(
             files, serialized['parameters']['files'])
+
+    def test_copy_keys_in_case_of_node_deletion(self):
+        new_node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'],
+            pending_deletion=True
+        )
+
+        task_config = {
+            'id': 'copy_keys',
+            'type': 'copy_files',
+            'role': '*',
+            'parameters': {
+                'files': [{
+                    'src': '/var/www/nailgun/keys/{CLUSTER_ID}/nova.key',
+                    'dst': '/var/lib/astute/nova.key'}],
+                'permissions': '0600',
+                'dir_permissions': '0700'}}
+
+        task = tasks_serializer.CopyKeys(
+            task_config, self.cluster, self.nodes + [new_node])
+
+        serialized = next(task.serialize())
+        self.assertNotIn(new_node.uid, serialized['uids'])
 
     def test_generate_keys(self):
         task_config = {

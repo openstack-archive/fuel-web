@@ -214,6 +214,7 @@ define([
                             <div className='statistics-disclaimer-box'>
                                 <p>{i18n(ns + 'statistics_includes_full')}</p>
                                 {_.map(lists, this.renderList)}
+                                <p>{i18n(ns + 'statistics_user_info')}</p>
                             </div>
                         }
                     </div>

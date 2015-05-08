@@ -89,6 +89,7 @@
                 "help_to_improve": "Help us to improve your experience by sending Mirantis information about the settings, features, and deployment actions when you use Mirantis OpenStack.",
                 "help_to_improve_community": "Help us to improve your experience by sending information about the settings, features, and deployment actions when you use Fuel and OpenStack.",
                 "learn_whats_collected": "Learn what's collected",
+                "statistics_user_info": "Note, that if you agree to send statistics, a new user under \"fuel_stats_user\" name will be added to your OpenStack environment. The fuel_stats_user will collect information about OpenStack workloads.",
                 "statistics_includes_full": "Usage statistics include the following. Information such as passwords, ip addresses, and node names are not included.",
                 "actions_title": "Actions:",
                 "actions": {

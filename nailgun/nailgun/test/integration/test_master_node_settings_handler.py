@@ -13,31 +13,17 @@
 #    under the License.
 
 import copy
-import uuid
 
 from oslo.serialization import jsonutils
 
-from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
-
 from nailgun import objects
-
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo
+from nailgun.test.base import BaseMasterNodeSettignsTest
+from nailgun.test.base import reverse
 
 
-class TestMasterNodeSettingsHandler(BaseIntegrationTest):
-
-    def setUp(self):
-        super(BaseIntegrationTest, self).setUp()
-
-        self.master_node_settings = {
-            'master_node_uid': str(uuid.uuid4()),
-        }
-        self.master_node_settings.update(_master_node_settings)
-
-        objects.MasterNodeSettings.create(self.master_node_settings)
-        self.db.commit()
+class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
 
     def test_get_controller(self):
         expected = self.master_node_settings
@@ -85,7 +71,7 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
             reverse("MasterNodeSettingsHandler"),
             headers=self.default_headers
         )
-        self.assertDictEqual(resp.json_body, data)
+        self.assertItemsEqual(resp.json_body, data)
 
     def test_delete(self):
         resp = self.app.delete(
@@ -292,100 +278,3 @@ class TestMasterNodeSettingsHandler(BaseIntegrationTest):
             {'contact_info_provided': False})
         self.assertIsNone(
             InstallationInfo().get_installation_info()['master_node_uid'])
-
-
-_master_node_settings = {
-    "settings": {
-        "statistics": {
-            "send_anonymous_statistic": {
-                "type": "checkbox",
-                "value": True,
-                "label": "statistics.setting_labels."
-                         "send_anonymous_statistic",
-                "weight": 10
-            },
-            "send_user_info": {
-                "type": "checkbox",
-                "value": False,
-                "label": "statistics.setting_labels.send_user_info",
-                "weight": 20,
-                "restrictions": [
-                    "fuel_settings:statistics."
-                    "send_anonymous_statistic.value == false",
-                    {
-                        "condition":
-                        "not ('mirantis' in version:feature_groups)",
-                        "action": "hide"
-                    }
-                ]
-            },
-            "name": {
-                "type": "text",
-                "value": "",
-                "label": "statistics.setting_labels.name",
-                "weight": 30,
-                "regex": {
-                    "source": "\S",
-                    "error": "statistics.errors.name"
-                },
-                "restrictions": [
-                    "fuel_settings:statistics."
-                    "send_anonymous_statistic.value == false",
-                    "fuel_settings:statistics."
-                    "send_user_info.value == false",
-                    {
-                        "condition":
-                        "not ('mirantis' in version:feature_groups)",
-                        "action": "hide"
-                    }
-                ]
-            },
-            "email": {
-                "type": "text",
-                "value": "",
-                "label": "statistics.setting_labels.email",
-                "weight": 40,
-                "regex": {
-                    "source": "\S",
-                    "error": "statistics.errors.email"
-                },
-                "restrictions": [
-                    "fuel_settings:statistics."
-                    "send_anonymous_statistic.value == false",
-                    "fuel_settings:statistics."
-                    "send_user_info.value == false",
-                    {
-                        "condition":
-                        "not ('mirantis' in version:feature_groups)",
-                        "action": "hide"
-                    }
-                ]
-            },
-            "company": {
-                "type": "text",
-                "value": "",
-                "label": "statistics.setting_labels.company",
-                "weight": 50,
-                "regex": {
-                    "source": "\S",
-                    "error": "statistics.errors.company"
-                },
-                "restrictions": [
-                    "fuel_settings:statistics."
-                    "send_anonymous_statistic.value == false",
-                    "fuel_settings:statistics."
-                    "send_user_info.value == false",
-                    {
-                        "condition":
-                        "not ('mirantis' in version:feature_groups)",
-                        "action": "hide"
-                    }
-                ]
-            },
-            "user_choice_saved": {
-                "type": "hidden",
-                "value": False
-            }
-        }
-    }
-}

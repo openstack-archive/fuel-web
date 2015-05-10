@@ -12,11 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import DBSingletonHandler
 from nailgun.api.v1.validators.master_node_settings \
     import MasterNodeSettingsValidator
-
+from nailgun.logger import logger
 from nailgun import objects
+from nailgun.task.manager import CreateStatsUserTaskManager
 
 
 class MasterNodeSettingsHandler(DBSingletonHandler):
@@ -26,3 +28,24 @@ class MasterNodeSettingsHandler(DBSingletonHandler):
     validator = MasterNodeSettingsValidator
 
     not_found_error = "Settings are not found in DB"
+
+    def _handle_stats_opt_in(self):
+        if self.single.must_send_stats():
+            logger.debug("Handling customer opt-in to sending statistics")
+            try:
+                manager = CreateStatsUserTaskManager()
+                manager.execute()
+            except Exception:
+                logger.exception("Creating stats user failed")
+
+    @content
+    def PUT(self):
+        result = super(MasterNodeSettingsHandler, self).PUT()
+        self._handle_stats_opt_in()
+        return result
+
+    @content
+    def PATCH(self):
+        result = super(MasterNodeSettingsHandler, self).PATCH()
+        self._handle_stats_opt_in()
+        return result

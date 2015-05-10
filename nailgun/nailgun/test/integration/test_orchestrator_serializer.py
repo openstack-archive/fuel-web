@@ -2540,13 +2540,13 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
             self.env.clusters[0]
         )['workloads_collector']
         self.assertEqual(set(oswl_user.keys()),
-                         set(['user',
+                         set(['username',
                               'enabled',
                               'password',
                               'metadata',
                               'tenant',
                               'create_user']))
-        self.assertEqual(oswl_user['user'], 'fuel_stats_user')
+        self.assertEqual(oswl_user['username'], 'fuel_stats_user')
         self.assertEqual(oswl_user['enabled'], True)
         self.assertEqual(len(oswl_user['password']), 8)
         self.assertEqual(oswl_user['tenant'], 'services')
@@ -2559,13 +2559,13 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
             self.env.clusters[0]
         )['workloads_collector']
         self.assertEqual(set(oswl_user.keys()),
-                         set(['user',
+                         set(['username',
                               'enabled',
                               'password',
                               'metadata',
                               'tenant',
                               'create_user']))
-        self.assertEqual(oswl_user['user'], 'fuel_stats_user')
+        self.assertEqual(oswl_user['username'], 'fuel_stats_user')
         self.assertEqual(oswl_user['enabled'], True)
         self.assertEqual(len(oswl_user['password']), 8)
         self.assertEqual(oswl_user['tenant'], 'services')

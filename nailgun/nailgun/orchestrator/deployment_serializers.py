@@ -1430,6 +1430,8 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             attrs['workloads_collector'] = {}
         attrs['workloads_collector']['create_user'] = \
             objects.MasterNodeSettings.must_send_stats()
+        username = attrs['workloads_collector'].pop('user', None)
+        attrs['workloads_collector']['username'] = username
 
         for node in attrs['nodes']:
             if node['role'] in 'cinder':

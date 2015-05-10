@@ -13,11 +13,26 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun import objects
 from nailgun.test.base import BaseTestCase
+from nailgun.test.base import fake_tasks
 
 
 class TestCluster(BaseTestCase):
+
+    def check_no_primary_node(self, cluster, roles):
+        self.assertIsInstance(roles, (tuple, list))
+        for role in roles:
+            self.assertIsNone(objects.Cluster.get_primary_node(
+                cluster, role))
+
+    def check_has_primary_node(self, cluster, roles):
+        self.assertIsInstance(roles, (tuple, list))
+        for role in roles:
+            primary_node = objects.Cluster.get_primary_node(
+                cluster, role)
+            self.assertIsNotNone(primary_node)
 
     def test_adjust_nodes_lists_on_controller_removing(self):
         self.env.create(
@@ -77,3 +92,60 @@ class TestCluster(BaseTestCase):
             AttributeError,
             objects.Cluster.adjust_nodes_lists_on_controller_removing,
             cluster, cluster.nodes, [])
+
+    @fake_tasks(override_state={'progress': 100,
+                                'status': consts.TASK_STATUSES.ready})
+    def test_get_primary_node(self):
+        self.env.create(
+            api=True,
+            nodes_kwargs=[
+                {'pending_roles': ['controller'],
+                 'pending_addition': True},
+                {'pending_roles': ['controller'],
+                 'pending_addition': True},
+                {'pending_roles': ['compute'],
+                 'pending_addition': True},
+                {'pending_roles': ['compute'],
+                 'pending_addition': True},
+            ]
+        )
+        cluster = self.env.clusters[0]
+
+        # Checking no primary nodes before deployment
+        self.check_no_primary_node(
+            cluster, ('controller', 'compute', 'fake_role'))
+
+        # Checking primary nodes after deployment
+        deploy = self.env.launch_deployment()
+        self.env.wait_ready(deploy)
+
+        self.check_has_primary_node(cluster, ('controller',))
+        self.check_no_primary_node(cluster, ('compute', 'fake_role'))
+
+    @fake_tasks(override_state={'progress': 100,
+                                'status': consts.TASK_STATUSES.ready})
+    def test_get_primary_node_pending_deletion(self):
+        self.env.create(
+            api=True,
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True}
+            ]
+        )
+        cluster = self.env.clusters[0]
+
+        # Checking primary present
+        deploy = self.env.launch_deployment()
+        self.env.wait_ready(deploy)
+
+        self.check_has_primary_node(cluster, ('controller',))
+        self.check_no_primary_node(cluster, ('compute', 'fake_role'))
+
+        # Checking no primary for pending deleting nodes
+        primary_controller = objects.Cluster.get_primary_node(
+            cluster, 'controller')
+        primary_controller.pending_deletion = True
+        self.env.db().flush()
+
+        self.check_no_primary_node(
+            cluster, ('controller', 'compute', 'fake_role'))

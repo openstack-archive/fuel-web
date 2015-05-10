@@ -1118,3 +1118,35 @@ class GenerateCapacityLogTask(object):
         task.status = 'ready'
         task.progress = '100'
         db().commit()
+
+
+class CreateStatsUserTask(object):
+
+    @classmethod
+    def message(cls, task, primary_controller):
+        rpc_message = make_astute_message(
+            task,
+            'execute_tasks',
+            'create_stats_user_resp',
+            {
+                'tasks': [{
+                    'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+                    'uids': [primary_controller.id],
+                    'parameters': {
+                        'puppet_modules': '/etc/puppet/modules',
+                        'puppet_manifest': '/etc/puppet/modules/osnailyfacter'
+                                           '/modular/keystone'
+                                           '/workloads_collector.pp',
+                        'cwd': '/',
+                    }
+                }]
+            }
+        )
+        return rpc_message
+
+    @classmethod
+    def execute(cls, task, primary_controller):
+        rpc.cast(
+            'naily',
+            cls.message(task, primary_controller)
+        )

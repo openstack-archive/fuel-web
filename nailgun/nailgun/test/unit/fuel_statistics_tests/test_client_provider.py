@@ -186,7 +186,7 @@ class TestOpenStackClientProvider(BaseTestCase):
         updated_attributes = {
             "editable": {
                 "access": {
-                    "user": {"value": default_username},
+                    "username": {"value": default_username},
                     "password": {"value": default_password},
                     "tenant": {"value": default_tenant}
                 }
@@ -198,7 +198,7 @@ class TestOpenStackClientProvider(BaseTestCase):
         updated_attributes = {
             "editable": {
                 "workloads_collector": {
-                    "user": {"value": expected_username},
+                    "username": {"value": expected_username},
                     "password": {"value": expected_password},
                     "tenant": {"value": expected_tenant}
                 }

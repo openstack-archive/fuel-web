@@ -2451,7 +2451,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
             self.env.clusters[0]
         )['workloads_collector']
         self.assertEqual(set(oswl_user.keys()),
-                         set(['user',
+                         set(['username',
                               'enabled',
                               'password',
                               'metadata',

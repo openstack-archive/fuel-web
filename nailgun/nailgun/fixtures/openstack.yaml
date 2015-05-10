@@ -411,7 +411,7 @@
           enabled:
             value: true
             type: "hidden"
-          user:
+          username:
             value: "fuel_stats_user"
             type: "text"
           password:

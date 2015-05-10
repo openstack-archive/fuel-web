@@ -128,7 +128,7 @@ class ClientProvider(object):
                 # foolproof as user might have changed them at this time
                 access_data = cluster_attrs_editable["access"]
 
-            os_user = access_data["user"]["value"]
+            os_user = access_data["username"]["value"]
             os_password = access_data["password"]["value"]
             os_tenant = access_data["tenant"]["value"]
 

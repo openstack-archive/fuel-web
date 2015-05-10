@@ -116,6 +116,47 @@ node_statuses_new = (
 )
 
 
+task_names_old = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'dump',
+    'capacity_log'
+)
+task_names_new = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'dump',
+    'capacity_log',
+    'create_stats_user'
+)
+
+
 def upgrade():
     upgrade_schema()
     upgrade_data()
@@ -301,8 +342,23 @@ def upgrade_schema():
         'plugins',
         sa.Column('homepage', sa.Text(), nullable=True))
 
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_old,             # old options
+        task_names_new              # new options
+    )
+
 
 def downgrade_schema():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_new,             # old options
+        task_names_old              # new options
+    )
     # Add interface properties
     op.drop_column('node_bond_interfaces', 'interface_properties')
     op.drop_column('node_nic_interfaces', 'interface_properties')

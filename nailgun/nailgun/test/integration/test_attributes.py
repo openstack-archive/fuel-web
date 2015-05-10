@@ -369,7 +369,7 @@ class TestAttributes(BaseIntegrationTest):
             True
         )
         self.assertEqual(
-            editable["workloads_collector"]["user"]["value"],
+            editable["workloads_collector"]["username"]["value"],
             "fuel_stats_user"
         )
         self.assertEqual(

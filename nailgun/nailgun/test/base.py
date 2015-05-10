@@ -24,6 +24,7 @@ import mock
 import os
 import re
 import time
+import uuid
 
 from datetime import datetime
 from functools import partial
@@ -57,6 +58,7 @@ from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
 from nailgun.objects import Cluster
+from nailgun.objects import MasterNodeSettings
 from nailgun.objects import Node
 from nailgun.objects import NodeGroup
 from nailgun.objects import Release
@@ -1154,3 +1156,114 @@ class BaseAlembicMigrationTest(TestCase):
     def tearDown(self):
         db.remove()
         super(BaseAlembicMigrationTest, self).tearDown()
+
+
+class BaseMasterNodeSettignsTest(BaseIntegrationTest):
+
+    def setUp(self):
+        super(BaseMasterNodeSettignsTest, self).setUp()
+        self.create_master_node_settings()
+
+    master_node_settings_template = {
+        "settings": {
+            "statistics": {
+                "send_anonymous_statistic": {
+                    "type": "checkbox",
+                    "value": True,
+                    "label": "statistics.setting_labels."
+                             "send_anonymous_statistic",
+                    "weight": 10
+                },
+                "send_user_info": {
+                    "type": "checkbox",
+                    "value": False,
+                    "label": "statistics.setting_labels.send_user_info",
+                    "weight": 20,
+                    "restrictions": [
+                        "fuel_settings:statistics."
+                        "send_anonymous_statistic.value == false",
+                        {
+                            "condition":
+                            "not ('mirantis' in version:feature_groups)",
+                            "action": "hide"
+                        }
+                    ]
+                },
+                "name": {
+                    "type": "text",
+                    "value": "",
+                    "label": "statistics.setting_labels.name",
+                    "weight": 30,
+                    "regex": {
+                        "source": "\S",
+                        "error": "statistics.errors.name"
+                    },
+                    "restrictions": [
+                        "fuel_settings:statistics."
+                        "send_anonymous_statistic.value == false",
+                        "fuel_settings:statistics."
+                        "send_user_info.value == false",
+                        {
+                            "condition":
+                            "not ('mirantis' in version:feature_groups)",
+                            "action": "hide"
+                        }
+                    ]
+                },
+                "email": {
+                    "type": "text",
+                    "value": "",
+                    "label": "statistics.setting_labels.email",
+                    "weight": 40,
+                    "regex": {
+                        "source": "\S",
+                        "error": "statistics.errors.email"
+                    },
+                    "restrictions": [
+                        "fuel_settings:statistics."
+                        "send_anonymous_statistic.value == false",
+                        "fuel_settings:statistics."
+                        "send_user_info.value == false",
+                        {
+                            "condition":
+                            "not ('mirantis' in version:feature_groups)",
+                            "action": "hide"
+                        }
+                    ]
+                },
+                "company": {
+                    "type": "text",
+                    "value": "",
+                    "label": "statistics.setting_labels.company",
+                    "weight": 50,
+                    "regex": {
+                        "source": "\S",
+                        "error": "statistics.errors.company"
+                    },
+                    "restrictions": [
+                        "fuel_settings:statistics."
+                        "send_anonymous_statistic.value == false",
+                        "fuel_settings:statistics."
+                        "send_user_info.value == false",
+                        {
+                            "condition":
+                            "not ('mirantis' in version:feature_groups)",
+                            "action": "hide"
+                        }
+                    ]
+                },
+                "user_choice_saved": {
+                    "type": "hidden",
+                    "value": False
+                }
+            }
+        }
+    }
+
+    def create_master_node_settings(self):
+        self.master_node_settings = {
+            'master_node_uid': str(uuid.uuid4()),
+        }
+        self.master_node_settings.update(self.master_node_settings_template)
+        MasterNodeSettings.create(self.master_node_settings)
+        self.db.commit()

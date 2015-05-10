@@ -49,6 +49,8 @@ tasks_names_actions_groups_mapping = {
 
     consts.TASK_NAMES.dump: "operations",
     consts.TASK_NAMES.capacity_log: "operations",
+
+    consts.TASK_NAMES.create_stats_user: "statistics"
 }
 
 

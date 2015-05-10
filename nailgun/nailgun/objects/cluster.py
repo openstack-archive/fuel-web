@@ -37,6 +37,7 @@ from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Release
+from nailgun.objects import Role
 
 from nailgun.plugins.manager import PluginManager
 
@@ -573,7 +574,7 @@ class Cluster(NailgunObject):
         return False
 
     @classmethod
-    def set_primary_role(cls, intance, nodes, role_name):
+    def set_primary_role(cls, instance, nodes, role_name):
         """Method for assigning primary attribute for specific role.
         - verify that there is no primary attribute of specific role
         assigned to cluster nodes with this role in role list
@@ -589,18 +590,13 @@ class Cluster(NailgunObject):
         :param nodes: list of Node db objects
         :param role_name: string with known role name
         """
-        all_roles = intance.release.role_list
+        all_roles = instance.release.role_list
         role = next((r for r in all_roles if r.name == role_name), None)
         if role is None:
             logger.warning(
                 'Trying to assign primary for non-existing role %s', role_name)
             return
-        node = db().query(models.Node).filter_by(
-            pending_deletion=False).filter(or_(
-                models.Node.role_associations.any(role=role.id, primary=True),
-                models.Node.pending_role_associations.any(
-                    role=role.id, primary=True))).filter(
-                        models.Node.cluster == intance).first()
+        node = cls.get_primary_node(instance, role_name)
         if not node:
             filtered_nodes = []
             for node in nodes:
@@ -670,6 +666,37 @@ class Cluster(NailgunObject):
                 models.Role.id == role.id).all()
 
         return deployed_nodes + pending_nodes
+
+    @classmethod
+    def get_primary_node(cls, instance, role_name):
+        """Get primary node for role_name. If primary node is not
+        found None will be returned. Pending roles and roles are
+        used in search.
+        :param instance: cluster db object
+        :type: python object
+        :param role_name: node role name
+        :type: string
+        :returns: node db object or None
+        """
+        logger.debug("Getting primary node for role: %s", role_name)
+        role = Role.get_by_release_id_role_name(instance.release_id,
+                                                role_name)
+        if role is None:
+            logger.debug("Role not found: %s", role_name)
+            return None
+
+        node = db().query(models.Node).filter_by(
+            pending_deletion=False).filter(or_(
+                models.Node.role_associations.any(role=role.id, primary=True),
+                models.Node.pending_role_associations.any(
+                    role=role.id, primary=True))).filter(
+                        models.Node.cluster == instance).first()
+        if node is None:
+            logger.debug("Not found primary node for role: %s", role_name)
+        else:
+            logger.debug("Found primary node: %s for role: %s",
+                         node.id, role_name)
+        return node
 
     @classmethod
     def get_controllers_group_id(cls, instance):

@@ -646,6 +646,16 @@ class FakeCapacityLog(FakeAmpqThread):
         }]
 
 
+class FakeExecuteTasksThread(FakeAmpqThread):
+    def message_gen(self):
+        self.sleep(self.tick_interval)
+        return [{
+            'task_uuid': self.task_uuid,
+            'status': 'ready',
+            'progress': 100
+        }]
+
+
 FAKE_THREADS = {
     'native_provision': FakeProvisionThread,
     'image_provision': FakeProvisionThread,
@@ -658,5 +668,6 @@ FAKE_THREADS = {
     'check_dhcp': FakeCheckingDhcpThread,
     'dump_environment': FakeDumpEnvironment,
     'generate_capacity_log': FakeCapacityLog,
-    'multicast_verification': FakeMulticastVerifications
+    'multicast_verification': FakeMulticastVerifications,
+    'execute_tasks': FakeExecuteTasksThread
 }

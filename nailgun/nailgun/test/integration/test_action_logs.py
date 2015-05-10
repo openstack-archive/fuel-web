@@ -13,15 +13,16 @@
 #    under the License.
 
 import datetime
+import mock
 
 from nailgun import consts
 from nailgun import objects
-from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import BaseMasterNodeSettignsTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
-class TestActionLogs(BaseIntegrationTest):
+class TestActionLogs(BaseMasterNodeSettignsTest):
 
     @fake_tasks()
     def test_action_log_updating_for_tasks(self):
@@ -101,3 +102,30 @@ class TestActionLogs(BaseIntegrationTest):
         action_logs = objects.ActionLogCollection.filter_by(None)
         action_types = [al.action_type for al in action_logs]
         self.assertSetEqual(set(consts.ACTION_TYPES), set(action_types))
+
+    @fake_tasks(override_state={'progress': 100,
+                                'status': consts.TASK_STATUSES.ready})
+    def test_create_stats_user_logged(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+        )
+
+        deploy_task = self.env.launch_deployment()
+        self.env.wait_ready(deploy_task)
+
+        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
+                        return_value=True):
+            resp = self.app.patch(
+                reverse('MasterNodeSettingsHandler'),
+                headers=self.default_headers,
+                params='{}'
+            )
+            self.assertEqual(200, resp.status_code)
+
+        task = objects.TaskCollection.filter_by(
+            None, name=consts.TASK_NAMES.create_stats_user).first()
+        action_log = objects.ActionLogCollection.filter_by(
+            None, task_uuid=task.uuid)
+        self.assertIsNotNone(action_log)

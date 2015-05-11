@@ -429,7 +429,7 @@
               - condition: "settings:additional_components.murano.value == false"
                 action: "hide"
           murano_repo_url:
-            value: "http://catalog.openstack.org/"
+            value: "http://storage.apps.openstack.org/"
             label: "Murano Repository URL"
             description: ""
             weight: 10

@@ -22,3 +22,4 @@ Development Documentation
    develop/ostf_contributors_guide
    develop/custom-bootstrap-node
    develop/modular-architecture
+   develop/separateMOS

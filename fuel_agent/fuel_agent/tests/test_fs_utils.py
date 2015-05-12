@@ -93,15 +93,26 @@ class TestFSUtils(test_base.BaseTestCase):
     @mock.patch.object(utils, 'execute')
     def test_umount_fs_ok(self, mock_exec):
         fu.umount_fs('/fake')
+        expected_calls = [
+            mock.call('mountpoint', '-q', '/fake', check_exit_code=[0]),
+            mock.call('umount', '/fake', check_exit_code=[0])
+        ]
+        self.assertEqual(expected_calls, mock_exec.call_args_list)
+
+    @mock.patch.object(utils, 'execute')
+    def test_umount_fs_not_mounted(self, mock_exec):
+        mock_exec.side_effect = errors.ProcessExecutionError
+        fu.umount_fs('/fake')
         mock_exec.assert_called_once_with(
-            'umount', '/fake', check_exit_code=[0])
+            'mountpoint', '-q', '/fake', check_exit_code=[0])
 
     @mock.patch.object(utils, 'execute')
     def test_umount_fs_error(self, mock_exec):
         mock_exec.side_effect = [
-            errors.ProcessExecutionError('message'), ('', '')]
-        fu.umount_fs('/fake')
+            None, errors.ProcessExecutionError('message'), ('', '')]
+        fu.umount_fs('/fake', try_lazy_umount=True)
         expected_calls = [
+            mock.call('mountpoint', '-q', '/fake', check_exit_code=[0]),
             mock.call('umount', '/fake', check_exit_code=[0]),
             mock.call('umount', '-l', '/fake', check_exit_code=[0])
         ]

@@ -158,3 +158,7 @@ class WrongRepositoryError(BaseError):
 
 class WrongDeviceError(BaseError):
     pass
+
+
+class UnexpectedProcessError(BaseError):
+    pass

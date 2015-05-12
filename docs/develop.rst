@@ -21,3 +21,4 @@ Development Documentation
    develop/pxe_deployment
    develop/ostf_contributors_guide
    develop/custom-bootstrap-node
+   develop/separateMOS

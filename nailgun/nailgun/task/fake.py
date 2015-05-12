@@ -507,7 +507,7 @@ class FakeVerificationThread(FakeThread):
         # we have to execute subtasks too, just like astute does. otherwise
         # we will have "running" subtasks in the database.
         for subtask in self.data.get('subtasks', []):
-            thread = FAKE_THREADS[subtask['method']](data=subtask)
+            thread = FAKE_THREADS[subtask['method']](subtask, self.params)
             thread.start()
             thread.join()
 

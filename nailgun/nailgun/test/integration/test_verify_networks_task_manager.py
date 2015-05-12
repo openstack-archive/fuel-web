@@ -394,7 +394,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
     @property
     def expected_args_deployed(self):
         expected_networks = [
-            {u'vlans': [0, 101, 102], u'iface': u'eth0'},
+            {u'vlans': [0, 101, 102, 103], u'iface': u'eth0'},
             {u'vlans': [0], u'iface': u'ovs-bond0'},
         ]
 

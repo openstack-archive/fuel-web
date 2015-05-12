@@ -836,7 +836,7 @@
             restrictions:
               - "settings:storage.images_ceph.value == false"
           osd_pool_size:
-            value: "2"
+            value: "3"
             label: "Ceph object replication factor"
             description: "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes."
             weight: 85
@@ -964,13 +964,13 @@
               label: "dialog.create_cluster_wizard.compute.kvm"
               description: "dialog.create_cluster_wizard.compute.kvm_description"
               bind:
-                - "wizard:Storage.cinder": "lvm"
+                - "wizard:Storage.cinder": "ceph"
                 - "wizard:Network.manager": "neutron-vlan"
             - data: "qemu"
               label: "dialog.create_cluster_wizard.compute.qemu"
               description: "dialog.create_cluster_wizard.compute.qemu_description"
               bind:
-                - "wizard:Storage.cinder": "lvm"
+                - "wizard:Storage.cinder": "ceph"
                 - "wizard:Network.manager": "neutron-vlan"
         vcenter:
           type: "checkbox"
@@ -1010,25 +1010,25 @@
         cinder:
           type: "radio"
           values:
-            - data: "lvm"
-              label: "dialog.create_cluster_wizard.storage.lvm"
-              bind:
-                - "settings:storage.volumes_lvm.value": true
-                - "settings:storage.volumes_ceph.value": false
             - data: "ceph"
               label: "dialog.create_cluster_wizard.storage.ceph"
               bind:
                 - "settings:storage.volumes_ceph.value": true
                 - "settings:storage.volumes_lvm.value": false
+            - data: "lvm"
+              label: "dialog.create_cluster_wizard.storage.lvm"
+              bind:
+                - "settings:storage.volumes_lvm.value": true
+                - "settings:storage.volumes_ceph.value": false
         glance:
           type: "radio"
           values:
-            - data: "swift"
-              label: "dialog.create_cluster_wizard.storage.swift"
             - data: "ceph"
               label: "dialog.create_cluster_wizard.storage.ceph"
               bind:
                 - "settings:storage.images_ceph.value": true
+            - data: "swift"
+              label: "dialog.create_cluster_wizard.storage.swift"
       AdditionalServices:
         sahara:
           type: "checkbox"

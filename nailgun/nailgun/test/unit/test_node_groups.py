@@ -83,7 +83,7 @@ class TestNodeGroups(BaseIntegrationTest):
         response = resp.json_body
 
         nets = db().query(NetworkGroup).filter_by(group_id=response['id'])
-        self.assertEquals(nets.count(), 5)
+        self.assertEquals(nets.count(), 4)
 
     def test_nodegroup_deletion(self):
         resp = self.env.create_node_group()

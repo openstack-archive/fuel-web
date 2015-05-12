@@ -913,8 +913,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         if use_vlan_splinters == 'hard':
             for ng in iface.assigned_networks_list:
-                if ng.name == 'private' and \
-                        cluster.network_config.segmentation_type == 'vlan':
+                if ng.name == 'private':
                     vlan_range = cluster.network_config.vlan_range
                     trunks.extend(xrange(*vlan_range))
                     trunks.append(vlan_range[1])
@@ -1165,10 +1164,6 @@ class NeutronNetworkDeploymentSerializer61(
                 provider='ovs',
                 mtu=65000))
 
-        elif node.cluster.network_config.segmentation_type == 'gre':
-            transformations.append(
-                cls.add_bridge('br-mesh'))
-
         # Add ports and bonds.
         for iface in node.interfaces:
             if iface.type == iface_types.ether:
@@ -1240,11 +1235,6 @@ class NeutronNetworkDeploymentSerializer61(
         if is_public:
             netgroup_mapping.append(('public', 'br-ex'))
 
-        if node.cluster.network_config.segmentation_type == 'gre':
-            netgroup_mapping.append(('private', 'br-mesh'))
-            attrs['endpoints']['br-mesh'] = {}
-            attrs['roles']['neutron/mesh'] = 'br-mesh'
-
         netgroups = {}
         nets_by_ifaces = defaultdict(list)
         for ngname, brname in netgroup_mapping:
@@ -1293,6 +1283,8 @@ class NeutronNetworkDeploymentSerializer61(
                     'br_name': 'br-aux',
                     'vlan_id': None
                 })
+        elif node.cluster.network_config.segmentation_type == 'gre':
+            attrs['roles']['neutron/mesh'] = 'br-mgmt'
 
         attrs['transformations'] = cls.generate_transformations(
             node, nm, nets_by_ifaces, is_public, prv_base_ep)
@@ -1312,7 +1304,7 @@ class NeutronNetworkDeploymentSerializer61(
         endpoints = network_scheme.get('endpoints', {})
         bonds_map = dict((b.name, b) for b in node.bond_interfaces)
         net_name_mapping = {'ex': 'public'}
-        managed_networks = ['public', 'storage', 'management', 'private']
+        managed_networks = ['public', 'storage', 'management']
 
         # Add interfaces drivers data
         for iface in node.nic_interfaces:

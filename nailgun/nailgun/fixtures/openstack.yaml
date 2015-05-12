@@ -219,16 +219,6 @@
             map_priority: 2
             neutron_vlan_range: true
             configurable: false
-          - name: "private"
-            seg_type: "gre"
-            cidr: "192.168.2.0/24"
-            vlan_start: 103
-            use_gateway: false
-            notation: "cidr"
-            render_type: "cidr"
-            render_addr_mask: "private"
-            map_priority: 2
-            configurable: true
         config:
           vlan_range: [1000, 1030]
           gre_id_range: [2, 65535]

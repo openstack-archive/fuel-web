@@ -626,9 +626,9 @@
                         "lvm": "LVM",
                         "swift": "Swift Object Storage",
                         "cinder": "Cinder",
-                        "cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.",
+                        "cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor. (to be changed)",
                         "glance": "Glance",
-                        "glance_help": "By default, Glance image service uses Swift object storage. Ceph backend requires two or more Ceph-OSD nodes."
+                        "glance_help": "By default, Glance image service uses Swift object storage. Ceph backend requires two or more Ceph-OSD nodes. (to be changed)"
                     },
                     "additional": {
                         "title": "Additional Services",
@@ -1213,9 +1213,7 @@
                         "default": "默认",
                         "ceph": "Ceph",
                         "cinder": "Cinder",
-                        "cinder_help": "Cinder块存储默认使用LVM卷和iSCSI共享存储。Ceph后端需要2个或更多Ceph-OSD节点与KVM管理器。",
-                        "glance": "Glance",
-                        "glance_help": "在HA部署模式中，Glance Image服务默认使用Swift对象存储, 在简单多节点模式中，使用控制节点的本地存储。Ceph后端需要2个或更多Ceph-OSD节点。"
+                        "glance": "Glance"
                     },
                     "additional": {
                         "title": "附加服务",
@@ -1679,9 +1677,7 @@
                         "default": "デフォルト",
                         "ceph": "Ceph",
                         "cinder": "Cinder",
-                        "cinder_help": "デフォルトで、Cinderブロック·ストレージは、iSCSI経由で共有されるLVMボリュームを使用しています。 Cephバックエンドは2つ以上のCeph-OSDノードとKVMハイパーバイザーを必要とします。",
-                        "glance": "Glance",
-                        "glance_help": "デフォルトで、Glanceイメージサービスは、HAデプロイモードではSwiftオブジェクトストレージを使用し、HAがないマルチノードモードではコントローラーノード上のローカルストレージを使用しています。 Cephバックエンドは2つ以上のCeph-OSDノードを必要とします。"
+                        "glance": "Glance"
                     },
                     "additional": {
                         "title": "追加サービス",
@@ -2161,9 +2157,7 @@
                         "default": "초기설정",
                         "ceph": "Ceph",
                         "cinder": "Cinder",
-                        "cinder_help": "기본적으로, Cinder 블록 스토리지는 iSCSI를 통해 공유되는 LVM 볼륨을 사용합니다. Ceph 백엔드는 두 개 이상의 Ceph-OSD 노드와 KVM 하이퍼바이저가 필요합니다.",
-                        "glance": "Glance",
-                        "glance_help": "기본적으로, Glance 이미지 서비스는 HA 배치모드의 경우에는 스위프트 객체 저장을사용하고, 간단한 다중노드모드의 경우에는 컨트롤러 노드에 있는 로컬 저장소를 사용합니다. Ceph 백엔드는 두 개 이상의 Ceph-OSD 노드가 필요합니다."
+                        "glance": "Glance"
                     },
                     "additional": {
                         "title": "추가 서비스",

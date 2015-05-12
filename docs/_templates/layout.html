@@ -1,0 +1,136 @@
+{# Import the theme's layout. #}
+{% extends "!layout.html" %}
+
+{# Custom CSS overrides #}
+{% set bootswatch_css_custom = ['_static/styles.css'] %}
+
+{% block footer %}
+<footer>
+    <div id="text-5" class="widget widget_text">
+        <div class="textwidget">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-4 col-sm-4">
+                        <div class="row">
+                            <div class="col-md-6 leftplz">
+                                <ul>
+                                    <li><a itemprop="url name" class="fmenu_section" title="Mirantis OpenStack" href="http://software.mirantis.com">Software</a></li>
+                                    <li><a itemprop="url name" title="Download Mirantis OpenStack" href="http://software.mirantis.com">Downloads</a></li>
+                                    <li><a itemprop="url name" title="Mirantis OpenStack - Core" href="http://software.mirantis.com/core-openstack/">Core OpenStack</a></li>
+                                    <li><a itemprop="url name" title="Mirantis OpenStack - Projects" href="http://software.mirantis.com/key-related-openstack-projects/">Key Related Projects</a></li>
+                                    <li><a itemprop="url name" title="Mirantis OpenStack Plug-ins & Drivers" href="http://software.mirantis.com/plugins-and-drivers/">Plug-ins & Drivers</a></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6 leftplz">
+                                <ul>
+                                    <li><a itemprop="url name" class="fmenu_section" title="OpenStack Services" href="http://www.mirantis.com/openstack-services/">Services</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Solutions Engineering" href="http://www.mirantis.com/openstack-services/solutions-engineering/">Solutions Engineering</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Custom Deployment" href="http://www.mirantis.com/openstack-services/custom-deployment/">Custom Deployment</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Custom Support" href="http://www.mirantis.com/openstack-services/custom-support/">Custom Support</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Drivers" href="http://www.mirantis.com/openstack-services/driver-development/">Drivers</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-4">
+                        <div class="row">
+                            <div class="col-md-6 leftplz">
+                                <ul>
+                                    <li><a itemprop="url name" title="OpenStack Training" class="fmenu_section" href="http://training.mirantis.com">Training</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Certification" href="http://training.mirantis.com/certification">OpenStack Certification</a></li>
+                                    <li><a itemprop="url name" title="Mirantis OpenStack Administration" href="http://training.mirantis.com/course/openstack-bootcamp">OpenStack Bootcamp</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Onsite Training" href="http://training.mirantis.com/training/onsite.html">Onsite Training</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Instructors" href="http://training.mirantis.com/meet-our-instructors">Our Instructors</a></li>
+                                    <li><a itemprop="url name" title="Online Resources" href="http://training.mirantis.com/online-resources">Online Resources</a></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6 leftplz">
+                                <ul>
+                                    <li><a itemprop="url name" class="fmenu_section" href="http://www.mirantis.com/openstack/">OpenStack:Now</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Blog" href="http://www.mirantis.com/blog/">Blog</a></li>
+                                    <li><a itemprop="url name" title="OpenStack News" href="http://www.mirantis.com/openstack/news/">News</a></li>
+                                    <li><a itemprop="url name" title="OpenStack Tutorials" href="http://www.mirantis.com/openstack/tutorials/">Tutorials</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-4">
+                        <div class="row">
+                            <div class="col-md-6 leftplz">
+                                <ul>
+                                    <li><a itemprop="url name" class="fmenu_section" href="http://www.mirantis.com/openstack-use-cases/">Use Cases</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/openstack-use-cases/saas-web/">SaaS/Web Vendors</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/openstack-use-cases/service-providers/">Service Providers</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/openstack-use-cases/enterprise-private-cloud/">Enterprise Cloud</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/openstack-use-cases/infrastructure-technology/">Infrastructure Vendors</a></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6 leftplz">
+                                <ul><!-- www.mirantis.com -->
+                                    <li><a itemprop="url name" class="fmenu_section" href="http://www.mirantis.com/company/about-pure-play-openstack/">Company</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/company/our-philosophy/">Our Philosophy</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/company/customer-successes/">Customer Successes</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/careers/">Careers</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/contact/">CONTACT/LOCATIONS</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/company/leadership/">Leadership</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/company/investors/">Investors</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/company/leadership/board-of-directors/">Board of Directors</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/company/partners/">Partners</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/company/press-center/info/">Press Center</a></li>
+                                    <li><a itemprop="url name" href="http://www.mirantis.com/company/privacy-policy/">Privacy Policy</a></li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div></div>
+            <div class="clear"></div>
+
+
+
+            <div class="footer_copy">
+                <div class="container">
+                    <div class="row">
+
+                        <div class="col-md-3 col-sm-3 col-logo">
+                            <span class="mira_btm">Mirantis Inc.</span> <br>
+                            <span class="pureplay_btm"><em>Pure Play OpenStack.</em></span>
+                        </div>
+
+                        <div class="col-md-4 col-sm-4 col-copy">
+                            <span class="copy_btm">&copy; 2005 - 2015 All Rights Reserved</span>
+                            <span class="copy_btm_text">All rights reserved. "Mirantis" and "FUEL" are are registered trademarks of Mirantis, Inc. All other trademarks are the property of their respective owners.</span>
+                        </div>
+
+                        <div class="col-md-5 col-sm-5 col-address">
+                            <span class="mira_btm">615 National Avenue, Suite 100 Mountain View, CA 94043<br>+1-650-963-9828</span>
+                        </div>
+
+                    </div>
+                    <div class="row">
+
+                        <div class="col-md-3 col-sm-3 col-logo">
+                        </div>
+
+                        <div class="col-md-4 col-sm-4 cc">
+				<a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/3.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+			</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+</footer>
+<a href="#0" class="cd-top">Top</a>
+<!-- Google Tag Manager -->
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id={{ theme_googletag }}"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','{{ theme_googletag }}');</script>
+<!-- End Google Tag Manager -->
+{% endblock %}

@@ -764,13 +764,9 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
         template: _.template(storagePaneTemplate),
         title: 'dialog.create_cluster_wizard.storage.title',
         renderCustomElements: function() {
-            this.$('.control-group .cinder h5').after(this.renderControls({
+            this.$('.control-group .ceph h5').after(this.renderControls({
                 hasDescription: false,
-                additionalAttribute: 'cinder'
-            }));
-            this.$('.control-group .glance h5').after(this.renderControls({
-                hasDescription: false,
-                additionalAttribute: 'glance'
+                additionalAttribute: 'ceph'
             }));
         }
     });

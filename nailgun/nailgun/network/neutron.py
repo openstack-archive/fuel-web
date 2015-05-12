@@ -40,7 +40,9 @@ class NeutronManager(NetworkManager):
 
     @classmethod
     def generate_vlan_ids_list(cls, data, cluster, ng):
-        if ng.get("name") == "private":
+        if ng.get("name") == consts.NETWORKS.private and \
+                cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
             if data.get("networking_parameters", {}).get("vlan_range"):
                 vlan_range = data["networking_parameters"]["vlan_range"]
             else:

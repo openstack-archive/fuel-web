@@ -45,6 +45,9 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
         self.env.create(
+            release_kwargs={
+                'version': "2014.2-6.0"
+            },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['controller'], 'pending_addition': True},
@@ -398,6 +401,15 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         cluster_db = self.env.clusters[0]
+
+        # This is here to work around the fact that we use the same fixture
+        # for all versions. Only 6.1 has a GRE network defined in
+        # openstack.yaml so we have to remove it from the 5.1.1 and 6.0 tests.
+        private_nets = self.db.query(NetworkGroup).filter_by(name='private')
+        for p in private_nets:
+            if p['meta'].get('seg_type') == consts.NEUTRON_SEGMENT_TYPES.gre:
+                self.db.delete(p)
+                self.db.flush()
 
         attrs = cluster_db.attributes.editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
@@ -836,6 +848,15 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         cluster_db = self.env.clusters[0]
+
+        # This is here to work around the fact that we use the same fixture
+        # for all versions. Only 6.1 has a GRE network defined in
+        # openstack.yaml so we have to remove it from the 5.1.1 and 6.0 tests.
+        private_nets = self.db.query(NetworkGroup).filter_by(name='private')
+        for p in private_nets:
+            if p['meta'].get('seg_type') == consts.NEUTRON_SEGMENT_TYPES.gre:
+                self.db.delete(p)
+                self.db.flush()
 
         attrs = cluster_db.attributes.editable
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \

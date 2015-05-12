@@ -76,7 +76,8 @@
                 "public": "Public",
                 "floating": "Floating",
                 "management": "Management",
-                "storage": "Storage"
+                "storage": "Storage",
+                "private": "Private"
             },
             "login_page": {
                 "username": "Username",

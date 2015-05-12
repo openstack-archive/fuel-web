@@ -690,8 +690,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             cluster_id=cluster['id'])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
-                                                      segment_type)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         objects.Cluster.set_primary_roles(cluster_db, cluster_db.nodes)
         self.db.flush()
         return cluster_db
@@ -908,11 +907,11 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                               'disable_offloading': True}},
                  'eth1': {}}
             )
-            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-mesh'])
+            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin'])
             role_dict = {'storage': 'br-storage',
                          'management': 'br-mgmt',
                          'fw-admin': 'br-fw-admin',
-                         'neutron/mesh': 'br-mesh'}
+                         'neutron/mesh': 'br-mgmt'}
             if is_public:
                 br_set.update(['br-ex', 'br-floating'])
                 role_dict.update({'ex': 'br-ex',
@@ -942,8 +941,6 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 {'action': 'add-patch',
                  'bridges': ['br-floating', 'br-ex'],
                  'provider': 'ovs'},
-                {'action': 'add-br',
-                 'name': 'br-mesh'},
                 {'action': 'add-port',
                  'bridge': 'br-fw-admin',
                  'name': 'eth0'},
@@ -954,15 +951,12 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                  'bridge': 'br-mgmt',
                  'name': 'eth0.101'},
                 {'action': 'add-port',
-                 'bridge': 'br-mesh',
-                 'name': 'eth0.103'},
-                {'action': 'add-port',
                  'bridge': 'br-ex',
-                 'name': 'eth1'},
+                 'name': 'eth1'}
             ]
             if not is_public:
                 # exclude all 'br-ex' and 'br-floating' objects
-                transformations = transformations[:3] + transformations[6:-1]
+                transformations = transformations[:3] + transformations[6:9]
             self.assertEqual(
                 scheme['transformations'],
                 transformations
@@ -1006,16 +1000,12 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 {'action': 'add-patch',
                  'bridges': ['br-floating', 'br-ex'],
                  'provider': 'ovs'},
-                {'action': 'add-br',
-                 'name': 'br-mesh'},
                 {'action': 'add-port',
                  'bridge': 'br-fw-admin',
                  'name': 'eth0'},
                 {'action': 'add-port',
                  'bridge': 'br-mgmt',
                  'name': 'eth0.101'},
-                {'action': 'add-port', 'bridge': 'br-mesh', 'name':
-                    'eth0.103'},
                 {'action': 'add-bond',
                  'bridge': 'br-ex',
                  'name': 'lnx_bond',
@@ -1052,7 +1042,6 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         nets_w_gw = {'management': '199.99.20.0/24',
                      'storage': '199.98.20.0/24',
                      'fuelweb_admin': '199.97.20.0/24',
-                     'private': '199.95.20.0/24',
                      'public': '199.96.20.0/24'}
         for net in nets['networks']:
             if net['name'] in nets_w_gw.keys():
@@ -1067,7 +1056,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         resp = self.env.neutron_networks_put(cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 
-        objects.NodeCollection.prepare_for_deployment(cluster.nodes, 'gre')
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
         serializer = get_serializer_for_cluster(cluster)
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
@@ -1076,7 +1065,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             node_db = objects.Node.get_by_uid(node['uid'])
             is_public = objects.Node.should_have_public(node_db)
             endpoints = node['network_scheme']['endpoints']
-            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin', 'br-mesh'])
+            br_set = set(['br-storage', 'br-mgmt', 'br-fw-admin'])
             if is_public:
                 br_set.add('br-ex')
                 # floating network won't have routes
@@ -1425,8 +1414,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                  'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
-                                                      segment_type)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def serialize_env_w_version(self, version):
@@ -1823,8 +1811,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
-                                                      segment_type)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def test_vlan_splinters_disabled(self):
@@ -2266,8 +2253,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         self.db.commit()
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes,
-                                                      segment_type)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def test_serialize_node(self):
@@ -2450,7 +2436,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
     def setUp(self):
         super(TestDeploymentAttributesSerialization61, self).setUp()
         self.cluster = self.create_env('ha_compact')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'gre')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
         self.serializer = DeploymentHASerializer61(self.cluster)
 
     def test_serialize_workloads_collector_user(self):
@@ -2474,7 +2460,7 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
     def setUp(self):
         super(TestDeploymentHASerializer61, self).setUp()
         self.cluster = self.create_env('ha_compact')
-        objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'gre')
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
         self.serializer = DeploymentHASerializer61(self.cluster)
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 

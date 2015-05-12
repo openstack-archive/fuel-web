@@ -1081,3 +1081,50 @@ class NodeDeletionTaskManager(TaskManager):
                 nodes_to_delete, mclient_remove=mclient_remove))
 
         return task
+
+
+class CreateStatsUserTaskManager(TaskManager):
+
+    def execute(self):
+
+        logger.info("Trying to create stats users in the operational "
+                    "environments")
+        created_tasks = []
+        clusters = objects.ClusterCollection.filter_by(
+            None, status=consts.CLUSTER_STATUSES.operational)
+
+        for cluster in clusters:
+            logger.debug("Creating task for adding stats user on the "
+                         "cluster %s", cluster.id)
+
+            primary_controller = objects.Cluster.get_primary_node(
+                cluster, 'controller')
+            if primary_controller is not None:
+                logger.debug("Primary controller cluster %s found: %s. "
+                             "Creating task for creating fuel stats user",
+                             cluster.id, primary_controller.id)
+
+                if objects.TaskCollection.filter_by(
+                        None,
+                        cluster_id=cluster.id,
+                        name=consts.TASK_NAMES.create_stats_user,
+                        status=consts.TASK_STATUSES.running).count():
+                    logger.debug("Creating stats user task is already "
+                                 "running for cluster %s", cluster.id)
+                    continue
+
+                task = Task(name=consts.TASK_NAMES.create_stats_user,
+                            cluster_id=cluster.id)
+                db().add(task)
+                db().commit()
+                created_tasks.append(task)
+
+                self._call_silently(
+                    task,
+                    tasks.CreateStatsUserTask,
+                    primary_controller
+                )
+            else:
+                logger.debug("Primary controller not found for cluster %s",
+                             cluster.id)
+        return created_tasks

@@ -499,6 +499,9 @@
             enabled: true
             label: "Mellanox Neutron components"
             weight: 50
+            restrictions:
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
           plugin:
             value: "disabled"
             label: "Mellanox drivers and SR-IOV plugin"
@@ -794,6 +797,8 @@
             type: "checkbox"
             restrictions:
               - "settings:storage.volumes_lvm.value != true or settings:common.libvirt_type.value != 'kvm'"
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
           volumes_ceph:
             value: false
             label: "Ceph RBD for volumes (Cinder)"

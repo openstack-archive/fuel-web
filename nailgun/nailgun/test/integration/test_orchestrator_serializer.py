@@ -35,16 +35,24 @@ from nailgun.orchestrator.deployment_serializers import\
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer51
 from nailgun.orchestrator.deployment_serializers import\
+    DeploymentHASerializer60
+from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer
+from nailgun.orchestrator.deployment_serializers import\
+    DeploymentMultinodeSerializer60
 
 from nailgun.orchestrator.priority_serializers import\
     PriorityHASerializer50
 from nailgun.orchestrator.priority_serializers import\
     PriorityHASerializer51
 from nailgun.orchestrator.priority_serializers import\
+    PriorityHASerializer60
+from nailgun.orchestrator.priority_serializers import\
     PriorityHASerializerPatching
 from nailgun.orchestrator.priority_serializers import\
     PriorityMultinodeSerializer50
+from nailgun.orchestrator.priority_serializers import\
+    PriorityMultinodeSerializer60
 
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
@@ -57,6 +65,22 @@ from nailgun.volumes import manager
 
 class OrchestratorSerializerTestBase(BaseIntegrationTest):
     """Class containts helpers."""
+
+    def create_env(self, mode):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'mode': mode,
+                'net_provider': 'neutron'},
+            nodes_kwargs=[{
+                'roles': ['controller'],
+                'pending_addition': True}])
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        objects.NodeCollection.prepare_for_deployment(
+            cluster_db.nodes)
+        self.db.flush()
+
+        return cluster_db
 
     def filter_by_role(self, nodes, role):
         return filter(lambda node: role in node['role'], nodes)
@@ -89,6 +113,37 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         for that attribute
         '''
         return copy.deepcopy(data_to_copy)
+
+    def check_vmware_escaped_dollar_sign(self):
+        cluster_attrs = objects.Cluster.get_attributes(
+            self.cluster_db).editable
+
+        cluster_attrs['common']['libvirt_type']['value'] = 'vcenter'
+        cluster_attrs['vcenter']['vc_user']['value'] = 'user$'
+        cluster_attrs['vcenter']['vc_password']['value'] = 'pass$word'
+        cluster_attrs['vcenter']['datastore_regex']['value'] = '^stack-[0-9]$'
+        cluster_attrs['storage']['vc_user']['value'] = 'user$'
+        cluster_attrs['storage']['vc_password']['value'] = 'pass$word'
+
+        objects.Cluster.update_attributes(
+            self.cluster_db, {'editable': cluster_attrs})
+
+        result = self.serializer.get_common_attrs(self.cluster_db)
+        self.assertEqual(
+            result['vcenter']['vc_user'],
+            "user$$")
+        self.assertEqual(
+            result['vcenter']['vc_password'],
+            "pass$$word")
+        self.assertEqual(
+            result['vcenter']['datastore_regex'],
+            "^stack-[0-9]$$")
+        self.assertEqual(
+            result['storage']['vc_user'],
+            "user$$")
+        self.assertEqual(
+            result['storage']['vc_password'],
+            "pass$$word")
 
 
 # TODO(awoodward): multinode deprecation: probably has duplicates
@@ -1643,3 +1698,33 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertIn('enable_metadata_network', l3_settings['dhcp_agent'])
         self.assertEqual(l3_settings['dhcp_agent']['enable_metadata_network'],
                          True)
+
+
+class TestDeploymentHASerializer60(OrchestratorSerializerTestBase):
+
+    def setUp(self):
+        super(TestDeploymentHASerializer60, self).setUp()
+        self.cluster_db = self.create_env('ha_compact')
+
+    @property
+    def serializer(self):
+        return DeploymentHASerializer60(
+            PriorityHASerializer60)
+
+    def test_vmware_escaped_dollar_sign(self):
+        self.check_vmware_escaped_dollar_sign()
+
+
+class TestDeploymentMultinodeSerializer60(OrchestratorSerializerTestBase):
+
+    def setUp(self):
+        super(TestDeploymentMultinodeSerializer60, self).setUp()
+        self.cluster_db = self.create_env('multinode')
+
+    @property
+    def serializer(self):
+        return DeploymentMultinodeSerializer60(
+            PriorityMultinodeSerializer60)
+
+    def test_vmware_escaped_dollar_sign(self):
+        self.check_vmware_escaped_dollar_sign()

@@ -1143,11 +1143,50 @@ class DeploymentMultinodeSerializer60(DeploymentMultinodeSerializer):
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
 
+    def get_common_attrs(self, cluster):
+        attrs = super(DeploymentMultinodeSerializer60, self).\
+            get_common_attrs(cluster)
+
+        if attrs['libvirt_type'] == 'vcenter':
+            data_to_replace = [
+                ('vcenter', 'vc_user'),
+                ('vcenter', 'vc_password'),
+                ('vcenter', 'datastore_regex'),
+                ('storage', 'vc_user'),
+                ('storage', 'vc_password')
+            ]
+
+            # In order to disable variable interpolation in values
+            # that we write to configuration files during deployment
+            # we must replace all $ (dollar sign) occurrences.
+            for group, key in data_to_replace:
+                attrs[group][key] = str(attrs[group][key]).replace('$', '$$')
+
+        return attrs
+
 
 class DeploymentHASerializer60(DeploymentHASerializer):
 
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+
+    def get_common_attrs(self, cluster):
+        attrs = super(DeploymentHASerializer60, self).\
+            get_common_attrs(cluster)
+
+        if attrs['libvirt_type'] == 'vcenter':
+            data_to_replace = [
+                ('vcenter', 'vc_user'),
+                ('vcenter', 'vc_password'),
+                ('vcenter', 'datastore_regex'),
+                ('storage', 'vc_user'),
+                ('storage', 'vc_password')
+            ]
+
+            for group, key in data_to_replace:
+                attrs[group][key] = str(attrs[group][key]).replace('$', '$$')
+
+        return attrs
 
 
 def create_serializer(cluster):

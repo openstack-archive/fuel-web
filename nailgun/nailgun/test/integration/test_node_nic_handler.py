@@ -141,7 +141,9 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json_body, [])
 
-    def test_get_handler_with_NICs(self):
+    @patch.dict('nailgun.api.v1.handlers.version.settings.VERSION', {
+        'release': '5.0'})
+    def test_get_handler_with_NICs_before_61(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': self.env.generate_random_mac(),

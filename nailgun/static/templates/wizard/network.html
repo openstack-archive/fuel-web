@@ -3,7 +3,9 @@
     <% if (_.contains(app.version.get('feature_groups'), 'mirantis')) { %>
       <div class="network-pane-description">
         <%- i18n('dialog.create_cluster_wizard.network.description') %>
-        <a href="http://docs.mirantis.com/openstack/fuel/master/planning-guide.html#choose-network-topology" target="_blank"><%- i18n('dialog.create_cluster_wizard.network.description_link') %></a>
+        <a href="https://docs.mirantis.com/openstack/fuel/fuel-<%= app.version.get('release') %>/planning-guide.html#choose-network-topology" target="_blank">
+          <%- i18n('dialog.create_cluster_wizard.network.description_link') %>
+        </a>
       </div>
     <% } %>
     <div class="control-group">

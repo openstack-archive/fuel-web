@@ -1012,28 +1012,25 @@
               bind:
                 - "cluster:net_provider": "nova_network"
       Storage:
-        cinder:
+        ceph:
           type: "radio"
           values:
-            - data: "lvm"
-              label: "dialog.create_cluster_wizard.storage.lvm"
+            - data: "no"
+              label: "dialog.create_cluster_wizard.storage.no_ceph"
               bind:
                 - "settings:storage.volumes_lvm.value": true
                 - "settings:storage.volumes_ceph.value": false
-            - data: "ceph"
-              label: "dialog.create_cluster_wizard.storage.ceph"
+                - "settings:storage.objects_ceph.value": false
+                - "settings:storage.ephemeral_ceph.value": false
+                - "settings:storage.images_ceph.value": false
+            - data: "yes"
+              label: "dialog.create_cluster_wizard.storage.yes_ceph"
               bind:
                 - "settings:storage.volumes_ceph.value": true
-                - "settings:storage.volumes_lvm.value": false
-        glance:
-          type: "radio"
-          values:
-            - data: "swift"
-              label: "dialog.create_cluster_wizard.storage.swift"
-            - data: "ceph"
-              label: "dialog.create_cluster_wizard.storage.ceph"
-              bind:
+                - "settings:storage.objects_ceph.value": true
+                - "settings:storage.ephemeral_ceph.value": true
                 - "settings:storage.images_ceph.value": true
+                - "settings:storage.volumes_lvm.value": false
       AdditionalServices:
         sahara:
           type: "checkbox"

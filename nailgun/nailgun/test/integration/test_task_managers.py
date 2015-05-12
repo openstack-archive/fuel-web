@@ -68,10 +68,11 @@ class TestTaskManagers(BaseIntegrationTest):
             (TASK_STATUSES.running, TASK_STATUSES.ready)
         )
         # we have three subtasks here
+        # repository check
         # deletion
         # provision
         # deployment
-        self.assertEqual(len(supertask.subtasks), 3)
+        self.assertEqual(len(supertask.subtasks), 4)
         # provisioning task has less weight then deployment
         provision_task = filter(
             lambda t: t.name == TASK_NAMES.provision, supertask.subtasks)[0]
@@ -154,7 +155,7 @@ class TestTaskManagers(BaseIntegrationTest):
         action_logs = objects.ActionLogCollection.filter_by(
             None, action_type=consts.ACTION_TYPES.nailgun_task).all()
 
-        self.assertEqual(len(action_logs), 3)
+        self.assertEqual(len(action_logs), 4)
         for al in action_logs:
             self.assertEqual(al.action_type, ACTION_TYPES.nailgun_task)
             if al.additional_info["operation"] == TASK_NAMES.deploy:

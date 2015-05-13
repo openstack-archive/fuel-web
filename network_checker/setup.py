@@ -34,16 +34,19 @@ setuptools.setup(
             'net_probe.py = network_checker.net_check.api:main',
             'fuel-netcheck = network_checker.cli:main',
             'dhcpcheck = dhcp_checker.cli:main',
+            'urlaccesscheck = url_access_checker.cli:main',
         ],
         'dhcp.check': [
             'discover = dhcp_checker.commands:ListDhcpServers',
             'request = dhcp_checker.commands:ListDhcpAssignment',
             'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
-
         ],
         'network_checker': [
             'multicast = network_checker.multicast.api:MulticastChecker',
             'simple = network_checker.tests.simple:SimpleChecker'
-        ]
+        ],
+        'urlaccesscheck': [
+            'check = url_access_checker.commands:CheckUrls'
+        ],
     },
 )

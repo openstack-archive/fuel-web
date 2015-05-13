@@ -236,20 +236,18 @@ class TestLegacyGraphSerialized(base.BaseTestCase):
                  {'uid': '8', 'role': 'compute'},
                  {'uid': '9', 'role': 'mongo'},
                  {'uid': '10', 'role': 'primary-mongo'},
-                 {'uid': '11', 'role': 'ceph-osd'},
-                 {'uid': '12', 'role': 'zabbix-server'}]
+                 {'uid': '11', 'role': 'ceph-osd'}]
         self.graph.add_priorities(nodes)
         by_priority = defaultdict(list)
         for role, group in groupby(nodes, lambda node: node['priority']):
             by_priority[role].extend(list(group))
-        self.assertEqual(by_priority[100][0]['role'], 'zabbix-server')
-        self.assertEqual(by_priority[200][0]['role'], 'mongo')
-        self.assertEqual(by_priority[300][0]['role'], 'primary-mongo')
-        self.assertEqual(by_priority[400][0]['role'], 'primary-controller')
-        self.assertEqual(by_priority[500][0]['role'], 'controller')
-        self.assertEqual(by_priority[500][1]['role'], 'controller')
+        self.assertEqual(by_priority[100][0]['role'], 'mongo')
+        self.assertEqual(by_priority[200][0]['role'], 'primary-mongo')
+        self.assertEqual(by_priority[300][0]['role'], 'primary-controller')
+        self.assertEqual(by_priority[400][0]['role'], 'controller')
+        self.assertEqual(by_priority[400][1]['role'], 'controller')
         self.assertEqual(
-            set([i['role'] for i in by_priority[600]]),
+            set([i['role'] for i in by_priority[500]]),
             set(['compute', 'cinder', 'ceph-osd']))
 
 

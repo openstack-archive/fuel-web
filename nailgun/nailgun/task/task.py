@@ -48,7 +48,6 @@ from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
-from nailgun.utils.zabbix import ZabbixManager
 
 
 def make_astute_message(task, method, respond_to, args):
@@ -430,22 +429,6 @@ class DeletionTask(object):
 
         nodes_to_delete = nodes['nodes_to_delete']
         nodes_to_restore = nodes['nodes_to_restore']
-
-        # check if there's a Zabbix server in an environment
-        # and if there is, remove hosts
-        if (task.name != consts.TASK_NAMES.cluster_deletion
-                and ZabbixManager.get_zabbix_node(task.cluster)):
-            zabbix_credentials = ZabbixManager.get_zabbix_credentials(
-                task.cluster
-            )
-            logger.debug("Removing nodes %s from zabbix", nodes_to_delete)
-            try:
-                ZabbixManager.remove_from_zabbix(
-                    zabbix_credentials, nodes_to_delete
-                )
-            except (errors.CannotMakeZabbixRequest,
-                    errors.ZabbixRequestError) as e:
-                logger.warning("%s, skipping removing nodes from Zabbix", e)
 
         nodes_to_delete = cls.remove_undeployed_nodes_from_db(nodes_to_delete)
 

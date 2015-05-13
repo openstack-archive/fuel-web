@@ -474,6 +474,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
         },
         componentDidMount: function() {
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
+            console.log(networkConfiguration.toJSON());
             $.when(this.props.cluster.get('settings').fetch({cache: true}), networkConfiguration.fetch({cache: true})).done(_.bind(function() {
                 this.updateInitialConfiguration();
                 this.setState({loading: false});

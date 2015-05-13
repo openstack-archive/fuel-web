@@ -311,16 +311,12 @@ function run_ui_unit_tests {
 function run_ui_func_tests {
   local SERVER_PORT=$UI_SERVER_PORT
   local TESTS_DIR=$ROOT/nailgun/ui_tests
-  local TESTS=$TESTS_DIR/test_*.js
   local artifacts=$ARTIFACTS/ui_func
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config
   local COMPRESSED_STATIC_DIR=$artifacts/static_compressed
 
-  if [ $# -ne 0 ]; then
-    TESTS=$@
-  fi
-
+ 
   pushd $ROOT/nailgun >> /dev/null
 
   # test compression
@@ -338,24 +334,7 @@ function run_ui_func_tests {
   local result=0
   local pid
 
-  for testcase in $TESTS; do
 
-    dropdb $config
-    syncdb $config true
-
-    run_server $SERVER_PORT $server_log $config || \
-      { echo 'Failed to start Nailgun'; return 1; }
-
-    SERVER_PORT=$SERVER_PORT \
-    ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
-    if [ $? -ne 0 ]; then
-      result=1
-      break
-    fi
-
-    kill_server $SERVER_PORT
-
-  done
 
   rm $server_log
   popd >> /dev/null

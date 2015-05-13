@@ -183,7 +183,7 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(
             resp.body,
-            "Deployment operation cannot be started .*"
+            "Deployment operation cannot be started.*"
         )
 
 
@@ -269,6 +269,26 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         self.send_put(deploy_action_url)
 
         self.check_deployment_call_made([node_to_deploy.uid], mcast)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_deployment_forbidden_on_pending_deletion(self, mcast):
+        nodes_uids = [n.uid for n in self.cluster.nodes]
+        self.emulate_nodes_provisioning(self.cluster.nodes)
+
+        marked_for_deletion = self.cluster.nodes[-1]
+        marked_for_deletion.pending_deletion = True
+        self.db.flush()
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes", nodes_uids)
+
+        resp = self.send_put(deploy_action_url)
+        self.check_resp_declined(resp)
+        self.assertNotIn(
+            "{0} are not provisioned yet".format(nodes_uids), resp.body)
+        self.assertIn(
+            "[{0}] marked for deletion".format(marked_for_deletion.id),
+            resp.body)
 
 
 class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):

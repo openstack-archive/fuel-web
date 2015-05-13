@@ -129,3 +129,32 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         action_log = objects.ActionLogCollection.filter_by(
             None, task_uuid=task.uuid)
         self.assertIsNotNone(action_log)
+
+    @fake_tasks(override_state={'progress': 100,
+                                'status': consts.TASK_STATUSES.ready})
+    def test_remove_stats_user_logged(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+        )
+
+        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
+                        return_value=True):
+            deploy_task = self.env.launch_deployment()
+            self.env.wait_ready(deploy_task)
+
+        with mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
+                        return_value=False):
+            resp = self.app.patch(
+                reverse('MasterNodeSettingsHandler'),
+                headers=self.default_headers,
+                params='{}'
+            )
+            self.assertEqual(200, resp.status_code)
+
+        task = objects.TaskCollection.filter_by(
+            None, name=consts.TASK_NAMES.remove_stats_user).first()
+        action_log = objects.ActionLogCollection.filter_by(
+            None, task_uuid=task.uuid)
+        self.assertIsNotNone(action_log)

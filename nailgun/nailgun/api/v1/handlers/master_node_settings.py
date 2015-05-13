@@ -19,6 +19,7 @@ from nailgun.api.v1.validators.master_node_settings \
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.task.manager import CreateStatsUserTaskManager
+from nailgun.task.manager import RemoveStatsUserTaskManager
 
 
 class MasterNodeSettingsHandler(DBSingletonHandler):
@@ -30,13 +31,18 @@ class MasterNodeSettingsHandler(DBSingletonHandler):
     not_found_error = "Settings are not found in DB"
 
     def _handle_stats_opt_in(self):
+
         if self.single.must_send_stats():
             logger.debug("Handling customer opt-in to sending statistics")
-            try:
-                manager = CreateStatsUserTaskManager()
-                manager.execute()
-            except Exception:
-                logger.exception("Creating stats user failed")
+            manager = CreateStatsUserTaskManager()
+        else:
+            logger.debug("Handling customer opt-out to sending statistics")
+            manager = RemoveStatsUserTaskManager()
+
+        try:
+            manager.execute()
+        except Exception:
+            logger.exception("Stats user operation failed")
 
     @content
     def PUT(self):

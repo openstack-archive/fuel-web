@@ -5,3 +5,4 @@ pypcap==1.1.1
 stevedore
 daemonize
 pyyaml
+requests

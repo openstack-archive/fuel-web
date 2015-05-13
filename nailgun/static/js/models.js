@@ -684,7 +684,7 @@ define([
     models.InterfaceNetworks = BaseCollection.extend({
         constructorName: 'InterfaceNetworks',
         model: models.InterfaceNetwork,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'fixed'],
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }
@@ -705,7 +705,7 @@ define([
     models.Networks = BaseCollection.extend({
         constructorName: 'Networks',
         model: models.Network,
-        preferredOrder: ['public', 'floating', 'storage', 'management', 'fixed'],
+        preferredOrder: ['public', 'floating', 'storage', 'management', 'private', 'fixed'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }

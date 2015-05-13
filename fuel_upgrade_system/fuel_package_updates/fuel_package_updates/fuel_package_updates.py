@@ -49,17 +49,27 @@ KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
                   'password': os.environ.get('KEYSTONE_PASSWORD', 'admin'),
                   'tenant_name': os.environ.get('KEYSTONE_TENANT', 'admin')}
 
+#TODO(mattymo): parse from Fuel API
+fuel_ver = "6.1"
+openstack_release = "2014.2.2-6.1"
+
 
 class Settings(object):
-    supported_distros = ('centos', 'ubuntu',)
-    supported_releases = ('2014.2-6.1', )
+    supported_distros = ('centos', 'ubuntu', 'ubuntu-baseos')
+    supported_releases = (openstack_release, )
     updates_destinations = {
         'centos': r'/var/www/nailgun/{0}/centos/updates',
         'ubuntu': r'/var/www/nailgun/{0}/ubuntu/updates',
+        'ubuntu-baseos': r'/var/www/nailgun/{0}/ubuntu/trusty',
+    }
+    mirror_base = "http://mirror.fuel-infra.org/mos"
+    default_mirrors = {
+        'centos': '{0}/centos-6/mos{1}/updates/'.format(mirror_base, fuel_ver),
+        'ubuntu': '{0}/ubuntu/'.format(mirror_base),
     }
     exclude_dirs = ('repodata/', 'mos?.?/')
     httproot = "/var/www/nailgun"
-    port = 8000
+    port = 8080
 
 
 class HTTPClient(object):
@@ -185,16 +195,37 @@ class FuelWebClient(object):
 
         if settings is None:
             settings = {}
-
         attributes = self.client.get_cluster_attributes(cluster_id)
-
         if 'repo_setup' in attributes['editable']:
             repos_attr = attributes['editable']['repo_setup']['repos']
             repos_attr['value'] = repo_merge(repos_attr['value'], settings)
 
         logger.debug("Try to update cluster "
                      "with next attributes {0}".format(attributes))
+
         self.client.update_cluster_attributes(cluster_id, attributes)
+
+    def update_default_repos(self,
+                             release_id,
+                             settings=None):
+        """Updates a cluster with new settings
+        :param cluster_id:
+        :param settings:
+        """
+
+        if settings is None:
+            settings = {}
+
+        attributes = self.client.get_release_attributes(release_id)
+        if 'repo_setup' in attributes['attributes_metadata']['editable']:
+            repos_attr = \
+                attributes['attributes_metadata']['editable']['repo_setup'][
+                    'repos']
+            repos_attr['value'] = repo_merge(repos_attr['value'], settings)
+
+        logger.debug("Try to update release "
+                     "with next attributes {0}".format(attributes))
+        self.client.update_release_attributes(release_id, attributes)
 
 
 class NailgunClient(object):
@@ -225,11 +256,22 @@ class NailgunClient(object):
         )
 
     @json_parse
+    def get_release_attributes(self, release_id):
+        return self.client.get(
+            "/api/releases/{0}/".format(release_id)
+        )
+
+    @json_parse
     def update_cluster_attributes(self, cluster_id, attrs):
         return self.client.put(
             "/api/clusters/{0}/attributes/".format(cluster_id),
             attrs
         )
+
+    @json_parse
+    def update_release_attributes(self, release_id, attrs):
+        return self.client.put(
+            "/api/releases/{0}/".format(release_id), attrs)
 
 
 class UpdatePackagesException(Exception):
@@ -260,6 +302,9 @@ def _wait_and_check_exit_code(cmd, child):
 def get_repository_packages(remote_repo_url, distro):
     repo_url = urlparse(remote_repo_url)
     packages = []
+    if distro == "ubuntu-baseos":
+        raise "Use fuel-createmirror to mirror base Ubuntu OS."
+
     if distro in ('ubuntu',):
         packages_url = '{0}/Packages'.format(repo_url.geturl())
         pkgs_raw = urlopen(packages_url).read()
@@ -277,15 +322,48 @@ def get_repository_packages(remote_repo_url, distro):
     return packages
 
 
+def get_ubuntu_baseos_repos(repopath, ip, httproot, port, baseurl=None):
+    # TODO(mattymo): parse all repo metadata
+    repolist = ['base', 'updates', 'security']
+    reponames = {
+        'base': 'ubuntu',
+        'updates': 'ubuntu-updates',
+        'security': 'ubuntu-security'}
+    if baseurl:
+        repourl = baseurl
+    else:
+        repourl = "http://{ip}:{port}{repopath}".format(
+            ip=ip,
+            port=port,
+            repopath=repopath.replace(httproot, ''))
+
+    repos = []
+    for repo in repolist:
+        name = reponames[repo]
+        repoentry = {
+            "type": "deb",
+            "name": name,
+            "uri": repourl,
+            "suite": repo,
+            "section": "main universe multiverse",
+            "priority": None}
+        if "holdback" in repo:
+            repoentry['priority'] = 1100
+        repos.append(repoentry)
+    return repos
+
+
 def get_ubuntu_repos(repopath, ip, httproot, port, baseurl=None):
     # TODO(mattymo): parse all repo metadata
-    repolist = ['mos6.1-updates', 'mos6.1-security', 'mos6.1-holdback']
+    repolist = [
+        'mos{0}-updates'.format(fuel_ver),
+        'mos{0}-holdback'.format(fuel_ver),
+        'mos{0}-security'.format(fuel_ver),
+    ]
     if baseurl:
-        repourl = "{baseurl}/{repopath}".format(
-            baseurl=baseurl,
-            repopath=repopath.replace(httproot, ''))
+        repourl = baseurl
     else:
-        repourl = "http://{ip}:{port}/{repopath}".format(
+        repourl = "http://{ip}:{port}{repopath}".format(
             ip=ip,
             port=port,
             repopath=repopath.replace(httproot, ''))
@@ -293,7 +371,7 @@ def get_ubuntu_repos(repopath, ip, httproot, port, baseurl=None):
     repos = []
     for repo in repolist:
         # FIXME(mattymo): repositories cannot have a period in their name
-        name = repo.replace('6.1', '')
+        name = repo.replace(fuel_ver, '')
         repoentry = {
             "type": "deb",
             "name": name,
@@ -309,15 +387,12 @@ def get_ubuntu_repos(repopath, ip, httproot, port, baseurl=None):
 
 def get_centos_repos(repopath, ip, httproot, port, baseurl=None):
     if baseurl:
-        repourl = "{baseurl}/{repopath}".format(
-            baseurl=baseurl,
-            repopath=repopath.replace(httproot, ''))
+        repourl = baseurl
     else:
-        repourl = "http://{ip}:{port}/{repopath}".format(
+        repourl = "http://{ip}:{port}{repopath}".format(
             ip=ip,
             port=port,
             repopath=repopath.replace(httproot, ''))
-
     repoentry = {
         "type": "rpm",
         "name": "MOS-Updates",
@@ -361,9 +436,18 @@ def show_env_conf(repos, showuri=False, ip="10.20.0.2"):
         print(reindent(yaml.dump(yamldata, default_flow_style=False), spaces))
 
 
-def update_env_conf(ip, env_id, distro, repos):
+def update_env_conf(ip, distro, repos, env_id=None, makedefault=False):
     fwc = FuelWebClient(ip)
-    fwc.update_cluster_repos(env_id, repos)
+    if env_id is not None:
+        logger.info("Updating environment repositories...")
+        fwc.update_cluster_repos(env_id, repos)
+    if 'ubuntu' in distro:
+        release_id = 2
+    elif distro == 'centos':
+        release_id = 1
+    if makedefault:
+        logger.info("Updating default repositories...")
+        fwc.update_default_repos(release_id, repos)
 
 
 def mirror_remote_repository(remote_repo_url, local_repo_path, exclude_dirs,
@@ -380,7 +464,7 @@ def mirror_remote_repository(remote_repo_url, local_repo_path, exclude_dirs,
     else:
         excl_dirs = "--exclude-directories='ubuntu/dists/mos?.?/,repodata'"
         download_cmd = (
-            'wget --recursive --no-parent --no-verbose -R "*.html" -R '
+            'wget -N --recursive --no-parent --no-verbose -R "*.html" -R '
             '"*.gif" -R "*.key" -R "*.gpg" -R "*.dsc" -R "*.tar.gz" '
             '{excl_dirs} --directory-prefix {path} -nH '
             '--cut-dirs={cutd} '
@@ -417,7 +501,11 @@ def main():
     parser.add_option('-r', '--release', dest='release', default=None,
                       help='Fuel release name (required)')
     parser.add_option("-u", "--url", dest="url", default="",
-                      help="Remote repository URL (required)")
+                      help="Remote repository URL")
+    parser.add_option("-N", "--no-download",
+                      action="store_true", dest="nodownload", default=False,
+                      help="Skip downloading repository (conflicts with"
+                      " --url)")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
@@ -425,17 +513,20 @@ def main():
                       action="store_true",
                       help="Show URIs for new repositories (optional). "
                       "Useful for WebUI.")
+    parser.add_option("-m", "--make-default", dest="makedefault",
+                      default=False, action="store_true",
+                      help="Make default for new environments (optional).")
     parser.add_option("-a", "--apply", dest="apply", default=False,
                       action="store_true",
                       help="Apply changes to Fuel environment (optional)")
     parser.add_option("-e", "--env", dest="env", default=None,
-                      help="Fuel environment ID (required for option -a)")
+                      help="Fuel environment ID to update")
     parser.add_option("-s", "--fuel-server", dest="ip", default="10.20.0.2",
                       help="Address of Fuel Master public address (defaults "
                       "to 10.20.0.2)")
     parser.add_option("-b", "--baseurl", dest="baseurl", default=None,
-                      help="URL prefix for mirror, such as http://myserver."
-                      "company.com/repos (optional)")
+                      help="Full URL of repo to set, such as http://myserver."
+                      "company.com/mos-ubuntu/ (optional)")
     parser.add_option("-p", "--password", dest="admin_pass", default=None,
                       help="Fuel Master admin password (defaults to admin)."
                       " Alternatively, use env var KEYSTONE_PASSWORD).")
@@ -462,33 +553,45 @@ def main():
             'following: "{1}". See help (--help) for details.'.format(
                 options.release, ', '.join(settings.supported_releases)))
 
+    if not options.url and options.distro != "ubuntu-baseos":
+        options.url = settings.default_mirrors[options.distro]
+        logger.debug("Using {0} as mirror URL.".format(options.url))
+
     if 'http' not in urlparse(options.url) and 'rsync' not in \
-            urlparse(options.url):
+            urlparse(options.url) and not options.nodownload:
         raise UpdatePackagesException(
-            'Repository url "{0}" does not look like valid URL. '
+            'Repository url "{0}" does not look like a valid URL. '
             'See help (--help) for details.'.format(options.url))
 
-    if options.apply and not options.env:
+    if options.apply and (not options.env and not options.makedefault):
         raise UpdatePackagesException(
-            '--apply option requires --env to be specified. '
+            '--apply option requires --env or --makedefault to be specified. '
             'See help (--help) for details.')
 
     updates_path = settings.updates_destinations[options.distro].format(
         options.release)
     if not os.path.exists(updates_path):
         os.makedirs(updates_path)
-    logger.info('Started mirroring remote repository...')
-    mirror_remote_repository(options.url, updates_path,
-                             settings.exclude_dirs, options.distro)
-    logger.info('Remote repository "{url}" for "{release}" ({distro}) was '
-                'successfuly mirrored to {path} folder.'.format(
-                    url=options.url,
-                    release=options.release,
-                    distro=options.distro,
-                    path=updates_path))
+    if options.nodownload:
+        logger.info('Skipping repository download...')
+    else:
+        logger.info('Started mirroring remote repository...')
+        mirror_remote_repository(options.url, updates_path,
+                                 settings.exclude_dirs, options.distro)
+        logger.info('Remote repository "{url}" for "{release}" ({distro}) was '
+                    'successfuly mirrored to {path} folder.'.format(
+                        url=options.url,
+                        release=options.release,
+                        distro=options.distro,
+                        path=updates_path))
     if options.distro == "ubuntu":
         repos = get_ubuntu_repos(updates_path, options.ip, settings.httproot,
                                  settings.port, options.baseurl)
+    elif options.distro == "ubuntu-baseos":
+        repos = get_ubuntu_baseos_repos(updates_path, options.ip,
+                                        settings.httproot, settings.port,
+                                        options.baseurl)
+
     elif options.distro == "centos":
         repos = get_centos_repos(updates_path, options.ip, settings.httproot,
                                  settings.port, options.baseurl)
@@ -498,7 +601,8 @@ def main():
     if options.admin_pass:
         KEYSTONE_CREDS['password'] = options.admin_pass
     if options.apply:
-        update_env_conf(options.ip, options.env, options.distro, repos)
+        update_env_conf(options.ip, options.distro, repos, options.env,
+                        options.makedefault)
     else:
         show_env_conf(repos, options.showuri, options.ip)
 

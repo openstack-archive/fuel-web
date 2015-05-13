@@ -270,6 +270,19 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         self.check_deployment_call_made([node_to_deploy.uid], mcast)
 
+    @patch('nailgun.task.task.rpc.cast')
+    def test_deployment_forbidden_on_pending_deletion(self, mcast):
+        marked_for_deletion = self.cluster.nodes[-1]
+        marked_for_deletion.pending_deletion = True
+        self.db.flush()
+        nodes_uids = [n.uid for n in self.cluster.nodes]
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes", node_uids)
+
+        resp = self.send_put(deploy_action_url)
+        self.check_resp_declined(resp)
+
 
 class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
 

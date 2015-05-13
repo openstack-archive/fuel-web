@@ -220,7 +220,8 @@ TASK_NAMES = Enum(
     'capacity_log',
 
     # statistics
-    'create_stats_user'
+    'create_stats_user',
+    'remove_stats_user'
 )
 
 NOTIFICATION_STATUSES = Enum(

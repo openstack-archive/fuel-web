@@ -887,4 +887,4 @@ LOAD_TESTS_PATHS:
     failed_test_file_name: "failed_tests.txt"
 
 DNS_UPSTREAM: "8.8.8.8, 8.8.4.4"
-NTP_UPSTREAM: "0.pool.ntp.org, 1.pool.ntp.org"
+NTP_UPSTREAM: "0.fuel.pool.ntp.org, 1.fuel.pool.ntp.org"

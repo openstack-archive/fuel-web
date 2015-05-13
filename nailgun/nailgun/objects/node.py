@@ -154,7 +154,7 @@ class Node(NailgunObject):
         """
         if Cluster.should_assign_public_to_all_nodes(instance.cluster):
             return True
-        ctrl = set(['primary-controller', 'controller', 'zabbix-server'])
+        ctrl = set(['primary-controller', 'controller'])
         if ctrl & (set(instance.roles) or set(instance.pending_roles)):
             return True
         return False

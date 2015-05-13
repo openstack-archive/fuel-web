@@ -71,29 +71,6 @@ class TestDeletionTask(BaseIntegrationTest):
 
     @mock.patch('nailgun.task.task.rpc')
     @mock.patch('nailgun.task.task.make_astute_message')
-    @mock.patch('nailgun.task.task.ZabbixManager')
-    def test_execute_with_zabbix_node(
-            self,
-            mock_zabbix_manager,
-            mmake_astute_message,
-            mrpc):
-        self.add_node(consts.NODE_STATUSES.ready)
-
-        nodes = DeletionTask.get_task_nodes_for_cluster(self.cluster_db)
-        self.assertEqual(len(nodes['nodes_to_delete']), 1)
-
-        task = models.Task(
-            name=consts.TASK_NAMES.cluster_deletion,
-            cluster=self.cluster_db
-        )
-        db().add(task)
-        db().commit()
-
-        DeletionTask.execute(task, nodes=nodes)
-        self.assertEqual(mock_zabbix_manager.get_zabbix_node.called, False)
-
-    @mock.patch('nailgun.task.task.rpc')
-    @mock.patch('nailgun.task.task.make_astute_message')
     @mock.patch.object(DeletionTask, 'remove_undeployed_nodes_from_db')
     def test_undeployed_node_called(
             self,

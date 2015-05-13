@@ -45,7 +45,6 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network import utils
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
-from nailgun.utils.zabbix import ZabbixManager
 from nailgun.settings import settings
 
 
@@ -937,17 +936,6 @@ class NetworkManager(object):
     @classmethod
     def get_keystone_url(cls, cluster_id):
         return 'http://%s:5000/' % cls.get_end_point_ip(cluster_id)
-
-    @classmethod
-    def get_zabbix_url(cls, cluster):
-        zabbix_node = ZabbixManager.get_zabbix_node(cluster)
-        if zabbix_node is None:
-            return None
-        ip_cidr = cls.get_node_network_by_netname(
-            zabbix_node, 'public'
-        )['ip']
-        ip = ip_cidr.split('/')[0]
-        return 'http://{0}/zabbix'.format(ip)
 
     @classmethod
     def is_same_network(cls, ipaddress, ipnetwork):

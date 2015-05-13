@@ -58,18 +58,10 @@ DEPLOYMENT_CURRENT = """
   parameters:
     strategy:
       type: parallel
-- id: zabbix-server
-  type: group
-  role: [zabbix-server]
-  required_for: [deploy_end]
-  requires: [deploy_start]
-  parameters:
-    strategy:
-      type: one_by_one
 - id: mongo
   type: group
   role: [mongo]
-  requires: [zabbix-server]
+  requires: [deploy_start]
   required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
@@ -102,7 +94,7 @@ DEPLOYMENT_CURRENT = """
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
-           zabbix-server, primary-mongo, mongo]
+           primary-mongo, mongo]
   required_for: [deploy_end]
   requires: [deploy_start]
   parameters:
@@ -153,18 +145,10 @@ DEPLOYMENT_50 = """
   parameters:
     strategy:
       type: parallel
-- id: zabbix-server
-  type: group
-  role: [zabbix-server]
-  required_for: [deploy_end]
-  requires: [deploy_start]
-  parameters:
-    strategy:
-      type: one_by_one
 - id: mongo
   type: group
   role: [mongo]
-  requires: [zabbix-server]
+  requires: [deploy_start]
   required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
@@ -190,7 +174,7 @@ DEPLOYMENT_50 = """
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
-           zabbix-server, primary-mongo, mongo]
+           primary-mongo, mongo]
   required_for: [deploy_end]
   requires: [deploy_start]
   parameters:
@@ -240,18 +224,10 @@ PATCHING = """
   parameters:
     strategy:
       type: one_by_one
-- id: zabbix-server
-  type: group
-  role: [zabbix-server]
-  required_for: [deploy_end]
-  requires: [deploy_start]
-  parameters:
-    strategy:
-      type: one_by_one
 - id: mongo
   type: group
   role: [mongo]
-  requires: [zabbix-server]
+  requires: [deploy_start]
   required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
@@ -277,7 +253,7 @@ PATCHING = """
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
-           zabbix-server, primary-mongo, mongo]
+           primary-mongo, mongo]
   required_for: [deploy_end]
   requires: [deploy_start]
   parameters:

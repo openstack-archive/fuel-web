@@ -148,6 +148,7 @@ Requires:  python-stevedore
 Requires:  python-daemonize
 Requires:  python-yaml
 Requires:  tcpdump
+Requires:  python-requests
 
 
 %description -n nailgun-net-check

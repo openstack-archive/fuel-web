@@ -354,26 +354,40 @@ class DeploySelectedNodesValidator(NodesFilterValidator):
         # via CLI or API for ha cluster) there may be situation when not
         # all nodes scheduled for deployment are provisioned, hence
         # here we check for such situation
-        not_provisioned_nodes_ids = [
-            n.id for n in nodes
+        not_provisioned = []
+
+        # it should not be possible to execute deployment tasks
+        # on nodes that are marked for deletion
+        pending_deletion = []
+        for n in nodes:
             if any(
                 [n.pending_addition,
                  n.needs_reprovision,
                  n.needs_redeletion,
                  n.status == consts.NODE_STATUSES.provisioning]
-            )
-        ]
+            ):
+                not_provisioned.append(n.id)
 
-        if not_provisioned_nodes_ids:
-            err_msg = ("Deployment operation cannot be started as nodes "
-                       "with uids {0} are not provisioned yet for "
-                       "cluster with id {1}."
-                       .format(not_provisioned_nodes_ids, cluster_id))
+            if n.pending_deletion:
+                pending_deletion.append(n.id)
 
-            raise errors.InvalidData(
-                err_msg,
-                log_message=True
-            )
+        if not (not_provisioned or pending_deletion):
+            return
+
+        err_msg = "Deployment operation cannot be started. "
+        if not_provisioned:
+            err_msg += (
+                "Nodes with uids {0} are not provisioned yet. "
+                .format(not_provisioned, cluster_id))
+        if pending_deletion:
+            err_msg += ("Nodes with uids {0} marked for deletion. "
+                        "Please remove them and restart deployment."
+                        .format(pending_deletion))
+
+        raise errors.InvalidData(
+            err_msg,
+            log_message=True
+        )
 
 
 class NodeDeploymentValidator(TaskDeploymentValidator,

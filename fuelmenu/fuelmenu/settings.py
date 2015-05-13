@@ -98,7 +98,8 @@ class Settings():
         settings.update(self.read(outfn))
         settings.update(newvalues)
         outfile = file(outfn, 'w')
-        yaml.dump(settings, outfile, default_flow_style=False)
+        yaml.dump(settings, outfile, default_style='"',
+                  default_flow_style=False)
         return True
 
 if __name__ == '__main__':

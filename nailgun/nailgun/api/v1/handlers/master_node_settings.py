@@ -19,6 +19,7 @@ from nailgun.api.v1.validators.master_node_settings \
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.task.manager import CreateStatsUserTaskManager
+from nailgun.task.manager import RemoveStatsUserTaskManager
 
 
 class MasterNodeSettingsHandler(DBSingletonHandler):
@@ -37,6 +38,13 @@ class MasterNodeSettingsHandler(DBSingletonHandler):
                 manager.execute()
             except Exception:
                 logger.exception("Creating stats user failed")
+        else:
+            logger.debug("Handling customer opt-out to sending statistics")
+            try:
+                manager = RemoveStatsUserTaskManager()
+                manager.execute()
+            except Exception:
+                logger.exception("Removing stats user failed")
 
     @content
     def PUT(self):

@@ -1091,8 +1091,8 @@ class NailgunReceiver(object):
             objects.Task.update(task, data)
 
     @classmethod
-    def create_stats_user_resp(cls, **kwargs):
-        logger.info("RPC method create_stats_user_resp received: %s",
+    def stats_user_resp(cls, **kwargs):
+        logger.info("RPC method stats_user_resp received: %s",
                     jsonutils.dumps(kwargs))
 
         task_uuid = kwargs.get('task_uuid')
@@ -1106,15 +1106,15 @@ class NailgunReceiver(object):
 
         if status not in (consts.TASK_STATUSES.ready,
                           consts.TASK_STATUSES.error):
-            logger.debug("Creating stats user task %s in status: %s",
-                         task.id, task.status)
+            logger.debug("Task %s %s in status: %s",
+                         task.id, task.name, task.status)
             return
 
         data = {'status': status, 'progress': 100, 'message': message}
         if status == consts.TASK_STATUSES.error:
-            logger.error("Creating status user failed: %s", error)
+            logger.error("Task %s failed: %s", task.name, error)
             data['message'] = error
 
         objects.Task.update(task, data)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
-        logger.info("RPC method create_stats_user_resp processed")
+        logger.info("RPC method stats_user_resp processed")

@@ -1093,48 +1093,64 @@ class NodeDeletionTaskManager(TaskManager):
         return task
 
 
-class CreateStatsUserTaskManager(TaskManager):
+class BaseStatsUserTaskManager(TaskManager):
+
+    task_name = None
+
+    task_cls = None
 
     def execute(self):
-
-        logger.info("Trying to create stats users in the operational "
-                    "environments")
+        logger.info("Trying to execute %s in the operational "
+                    "environments", self.task_name)
         created_tasks = []
         clusters = objects.ClusterCollection.filter_by(
             None, status=consts.CLUSTER_STATUSES.operational)
 
         for cluster in clusters:
-            logger.debug("Creating task for adding stats user on the "
-                         "cluster %s", cluster.id)
+            logger.debug("Creating task for %s on the "
+                         "cluster %s", self.task_name, cluster.id)
 
             primary_controller = objects.Cluster.get_primary_node(
                 cluster, 'controller')
             if primary_controller is not None:
                 logger.debug("Primary controller cluster %s found: %s. "
-                             "Creating task for creating fuel stats user",
-                             cluster.id, primary_controller.id)
+                             "Creating task for %s", cluster.id,
+                             primary_controller.id, self.task_name)
 
                 if objects.TaskCollection.filter_by(
                         None,
                         cluster_id=cluster.id,
-                        name=consts.TASK_NAMES.create_stats_user,
+                        name=self.task_name,
                         status=consts.TASK_STATUSES.running).count():
-                    logger.debug("Creating stats user task is already "
-                                 "running for cluster %s", cluster.id)
+                    logger.debug("Task %s is already running for cluster %s",
+                                 self.task_name, cluster.id)
                     continue
 
-                task = Task(name=consts.TASK_NAMES.create_stats_user,
-                            cluster_id=cluster.id)
+                task = Task(name=self.task_name, cluster_id=cluster.id)
                 db().add(task)
                 db().commit()
                 created_tasks.append(task)
 
                 self._call_silently(
                     task,
-                    tasks.CreateStatsUserTask,
+                    self.task_cls,
                     primary_controller
                 )
             else:
                 logger.debug("Primary controller not found for cluster %s",
                              cluster.id)
         return created_tasks
+
+
+class CreateStatsUserTaskManager(BaseStatsUserTaskManager):
+
+    task_name = consts.TASK_NAMES.create_stats_user
+
+    task_cls = tasks.CreateStatsUserTask
+
+
+class RemoveStatsUserTaskManager(BaseStatsUserTaskManager):
+
+    task_name = consts.TASK_NAMES.remove_stats_user
+
+    task_cls = tasks.RemoveStatsUserTask

@@ -85,10 +85,6 @@ default_messages = {
     # Tracking errors
     "TrackingError": "Action failed",
 
-    # Zabbix errors
-    "CannotMakeZabbixRequest": "Can't make a request to Zabbix",
-    "ZabbixRequestError": "Zabbix request returned an error",
-
     # Plugin errors
     "PackageVersionIsNotCompatible": "Package version is not compatible",
 

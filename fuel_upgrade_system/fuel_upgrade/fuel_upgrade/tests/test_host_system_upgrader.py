@@ -43,7 +43,7 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.called_once(run_puppet_mock)
         self.called_once(update_repo_mock)
         mock_utils.exec_cmd.assert_called_with(
-            'yum install -v -y fuel-release-9999.0.0')
+            'yum install -v -y fuel-9999.0.0')
 
     @mock.patch('fuel_upgrade.engines.host_system.utils')
     def test_update_repo(self, utils_mock):

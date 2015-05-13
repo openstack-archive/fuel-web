@@ -33,6 +33,7 @@ define(['js/config'], function(config) {
         },
         // A regular expression matching URLs to files that should not be included in code coverage analysis
         excludeInstrumentation: /^/,
-        loader: config
+        loader: config,
+        reporters: ['pretty', 'console']
     };
 });

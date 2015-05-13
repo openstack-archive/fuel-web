@@ -1123,7 +1123,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def test_set_deployment_priorities(self):
         nodes = [
-            {'role': 'zabbix-server'},
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
@@ -1134,7 +1133,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'zabbix-server', 'priority': 100},
             {'role': 'mongo', 'priority': 200},
             {'role': 'primary-mongo', 'priority': 300},
             {'role': 'primary-controller', 'priority': 400},
@@ -1147,7 +1145,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def test_set_deployment_priorities_many_cntrls(self):
         nodes = [
-            {'role': 'zabbix-server'},
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
@@ -1164,7 +1161,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'zabbix-server', 'priority': 100},
             {'role': 'mongo', 'priority': 200},
             {'role': 'primary-mongo', 'priority': 300},
             {'role': 'primary-controller', 'priority': 400},
@@ -1183,7 +1179,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def test_set_critital_node(self):
         nodes = [
-            {'role': 'zabbix-server'},
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
@@ -1193,7 +1188,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         ]
         self.serializer.set_critical_nodes(nodes)
         expected_ciritial_roles = [
-            {'role': 'zabbix-server', 'fail_if_error': False},
             {'role': 'mongo', 'fail_if_error': False},
             {'role': 'primary-mongo', 'fail_if_error': True},
             {'role': 'primary-controller', 'fail_if_error': True},
@@ -1263,7 +1257,6 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
 
     def test_set_deployment_priorities(self):
         nodes = [
-            {'role': 'zabbix-server'},
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
@@ -1274,7 +1267,6 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'zabbix-server', 'priority': 100},
             {'role': 'mongo', 'priority': 200},
             {'role': 'primary-mongo', 'priority': 300},
             {'role': 'primary-controller', 'priority': 400},
@@ -1287,7 +1279,6 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
 
     def test_set_deployment_priorities_many_cntrls(self):
         nodes = [
-            {'role': 'zabbix-server'},
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
@@ -1304,7 +1295,6 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'zabbix-server', 'priority': 100},
             {'role': 'mongo', 'priority': 200},
             {'role': 'primary-mongo', 'priority': 300},
             {'role': 'primary-controller', 'priority': 400},
@@ -1334,7 +1324,6 @@ class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
 
     def test_set_deployment_priorities(self):
         nodes = [
-            {'role': 'zabbix-server'},
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
@@ -1345,7 +1334,6 @@ class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'zabbix-server', 'priority': 100},
             {'role': 'mongo', 'priority': 200},
             {'role': 'primary-mongo', 'priority': 300},
             {'role': 'primary-controller', 'priority': 400},
@@ -1358,7 +1346,6 @@ class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
 
     def test_set_deployment_priorities_many_cntrls(self):
         nodes = [
-            {'role': 'zabbix-server'},
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
@@ -1375,7 +1362,6 @@ class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'zabbix-server', 'priority': 100},
             {'role': 'mongo', 'priority': 200},
             {'role': 'primary-mongo', 'priority': 300},
             {'role': 'primary-controller', 'priority': 400},

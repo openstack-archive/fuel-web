@@ -500,9 +500,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         }
     });
 
+    // FIXME: the code below neeeds deduplication
+    // extra confirmation logic should be moved out to dialog mixin
     dialogs.ResetEnvironmentDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.reset_environment.title')};},
+        getInitialState: function() {
+            return {confirmation: false};
+        },
+        getDefaultProps: function() {
+            return {title: i18n('dialog.reset_environment.title')};
+        },
         resetEnvironment: function() {
             this.setState({actionInProgress: true});
             dispatcher.trigger('deploymentTasksUpdated');
@@ -515,17 +522,43 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 .fail(this.showError);
         },
         renderBody: function() {
+            var clusterName = this.props.cluster.get('name');
             return (
-                <div className='msg-error'>
+                <div>
                     {this.renderImportantLabel()}
                     {i18n('dialog.reset_environment.text')}
+                    {this.state.confirmation &&
+                        <div className='confirm-reset-form'>
+                            {i18n('dialog.reset_environment.enter_environment_name', {name: clusterName})}
+                            <controls.Input
+                                type='text'
+                                name='name'
+                                disabled={this.state.actionInProgress}
+                                onChange={_.bind(function(name, value) {
+                                    this.setState({confirmationError: value != clusterName});
+                                }, this)}
+                                onPaste={function(e) {e.preventDefault();}}
+                                autoFocus
+                            />
+                        </div>
+                    }
                 </div>
             );
         },
+        showConfirmationForm: function() {
+            this.setState({confirmation: true});
+        },
         renderFooter: function() {
             return ([
-                <button key='cancel' className='btn' onClick={this.close}>{i18n('common.cancel_button')}</button>,
-                <button key='reset' className='btn btn-danger reset-environment-btn' onClick={this.resetEnvironment} disabled={this.state.actionInProgress}>{i18n('common.reset_button')}</button>
+                <button key='cancel' className='btn' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+                <button
+                    key='reset'
+                    className='btn btn-danger reset-environment-btn'
+                    disabled={this.state.actionInProgress || this.state.confirmation && _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
+                    onClick={this.state.confirmation ? this.resetEnvironment : this.showConfirmationForm}
+                >
+                    {i18n('common.reset_button')}
+                </button>
             ]);
         }
     });

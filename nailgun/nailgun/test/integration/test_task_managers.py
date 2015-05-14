@@ -373,6 +373,39 @@ class TestTaskManagers(BaseIntegrationTest):
         tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])
 
+    @fake_tasks(tick_interval=1, tick_count=5)
+    def test_deletion_clusters_one_by_one(self):
+        cluster_1 = self.env.create(
+            nodes_kwargs=[
+                {"status": "ready", "progress": 100},
+                {"roles": ["compute"], "status": "ready", "progress": 100},
+                {"roles": ["compute"], "status": "ready", "progress": 100},
+                {"roles": ["compute"], "status": "ready", "progress": 100},
+                {"roles": ["controller"], "status": "ready", "progress": 100},
+                {"roles": ["controller"], "status": "ready", "progress": 100},
+            ]
+        )
+        cluster_2 = self.env.create_cluster(api=True)
+
+        cluster_1_id = self.env.clusters[0].id
+        cluster_2_id = self.env.clusters[1].id
+
+        resp = self.app.delete(
+            reverse(
+                'ClusterHandler',
+                kwargs={'obj_id': cluster_1_id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(202, resp.status_code)
+
+        resp = self.app.delete(
+            reverse(
+                'ClusterHandler',
+                kwargs={'obj_id': cluster_2_id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(202, resp.status_code)
+
     @fake_tasks(recover_nodes=False)
     def test_deletion_during_deployment(self):
         self.env.create(

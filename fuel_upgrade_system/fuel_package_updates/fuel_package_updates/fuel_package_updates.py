@@ -405,9 +405,22 @@ def main():
     logger.addHandler(sh)
     logger.setLevel(logging.INFO)
 
+    #Override epilog to enable newlines
+    OptionParser.format_epilog = lambda self, formatter: self.epilog
+
     parser = OptionParser(
         description="Pull updates for a given release of Fuel based on "
-                    "the provided URL."
+                    "the provided URL.",
+        epilog="\nUse env var \"http_proxy\" if necessary.\n\nExamples:\n\n"
+        "fuel-package-updates -d centos -r {release} -a -m\n"
+        "fuel-package-updates -d ubuntu -r {release} -a -m\n"
+        "\n"
+        "fuel-package-updates -v -d centos -r {release} -a -m -b rsync:"
+        "//myserver/mos-centos/updates\n"
+        "fuel-package-updates -d ubuntu -r {release} -a -e 1 -b http:"
+        "//myserver/myrepo/ubuntu/updates\n".format(
+        release=settings.supported_releases[-1]
+        )
     )
     parser.add_option('-l', '--list-distros', dest='list_distros',
                       default=None, action="store_true",

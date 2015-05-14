@@ -621,6 +621,10 @@
                     "storage": {
                         "title": "Storage Backends",
                         "alert": "Ceph is not supported in __NameAndRelease.release_name__",
+                        "ceph_description": "Use Ceph storage?",
+                        "ceph_enable": "Yes, use Ceph",
+                        "ceph_disable": "No, use default providers",
+                        "ceph_help": "Ceph provides a shared backend for Glance images, Nova and Cinder volumes, and Swift objects, as well as copy-on-write between them in some cases. Ceph will require assigning Ceph-OSD role to several nodes in your cluster (at least as many as the configured replication factor). You can control the storage backend options for each component and the replication factor on the settings page.",
                         "default": "Default",
                         "ceph": "Ceph",
                         "lvm": "LVM",

@@ -969,13 +969,13 @@
               label: "dialog.create_cluster_wizard.compute.kvm"
               description: "dialog.create_cluster_wizard.compute.kvm_description"
               bind:
-                - "wizard:Storage.cinder": "lvm"
+                - "wizard:Storage.ceph": "disable"
                 - "wizard:Network.manager": "neutron-vlan"
             - data: "qemu"
               label: "dialog.create_cluster_wizard.compute.qemu"
               description: "dialog.create_cluster_wizard.compute.qemu_description"
               bind:
-                - "wizard:Storage.cinder": "lvm"
+                - "wizard:Storage.ceph": "disable"
                 - "wizard:Network.manager": "neutron-vlan"
         vcenter:
           type: "checkbox"
@@ -983,7 +983,7 @@
           label: "dialog.create_cluster_wizard.compute.vcenter"
           description: "dialog.create_cluster_wizard.compute.vcenter_description"
           bind:
-            - "wizard:Storage.cinder": "lvm"
+            - "wizard:Storage.ceph": "disable"
             - "wizard:Network.manager": "nova-network"
             - "settings:common.use_vcenter.value"
       Network:
@@ -1012,28 +1012,25 @@
               bind:
                 - "cluster:net_provider": "nova_network"
       Storage:
-        cinder:
+        ceph:
           type: "radio"
           values:
-            - data: "lvm"
-              label: "dialog.create_cluster_wizard.storage.lvm"
+            - data: "disable"
+              label: "dialog.create_cluster_wizard.storage.ceph_disable"
               bind:
                 - "settings:storage.volumes_lvm.value": true
                 - "settings:storage.volumes_ceph.value": false
-            - data: "ceph"
-              label: "dialog.create_cluster_wizard.storage.ceph"
+                - "settings:storage.objects_ceph.value": false
+                - "settings:storage.ephemeral_ceph.value": false
+                - "settings:storage.images_ceph.value": false
+            - data: "enable"
+              label: "dialog.create_cluster_wizard.storage.ceph_enable"
               bind:
                 - "settings:storage.volumes_ceph.value": true
-                - "settings:storage.volumes_lvm.value": false
-        glance:
-          type: "radio"
-          values:
-            - data: "swift"
-              label: "dialog.create_cluster_wizard.storage.swift"
-            - data: "ceph"
-              label: "dialog.create_cluster_wizard.storage.ceph"
-              bind:
+                - "settings:storage.objects_ceph.value": true
+                - "settings:storage.ephemeral_ceph.value": true
                 - "settings:storage.images_ceph.value": true
+                - "settings:storage.volumes_lvm.value": false
       AdditionalServices:
         sahara:
           type: "checkbox"

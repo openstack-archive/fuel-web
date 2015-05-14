@@ -15,6 +15,7 @@
 #    under the License.
 
 from mock import patch
+from oslo.serialization import jsonutils
 
 from nailgun import consts
 from nailgun.objects import Plugin
@@ -85,3 +86,52 @@ class TestNailgunReceiver(base.BaseTestCase):
             task_resp['status'],
             u'Deployment has failed. Method granular_deploy.',
             self.cluster.id)
+
+    @patch('nailgun.objects.Task.update_verify_networks')
+    def test_check_repositories_resp_success(self, update_verify_networks):
+        repo_check_message = {
+            "status": "ready",
+            "progress": 100,
+            "task_uuid": self.task.uuid,
+            "nodes": [
+                [
+                    ["sender", 1],
+                    ["data", {
+                        "status": 0,
+                        "err": "",
+                        "out": ""
+                    }]
+                ]
+            ]
+        }
+        NailgunReceiver.check_repositories_resp(**repo_check_message)
+
+        update_verify_networks.assert_called_with(
+            self.task, 'ready', 100, '', [])
+
+    @patch('nailgun.objects.Task.update_verify_networks')
+    def test_check_repositories_resp_error(self, update_verify_networks):
+        urls = ['url1', 'url2']
+        repo_check_message = {
+            "status": "ready",
+            "progress": 100,
+            "task_uuid": self.task.uuid,
+            "nodes": [
+                [
+                    ["sender", 1],
+                    ["data", {
+                        "status": 1,
+                        "out": jsonutils.dumps({
+                            "failed_urls": urls
+                        }),
+                        "err": ""
+                    }]
+                ]
+            ]
+        }
+        NailgunReceiver.check_repositories_resp(**repo_check_message)
+
+        update_verify_networks.assert_called_with(
+            self.task, 'error', 100,
+            ('These nodes: "1" failed to '
+             'connect to some of these repositories: "url2", "url1"'), [])

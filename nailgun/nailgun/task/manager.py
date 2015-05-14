@@ -246,13 +246,6 @@ class ApplyChangesTaskManager(TaskManager):
             # we should have task committed for processing in other threads
             db().commit()
 
-            self._call_silently(
-                task_deletion,
-                tasks.DeletionTask,
-                tasks.DeletionTask.get_task_nodes_for_cluster(self.cluster),
-                check_ceph=True)
-            db().commit()
-
         if nodes_to_provision:
             objects.TaskCollection.lock_cluster_tasks(self.cluster.id)
             # updating nodes
@@ -344,6 +337,23 @@ class ApplyChangesTaskManager(TaskManager):
         self.cluster.status = consts.CLUSTER_STATUSES.deployment
         db().add(self.cluster)
         db().commit()
+
+        # We have to execute node deletion task only when provision,
+        # deployment and other tasks are in the database. Otherwise,
+        # it may be executed too quick (e.g. our tests) and this
+        # will affect parent task calculation - it will be marked
+        # as 'ready' because by that time it have only two subtasks
+        # - network_check and node_deletion - and they're  ready.
+        # In order to avoid that wrong behavior, let's send
+        # deletion task to execution only when others subtasks in
+        # the database.
+        if task_deletion:
+            self._call_silently(
+                task_deletion,
+                tasks.DeletionTask,
+                tasks.DeletionTask.get_task_nodes_for_cluster(self.cluster),
+                check_ceph=True)
+            db().commit()
 
         if task_messages:
             rpc.cast('naily', task_messages)

@@ -738,7 +738,8 @@
                 },
                 "reset_environment": {
                     "title": "Reset Environment",
-                    "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state. Disk and interface configuration will also be reset to defaults."
+                    "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state. Disk and interface configuration will also be reset to defaults.",
+                    "enter_environment_name": "Please type in the name of the environment \"__name__\" to confirm."
                 },
                 "update_environment": {
                     "title": "Update Environment",

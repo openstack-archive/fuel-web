@@ -1119,3 +1119,54 @@ class NailgunReceiver(object):
         objects.Task.update(task, data)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
         logger.info("RPC method stats_user_resp processed")
+
+    @classmethod
+    def repo_connection_resp(cls, **kwargs):
+        logger.info(
+            "RPC method repo_connection_resp received: %s" %
+            jsonutils.dumps(kwargs)
+        )
+        task_uuid = kwargs.get('task_uuid')
+        nodes = map(dict, kwargs.get('nodes'))
+
+        logger.info(
+            "nodes: %s" %
+            jsonutils.dumps(nodes)
+        )
+
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        failed_nodes = [node for node in nodes if node['data']['status'] != 0]
+        failed_nodes_ids = [node['sender'] for node in failed_nodes]
+
+        if len(failed_nodes_ids) == 0:
+            data = {'status': 'ready', 'progress': 100}
+        else:
+            failed_nodes_db = objects.NodeCollection.filter_by_list(
+                None,
+                'id',
+                failed_nodes_ids,
+                order_by='id'
+            )
+
+            names = [n.name for n in failed_nodes_db]
+            failed_urls = list(itertools.chain.from_iterable(
+                [jsonutils.loads(n['data']['out'])['failed_urls']
+                 for n in failed_nodes]
+            ))
+
+            error_message = ('Some of these nodes: "{0}" failed to connect to '
+                             'these repositories: "{1}"').format(
+                                 '"'.join(names), '"'.join(failed_urls)
+                             )
+
+            data = {
+                'status': 'error',
+                'progress': 100,
+                'message': error_message,
+            }
+            notifier.notify(
+                'error',
+                error_message
+            )
+
+        objects.Task.update(task, data)

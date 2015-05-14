@@ -880,6 +880,7 @@ class ClusterDeletionManager(TaskManager):
         locked_tasks = objects.TaskCollection.lock_cluster_tasks(
             self.cluster.id
         )
+
         # locking cluster
         objects.Cluster.get_by_uid(
             self.cluster.id,
@@ -899,7 +900,6 @@ class ClusterDeletionManager(TaskManager):
             'name',
             (consts.TASK_NAMES.cluster_deletion,)
         )
-
         deploy_running = objects.TaskCollection.filter_by(
             None,
             cluster_id=self.cluster.id,
@@ -922,6 +922,11 @@ class ClusterDeletionManager(TaskManager):
 
         logger.debug("Removing cluster tasks")
         for task in current_cluster_tasks:
+            # NOTE(ivankliuk) For reasons unexplained
+            # task.cluster_id != self.cluster.id
+            # TODO(ivankliuk): Remove this dirty hack.
+            if task.cluster_id != self.cluster.id:
+                continue
             if task.status == consts.TASK_STATUSES.running:
                 db().rollback()
                 raise errors.DeletionAlreadyStarted()

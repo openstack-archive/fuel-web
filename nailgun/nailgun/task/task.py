@@ -1119,6 +1119,17 @@ class GenerateCapacityLogTask(object):
 
 class CheckRepositoryConnectionTask(object):
     @classmethod
+    def _get_repo_urls(cls, task):
+        return [r['uri'] for r in cls._get_repository_list(task)]
+
+    @classmethod
+    def _get_repository_list(cls, task):
+        return task.cluster.attributes.editable['repo_setup']['repos']['value']
+
+
+class CheckRepositoryConnectionFromMasterNodeTask(
+        CheckRepositoryConnectionTask):
+    @classmethod
     def execute(cls, task):
         failed_repositories = cls._get_failed_repositories(task)
 
@@ -1135,20 +1146,39 @@ class CheckRepositoryConnectionTask(object):
 
     @classmethod
     def _get_failed_repositories(cls, task):
-        repos = cls._get_repository_list(task)
-        urls = [r['uri'] for r in repos]
-
+        urls = cls._get_repo_urls(task)
         responses = cls._get_responses(urls)
         failed_responses = filter(lambda x: x.status_code != 200, responses)
         return [r.url for r in failed_responses]
 
     @classmethod
-    def _get_repository_list(cls, task):
-        return task.cluster.attributes.editable['repo_setup']['repos']['value']
-
-    @classmethod
     def _get_responses(cls, urls):
         return map(requests.get, urls)
+
+
+class CheckRepositoryConnectionFromSlavesTask(CheckRepositoryConnectionTask,
+					      BaseNetworkVerification):
+    def get_message(self):
+        rpc_message = make_astute_message(
+            self.task,
+            "check_repositories",
+            "repo_connection_resp",
+            {
+                "nodes": self._get_nodes_to_check(),
+                "urls": self._get_repo_urls(self.task),
+            }
+        )
+        return rpc_message
+
+    def execute(self):
+        rpc.cast(
+            'naily',
+            self.get_message()
+        )
+
+    def _get_nodes_to_check(self):
+        return [n.id for n 
+		in db().query(Node).filter_by(cluster=self.task.cluster)]
 
 
 class CreateStatsUserTask(object):
@@ -1185,5 +1215,6 @@ class CreateStatsUserTask(object):
 
 if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
     rpc.cast = fake_cast
-    CheckRepositoryConnectionTask._get_failed_repositories = classmethod(
-        lambda *args: [])
+    CheckRepositoryConnectionFromMasterNodeTask\
+        ._get_failed_repositories = classmethod(
+            lambda *args: [])

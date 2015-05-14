@@ -656,6 +656,17 @@ class FakeExecuteTasksThread(FakeAmpqThread):
         }]
 
 
+class FakeCheckRepositories(FakeAmpqThread):
+    def message_gen(self):
+        self.sleep(self.tick_interval)
+        return [{
+            "task_uuid": self.task_uuid,
+            "status": "ready",
+            "progress": 100,
+            "msg": [{"uid": "1", "exit code": 0}]
+        }]
+
+
 FAKE_THREADS = {
     'native_provision': FakeProvisionThread,
     'image_provision': FakeProvisionThread,
@@ -669,5 +680,6 @@ FAKE_THREADS = {
     'dump_environment': FakeDumpEnvironment,
     'generate_capacity_log': FakeCapacityLog,
     'multicast_verification': FakeMulticastVerifications,
-    'execute_tasks': FakeExecuteTasksThread
+    'execute_tasks': FakeExecuteTasksThread,
+    'check_repositories': FakeCheckRepositories,
 }

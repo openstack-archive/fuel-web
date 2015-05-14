@@ -1118,3 +1118,43 @@ class NailgunReceiver(object):
         objects.Task.update(task, data)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
         logger.info("RPC method create_stats_user_resp processed")
+
+    @classmethod
+    def repo_connection_resp(cls, **kwargs):
+        logger.info(
+            "RPC method repo_connection_resp received: %s" %
+            jsonutils.dumps(kwargs)
+        )
+        task_uuid = kwargs.get('task_uuid')
+        msg = kwargs.get('msg')
+
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        failed_nodes_ids = []
+        for node in msg:
+            if node['exit code'] != 0:
+                failed_nodes_ids.append(node['uid'])
+
+        if len(failed_nodes_ids) == 0:
+            data = {'status': 'ready', 'progress': 100}
+        else:
+            failed_nodes = objects.NodeCollection.filter_by_list(
+                None,
+                'id',
+                failed_nodes_ids,
+                order_by='id'
+            )
+
+            names = [n.name for n in failed_nodes]
+            data = {
+                'status': 'error',
+                'progress': 100,
+                'message': ('Nodes failed to connect to ubuntu repo: '
+                            '\'{0}\'').format("'".join(names)),
+            }
+            notifier.notify(
+                'error',
+                ('These nodes failed to connect to at'
+                 ' least one ubuntu repository: \'{0}\'').format(
+                     "', '".join(names)))
+
+        objects.Task.update(task, data)

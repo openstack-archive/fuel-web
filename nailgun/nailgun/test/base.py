@@ -931,7 +931,8 @@ class BaseTestCase(TestCase):
         resp_mock.url = ''
         responses_mock = mock.Mock(return_value=[resp_mock])
         cls.repo_check_patcher = mock.patch(
-            'nailgun.task.task.CheckRepositoryConnectionTask._get_responses',
+            ('nailgun.task.task.CheckRepositoryConnectionFromMasterNodeTask'
+             '._get_responses'),
             new=responses_mock
         )
         cls.repo_check_patcher.start()

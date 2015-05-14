@@ -1040,7 +1040,6 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        super(BaseAuthenticationIntegrationTest, cls).setUpClass()
         cls.app = app.TestApp(build_app(db_driver=test_db_driver).wsgifunc(
             ConnectionMonitorMiddleware, NailgunFakeKeystoneAuthMiddleware))
         syncdb()

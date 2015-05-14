@@ -1149,7 +1149,8 @@ class NeutronNetworkDeploymentSerializer61(
                 cls.add_bridge('br-floating', provider='ovs'))
             transformations.append(cls.add_patch(
                 bridges=['br-floating', 'br-ex'],
-                provider='ovs'))
+                provider='ovs',
+                mtu=65000))
 
         # Dance around Neutron segmentation type.
         if node.cluster.network_config.segmentation_type == 'vlan':

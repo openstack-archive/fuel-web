@@ -888,7 +888,7 @@ class ClusterDeletionManager(TaskManager):
     def execute(self):
         # locking required tasks
         locked_tasks = objects.TaskCollection.lock_cluster_tasks(
-            self.cluster.id
+            self.cluster.id, names=(consts.TASK_NAMES.cluster_deletion,)
         )
         # locking cluster
         objects.Cluster.get_by_uid(
@@ -903,12 +903,6 @@ class ClusterDeletionManager(TaskManager):
         )
         nodes = objects.NodeCollection.order_by(nodes, 'id')
         objects.NodeCollection.lock_for_update(nodes).all()
-
-        current_cluster_tasks = objects.TaskCollection.filter_by_list(
-            locked_tasks,
-            'name',
-            (consts.TASK_NAMES.cluster_deletion,)
-        )
 
         deploy_running = objects.TaskCollection.filter_by(
             None,
@@ -931,7 +925,7 @@ class ClusterDeletionManager(TaskManager):
             TaskHelper.set_ready_if_not_finished(deploy_running)
 
         logger.debug("Removing cluster tasks")
-        for task in current_cluster_tasks:
+        for task in locked_tasks:
             if task.status == consts.TASK_STATUSES.running:
                 db().rollback()
                 raise errors.DeletionAlreadyStarted()

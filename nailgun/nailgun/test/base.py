@@ -931,7 +931,8 @@ class BaseTestCase(TestCase):
         resp_mock.url = ''
         responses_mock = mock.Mock(return_value=[resp_mock])
         cls.repo_check_patcher = mock.patch(
-            'nailgun.task.task.CheckRepositoryConnectionTask._get_responses',
+            ('nailgun.task.task.CheckRepositoryConnectionFromMasterNodeTask'
+             '._get_responses'),
             new=responses_mock
         )
         cls.repo_check_patcher.start()
@@ -1040,7 +1041,7 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        super(BaseAuthenticationIntegrationTest, cls).setUpClass()
+        cls._set_up_check_repo_patcher()
         cls.app = app.TestApp(build_app(db_driver=test_db_driver).wsgifunc(
             ConnectionMonitorMiddleware, NailgunFakeKeystoneAuthMiddleware))
         syncdb()

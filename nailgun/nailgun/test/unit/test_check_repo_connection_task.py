@@ -17,14 +17,14 @@ import mock
 
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
-from nailgun.task.task import CheckRepositoryConnectionTask
+from nailgun.task.task import CheckRepositoryConnectionFromMasterNodeTask
 from nailgun.test.base import BaseTestCase
 
 
-class CheckRepositoryConnectionTaskTest(BaseTestCase):
+class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
 
     def setUp(self):
-        super(CheckRepositoryConnectionTaskTest, self).setUp()
+        super(CheckRepositoryConnectionFromMasterNodeTaskTest, self).setUp()
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
@@ -42,14 +42,14 @@ class CheckRepositoryConnectionTaskTest(BaseTestCase):
             {'type': 'deb', 'uri': self.url, 'suite': 'suite'}]
 
         self.patcher = mock.patch(
-            ('nailgun.task.task.CheckRepositoryConnectionTask'
+            ('nailgun.task.task.CheckRepositoryConnectionFromMasterNodeTask'
              '._get_repository_list'),
             new=mock.Mock(return_value=self.mocked_repositories))
         self.patcher.start()
 
     def tearDown(self):
         self.patcher.stop()
-        super(CheckRepositoryConnectionTaskTest, self).tearDown()
+        super(CheckRepositoryConnectionFromMasterNodeTaskTest, self).tearDown()
 
     @mock.patch('requests.get')
     def test_execute_success(self, get_mock):
@@ -58,11 +58,12 @@ class CheckRepositoryConnectionTaskTest(BaseTestCase):
         response_mock.url = self.url
         get_mock.return_value = response_mock
 
-        CheckRepositoryConnectionTask.execute(self.task)
+        CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
 
-        CheckRepositoryConnectionTask._get_repository_list.assert_called_with(
-            self.task
-        )
+        CheckRepositoryConnectionFromMasterNodeTask\
+            ._get_repository_list.assert_called_with(
+                self.task
+            )
 
     @mock.patch('requests.get')
     def test_execute_fail(self, get_mock):
@@ -72,4 +73,4 @@ class CheckRepositoryConnectionTaskTest(BaseTestCase):
         get_mock.return_value = response_mock
 
         with self.assertRaises(errors.CheckBeforeDeploymentError):
-            CheckRepositoryConnectionTask.execute(self.task)
+            CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)

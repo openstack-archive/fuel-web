@@ -163,6 +163,11 @@ casper.then(function() {
     this.then(function() {
         this.click('.modal .reset-environment-btn'); // "Reset environment" button click
     });
+    this.test.assertSelectorAppears('.modal .confirm-reset-form', 'Confirmation of reset action requested');
+    this.then(function() {
+        this.fill('.modal .confirm-reset-form', {name: 'Test Cluster'});
+        this.click('.modal .reset-environment-btn:not(:disabled)');
+    });
     this.test.assertSelectorDisappears('.modal', 'Reset dialog closes after clicking Reset button');
     this.test.assertSelectorDisappears('.deploy-btn', 'Deploy changes button disappears');
     this.test.assertSelectorAppears('.cluster-deploy-placeholder .progress-striped', 'Reset progress bar appears');

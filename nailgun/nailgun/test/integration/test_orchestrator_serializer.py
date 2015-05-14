@@ -2535,7 +2535,9 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
         objects.NodeCollection.prepare_for_deployment(self.env.nodes, 'gre')
         self.serializer = DeploymentHASerializer61(self.cluster)
 
-    def test_serialize_workloads_collector_user(self):
+    @mock.patch('nailgun.objects.MasterNodeSettings.must_send_stats',
+                return_value=False)
+    def test_serialize_workloads_collector_user_opted_out(self, _):
         oswl_user = self.serializer.get_common_attrs(
             self.env.clusters[0]
         )['workloads_collector']

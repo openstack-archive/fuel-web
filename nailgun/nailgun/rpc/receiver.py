@@ -1119,3 +1119,38 @@ class NailgunReceiver(object):
         objects.Task.update(task, data)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
         logger.info("RPC method stats_user_resp processed")
+
+    @classmethod
+    def check_repositories_resp(cls, **kwargs):
+        logger.info(
+            "RPC method check_repositories_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+        task_uuid = kwargs.get('task_uuid')
+        nodes = map(dict, kwargs.get('nodes'))
+
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        failed_nodes = [node for node in nodes if node['data']['status'] != 0]
+        failed_nodes_ids = [node['sender'] for node in failed_nodes]
+
+        progress = 100
+        message = ''
+
+        if not failed_nodes_ids:
+            status = consts.TASK_STATUSES.ready
+        else:
+            failed_urls = set(itertools.chain.from_iterable(
+                [jsonutils.loads(n['data']['out'])['failed_urls']
+                 for n in failed_nodes]
+            ))
+
+            message = ('These nodes: "{0}" failed to connect to '
+                       'some of these repositories: "{1}"').format(
+                           '", "'.join([str(id) for id in failed_nodes_ids]),
+                           '", "'.join(failed_urls)
+                       )
+
+            status = consts.TASK_STATUSES.error
+
+        objects.Task.update_verify_networks(
+            task, status, progress, message, [])

@@ -380,7 +380,7 @@ class ApplyChangesTaskManager(TaskManager):
 
         self._call_silently(
             check_repo_connect,
-            tasks.CheckRepositoryConnectionTask,
+            tasks.CheckRepositoryConnectionFromMasterNodeTask,
         )
 
         if check_repo_connect.status == consts.TASK_STATUSES.error:
@@ -876,6 +876,12 @@ class VerifyNetworksTaskManager(TaskManager):
                     task, name=consts.TASK_NAMES.multicast_verification)
                 verify_task.add_subtask(
                     tasks.MulticastVerificationTask(multicast))
+
+            repo_check_task = objects.task.Task.create_subtask(
+                task, name=consts.TASK_NAMES.check_repo_availability)
+            verify_task.add_subtask(
+                tasks.CheckRepositoryConnectionFromSlavesTask(repo_check_task,
+                                                              vlan_ids))
 
             db().commit()
             self._call_silently(task, verify_task)

@@ -373,6 +373,63 @@ class TestTaskManagers(BaseIntegrationTest):
         tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])
 
+    @fake_tasks(tick_interval=10, tick_count=5)
+    def test_deletion_clusters_one_by_one(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"status": "ready", "progress": 100},
+                {"roles": ["compute"], "status": "ready", "progress": 100},
+                {"roles": ["compute"], "status": "ready", "progress": 100},
+                {"roles": ["compute"], "status": "ready", "progress": 100},
+                {"roles": ["controller"], "status": "ready", "progress": 100},
+                {"roles": ["controller"], "status": "ready", "progress": 100},
+            ]
+        )
+        cluster1_id = self.env.clusters[0].id
+        self.env.create_cluster(api=True)
+        cluster2_id = self.env.clusters[1].id
+        cluster_names = [cluster.name for cluster in self.env.clusters]
+
+        resp = self.app.delete(
+            reverse(
+                'ClusterHandler',
+                kwargs={'obj_id': cluster1_id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(202, resp.status_code)
+
+        resp = self.app.delete(
+            reverse(
+                'ClusterHandler',
+                kwargs={'obj_id': cluster2_id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(202, resp.status_code)
+
+        timer = time.time()
+        timeout = 15
+
+        clstr1 = self.db.query(models.Cluster).get(cluster1_id)
+        clstr2 = self.db.query(models.Cluster).get(cluster2_id)
+        while clstr1 or clstr2:
+            time.sleep(1)
+            try:
+                self.db.refresh(clstr1 or clstr2)
+            except Exception:
+                break
+            if time.time() - timer > timeout:
+                raise Exception("Cluster deletion seems to be hanged")
+
+        for name in cluster_names:
+            notification = self.db.query(models.Notification)\
+                .filter(models.Notification.topic == "done")\
+                .filter(models.Notification.message == "Environment '%s' and "
+                        "all its nodes are deleted" % name)
+            self.assertIsNotNone(notification)
+
+        tasks = self.db.query(models.Task).all()
+        self.assertEqual(tasks, [])
+
     @fake_tasks(recover_nodes=False)
     def test_deletion_during_deployment(self):
         self.env.create(

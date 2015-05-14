@@ -44,7 +44,7 @@ class TestNetworkModels(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, 60)
+        self.env.wait_ready(supertask, 90)
 
         test_nets = self.env.nova_networks_get(
             self.env.clusters[0].id

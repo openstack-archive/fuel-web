@@ -894,12 +894,6 @@ class ClusterDeletionManager(TaskManager):
         nodes = objects.NodeCollection.order_by(nodes, 'id')
         objects.NodeCollection.lock_for_update(nodes).all()
 
-        current_cluster_tasks = objects.TaskCollection.filter_by_list(
-            locked_tasks,
-            'name',
-            (consts.TASK_NAMES.cluster_deletion,)
-        )
-
         deploy_running = objects.TaskCollection.filter_by(
             None,
             cluster_id=self.cluster.id,
@@ -919,6 +913,9 @@ class ClusterDeletionManager(TaskManager):
             )
             # Updating action logs for deploy task
             TaskHelper.set_ready_if_not_finished(deploy_running)
+
+        current_cluster_tasks = objects.TaskCollection.get_by_cluster_id(
+            self.cluster.id)
 
         logger.debug("Removing cluster tasks")
         for task in current_cluster_tasks:

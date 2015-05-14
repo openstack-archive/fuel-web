@@ -205,6 +205,8 @@ class FakeAmpqThread(FakeThread):
                     resp_method(**msg)
                     db().commit()
                 except Exception as e:
+                    # TODO(ikalnitsky): research why some tests hit this
+                    # code but do not fail.
                     db().rollback()
                     raise e
 

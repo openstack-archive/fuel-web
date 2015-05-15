@@ -136,7 +136,8 @@ task_names_old = (
     'capacity_log'
 )
 task_names_new = task_names_old + ('create_stats_user',
-                                   'remove_stats_user')
+                                   'remove_stats_user',
+                                   'repo_availability_with_setup')
 
 
 def upgrade():

@@ -39,6 +39,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
+from nailgun.network.manager import NetworkManager
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
@@ -1117,18 +1118,7 @@ class GenerateCapacityLogTask(object):
         db().commit()
 
 
-class CheckRepositoryConnectionTask(object):
-    @classmethod
-    def _get_repo_urls(cls, task):
-        return [r['uri'] for r in cls._get_repository_list(task)]
-
-    @classmethod
-    def _get_repository_list(cls, task):
-        return task.cluster.attributes.editable['repo_setup']['repos']['value']
-
-
-class CheckRepositoryConnectionFromMasterNodeTask(
-        CheckRepositoryConnectionTask):
+class CheckRepositoryConnectionFromMasterNodeTask(object):
     @classmethod
     def execute(cls, task):
         failed_repositories = cls._get_failed_repositories(task)
@@ -1146,7 +1136,7 @@ class CheckRepositoryConnectionFromMasterNodeTask(
 
     @classmethod
     def _get_failed_repositories(cls, task):
-        urls = cls._get_repo_urls(task)
+        urls = objects.Cluster.get_repo_urls(task.cluster)
         responses = cls._get_responses(urls)
         failed_responses = filter(lambda x: x.status_code != 200, responses)
         return [r.url for r in failed_responses]
@@ -1156,8 +1146,7 @@ class CheckRepositoryConnectionFromMasterNodeTask(
         return map(requests.get, urls)
 
 
-class CheckRepositoryConnectionFromSlavesTask(CheckRepositoryConnectionTask,
-                                              BaseNetworkVerification):
+class CheckRepositoryConnectionFromSlavesTask(BaseNetworkVerification):
     def get_message(self):
         rpc_message = make_astute_message(
             self.task,
@@ -1165,7 +1154,7 @@ class CheckRepositoryConnectionFromSlavesTask(CheckRepositoryConnectionTask,
             "repo_connection_resp",
             {
                 "nodes": self._get_nodes_to_check(),
-                "urls": self._get_repo_urls(self.task),
+                "urls": objects.Cluster.get_repo_urls(self.task.cluster),
             }
         )
         return rpc_message
@@ -1179,6 +1168,73 @@ class CheckRepositoryConnectionFromSlavesTask(CheckRepositoryConnectionTask,
     def _get_nodes_to_check(self):
         return [{"uid": n.id} for n
                 in db().query(Node).filter_by(cluster=self.task.cluster)]
+
+
+class RepoAvailabilityWithSetup(object):
+
+    def __init__(self, task, config):
+        self.task = task
+        self.config = config
+
+    @classmethod
+    def get_config(cls, cluster):
+        urls = objects.Cluster.get_repo_urls(cluster)
+        nodes = []
+        # if there is nothing to verify - just skip this task
+        if not urls:
+            return
+
+        all_public = \
+            objects.Cluster.should_assign_public_to_all_nodes(cluster)
+
+        public_networks = filter(
+            lambda ng: ng.name == 'public', cluster.network_groups)
+
+        for public in public_networks:
+            # we are not running this verification for nodes not in discover
+            # state
+            public_nodes = []
+            group_nodes = objects.NodeCollection.filter_by(
+                None, group_id=public.group_id,
+                status=consts.NODE_STATUSES.discover)
+            if all_public:
+                public_nodes = group_nodes
+            else:
+                for n in group_nodes:
+                    if objects.Node.should_have_public(n):
+                        public_nodes.append(n)
+
+            if not public_nodes:
+                continue
+
+            # we are not doing any allocations during verification
+            # just ask for free ips and use them
+            free_ips = NetworkManager.get_free_ips(public, len(public_nodes))
+            mask = public.cidr.split('/')[1]
+            for node, ip in zip(public_nodes, free_ips):
+                iface = NetworkManager.find_iface_assoc_with_ng(
+                    node, public)
+                #TODO(dshulyak) check here for bond types
+                node_config = {
+                    'addr': '{0}/{1}'.format(ip, mask),
+                    'gateway': public.gateway,
+                    'vlan': public.vlan_start or 0,
+                    'iface': iface.name,
+                    'urls': urls,
+                    'uid': node.uid}
+                nodes.append(node_config)
+        # if no nodes will be present - we will skip this task
+        return nodes
+
+    def get_message(self):
+        return make_astute_message(
+            self.task,
+            "check_repositories_with_setup",
+            "check_repositories_with_setup",
+            {
+                "nodes": self.config,
+            }
+        )
 
 
 class CreateStatsUserTask(object):

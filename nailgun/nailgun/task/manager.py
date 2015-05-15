@@ -206,6 +206,7 @@ class ApplyChangesTaskManager(TaskManager):
                     e.message),
             }
             objects.Task.update(supertask, data)
+        finally:
             db().commit()
 
     def _execute_async_content(self, supertask):
@@ -256,7 +257,7 @@ class ApplyChangesTaskManager(TaskManager):
             logger.debug("There are nodes to provision: %s",
                          " ".join([n.fqdn for n in nodes_to_provision]))
 
-            # For more accurate progress calulation
+            # For more accurate progress calculation
             task_weight = 0.4
             task_provision = supertask.create_subtask(
                 consts.TASK_NAMES.provision,
@@ -348,6 +349,7 @@ class ApplyChangesTaskManager(TaskManager):
         # deletion task to execution only when others subtasks in
         # the database.
         if task_deletion:
+            objects.Task.get_by_uid(task_deletion.id, lock_for_update=True)
             self._call_silently(
                 task_deletion,
                 tasks.DeletionTask,

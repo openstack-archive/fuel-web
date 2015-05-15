@@ -60,9 +60,7 @@ class NailgunReceiver(object):
         if status in [consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error]:
             progress = 100
 
-        # locking tasks on cluster
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
-        objects.TaskCollection.lock_cluster_tasks(task.cluster_id)
+        # locking task
         task = objects.Task.get_by_uuid(
             task_uuid,
             fail_if_not_found=True,
@@ -217,12 +215,10 @@ class NailgunReceiver(object):
         task = objects.Task.get_by_uuid(
             task_uuid,
             fail_if_not_found=True,
+            lock_for_update=True
         )
 
-        # locking all cluster tasks
-        objects.TaskCollection.lock_cluster_tasks(task.cluster_id)
-
-        # lock cluster
+        # locking cluster
         objects.Cluster.get_by_uid(
             task.cluster_id,
             fail_if_not_found=True,

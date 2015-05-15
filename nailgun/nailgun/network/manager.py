@@ -1187,3 +1187,16 @@ class NetworkManager(object):
                 iface.interface_properties['disable_offloading']
             }
         return properties
+
+    @classmethod
+    def find_iface_assoc_with_ng(self, node, network_group):
+        """Will find iface on node that is associated with network_group.
+        If interface is a part of bond - check network on that bond
+        """
+        for iface in node.nic_interfaces:
+            assigned_networks = iface.assigned_networks_list
+            if iface.bond:
+                assigned_networks = iface.bond.assigned_networks_list
+            if network_group in assigned_networks:
+                return iface
+        return None

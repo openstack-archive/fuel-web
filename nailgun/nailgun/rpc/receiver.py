@@ -1132,12 +1132,13 @@ class NailgunReceiver(object):
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
         failed_nodes_ids = []
         for node in msg:
-            if node['exit code'] != 0:
+            if node['status'] != 0:
                 failed_nodes_ids.append(node['uid'])
 
-        if len(failed_nodes_ids) == 0:
-            data = {'status': 'ready', 'progress': 100}
-        else:
+        status = 'ready'
+        progress = 100
+        msg = None
+        if failed_nodes_ids:
             failed_nodes = objects.NodeCollection.filter_by_list(
                 None,
                 'id',
@@ -1146,16 +1147,58 @@ class NailgunReceiver(object):
             )
 
             names = [n.name for n in failed_nodes]
-            data = {
-                'status': 'error',
-                'progress': 100,
-                'message': ('Nodes failed to connect to ubuntu repo: '
-                            '\'{0}\'').format("'".join(names)),
-            }
+            status = 'error'
+            progress = 100
+            msg = ('Nodes failed to connect to ubuntu repo: '
+                   '\'{0}\'').format("'".join(names))
             notifier.notify(
                 'error',
                 ('These nodes failed to connect to at'
                  ' least one ubuntu repository: \'{0}\'').format(
                      "', '".join(names)))
 
-        objects.Task.update(task, data)
+        objects.Task.update_verify_networks(
+            task, status, progress, msg, {})
+
+    @classmethod
+    def check_repositories_with_setup(cls, **kwargs):
+        logger.info(
+            "RPC method check_repositories_with_setup received: %s" %
+            jsonutils.dumps(kwargs)
+        )
+
+        task_uuid = kwargs.get('task_uuid')
+        response = kwargs.get('nodes')
+        status = 'ready'
+        progress = 100
+
+        task = objects.Task.get_by_uuid(
+            task_uuid, fail_if_not_found=True)
+
+        response_nodes = dict([(n['uid'], n) for n in response])
+        nodes = objects.NodeCollection.filter_by_list(
+            None, 'id', response_nodes.keys(), order_by='id')
+
+        failed_nodes = []
+        failed_repos = set()
+        for node in nodes:
+            node_response = response_nodes[node.uid]
+            if node_response['status'] != 0:
+                if isinstance(node_response['out'], dict):
+                    failed_repos.update(
+                        node_response['out'].get('failed_urls', []))
+                failed_nodes.append(node.name)
+        msg = None
+        if failed_nodes:
+            msg = (
+                'Following nodes {0} failed to fetch Ubuntu repositories. '
+                .format(', '.join(failed_nodes)))
+        if failed_repos:
+            msg += 'Following repos werent available: {0}'.format(
+                '\n'.join(failed_repos))
+        if msg:
+            msg += ('Verify your public network settings or list of repos. '
+                    'Please examine logs for more details.')
+            status = 'error'
+        objects.Task.update_verify_networks(
+            task, status, progress, msg, {})

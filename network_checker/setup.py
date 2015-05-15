@@ -46,7 +46,8 @@ setuptools.setup(
             'simple = network_checker.tests.simple:SimpleChecker'
         ],
         'urlaccesscheck': [
-            'check = url_access_checker.commands:CheckUrls'
+            'check = url_access_checker.commands:CheckUrls',
+            'with_setup = url_access_checker.commands:CheckUrlsWithSetup'
         ],
     },
 )

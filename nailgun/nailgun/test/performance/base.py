@@ -64,6 +64,7 @@ class BaseLoadTestCase(BaseTestCase):
         cls.tests_results = defaultdict(
             lambda: defaultdict(lambda: defaultdict(list)))
         cls.tests_stats = defaultdict(lambda: defaultdict(dict))
+        cls._set_up_check_repo_patcher()
 
     @classmethod
     def tearDownClass(cls):
@@ -92,6 +93,7 @@ class BaseLoadTestCase(BaseTestCase):
             tar.close()
             shutil.rmtree(settings.LOAD_TESTS_PATHS['load_tests_base'])
         write_results(str(cls.__name__), cls.tests_stats)
+        cls.repo_check_patcher.stop()
 
     def setUp(self):
         super(BaseLoadTestCase, self).setUp()

@@ -137,6 +137,23 @@ your Fuel ISO build environment on Ubuntu 14.04:
     both ``are OUT`` of the Virtualbox
     `shared folder path <https://www.virtualbox.org/manual/ch04.html#sharedfolders>`_
 
+
+You can also use the following tools to make your work and development process
+with Fuel easier:
+
+* CGenie fuel-utils - a set of tools to interact with code on a Fuel Master node created
+  from the ISO. It provides the *fuel* command
+  that gives a simple way to upload Python or UI code (with staticfiles compression)
+  to Docker containers, SSH into machine and into the container,
+  display the logs etc.
+
+* Vagrant SaltStack-based -Vagrant box definition with quick and basic Fuel
+  environment with fake tasks.
+  This is useful for UI or Nailgun development.
+
+You can download both tools from the
+`fuel-dev-tools <https://github.com/stackforge/fuel-dev-tools>`_.
+
 Nailgun (Fuel-Web)
 ------------------
 

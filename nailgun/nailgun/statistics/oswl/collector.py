@@ -22,6 +22,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.logger import logger
 from nailgun.objects import ClusterCollection
+from nailgun.objects import MasterNodeSettings
 from nailgun.objects import OpenStackWorkloadStatsCollection
 from nailgun.settings import settings
 from nailgun.statistics import errors
@@ -89,8 +90,11 @@ def run():
                 .format(resource_type))
     try:
         while True:
-            collect(resource_type)
+            if MasterNodeSettings.must_send_stats():
+                collect(resource_type)
+
             time.sleep(poll_interval)
+
     except (KeyboardInterrupt, SystemExit):
         logger.info("Stopping OSWL collector for {0} resource"
                     .format(resource_type))

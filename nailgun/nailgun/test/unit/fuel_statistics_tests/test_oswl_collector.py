@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import sys
+
 from mock import patch
 
 from nailgun.test.base import BaseTestCase
@@ -20,6 +22,7 @@ from nailgun import consts
 from nailgun.objects import Cluster
 from nailgun.objects import OpenStackWorkloadStats
 from nailgun.statistics.oswl.collector import collect as oswl_collect_once
+from nailgun.statistics.oswl.collector import run as run_collecting
 
 
 class TestOSWLCollector(BaseTestCase):
@@ -183,3 +186,29 @@ class TestOSWLCollector(BaseTestCase):
             'time': last.updated_time.isoformat()
         })
         self.assertListEqual(removed_data, last.resource_data['removed'])
+
+    @patch("nailgun.statistics.oswl.collector.time.sleep",
+           side_effect=StopIteration)
+    @patch.object(sys, "argv", new=["_", consts.OSWL_RESOURCE_TYPES.vm])
+    def test_oswl_is_not_collected_when_stats_collecting_disabled(self, *_):
+        collect_func_path = ("nailgun.statistics.oswl.collector.collect")
+        must_send_stats_path = ("nailgun.statistics.oswl.collector"
+                                ".MasterNodeSettings.must_send_stats")
+
+        with patch(must_send_stats_path, return_value=False):
+            with patch(collect_func_path) as collect_mock:
+                try:
+                    run_collecting()
+                except StopIteration:
+                    pass
+
+                self.assertFalse(collect_mock.called)
+
+        with patch(must_send_stats_path, return_value=True):
+            with patch(collect_func_path) as collect_mock:
+                try:
+                    run_collecting()
+                except StopIteration:
+                    pass
+
+                self.assertTrue(collect_mock.called)

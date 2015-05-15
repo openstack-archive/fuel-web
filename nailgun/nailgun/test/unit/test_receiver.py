@@ -15,7 +15,6 @@
 #    under the License.
 
 from mock import patch
-from oslo.serialization import jsonutils
 
 from nailgun import consts
 from nailgun.objects import Plugin
@@ -93,17 +92,11 @@ class TestNailgunReceiver(base.BaseTestCase):
             "status": "ready",
             "progress": 100,
             "task_uuid": self.task.uuid,
-            "nodes": [
-                [
-                    ["sender", 1],
-                    ["data", {
-                        "status": 0,
-                        "err": "",
-                        "out": ""
-                    }]
-                ]
-            ]
-        }
+            "nodes": [{
+                "status": 0,
+                "err": "",
+                "out": "",
+                "uid": "1"}]}
         NailgunReceiver.check_repositories_resp(**repo_check_message)
 
         update_verify_networks.assert_called_with(
@@ -116,19 +109,11 @@ class TestNailgunReceiver(base.BaseTestCase):
             "status": "ready",
             "progress": 100,
             "task_uuid": self.task.uuid,
-            "nodes": [
-                [
-                    ["sender", 1],
-                    ["data", {
-                        "status": 1,
-                        "out": jsonutils.dumps({
-                            "failed_urls": urls
-                        }),
-                        "err": ""
-                    }]
-                ]
-            ]
-        }
+            "nodes": [{
+                "status": 1,
+                "out": {"failed_urls": urls},
+                "err": "",
+                "uid": "1"}]}
         NailgunReceiver.check_repositories_resp(**repo_check_message)
 
         update_verify_networks.assert_called_with(

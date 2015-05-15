@@ -17,6 +17,7 @@ import logging
 from cliff import command
 
 import url_access_checker.api as api
+from url_access_checker.network import manage_network
 
 
 LOG = logging.getLogger(__name__)
@@ -33,3 +34,21 @@ class CheckUrls(command.Command):
     def take_action(self, parsed_args):
         LOG.info('Starting url access check for {0}'.format(parsed_args.urls))
         api.check_urls(parsed_args.urls)
+
+
+class CheckUrlsWithSetup(CheckUrls):
+
+    def get_parser(self, prog_name):
+        parser = super(CheckUrlsWithSetup, self).get_parser(
+            prog_name)
+        parser.add_argument('-i', type=str, help='Interface')
+        parser.add_argument('-a', type=str, help='Addr/Mask pair')
+        parser.add_argument('-g', type=str,
+                            help='Gateway to be used as default')
+        parser.add_argument('-v', type=str, help='Vlan tag')
+        return parser
+
+    def take_action(self, pa):
+        with manage_network(pa.i, pa.a, pa.g, pa.v):
+            return super(
+                CheckUrlsWithSetup, self).take_action(pa)

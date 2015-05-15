@@ -1581,14 +1581,35 @@ button, .btn:not(.btn-link) {.font-semibold;}
     display: block;
     width: 120px;
     height: 120px;
-    background-color: #7B94A5;
     border-radius: 60px;
     border: 3px solid #e0e0e0;
     float: left;
     box-sizing: border-box;
-    &.img-statistics {
-      background: #7B94A5 url(../img/icons/support-images.svg) no-repeat top left;
+
+    @support-icon-background-color: #4e85aa;
+    background: @support-icon-background-color;
+    .support-icon-sprite-index(@index) {
+        background: @support-icon-background-color url(../img/icons/support-images.svg) no-repeat 0 -120px * @index;
     }
+    &.img-register-fuel {
+      .support-icon-sprite-index(0);
+    }
+    &.img-statistics {
+      .support-icon-sprite-index(1);
+    }
+    &.img-contact-support {
+      .support-icon-sprite-index(2);
+    }
+    &.img-documentation-link {
+      .support-icon-sprite-index(3);
+    }
+    &.img-download-logs {
+      .support-icon-sprite-index(4);
+    }
+    &.img-audit-logs {
+      .support-icon-sprite-index(5);
+    }
+
   }
   .support-box-content {
     width: 100%;

@@ -12,10 +12,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from logging import getLogger
+import subprocess
 
-class UrlNotAvailable(Exception):
-    pass
+logger = getLogger(__name__)
 
 
-class CommandFailed(Exception):
-    pass
+def execute(cmd):
+    logger.debug('Executing command %s', cmd)
+    command = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = command.communicate()
+    msg = 'Command {0} executed. RC {1}, stdout {2}, stderr {3}'.format(
+        cmd, command.returncode, stdout, stderr)
+    if command.returncode:
+        logger.error(msg)
+    else:
+        logger.debug(msg)
+    return command.returncode, stdout, stderr

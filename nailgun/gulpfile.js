@@ -119,6 +119,12 @@ gulp.task('jison', function() {
 var jsFiles = ['static/js/**/*.js', 'static/js/**/*.jsx', '!static/js/libs/**', '!static/js/expression/parser.js'];
 var styleFiles = 'static/**/*.less';
 
+gulp.task('jscs:fix', function() {
+    return gulp.src(jsFiles, {base: '.'})
+        .pipe(jscs(_.extend({fix: true}, jscsConfig)))
+        .pipe(gulp.dest('.'));
+});
+
 gulp.task('jscs', function() {
     return gulp.src(jsFiles)
         .pipe(jscs(jscsConfig));

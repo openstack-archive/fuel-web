@@ -2873,12 +2873,12 @@
       }
     },
     "gulp-jscs": {
-      "version": "1.3.1",
-      "from": "gulp-jscs@~1.3.0",
+      "version": "1.6.0",
+      "from": "gulp-jscs@1.6.0",
       "dependencies": {
         "jscs": {
-          "version": "1.12.0",
-          "from": "jscs@^1.8.0",
+          "version": "1.13.1",
+          "from": "jscs@^1.12.0",
           "dependencies": {
             "chalk": {
               "version": "1.0.0",
@@ -2912,7 +2912,7 @@
                   "dependencies": {
                     "ansi-regex": {
                       "version": "1.1.1",
-                      "from": "ansi-regex@1.1.1"
+                      "from": "ansi-regex@^1.0.0"
                     }
                   }
                 },
@@ -2941,8 +2941,8 @@
               "from": "esprima@^1.2.5"
             },
             "esprima-harmony-jscs": {
-              "version": "1.1.0-templates",
-              "from": "esprima-harmony-jscs@1.1.0-templates"
+              "version": "1.1.0-bin",
+              "from": "esprima-harmony-jscs@1.1.0-bin"
             },
             "estraverse": {
               "version": "1.9.3",
@@ -2953,7 +2953,7 @@
               "from": "exit@~0.1.2"
             },
             "glob": {
-              "version": "5.0.3",
+              "version": "5.0.6",
               "from": "glob@^5.0.1",
               "dependencies": {
                 "inflight": {
@@ -2971,7 +2971,7 @@
                   "from": "inherits@2"
                 },
                 "once": {
-                  "version": "1.3.1",
+                  "version": "1.3.2",
                   "from": "once@^1.3.0",
                   "dependencies": {
                     "wrappy": {
@@ -2979,6 +2979,10 @@
                       "from": "wrappy@1"
                     }
                   }
+                },
+                "path-is-absolute": {
+                  "version": "1.0.0",
+                  "from": "path-is-absolute@^1.0.0"
                 }
               }
             },
@@ -2987,51 +2991,55 @@
               "from": "lodash.assign@~3.0.0",
               "dependencies": {
                 "lodash._baseassign": {
-                  "version": "3.0.2",
+                  "version": "3.1.1",
                   "from": "lodash._baseassign@^3.0.0",
                   "dependencies": {
                     "lodash._basecopy": {
-                      "version": "3.0.0",
+                      "version": "3.0.1",
                       "from": "lodash._basecopy@^3.0.0"
                     },
+                    "lodash.isnative": {
+                      "version": "3.0.2",
+                      "from": "lodash.isnative@^3.0.0"
+                    },
                     "lodash.keys": {
-                      "version": "3.0.5",
+                      "version": "3.0.7",
                       "from": "lodash.keys@^3.0.0",
                       "dependencies": {
                         "lodash.isarguments": {
-                          "version": "3.0.1",
+                          "version": "3.0.2",
                           "from": "lodash.isarguments@^3.0.0"
                         },
                         "lodash.isarray": {
-                          "version": "3.0.1",
+                          "version": "3.0.2",
                           "from": "lodash.isarray@^3.0.0"
-                        },
-                        "lodash.isnative": {
-                          "version": "3.0.1",
-                          "from": "lodash.isnative@^3.0.0"
                         }
                       }
                     }
                   }
                 },
                 "lodash._createassigner": {
-                  "version": "3.0.1",
+                  "version": "3.1.0",
                   "from": "lodash._createassigner@^3.0.0",
                   "dependencies": {
                     "lodash._bindcallback": {
-                      "version": "3.0.0",
+                      "version": "3.0.1",
                       "from": "lodash._bindcallback@^3.0.0"
                     },
                     "lodash._isiterateecall": {
-                      "version": "3.0.5",
+                      "version": "3.0.7",
                       "from": "lodash._isiterateecall@^3.0.0"
+                    },
+                    "lodash.restparam": {
+                      "version": "3.6.1",
+                      "from": "lodash.restparam@^3.0.0"
                     }
                   }
                 }
               }
             },
             "minimatch": {
-              "version": "2.0.4",
+              "version": "2.0.7",
               "from": "minimatch@~2.0.1",
               "dependencies": {
                 "brace-expansion": {
@@ -3049,6 +3057,10 @@
                   }
                 }
               }
+            },
+            "pathval": {
+              "version": "0.1.1",
+              "from": "pathval@~0.1.1"
             },
             "prompt": {
               "version": "0.2.14",
@@ -3078,7 +3090,7 @@
                   "dependencies": {
                     "async": {
                       "version": "0.2.10",
-                      "from": "async@~0.2.9"
+                      "from": "async@0.2.x"
                     },
                     "deep-equal": {
                       "version": "1.0.0",
@@ -3089,7 +3101,7 @@
                       "from": "i@0.3.x"
                     },
                     "mkdirp": {
-                      "version": "0.5.0",
+                      "version": "0.5.1",
                       "from": "mkdirp@0.x.x",
                       "dependencies": {
                         "minimist": {
@@ -3175,7 +3187,7 @@
                       "from": "inherits@2"
                     },
                     "once": {
-                      "version": "1.3.1",
+                      "version": "1.3.2",
                       "from": "once@^1.3.0",
                       "dependencies": {
                         "wrappy": {
@@ -3205,8 +3217,8 @@
           "from": "object-assign@^2.0.0"
         },
         "through2": {
-          "version": "0.6.3",
-          "from": "through2@~0.6.3",
+          "version": "0.6.5",
+          "from": "through2@^0.6.5",
           "dependencies": {
             "readable-stream": {
               "version": "1.0.33",
@@ -3233,6 +3245,16 @@
             "xtend": {
               "version": "4.0.0",
               "from": "xtend@>=4.0.0 <4.1.0-0"
+            }
+          }
+        },
+        "tildify": {
+          "version": "1.0.0",
+          "from": "tildify@^1.0.0",
+          "dependencies": {
+            "user-home": {
+              "version": "1.1.1",
+              "from": "user-home@^1.0.0"
             }
           }
         }

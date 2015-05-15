@@ -219,6 +219,8 @@ def get_host_system(update_path, new_version):
             '/etc/yum.repos.d',
             '{0}_nailgun.repo'.format(new_version)),
 
+        'repo_aux_config_path': '/etc/yum.repos.d/auxiliary.repo',
+
         'repos': {
             'src': join(update_path, 'repos', '[0-9.-]*'),
             'dst': join('/var', 'www', 'nailgun')},

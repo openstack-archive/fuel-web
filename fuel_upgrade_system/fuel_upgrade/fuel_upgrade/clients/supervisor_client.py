@@ -119,6 +119,12 @@ class SupervisorClient(object):
             current_cfg_path)
         self.supervisor.reloadConfig()
 
+    def start_all_services(self):
+        """Stops all processes
+        """
+        logger.info(u'Start all services')
+        self.supervisor.startAllProcesses()
+
     def stop_all_services(self):
         """Stops all processes
         """

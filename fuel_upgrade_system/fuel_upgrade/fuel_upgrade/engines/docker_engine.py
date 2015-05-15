@@ -58,13 +58,13 @@ class DockerUpgrader(UpgradeEngine):
         self.from_version = self.config.from_version
         self.supervisor = SupervisorClient(self.config, self.from_version)
 
-    def upgrade(self):
-        """Method with upgarde logic
-        """
-        # Preapre env for upgarde
+    def backup(self):
         self.save_db()
         self.save_cobbler_configs()
 
+    def upgrade(self):
+        """Method with upgarde logic
+        """
         # Point to new supervisor configs and restart supervisor in
         # order to apply them
         self.switch_to_new_configs()

@@ -39,6 +39,11 @@ class UpgradeEngine(object):
         """Rollback all the changes, generally used in case of failed upgrade.
         """
 
+    def backup(self):
+        """Perform backup actions
+        """
+        return NotImplemented
+
     @abc.abstractproperty
     def required_free_space(self):
         """Required free space for upgarde

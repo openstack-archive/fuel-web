@@ -24,6 +24,7 @@ from fuel_upgrade.cli import run_upgrade
 from fuel_upgrade.tests.base import BaseTestCase
 
 
+@mock.patch('fuel_upgrade.engines.host_system.SupervisorClient', mock.Mock())
 @mock.patch('fuel_upgrade.cli.CheckerManager', mock.Mock())
 @mock.patch('fuel_upgrade.cli.PreUpgradeHookManager', mock.Mock())
 @mock.patch('fuel_upgrade.cli.UpgradeManager', mock.Mock())

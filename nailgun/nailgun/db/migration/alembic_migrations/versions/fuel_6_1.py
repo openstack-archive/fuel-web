@@ -138,6 +138,7 @@ task_names_old = (
 task_names_new = task_names_old + ('create_stats_user',
                                    'remove_stats_user',
                                    'check_repo_availability')
+                                   'check_repo_availability_with_setup')
 
 
 def upgrade():

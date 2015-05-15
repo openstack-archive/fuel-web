@@ -25,7 +25,9 @@ from fuel_upgrade.tests.base import BaseTestCase
 class TestHostSystemUpgrader(BaseTestCase):
 
     def setUp(self):
-        self.upgrader = HostSystemUpgrader(self.fake_config)
+        with mock.patch('fuel_upgrade.engines.host_system.SupervisorClient'):
+            self.upgrader = HostSystemUpgrader(self.fake_config)
+        self.upgrader.supervisor = mock.Mock()
 
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.install_repos')
@@ -42,6 +44,7 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.called_once(install_repos_mock)
         self.called_once(run_puppet_mock)
         self.called_once(update_repo_mock)
+        self.called_once(self.upgrader.supervisor.stop_all_services)
         mock_utils.exec_cmd.assert_called_with(
             'yum install -v -y fuel-9999.0.0')
 
@@ -74,6 +77,7 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.upgrader.rollback()
         self.called_once(remove_repo_config_mock)
         self.called_once(remove_repos_mock)
+        self.called_once(self.upgrader.supervisor.start_all_services)
 
     @mock.patch('fuel_upgrade.engines.host_system.utils')
     def test_remove_repo_config(self, utils_mock):

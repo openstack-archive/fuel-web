@@ -60,10 +60,23 @@ class UpgradeManager(object):
         self._version_file.switch_to_new()
 
         for upgrader in self._upgraders:
+            logger.debug('%s: backuping...', upgrader.__class__.__name__)
 
             try:
-                logger.debug('%s: upgrading...', upgrader.__class__.__name__)
-                self._used_upgraders.append(upgrader)
+                upgrader.backup()
+            except Exception as exc:
+                logger.exception(
+                    '%s: failed to backup: "%s"',
+                    upgrader.__class__.__name__, exc)
+
+                logger.error('*** UPGRADE FAILED')
+                raise
+
+        for upgrader in self._upgraders:
+            logger.debug('%s: upgrading...', upgrader.__class__.__name__)
+            self._used_upgraders.append(upgrader)
+
+            try:
                 upgrader.upgrade()
             except Exception as exc:
                 logger.exception(

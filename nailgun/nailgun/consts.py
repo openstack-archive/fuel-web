@@ -214,6 +214,7 @@ TASK_NAMES = Enum(
     'verify_network_connectivity',
     'multicast_verification',
     'check_repo_availability',
+    'check_repo_availability_with_setup',
 
     # dump
     'dump',

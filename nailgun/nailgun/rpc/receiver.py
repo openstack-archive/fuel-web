@@ -1127,11 +1127,11 @@ class NailgunReceiver(object):
             jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
-        nodes = map(dict, kwargs.get('nodes'))
+        nodes = kwargs.get('nodes')
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
-        failed_nodes = [node for node in nodes if node['data']['status'] != 0]
-        failed_nodes_ids = [node['sender'] for node in failed_nodes]
+        failed_nodes = [node for node in nodes if node['status'] != 0]
+        failed_nodes_ids = [node['uid'] for node in failed_nodes]
 
         progress = 100
         message = ''
@@ -1141,8 +1141,7 @@ class NailgunReceiver(object):
             progress = 100
         else:
             failed_urls = list(itertools.chain.from_iterable(
-                [jsonutils.loads(n['data']['out'])['failed_urls']
-                 for n in failed_nodes]
+                [n['out'].get('failed_urls', []) for n in failed_nodes]
             ))
 
             message = ('Some of these nodes: "{0}" failed to connect to '
@@ -1156,3 +1155,50 @@ class NailgunReceiver(object):
 
         objects.Task.update_verify_networks(
             task, status, progress, message, [])
+
+    @classmethod
+    def check_repositories_with_setup(cls, **kwargs):
+        logger.info(
+            "RPC method check_repositories_with_setup received: %s" %
+            jsonutils.dumps(kwargs)
+        )
+
+        task_uuid = kwargs.get('task_uuid')
+        response = kwargs.get('nodes')
+        status = 'ready'
+        progress = 100
+
+        task = objects.Task.get_by_uuid(
+            task_uuid, fail_if_not_found=True)
+
+        response_nodes = dict([(n['uid'], n) for n in response])
+        nodes = objects.NodeCollection.filter_by_list(
+            None, 'id', response_nodes.keys(), order_by='id')
+
+        failed_nodes = []
+        failed_repos = set()
+        for node in nodes:
+            node_response = response_nodes[node.uid]
+            if node_response['status'] != 0:
+                if isinstance(node_response['out'], dict):
+                    failed_repos.update(
+                        node_response['out'].get('failed_urls', []))
+                failed_nodes.append(node.name)
+        msg = None
+
+        if failed_nodes:
+            msg = ('Repo availability verification using public network'
+                   ' failed on following nodes {0}.\n'.format(
+                   ', '.join(failed_nodes)))
+        if failed_repos:
+            msg += ('Following repos are not available{0}\n.'.format(
+                    ', '.join(failed_repos)))
+        if msg:
+            msg += ('Check your public network settings and '
+                    'availability of the repositories from public network. '
+                    'Please examine nailgun and astute'
+                    ' logs for additional details.')
+            status = 'error'
+
+        objects.Task.update_verify_networks(
+            task, status, progress, msg, {})

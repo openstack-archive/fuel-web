@@ -15,3 +15,7 @@
 
 class UrlNotAvailable(Exception):
     pass
+
+
+class CommandFailed(Exception):
+    pass

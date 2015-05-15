@@ -38,6 +38,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
+from nailgun.network.manager import NetworkManager
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
@@ -1115,18 +1116,7 @@ class GenerateCapacityLogTask(object):
         db().commit()
 
 
-class CheckRepositoryConnectionTask(object):
-    @classmethod
-    def _get_repo_urls(cls, task):
-        return [r['uri'] for r in cls._get_repository_list(task)]
-
-    @classmethod
-    def _get_repository_list(cls, task):
-        return task.cluster.attributes.editable['repo_setup']['repos']['value']
-
-
-class CheckRepositoryConnectionFromMasterNodeTask(
-        CheckRepositoryConnectionTask):
+class CheckRepositoryConnectionFromMasterNodeTask(object):
     @classmethod
     def execute(cls, task):
         failed_repositories = cls._get_failed_repositories(task)
@@ -1144,7 +1134,7 @@ class CheckRepositoryConnectionFromMasterNodeTask(
 
     @classmethod
     def _get_failed_repositories(cls, task):
-        urls = cls._get_repo_urls(task)
+        urls = objects.Cluster.get_repo_urls(task.cluster)
         responses = cls._get_responses(urls)
         failed_responses = filter(lambda x: x.status_code != 200, responses)
         return [r.url for r in failed_responses]
@@ -1154,8 +1144,7 @@ class CheckRepositoryConnectionFromMasterNodeTask(
         return map(requests.get, urls)
 
 
-class CheckRepositoryConnectionFromSlavesTask(CheckRepositoryConnectionTask,
-                                              BaseNetworkVerification):
+class CheckRepositoryConnectionFromSlavesTask(BaseNetworkVerification):
     def get_message(self):
         rpc_message = make_astute_message(
             self.task,
@@ -1163,7 +1152,7 @@ class CheckRepositoryConnectionFromSlavesTask(CheckRepositoryConnectionTask,
             "check_repositories_resp",
             {
                 "nodes": self._get_nodes_to_check(),
-                "urls": self._get_repo_urls(self.task),
+                "urls": objects.Cluster.get_repo_urls(self.task.cluster),
             }
         )
         return rpc_message
@@ -1176,6 +1165,94 @@ class CheckRepositoryConnectionFromSlavesTask(CheckRepositoryConnectionTask,
                 in (objects.Cluster
                     .get_nodes_not_for_deletion(self.task.cluster))
                 ]
+
+
+class RepoAvailabilityWithSetup(object):
+
+    def __init__(self, task, config):
+        self.task = task
+        self.config = config
+
+    @classmethod
+    def get_config(cls, cluster):
+        urls = objects.Cluster.get_repo_urls(cluster)
+        nodes = []
+        errors = []
+        # if there is nothing to verify - just skip this task
+        if not urls:
+            return
+
+        all_public = \
+            objects.Cluster.should_assign_public_to_all_nodes(cluster)
+
+        public_networks = filter(
+            lambda ng: ng.name == 'public', cluster.network_groups)
+
+        for public in public_networks:
+            # we are not running this verification for nodes not in discover
+            # state
+            nodes_with_public_ip = []
+            required_ips = 0
+            group_nodes = objects.NodeCollection.filter_by(
+                None, group_id=public.group_id,
+                status=consts.NODE_STATUSES.discover).all()
+
+            for node in group_nodes:
+
+                if not (all_public or objects.Node.should_have_public(node)):
+                    continue
+
+                ip = NetworkManager.get_ip_by_network_name(node, public.name)
+                nodes_with_public_ip.append((node, ip))
+                if ip is None:
+                    required_ips += 1
+
+            if not nodes_with_public_ip:
+                continue
+
+            # we are not doing any allocations during verification
+            # just ask for free ips and use them
+            free_ips = iter(NetworkManager.get_free_ips(public, required_ips))
+            mask = public.cidr.split('/')[1]
+
+            lacp_modes = (
+                consts.BOND_MODES.lacp_balance_tcp,
+                consts.BOND_MODES.l_802_3ad)
+
+            for node, ip in nodes_with_public_ip:
+                iface = NetworkManager.find_nic_assoc_with_ng(
+                    node, public)
+
+                if iface.bond and iface.bond.mode in lacp_modes:
+                    errors.append(
+                        'Iface {0} on node {1} configured to use '
+                        'lacp-balance-tcp mode as part of {2}. Repo '
+                        'availability verification for this node '
+                        'will be skipped.'.format(
+                            iface.name, node.name, iface.bond.name))
+                    continue
+
+                ip = ip or next(free_ips)
+                node_config = {
+                    'addr': '{0}/{1}'.format(ip, mask),
+                    'gateway': public.gateway,
+                    'vlan': public.vlan_start or 0,
+                    'iface': iface.name,
+                    'urls': urls,
+                    'uid': node.uid}
+                nodes.append(node_config)
+        # if no nodes will be present - we will skip this task
+        return nodes, errors
+
+    def get_message(self):
+        return make_astute_message(
+            self.task,
+            "check_repositories_with_setup",
+            "check_repositories_with_setup_resp",
+            {
+                "nodes": self.config
+            }
+        )
 
 
 class CreateStatsUserTask(object):

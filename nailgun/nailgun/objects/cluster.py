@@ -851,6 +851,11 @@ class Cluster(NailgunObject):
                        instance.nodes))
             nodes_to_deploy.extend(controllers_to_deploy)
 
+    @classmethod
+    def get_repo_urls(self, instance):
+        repos = instance.attributes.editable['repo_setup']['repos']['value']
+        return tuple(set([r['uri'] for r in repos]))
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

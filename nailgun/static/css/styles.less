@@ -1581,14 +1581,19 @@ button, .btn:not(.btn-link) {.font-semibold;}
     display: block;
     width: 120px;
     height: 120px;
-    background-color: #7B94A5;
     border-radius: 60px;
     border: 3px solid #e0e0e0;
     float: left;
     box-sizing: border-box;
-    &.img-statistics {
-      background: #7B94A5 url(../img/icons/support-images.svg) no-repeat top left;
-    }
+
+    @support-icon-background-color: #4e85aa;
+    @icons: img-register-fuel, img-statistics, img-contact-support, img-documentation-link, img-download-logs, img-audit-logs;
+    .-(@i: length(@icons)) when (@i > 0) {
+        @name: extract(@icons, @i);
+        &.@{name} {background: @support-icon-background-color url(../img/icons/support-images.svg) no-repeat 0 -120px * (@i - 1);}
+        .-((@i - 1));
+    } .-;
+    background: @support-icon-background-color;
   }
   .support-box-content {
     width: 100%;

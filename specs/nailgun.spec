@@ -61,7 +61,7 @@ Requires:    pytz
 Nailgun package
 
 %prep
-%setup -cq -n %{name}-%{version} 
+%setup -cq -n %{name}-%{version}
 npm install --prefix %{_builddir}/%{name}-%{version}/nailgun/ gulp
 
 %build
@@ -149,6 +149,7 @@ Requires:  python-daemonize
 Requires:  python-yaml
 Requires:  tcpdump
 Requires:  python-requests
+Requires:  python-netifaces
 
 
 %description -n nailgun-net-check
@@ -179,7 +180,7 @@ Requires:    openssh-clients
 Requires:    xz
 
 %description -n shotgun
-Shotgun package. 
+Shotgun package.
 
 %files -n shotgun -f  %{_builddir}/%{name}-%{version}/shotgun/INSTALLED_FILES
 %defattr(-,root,root)

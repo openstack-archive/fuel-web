@@ -17,7 +17,10 @@ import mock
 
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun.network.manager import NetworkManager
+from nailgun import objects
 from nailgun.task.task import CheckRepositoryConnectionFromMasterNodeTask
+from nailgun.task.task import RepoAvailabilityWithSetup
 from nailgun.test.base import BaseTestCase
 
 
@@ -42,10 +45,9 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
             {'type': 'deb', 'uri': self.url, 'suite': 'suite'}]
 
         self.patcher = mock.patch(
-            ('nailgun.task.task.CheckRepositoryConnectionFromMasterNodeTask'
-             '._get_repository_list'),
+            'nailgun.task.task.objects.Cluster.get_repo_urls',
             new=mock.Mock(return_value=self.mocked_repositories))
-        self.patcher.start()
+        self.mrepos = self.patcher.start()
 
     def tearDown(self):
         self.patcher.stop()
@@ -59,11 +61,7 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
         get_mock.return_value = response_mock
 
         CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
-
-        CheckRepositoryConnectionFromMasterNodeTask\
-            ._get_repository_list.assert_called_with(
-                self.task
-            )
+        self.mrepos.assert_called_with(self.task.cluster)
 
     @mock.patch('requests.get')
     def test_execute_fail(self, get_mock):
@@ -74,3 +72,44 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
 
         with self.assertRaises(errors.CheckBeforeDeploymentError):
             CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
+
+
+class TestRepoAvailabilityWithSetup(BaseTestCase):
+
+    def setUp(self):
+        super(TestRepoAvailabilityWithSetup, self).setUp()
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[{'roles': ['controller']},
+                          {'roles': ['controller']},
+                          {'roles': ['compute']}])
+
+        self.cluster = self.env.clusters[0]
+        self.public_ng = next(ng for ng in self.cluster.network_groups
+                              if ng.name == 'public')
+        self.free_ips = NetworkManager.get_free_ips(self.public_ng, 2)
+        self.repo_urls = objects.Cluster.get_repo_urls(self.cluster)
+        self.controllers = [n for n in self.cluster.nodes
+                            if 'controller' in n.all_roles]
+
+    def test_generate_config(self):
+        config, errors = RepoAvailabilityWithSetup.get_config(self.cluster)
+        self.assertEqual(len(config), 2)
+
+        control_1, control_2 = self.controllers
+        control_1_conf = next(c for c in config if c['uid'] == control_1.uid)
+        control_2_conf = next(c for c in config if c['uid'] == control_2.uid)
+
+        self.assertNotEqual(control_1_conf['addr'], control_2_conf['addr'])
+        self.assertEqual(control_1_conf['gateway'], control_2_conf['gateway'])
+        self.assertEqual(control_1_conf['gateway'], self.public_ng.gateway)
+        self.assertIn(control_1_conf['addr'].split('/')[0], self.free_ips)
+        self.assertIn(control_2_conf['addr'].split('/')[0], self.free_ips)
+
+        self.assertEqual(control_1_conf['urls'], control_2_conf['urls'])
+        self.assertEqual(control_1_conf['urls'], self.repo_urls)
+
+        self.assertEqual(control_1_conf['vlan'], control_2_conf['vlan'])

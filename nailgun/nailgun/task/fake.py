@@ -665,7 +665,7 @@ class FakeCheckRepositories(FakeAmpqThread):
             "task_uuid": self.task_uuid,
             "status": "ready",
             "progress": 100,
-            "msg": [{"uid": "1", "exit code": 0}]
+            "nodes": [{"uid": "1", "status": 0, "out": "", "err": ""}]
         }]
 
 
@@ -684,4 +684,5 @@ FAKE_THREADS = {
     'multicast_verification': FakeMulticastVerifications,
     'execute_tasks': FakeExecuteTasksThread,
     'check_repositories': FakeCheckRepositories,
+    'check_repositories_with_setup': FakeCheckRepositories,
 }

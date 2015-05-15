@@ -30,6 +30,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import notifier
 from nailgun import objects
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
@@ -882,6 +883,25 @@ class VerifyNetworksTaskManager(TaskManager):
             verify_task.add_subtask(
                 tasks.CheckRepositoryConnectionFromSlavesTask(repo_check_task,
                                                               vlan_ids))
+
+            config, errors = tasks.RepoAvailabilityWithSetup.get_config(
+                self.cluster)
+            # if there is no config - there is no nodes on which
+            # we need to setup network
+            if config:
+                repo_check_task = objects.task.Task.create_subtask(
+                    task,
+                    name=consts.TASK_NAMES.check_repo_availability_with_setup)
+                verify_task.add_subtask(
+                    tasks.RepoAvailabilityWithSetup(
+                        repo_check_task, config))
+
+            if errors:
+                notifier.notify(
+                    "warning",
+                    '\n'.join(errors),
+                    self.cluster.id
+                )
 
             db().commit()
             self._call_silently(task, verify_task)

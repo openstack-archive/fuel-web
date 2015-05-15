@@ -42,10 +42,9 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
             {'type': 'deb', 'uri': self.url, 'suite': 'suite'}]
 
         self.patcher = mock.patch(
-            ('nailgun.task.task.CheckRepositoryConnectionFromMasterNodeTask'
-             '._get_repository_list'),
+            'nailgun.task.task.objects.Cluster.get_repo_urls',
             new=mock.Mock(return_value=self.mocked_repositories))
-        self.patcher.start()
+        self.mrepos = self.patcher.start()
 
     def tearDown(self):
         self.patcher.stop()
@@ -59,11 +58,7 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
         get_mock.return_value = response_mock
 
         CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
-
-        CheckRepositoryConnectionFromMasterNodeTask\
-            ._get_repository_list.assert_called_with(
-                self.task
-            )
+        self.mrepos.assert_called_with(self.task.cluster)
 
     @mock.patch('requests.get')
     def test_execute_fail(self, get_mock):

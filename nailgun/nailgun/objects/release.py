@@ -17,7 +17,7 @@
 """
 Release object and collection
 """
-
+from distutils.version import StrictVersion
 from sqlalchemy import not_
 import yaml
 
@@ -150,6 +150,16 @@ class Release(NailgunObject):
         return instance.is_deployable
 
     @classmethod
+    def is_granular_enabled(cls, instance):
+        """Check if granular deployment is available for release
+
+        :param instance: a Release instance
+        :returns: boolean
+        """
+        return (StrictVersion(instance.fuel_version) >=
+                StrictVersion(consts.FUEL_GRANULAR_DEPLOY))
+
+    @classmethod
     def get_deployment_tasks(cls, instance):
         """Get deployment graph based on release version."""
         env_version = extract_env_version(instance.version)
@@ -157,8 +167,8 @@ class Release(NailgunObject):
             return instance.deployment_tasks
         elif env_version.startswith('5.0'):
             return yaml.load(graph_configuration.DEPLOYMENT_50)
-        else:
-            return yaml.load(graph_configuration.DEPLOYMENT_CURRENT)
+        elif env_version.startswith('5.1') or env_version.startswith('6.0'):
+            return yaml.load(graph_configuration.DEPLOYMENT_51_60)
 
 
 class ReleaseCollection(NailgunCollection):

@@ -12,7 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import sys
+# fixed in cmd2 >=0.6.6
+os.environ['EDITOR'] = '/usr/bin/nano'
 
 from cliff.commandmanager import CommandManager
 

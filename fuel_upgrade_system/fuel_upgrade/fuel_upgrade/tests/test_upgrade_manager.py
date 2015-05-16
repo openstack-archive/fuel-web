@@ -76,6 +76,29 @@ class TestUpgradeManager(BaseTestCase):
         self.method_was_not_called(upgrader._upgraders[2].upgrade)
         self.method_was_not_called(upgrader._upgraders[2].rollback)
 
+    def test_run_backup_for_all_engines(self):
+        upgrader = UpgradeManager(**self.default_args(
+            upgraders=[mock.Mock(), mock.Mock()],
+        ))
+        upgrader.run()
+
+        self.called_once(upgrader._upgraders[0].backup)
+        self.called_once(upgrader._upgraders[1].backup)
+
+    def test_run_backup_fails(self):
+        upgrader = UpgradeManager(**self.default_args(
+            upgraders=[mock.Mock(), mock.Mock()],
+        ))
+        upgrader._upgraders[1].backup.side_effect = Exception('Backup fails')
+        self.assertRaisesRegexp(
+            Exception, 'Backup fails', upgrader.run)
+
+        self.called_once(upgrader._upgraders[0].backup)
+        self.called_once(upgrader._upgraders[1].backup)
+
+        self.method_was_not_called(upgrader._upgraders[0].rollback)
+        self.method_was_not_called(upgrader._upgraders[1].rollback)
+
     def test_run_upgrade_for_all_engines(self):
         upgrader = UpgradeManager(**self.default_args(
             upgraders=[mock.Mock(), mock.Mock()],
@@ -123,7 +146,8 @@ class TestUpgradeManager(BaseTestCase):
         upgrader._on_success.side_effect = Exception('error')
         upgrader.run()
 
-    def test_hostsystem_rollback_is_first(self):
+    @mock.patch('fuel_upgrade.engines.host_system.SupervisorClient')
+    def test_hostsystem_rollback_is_first(self, _):
         args = self.default_args()
 
         hostsystem = HostSystemUpgrader(args['config'])

@@ -25,7 +25,9 @@ from fuel_upgrade.tests.base import BaseTestCase
 class TestHostSystemUpgrader(BaseTestCase):
 
     def setUp(self):
-        self.upgrader = HostSystemUpgrader(self.fake_config)
+        with mock.patch('fuel_upgrade.engines.host_system.SupervisorClient'):
+            self.upgrader = HostSystemUpgrader(self.fake_config)
+        self.upgrader.supervisor = mock.Mock()
 
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.install_repos')
@@ -42,6 +44,7 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.called_once(install_repos_mock)
         self.called_once(run_puppet_mock)
         self.called_once(update_repo_mock)
+        self.called_once(self.upgrader.supervisor.stop_all_services)
         mock_utils.exec_cmd.assert_called_with(
             'yum install -v -y fuel-9999.0.0')
 
@@ -74,11 +77,22 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.upgrader.rollback()
         self.called_once(remove_repo_config_mock)
         self.called_once(remove_repos_mock)
+        self.called_once(self.upgrader.supervisor.start_all_services)
 
-    @mock.patch('fuel_upgrade.engines.host_system.utils')
-    def test_remove_repo_config(self, utils_mock):
+    @mock.patch('fuel_upgrade.engines.host_system.utils.remove_if_exists')
+    def test_remove_repo_config(self, remove_mock):
+        self.upgrader.config.from_version = '6.0'
         self.upgrader.remove_repo_config()
-        utils_mock.remove_if_exists.assert_called_once_with(
+        self.assertEqual(remove_mock.call_args_list, [
+            mock.call('/etc/yum.repos.d/9999_nailgun.repo'),
+            mock.call('/etc/yum.repos.d/auxiliary.repo'),
+        ])
+
+    @mock.patch('fuel_upgrade.engines.host_system.utils.remove_if_exists')
+    def test_remove_repo_config_for_fuel_ge_61(self, remove_mock):
+        self.upgrader.config.from_version = '6.1'
+        self.upgrader.remove_repo_config()
+        remove_mock.assert_called_once_with(
             '/etc/yum.repos.d/9999_nailgun.repo')
 
     @mock.patch('fuel_upgrade.engines.host_system.utils.copy')

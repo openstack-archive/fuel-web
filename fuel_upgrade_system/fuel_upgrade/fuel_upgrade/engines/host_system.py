@@ -17,6 +17,7 @@
 import glob
 import os
 
+from fuel_upgrade.clients import SupervisorClient
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade import utils
 
@@ -60,6 +61,9 @@ class HostSystemUpgrader(UpgradeEngine):
         #: packages to be installed before running puppet
         self.packages = self.host_system_config['install_packages']
 
+        self.supervisor = SupervisorClient(
+            self.config, self.config.from_version)
+
     @property
     def required_free_space(self):
         """Required free space to run upgrade
@@ -80,6 +84,14 @@ class HostSystemUpgrader(UpgradeEngine):
     def upgrade(self):
         """Run host system upgrade process
         """
+        # The workaround we need in order to fix [1]. In few words,
+        # when new Docker is installed the containers MUST NOT start
+        # again because in this case puppet inside them will install
+        # latest packages and breaks dependencies in some soft.
+        #
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1455419
+        self.supervisor.stop_all_services()
+
         self.install_repos()
         self.update_repo()
         self.install_packages()
@@ -91,6 +103,8 @@ class HostSystemUpgrader(UpgradeEngine):
         """
         self.remove_repo_config()
         self.remove_repos()
+
+        self.supervisor.start_all_services()
 
     def install_repos(self):
         sources = glob.glob(self.host_system_config['repos']['src'])
@@ -136,3 +150,10 @@ class HostSystemUpgrader(UpgradeEngine):
         """Remove yum repository config
         """
         utils.remove_if_exists(self.repo_config_path)
+
+        # One more damn hack! We have to remove auxiliary repo config
+        # if we're rollbacking to the Fuel version that doesn't have
+        # auxiliary repo at all.
+        if utils.compare_version(self.config.from_version, '6.1') > 0:
+            utils.remove_if_exists(
+                self.host_system_config['repo_aux_config_path'])

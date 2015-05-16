@@ -755,6 +755,8 @@ DUMP:
       - type: command
         command: rabbitmqctl report
         to_file: rabbitmqctl_report.txt
+      - type: file
+        path: /var/log/neutron
 
     slave:
       hosts: []

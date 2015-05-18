@@ -161,7 +161,7 @@ related to Infrastructure itself.
 
 Our Gerrit instance is installed and configured by Puppet, including specifying
 the exact Java WAR file that is used(link). To manage Gerrit instance we use
-`Jeepyb <http://ci.openstack.org/jeepyb.html>`_ - the tool written by Openstack Infra
+`Jeepyb <http://docs.openstack.org/infra/system-config/jeepyb.html>`_ - the tool written by Openstack Infra
 team, which allows to store projects configuration in YAML format.
 
 To use Jeepyb with gerrit you need to create "projects.yaml" configuration file,

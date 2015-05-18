@@ -570,9 +570,6 @@ _limits_to_update = {
             }
         ]
     },
-    'zabbix-server': {
-        'max': 1
-    }
 }
 
 

@@ -15,7 +15,6 @@
       - cinder-vmware
       - ceph-osd
       - mongo
-      - zabbix-server
       - base-os
     roles_metadata:
       controller:
@@ -95,20 +94,6 @@
             message: "Ceilometer should be enabled."
           - condition: "settings:additional_components.mongo.value == true"
             message: "You are already using external MongoDB."
-      zabbix-server:
-        name: "Zabbix Server"
-        description: "Zabbix monitoring system server."
-        conflicts:
-          - controller
-          - compute
-          - cinder
-          - ceph-osd
-          - mongo
-        limits:
-          max: 1
-        restrictions:
-          - condition: "not ('experimental' in version:feature_groups)"
-            action: "hide"
       base-os:
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
@@ -273,9 +258,6 @@
         mongo:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "mongo"}
-        zabbix-server:
-          - {allocate_size: "min", id: "os"}
-          - {allocate_size: "all", id: "mysql"}
         other:
           - {allocate_size: "all", id: "os"}
         # NOTE(eli): it's better to use entire disk
@@ -643,7 +625,7 @@
           assign_to_all_nodes:
             value: false
             label: "Assign public network to all nodes"
-            description: "When disabled, public network will be assigned to controllers and zabbix-server only"
+            description: "When disabled, public network will be assigned to controllers only"
             weight: 10
             type: "checkbox"
         corosync:

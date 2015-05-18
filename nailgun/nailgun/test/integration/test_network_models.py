@@ -21,10 +21,11 @@ from nailgun.objects.serializers.network_configuration \
 from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
 
+from nailgun.consts import CLUSTER_STATUSES
+from nailgun.consts import NODE_STATUSES
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
@@ -34,33 +35,26 @@ class TestNetworkModels(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestNetworkModels, self).tearDown()
 
-    @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_cluster_locking_after_deployment(self):
         self.env.create(
+            cluster_kwargs={'status': CLUSTER_STATUSES.operational},
             nodes_kwargs=[
-                {"pending_addition": True},
-                {"pending_addition": True},
-                {"pending_deletion": True},
-            ]
-        )
-        supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, 60)
+                {"pending_addition": False, 'status': NODE_STATUSES.ready},
+                {"pending_addition": False, 'status': NODE_STATUSES.ready},
+                {"pending_deletion": False, 'status': NODE_STATUSES.ready}])
 
         test_nets = self.env.nova_networks_get(
-            self.env.clusters[0].id
-        ).json_body
+            self.env.clusters[0].id).json_body
 
         resp_nova_net = self.env.nova_networks_put(
             self.env.clusters[0].id,
             test_nets,
-            expect_errors=True
-        )
+            expect_errors=True)
 
         resp_neutron_net = self.env.neutron_networks_put(
             self.env.clusters[0].id,
             test_nets,
-            expect_errors=True
-        )
+            expect_errors=True)
 
         resp_cluster = self.app.put(
             reverse('ClusterAttributesHandler',
@@ -71,8 +65,8 @@ class TestNetworkModels(BaseIntegrationTest):
                 }
             }),
             headers=self.default_headers,
-            expect_errors=True
-        )
+            expect_errors=True)
+
         self.assertEqual(resp_nova_net.status_code, 403)
         # it's 400 because we used Nova network
         self.assertEqual(resp_neutron_net.status_code, 400)

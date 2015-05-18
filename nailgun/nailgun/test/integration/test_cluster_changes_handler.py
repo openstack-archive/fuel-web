@@ -171,7 +171,7 @@ class TestHandlers(BaseIntegrationTest):
 
         critical_mapping = {
             'primary-controller': True,
-            'controller': False,
+            'controller': True,
             'cinder': False,
             'compute': False
         }
@@ -569,7 +569,7 @@ class TestHandlers(BaseIntegrationTest):
 
         critical_mapping = {
             'primary-controller': True,
-            'controller': False,
+            'controller': True,
             'cinder': False,
             'compute': False
         }
@@ -1014,7 +1014,7 @@ class TestHandlers(BaseIntegrationTest):
 
         critical_mapping = {
             'primary-controller': True,
-            'controller': False,
+            'controller': True,
             'cinder': False,
             'compute': False
         }

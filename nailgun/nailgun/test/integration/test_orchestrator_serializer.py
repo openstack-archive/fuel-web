@@ -1277,8 +1277,8 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'role': 'mongo', 'fail_if_error': False},
             {'role': 'primary-mongo', 'fail_if_error': True},
             {'role': 'primary-controller', 'fail_if_error': True},
-            {'role': 'controller', 'fail_if_error': False},
-            {'role': 'controller', 'fail_if_error': False},
+            {'role': 'controller', 'fail_if_error': True},
+            {'role': 'controller', 'fail_if_error': True},
             {'role': 'ceph-osd', 'fail_if_error': True}
         ]
         self.assertEqual(expected_ciritial_roles, nodes)

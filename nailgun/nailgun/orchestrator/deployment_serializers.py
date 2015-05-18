@@ -1624,7 +1624,8 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
     critical_roles = ['primary-controller',
                       'primary-mongo',
                       'primary-swift-proxy',
-                      'ceph-osd']
+                      'ceph-osd',
+                      'controller']
 
     def get_last_controller(self, nodes):
         sorted_nodes = sorted(

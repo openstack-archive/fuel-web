@@ -564,8 +564,8 @@ sleep_time = rand(30)
 logger.debug("Sleep for #{sleep_time} seconds before sending request")
 sleep(sleep_time)
 
-if File.exist?('/var/run/nodiscover')
-  logger.info("Discover prevented by /var/run/nodiscover presence.")
+if File.exist?('/etc/nailgun-agent/nodiscover')
+  logger.info("Discover prevented by /etc/nailgun-agent/nodiscover presence.")
   exit 1
 end
 

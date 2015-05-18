@@ -237,7 +237,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return !this.isLocked() && !!availableBondTypes;
         },
         getBondType: function() {
-            var configModels = {settings: this.props.cluster.get('settings')};
+            var configModels = {
+                version: app.version,
+                cluster: this.props.cluster,
+                settings: this.props.cluster.get('settings')
+            };
             return _.compact(_.flatten(_.map(this.props.bondingConfig.availability, function(modeAvailabilityData) {
                 return _.map(modeAvailabilityData, function(condition, name) {
                     var result = utils.evaluateExpression(condition, configModels).value;

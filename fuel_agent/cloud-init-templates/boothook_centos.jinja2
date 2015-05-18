@@ -91,7 +91,8 @@ add_str_to_file_if_not_exists /etc/ssh/sshd_config 'UseDNS' 'UseDNS no'
 
 cloud-init-per instance gssapi_disable sed -i -e "/^\s*GSSAPICleanupCredentials yes/d" -e "/^\s*GSSAPIAuthentication yes/d" /etc/ssh/sshd_config
 
-cloud-init-per instance nailgun_agent /bin/sh -c 'echo "flock -w 0 -o /var/lock/agent.lock -c \"/opt/nailgun/bin/agent >> /var/log/nailgun-agent.log 2>&1\"" | tee /etc/rc.local'
+cloud-init-per instance nailgun_agent /bin/sh -c 'echo "rm -f /var/run/nodiscover" | tee /etc/rc.local'
+cloud-init-per instance nailgun_agent /bin/sh -c 'echo "flock -w 0 -o /var/lock/agent.lock -c \"/opt/nailgun/bin/agent >> /var/log/nailgun-agent.log 2>&1\"" | tee -a /etc/rc.local'
 
 # Copying default bash settings to the root directory
 cloud-init-per instance skel_bash cp -f /etc/skel/.bash* /root/

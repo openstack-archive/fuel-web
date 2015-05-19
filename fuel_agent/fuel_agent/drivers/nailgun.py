@@ -507,6 +507,7 @@ class NailgunBuildImage(BaseDataDriver):
         "vim",
         "virt-what",
         "vlan",
+        "xfsprogs",
     ]
 
     def __init__(self, data):

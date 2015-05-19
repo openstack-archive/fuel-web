@@ -30,7 +30,7 @@ WhiteListRule = namedtuple(
 
 
 def get_mgmt_ip_of_cluster_controller(cluster):
-    return manager.NetworkManager._get_ip_by_network_name(
+    return manager.NetworkManager.get_ip_by_network_name(
         get_online_controller(cluster),
         consts.NETWORKS.management
     ).ip_addr

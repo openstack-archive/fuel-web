@@ -1731,7 +1731,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
                 net_man = objects.Node.get_network_manager(node_db)
                 self.assertEqual(
-                    net_man._get_ip_by_network_name(
+                    net_man.get_ip_by_network_name(
                         node_db, 'public') is not None,
                     is_public
                 )

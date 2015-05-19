@@ -607,7 +607,7 @@ class NetworkManager(object):
             networks_wo_admin = cls._get_networks_except_admin(
                 interface.assigned_networks_list)
             for net in networks_wo_admin:
-                ip = cls._get_ip_by_network_name(node, net.name)
+                ip = cls.get_ip_by_network_name(node, net.name)
                 if ip is not None:
                     network_data.append(cls._get_network_data_with_ip(
                         node, interface, net, ip))
@@ -898,7 +898,7 @@ class NetworkManager(object):
             '{1}'.format(network_name, node.full_name))
 
     @classmethod
-    def _get_ip_by_network_name(cls, node, network_name):
+    def get_ip_by_network_name(cls, node, network_name):
         for ip in node.ip_addrs:
             ng = ip.network_data
             if ng.name == network_name and ng.group_id == node.group_id:
@@ -1187,3 +1187,16 @@ class NetworkManager(object):
                 iface.interface_properties['disable_offloading']
             }
         return properties
+
+    @classmethod
+    def find_nic_assoc_with_ng(self, node, network_group):
+        """Will find iface on node that is associated with network_group.
+        If interface is a part of bond - check network on that bond
+        """
+        for iface in node.nic_interfaces:
+            assigned_networks = iface.assigned_networks_list
+            if iface.bond:
+                assigned_networks = iface.bond.assigned_networks_list
+            if network_group in assigned_networks:
+                return iface
+        return None

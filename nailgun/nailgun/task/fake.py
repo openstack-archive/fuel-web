@@ -204,11 +204,11 @@ class FakeAmpqThread(FakeThread):
                 try:
                     resp_method(**msg)
                     db().commit()
-                except Exception as e:
+                except Exception:
                     # TODO(ikalnitsky): research why some tests hit this
                     # code but do not fail.
                     db().rollback()
-                    raise e
+                    raise
 
 
 class FakeDeploymentThread(FakeAmpqThread):

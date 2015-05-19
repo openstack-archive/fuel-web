@@ -53,7 +53,18 @@
                 "system": "System",
                 "memory": "Memory",
                 "disks": "Disks",
-                "interfaces": "Interfaces"
+                "interfaces": "Interfaces",
+                "interfaces_amount": "__count__ interface",
+                "interfaces_amount_plural": "__count__ interfaces",
+                "disks_amount": "__count__ disk (__size__)",
+                "disks_amount_plural": "__count__ disks (__size__)",
+                "cpu_details": "__real__ real (__total__ total) CPU",
+                "cpu_details_short": "__real__ real (__total__ total)",
+                "total_hdd": "__total__ HDD",
+                "total_ram": "__total__ RAM",
+                "online": "Online",
+                "offline": "Offline",
+                "os": "OS"
             },
             "cluster": {
                 "status": {
@@ -252,9 +263,26 @@
                     "actions": "Actions"
                 },
                 "nodes_tab": {
-                    "roles": "Roles",
-                    "hardware_info": "Hardware Info",
-                    "roles_and_hardware_info": "Roles and hardware info",
+                    "sorters": {
+                        "roles": "Roles",
+                        "status": "Status",
+                        "offline": "Offline status",
+                        "name": "Name",
+                        "mac": "MAC address",
+                        "ip": "IP address",
+                        "manufacturer": "Manufacturer",
+                        "cpu_real": "CPU (real)",
+                        "cpu_total": "CPU (total)",
+                        "hdd": "HDD total size",
+                        "disks": "Disks amount and sizes",
+                        "ram": "RAM total size",
+                        "interfaces": "Interfaces amount"
+                    },
+                    "filters": {
+                        "roles": "Roles",
+                        "hdd": "HDD total size"
+                    },
+                    "selected_nodes_amount": " (__selected__ of __total__ selected)",
                     "assign_roles": "Assign Roles",
                     "breadcrumbs": {
                         "add": "Add Nodes",
@@ -329,9 +357,9 @@
                         }
                     },
                     "node_management_panel": {
-                        "group_by": "Group By",
+                        "sort_by": "Sort By",
                         "filter_by": "Filter By",
-                        "filter_placeholder": "Node name/mac",
+                        "search_placeholder": "Search by node name, MAC or IP address",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "node_management_error": {
@@ -371,7 +399,6 @@
                         "title": "Node Deletion Error",
                         "node_deletion_warning": "Unable to delete nodes"
                     },
-                    "no_filtered_nodes_warning": "There are no nodes found matching the filter value.",
                     "filtered_nodes_count":"__filteredNodesCount__ of __count__ node",
                     "filtered_nodes_count_plural": "__filteredNodesCount__ of __count__ nodes"
                 },

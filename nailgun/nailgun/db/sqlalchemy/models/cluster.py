@@ -66,11 +66,6 @@ class Cluster(Base):
                                   backref=backref("cluster"),
                                   cascade="all,delete",
                                   uselist=False)
-    grouping = Column(
-        Enum(*consts.CLUSTER_GROUPING, name='cluster_grouping'),
-        nullable=False,
-        default=consts.CLUSTER_GROUPING.roles
-    )
     view_mode = Column(
         Enum(*consts.CLUSTER_VIEW_MODES, name='cluster_view_mode'),
         nullable=False,

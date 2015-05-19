@@ -104,6 +104,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                     'custom-tumbler': isCheckboxOrRadio,
                     textarea: this.props.type == 'textarea'
                 };
+                inputWrapperClasses[this.props.inputWrapperClassName] = this.props.inputWrapperClassName;
             return (
                 <div key='input-group' className={utils.classNames(inputWrapperClasses)}>
                     {input}
@@ -142,7 +143,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
         renderWrapper: function(children) {
             var isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 classes = {
-                    'form-group': !isCheckboxOrRadio,
+                    'form-group': true,
                     'checkbox-group': isCheckboxOrRadio,
                     'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
                     disabled: this.props.disabled
@@ -170,7 +171,8 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
             label: React.PropTypes.node,
-            tooltipText: React.PropTypes.node
+            tooltipText: React.PropTypes.node,
+            disabled: React.PropTypes.bool
         },
         render: function() {
             return (
@@ -190,6 +192,175 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                             value={value.data}
                         />;
                     }, this)}
+                </div>
+            );
+        }
+    });
+
+    controls.MultiSelect = React.createClass({
+        mixins: [componentMixins.outerClickMixin],
+        propTypes: {
+            name: React.PropTypes.string,
+            options: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+            label: React.PropTypes.node.isRequired,
+            disabled: React.PropTypes.bool,
+            simple: React.PropTypes.bool,
+            onChange: React.PropTypes.func,
+            extraContent: React.PropTypes.node,
+            sort: React.PropTypes.bool
+        },
+        getInitialState: function() {
+            return {
+                itemsVisible: false,
+                values: []
+            };
+        },
+        toggle: function(visible) {
+            this.setState({itemsVisible: visible});
+        },
+        onChange: function(name, checked) {
+            var values = name == 'all' ?
+                    checked ? _.pluck(this.props.options, 'name') : []
+                :
+                    checked ? _.union(this.state.values, [name]) : _.difference(this.state.values, [name]);
+            this.setState({values: values});
+        },
+        render: function() {
+            var controlClasses = {
+                    'btn-group multiselect': true,
+                    open: this.state.itemsVisible
+                },
+                buttonClasses = {
+                    'btn dropdown-toggle': true,
+                    'btn-link': this.props.simple && !this.state.itemsVisible,
+                    'btn-default': !(this.props.simple && !this.state.itemsVisible)
+                };
+
+            var label = !this.props.simple && this.state.values.length ?
+                    this.state.values.length > 3 ? this.state.values.length + ' selected' : _.map(this.state.values, function(itemName) {
+                        return _.find(this.props.options, {name: itemName}).label;
+                    }, this).join(', ')
+                :
+                    this.props.label;
+
+            if (this.props.sort) {
+                this.props.options.sort(function(option1, option2) {
+                    return utils.natsort(option1.label, option2.label);
+                });
+            }
+
+            return (
+                <div className={utils.classNames(controlClasses)}>
+                    <button className={utils.classNames(buttonClasses)} disabled={this.props.disabled} onClick={this.toggle}>
+                        {label} <span className='caret'></span>
+                    </button>
+                    <ul className='dropdown-menu'>
+                        {!this.props.simple && [
+                                <li key='all'>
+                                    <controls.Input
+                                        type='checkbox'
+                                        label='Select All'
+                                        name='all'
+                                        checked={this.state.values.length == this.props.options.length}
+                                        onChange={this.props.onChange || this.onChange}
+                                    />
+                                </li>,
+                                <li key='divider' className='divider' />
+                            ]
+                        }
+                        {_.map(this.props.options, function(option, index) {
+                            return (
+                                <li key={index}>
+                                    <controls.Input {...option}
+                                        type='checkbox'
+                                        checked={_.contains(this.state.values, option.name)}
+                                        onChange={this.props.onChange || this.onChange}
+                                    />
+                                </li>
+                            );
+                        }, this)}
+                    </ul>
+                    {this.props.extraContent}
+                </div>
+            );
+        }
+    });
+
+    controls.NumberRange = React.createClass({
+        mixins: [componentMixins.outerClickMixin],
+        propTypes: {
+            name: React.PropTypes.string,
+            disabled: React.PropTypes.bool,
+            onChange: React.PropTypes.func,
+            prefix: React.PropTypes.string,
+            extraContent: React.PropTypes.node
+        },
+        getInitialState: function() {
+            return {
+                itemsVisible: false,
+                values: []
+            };
+        },
+        toggle: function(visible) {
+            this.setState({itemsVisible: visible});
+        },
+        onChange: function(name, value) {
+            value = value == '' ? undefined : Number(value);
+            if (!_.isNaN(value)) {
+                var values = this.state.values;
+                if (_.contains(name, 'start')) {
+                    values[0] = value;
+                } else {
+                    values[0] = values[0] || 0;
+                    values[1] = value;
+                }
+                this.setState({values: values});
+            }
+        },
+        render: function() {
+            var values = this.state.values;
+            var controlClasses = {
+                    'btn-group number-range': true,
+                    open: this.state.itemsVisible
+                };
+
+            var props = {
+                    type: 'number',
+                    disabled: this.props.disabled,
+                    onChange: this.props.onChange || this.onChange,
+                    inputClassName: 'pull-left',
+                    error: values[0] > values[1] || null
+                };
+
+            var label = _.compact(values).length ?
+                    (
+                        !_.isUndefined(values[0]) && !_.isUndefined(values[1]) ?
+                            values[0] == values[1] ? values[0] : values[0] + ' - ' + values[1]
+                        :
+                            !_.isUndefined(values[0]) ? 'More than ' + values[0] : 'Less than ' + values[1]
+                    ) + ' ' + this.props.prefix
+                :
+                    this.props.label;
+
+            return (
+                <div className={utils.classNames(controlClasses)}>
+                    <button className='btn btn-default dropdown-toggle' disabled={this.props.disabled} onClick={this.toggle}>
+                        {label} <span className='caret'></span>
+                    </button>
+                    <ul className='dropdown-menu'>
+                        <li>
+                            <controls.Input {...props}
+                                name={this.props.name + '-start'}
+                                value={values[0]}
+                            />
+                            <span className='pull-left'> &mdash; </span>
+                            <controls.Input {...props}
+                                name={this.props.name + '-end'}
+                                value={values[1]}
+                            />
+                        </li>
+                    </ul>
+                    {this.props.extraContent}
                 </div>
             );
         }

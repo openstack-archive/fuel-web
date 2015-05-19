@@ -286,8 +286,10 @@ define([
             }
             return _.isEmpty(errors) ? null : errors;
         },
-        groupings: function() {
-            return {roles: i18n('cluster_page.nodes_tab.roles'), hardware: i18n('cluster_page.nodes_tab.hardware_info'), both: i18n('cluster_page.nodes_tab.roles_and_hardware_info')};
+        sorters: function(mode) {
+            var sorters = ['status', 'name', 'mac', 'ip', 'manufacturer', 'cpu_real', 'cpu_total', 'hdd', 'disks', 'ram', 'interfaces'];
+            if (mode == 'list') return _.union(['roles'], sorters);
+            return sorters;
         },
         task: function(filter1, filter2) {
             var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
@@ -329,8 +331,10 @@ define([
                     resource = _.reduce(this.get('meta').disks, function(hdd, disk) {return _.isNumber(disk.size) ? hdd + disk.size : hdd;}, 0);
                 } else if (resourceName == 'ram') {
                     resource = this.get('meta').memory.total;
-                } else if (resourceName == 'disks') {
+                } else if (resourceName == 'disks') { // used for sorting
                     resource = _.pluck(this.get('meta').disks, 'size').sort(function(a, b) {return a - b;});
+                } else if (resourceName == 'disks_amount') { // used for filtering
+                    resource = this.get('meta').disks.length;
                 } else if (resourceName == 'interfaces') {
                     resource = this.get('meta').interfaces.length;
                 }
@@ -360,8 +364,15 @@ define([
                 return releaseRoles.findWhere({name: role}).get('label');
             }).join(', ');
         },
-        getHardwareSummary: function() {
-            return i18n('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + i18n('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
+        getStatusSummary: function() {
+            // 'offline' status has higher priority
+            if (!this.get('online')) return 'offline';
+            var status = this.get('status');
+            // 'removing' end 'error' statuses has higher priority
+            if (_.contains(['removing', 'error'], status)) return status;
+            if (this.get('pending_addition')) return 'pending_addition';
+            if (this.get('pending_deletion')) return 'pending_deletion';
+            return status;
         }
     });
 

@@ -286,8 +286,10 @@ define([
             }
             return _.isEmpty(errors) ? null : errors;
         },
-        groupings: function() {
-            return {roles: i18n('cluster_page.nodes_tab.roles'), hardware: i18n('cluster_page.nodes_tab.hardware_info'), both: i18n('cluster_page.nodes_tab.roles_and_hardware_info')};
+        sorters: function(mode) {
+            var sorters = ['hdd'];
+            if (mode == 'list') sorters.unshift('roles');
+            return sorters;
         },
         task: function(filter1, filter2) {
             var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
@@ -361,7 +363,7 @@ define([
             }).join(', ');
         },
         getHardwareSummary: function() {
-            return i18n('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + i18n('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
+            return i18n('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd'));
         }
     });
 

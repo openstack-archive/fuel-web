@@ -104,6 +104,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                     'custom-tumbler': isCheckboxOrRadio,
                     textarea: this.props.type == 'textarea'
                 };
+                inputWrapperClasses[this.props.inputWrapperClassName] = this.props.inputWrapperClassName;
             return (
                 <div key='input-group' className={utils.classNames(inputWrapperClasses)}>
                     {input}
@@ -142,7 +143,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
         renderWrapper: function(children) {
             var isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 classes = {
-                    'form-group': !isCheckboxOrRadio,
+                    'form-group': true,
                     'checkbox-group': isCheckboxOrRadio,
                     'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
                     disabled: this.props.disabled

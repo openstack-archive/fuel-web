@@ -252,9 +252,15 @@
                     "actions": "Actions"
                 },
                 "nodes_tab": {
-                    "roles": "Roles",
-                    "hardware_info": "Hardware Info",
-                    "roles_and_hardware_info": "Roles and hardware info",
+                    "sorters": {
+                        "roles": "Roles",
+                        "hdd": "HDD total size"
+                    },
+                    "filters": {
+                        "roles": "Roles",
+                        "hdd": "HDD total size"
+                    },
+                    "selected_nodes_amount": " (__selected__ of __total__ selected)",
                     "assign_roles": "Assign Roles",
                     "breadcrumbs": {
                         "add": "Add Nodes",
@@ -329,9 +335,10 @@
                         }
                     },
                     "node_management_panel": {
-                        "group_by": "Group By",
+                        "sort_by": "Sort By",
                         "filter_by": "Filter By",
-                        "filter_placeholder": "Node name/mac",
+                        "search": "Search",
+                        "search_placeholder": "Node name, MAC or IP address",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "node_management_error": {

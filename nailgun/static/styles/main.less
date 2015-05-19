@@ -1242,51 +1242,196 @@ button, .btn:not(.btn-link) {.font-semibold;}
 }
 
 .node-management-panel {
-  height: 70px;
-  label {
-    font-size: @base-font-size - 2;
-    select, input {
-      .font-normal;
-    }
-  }
-  .control-buttons-box {
-    overflow: hidden;
-    .btn-group {
-      margin-left: 10px;
-      .glyphicon {
-        margin-right: 5px;
-      }
-    }
-  }
-  .label-wrapper {
-    margin-bottom: 5px;
-  }
-  .filter-group {
-    input[name=filter] {
-      padding-right: 22px;
-    }
-    .btn-clear-filter {
-      position: absolute;
-      bottom: 21px;
-      right: 24px;
-    }
-  }
+  @management-panel-indent: 5px;
+  min-height: 70px;
+
   .view-mode-switcher {
-    padding-right: 0;
+    margin-right: @management-panel-indent * 3;
+    float: left;
     .btn-group label {
       width: auto;
       font-size: @base-font-size;
       padding: 7px 10px 3px;
     }
   }
+
+  .node-list-management-buttons {
+    button {
+      margin-right: @management-panel-indent;
+    }
+    .search {
+      min-width: 350px;
+      position: relative;
+      .form-group {
+        margin: 0;
+      }
+      .btn-clear-search {
+        position: absolute;
+        right: 0;
+        top: 6px;
+      }
+    }
+  }
+
+  .well {
+    margin: @management-panel-indent * 2 0;
+    > div {
+      margin: 0 0 @management-panel-indent @management-panel-indent;
+    }
+    .well-heading {
+      .font-semibold;
+      .btn-link {
+        padding: 0;
+      }
+    }
+    .multiselect {
+      &:last-child .btn-link {
+        padding-left: @management-panel-indent;
+      }
+    }
+    .control-buttons {
+      float: none;
+      margin: 0;
+    }
+  }
+
+  .help-block {
+    display: none;
+  }
+
+  .active-sorters-filters {
+    border-radius: @management-panel-indent;
+    border: 1px solid @gray + 80%;
+    padding: @management-panel-indent * 2;
+    margin: @management-panel-indent * 2 0 @management-panel-indent * 4;
+    cursor: pointer;
+    .active-sorters, .active-filters {
+      position: relative;
+      > div {
+        padding-right: 40px;
+        > div {
+          margin-right: @management-panel-indent;
+          display: inline;
+        }
+      }
+      > strong {
+        padding-right: 0;
+      }
+      button {
+        padding: 0;
+        position: absolute;
+        top: 0;
+        right: @management-panel-indent * 2;
+      }
+      &.active-filters {
+        margin-bottom: @management-panel-indent * 2;
+      }
+    }
+  }
+
+  .form-group:not(.checkbox-group) label {
+    width: 60px;
+    margin: 8px 5px 0 0;
+    float: left;
+    &:empty {
+      display: none;
+    }
+  }
+
+  .control-buttons-box {
+    overflow: hidden;
+    .btn-group {
+      margin-left: @management-panel-indent;
+      .glyphicon {
+        margin-right: @management-panel-indent;
+      }
+    }
+  }
+
+  .filter-group {
+    margin-bottom: @management-panel-indent;
+    &:first-child {
+      margin-top: @management-panel-indent * 2;
+    }
+    &:last-child {
+      margin-bottom: @management-panel-indent * 3;
+      position: relative;
+    }
+    .form-group {
+      margin-right: @management-panel-indent;
+    }
+    .glyphicon {
+      margin-right: @management-panel-indent;
+      &.glyphicon-plus-sign {
+        position: relative;
+        top: 7px;
+      }
+    }
+  }
+
+  .sorters, .filters {
+    .glyphicon {
+      padding-left: @management-panel-indent;
+    }
+  }
+  .sorters {
+    .form-control {
+      width: auto;
+      float: left;
+    }
+  }
 }
+
+.multiselect, .number-range {
+  .popover {
+    display: block;
+    width: 210px;
+    top: 25px;
+    .arrow {
+      display: none;
+    }
+  }
+
+  &.multiselect {
+    .popover-content {
+      > div {
+        padding: 0 5px;
+        .custom-tumbler + span {
+          position: relative;
+          top: 3px;
+        }
+        label {
+          .font-normal;
+          font-size: @base-font-size - 2;
+        }
+        &.divider {
+          border-bottom: 1px solid @gray + 80%;
+          margin: 8px 0 10px;
+        }
+      }
+    }
+  }
+
+  &.number-range {
+    .popover {
+      span {
+        padding-top: 6px;
+      }
+      .form-control {
+        width: 72px;
+        margin: 0 5px;
+      }
+    }
+  }
+}
+
 
 // NODE LIST
 
 .node-list {
 
   .select-all {
-    .label-wrapper {
+    label {
       display: inline-block;
       position: relative;
       top: 1px;
@@ -1294,7 +1439,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
   .node-list-header .select-all {
-    margin: 0 21px 8px 0;
+    margin: 0 21px 8px 7px;
   }
 
   .nodes-group {
@@ -3070,5 +3215,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .input-wrapper input {
     width: 513px;
     margin-top: 10px;
+  }
+}
+
+.btn-link.glyphicon {
+  padding-left: 0;
+  &:hover {
+    text-decoration: none;
   }
 }

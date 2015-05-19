@@ -93,6 +93,9 @@ runcmd:
 {% if mcollective.enable != 1 %}
  - /usr/sbin/invoke-rc.d mcollective stop
  - /usr/sbin/update-rc.d -f mcollective remove
+{% else %}
+ - /usr/sbin/update-rc.d mcollective defaults
+ - service mcollective restart
 {% endif %}
  - iptables -t filter -F INPUT
  - iptables -t filter -F FORWARD

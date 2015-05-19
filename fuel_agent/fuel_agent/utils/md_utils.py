@@ -145,8 +145,16 @@ def mdremove(mdname):
     #           Thus `udevadm settle` is helping to avoid the later failure and
     #       to prevent strange behaviour of md device.
     utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
-    utils.execute('mdadm', '--stop', mdname, check_exit_code=[0])
-    utils.execute('mdadm', '--remove', mdname, check_exit_code=[0, 1])
+    try:
+        utils.execute('mdadm', '--stop', mdname, check_exit_code=[0])
+        utils.execute('mdadm', '--remove', mdname, check_exit_code=[0, 1])
+    except errors.ProcessExecutionError as e:
+        LOG.error('Can not remove md %s: %s', mdname, e)
+        out, err = utils.execute('fuser', '--verbose', '--mount', mdname,
+                                 check_exit_code=False)
+        LOG.warning('Found processes which are accessing device %s: %s\n%s',
+                    mdname, out, err)
+        raise
 
 
 def mdclean(device):

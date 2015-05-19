@@ -261,6 +261,25 @@ localhost.localdomain)
         mu.mdremove('/dev/md0')
         self.assertEqual(mock_exec.call_args_list, expected_calls)
 
+    @mock.patch.object(utils, 'execute')
+    @mock.patch.object(mu, 'get_mdnames')
+    def test_mdremove_cannot_remove(self, mock_get_mdn, mock_exec):
+        # should check if md exists
+        # should run mdadm command to remove md device
+        mock_get_mdn.return_value = ['/dev/md0']
+        # mdadm --stop fails with exception
+        mock_exec.side_effect = [None, errors.ProcessExecutionError,
+                                 ('stdout', 'stderr')]
+        expected_calls = [
+            mock.call('udevadm', 'settle', '--quiet', check_exit_code=[0]),
+            mock.call('mdadm', '--stop', '/dev/md0', check_exit_code=[0]),
+            mock.call('fuser', '--verbose', '--mount', '/dev/md0',
+                      check_exit_code=False)
+        ]
+        self.assertRaises(errors.ProcessExecutionError, mu.mdremove,
+                          '/dev/md0')
+        self.assertEqual(mock_exec.call_args_list, expected_calls)
+
     @mock.patch.object(mu, 'get_mdnames')
     def test_mdremove_notfound(self, mock_get_mdn):
         # should check if md exists

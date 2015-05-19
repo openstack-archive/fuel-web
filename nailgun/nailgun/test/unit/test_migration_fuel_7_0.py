@@ -568,6 +568,3 @@ class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
         self.assertItemsEqual(
             ui_settings['view_mode'],
             consts.NODE_VIEW_MODES.standard)
-        self.assertItemsEqual(
-            ui_settings['grouping'],
-            consts.CLUSTER_GROUPING.roles)

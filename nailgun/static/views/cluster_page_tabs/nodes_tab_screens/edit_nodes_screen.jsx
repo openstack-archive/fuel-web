@@ -51,7 +51,11 @@ function(_, React, models, utils, NodeListScreen) {
             return this.refs.screen.revertChanges();
         },
         render: function() {
-            return <NodeListScreen {... _.omit(this.props, 'screenOptions')} ref='screen' mode='edit' />;
+            return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
+                ref='screen'
+                mode='edit'
+                defaultSorting={[{roles: 'asc'}]}
+            />;
         }
     });
 

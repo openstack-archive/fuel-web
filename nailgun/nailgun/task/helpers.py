@@ -190,7 +190,7 @@ class TaskHelper(object):
         :returns: None
         """
         for node in cluster.nodes:
-            if (node not in nodes_to_deploy and
+            if (node not in nodes_to_deploy and not node.pending_deletion and
                     set(node.roles) & update_required):
                 nodes_to_deploy.append(node)
 

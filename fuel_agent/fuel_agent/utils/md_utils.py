@@ -145,7 +145,11 @@ def mdremove(mdname):
     #           Thus `udevadm settle` is helping to avoid the later failure and
     #       to prevent strange behaviour of md device.
     utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
-    utils.execute('mdadm', '--stop', mdname, check_exit_code=[0])
+    # NOTE(agordeev): https://bugzilla.redhat.com/show_bug.cgi?id=956053
+    # bootstrap image contains mdadm-3.2.6-7, but the issue was fixed
+    # only starting with 3.2.6-21 version.
+    # fuel-agent will try call stop it again if first try fails
+    utils.execute('mdadm', '--stop', mdname, check_exit_code=[0], attempts=2)
     utils.execute('mdadm', '--remove', mdname, check_exit_code=[0, 1])
 
 

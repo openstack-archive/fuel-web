@@ -255,7 +255,8 @@ localhost.localdomain)
         mock_get_mdn.return_value = ['/dev/md0']
         expected_calls = [
             mock.call('udevadm', 'settle', '--quiet', check_exit_code=[0]),
-            mock.call('mdadm', '--stop', '/dev/md0', check_exit_code=[0]),
+            mock.call('mdadm', '--stop', '/dev/md0', attempts=2,
+                      check_exit_code=[0]),
             mock.call('mdadm', '--remove', '/dev/md0', check_exit_code=[0, 1])
         ]
         mu.mdremove('/dev/md0')

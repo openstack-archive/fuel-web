@@ -112,8 +112,7 @@ def prepare():
             'status': 'new',
             'net_provider': 'neutron',
             'ui_settings': {
-                'view_mode': 'standard',
-                'grouping': 'roles'
+                'view_mode': 'standard'
             },
             'fuel_version': '7.0',
         }])
@@ -358,6 +357,3 @@ class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):
         self.assertItemsEqual(
             ui_settings['view_mode'],
             consts.NODE_VIEW_MODES.standard)
-        self.assertItemsEqual(
-            ui_settings['grouping'],
-            consts.CLUSTER_GROUPING.roles)

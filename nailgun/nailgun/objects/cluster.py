@@ -51,17 +51,12 @@ from nailgun.utils import traverse
 
 CLUSTER_UI_SETTING = {
     "type": "object",
-    "required": ["view_mode", "grouping"],
+    "required": ["view_mode"],
     "properties": {
         "view_mode": {
             "type": "string",
             "description": "View mode of cluster nodes",
             "enum": list(consts.NODE_VIEW_MODES)
-        },
-        "grouping": {
-            "type": "string",
-            "description": "Grouping mode of cluster nodes",
-            "enum": list(consts.CLUSTER_GROUPING)
         }
     }
 }

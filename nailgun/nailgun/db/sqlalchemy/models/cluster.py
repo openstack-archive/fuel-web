@@ -69,7 +69,7 @@ class Cluster(Base):
     ui_settings = Column(
         JSON,
         nullable=False,
-        server_default='{"view_mode": "standard", "grouping": "roles"}'
+        server_default='{"view_mode": "standard"}'
     )
     name = Column(Unicode(50), unique=True, nullable=False)
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)

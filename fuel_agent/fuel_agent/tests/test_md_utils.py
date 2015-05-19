@@ -17,6 +17,7 @@ from oslotest import base as test_base
 import six
 
 from fuel_agent import errors
+from fuel_agent.utils import build_utils as bu
 from fuel_agent.utils import hardware_utils as hu
 from fuel_agent.utils import md_utils as mu
 from fuel_agent.utils import utils
@@ -247,9 +248,10 @@ localhost.localdomain)
         mock_mddisplay.return_value = [{'name': '/dev/md11'}]
         self.assertRaises(errors.MDRemovingError, mu.mdclean_all)
 
+    @mock.patch.object(bu, 'stop_chrooted_processes')
     @mock.patch.object(utils, 'execute')
     @mock.patch.object(mu, 'get_mdnames')
-    def test_mdremove_ok(self, mock_get_mdn, mock_exec):
+    def test_mdremove_ok(self, mock_get_mdn, mock_exec, mock_bu_scp):
         # should check if md exists
         # should run mdadm command to remove md device
         mock_get_mdn.return_value = ['/dev/md0']

@@ -205,7 +205,7 @@ def do_post_inst(chroot):
 
 
 def stop_chrooted_processes(chroot, signal=sig.SIGTERM,
-                            attempts=10, attempts_delay=2):
+                            attempts=10, attempts_delay=2, chrooted=True):
     """Sends signal to all processes, which are running inside chroot.
     It tries several times until all processes die. If at some point there
     are no running processes found, it returns True.
@@ -215,6 +215,7 @@ def stop_chrooted_processes(chroot, signal=sig.SIGTERM,
     SIGTERM or SIGKILL. (Default: SIGTERM)
     :param attempts: Number of attempts (Default: 10)
     :param attempts_delay: Delay between attempts (Default: 2)
+    :param chrooted: Stop only processes inside of chroot (Default: True)
     """
 
     if signal not in (sig.SIGTERM, sig.SIGKILL):
@@ -232,8 +233,14 @@ def stop_chrooted_processes(chroot, signal=sig.SIGTERM,
         for p in running_processes:
             try:
                 pid = int(p)
-                if os.readlink('/proc/%s/root' % pid) == chroot:
-                    LOG.debug('Sending %s to chrooted process %s', signal, pid)
+                if chrooted:
+                    if os.readlink('/proc/%s/root' % pid) == chroot:
+                        LOG.debug('Sending %s to chrooted process %s', signal,
+                                  pid)
+                        os.kill(pid, signal)
+                else:
+                    LOG.debug('Sending %s to non-chrooted process %s', signal,
+                              pid)
                     os.kill(pid, signal)
             except (OSError, ValueError) as e:
                 cmdline = ''

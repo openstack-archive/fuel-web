@@ -16,6 +16,7 @@ import re
 
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
+from fuel_agent.utils import build_utils as bu
 from fuel_agent.utils import hardware_utils as hu
 from fuel_agent.utils import utils
 
@@ -145,6 +146,8 @@ def mdremove(mdname):
     #           Thus `udevadm settle` is helping to avoid the later failure and
     #       to prevent strange behaviour of md device.
     utils.execute('udevadm', 'settle', '--quiet', check_exit_code=[0])
+    # NOTE(agordeev): try to kill all processes which possibly block md device
+    bu.stop_chrooted_processes(mdname, chrooted=False)
     utils.execute('mdadm', '--stop', mdname, check_exit_code=[0])
     utils.execute('mdadm', '--remove', mdname, check_exit_code=[0, 1])
 

@@ -19,20 +19,27 @@ from nailgun import consts
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import role
 
-CLUSTER_UI_SETTING = {
+CLUSTER_UI_SETTINGS = {
     "type": "object",
-    "required": ["view_mode", "grouping"],
+    "required": ["view_mode", "filter", "sort"],
     "properties": {
         "view_mode": {
             "type": "string",
             "description": "View mode of cluster nodes",
-            "enum": list(consts.NODE_VIEW_MODES)
+            "enum": list(consts.NODE_VIEW_MODES),
         },
-        "grouping": {
-            "type": "string",
-            "description": "Grouping mode of cluster nodes",
-            "enum": list(consts.CLUSTER_GROUPING)
-        }
+        "filter": {
+            "type": "object",
+            "description": "Filters applied to node list",
+        },
+        "sort": {
+            "type": "array",
+            "description": "Sorters applied to node list",
+            'minItems': 1,
+            'items': [
+                {'type': 'object'},
+            ],
+        },
     }
 }
 
@@ -57,7 +64,7 @@ single_schema = {
             "type": "string",
             "enum": list(consts.CLUSTER_NET_PROVIDERS)
         },
-        "ui_settings": CLUSTER_UI_SETTING,
+        "ui_settings": CLUSTER_UI_SETTINGS,
         "release_id": {"type": "number"},
         "pending_release_id": base_types.NULLABLE_ID,
         "replaced_deployment_info": {"type": "object"},

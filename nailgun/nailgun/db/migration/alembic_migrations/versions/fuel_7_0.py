@@ -471,7 +471,8 @@ def upgrade_cluster_ui_settings():
         sa.Column(
             'ui_settings',
             fields.JSON(),
-            server_default='{"view_mode": "standard", "grouping": "roles"}',
+            server_default='{"view_mode": "standard", "filter": {},'
+                '"sort": [{"roles": "asc"}]}',
             nullable=False
         )
     )

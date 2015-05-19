@@ -29,6 +29,44 @@ function(React, NodeListScreen) {
                 mode='list'
                 cluster={this.props.cluster}
                 nodes={this.props.cluster.get('nodes')}
+                sorters={[
+                    'roles',
+                    'status',
+                    'name',
+                    'mac',
+                    'ip',
+                    'manufacturer',
+                    'cores',
+                    'ht_cores',
+                    'hdd',
+                    'disks',
+                    'ram',
+                    'interfaces'
+                ]}
+                defaultSorting={[{roles: 'asc'}]}
+                filters={[
+                    'roles',
+                    'status',
+                    'manufacturer',
+                    'cores',
+                    'ht_cores',
+                    'hdd',
+                    'disks_amount',
+                    'ram',
+                    'interfaces'
+                ]}
+                statusesToFilter={[
+                    'ready',
+                    'pending_addition',
+                    'pending_deletion',
+                    'provisioned',
+                    'provisioning',
+                    'deploying',
+                    'removing',
+                    'error',
+                    'offline'
+                ]}
+                defaultFilters={['roles', 'status']}
             />;
         }
     });

@@ -25,11 +25,12 @@ define(
     'dispatcher',
     'jsx!views/controls',
     'jsx!views/dialogs',
-    'jsx!component_mixins'
+    'jsx!component_mixins',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/node'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialogs, componentMixins, Node) {
     'use strict';
-    var NodeListScreen, ManagementPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup, Node;
+    var NodeListScreen, MultiSelectControl, NumberRangeControl, ManagementPanel, RolePanel, SelectAllMixin, NodeList, NodeGroup;
 
     NodeListScreen = React.createClass({
         mixins: [
@@ -50,8 +51,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     return !this.props.nodes.any(function(node) {return !node.hasRole(role);});
                 }, this) : [];
             return {
-                filter: '',
-                grouping: this.props.mode == 'add' ? 'hardware' : uiSettings.grouping,
+                search: this.props.mode == 'add' ? '' : uiSettings.search,
+                activeSorters: this.props.mode == 'add' ? _.clone(this.props.defaultSorting) : uiSettings.sort,
+                activeFilters: this.props.mode == 'add' ? {} : uiSettings.filter,
                 viewMode: uiSettings.view_mode,
                 selectedNodeIds: this.props.nodes.reduce(function(result, node) {
                     result[node.id] = this.props.mode == 'edit';
@@ -92,8 +94,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         componentWillMount: function() {
             this.updateInitialRoles();
             this.props.nodes.on('update reset', this.updateInitialRoles, this);
-            // hack to prevent node roles update after node polling
-            if (this.props.mode != 'list') this.props.nodes.on('change:pending_roles', this.checkRoleAssignment, this);
+
+            if (this.props.mode != 'list') {
+                // hack to prevent node roles update after node polling
+                this.props.nodes.on('change:pending_roles', this.checkRoleAssignment, this);
+            }
         },
         componentWillUnmount: function() {
             this.props.nodes.off('update reset', this.updateInitialRoles, this);
@@ -139,15 +144,62 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return !_.isEqual(node.get('pending_roles'), this.initialRoles[node.id]);
             }, this);
         },
-        changeFilter: _.debounce(function(value) {
-            this.setState({filter: value});
+        changeSearch: _.debounce(function(value) {
+            this.updateSearch(value);
         }, 200, {leading: true}),
-        clearFilter: function() {
-            this.setState({filter: ''});
+        clearSearchField: function() {
+            this.updateSearch('');
         },
-        changeGrouping: function(name, value) {
-            this.setState({grouping: value});
-            this.changeUISettings('grouping', value);
+        updateSearch: function(value) {
+            this.setState({search: value});
+            if (this.props.mode != 'add') this.changeUISettings('search', value);
+        },
+        addSorting: function(sorterName) {
+            var activeSorters = this.state.activeSorters,
+                newSorter = {};
+            newSorter[sorterName] = 'asc';
+            activeSorters.push(newSorter);
+            this.updateSorting(activeSorters);
+        },
+        removeSorting: function(sorter) {
+            this.updateSorting(_.difference(this.state.activeSorters, [sorter]));
+        },
+        resetSorters: function() {
+            this.updateSorting(this.props.defaultSorting);
+        },
+        changeSortingOrder: function(sorterName) {
+            var activeSorters = this.state.activeSorters,
+                sorter = _.find(activeSorters, function(sorter) {
+                    return sorter[sorterName];
+                });
+            sorter[sorterName] = sorter[sorterName] == 'asc' ? 'desc' : 'asc';
+            this.updateSorting(activeSorters);
+        },
+        updateSorting: function(sorters) {
+            this.setState({activeSorters: sorters});
+            if (this.props.mode != 'add') this.changeUISettings('sort', sorters);
+        },
+        updateFilters: function(filters) {
+            this.setState({activeFilters: filters});
+            if (this.props.mode != 'add') this.changeUISettings('filter', filters);
+        },
+        addFilter: function(filterName) {
+            var activeFilters = this.state.activeFilters;
+            activeFilters[filterName] = [];
+            this.updateFilters(activeFilters);
+        },
+        changeFilter: function(filterName, values) {
+            var activeFilters = this.state.activeFilters;
+            activeFilters[filterName] = values;
+            this.updateFilters(activeFilters);
+        },
+        removeFilter: function(filterName) {
+            var activeFilters = this.state.activeFilters;
+            delete activeFilters[filterName];
+            this.updateFilters(activeFilters);
+        },
+        resetFilters: function() {
+            this.updateFilters({});
         },
         changeViewMode: function(name, value) {
             this.setState({viewMode: value});
@@ -178,43 +230,80 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 nodes = this.props.nodes,
                 processedRoleData = this.processRoleLimits();
 
+            // filter nodes
+            var filteredNodes = nodes.filter(function(node) {
+                // search field
+                if (this.state.search) {
+                    var search = this.state.search.toLowerCase();
+                    if (!_.any(node.pick('name', 'mac', 'ip'), function(attribute) {
+                        return _.contains(attribute.toLowerCase(), search);
+                    })) {
+                        return false;
+                    }
+                }
+
+                // filters
+                return _.all(this.state.activeFilters, function(values, filter) {
+                    if (!_.contains(this.props.filters, filter) || !values.length) {
+                        return true;
+                    }
+
+                    if (filter == 'roles') {
+                        return _.any(values, function(role) {return node.hasRole(role);});
+                    }
+                    if (filter == 'status') {
+                        return _.contains(values, node.getStatusSummary());
+                    }
+                    if (filter == 'manufacturer') {
+                        return _.contains(values, node.get('manufacturer'));
+                    }
+
+                    // handle number ranges
+                    var currentValue = node.resource(filter);
+                    if (filter == 'hdd' || filter == 'ram') {
+                        currentValue = currentValue / Math.pow(1024, 3);
+                    }
+                    return currentValue >= values[0] && (_.isUndefined(values[1]) || currentValue <= values[1]);
+                }, this);
+            }, this);
+
             return (
                 <div>
                     {this.props.mode == 'edit' &&
-                        <div className='alert alert-warning'>{i18n('cluster_page.nodes_tab.disk_configuration_reset_warning')}</div>
+                        <div className='alert alert-warning'>
+                            {i18n('cluster_page.nodes_tab.disk_configuration_reset_warning')}
+                        </div>
                     }
                     <ManagementPanel
-                        {... _.pick(this.state, 'grouping', 'viewMode', 'filter')}
-                        mode={this.props.mode}
+                        {... _.pick(this.state, 'viewMode', 'search', 'activeSorters', 'activeFilters')}
+                        {... _.pick(this.props, 'cluster', 'mode', 'sorters', 'defaultSorting', 'filters', 'statusesToFilter', 'defaultFilters')}
+                        {... _.pick(this, 'addSorting', 'removeSorting', 'resetSorters', 'changeSortingOrder')}
+                        {... _.pick(this, 'addFilter', 'changeFilter', 'removeFilter', 'resetFilters')}
+                        {... _.pick(this, 'changeSearch', 'clearSearchField')}
+                        {... _.pick(this, 'changeViewMode')}
                         nodes={new models.Nodes(_.compact(_.map(this.state.selectedNodeIds, function(checked, id) {
                             if (checked) return nodes.get(id);
                         })))}
-                        totalNodeAmount={nodes.length}
-                        cluster={cluster}
-                        changeGrouping={this.changeGrouping}
-                        changeViewMode={this.changeViewMode}
-                        changeFilter={this.changeFilter}
-                        clearFilter={this.clearFilter}
+                        screenNodes={nodes}
+                        filteredNodesLength={filteredNodes.length}
                         hasChanges={this.hasChanges()}
                         locked={locked}
                         revertChanges={this.revertChanges}
                     />
                     {this.props.mode != 'list' &&
                         <RolePanel
-                            {...this.props}
+                            {... _.pick(this.state, 'selectedNodeIds', 'selectedRoles', 'indeterminateRoles', 'configModels')}
+                            {... _.pick(this.props, 'cluster', 'mode', 'nodes')}
                             {... _.pick(processedRoleData, 'processedRoleLimits')}
-                            {... _.pick(this.state, 'selectedNodeIds', 'selectedRoles', 'indeterminateRoles')}
                             selectRoles={this.selectRoles}
-                            configModels={this.state.configModels}
                         />
                     }
                     <NodeList
-                        {...this.props}
-                        nodes={nodes.filter(function(node) {
-                            return _.contains(node.get('name').concat(' ', node.get('mac')).toLowerCase(), this.state.filter.toLowerCase());
-                        }, this)}
-                        {... _.pick(this.state, 'grouping', 'viewMode', 'selectedNodeIds', 'selectedRoles')}
+                        {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedNodeIds', 'selectedRoles')}
+                        {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter')}
                         {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
+                        nodes={filteredNodes}
+                        totalNodesLength={nodes.length}
                         locked={locked}
                         selectNodes={this.selectNodes}
                     />
@@ -223,12 +312,209 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         }
     });
 
+    MultiSelectControl = React.createClass({
+        propTypes: {
+            name: React.PropTypes.string,
+            options: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+            values: React.PropTypes.arrayOf(React.PropTypes.string),
+            label: React.PropTypes.node.isRequired,
+            dynamicValues: React.PropTypes.bool,
+            onChange: React.PropTypes.func,
+            extraContent: React.PropTypes.node
+        },
+        getInitialState: function() {
+            return {isOpen: false};
+        },
+        getDefaultProps: function() {
+            return {values: []};
+        },
+        toggle: function(visible) {
+            this.setState({
+                isOpen: _.isBoolean(visible) ? visible : !this.state.isOpen
+            });
+        },
+        onChange: function(name, checked) {
+            if (!this.props.dynamicValues) {
+                var values = name == 'all' ?
+                        checked ? _.pluck(this.props.options, 'name') : []
+                    :
+                        checked ? _.union(this.props.values, [name]) : _.difference(this.props.values, [name]);
+                this.props.onChange(values);
+            } else {
+                this.props.onChange(checked && name);
+            }
+        },
+        render: function() {
+            var valuesAmount = this.props.values.length,
+                label = (this.props.dynamicValues || !valuesAmount) ? this.props.label : valuesAmount > 3 ?
+                        i18n('cluster_page.nodes_tab.node_management_panel.selected_options', {label: this.props.label, count: valuesAmount})
+                    :
+                        _.map(this.props.values, function(itemName) {
+                        return _.find(this.props.options, {name: itemName}).label;
+                    }, this).join(', ');
+
+            this.props.options.sort(function(option1, option2) {
+                return utils.natsort(option1.label, option2.label);
+            });
+
+            return (
+                <div className={utils.classNames({'btn-group multiselect': true, open: this.state.isOpen})}>
+                    <button
+                        className={'btn dropdown-toggle ' + ((this.props.dynamicValues && !this.state.isOpen) ? 'btn-link' : 'btn-default')}
+                        onClick={this.toggle}
+                    >
+                        {label} <span className='caret'></span>
+                    </button>
+                    {this.state.isOpen &&
+                        <controls.Popover toggle={this.toggle}>
+                            {!this.props.dynamicValues && [
+                                    <div key='all'>
+                                        <controls.Input
+                                            type='checkbox'
+                                            label={i18n('cluster_page.nodes_tab.node_management_panel.select_all')}
+                                            name='all'
+                                            checked={valuesAmount == this.props.options.length}
+                                            onChange={this.onChange}
+                                        />
+                                    </div>,
+                                    <div key='divider' className='divider' />
+                                ]
+                            }
+                            {_.map(this.props.options, function(option, index) {
+                                return (
+                                    <controls.Input {...option}
+                                        key={index}
+                                        type='checkbox'
+                                        checked={_.contains(this.props.values, option.name)}
+                                        onChange={this.onChange}
+                                    />
+                                );
+                            }, this)}
+                        </controls.Popover>
+                    }
+                    {this.props.extraContent}
+                </div>
+            );
+        }
+    });
+
+    NumberRangeControl = React.createClass({
+        propTypes: {
+            name: React.PropTypes.string,
+            label: React.PropTypes.node.isRequired,
+            values: React.PropTypes.array,
+            onChange: React.PropTypes.func,
+            extraContent: React.PropTypes.node,
+            prefix: React.PropTypes.string
+        },
+        getInitialState: function() {
+            return {isOpen: false};
+        },
+        getDefaultProps: function() {
+            return {values: []};
+        },
+        toggle: function(visible) {
+            this.setState({
+                isOpen: _.isBoolean(visible) ? visible : !this.state.isOpen
+            });
+        },
+        changeStartValue: function(name, value) {
+            value = Number(value);
+            if (!_.isNaN(value)) {
+                var values = this.props.values;
+                // 0 is minimum for start value
+                values[0] = value || 0;
+                this.props.onChange(values);
+            }
+        },
+        changeEndValue: function(name, value) {
+            value = Number(value);
+            if (!_.isNaN(value)) {
+                var values = this.props.values;
+                // set undefined value if user enters an epmty string
+                values[1] = value || undefined;
+                this.props.onChange(values);
+            }
+        },
+        render: function() {
+            var values = this.props.values;
+            var props = {
+                    type: 'number',
+                    inputClassName: 'pull-left',
+                    error: values[0] < 0 || values[1] < 0 || values[0] > values[1] || null,
+                    min: 0
+                };
+            var ns = 'cluster_page.nodes_tab.node_management_panel.',
+                label = _.isEmpty(values) ?
+                    this.props.label
+                :
+                    ((values[0] && values[1] || values[0] == values[1]) ?
+                        values[0] == values[1] ? values[0] : values[0] + ' - ' + values[1]
+                    :
+                        values[0] ? i18n(ns + 'more_than') + values[0] : i18n(ns + 'less_than') + values[1]
+                    ) + ' ' + this.props.prefix;
+
+            return (
+                <div className={utils.classNames({'btn-group number-range': true, open: this.state.isOpen})}>
+                    <button className='btn btn-default dropdown-toggle' onClick={this.toggle}>
+                        {label} <span className='caret'></span>
+                    </button>
+                    {this.state.isOpen &&
+                        <controls.Popover toggle={this.toggle}>
+                            <div className='clearfix'>
+                                <controls.Input {...props}
+                                    name={this.props.name + '-start'}
+                                    value={values[0]}
+                                    onChange={this.changeStartValue}
+                                />
+                                <span className='pull-left'> &mdash; </span>
+                                <controls.Input {...props}
+                                    name={this.props.name + '-end'}
+                                    value={values[1]}
+                                    onChange={this.changeEndValue}
+                                />
+                            </div>
+                        </controls.Popover>
+                    }
+                    {this.props.extraContent}
+                </div>
+            );
+        }
+    });
+
     ManagementPanel = React.createClass({
         getInitialState: function() {
             return {
-                isFilterButtonVisible: !!this.props.filter,
-                actionInProgress: false
+                actionInProgress: false,
+                isSearchButtonVisible: !!this.props.search,
+                activeSearch: !!this.props.search
             };
+        },
+        getFilterOptions: function(filter) {
+            var options;
+            switch (filter) {
+                case 'status':
+                    var os = this.props.cluster.get('release').get('operating_system') || 'OS';
+                    options = this.props.statusesToFilter.map(function(status) {
+                        return {
+                            name: status,
+                            label: i18n('cluster_page.nodes_tab.node.status.' + status, {os: os})
+                        };
+                    });
+                    break;
+                case 'manufacturer':
+                    options = _.uniq(this.props.screenNodes.pluck('manufacturer')).map(function(manufacturer) {
+                        return {
+                            name: manufacturer.replace(/\s/g, '_'),
+                            label: manufacturer
+                        };
+                    });
+                    break;
+                case 'roles':
+                    options = this.props.cluster.get('roles').invoke('pick', 'name', 'label');
+                    break;
+            }
+            return options;
         },
         changeScreen: function(url, passNodeIds) {
             if (!url) this.props.revertChanges();
@@ -273,167 +559,411 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     });
                 }, this));
         },
-        startFiltering: function(name, value) {
-            this.setState({isFilterButtonVisible: !!value});
-            this.props.changeFilter(value);
+        searchNodes: function(name, value) {
+            this.setState({isSearchButtonVisible: !!value});
+            this.props.changeSearch(value);
         },
-        clearFilter: function() {
-            this.setState({isFilterButtonVisible: false});
-            this.refs.filter.getInputDOMNode().value = '';
-            this.props.clearFilter();
+        clearSearchField: function() {
+            this.setState({isSearchButtonVisible: false});
+            this.refs.search.getInputDOMNode().value = '';
+            this.props.clearSearchField();
+        },
+        activateSearch: function() {
+            this.setState({activeSearch: true});
+            $('html').on('click.search', _.bind(function(e) {
+                if (!this.props.search && this.refs.search && !$(e.target).closest(this.refs.search.getDOMNode()).length) {
+                    this.setState({activeSearch: false});
+                }
+            }, this));
+        },
+        componentWillUnmount: function() {
+            $('html').off('click.search');
+        },
+        removeSorting: function(sorter) {
+            this.props.removeSorting(sorter);
+            this.setState({sortersKey: _.now()});
+        },
+        resetSorters: function(e) {
+            e.stopPropagation();
+            this.props.resetSorters();
+            this.setState({sortersKey: _.now()});
+        },
+        removeFilter: function(name) {
+            this.props.removeFilter(name);
+            this.setState({filtersKey: _.now()});
+        },
+        resetFilters: function(e) {
+            e.stopPropagation();
+            this.props.resetFilters();
+            this.setState({filtersKey: _.now()});
+        },
+        toggleSorters: function() {
+            this.setState({
+                areSortersVisible: !this.state.areSortersVisible,
+                areFiltersVisible: false
+            });
+        },
+        toggleFilters: function() {
+            this.setState({
+                areFiltersVisible: !this.state.areFiltersVisible,
+                areSortersVisible: false
+            });
+        },
+        renderDeleteFilterButton: function(filter) {
+            if (_.contains(this.props.defaultFilters, filter)) return null;
+            return (
+                <i className='btn btn-link glyphicon glyphicon-minus-sign' onClick={_.partial(this.removeFilter, filter)} />
+            );
+        },
+        renderDeleteSorterButton: function(sorter) {
+            var isDefaultSorter = _.any(this.props.defaultSorting, function(defaultSorter) {
+                return _.isEqual(defaultSorter, sorter);
+            });
+            if (isDefaultSorter) return null;
+            return (
+                <i className='btn btn-link glyphicon glyphicon-minus-sign' onClick={_.partial(this.removeSorting, sorter)} />
+            );
         },
         render: function() {
-            var ns = 'cluster_page.nodes_tab.node_management_panel.',
-                sampleNode = this.props.nodes.at(0),
+            var ns = 'cluster_page.nodes_tab.node_management_panel.';
+
+            var sampleNode, disksConflict, interfaceConflict;
+            if (this.props.mode == 'list') {
+                sampleNode = this.props.nodes.at(0);
                 disksConflict = this.props.nodes.any(function(node) {
                     var roleConflict = _.difference(_.union(sampleNode.get('roles'), sampleNode.get('pending_roles')), _.union(node.get('roles'), node.get('pending_roles'))).length;
                     return roleConflict || !_.isEqual(sampleNode.resource('disks'), node.resource('disks'));
-                }),
+                });
                 interfaceConflict = _.uniq(this.props.nodes.map(function(node) {return node.resource('interfaces');})).length > 1;
+            }
 
-            var viewModeButtonClasses = _.bind(function(mode) {
+            var managementButtonClasses = _.bind(function(isActive, className) {
                 var classes = {
-                    'btn btn-default': true,
-                    active: mode == this.props.viewMode
+                    'btn btn-default pull-left': true,
+                    active: isActive
                 };
-                classes[mode] = true;
+                classes[className] = true;
                 return classes;
             }, this);
+
+            var activeSorters, inactiveSorters;
+            var filtersToDisplay, inactiveFilters, filtersWithChosenValues;
+            if (this.props.mode != 'edit') {
+                activeSorters = _.flatten(_.map(this.props.activeSorters, _.keys));
+                inactiveSorters = _.difference(this.props.sorters, activeSorters);
+                filtersToDisplay = _.extend(_.zipObject(this.props.defaultFilters, _.times(this.props.defaultFilters.length, function() {return [];})), this.props.activeFilters);
+                inactiveFilters = _.difference(this.props.filters, _.keys(filtersToDisplay));
+                filtersWithChosenValues = _.omit(this.props.activeFilters, function(values) {return !values.length;});
+            }
 
             return (
                 <div className='row'>
                     <div className='sticker node-management-panel'>
-                        <div className='col-xs-1 view-mode-switcher'>
-                            <label>&nbsp;</label>
-                            <div className='btn-group' data-toggle='buttons'>
-                                {_.map(this.props.cluster.viewModes(), function(mode) {
-                                    return (
-                                        <label
-                                            key={mode + '-view'}
-                                            className={utils.classNames(viewModeButtonClasses(mode))}
-                                            onClick={mode != this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
-                                        >
-                                            <input type='radio' name='view_mode' value={mode} />
-                                            <i className={utils.classNames({
-                                                glyphicon: true,
-                                                'glyphicon-th-list': mode == 'standard',
-                                                'glyphicon-th': mode == 'compact'
-                                            })} />
-                                        </label>
-                                    );
-                                }, this)}
-                            </div>
-                        </div>
-                        <div className='col-xs-2'>
-                            <div className='filter-group'>
-                                <controls.Input
-                                    type='select'
-                                    name='grouping'
-                                    label={i18n(ns + 'group_by')}
-                                    children={_.map(this.props.cluster.groupings(), function(label, grouping) {
-                                        return <option key={grouping} value={grouping}>{label}</option>;
-                                    })}
-                                    defaultValue={this.props.grouping}
-                                    disabled={!this.props.totalNodeAmount || this.props.mode == 'add'}
-                                    onChange={this.props.changeGrouping}
-                                    inputClassName='form-control'
-                                />
-                            </div>
-                        </div>
-                        <div className='col-xs-2'>
-                            <div className='filter-group'>
-                                <controls.Input
-                                    type='text'
-                                    name='filter'
-                                    ref='filter'
-                                    defaultValue={this.props.filter}
-                                    label={i18n(ns + 'filter_by')}
-                                    placeholder={i18n(ns + 'filter_placeholder')}
-                                    disabled={!this.props.totalNodeAmount}
-                                    onChange={this.startFiltering}
-                                    inputClassName='form-control'
-                                />
-                                {this.state.isFilterButtonVisible &&
-                                    <button className='close btn-clear-filter' onClick={this.clearFilter}>&times;</button>
-                                }
-                            </div>
-                        </div>
-                        <div className='col-xs-7'>
-                            <div className='control-buttons-box pull-right'>
-                                <label>&nbsp;</label>
-                                {this.props.mode != 'list' ?
-                                    <div className='btn-group' role='group'>
-                                        <button
-                                            className='btn btn-default'
-                                            disabled={this.state.actionInProgress}
-                                            onClick={_.bind(this.changeScreen, this, '', false)}
-                                        >
-                                            {i18n('common.cancel_button')}
-                                        </button>
-                                        <button
-                                            className='btn btn-success btn-apply'
-                                            disabled={this.state.actionInProgress || !this.props.hasChanges}
-                                            onClick={this.applyChanges}
-                                        >
-                                            {i18n('common.apply_changes_button')}
-                                        </button>
-                                    </div>
-                                :
-                                    [
-                                        <div className='btn-group' role='group' key='configuration-buttons'>
-                                            <button
-                                                className='btn btn-default btn-configure-disks'
-                                                disabled={!this.props.nodes.length}
-                                                onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
+                        <div className='node-list-management-buttons col-xs-6'>
+                            <div className='view-mode-switcher'>
+                                <div className='btn-group' data-toggle='buttons'>
+                                    {_.map(this.props.cluster.viewModes(), function(mode) {
+                                        return (
+                                            <label
+                                                key={mode + '-view'}
+                                                className={utils.classNames(managementButtonClasses(mode == this.props.viewMode, mode))}
+                                                onClick={mode != this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
                                             >
-                                                {disksConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
-                                                {i18n('dialog.show_node.disk_configuration_button')}
+                                                <input type='radio' name='view_mode' value={mode} />
+                                                <i className={utils.classNames({
+                                                    glyphicon: true,
+                                                    'glyphicon-th-list': mode == 'standard',
+                                                    'glyphicon-th': mode == 'compact'
+                                                })} />
+                                            </label>
+                                        );
+                                    }, this)}
+                                </div>
+                            </div>
+                            {this.props.mode != 'edit' && [
+                                <button
+                                    key='sorters-btn'
+                                    disabled={!this.props.screenNodes.length}
+                                    onClick={this.toggleSorters}
+                                    className={utils.classNames(managementButtonClasses(this.state.areSortersVisible))}
+                                >
+                                    <i className='glyphicon glyphicon-sort' />
+                                </button>,
+                                <button
+                                    key='filters-btn'
+                                    disabled={!this.props.screenNodes.length}
+                                    onClick={this.toggleFilters}
+                                    className={utils.classNames(managementButtonClasses(this.state.areFiltersVisible))}
+                                >
+                                    <i className='glyphicon glyphicon-filter' />
+                                </button>,
+                                !this.state.activeSearch && (
+                                    <button
+                                        key='search-btn'
+                                        disabled={!this.props.screenNodes.length}
+                                        onClick={this.activateSearch}
+                                        className={utils.classNames(managementButtonClasses(false, 'btn-search'))}
+                                    >
+                                        <i className='glyphicon glyphicon-search' />
+                                    </button>
+                                ),
+                                this.state.activeSearch && (
+                                    <div className='search pull-left' key='search'>
+                                        <controls.Input
+                                            type='text'
+                                            name='search'
+                                            ref='search'
+                                            defaultValue={this.props.search}
+                                            placeholder={i18n(ns + 'search_placeholder')}
+                                            disabled={!this.props.screenNodes.length}
+                                            onChange={this.searchNodes}
+                                            autoFocus
+                                        />
+                                        {this.state.isSearchButtonVisible &&
+                                            <button className='close btn-clear-search' onClick={this.clearSearchField}>&times;</button>
+                                        }
+                                    </div>
+                                )
+                            ]}
+                        </div>
+                        <div className='control-buttons-box col-xs-6 text-right'>
+                            {this.props.mode != 'list' ?
+                                <div className='btn-group' role='group'>
+                                    <button
+                                        className='btn btn-default'
+                                        disabled={this.state.actionInProgress}
+                                        onClick={_.bind(this.changeScreen, this, '', false)}
+                                    >
+                                        {i18n('common.cancel_button')}
+                                    </button>
+                                    <button
+                                        className='btn btn-success btn-apply'
+                                        disabled={this.state.actionInProgress || !this.props.hasChanges}
+                                        onClick={this.applyChanges}
+                                    >
+                                        {i18n('common.apply_changes_button')}
+                                    </button>
+                                </div>
+                            :
+                                [
+                                    <div className='btn-group' role='group' key='configuration-buttons'>
+                                        <button
+                                            className='btn btn-default btn-configure-disks'
+                                            disabled={!this.props.nodes.length}
+                                            onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
+                                        >
+                                            {disksConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
+                                            {i18n('dialog.show_node.disk_configuration_button')}
+                                        </button>
+                                        {!this.props.nodes.any({status: 'error'}) &&
+                                            <button
+                                                className='btn btn-default btn-configure-interfaces'
+                                                disabled={!this.props.nodes.length}
+                                                onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
+                                            >
+                                                {interfaceConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
+                                                {i18n('dialog.show_node.network_configuration_button')}
                                             </button>
-                                            {!this.props.nodes.any({status: 'error'}) &&
-                                                <button
-                                                    className='btn btn-default btn-configure-interfaces'
-                                                    disabled={!this.props.nodes.length}
-                                                    onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces', interfaceConflict)}
-                                                >
-                                                    {interfaceConflict && <i className='glyphicon glyphicon-warning-sign text-danger' />}
-                                                    {i18n('dialog.show_node.network_configuration_button')}
-                                                </button>
-                                            }
-                                        </div>,
-                                        <div className='btn-group' role='group' key='role-management-buttons'>
-                                            {!!this.props.nodes.length && !this.props.locked && this.props.nodes.any({pending_deletion: false}) &&
-                                                <button
-                                                    className='btn btn-danger btn-delete-nodes'
-                                                    onClick={this.showDeleteNodesDialog}
-                                                >
-                                                    <i className='glyphicon glyphicon-trash' />
-                                                    {i18n('common.delete_button')}
-                                                </button>
-                                            }
-                                            {!!this.props.nodes.length && !this.props.nodes.any({pending_addition: false}) &&
-                                                <button
-                                                    className='btn btn-success btn-edit-roles'
-                                                    onClick={_.bind(this.changeScreen, this, 'edit', true)}
-                                                >
-                                                    <i className='glyphicon glyphicon-edit' />
-                                                    {i18n(ns + 'edit_roles_button')}
-                                                </button>
-                                            }
-                                            {!this.props.nodes.length && !this.props.locked &&
-                                                <button
-                                                    className='btn btn-success btn-add-nodes'
-                                                    onClick={_.bind(this.changeScreen, this, 'add', false)}
-                                                    disabled={this.props.locked}
-                                                >
-                                                    <i className='glyphicon glyphicon-plus' />
-                                                    {i18n(ns + 'add_nodes_button')}
+                                        }
+                                    </div>,
+                                    <div className='btn-group' role='group' key='role-management-buttons'>
+                                        {!this.props.locked && !!this.props.nodes.length && this.props.nodes.any({pending_deletion: false}) &&
+                                            <button
+                                                className='btn btn-danger btn-delete-nodes'
+                                                onClick={this.showDeleteNodesDialog}
+                                            >
+                                                <i className='glyphicon glyphicon-trash' />
+                                                {i18n('common.delete_button')}
+                                            </button>
+                                        }
+                                        {!!this.props.nodes.length && !this.props.nodes.any({pending_addition: false}) &&
+                                            <button
+                                                className='btn btn-success btn-edit-roles'
+                                                onClick={_.bind(this.changeScreen, this, 'edit', true)}
+                                            >
+                                                <i className='glyphicon glyphicon-edit' />
+                                                {i18n(ns + 'edit_roles_button')}
+                                            </button>
+                                        }
+                                        {!this.props.locked && !this.props.nodes.length &&
+                                            <button
+                                                className='btn btn-success btn-add-nodes'
+                                                onClick={_.bind(this.changeScreen, this, 'add', false)}
+                                                disabled={this.props.locked}
+                                            >
+                                                <i className='glyphicon glyphicon-plus' />
+                                                {i18n(ns + 'add_nodes_button')}
+                                            </button>
+                                        }
+                                    </div>
+                                ]
+                            }
+                        </div>
+                        {this.props.mode != 'edit' && !!this.props.screenNodes.length && [
+                            this.state.areSortersVisible && (
+                                <div className='col-xs-12 sorters' key='sorters'>
+                                    <div className='well clearfix' key={this.state.sortersKey}>
+                                        <div className='well-heading'>
+                                            <i className='glyphicon glyphicon-sort' /> {i18n(ns + 'sort_by')}
+                                            {!_.isEqual(this.props.activeSorters, this.props.defaultSorting) &&
+                                                <button className='btn btn-link pull-right' onClick={this.resetSorters}>
+                                                    <i className='glyphicon glyphicon-remove-sign' /> {i18n(ns + 'clear_all')}
                                                 </button>
                                             }
                                         </div>
-                                    ]
+                                        {this.props.activeSorters.map(function(sortObject) {
+                                            var sorterName = _.keys(sortObject)[0];
+                                            if (!_.contains(this.props.sorters, sorterName)) return null;
+                                            var asc = sortObject[sorterName] == 'asc';
+                                            return (
+                                                <div key={'sort_by-' + sorterName} className='pull-left'>
+                                                    <button className='btn btn-default' onClick={_.partial(this.props.changeSortingOrder, sorterName)}>
+                                                        {i18n('cluster_page.nodes_tab.sorters.' + sorterName)}
+                                                        <i
+                                                            className={utils.classNames({
+                                                                glyphicon: true,
+                                                                'glyphicon-arrow-down': asc,
+                                                                'glyphicon-arrow-up': !asc
+                                                            })}
+                                                        />
+                                                    </button>
+                                                    {this.renderDeleteSorterButton(sortObject)}
+                                                </div>
+                                            );
+                                        }, this)}
+                                        {!!inactiveSorters.length &&
+                                            <MultiSelectControl
+                                                name='sorter-more'
+                                                label={i18n(ns + 'more')}
+                                                options={inactiveSorters.map(function(sorterName) {
+                                                    return {
+                                                        name: sorterName,
+                                                        label: i18n('cluster_page.nodes_tab.sorters.' + sorterName)
+                                                    };
+                                                })}
+                                                onChange={this.props.addSorting}
+                                                dynamicValues={true}
+                                            />
+                                        }
+                                    </div>
+                                </div>
+                            ),
+                            this.state.areFiltersVisible && (
+                                <div className='col-xs-12 filters' key='filters'>
+                                    <div className='well clearfix' key={this.state.filtersKey}>
+                                        <div className='well-heading'>
+                                            <i className='glyphicon glyphicon-filter' /> {i18n(ns + 'filter_by')}
+                                            {!_.isEmpty(this.props.activeFilters) &&
+                                                <button className='btn btn-link pull-right' onClick={this.resetFilters}>
+                                                    <i className='glyphicon glyphicon-remove-sign' /> {i18n(ns + 'clear_all')}
+                                                </button>
+                                            }
+                                        </div>
+                                        {_.map(filtersToDisplay, function(values, filterName) {
+                                            var options = this.getFilterOptions(filterName),
+                                                Control = options ? MultiSelectControl : NumberRangeControl;
+                                            return (
+                                                <Control
+                                                    key={filterName}
+                                                    ref={filterName}
+                                                    name={filterName}
+                                                    label={i18n('cluster_page.nodes_tab.filters.' + filterName)}
+                                                    options={options}
+                                                    values={values}
+                                                    extraContent={this.renderDeleteFilterButton(filterName)}
+                                                    onChange={_.partial(this.props.changeFilter, filterName)}
+                                                    prefix={i18n('cluster_page.nodes_tab.filters.prefixes.' + filterName, {defaultValue: ''})}
+                                                />
+                                            );
+                                        }, this)}
+                                        {!!inactiveFilters.length &&
+                                            <MultiSelectControl
+                                                name='filter-more'
+                                                label={i18n(ns + 'more')}
+                                                options={inactiveFilters.map(function(filterName) {
+                                                    return {
+                                                        name: filterName,
+                                                        label: i18n('cluster_page.nodes_tab.filters.' + filterName)
+                                                    };
+                                                })}
+                                                onChange={this.props.addFilter}
+                                                dynamicValues={true}
+                                            />
+                                        }
+                                    </div>
+                                </div>
+                            )
+                        ]}
+                        {this.props.mode != 'edit' && !!this.props.screenNodes.length &&
+                            <div className='col-xs-12'>
+                                {(!this.state.areSortersVisible || !this.state.areFiltersVisible && !_.isEmpty(filtersWithChosenValues)) &&
+                                    <div className='active-sorters-filters'>
+                                        {!this.state.areFiltersVisible && !_.isEmpty(filtersWithChosenValues) &&
+                                            <div className='active-filters row' onClick={this.toggleFilters}>
+                                                <strong className='col-xs-1'>{i18n(ns + 'filter_by')}</strong>
+                                                <div className='col-xs-11'>
+                                                    {i18n('cluster_page.nodes_tab.filter_results_amount', {count: this.props.filteredNodesLength})}
+                                                    {_.map(this.props.activeFilters, function(values, filterName) {
+                                                        if (!values.length) return null;
+                                                        var options = this.getFilterOptions(filterName);
+                                                        return (
+                                                            <div key={filterName}>
+                                                                <span>{i18n('cluster_page.nodes_tab.filters.' + filterName)}: </span>
+                                                                <strong>
+                                                                    {options ?
+                                                                        _.map(values, function(value) {
+                                                                            return _.find(options, {name: value}).label;
+                                                                        }).join(', ')
+                                                                    :
+                                                                        !values[0] ?
+                                                                            i18n(ns + 'less_than') + values[1]
+                                                                        :
+                                                                            !values[1] ? i18n(ns + 'more_than') + values[0] : _.uniq(values).join(' - ')
+                                                                    }
+                                                                </strong>
+                                                            </div>
+                                                        );
+                                                    }, this)}
+                                                </div>
+                                                <button className='btn btn-link' onClick={this.resetFilters}>
+                                                    <i className='glyphicon glyphicon-remove-sign' />
+                                                </button>
+                                            </div>
+                                        }
+                                        {!this.state.areSortersVisible &&
+                                            <div className='active-sorters row' onClick={this.toggleSorters}>
+                                                <strong className='col-xs-1'>{i18n(ns + 'sort_by')}</strong>
+                                                <div className='col-xs-11'>
+                                                    {_.map(this.props.activeSorters, function(sortObject, index) {
+                                                        var sorterName = _.keys(sortObject)[0];
+                                                        var asc = sortObject[sorterName] == 'asc';
+                                                        if (!_.contains(this.props.sorters, sorterName)) return null;
+                                                        return (
+                                                            <span key={sorterName}>
+                                                                {i18n('cluster_page.nodes_tab.sorters.' + sorterName)}
+                                                                <i
+                                                                    className={utils.classNames({
+                                                                        glyphicon: true,
+                                                                        'glyphicon-arrow-down': asc,
+                                                                        'glyphicon-arrow-up': !asc
+                                                                    })}
+                                                                />
+                                                                {!!this.props.activeSorters[index + 1] && ' + '}
+                                                            </span>
+                                                        );
+                                                    }, this)}
+                                                </div>
+                                                {!_.isEqual(this.props.activeSorters, this.props.defaultSorting) &&
+                                                    <button className='btn btn-link' onClick={this.resetSorters}>
+                                                        <i className='glyphicon glyphicon-remove-sign' />
+                                                    </button>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
                                 }
                             </div>
-                        </div>
+                        }
                     </div>
                 </div>
             );
@@ -523,7 +1053,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
 
     SelectAllMixin = {
         componentDidUpdate: function() {
-            if (this.props.nodes.length) {
+            if (this.refs['select-all']) {
                 var input = this.refs['select-all'].getInputDOMNode();
                 input.indeterminate = !input.checked && _.any(this.props.nodes, function(node) {return this.props.selectedNodeIds[node.id];}, this);
             }
@@ -543,39 +1073,107 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                     }
                     label={i18n('common.select_all')}
                     wrapperClassName='select-all pull-right'
-                    onChange={_.bind(this.props.selectNodes, this.props, availableNodesIds)}
-                />
+                    onChange={_.bind(this.props.selectNodes, this.props, availableNodesIds)} />
             );
         }
     };
 
     NodeList = React.createClass({
         mixins: [SelectAllMixin],
-        getEmptyListWarning: function() {
-            var ns = 'cluster_page.nodes_tab.';
-            if (this.props.mode == 'add') return i18n(ns + 'no_nodes_in_fuel');
-            if (this.props.cluster.get('nodes').length) return i18n(ns + 'no_filtered_nodes_warning');
-            return i18n(ns + 'no_nodes_in_environment');
-        },
         groupNodes: function() {
-            var roles = this.props.cluster.get('roles'),
-                method = _.bind(function(node) {
-                    if (this.props.grouping == 'roles') return node.getRolesSummary(roles);
-                    if (this.props.grouping == 'hardware') return node.getHardwareSummary();
-                    return node.getRolesSummary(roles) + '; \u00A0' + node.getHardwareSummary();
-                }, this),
-                groups = _.pairs(_.groupBy(this.props.nodes, method));
-            if (this.props.grouping == 'hardware') return _.sortBy(groups, _.first);
-            var preferredOrder = roles.pluck('name');
-            return groups.sort(function(group1, group2) {
-                var roles1 = group1[1][0].sortedRoles(preferredOrder),
-                    roles2 = group2[1][0].sortedRoles(preferredOrder),
-                    order;
-                while (!order && roles1.length && roles2.length) {
-                    order = _.indexOf(preferredOrder, roles1.shift()) - _.indexOf(preferredOrder, roles2.shift());
-                }
-                return order || roles1.length - roles2.length;
-            });
+            var roles = this.props.cluster.get('roles');
+            var uniqValueSorters = ['name', 'mac', 'ip'],
+                activeSorters = _.uniq(_.flatten(_.map(this.props.activeSorters, _.keys)));
+
+            var groupingMethod = _.bind(function(node) {
+                return (_.map(_.difference(activeSorters, uniqValueSorters), function(sorter) {
+                    if (sorter == 'roles') {
+                        return node.getRolesSummary(roles);
+                    }
+                    if (sorter == 'status') {
+                        return i18n('cluster_page.nodes_tab.node.status.' + node.getStatusSummary(), {
+                            os: this.props.cluster.get('release').get('operating_system') || 'OS'
+                        });
+                    }
+                    if (sorter == 'manufacturer') {
+                        return node.get('manufacturer');
+                    }
+                    if (sorter == 'hdd') {
+                        return i18n('node_details.total_hdd', {
+                            total: utils.showDiskSize(node.resource('hdd'))
+                        });
+                    }
+                    if (sorter == 'disks') {
+                        var diskSizes = node.resource('disks');
+                        return i18n('node_details.disks_amount', {
+                            count: diskSizes.length,
+                            size: diskSizes.map(function(size) {
+                                    return utils.showDiskSize(size) + ' ' + i18n('node_details.hdd');
+                                }).join(', ')
+                        });
+                    }
+                    if (sorter == 'ram') {
+                        return i18n('node_details.total_ram', {
+                            total: utils.showMemorySize(node.resource('ram'))
+                        });
+                    }
+                    return i18n('node_details.' + (sorter == 'interfaces' ? 'interfaces_amount' : sorter), {count: node.resource(sorter)});
+                }, this)).join('; ');
+            }, this);
+            var groups = _.pairs(_.groupBy(this.props.nodes, groupingMethod));
+
+            // sort grouped nodes by name, mac or ip
+            if (_.intersection(activeSorters, uniqValueSorters).length) {
+                var formattedSorters = _.compact(_.map(this.props.activeSorters, function(sorter) {
+                    var sorterName = _.keys(sorter)[0];
+                    if (_.contains(uniqValueSorters, sorterName)) {
+                        return {attr: sorterName, desc: sorter[sorterName] == 'desc'};
+                    }
+                }));
+                _.each(groups, function(group) {
+                    group[1].sort(function(node1, node2) {
+                        return utils.multiSort(node1, node2, formattedSorters);
+                    });
+                });
+            }
+
+            // sort grouped nodes by other applied sorters
+            var preferredRolesOrder = roles.pluck('name');
+            return groups.sort(_.bind(function(group1, group2) {
+                var result;
+                _.each(this.props.activeSorters, function(sorter) {
+                    var node1 = group1[1][0], node2 = group2[1][0];
+                    var sorterName = _.keys(sorter)[0];
+                    switch (sorterName) {
+                        case 'roles':
+                            var roles1 = node1.sortedRoles(preferredRolesOrder),
+                                roles2 = node2.sortedRoles(preferredRolesOrder),
+                                order;
+                            while (!order && roles1.length && roles2.length) {
+                                order = _.indexOf(preferredRolesOrder, roles1.shift()) - _.indexOf(preferredRolesOrder, roles2.shift());
+                            }
+                            result = order || roles1.length - roles2.length;
+                            break;
+                        case 'status':
+                            result = _.indexOf(this.props.statusesToFilter, node1.getStatusSummary()) - _.indexOf(this.props.statusesToFilter, node2.getStatusSummary());
+                            break;
+                        case 'manufacturer':
+                            result = utils.natsort(node1.get('manufacturer'), node2.get('manufacturer'));
+                            break;
+                        case 'disks':
+                            result = utils.natsort(node1.resource('disks'), node2.resource('disks'));
+                            break;
+                        default:
+                            result = node1.resource(sorterName) - node2.resource(sorterName);
+                            break;
+                    }
+                    if (sorter[sorterName] == 'desc') {
+                        result = result * -1;
+                    }
+                    return !_.isUndefined(result) && !result;
+                }, this);
+                return result;
+            }, this));
         },
         render: function() {
             var groups = this.groupNodes(),
@@ -584,19 +1182,31 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }, this));
             return (
                 <div className={utils.classNames({'node-list row': true, compact: this.props.viewMode == 'compact'})}>
-                    {!!groups.length && <div className='col-xs-12 node-list-header'>{this.renderSelectAllCheckbox()}</div>}
+                    {groups.length > 1 &&
+                        <div className='col-xs-12 node-list-header'>
+                            {this.renderSelectAllCheckbox()}
+                        </div>
+                    }
                     <div className='col-xs-12 content-elements'>
-                        {groups.length ?
-                            groups.map(function(group) {
-                                return <NodeGroup {...this.props}
-                                    key={group[0]}
-                                    label={group[0]}
-                                    nodes={group[1]}
-                                    rolesWithLimitReached={rolesWithLimitReached}
-                                />;
-                            }, this)
+                        {groups.map(function(group) {
+                            return <NodeGroup {...this.props}
+                                key={group[0]}
+                                label={group[0]}
+                                nodes={group[1]}
+                                rolesWithLimitReached={rolesWithLimitReached}
+                            />;
+                        }, this)}
+                        {this.props.totalNodesLength ?
+                            (
+                                !this.props.nodes.length &&
+                                    <div className='alert alert-warning'>
+                                        {i18n('cluster_page.nodes_tab.no_filtered_nodes_warning')}
+                                    </div>
+                            )
                         :
-                            <div className='alert alert-warning'>{this.getEmptyListWarning()}</div>
+                            <div className='alert alert-warning'>
+                                {i18n('cluster_page.nodes_tab.' + (this.props.mode == 'add' ? 'no_nodes_in_fuel' : 'no_nodes_in_environment'))}
+                            </div>
                         }
                     </div>
                 </div>
@@ -633,409 +1243,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             />;
                         }, this)}
                     </div>
-                </div>
-            );
-        }
-    });
-
-    Node = React.createClass({
-        getInitialState: function() {
-            return {
-                renaming: false,
-                actionInProgress: false,
-                eventNamespace: 'click.editnodename' + this.props.node.id,
-                extendedView: false
-            };
-        },
-        componentWillUnmount: function() {
-            $('html').off(this.state.eventNamespace);
-        },
-        componentDidUpdate: function() {
-            if (!this.props.node.get('cluster') && !this.props.checked) this.props.node.set({pending_roles: []}, {assign: true});
-        },
-        startNodeRenaming: function(e) {
-            e.preventDefault();
-            $('html').on(this.state.eventNamespace, _.bind(function(e) {
-                if ($(e.target).hasClass('node-name-input')) {
-                    e.preventDefault();
-                } else {
-                    this.endNodeRenaming();
-                }
-            }, this));
-            this.setState({renaming: true});
-        },
-        endNodeRenaming: function() {
-            $('html').off(this.state.eventNamespace);
-            this.setState({
-                renaming: false,
-                actionInProgress: false
-            });
-        },
-        getNodeLogsLink: function() {
-            var status = this.props.node.get('status'),
-                error = this.props.node.get('error_type'),
-                options = {type: 'remote', node: this.props.node.id};
-            if (status == 'discover') {
-                options.source = 'bootstrap/messages';
-            } else if (status == 'provisioning' || status == 'provisioned' || (status == 'error' && error == 'provision')) {
-                options.source = 'install/anaconda';
-            } else if (status == 'deploying' || status == 'ready' || (status == 'error' && error == 'deploy')) {
-                options.source = 'install/puppet';
-            }
-            return '#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(options);
-        },
-        applyNewNodeName: function(newName) {
-            if (newName && newName != this.props.node.get('name')) {
-                this.setState({actionInProgress: true});
-                this.props.node.save({name: newName}, {patch: true, wait: true}).always(this.endNodeRenaming);
-            } else {
-                this.endNodeRenaming();
-            }
-        },
-        onNodeNameInputKeydown: function(e) {
-            if (e.key == 'Enter') {
-                this.applyNewNodeName(this.refs.name.getInputDOMNode().value);
-            } else if (e.key == 'Escape') {
-                this.endNodeRenaming();
-            }
-        },
-        discardNodeChanges: function() {
-            if (this.state.actionInProgress) return;
-            this.setState({actionInProgress: true});
-            var node = new models.Node(this.props.node.attributes),
-                nodeWillBeRemoved = node.get('pending_addition'),
-                data = nodeWillBeRemoved ? {cluster_id: null, pending_addition: false, pending_roles: []} : {pending_deletion: false};
-            node.save(data, {patch: true})
-                .done(_.bind(function() {
-                    this.props.cluster.fetchRelated('nodes').done(_.bind(function() {
-                        if (!nodeWillBeRemoved) this.setState({actionInProgress: false});
-                    }, this));
-                    dispatcher.trigger('updateNodeStats networkConfigurationUpdated');
-                }, this))
-                .fail(function(response) {
-                    utils.showErrorDialog({
-                        title: i18n('dialog.discard_changes.cant_discard'),
-                        response: response
-                    });
-                });
-        },
-        removeNode: function(e) {
-            e.preventDefault();
-            if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
-            dialogs.RemoveNodeConfirmDialog.show({
-                cb: this.removeNodeConfirmed
-            });
-        },
-        removeNodeConfirmed: function() {
-            // sync('delete') is used instead of node.destroy() because we want
-            // to keep showing the 'Removing' status until the node is truly removed
-            // Otherwise this node would disappear and might reappear again upon
-            // cluster nodes refetch with status 'Removing' which would look ugly
-            // to the end user
-            Backbone.sync('delete', this.props.node).then(_.bind(function(task) {
-                    dispatcher.trigger('networkConfigurationUpdated updateNodeStats updateNotifications');
-                    if (task.status == 'ready') {
-                        // Do not send the 'DELETE' request again, just get rid
-                        // of this node.
-                        this.props.node.trigger('destroy', this.props.node);
-                        return;
-                    }
-                    this.props.cluster.get('tasks').add(new models.Task(task), {parse: true});
-                    this.props.node.set('status', 'removing');
-                }, this)
-            );
-        },
-        showNodeDetails: function(e) {
-            e.preventDefault();
-            if (this.state.extendedView) this.toggleExtendedNodePanel();
-            dialogs.ShowNodeInfoDialog.show({node: this.props.node});
-        },
-        calculateNodeViewStatus: function() {
-            var node = this.props.node;
-            // 'removing' status has priority over 'offline'
-            if (node.get('status') == 'removing') return 'removing';
-            if (!node.get('online')) return 'offline';
-            if (node.get('pending_addition')) return 'pending_addition';
-            if (node.get('pending_deletion')) return 'pending_deletion';
-            // 'error' status has priority over 'discover'
-            if (node.get('status') == 'error') return 'error';
-            if (!node.get('cluster')) return 'discover';
-            return node.get('status');
-        },
-        sortRoles: function(roles) {
-            var preferredOrder = this.props.cluster.get('release').get('roles');
-            return roles.sort(function(a, b) {
-                return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
-            });
-        },
-        toggleExtendedNodePanel: function() {
-            var states = this.state.extendedView ? {extendedView: false, renaming: false} : {extendedView: true};
-            this.setState(states);
-        },
-        renderNameControl: function() {
-            if (this.state.renaming) return (
-                <controls.Input
-                    ref='name'
-                    type='text'
-                    name='node-name'
-                    defaultValue={this.props.node.get('name')}
-                    inputClassName='form-control node-name-input'
-                    disabled={this.state.actionInProgress}
-                    onKeyDown={this.onNodeNameInputKeydown}
-                    autoFocus
-                />
-            );
-            return (
-                <p
-                    title={i18n('cluster_page.nodes_tab.node.edit_name')}
-                    onClick={!this.state.actionInProgress && this.startNodeRenaming}
-                >
-                    {this.props.node.get('name') || this.props.node.get('mac')}
-                </p>
-            );
-        },
-        renderStatusLabel: function(status) {
-            return (
-                <span>
-                    {i18n('cluster_page.nodes_tab.node.status.' + status, {
-                        os: this.props.cluster.get('release').get('operating_system') || 'OS'
-                    })}
-                </span>
-            );
-        },
-        renderNodeProgress: function(showPercentage) {
-            var nodeProgress = this.props.node.get('progress');
-            return (
-                <div className='progress'>
-                    <div className='progress-bar' role='progressbar' style={{width: _.max([nodeProgress, 3]) + '%'}}>
-                        {showPercentage && (nodeProgress + '%')}
-                    </div>
-                </div>
-            );
-        },
-        renderNodeHardwareSummary: function() {
-            var node = this.props.node;
-            return (
-                <div className='node-hardware'>
-                    <span>{i18n('node_details.cpu')}: {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})</span>
-                    <span>{i18n('node_details.hdd')}: {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}</span>
-                    <span>{i18n('node_details.ram')}: {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}</span>
-                </div>
-            );
-        },
-        renderLogsLink: function(iconRepresentation) {
-            return (
-                <a className={iconRepresentation ? 'icon icon-logs' : 'btn'} href={this.getNodeLogsLink()}>
-                    {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
-                </a>
-            );
-        },
-        renderNodeCheckbox: function() {
-            return (
-                <controls.Input
-                    type='checkbox'
-                    name={this.props.node.id}
-                    checked={this.props.checked}
-                    disabled={!this.props.node.isSelectable()}
-                    onChange={this.props.mode != 'edit' && this.props.onNodeSelection}
-                    wrapperClassName='pull-left'
-                />
-            );
-        },
-        renderRemoveButton: function() {
-            return (
-                <button onClick={this.removeNode} className='btn node-remove-button'>
-                    {i18n('cluster_page.nodes_tab.node.remove')}
-                </button>
-            );
-        },
-        renderRoleList: function(roles) {
-            return (
-                <ul className='clearfix'>
-                    {_.map(roles, function(role) {
-                        return (
-                            <li
-                                key={this.props.node.id + role}
-                                className={utils.classNames({'text-success': !this.props.node.get('roles').length})}
-                            >
-                                {role}
-                            </li>
-                        );
-                    }, this)}
-                </ul>
-            );
-        },
-        showDeleteNodesDialog: function() {
-            if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
-            dialogs.DeleteNodesDialog.show({nodes: [this.props.node], cluster: this.props.cluster});
-        },
-        render: function() {
-            var ns = 'cluster_page.nodes_tab.node.',
-                node = this.props.node,
-                isSelectable = node.isSelectable() && this.props.mode != 'edit',
-                status = this.calculateNodeViewStatus(),
-                roles = this.sortRoles(node.get('roles').length ? node.get('roles') : node.get('pending_roles'));
-
-            // compose classes
-            var nodePanelClasses = {
-                node: true,
-                selected: this.props.checked,
-                'col-xs-12': this.props.viewMode != 'compact',
-                unavailable: !isSelectable
-            };
-            nodePanelClasses[status] = status;
-
-            var manufacturer = node.get('manufacturer'),
-                logoClasses = {
-                    'manufacturer-logo': true
-                };
-            logoClasses[manufacturer.toLowerCase()] = manufacturer;
-
-            var statusClasses = {
-                    'node-status': true
-                },
-                statusClass = {
-                    pending_addition: 'text-success',
-                    pending_deletion: 'text-warning',
-                    error: 'text-danger',
-                    ready: 'text-info',
-                    provisioning: 'text-info',
-                    deploying: 'text-success',
-                    provisioned: 'text-info'
-                }[status];
-            statusClasses[statusClass] = true;
-
-            if (this.props.viewMode == 'compact') return (
-                <div className='compact-node'>
-                    <div className={utils.classNames(nodePanelClasses)}>
-                        <label className='node-box'>
-                            <div
-                                className='node-box-inner clearfix'
-                                onClick={isSelectable && _.partial(this.props.onNodeSelection, null, !this.props.checked)}
-                            >
-                                <div className='node-buttons'>
-                                    {this.props.checked && <i className='glyphicon glyphicon-ok' />}
-                                </div>
-                                <div className='node-name'>
-                                    <p>{node.get('name') || node.get('mac')}</p>
-                                </div>
-                                <div className={utils.classNames(statusClasses)}>
-                                    {_.contains(['provisioning', 'deploying'], status) ?
-                                        this.renderNodeProgress()
-                                    :
-                                        this.renderStatusLabel(status)
-                                    }
-                                </div>
-                            </div>
-                            <div className='node-hardware'>
-                                <p>
-                                    <span>
-                                        {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
-                                    </span> / <span>
-                                        {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}
-                                    </span> / <span>
-                                        {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}
-                                    </span>
-                                </p>
-                                <p className='btn btn-link' onClick={this.toggleExtendedNodePanel}>
-                                    {i18n(ns + 'more_info')}
-                                </p>
-                            </div>
-                        </label>
-                    </div>
-                    {this.state.extendedView &&
-                        <controls.Popover className='node-popover' toggle={this.toggleExtendedNodePanel}>
-                            <div>
-                                <div className='node-name clearfix'>
-                                    {this.renderNodeCheckbox()}
-                                    <div className='name pull-left'>
-                                        {this.renderNameControl()}
-                                    </div>
-                                </div>
-                                <div className='node-stats'>
-                                    {!!roles.length &&
-                                        <div className='role-list'>
-                                            <i className='glyphicon glyphicon-pushpin' />
-                                            {this.renderRoleList(roles)}
-                                        </div>
-                                    }
-                                    <div className={utils.classNames(statusClasses)}>
-                                        <i className='glyphicon glyphicon-time' />
-                                        {_.contains(['provisioning', 'deploying'], status) ?
-                                            <div>
-                                                {this.renderStatusLabel(status)}
-                                                {this.renderLogsLink()}
-                                                {this.renderNodeProgress(true)}
-                                            </div>
-                                        :
-                                            <div>
-                                                {this.renderStatusLabel(status)}
-                                                {status == 'offline' && this.renderRemoveButton()}
-                                                {!!node.get('cluster') &&
-                                                    (node.hasChanges() ?
-                                                        <button className='btn btn-discard' onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}>
-                                                            {i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
-                                                        </button>
-                                                    :
-                                                        this.renderLogsLink()
-                                                    )
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                                <div className='hardware-info clearfix'>
-                                    <div className={utils.classNames(logoClasses)} />
-                                    {this.renderNodeHardwareSummary()}
-                                </div>
-                                <div className='node-popover-buttons'>
-                                    <button className='btn btn-default node-details' onClick={this.showNodeDetails}>Details</button>
-                                </div>
-                            </div>
-                        </controls.Popover>
-                    }
-                </div>
-            );
-
-            return (
-                <div className={utils.classNames(nodePanelClasses)}>
-                    <label className='node-box'>
-                        {this.renderNodeCheckbox()}
-                        <div className={utils.classNames(logoClasses)} />
-                        <div className='node-name'>
-                            <div className='name'>
-                                {this.renderNameControl()}
-                            </div>
-                            <div className='role-list'>
-                                {this.renderRoleList(roles)}
-                            </div>
-                        </div>
-                        <div className='node-action'>
-                            {!!node.get('cluster') &&
-                                ((this.props.locked || !node.hasChanges()) ?
-                                    this.renderLogsLink(true)
-                                :
-                                    <div
-                                        className='icon'
-                                        title={i18n(ns + (node.get('pending_addition') ? 'discard_addition' : 'discard_deletion'))}
-                                        onClick={node.get('pending_addition') ? this.showDeleteNodesDialog : this.discardNodeChanges}
-                                    />
-                                )
-                            }
-                        </div>
-                        <div className={utils.classNames(statusClasses)}>
-                            {_.contains(['provisioning', 'deploying'], status) ?
-                                this.renderNodeProgress(true)
-                            :
-                                <div>
-                                    {this.renderStatusLabel(status)}
-                                    {status == 'offline' && this.renderRemoveButton()}
-                                </div>
-                            }
-                        </div>
-                        {this.renderNodeHardwareSummary()}
-                        <div className='node-settings' onClick={this.showNodeDetails} />
-                    </label>
                 </div>
             );
         }

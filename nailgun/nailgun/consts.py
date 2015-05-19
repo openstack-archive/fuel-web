@@ -72,12 +72,6 @@ NOVA_NET_MANAGERS = Enum(
     'VlanManager'
 )
 
-CLUSTER_GROUPING = Enum(
-    'roles',
-    'hardware',
-    'both'
-)
-
 CLUSTER_NET_PROVIDERS = Enum(
     'nova_network',
     'neutron'

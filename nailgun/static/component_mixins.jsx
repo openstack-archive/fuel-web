@@ -62,11 +62,17 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
         },
         outerClickMixin: {
             propTypes: {
-                toggle: React.PropTypes.func.isRequired
+                toggle: React.PropTypes.func.isRequired,
+                closeOnRoute: React.PropTypes.bool
             },
             getInitialState: function() {
                 return {
                     clickEventName: 'click.' + _.uniqueId('outer-click')
+                };
+            },
+            getDefaultProps: function() {
+                return {
+                    closeOnRoute: true
                 };
             },
             handleBodyClick: function(e) {
@@ -76,7 +82,9 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             },
             componentDidMount: function() {
                 $('html').on(this.state.clickEventName, this.handleBodyClick);
-                Backbone.history.on('route', _.partial(this.props.toggle, false), this);
+                if (this.props.closeOnRoute) {
+                    Backbone.history.on('route', _.partial(this.props.toggle, false), this);
+                }
             },
             componentWillUnmount: function() {
                 $('html').off(this.state.clickEventName);

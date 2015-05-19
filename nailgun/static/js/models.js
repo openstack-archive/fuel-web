@@ -649,9 +649,12 @@ define([
             if (untaggedNetworks.length > maxUntaggedNetworksCount) {
                 errors.push(i18n(ns + 'too_many_untagged_networks'));
             }
-            var mtuValue = this.get('interface_properties').mtu;
-            if (mtuValue && (mtuValue < 42 || mtuValue > 65536)) {
-                errors.push(i18n(ns + 'invalid_mtu'));
+            var interfaceProperties = this.get('interface_properties');
+            if (interfaceProperties && interfaceProperties.mtu) {
+                var mtuValue = interfaceProperties.mtu;
+                if (mtuValue && (mtuValue < 42 || mtuValue > 65536)) {
+                    errors.push(i18n(ns + 'invalid_mtu'));
+                }
             }
             return errors;
         }

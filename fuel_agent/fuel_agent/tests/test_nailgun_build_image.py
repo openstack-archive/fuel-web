@@ -65,6 +65,7 @@ DEFAULT_TRUSTY_PACKAGES = [
     "vim",
     "virt-what",
     "vlan",
+    "xfsprogs",
 ]
 
 REPOS_SAMPLE = [

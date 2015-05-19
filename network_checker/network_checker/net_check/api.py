@@ -369,13 +369,13 @@ class Sender(Actor):
 
     def _send_packets(self):
         start_time = time.time()
-        for iface, vlan in itertools.cycle(self._iface_vlan_iterator()):
-            self.logger.debug("Sending packets: iface=%s vlan=%s",
+
+        while time.time() - start_time <= self.config['duration']:
+            for iface, vlan in self._iface_vlan_iterator():
+                self.logger.debug("Sending packets: iface=%s vlan=%s",
                               iface, str(vlan))
-            for _ in xrange(self.config['repeat']):
-                self._sendp(iface, vlan)
-            if time.time() - start_time >= self.config['duration']:
-                break
+                for _ in xrange(self.config['repeat']):
+                    self._sendp(iface, vlan)
 
     def _sendp(self, iface, vlan):
         try:

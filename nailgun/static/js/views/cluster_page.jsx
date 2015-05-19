@@ -60,7 +60,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 var cluster = pageOptions.cluster,
                     tabOptions = pageOptions.tabOptions[0],
                     screenRegexp = /^\w+$/,
-                    isScreen = tabOptions && tabOptions.match(screenRegexp),
+                    isScreen = tabOptions && tabOptions != 'list' && tabOptions.match(screenRegexp),
                     breadcrumbs = [
                         ['home', '#'],
                         ['environments', '#clusters'],

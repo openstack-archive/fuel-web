@@ -149,10 +149,6 @@ class Cluster(NailgunObject):
                 "type": "string",
                 "enum": list(consts.CLUSTER_NET_PROVIDERS)
             },
-            "grouping": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_GROUPING)
-            },
             "view_mode": {
                 "type": "string",
                 "enum": list(consts.CLUSTER_VIEW_MODES)

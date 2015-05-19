@@ -33,7 +33,6 @@ from nailgun.utils.migration import drop_enum
 
 ENUMS = (
     'bond_mode',
-    'cluster_grouping',
     'cluster_view_modes',
     'cluster_mode',
     'cluster_net_manager',
@@ -107,9 +106,6 @@ def upgrade():
                               nullable=False),
                     sa.Column('net_provider', sa.Enum(
                         'nova_network', 'neutron', name='net_provider'),
-                        nullable=False),
-                    sa.Column('grouping', sa.Enum(
-                        'roles', 'hardware', 'both', name='cluster_grouping'),
                         nullable=False),
                     sa.Column('view_mode', sa.Enum(
                         'standard', 'compact', name='cluster_view_modes'),

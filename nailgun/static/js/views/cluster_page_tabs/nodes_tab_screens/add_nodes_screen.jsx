@@ -39,6 +39,7 @@ function(_, React, models, NodeListScreen) {
                 mode='add'
                 cluster={this.props.cluster}
                 nodes={this.state.nodes}
+                query={this.props.screenOptions[0]}
             />;
         }
     });

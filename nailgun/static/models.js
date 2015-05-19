@@ -326,13 +326,6 @@ define([
             }
             return _.isEmpty(errors) ? null : errors;
         },
-        groupings: function() {
-            return {
-                roles: i18n('cluster_page.nodes_tab.roles'),
-                hardware: i18n('cluster_page.nodes_tab.hardware_info'),
-                both: i18n('cluster_page.nodes_tab.roles_and_hardware_info')
-            };
-        },
         viewModes: function() {
             return ['standard', 'compact'];
         },
@@ -378,14 +371,13 @@ define([
                     resource = this.get('meta').memory.total;
                 } else if (resourceName == 'disks') {
                     resource = _.pluck(this.get('meta').disks, 'size').sort(function(a, b) {return a - b;});
+                } else if (resourceName == 'disks_amount') {
+                    resource = this.get('meta').disks.length;
                 } else if (resourceName == 'interfaces') {
                     resource = this.get('meta').interfaces.length;
                 }
             } catch (ignore) {}
-            if (_.isNaN(resource)) {
-                resource = 0;
-            }
-            return resource;
+            return _.isNaN(resource) ? 0 : resource;
         },
         sortedRoles: function(preferredOrder) {
             return _.union(this.get('roles'), this.get('pending_roles')).sort(function(a, b) {
@@ -407,8 +399,15 @@ define([
                 return releaseRoles.findWhere({name: role}).get('label');
             }).join(', ');
         },
-        getHardwareSummary: function() {
-            return i18n('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + i18n('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
+        getStatusSummary: function() {
+            // 'offline' status has higher priority
+            if (!this.get('online')) return 'offline';
+            var status = this.get('status');
+            // 'removing' end 'error' statuses have higher priority
+            if (_.contains(['removing', 'error'], status)) return status;
+            if (this.get('pending_addition')) return 'pending_addition';
+            if (this.get('pending_deletion')) return 'pending_deletion';
+            return status;
         }
     });
 

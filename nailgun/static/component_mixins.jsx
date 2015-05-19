@@ -62,7 +62,7 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
         },
         outerClickMixin: {
             propTypes: {
-                toggle: React.PropTypes.func.isRequired
+                toggle: React.PropTypes.func
             },
             getInitialState: function() {
                 return {
@@ -71,12 +71,12 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             },
             handleBodyClick: function(e) {
                 if (!$(e.target).closest(this.getDOMNode()).length) {
-                    _.defer(_.partial(this.props.toggle, false));
+                    _.defer(_.partial(this.props.toggle || this.toggle, false));
                 }
             },
             componentDidMount: function() {
                 $('html').on(this.state.clickEventName, this.handleBodyClick);
-                Backbone.history.on('route', _.partial(this.props.toggle, false), this);
+                Backbone.history.on('route', _.partial(this.props.toggle || this.toggle, false), this);
             },
             componentWillUnmount: function() {
                 $('html').off(this.state.clickEventName);

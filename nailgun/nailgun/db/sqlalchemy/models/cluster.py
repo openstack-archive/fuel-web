@@ -70,8 +70,7 @@ class Cluster(Base):
         JSON,
         nullable=False,
         default={
-            "view_mode": consts.NODE_VIEW_MODES.standard,
-            "grouping": consts.CLUSTER_GROUPING.roles
+            "view_mode": consts.NODE_VIEW_MODES.standard
         }
     )
     name = Column(Unicode(50), unique=True, nullable=False)

@@ -29,6 +29,7 @@ function(React, NodeListScreen) {
                 mode='list'
                 cluster={this.props.cluster}
                 nodes={this.props.cluster.get('nodes')}
+                query={JSON.parse(this.props.screenOptions[0])}
             />;
         }
     });

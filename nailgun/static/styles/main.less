@@ -127,8 +127,8 @@
 
 .glyphicon-warning-sign {
   content: none;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   background: url(@common-icons-sprite) -52px -132px no-repeat;
   &:before, &:after {
     content: none;
@@ -1183,41 +1183,192 @@ button, .btn:not(.btn-link) {.font-semibold;}
 }
 
 .node-management-panel {
-  height: 70px;
-  label {
-    font-size: @base-font-size - 2;
-    select, input {
-      .font-normal;
-    }
-  }
-  .control-buttons-box {
-    overflow: hidden;
-    .btn-group {
-      margin-left: 5px;
-      .glyphicon {
-        margin-right: 5px;
-      }
-    }
-  }
-  .label-wrapper {
-    margin-bottom: 5px;
-  }
-  .filter-group {
-    input[name=filter] {
-      padding-right: 22px;
-    }
-    .btn-clear-filter {
-      position: absolute;
-      bottom: 21px;
-      right: 24px;
-    }
-  }
+  @indent: 5px;
+  min-height: 70px;
+
   .view-mode-switcher {
-    padding-right: 0;
+    margin-right: @indent;
+    float: left;
     .btn-group label {
       width: auto;
       font-size: @base-font-size;
     }
+  }
+
+  .node-list-management-buttons {
+    button {
+      margin-right: @indent;
+    }
+    .search {
+      min-width: 350px;
+      position: relative;
+      .form-group {
+        margin: 0;
+      }
+      .btn-clear-search {
+        position: absolute;
+        right: 0;
+        top: 6px;
+      }
+    }
+  }
+
+  .well {
+    margin: @indent * 2 0;
+    > div {
+      margin: 0 0 @indent @indent;
+    }
+    .well-heading {
+      .font-semibold;
+      .btn-link {
+        padding: 0;
+      }
+    }
+    .multiselect {
+      .dropdown-menu {
+        width: 200px;
+      }
+      .btn-link {
+        padding-left: @indent;
+      }
+    }
+    .control-buttons {
+      float: none;
+      margin: 0;
+    }
+  }
+
+  .help-block {
+    display: none;
+  }
+
+  .filters {
+    .filter-control-buttons {
+      float: none;
+    }
+  }
+
+  .active-sorters-filters {
+    border-radius: @indent;
+    border: 1px solid @gray + 80%;
+    padding: @indent * 2;
+    margin: @indent * 2 0 @indent * 4;
+    cursor: pointer;
+    hr {
+      margin: @indent * 2 0;
+    }
+    .active-sorters, .active-filters {
+      position: relative;
+      > div > div {
+        margin-right: @indent * 5;
+        display: inline;
+      }
+      > strong {
+        padding-right: 0;
+      }
+      button {
+        padding: 0;
+        position: absolute;
+        top: 0;
+        right: @indent * 2;
+      }
+    }
+  }
+
+  .form-group:not(.checkbox-group) label {
+    width: 60px;
+    margin: 8px 5px 0 0;
+    float: left;
+    &:empty {
+      display: none;
+    }
+  }
+
+  .control-buttons-box {
+    overflow: hidden;
+    .btn-group {
+      margin-left: @indent;
+      .glyphicon {
+        margin-right: @indent;
+      }
+    }
+  }
+
+  .filter-group {
+    margin-bottom: @indent;
+    &:first-child {
+      margin-top: @indent * 2;
+    }
+    &:last-child {
+      margin-bottom: @indent * 3;
+      position: relative;
+    }
+    .form-group {
+      margin-right: @indent;
+    }
+    .glyphicon {
+      margin-right: @indent;
+      &.glyphicon-plus-sign {
+        position: relative;
+        top: 7px;
+      }
+    }
+  }
+
+  .sorters {
+    .glyphicon {
+      padding-left: @indent;
+    }
+    .form-control {
+      width: auto;
+      float: left;
+    }
+  }
+}
+
+.multiselect {
+  .popover {
+    display: block;
+    width: 210px;
+    top: 25px;
+    .popover-content {
+      > div {
+        padding: 0 5px;
+        .custom-tumbler + span {
+          position: relative;
+          top: 3px;
+        }
+        label {
+          .font-normal;
+          font-size: @base-font-size - 2;
+        }
+        &.divider {
+          border-bottom: 1px solid @gray + 80%;
+          margin: 8px 0 10px;
+        }
+      }
+    }
+  }
+  .dropdown-toggle + i {
+    padding-left: 5px;
+  }
+}
+
+.number-range {
+  .popover {
+    display: block;
+    width: 210px;
+    top: 25px;
+    span {
+      padding-top: 6px;
+    }
+    .form-control {
+      width: 72px;
+      margin: 0 5px;
+    }
+  }
+  .dropdown-toggle + i {
+    padding-left: 5px;
   }
 }
 
@@ -1226,7 +1377,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .node-list {
 
   .select-all {
-    .label-wrapper {
+    label {
       display: inline-block;
       position: relative;
       top: 1px;
@@ -1234,7 +1385,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
   .node-list-header .select-all {
-    margin: 0 21px 8px 0;
+    margin: 0 15px 8px 7px;
   }
 
   .nodes-group {
@@ -1253,6 +1404,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
     h4 {
       margin: 0 0 @node-indent 0;
+    }
+
+    .node-group-header {
+      .glyphicon {
+        cursor: pointer;
+      }
+      > div:first-child {
+        padding-left: 0;
+      }
     }
 
     .node {
@@ -1412,6 +1572,14 @@ button, .btn:not(.btn-link) {.font-semibold;}
           }
         }
       }
+
+      &.error .node-box {
+        cursor: default;
+        .node-hardware {
+          cursor: pointer;
+        }
+      }
+
     }
 
     /* override node styles if compact view */
@@ -2991,5 +3159,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .input-wrapper input {
     width: 513px;
     margin-top: 10px;
+  }
+}
+
+.btn-link.glyphicon {
+  padding-left: 0;
+  &:hover {
+    text-decoration: none;
   }
 }

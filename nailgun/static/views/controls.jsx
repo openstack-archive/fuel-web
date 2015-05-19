@@ -239,7 +239,8 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             name: React.PropTypes.string,
             values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
             label: React.PropTypes.node,
-            tooltipText: React.PropTypes.node
+            tooltipText: React.PropTypes.node,
+            disabled: React.PropTypes.bool
         },
         render: function() {
             return (
@@ -259,6 +260,181 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
                             value={value.data}
                         />;
                     }, this)}
+                </div>
+            );
+        }
+    });
+
+    controls.MultiSelect = React.createClass({
+        propTypes: {
+            name: React.PropTypes.string,
+            options: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+            label: React.PropTypes.node.isRequired,
+            disabled: React.PropTypes.bool,
+            simple: React.PropTypes.bool,
+            onChange: React.PropTypes.func,
+            extraContent: React.PropTypes.node,
+            sort: React.PropTypes.bool
+        },
+        getInitialState: function() {
+            return {
+                itemsVisible: false,
+                values: this.props.values || []
+            };
+        },
+        toggle: function(visible) {
+            this.setState({
+                itemsVisible: _.isBoolean(visible) ? visible : !this.state.itemsVisible
+            });
+        },
+        onChange: function(name, checked) {
+            var values = name == 'all' ?
+                    checked ? _.pluck(this.props.options, 'name') : []
+                :
+                    checked ? _.union(this.state.values, [name]) : _.difference(this.state.values, [name]);
+            this.setState({values: values});
+        },
+        render: function() {
+            var controlClasses = {
+                    'btn-group multiselect': true,
+                    open: this.state.itemsVisible
+                },
+                buttonClasses = {
+                    'btn dropdown-toggle': true,
+                    'btn-link': this.props.simple && !this.state.itemsVisible,
+                    'btn-default': !(this.props.simple && !this.state.itemsVisible)
+                };
+
+            var label = !this.props.simple && this.state.values.length ?
+                    this.state.values.length > 3 ? this.state.values.length + ' selected' : _.map(this.state.values, function(itemName) {
+                        return _.find(this.props.options, {name: itemName}).label;
+                    }, this).join(', ')
+                :
+                    this.props.label;
+
+            if (this.props.sort) {
+                this.props.options.sort(function(option1, option2) {
+                    return utils.natsort(option1.label, option2.label);
+                });
+            }
+
+            return (
+                <div className={utils.classNames(controlClasses)}>
+                    <button className={utils.classNames(buttonClasses)} onClick={this.toggle} disabled={this.props.disabled}>
+                        {label} <span className='caret'></span>
+                    </button>
+                    {this.state.itemsVisible &&
+                        <controls.Popover toggle={this.toggle} showArrow={false}>
+                            {!this.props.simple && [
+                                    <div key='all'>
+                                        <controls.Input
+                                            type='checkbox'
+                                            label='Select All'
+                                            name='all'
+                                            checked={this.state.values.length == this.props.options.length}
+                                            onChange={this.props.onChange || this.onChange}
+                                        />
+                                    </div>,
+                                    <div key='divider' className='divider' />
+                                ]
+                            }
+                            {_.map(this.props.options, function(option, index) {
+                                return (
+                                    <controls.Input {...option}
+                                        key={index}
+                                        type='checkbox'
+                                        checked={_.contains(this.state.values, option.name)}
+                                        onChange={this.props.onChange || this.onChange}
+                                    />
+                                );
+                            }, this)}
+                        </controls.Popover>
+                    }
+                    {this.props.extraContent}
+                </div>
+            );
+        }
+    });
+
+    controls.NumberRange = React.createClass({
+        mixins: [componentMixins.outerClickMixin],
+        propTypes: {
+            name: React.PropTypes.string,
+            disabled: React.PropTypes.bool,
+            onChange: React.PropTypes.func,
+            prefix: React.PropTypes.string,
+            extraContent: React.PropTypes.node
+        },
+        getInitialState: function() {
+            return {
+                itemsVisible: false,
+                values: []
+            };
+        },
+        toggle: function(visible) {
+            this.setState({
+                itemsVisible: _.isBoolean(visible) ? visible : !this.state.itemsVisible
+            });
+        },
+        onChange: function(name, value) {
+            value = value == '' ? undefined : Number(value);
+            if (!_.isNaN(value)) {
+                var values = this.state.values;
+                if (_.contains(name, 'start')) {
+                    values[0] = value;
+                } else {
+                    values[0] = values[0] || 0;
+                    values[1] = value;
+                }
+                this.setState({values: values});
+            }
+        },
+        render: function() {
+            var values = this.state.values;
+            var controlClasses = {
+                    'btn-group number-range': true,
+                    open: this.state.itemsVisible
+                };
+
+            var props = {
+                    type: 'number',
+                    disabled: this.props.disabled,
+                    onChange: this.props.onChange || this.onChange,
+                    inputClassName: 'pull-left',
+                    error: values[0] > values[1] || null
+                };
+
+            var label = _.all(values, _.isUndefined) ?
+                    this.props.label
+                :
+                    (
+                        !_.isUndefined(values[0]) && !_.isUndefined(values[1]) ?
+                            values[0] == values[1] ? values[0] : values[0] + ' - ' + values[1]
+                        :
+                            !_.isUndefined(values[0]) ? 'More than ' + values[0] : 'Less than ' + values[1]
+                    ) + ' ' + this.props.prefix;
+
+            return (
+                <div className={utils.classNames(controlClasses)}>
+                    <button className='btn btn-default dropdown-toggle' disabled={this.props.disabled} onClick={this.toggle}>
+                        {label} <span className='caret'></span>
+                    </button>
+                    {this.state.itemsVisible &&
+                        <controls.Popover toggle={this.toggle} showArrow={false}>
+                            <div className='clearfix'>
+                                <controls.Input {...props}
+                                    name={this.props.name + '-start'}
+                                    value={values[0]}
+                                />
+                                <span className='pull-left'> &mdash; </span>
+                                <controls.Input {...props}
+                                    name={this.props.name + '-end'}
+                                    value={values[1]}
+                                />
+                            </div>
+                        </controls.Popover>
+                    }
+                    {this.props.extraContent}
                 </div>
             );
         }
@@ -312,10 +488,14 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
         mixins: [componentMixins.outerClickMixin],
         propTypes: {
             className: React.PropTypes.node,
-            placement: React.PropTypes.node
+            placement: React.PropTypes.node,
+            showArrow: React.PropTypes.bool
         },
         getDefaultProps: function() {
-            return {placement: 'bottom'};
+            return {
+                placement: 'bottom',
+                showArrow: true
+            };
         },
         render: function() {
             var classes = {'popover in': true};
@@ -323,7 +503,7 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             classes[this.props.className] = true;
             return (
                 <div className={utils.classNames(classes)}>
-                    <div className='arrow' />
+                    {this.props.showArrow && <div className='arrow' />}
                     <div className='popover-content'>{this.props.children}</div>
                 </div>
             );

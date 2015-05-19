@@ -106,8 +106,7 @@ def prepare():
             'status': 'new',
             'net_provider': 'neutron',
             'ui_settings': {
-                'view_mode': 'standard',
-                'grouping': 'roles'
+                'view_mode': 'standard'
             },
             'fuel_version': '6.0',
         }])

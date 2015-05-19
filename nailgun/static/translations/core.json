@@ -59,7 +59,18 @@
                 "system": "System",
                 "memory": "Memory",
                 "disks": "Disks",
-                "interfaces": "Interfaces"
+                "interfaces": "Interfaces",
+                "interfaces_amount": "__count__ interface",
+                "interfaces_amount_plural": "__count__ interfaces",
+                "disks_amount": "__count__ disk (__size__)",
+                "disks_amount_plural": "__count__ disks (__size__)",
+                "cpu_details": "__real__ real (__total__ total) CPU",
+                "cpu_details_short": "__real__ real (__total__ total)",
+                "total_hdd": "__total__ HDD",
+                "total_ram": "__total__ RAM",
+                "online": "Online",
+                "offline": "Offline",
+                "os": "OS"
             },
             "cluster": {
                 "status": {
@@ -258,9 +269,28 @@
                     "actions": "Actions"
                 },
                 "nodes_tab": {
-                    "roles": "Roles",
-                    "hardware_info": "Hardware Info",
-                    "roles_and_hardware_info": "Roles and hardware info",
+                    "sorters": {
+                        "roles": "Roles",
+                        "status": "Status",
+                        "offline": "Offline status",
+                        "name": "Name",
+                        "mac": "MAC address",
+                        "ip": "IP address",
+                        "manufacturer": "Manufacturer",
+                        "cpu_real": "CPU (real)",
+                        "cpu_total": "CPU (total)",
+                        "hdd": "HDD total size",
+                        "disks": "Disks amount and sizes",
+                        "ram": "RAM total size",
+                        "interfaces": "Interfaces amount"
+                    },
+                    "filters": {
+                        "roles": "Roles",
+                        "hdd": "HDD total size"
+                    },
+                    "selected_nodes_amount": "__selected__ of __total__ selected",
+                    "filter_results_amount": "Shown __count__ node from __total__ for ",
+                    "filter_results_amount_plural": "Shown __count__ nodes from __total__ for ",
                     "assign_roles": "Assign Roles",
                     "breadcrumbs": {
                         "add": "Add Nodes",
@@ -337,9 +367,9 @@
                         }
                     },
                     "node_management_panel": {
-                        "group_by": "Group By",
+                        "sort_by": "Sort By",
                         "filter_by": "Filter By",
-                        "filter_placeholder": "Node name/mac",
+                        "search_placeholder": "Search by node name, MAC or IP address",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "node_management_error": {
@@ -367,7 +397,7 @@
                         "discard_deletion": "Discard Deletion",
                         "view_logs": "View Logs",
                         "edit_name": "Edit Name",
-                        "show_details": "Show Details"
+                        "show_details": "More info"
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",
@@ -380,9 +410,7 @@
                         "title": "Node Deletion Error",
                         "node_deletion_warning": "Unable to delete nodes"
                     },
-                    "no_filtered_nodes_warning": "There are no nodes found matching the filter value.",
-                    "filtered_nodes_count":"__filteredNodesCount__ of __count__ node",
-                    "filtered_nodes_count_plural": "__filteredNodesCount__ of __count__ nodes"
+                    "no_filtered_nodes_warning": "No nodes found matching the selected filters."
                 },
                 "settings_tab": {
                     "settings_error": {
@@ -920,9 +948,6 @@
                     "actions": "动作"
                 },
                 "nodes_tab": {
-                    "roles": "角色",
-                    "hardware_info": "硬件信息",
-                    "roles_and_hardware_info": "角色和硬件信息",
                     "assign_roles": "分配角色",
                     "configure_interfaces": {
                         "title": "在__name__上配置接口",
@@ -2236,9 +2261,6 @@
                     "actions": "작업"
                 },
                 "nodes_tab": {
-                    "roles": "역할",
-                    "hardware_info": "하드웨워 정보",
-                    "roles_and_hardware_info": "역할 및 하드웨어 정보",
                     "assign_roles": "역할 지정",
                     "configure_interfaces": {
                         "title": "__name__ 에 인터페이스 설정",
@@ -2304,9 +2326,7 @@
                     "no_nodes_in_environment": "환경에 노드를 추가하기 위해서는, 노드추가 옵션을 선택한다음에, 배치하기를 원하는 노드를 선택하고 각각의 역할을 할당합니다",
                     "no_nodes_in_fuel": "배치되지 않은 노드 풀은 이 작업을 위해 필요합니다. 풀에 노드를 추가하려면 네트워크(일명 PXE 부팅)로부터 부팅하도록 노드를 설정합니다. 그러면, Fuel가 자동적으로 노드를 찾아낼 수 있습니다.",
                     "role_conflict": "이 역할은 이미 선택된 다른 역할과 섞을 수 없습니다.",
-                    "no_filtered_nodes_warning": "필터값과 일치하는 노드가 없습니다.",
-                    "filtered_nodes_count":"__count__ node의__filteredNodesCount__ ",
-                    "filtered_nodes_count_plural": "__count__ nodes의__filteredNodesCount__"
+                    "no_filtered_nodes_warning": "필터값과 일치하는 노드가 없습니다."
                 },
                 "settings_tab": {
                     "title": "OpenStack 설정",

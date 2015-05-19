@@ -43,7 +43,11 @@ function($, _, React, models, NodeListScreen) {
             return this.refs.screen.revertChanges();
         },
         render: function() {
-            return <NodeListScreen {... _.omit(this.props, 'screenOptions')} ref='screen' mode='add' />;
+            return <NodeListScreen {... _.omit(this.props, 'screenOptions')}
+                ref='screen'
+                mode='add'
+                query={this.props.screenOptions[0]}
+            />;
         }
     });
 

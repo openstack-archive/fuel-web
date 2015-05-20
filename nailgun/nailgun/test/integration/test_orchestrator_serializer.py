@@ -2207,7 +2207,7 @@ class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
         super(TestCephOsdImageOrchestratorSerialize, self).setUp()
         cluster = self.env.create(
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode': 'ha_compact'},
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd']}])
         self.app.patch(
@@ -2233,7 +2233,7 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
     def create_env(self, nodes, osd_pool_size='2'):
         cluster = self.env.create(
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode': 'ha_compact'},
             nodes_kwargs=nodes)
         self.app.patch(
             reverse(

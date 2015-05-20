@@ -66,7 +66,7 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
         """
         cluster = self.env.create(
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode': 'ha_compact'},
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd']}])
         self.app.patch(

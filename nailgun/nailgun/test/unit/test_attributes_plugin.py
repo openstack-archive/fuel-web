@@ -40,7 +40,7 @@ class TestPluginBase(base.BaseTestCase):
             package_version=self.package_version)
         self.plugin = Plugin.create(self.plugin_metadata)
         self.env.create(
-            cluster_kwargs={'mode': 'multinode'},
+            cluster_kwargs={'mode': 'ha_compact'},
             release_kwargs={
                 'version': '2014.2-6.0',
                 'operating_system': 'Ubuntu'})

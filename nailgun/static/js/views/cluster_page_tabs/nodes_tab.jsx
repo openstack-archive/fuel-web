@@ -18,14 +18,13 @@ define(
     'jquery',
     'underscore',
     'react',
-    'jsx!backbone_view_wrapper',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/cluster_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
-    'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
     'jsx!views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function($, _, React, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
     'use strict';
 
     var ReactTransitionGroup = React.addons.TransitionGroup;
@@ -48,7 +47,7 @@ function($, _, React, BackboneViewWrapper, ClusterNodesScreen, AddNodesScreen, E
                 list: ClusterNodesScreen,
                 add: AddNodesScreen,
                 edit: EditNodesScreen,
-                disks: BackboneViewWrapper(EditNodeDisksScreen),
+                disks: EditNodeDisksScreen,
                 interfaces: EditNodeInterfacesScreen
             };
         },

@@ -744,6 +744,14 @@ DUMP:
           - atop/
       - type: file
         path: /var/log/atop/atop_current
+      - type: command
+        command: uname -a
+        to_file: uname_a.txt
+      - type: command
+        command: lsmod
+        to_file: lsmod.txt
+      - type: file
+        path: /etc/*-release
 
     controller:
       hosts: []
@@ -852,7 +860,6 @@ DUMP:
       - type: command
         command: dpkg -l
         to_file: installed-debs.txt
-
       - type: dir
         path: /etc/sysconfig/network-scripts
       - type: dir
@@ -876,6 +883,14 @@ DUMP:
       - type: command
         command: cat /proc/interrupts
         to_file: proc_interrupts.txt
+      - type: command
+        command: uname -a
+        to_file: uname_a.txt
+      - type: command
+        command: lsmod
+        to_file: lsmod.txt
+      - type: file
+        path: /etc/*-release
 
 # performance tests settings
 PERFORMANCE_TESTS_RUN_NUMBER: 10

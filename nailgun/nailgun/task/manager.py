@@ -14,7 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from distutils.version import StrictVersion
 import traceback
+
 
 from oslo.serialization import jsonutils
 
@@ -878,30 +880,36 @@ class VerifyNetworksTaskManager(TaskManager):
                 verify_task.add_subtask(
                     tasks.MulticastVerificationTask(multicast))
 
-            repo_check_task = objects.task.Task.create_subtask(
-                task, name=consts.TASK_NAMES.check_repo_availability)
-            verify_task.add_subtask(
-                tasks.CheckRepositoryConnectionFromSlavesTask(repo_check_task,
-                                                              vlan_ids))
+            # we have remote connectivity checks sicne fuel 6.1, so
+            # we should not create those tasks for old envs
+            if StrictVersion(self.cluster.fuel_version) >= \
+                    StrictVersion(consts.FUEL_REMOTE_REPOS):
 
-            config, errors = tasks.RepoAvailabilityWithSetup.get_config(
-                self.cluster)
-            # if there is no config - there is no nodes on which
-            # we need to setup network
-            if config:
+                # repo connectivity check via default gateway
                 repo_check_task = objects.task.Task.create_subtask(
-                    task,
-                    name=consts.TASK_NAMES.check_repo_availability_with_setup)
+                    task, name=consts.TASK_NAMES.check_repo_availability)
                 verify_task.add_subtask(
-                    tasks.RepoAvailabilityWithSetup(
-                        repo_check_task, config))
+                    tasks.CheckRepoAvailability(repo_check_task, vlan_ids))
 
-            if errors:
-                notifier.notify(
-                    "warning",
-                    '\n'.join(errors),
-                    self.cluster.id
-                )
+                # repo connectivity check via external gateway
+                conf, errors = tasks.CheckRepoAvailabilityWithSetup.get_config(
+                    self.cluster)
+                # if there is no conf - there is no nodes on which
+                # we need to setup network
+                if conf:
+                    repo_check_task = objects.task.Task.create_subtask(
+                        task,
+                        consts.TASK_NAMES.check_repo_availability_with_setup)
+                    verify_task.add_subtask(
+                        tasks.CheckRepoAvailabilityWithSetup(
+                            repo_check_task, conf))
+
+                if errors:
+                    notifier.notify(
+                        "warning",
+                        '\n'.join(errors),
+                        self.cluster.id
+                    )
 
             db().commit()
             self._call_silently(task, verify_task)

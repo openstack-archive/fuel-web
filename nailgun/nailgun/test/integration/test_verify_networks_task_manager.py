@@ -618,3 +618,32 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
             task.cache['args']['nodes'][2]['networks'],
             [eth0_vlans, eth1_vlans])
         self.env.wait_ready(task, 30)
+
+    @fake_tasks()
+    def test_repo_availability_tasks_are_created(self):
+        task = self.env.launch_verify_networks()
+
+        check_repo_tasks = filter(
+            lambda t: t.name in (
+                consts.TASK_NAMES.check_repo_availability,
+                consts.TASK_NAMES.check_repo_availability_with_setup),
+            task.subtasks)
+
+        msg = "envs >= 6.1 must have check repo availability tasks"
+        self.assertTrue(bool(check_repo_tasks), msg)
+
+    @fake_tasks()
+    def test_repo_availability_tasks_are_not_created(self):
+        self.env.clusters[0].fuel_version = '6.0'
+        self.db.flush()
+
+        task = self.env.launch_verify_networks()
+
+        check_repo_tasks = filter(
+            lambda t: t.name in (
+                consts.TASK_NAMES.check_repo_availability,
+                consts.TASK_NAMES.check_repo_availability_with_setup),
+            task.subtasks)
+
+        msg = "envs < 6.1 must not have check repo availability tasks"
+        self.assertFalse(bool(check_repo_tasks), msg)

@@ -23,39 +23,18 @@ define(
     'utils',
     'models',
     'dispatcher',
-    'jsx!views/dialogs',
     'jsx!views/controls',
     'jsx!component_mixins',
     'jquery-ui/sortable'
 ],
-function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, controls, ComponentMixins) {
+function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins) {
     'use strict';
 
-    var ScreenMixin, EditNodeInterfacesScreen, NodeInterface;
-
-    ScreenMixin = {
-        goToNodeList: function() {
-            app.navigate('#cluster/' + this.props.cluster.get('id') + '/nodes', {trigger: true});
-        },
-        isLockedScreen: function() {
-            var nodesAvailableForChanges = this.props.nodes.filter(function(node) {
-                return node.get('pending_addition') || node.get('status') == 'error';
-            });
-            return !nodesAvailableForChanges.length ||
-                this.props.cluster && !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
-        },
-        returnToNodeList: function() {
-            if (this.hasChanges()) {
-                dialogs.DiscardSettingsChangesDialog.show({cb: _.bind(this.goToNodeList, this)});
-            } else {
-                this.goToNodeList();
-            }
-        }
-    };
+    var EditNodeInterfacesScreen, NodeInterface;
 
     EditNodeInterfacesScreen = React.createClass({
         mixins: [
-            ScreenMixin,
+            ComponentMixins.nodeConfigurationScreenMixin,
             ComponentMixins.backboneMixin('interfaces', 'change:checked change:slaves change:bond_properties change:interface_properties reset sync'),
             ComponentMixins.backboneMixin('cluster', 'change:status change:networkConfiguration change:nodes sync'),
             ComponentMixins.backboneMixin('nodes', 'change sync')
@@ -64,7 +43,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             fetchData: function(options) {
                 var cluster = options.cluster,
                     nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);}),
-                    nodeLoadingErrorNS = 'cluster_page.nodes_tab.configure_interfaces.node_loading_error.',
+                    nodeLoadingErrorNS = 'cluster_page.nodes_tab.node_loading_error.',
                     nodes,
                     networkConfiguration,
                     networksMetadata = new models.ReleaseNetworkProperties();
@@ -76,7 +55,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         title: i18n(nodeLoadingErrorNS + 'title'),
                         message: i18n(nodeLoadingErrorNS + 'load_error')
                     });
-                    ScreenMixin.goToNodeList();
+                    ComponentMixins.nodeConfigurationScreenMixin.goToNodeList(cluster);
                     return;
                 }
 

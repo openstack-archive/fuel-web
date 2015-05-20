@@ -49,12 +49,21 @@ class ClusterValidator(BasicValidator):
     @classmethod
     def _validate_common(cls, data, instance=None):
         d = cls.validate_json(data)
-
         release_id = d.get("release", d.get("release_id"))
         if release_id:
-            if not objects.Release.get_by_uid(release_id):
+            release = objects.Release.get_by_uid(release_id)
+            if not release:
                 raise errors.InvalidData(
                     "Invalid release ID", log_message=True)
+            else:
+                mode = d.get('mode')
+                if mode and mode not in release.modes:
+                    raise errors.InvalidData(
+                        "Cannot deploy in {0} mode in current release".format(
+                            mode),
+                        log_message=True
+                    )
+
         pend_release_id = d.get("pending_release_id")
         if pend_release_id:
             pend_release = objects.Release.get_by_uid(pend_release_id,
@@ -75,6 +84,7 @@ class ClusterValidator(BasicValidator):
                     "it cannot update current release",
                     log_message=True
                 )
+
         return d
 
     @classmethod

@@ -178,6 +178,9 @@ def upgrade_schema():
     op.add_column(
         'releases',
         sa.Column('vmware_attributes_metadata', fields.JSON(), nullable=True))
+    op.add_column(
+        'releases',
+        sa.Column('modes', fields.JSON(), nullable=True))
     op.create_table(
         'vmware_attributes',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -461,6 +464,11 @@ def upgrade_data():
             attrs=jsonutils.dumps(attributes_meta),
             networks=jsonutils.dumps(networks_meta),
         )
+
+    update_modes = text(
+        'UPDATE releases SET modes = :modes')
+    connection.execute(update_modes, modes=jsonutils.dumps(
+        ['ha_compact', 'multinode']))
 
     upgrade_master_node_settings(connection)
     upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)

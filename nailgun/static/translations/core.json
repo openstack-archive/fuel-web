@@ -262,6 +262,10 @@
                         "disks": "Configure Disks",
                         "interfaces": "Configure Interfaces"
                     },
+                    "node_loading_error": {
+                        "title": "Error loading nodes",
+                        "load_error": "Some nodes failed to load"
+                    },
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",
@@ -303,10 +307,6 @@
                             "saving_warning": "Unable to apply changes",
                             "load_defaults_warning": "Unable to load default configuration"
                         },
-                        "node_loading_error": {
-                            "title": "Error loading nodes",
-                            "load_error": "Some nodes failed to load"
-                        },
                         "validation": {
                             "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface",
                             "invalid_mtu": "Invalid MTU value"
@@ -325,7 +325,12 @@
                         "configuration_error": {
                             "title": "Disks Configuration Error",
                             "saving_warning": "Unable to apply changes",
-                            "load_defaults_warning": "Unable to load default configuration"
+                            "load_defaults_warning": "Unable to load default configuration",
+                            "invalid_size": "Invalid size"
+                        },
+                        "configuration_notice": {
+                            "maximum": "You have reached maximum allowed place __count__ MB",
+                            "minimum": "Minimal size for this volume is __count__ MB"
                         }
                     },
                     "node_management_panel": {

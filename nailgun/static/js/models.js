@@ -599,13 +599,18 @@ define([
             var groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');}, 0, this);
             return minimum - groupAllocatedSpace;
         },
+        getMaxSize: function() {
+            var volumes = this.collection.disk.get('volumes'),
+                diskAllocatedSpace = volumes.reduce(function(total, volume) {return this.get('name') == volume.get('name') ? total : total + volume.get('size');}, 0, this);
+            return this.collection.disk.get('size') - diskAllocatedSpace ;
+        },
         validate: function(attrs, options) {
-            var error;
-            var min = this.getMinimalSize(options.minimum);
+            var error,
+                min = this.getMinimalSize(options.minimum);
             if (_.isNaN(attrs.size)) {
-                error = 'Invalid size';
+                error = i18n('cluster_page.nodes_tab.configure_disks.configuration_error.invalid_size');
             } else if (attrs.size < min) {
-                error = 'The value is too low. You must allocate at least ' + utils.formatNumber(min) + ' MB';
+                error = i18n('cluster_page.nodes_tab.configure_disks.configuration_notice.minimum', {count: utils.formatNumber(min)});
             }
             return error;
         }

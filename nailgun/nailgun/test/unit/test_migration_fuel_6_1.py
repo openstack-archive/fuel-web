@@ -330,3 +330,14 @@ class TestOldReleasesAreNotDeployable(base.BaseAlembicMigrationTest):
 
         for row in result:
             self.assertFalse(row['is_deployable'])
+
+
+class TestAddingModesToReleases(base.BaseAlembicMigrationTest):
+    def test_release_modes_are_added(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.modes]))
+
+        for row in result:
+            self.assertItemsEqual(
+                jsonutils.loads(row['modes']),
+                ['ha_compact', 'multinode'])

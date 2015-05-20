@@ -149,6 +149,7 @@ class EnvironmentManager(object):
             'version': version,
             'description': u"release_desc" + version,
             'roles': self.get_default_roles(),
+            'modes': ['ha_compact', 'multinode'],
         })
 
         if kwargs.get('deployment_tasks') is None:

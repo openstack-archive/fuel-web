@@ -1144,7 +1144,8 @@ class CheckRepositoryConnectionFromMasterNodeTask(object):
         return map(requests.get, urls)
 
 
-class CheckRepositoryConnectionFromSlavesTask(BaseNetworkVerification):
+class CheckRepoAvailability(BaseNetworkVerification):
+
     def get_message(self):
         rpc_message = make_astute_message(
             self.task,
@@ -1167,7 +1168,7 @@ class CheckRepositoryConnectionFromSlavesTask(BaseNetworkVerification):
                 ]
 
 
-class RepoAvailabilityWithSetup(object):
+class CheckRepoAvailabilityWithSetup(object):
 
     def __init__(self, task, config):
         self.task = task

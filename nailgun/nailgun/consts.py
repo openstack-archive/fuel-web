@@ -315,6 +315,8 @@ MASTER_ROLE = 'master'
 
 # version of fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'
+# version of fuel when we added remote repos
+FUEL_REMOTE_REPOS = '6.1'
 
 OSWL_RESOURCE_TYPES = Enum(
     'vm',

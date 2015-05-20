@@ -19,8 +19,8 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
+from nailgun.task.task import CheckRepoAvailabilityWithSetup
 from nailgun.task.task import CheckRepositoryConnectionFromMasterNodeTask
-from nailgun.task.task import RepoAvailabilityWithSetup
 from nailgun.test.base import BaseTestCase
 
 
@@ -96,7 +96,8 @@ class TestRepoAvailabilityWithSetup(BaseTestCase):
                             if 'controller' in n.all_roles]
 
     def test_generate_config(self):
-        config, errors = RepoAvailabilityWithSetup.get_config(self.cluster)
+        config, errors = CheckRepoAvailabilityWithSetup.get_config(
+            self.cluster)
         self.assertEqual(len(config), 2)
 
         control_1, control_2 = self.controllers

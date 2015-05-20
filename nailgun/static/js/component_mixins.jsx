@@ -82,6 +82,30 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
                 $('html').off(this.state.clickEventName);
                 Backbone.history.off('route', null, this);
             }
+        },
+        nodeConfigurationScreenMixin: {
+            goToNodeList: function(cluster) {
+                if (!cluster) cluster = this.props.cluster;
+                app.navigate('#cluster/' + cluster.id + '/nodes', {trigger: true, replace: true});
+            },
+            isLockedScreen: function() {
+                var nodesAvailableForChanges = this.props.nodes.any(function(node) {
+                    return node.get('pending_addition') || node.get('status') == 'error';
+                });
+                return !nodesAvailableForChanges ||
+                    this.props.cluster && !!this.props.cluster.tasks({group: 'deployment', status: 'running'}).length;
+            },
+            showDiscardChangesDialog: function() {
+                var dialogs = require('jsx!views/dialogs');
+                dialogs.DiscardSettingsChangesDialog.show({cb: this.goToNodeList});
+            },
+            returnToNodeList: function() {
+                if (this.hasChanges()) {
+                    this.showDiscardChangesDialog();
+                } else {
+                    this.goToNodeList();
+                }
+            }
         }
     };
 });

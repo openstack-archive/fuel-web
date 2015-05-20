@@ -75,6 +75,14 @@ class ClusterValidator(BasicValidator):
                     "it cannot update current release",
                     log_message=True
                 )
+
+            mode = d.get('mode')
+            if mode not in pend_release.modes:
+                raise errors.InvalidData(
+                    "Cannot release in {0} mode in current release",
+                    log_message=True
+                )
+
         return d
 
     @classmethod

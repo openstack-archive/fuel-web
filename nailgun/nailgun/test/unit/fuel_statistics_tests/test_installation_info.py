@@ -99,7 +99,7 @@ class TestInstallationInfo(BaseTestCase):
         self.env.create(
             cluster_kwargs={
                 'release_id': release[0].id,
-                'mode': consts.CLUSTER_MODES.ha_full,
+                'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             nodes_kwargs=nodes_params
         )
@@ -121,7 +121,7 @@ class TestInstallationInfo(BaseTestCase):
         self.env.create(
             cluster_kwargs={
                 'release_id': release[0].id,
-                'mode': consts.CLUSTER_MODES.ha_full,
+                'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             nodes_kwargs=nodes_params
         )
@@ -134,7 +134,7 @@ class TestInstallationInfo(BaseTestCase):
         self.assertEquals(len(nodes_params), len(cluster_info['nodes']))
         self.assertEquals(len(nodes_params), cluster_info['nodes_num'])
 
-        self.assertEquals(consts.CLUSTER_MODES.ha_full,
+        self.assertEquals(consts.CLUSTER_MODES.ha_compact,
                           cluster_info['mode'])
         self.assertEquals(consts.CLUSTER_NET_PROVIDERS.nova_network,
                           cluster_info['net_provider'])
@@ -173,7 +173,7 @@ class TestInstallationInfo(BaseTestCase):
         # Checking nova network configuration
         nova = consts.CLUSTER_NET_PROVIDERS.nova_network
         self.env.create(cluster_kwargs={
-            'mode': consts.CLUSTER_MODES.ha_full,
+            'mode': consts.CLUSTER_MODES.ha_compact,
             'net_provider': nova
         })
         clusters_info = info.get_clusters_info()
@@ -188,7 +188,7 @@ class TestInstallationInfo(BaseTestCase):
         # Checking neutron network configuration
         neutron = consts.CLUSTER_NET_PROVIDERS.neutron
         self.env.create(cluster_kwargs={
-            'mode': consts.CLUSTER_MODES.ha_full,
+            'mode': consts.CLUSTER_MODES.ha_compact,
             'net_provider': neutron
         })
         clusters_info = info.get_clusters_info()

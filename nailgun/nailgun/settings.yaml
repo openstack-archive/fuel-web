@@ -729,7 +729,10 @@ DUMP:
         to_file: brctl_show.txt
       - type: command
         command: rpm -qa
-        to_file: installed-rpms.txt
+        to_file: centos_installed_rpms.txt
+      - type: command
+        command: yum repolist
+        to_file: centos_repo_list.txt
       - type: dir
         path: /etc/sysconfig/network-scripts
       - type: file
@@ -848,10 +851,16 @@ DUMP:
         to_file: brctl_show.txt
       - type: command
         command: rpm -qa
-        to_file: installed-rpms.txt
+        to_file: centos_installed_rpms.txt
+      - type: command
+        command: yum repolist
+        to_file: centos_repo_list.txt
       - type: command
         command: dpkg -l
-        to_file: installed-debs.txt
+        to_file: ubuntu_installed_debs.txt
+      - type: command
+        command: apt-cache policy
+        to_file: ubuntu_repo_list.txt
 
       - type: dir
         path: /etc/sysconfig/network-scripts

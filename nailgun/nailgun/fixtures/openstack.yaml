@@ -702,7 +702,7 @@
                 description: "Install from scratch using anaconda or debian-installer."
         external_dns:
           metadata:
-            label: "Upstream DNS"
+            label: "Host OS DNS Servers"
             weight: 90
           dns_list:
             value:

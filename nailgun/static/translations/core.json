@@ -469,7 +469,7 @@
                         "fixed_vlan_range": "Fixed VLAN ID range",
                         "use_vlan_tagging_fixed": "Use VLAN tagging for fixed  networks",
                         "nova_configuration": "Nova-network Configuration",
-                        "dns_nameservers": "DNS Servers",
+                        "dns_nameservers": "Guest OS DNS Servers",
                         "l2_configuration": "Neutron L2 Configuration",
                         "l3_configuration": "Neutron L3 Configuration",
                         "gre_id_range": "Tunnel ID range",

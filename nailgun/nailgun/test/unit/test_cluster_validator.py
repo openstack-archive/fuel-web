@@ -13,66 +13,60 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from contextlib import nested
-
 from mock import Mock
 from mock import patch
+from oslo.serialization import jsonutils
 
 from nailgun.api.v1.validators.cluster import ClusterValidator
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun.test.base import BaseTestCase
 
 
 class TestClusterValidator(BaseTestCase):
-    def setUp(self):
-        super(TestClusterValidator, self).setUp()
-        self.cluster_data = '{"name": "test", "release": 1}'
+    @classmethod
+    def setUpClass(cls):
+        super(TestClusterValidator, cls).setUpClass()
+        cls.cluster_data = jsonutils.dumps({
+            "name": "test",
+            "release": 1,
+            "mode": consts.CLUSTER_MODES.ha_compact})
 
-    def test_cluster_exists_validation(self):
-        with nested(
-            patch('nailgun.api.v1.validators.cluster.objects.'
-                  'ClusterCollection'),
-            patch('nailgun.api.v1.validators.cluster.objects.Release')
-        ) as (cc, r):
-            r.get_by_uid.return_value = 'release'
-            cc.filter_by.return_value.first.return_value = 'cluster'
-            self.assertRaises(errors.AlreadyExists,
-                              ClusterValidator.validate, self.cluster_data)
+    @patch('nailgun.api.v1.validators.cluster.objects'
+           '.ClusterCollection.filter_by')
+    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    def test_cluster_exists_validation(self, release_get_by_uid, cc_filter_by):
+        release_get_by_uid.return_value = Mock(modes=['ha_compact'])
+        cc_filter_by.return_value.first.return_value = 'cluster'
+        self.assertRaises(errors.AlreadyExists,
+                          ClusterValidator.validate, self.cluster_data)
 
-    def test_cluster_non_exists_validation(self):
-        with nested(
-            patch(
-                'nailgun.api.v1.validators.cluster.objects.ClusterCollection',
-                Mock()
-            ),
-            patch('nailgun.api.v1.validators.cluster.objects.Release', Mock())
-        ) as (cc, r):
-            try:
-                cc.filter_by.return_value.first.return_value = None
-                r.get_by_uuid.return_value = 'release'
-                ClusterValidator.validate(self.cluster_data)
-            except errors.AlreadyExists as e:
-                self.fail(
-                    'Cluster exists validation failed: {0}'.format(e)
-                )
+    @patch('nailgun.api.v1.validators.cluster.objects'
+           '.ClusterCollection.filter_by')
+    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    def test_cluster_does_not_exist_validation(self, release_get_by_uid,
+                                               cc_filter_by):
+        try:
+            cc_filter_by.return_value.first.return_value = None
+            release_get_by_uid.return_value = Mock(modes=['ha_compact'])
+            ClusterValidator.validate(self.cluster_data)
+        except errors.AlreadyExists as e:
+            self.fail(
+                'Cluster exists validation failed: {0}'.format(e)
+            )
 
-    def test_release_exists_validation(self):
-        with patch(
-            'nailgun.api.v1.validators.cluster.objects.ClusterCollection',
-            Mock()
-        ) as cc:
-            cc.filter_by.return_value.first.return_value = None
-            self.assertRaises(errors.InvalidData,
-                              ClusterValidator.validate, self.cluster_data)
+    @patch('nailgun.api.v1.validators.cluster.objects'
+           '.ClusterCollection.filter_by')
+    def test_release_exists_validation(self, cc_filter_by):
+        cc_filter_by.return_value.first.return_value = None
+        self.assertRaises(errors.InvalidData,
+                          ClusterValidator.validate, self.cluster_data)
 
-    def test_release_non_exists_validation(self):
-        with patch('nailgun.api.v1.validators.cluster.objects.Release',
-                   Mock()) as r:
-            try:
-                r.get_by_uuid.return_value = None
-                ClusterValidator.validate(self.cluster_data)
-            except errors.InvalidData as e:
-                self.fail('Release exists validation failed: {0}'.format(e))
+    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    def test_release_non_exists_validation(self, release_get_by_uid):
+        release_get_by_uid.return_value = None
+        self.assertRaises(errors.InvalidData,
+                          ClusterValidator.validate, self.cluster_data)
 
     def test_pending_release_validation_success(self):
         curr_release = Mock(
@@ -154,3 +148,27 @@ class TestClusterValidator(BaseTestCase):
                 pend_release, curr_release
             )
         )
+
+    @patch('nailgun.api.v1.validators.cluster.objects'
+           '.ClusterCollection.filter_by')
+    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    def test_mode_check_passes(self, release_get_by_uid, cc_filter_by):
+        release_get_by_uid.return_value = Mock(modes=['ha_compact'])
+
+        cc_filter_by.return_value.first.return_value = None
+        try:
+            ClusterValidator.validate(self.cluster_data)
+        except errors.InvalidData as e:
+            self.fail('test_mode_check failed: {0}'.format(e))
+
+    @patch('nailgun.api.v1.validators.cluster.objects'
+           '.ClusterCollection.filter_by')
+    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    def test_mode_check_fails(self, release_get_by_uid, cc_filter_by):
+        release_get_by_uid.return_value = Mock(modes=['trolomod', 'multinode'])
+
+        cc_filter_by.return_value.first.return_value = None
+        self.assertRaisesRegexp(errors.InvalidData,
+                                "Cannot deploy in .* mode in current release",
+                                ClusterValidator.validate,
+                                self.cluster_data)

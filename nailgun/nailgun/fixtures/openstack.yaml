@@ -1165,6 +1165,7 @@
             vcenter_password: ""
             datacenter: ""
             datastore: ""
+    modes: ['ha_compact']
 - pk: 1
   extend: *base_release
   fields:

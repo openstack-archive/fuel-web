@@ -580,7 +580,8 @@
             weight: 40
             type: "checkbox"
             restrictions:
-              - "cluster:net_provider == 'neutron'"
+              - condition: "cluster:net_provider == 'neutron'"
+                action: "hide"
           use_vcenter:
             value: false
             weight: 30

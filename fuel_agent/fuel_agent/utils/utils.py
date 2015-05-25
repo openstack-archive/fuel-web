@@ -18,6 +18,7 @@ import math
 import os
 import re
 import shlex
+import socket
 import subprocess
 import time
 
@@ -203,7 +204,8 @@ def init_http_request(url, byte_range=0):
                     url, stream=True,
                     timeout=CONF.http_request_timeout,
                     headers={'Range': 'bytes=%s-' % byte_range})
-            except (urllib3.exceptions.DecodeError,
+            except (socket.timeout,
+                    urllib3.exceptions.DecodeError,
                     urllib3.exceptions.ProxyError,
                     requests.exceptions.ConnectionError,
                     requests.exceptions.Timeout,

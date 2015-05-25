@@ -804,7 +804,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             autoFocus
                                         />
                                     :
-                                        <p title={i18n(ns + 'edit_name')} onClick={!disabled && this.startNodeRenaming}>
+                                        <p title={i18n(ns + 'edit_name')} onClick={!this.state.actionInProgress && this.startNodeRenaming}>
                                             {node.get('name') || node.get('mac')}
                                         </p>
                                     }

@@ -440,11 +440,11 @@
                     "range_start": "Start",
                     "range_end": "End",
                     "verify_networks": {
-                        "step_0": "Network Verification is done in 4 steps:",
-                        "step_1": "1. Every node starts listening for test frames.",
-                        "step_2": "2. Every node sends out 802.1Q tagged UDP frames.",
-                        "step_3": "3. Nodes listeners register test frames from other nodes.",
-                        "step_4": "4. Send DHCP discover messages on all available ports.",
+                        "step_0": "Network verification performs the following checks:",
+                        "step_1": "1. L2 connectivity checks between every node in the environment.",
+                        "step_2": "2. DHCP discover check on all nodes.",
+                        "step_3": "3. Packages repo connectivity check from master node.",
+                        "step_4": "4. Packages repo connectivity check from slave nodes via public network.",
                         "success_alert": "Verification succeeded. Your network is configured correctly.",
                         "verification_error": {
                             "title": "Network Verification Error",

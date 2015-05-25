@@ -704,7 +704,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div>
                     <div className='row-fluid'>
                         <div className='span5'><div className='node-image-outline'></div></div>
-                        <div className='span7'>
+                        <div className='span7 enable-selection'>
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
@@ -726,7 +726,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                         </div>
                                     </div>
                                     <div className='accordion-body collapse' ref={'togglable_' + groupIndex}>
-                                        <div className='accordion-inner'>
+                                        <div className='accordion-inner enable-selection'>
                                             {_.isArray(groupEntries) &&
                                                 <div>
                                                     {_.map(groupEntries, function(entry, entryIndex) {

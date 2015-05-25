@@ -36,7 +36,8 @@ class TestClusterValidator(BaseTestCase):
            '.ClusterCollection.filter_by')
     @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
     def test_cluster_exists_validation(self, release_get_by_uid, cc_filter_by):
-        release_get_by_uid.return_value = Mock(modes=['ha_compact'])
+        release_get_by_uid.return_value = Mock(modes=[
+            consts.CLUSTER_MODES.ha_compact])
         cc_filter_by.return_value.first.return_value = 'cluster'
         self.assertRaises(errors.AlreadyExists,
                           ClusterValidator.validate, self.cluster_data)
@@ -48,7 +49,8 @@ class TestClusterValidator(BaseTestCase):
                                                cc_filter_by):
         try:
             cc_filter_by.return_value.first.return_value = None
-            release_get_by_uid.return_value = Mock(modes=['ha_compact'])
+            release_get_by_uid.return_value = Mock(modes=[
+                consts.CLUSTER_MODES.ha_compact])
             ClusterValidator.validate(self.cluster_data)
         except errors.AlreadyExists as e:
             self.fail(
@@ -153,7 +155,8 @@ class TestClusterValidator(BaseTestCase):
            '.ClusterCollection.filter_by')
     @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
     def test_mode_check_passes(self, release_get_by_uid, cc_filter_by):
-        release_get_by_uid.return_value = Mock(modes=['ha_compact'])
+        release_get_by_uid.return_value = Mock(modes=[
+            consts.CLUSTER_MODES.ha_compact])
 
         cc_filter_by.return_value.first.return_value = None
         try:
@@ -165,10 +168,41 @@ class TestClusterValidator(BaseTestCase):
            '.ClusterCollection.filter_by')
     @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
     def test_mode_check_fails(self, release_get_by_uid, cc_filter_by):
-        release_get_by_uid.return_value = Mock(modes=['trolomod', 'multinode'])
+        release_get_by_uid.return_value = Mock(
+            modes=['trolomod', 'multinode'])
 
         cc_filter_by.return_value.first.return_value = None
         self.assertRaisesRegexp(errors.InvalidData,
                                 "Cannot deploy in .* mode in current release",
                                 ClusterValidator.validate,
                                 self.cluster_data)
+
+    @patch('nailgun.api.v1.validators.cluster.objects'
+           '.ClusterCollection.filter_by')
+    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    def test_update_mode_check_passes(self, release_get_by_uid, cc_filter_by):
+        release_mock = Mock(
+            modes=[consts.CLUSTER_MODES.ha_compact, 'multinode'])
+        release_get_by_uid.return_value = release_mock
+
+        cluster_mock = Mock(id=1, release_id=1, release=release_mock)
+        cc_filter_by.return_value.first.return_value = None
+        try:
+            ClusterValidator.validate_update(self.cluster_data, cluster_mock)
+        except errors.InvalidData as e:
+            self.fail('test_mode_check failed: {0}'.format(e))
+
+    @patch('nailgun.api.v1.validators.cluster.objects'
+           '.ClusterCollection.filter_by')
+    @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
+    def test_update_mode_check_fails(self, release_get_by_uid, cc_filter_by):
+        release_mock = Mock(
+            modes=['trolomod', 'multinode'])
+
+        cluster_mock = Mock(id=1, release_id=1, release=release_mock)
+        cc_filter_by.return_value.first.return_value = None
+        self.assertRaisesRegexp(errors.InvalidData,
+                                "Cannot deploy in .* mode in current release",
+                                ClusterValidator.validate_update,
+                                self.cluster_data,
+                                cluster_mock)

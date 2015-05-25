@@ -55,14 +55,7 @@ class ClusterValidator(BasicValidator):
             if not release:
                 raise errors.InvalidData(
                     "Invalid release ID", log_message=True)
-            mode = d.get('mode')
-            if mode and mode not in release.modes:
-                raise errors.InvalidData(
-                    "Cannot deploy in {0} mode in current release."
-                    " Need to be one of {1}".format(
-                        mode, release.modes),
-                    log_message=True
-                )
+            cls._validate_mode(d, release)
 
         pend_release_id = d.get("pending_release_id")
         if pend_release_id:
@@ -129,7 +122,21 @@ class ClusterValidator(BasicValidator):
                     u"Changing '{0}' for environment is prohibited".format(k),
                     log_message=True
                 )
+
+        cls._validate_mode(d, instance.release)
+
         return d
+
+    @classmethod
+    def _validate_mode(cls, data, release):
+        mode = data.get("mode")
+        if mode and mode not in release.modes:
+            raise errors.InvalidData(
+                "Cannot deploy in {0} mode in current release."
+                " Need to be one of {1}".format(
+                    mode, release.modes),
+                log_message=True
+            )
 
 
 class AttributesValidator(BasicValidator):

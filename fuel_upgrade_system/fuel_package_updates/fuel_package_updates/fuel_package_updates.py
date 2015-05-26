@@ -637,6 +637,11 @@ def main():
         repos = get_ubuntu_repos(updates_path, options.ip, settings.httproot,
                                  settings.port, options.baseurl)
     elif options.distro == DISTROS.ubuntu_baseos:
+        if options.clear_upstream_repos:
+            logger.warning('*IMPORTANT* If there are any custom Ubuntu mirrors '
+                           'that have been configured manually, please remove '
+                           'them manually as they will not be removed with the '
+                           '--clear-upstream-repos option.')
         repos = get_ubuntu_baseos_repos(updates_path, options.ip,
                                         settings.httproot, settings.port,
                                         options.baseurl,

@@ -1162,10 +1162,11 @@ class CheckRepoAvailability(BaseNetworkVerification):
         rpc.cast('naily', self.get_message())
 
     def _get_nodes_to_check(self):
-        return [{"uid": n.id} for n
-                in (objects.Cluster
-                    .get_nodes_not_for_deletion(self.task.cluster))
-                ]
+        nodes = []
+        for n in objects.Cluster.get_nodes_not_for_deletion(self.task.cluster):
+            if n.online:
+                nodes.append({'uid': n.id})
+        return nodes
 
 
 class CheckRepoAvailabilityWithSetup(object):
@@ -1221,6 +1222,9 @@ class CheckRepoAvailabilityWithSetup(object):
                 consts.BOND_MODES.l_802_3ad)
 
             for node, ip in nodes_with_public_ip:
+                if not node.online:
+                    continue
+
                 iface = NetworkManager.find_nic_assoc_with_ng(
                     node, public)
 

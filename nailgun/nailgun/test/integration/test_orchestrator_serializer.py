@@ -624,6 +624,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         )
         for node in cluster.nodes:
             self.move_network(node.id, 'management', 'eth0', 'eth1')
+            self.move_network(node.id, 'fixed', 'eth0', 'eth1')
             self.env.make_bond_via_api('lnx_bond',
                                        '',
                                        ['eth1', 'eth2'],
@@ -635,6 +636,14 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         facts = serializer(AstuteGraph(cluster)).serialize(
             cluster, cluster.nodes)
         for node in facts:
+            self.assertEqual(
+                node['network_scheme']['roles'],
+                {'storage': 'br-storage',
+                 'management': 'br-mgmt',
+                 'fw-admin': 'br-fw-admin',
+                 'ex': 'br-ex',
+                 'novanetwork/vlan': 'lnx_bond'}
+            )
             self.assertEqual(
                 node['network_scheme']['transformations'],
                 [

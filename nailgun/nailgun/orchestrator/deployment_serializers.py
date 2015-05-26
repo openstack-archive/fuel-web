@@ -506,6 +506,10 @@ class NovaNetworkDeploymentSerializer61(
                             bond_params['bridge'] = net['br_name']
                 transformations.append(cls.add_bond(iface, bond_params))
                 transformations.extend(bond_ports)
+                # we should avoid adding the port twice in case of
+                # VlanManager
+                if fixed_sub_iface == iface.name:
+                    fixed_sub_iface = None
         # add manager-related ports
         if fixed_sub_iface:
             transformations.append(cls.add_port(fixed_sub_iface, None))

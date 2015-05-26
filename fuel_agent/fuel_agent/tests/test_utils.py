@@ -18,6 +18,7 @@ import testtools
 import mock
 from oslo.config import cfg
 import requests
+import socket
 import stevedore
 import urllib3
 
@@ -140,6 +141,7 @@ class ExecuteTestCase(testtools.TestCase):
                                 requests.exceptions.ConnectionError(),
                                 requests.exceptions.Timeout(),
                                 requests.exceptions.TooManyRedirects(),
+                                socket.timeout(),
                                 mock_ok]
         req_obj = utils.init_http_request('fake_url')
         self.assertEqual(mock_ok, req_obj)

@@ -718,7 +718,7 @@
               error: "Invalid IP address list"
         external_ntp:
           metadata:
-            label: "Upstream NTP"
+            label: "Host OS NTP Servers"
             weight: 100
           ntp_list:
             value:

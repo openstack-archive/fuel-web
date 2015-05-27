@@ -160,13 +160,18 @@ class BuildUtilsTestCase(testtools.TestCase):
                        'etc/apt/apt.conf.d/%s' % 'force_ipv4',
                        'etc/apt/apt.conf.d/%s' % 'unsigned'])
 
+    @mock.patch('fuel_agent.utils.build_utils.open',
+                create=True, new_callable=mock.mock_open)
     @mock.patch.object(os, 'path')
     @mock.patch.object(bu, 'clean_apt_settings')
     @mock.patch.object(bu, 'remove_files')
     @mock.patch.object(utils, 'execute')
-    def test_do_post_inst(self, mock_exec, mock_files, mock_clean, mock_path):
+    def test_do_post_inst(self, mock_exec, mock_files, mock_clean, mock_path,
+                          mock_open):
         mock_path.join.return_value = 'fake_path'
         bu.do_post_inst('chroot')
+        file_handle_mock = mock_open.return_value.__enter__.return_value
+        file_handle_mock.write.assert_called_once_with('manual\n')
         mock_exec_expected_calls = [
             mock.call('sed', '-i', 's%root:[\*,\!]%root:$6$IInX3Cqo$5xytL1VZb'
                       'ZTusOewFnG6couuF0Ia61yS3rbC6P5YbZP2TYclwHqMq9e3Tg8rvQx'
@@ -175,7 +180,11 @@ class BuildUtilsTestCase(testtools.TestCase):
         self.assertEqual(mock_exec_expected_calls, mock_exec.call_args_list)
         mock_files.assert_called_once_with('chroot', ['usr/sbin/policy-rc.d'])
         mock_clean.assert_called_once_with('chroot')
-        mock_path.join.assert_called_once_with('chroot', 'etc/shadow')
+        mock_path_join_expected_calls = [
+            mock.call('chroot', 'etc/shadow'),
+            mock.call('chroot', 'etc/init/mcollective.override')]
+        self.assertEqual(mock_path_join_expected_calls,
+                         mock_path.join.call_args_list)
 
     @mock.patch('fuel_agent.utils.build_utils.open',
                 create=True, new_callable=mock.mock_open)

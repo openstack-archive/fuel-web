@@ -718,13 +718,13 @@
               error: "Invalid IP address list"
         external_ntp:
           metadata:
-            label: "Upstream NTP"
+            label: "Host OS NTP Servers"
             weight: 100
           ntp_list:
             value:
               generator: "from_settings"
               generator_arg: "NTP_UPSTREAM"
-            label: "NTP server list"
+            label: "NTP list"
             description: "List of upstream NTP servers, separated by comma"
             weight: 10
             type: "text"

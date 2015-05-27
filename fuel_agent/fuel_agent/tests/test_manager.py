@@ -447,6 +447,10 @@ class TestManager(test_base.BaseTestCase):
             mock_bu.add_apt_preference.call_args_list)
         mock_utils.makedirs_if_not_exists.assert_called_once_with(
             '/tmp/imgdir/proc')
+        self.assertEqual([
+            mock.call('tune2fs', '-O', '^has_journal', '/dev/loop0'),
+            mock.call('tune2fs', '-O', 'has_journal', '/dev/loop0')],
+            mock_utils.execute.call_args_list)
         mock_fu.mount_bind.assert_called_once_with('/tmp/imgdir', '/proc')
         mock_bu.run_apt_get.assert_called_once_with(
             '/tmp/imgdir', packages=['fakepackage1', 'fakepackage2'])

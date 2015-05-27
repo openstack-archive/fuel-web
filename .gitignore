@@ -23,7 +23,7 @@ lock
 
 node_modules
 bower_components
-nailgun/static/js/libs/bower
+nailgun/static/libs/bower
 
 *.egg
 .testrepository

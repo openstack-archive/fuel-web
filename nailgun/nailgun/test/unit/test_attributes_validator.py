@@ -190,6 +190,27 @@ class TestAttributesValidator(BaseTestCase):
                              AttributesValidator.validate_editable_attributes,
                              yaml.load(attrs))
 
+    def test_select_value(self):
+        attrs = '''
+        editable:
+          common:
+            libvirt_type:
+              label: Hypervisor type
+              type: select
+              value: qemu
+              values:
+                - data: kvm
+                  label: KVM
+                  description: KVM description
+                - data: qemu
+                  label: QEMU
+                  description: QEMU description
+        '''
+
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate_editable_attributes,
+                             yaml.load(attrs))
+
     def test_text_value(self):
         attrs = '''
         editable:

@@ -74,6 +74,7 @@ attribute_schema = {
                 'hidden',
                 'password',
                 'radio',
+                'select',
                 'text',
                 'textarea',
             ]
@@ -88,10 +89,31 @@ attribute_schema = {
     'required': ['type', 'value'],
 }
 
+# Schema with allowed values for 'radio' and 'select' attribute types
+allowed_values_schema = {
+    'value': {
+        'type': 'string',
+    },
+    'values': {
+        'type': 'array',
+        'minItems': 1,
+        'items': [
+            {
+                'type': 'object',
+                'properties': {
+                    'data': {'type': 'string'},
+                    'label': {'type': 'string'},
+                    'description': {'type': 'string'},
+                    'restrictions': role.RESTRICTIONS,
+                },
+                'required': ['data', 'label'],
+            },
+        ],
+    },
+}
+
 # Additional properties definitions for 'attirbute_schema'
 # depending on 'type' property
-# (note that for example 'radio' can have 'value' and 'values'
-# properties)
 attribute_type_schemas = {
     'checkbox': {'value': {'type': 'boolean'}},
     'custom_repo_configuration': {
@@ -114,27 +136,8 @@ attribute_type_schemas = {
         },
     },
     'password': {'value': {'type': 'string'}},
-    'radio': {
-        'value': {
-            'type': 'string',
-        },
-        'values': {
-            'type': 'array',
-            'minItems': 1,
-            'items': [
-                {
-                    'type': 'object',
-                    'properties': {
-                        'data': {'type': 'string'},
-                        'label': {'type': 'string'},
-                        'description': {'type': 'string'},
-                        'restrictions': role.RESTRICTIONS,
-                    },
-                    'required': ['data', 'label'],
-                },
-            ],
-        },
-    },
+    'radio': allowed_values_schema,
+    'select': allowed_values_schema,
     'text': {'value': {'type': 'string'}},
     'textarea': {'value': {'type': 'string'}},
 }

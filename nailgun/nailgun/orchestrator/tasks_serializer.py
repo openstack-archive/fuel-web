@@ -235,6 +235,30 @@ class CopyKeys(GenericRolesHook):
             uids, self.task)
 
 
+class GenerateHaproxyKeys(GenericRolesHook):
+
+    identity = 'generate_haproxy_keys'
+
+    def serialize(self):
+        uids = self.get_uids()
+        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
+            CLUSTER_ID=self.cluster.id)
+        yield templates.make_shell_task(uids, self.task)
+
+
+class CopyHaproxyKeys(GenericRolesHook):
+
+    identity = 'copy_haproxy_keys'
+
+    def serialize(self):
+        for file_path in self.task['parameters']['files']:
+            file_path['src'] = file_path['src'].format(
+                CLUSTER_ID=self.cluster.id)
+        uids = self.get_uids()
+        yield templates.make_generic_task(
+            uids, self.task)
+
+
 class RestartRadosGW(GenericRolesHook):
 
     identity = 'restart_radosgw'

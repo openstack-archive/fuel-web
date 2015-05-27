@@ -105,10 +105,10 @@
         properties:
           linux:
             mode:
-              - values: ["balance-rr", "balance-xor", "active-backup", "broadcast", "802.3ad", "balance-tlb", "balance-alb"]
+              - values: ["balance-rr", "active-backup", "802.3ad"]
             xmit_hash_policy:
               - values: ["layer2", "layer2+3", "layer3+4", "encap2+3", "encap3+4"]
-                for_modes: ["802.3ad", "balance-xor", "balance-tlb", "balance-alb"]
+                for_modes: ["802.3ad"]
             lacp_rate:
               - values: ["slow", "fast"]
                 for_modes: ["802.3ad"]

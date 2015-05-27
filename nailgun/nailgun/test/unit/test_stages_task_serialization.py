@@ -293,6 +293,27 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             "{CLUSTER_ID} -o 'mongodb' -s 'neutron nova ceph mysql' -p "
             "/etc/fuel/keys/".format(CLUSTER_ID=self.cluster.id))
 
+    def test_generate_haproxy_keys(self):
+        cmd_template = "sh /etc/puppet/modules/osnailyfacter/modular/" \
+                       "astute/generate_haproxy_keys.sh -i {CLUSTER_ID} " \
+                       "-h {CN_HOSTNAME} -o 'haproxy' -p /var/lib/fuel/keys/"
+        task_config = {
+            'id': 'generate_haproxy_keys',
+            'type': 'shell',
+            'role': 'master',
+            'parameters': {
+                'cmd': cmd_template,
+                'timeout': 180}}
+        task = tasks_serializer.GenerateHaproxyKeys(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'shell')
+        editable = self.cluster.attributes.editable
+        hostname = editable['public_ssl']['hostname']['value']
+        expected_cmd = cmd_template.format(
+            CLUSTER_ID=self.cluster.id, CN_HOSTNAME=hostname)
+        self.assertEqual(expected_cmd, serialized['parameters']['cmd'])
+
 
 class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
 

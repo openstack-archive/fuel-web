@@ -185,6 +185,13 @@ def clean_apt_settings(chroot, allow_unsigned_file=CONF.allow_unsigned_file,
     clean_dirs(chroot, dirs)
 
 
+def toggle_service_in_image(service, chroot, on=False):
+    action = 'disable'
+    if on:
+        action = 'enable'
+    utils.execute('chroot', chroot, 'update-rc.d', service, action)
+
+
 def do_post_inst(chroot):
     # NOTE(agordeev): set up password for root
     utils.execute('sed', '-i',
@@ -197,7 +204,10 @@ def do_post_inst(chroot):
     # and recognizing the deployment as failed.
     # TODO(agordeev): take care of puppet service for other distros, once
     # fuel-agent will be capable of building images for them too.
-    utils.execute('chroot', chroot, 'update-rc.d', 'puppet', 'disable')
+    toggle_service_in_image('puppet', chroot)
+    # NOTE(agordeev): disable mcollective to be automatically started on boot
+    # to prevent confusing messages in its log (regarding connection errors).
+    toggle_service_in_image('mcollective', chroot)
     # NOTE(agordeev): remove custom policy-rc.d which is needed to disable
     # execution of post/pre-install package hooks and start of services
     remove_files(chroot, ['usr/sbin/policy-rc.d'])

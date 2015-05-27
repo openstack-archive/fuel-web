@@ -171,7 +171,9 @@ class BuildUtilsTestCase(testtools.TestCase):
             mock.call('sed', '-i', 's%root:[\*,\!]%root:$6$IInX3Cqo$5xytL1VZb'
                       'ZTusOewFnG6couuF0Ia61yS3rbC6P5YbZP2TYclwHqMq9e3Tg8rvQx'
                       'hxSlBXP1DZhdUamxdOBXK0.%', 'fake_path'),
-            mock.call('chroot', 'chroot', 'update-rc.d', 'puppet', 'disable')]
+            mock.call('chroot', 'chroot', 'update-rc.d', 'puppet', 'disable'),
+            mock.call('chroot', 'chroot', 'update-rc.d', 'mcollective',
+                      'disable')]
         self.assertEqual(mock_exec_expected_calls, mock_exec.call_args_list)
         mock_files.assert_called_once_with('chroot', ['usr/sbin/policy-rc.d'])
         mock_clean.assert_called_once_with('chroot')
@@ -478,3 +480,15 @@ class BuildUtilsTestCase(testtools.TestCase):
     def test_containerize_bad_container(self):
         self.assertRaises(errors.WrongImageDataError, bu.containerize, 'file',
                           'fake')
+
+    @mock.patch.object(utils, 'execute')
+    def test_toggle_service_in_image(self, mock_exec):
+        bu.toggle_service_in_image('service', 'chroot')
+        mock_exec.assert_called_once_with('chroot', 'chroot', 'update-rc.d',
+                                          'service', 'disable')
+
+    @mock.patch.object(utils, 'execute')
+    def test_toggle_service_in_image_on(self, mock_exec):
+        bu.toggle_service_in_image('service', 'chroot', on=True)
+        mock_exec.assert_called_once_with('chroot', 'chroot', 'update-rc.d',
+                                          'service', 'enable')

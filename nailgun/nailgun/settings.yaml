@@ -869,6 +869,9 @@ DUMP:
       - type: command
         command: apt-cache policy
         to_file: ubuntu_repo_list.txt
+      - type: command
+        command: sysctl -a
+        to_file: sysctl.txt
 
       - type: dir
         path: /etc/sysconfig/network-scripts

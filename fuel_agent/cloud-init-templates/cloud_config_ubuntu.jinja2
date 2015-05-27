@@ -47,7 +47,7 @@ mcollective:
     libdir: /usr/share/mcollective/plugins
     logfile: /var/log/mcollective.log
     loglevel: debug
-    daemonize: 1
+    daemonize: 0
     direct_addressing: 1
     ttl: 4294957
     securityprovider: psk
@@ -92,9 +92,9 @@ runcmd:
 {% endif %}
 {% if mcollective.enable != 1 %}
  - /usr/sbin/invoke-rc.d mcollective stop
- - /usr/sbin/update-rc.d -f mcollective remove
+ - echo manual > /etc/init/mcollective.override
 {% else %}
- - /usr/sbin/update-rc.d mcollective defaults
+ - rm -f /etc/init/mcollective.override
  - service mcollective restart
 {% endif %}
  - iptables -t filter -F INPUT

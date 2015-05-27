@@ -541,6 +541,11 @@ class Manager(object):
                     fs_options=fs.options,
                     fs_label=fs.label,
                     dev=str(fs.device))
+                if fs.type == 'ext4':
+                    LOG.debug('Trying to disable journaling for ext4 '
+                              'in order to speed up the build')
+                    utils.execute('tune2fs', '-O', '^has_journal',
+                                  str(fs.device))
 
             # mounting all images into chroot tree
             self.mount_target(chroot, treat_mtab=False, pseudo=False)
@@ -631,6 +636,16 @@ class Manager(object):
             self.umount_target(chroot, pseudo=False, try_lazy_umount=False)
 
             for image in self.driver.image_scheme.images:
+                # find fs with the same loop device object
+                # as image.target_device
+                fs = self.driver.partition_scheme.fs_by_device(
+                    image.target_device)
+
+                if fs.type == 'ext4':
+                    LOG.debug('Trying to re-enable journaling for ext4')
+                    utils.execute('tune2fs', '-O', 'has_journal',
+                                  str(fs.device))
+
                 LOG.debug('Deattaching loop device from file: %s',
                           image.img_tmp_file)
                 bu.deattach_loop(str(image.target_device))

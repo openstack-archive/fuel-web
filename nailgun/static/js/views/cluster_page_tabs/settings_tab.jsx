@@ -232,15 +232,18 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         processRestrictions: function(groupName, settingName) {
             var result = false,
+                path = this.props.makePath(groupName, settingName),
                 messages = [];
 
-            var restrictionsCheck = this.checkRestrictions('disable', this.props.makePath(groupName, settingName)),
+            var restrictionsCheck = this.checkRestrictions('disable', path),
                 dependentRoles = this.checkDependentRoles(groupName, settingName),
-                dependentSettings = this.checkDependentSettings(groupName, settingName);
+                dependentSettings = this.checkDependentSettings(groupName, settingName),
+                messagesCheck = this.checkRestrictions('none', path);
 
             if (restrictionsCheck.message) messages.push(restrictionsCheck.message);
             if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
             if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
+            if (messagesCheck.message) messages.push(messagesCheck.message);
 
             // FIXME: hack for #1442475 to lock images_ceph in env with controllers
             if (settingName == 'images_ceph') {

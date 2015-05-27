@@ -14,6 +14,8 @@
  * under the License.
  **/
 define(['underscore', 'backbone'], function(_, Backbone) {
+    'use strict';
+
     // Adjust some collection functions to work properly with model.get.
     // Lodash supports some methods with predicate objects, not functions.
     // Underscore has only pure predicate functions.

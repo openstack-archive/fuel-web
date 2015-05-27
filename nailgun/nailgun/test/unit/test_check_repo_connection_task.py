@@ -15,10 +15,12 @@
 
 import mock
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
+from nailgun.task.task import CheckRepoAvailability
 from nailgun.task.task import CheckRepoAvailabilityWithSetup
 from nailgun.task.task import CheckRepositoryConnectionFromMasterNodeTask
 from nailgun.test.base import BaseTestCase
@@ -74,10 +76,10 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
             CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
 
 
-class TestRepoAvailabilityWithSetup(BaseTestCase):
+class TestRepoAvailability(BaseTestCase):
 
     def setUp(self):
-        super(TestRepoAvailabilityWithSetup, self).setUp()
+        super(TestRepoAvailability, self).setUp()
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
@@ -85,7 +87,8 @@ class TestRepoAvailabilityWithSetup(BaseTestCase):
             },
             nodes_kwargs=[{'roles': ['controller']},
                           {'roles': ['controller']},
-                          {'roles': ['compute']}])
+                          {'roles': ['compute']},
+                          {'roles': ['compute'], 'online': False}])
 
         self.cluster = self.env.clusters[0]
         self.public_ng = next(ng for ng in self.cluster.network_groups
@@ -94,11 +97,15 @@ class TestRepoAvailabilityWithSetup(BaseTestCase):
         self.repo_urls = objects.Cluster.get_repo_urls(self.cluster)
         self.controllers = [n for n in self.cluster.nodes
                             if 'controller' in n.all_roles]
+        self.online_uids = [n.uid for n in self.cluster.nodes if n.online]
 
-    def test_generate_config(self):
+    def test_repo_with_setup_generate_config(self):
         config, errors = CheckRepoAvailabilityWithSetup.get_config(
             self.cluster)
         self.assertEqual(len(config), 2)
+        # resulted list of nodes contains only online uids
+        self.assertTrue(
+            set([n['uid'] for n in config]) <= set(self.online_uids))
 
         control_1, control_2 = self.controllers
         control_1_conf = next(c for c in config if c['uid'] == control_1.uid)
@@ -114,3 +121,12 @@ class TestRepoAvailabilityWithSetup(BaseTestCase):
         self.assertEqual(control_1_conf['urls'], self.repo_urls)
 
         self.assertEqual(control_1_conf['vlan'], control_2_conf['vlan'])
+
+    def test_nodes_to_check(self):
+        task = objects.Task.create({
+            'cluster': self.cluster,
+            'name': consts.TASK_NAMES.check_repo_availability})
+        repo_check = CheckRepoAvailability(task, {})
+        self.assertItemsEqual(
+            self.online_uids,
+            [str(n['uid']) for n in repo_check._get_nodes_to_check()])

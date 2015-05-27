@@ -77,6 +77,8 @@ cloud-init-per instance edit_ntp_conf4 sed -i '/^\s*server/ d' /etc/ntp.conf
 cloud-init-per instance edit_ntp_conf5 /bin/sh -c 'echo "server {{ common.master_ip }} burst iburst" | tee -a /etc/ntp.conf'
 cloud-init-per instance start_ntp service ntp start
 
+cloud-init-per instance enable_mcollective_start rm -f /etc/init/mcollective.override
+
 cloud-init-per instance removeUseDNS sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config
 add_str_to_file_if_not_exists /etc/ssh/sshd_config 'UseDNS' 'UseDNS no'
 

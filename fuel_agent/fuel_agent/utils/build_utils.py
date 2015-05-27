@@ -198,6 +198,10 @@ def do_post_inst(chroot):
     # TODO(agordeev): take care of puppet service for other distros, once
     # fuel-agent will be capable of building images for them too.
     utils.execute('chroot', chroot, 'update-rc.d', 'puppet', 'disable')
+    # NOTE(agordeev): disable mcollective to be automatically started on boot
+    # to prevent races between services which edit its server.cfg
+    with open(os.path.join(chroot, 'etc/init/mcollective.override'), 'w') as f:
+        f.write("manual\n")
     # NOTE(agordeev): remove custom policy-rc.d which is needed to disable
     # execution of post/pre-install package hooks and start of services
     remove_files(chroot, ['usr/sbin/policy-rc.d'])

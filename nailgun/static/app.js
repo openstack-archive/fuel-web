@@ -40,7 +40,7 @@ define(
     'stickit',
     'routefilter',
     'bootstrap',
-    'less!/static/css/styles',
+    'less!/static/styles/main',
     'backbone-lodash-monkeypatch'
 
 ],

@@ -46,7 +46,7 @@ var jshintConfig = JSON.parse(fs.readFileSync('./.jshintrc'));
 
 var intermediate = require('gulp-intermediate');
 var rjs = require('requirejs');
-var rjsConfig = _.merge(rjs('static/js/config.js'), {
+var rjsConfig = _.merge(rjs('static/config.js'), {
     baseUrl: '.',
     appDir: 'static',
     optimize: 'uglify2',
@@ -63,12 +63,12 @@ var rjsConfig = _.merge(rjs('static/js/config.js'), {
         }
     },
     paths: {
-        react: 'js/libs/bower/react/react-with-addons.min'
+        react: 'vendor/bower/react/react-with-addons.min'
     },
     stubModules: ['jsx'],
     modules: [
         {
-            name: 'js/main',
+            name: 'main',
             exclude: ['require-css/normalize']
         }
     ]
@@ -80,11 +80,11 @@ var lessFilter = filter('**/*.less');
 var indexFilter = filter('index.html');
 var buildResultFilter = filter([
     'index.html',
-    'js/main.js',
-    'js/main.js.map',
-    'js/libs/bower/requirejs/require.js',
-    'js/libs/bower/requirejs/require.js.map',
-    'css/styles.css',
+    'main.js',
+    'main.js.map',
+    'vendor/bower/requirejs/require.js',
+    'vendor/bower/requirejs/require.js.map',
+    'styles/main.css',
     'favicon.ico',
     'img/**',
     '**/*.+(ttf|eot|svg|woff|woff2)',
@@ -101,7 +101,7 @@ gulp.task('i18n:validate', function() {
 gulp.task('bower:fetch', bower);
 
 gulp.task('bower:copy-main', function() {
-    var bowerDir = 'static/js/libs/bower/';
+    var bowerDir = 'static/vendor/bower/';
     rimraf.sync(bowerDir);
     return gulp.src(mainBowerFiles({checkExistence: true}), {base: 'bower_components'})
         .pipe(gulp.dest(bowerDir));
@@ -112,12 +112,12 @@ gulp.task('bower', function(cb) {
 });
 
 gulp.task('jison', function() {
-    return gulp.src('static/js/expression/parser.jison')
+    return gulp.src('static/expression/parser.jison')
         .pipe(jison({moduleType: 'js'}))
-        .pipe(gulp.dest('static/js/expression/'));
+        .pipe(gulp.dest('static/expression/'));
 });
 
-var jsFiles = ['static/js/**/*.js', 'static/js/**/*.jsx', '!static/js/libs/**', '!static/js/expression/parser.js'];
+var jsFiles = ['static/**/*.js', 'static/**/*.jsx', '!static/vendor/**', '!static/expression/parser.js'];
 var styleFiles = 'static/**/*.less';
 
 gulp.task('jscs', function() {

@@ -154,7 +154,7 @@ def make_apt_update_task(uids):
     task = {
         'parameters': {
             'cmd': 'apt-get update',
-            'timeout': 180}}
+            'timeout': 1800}}
     return make_shell_task(uids, task)
 
 

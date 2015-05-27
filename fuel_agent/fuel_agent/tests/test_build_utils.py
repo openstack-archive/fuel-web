@@ -175,7 +175,11 @@ class BuildUtilsTestCase(testtools.TestCase):
         self.assertEqual(mock_exec_expected_calls, mock_exec.call_args_list)
         mock_files.assert_called_once_with('chroot', ['usr/sbin/policy-rc.d'])
         mock_clean.assert_called_once_with('chroot')
-        mock_path.join.assert_called_once_with('chroot', 'etc/shadow')
+        mock_path_join_expected_calls = [
+            mock.call('chroot', 'etc/shadow'),
+            mock.call('chroot', 'etc/init/mcollective.override')]
+        self.assertEqual(mock_path_join_expected_calls,
+                         mock_path.join.call_args_list)
 
     @mock.patch('fuel_agent.utils.build_utils.open',
                 create=True, new_callable=mock.mock_open)

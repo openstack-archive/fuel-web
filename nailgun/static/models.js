@@ -320,7 +320,7 @@ define([
         },
         validate: function(attrs) {
             var errors = {};
-            if (!$.trim(attrs.name) || $.trim(attrs.name).length == 0) {
+            if (!_.trim(attrs.name) || _.trim(attrs.name).length == 0) {
                 errors.name = 'Environment name cannot be empty';
             }
             if (!attrs.release) {

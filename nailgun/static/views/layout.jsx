@@ -313,7 +313,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
         },
         render: function() {
             var showMore = Backbone.history.getHash() != 'notifications';
-            var notifications = this.props.notifications.first(this.props.displayCount);
+            var notifications = this.props.notifications.take(this.props.displayCount);
             return (
                 <controls.Popover {...this.props} className='notifications-popover'>
                     {_.map(notifications, this.renderNotification)}

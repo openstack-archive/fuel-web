@@ -227,10 +227,17 @@ def init_http_request(url, byte_range=0):
 
 def makedirs_if_not_exists(path, mode=0o755):
     """Create directory if it does not exist
+
+    If a file with the same name exists, it will be removed
+    and a directory will be created.
+
     :param path: Directory path
     :param mode: Directory mode (Default: 0o755)
     """
     if not os.path.isdir(path):
+        if os.path.exists(path):
+            LOG.warning('Removing file %s to create a directory', path)
+            os.remove(path)
         os.makedirs(path, mode=mode)
 
 

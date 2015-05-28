@@ -183,6 +183,18 @@ class ExecuteTestCase(testtools.TestCase):
         mock_isdir.assert_called_once_with('/fake/path')
         self.assertEqual(mock_makedirs.mock_calls, [])
 
+    @mock.patch('fuel_agent.utils.utils.os.makedirs')
+    @mock.patch('fuel_agent.utils.utils.os.remove')
+    @mock.patch('fuel_agent.utils.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_agent.utils.utils.os.path.isdir', return_value=False)
+    def test_makedirs_if_not_exists_file_already_exists(
+            self, mock_isdir, mock_exists, mock_remove, mock_makedirs):
+        utils.makedirs_if_not_exists('/fake/path')
+        mock_isdir.assert_called_once_with('/fake/path')
+        mock_exists.assert_called_once_with('/fake/path')
+        mock_remove.assert_called_once_with('/fake/path')
+        mock_makedirs.assert_called_once_with('/fake/path', mode=0o755)
+
     @mock.patch('fuel_agent.utils.utils.os.listdir')
     def test_guess_filename(self, mock_oslistdir):
         mock_oslistdir.return_value = ['file1', 'file2', 'file3']

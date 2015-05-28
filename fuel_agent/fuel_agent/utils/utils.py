@@ -231,6 +231,9 @@ def makedirs_if_not_exists(path, mode=0o755):
     :param mode: Directory mode (Default: 0o755)
     """
     if not os.path.isdir(path):
+        if os.path.exists(path):
+            LOG.warning('Removing file %s to create a directory', path)
+            os.remove(path)
         os.makedirs(path, mode=mode)
 
 

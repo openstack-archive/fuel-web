@@ -11,9 +11,9 @@
     "require-css": "0.1.0",
     "jsx-requirejs-plugin": "0.5.1",
     "routefilter": "0.2.1",
-    "lodash": "2.4.1",
+    "lodash": "3.9.3",
     "autoNumeric": "1.9.12",
-    "backbone": "1.1.2",
+    "backbone": "1.2.0",
     "backbone.stickit": "0.7.0",
     "cocktail": "0.5.7",
     "i18next": "1.7.1",
@@ -36,9 +36,6 @@
     },
     "requirejs-plugins": {
       "main": "src/json.js"
-    },
-    "lodash": {
-      "main": "dist/lodash.compat.js"
     },
     "autoNumeric": {
       "main": "autoNumeric.js"
@@ -72,5 +69,8 @@
     "test",
     "tests"
   ],
-  "private": true
+  "private": true,
+  "resolutions": {
+    "backbone": "1.2.0"
+  }
 }

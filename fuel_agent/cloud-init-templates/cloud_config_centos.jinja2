@@ -44,6 +44,7 @@ runcmd:
 {% endif %}
  - iptables -t filter -F INPUT
  - iptables -t filter -F FORWARD
+ - service iptables save
 
 # that module's missing in 0.6.3, but existent for >= 0.7.3
 write_files:

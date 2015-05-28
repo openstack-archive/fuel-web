@@ -24,8 +24,8 @@ define(function() {
             'jquery-cookie': 'vendor/bower/jquery-cookie/jquery.cookie',
             'jquery-ui': 'vendor/bower/jquery-ui/ui',
             'jquery-autoNumeric': 'vendor/bower/autoNumeric/autoNumeric',
-            lodash: 'vendor/bower/lodash/dist/lodash.compat',
-            underscore: 'vendor/bower/lodash/dist/lodash.compat',
+            lodash: 'vendor/bower/lodash/lodash',
+            underscore: 'vendor/bower/lodash/lodash',
             backbone: 'vendor/bower/backbone/backbone',
             classnames: 'vendor/bower/classnames/index',
             react: 'vendor/bower/react/react-with-addons',
@@ -39,7 +39,7 @@ define(function() {
             text: 'vendor/bower/requirejs-text/text',
             json: 'vendor/bower/requirejs-plugins/src/json',
             i18next: 'vendor/bower/i18next/release/i18next-1.7.1',
-            deepModel: 'vendor/bower/backbone-deep-model/distribution/deep-model',
+            deepModel: 'vendor/custom/deep-model',
             lessLibrary: 'vendor/bower/less/dist/less',
             'require-css': 'vendor/bower/require-css'
         },
@@ -69,11 +69,6 @@ define(function() {
                 // Backbone.View's completely
                 deps: ['jquery'],
                 exports: 'i18n'
-            },
-            deepModel: {
-                // even though deepmodel uses AMD format, it uses _.mixin
-                // before define() call
-                deps: ['underscore']
             },
             'jquery-autoNumeric': {
                 // non-AMD module, relies on global jQuery

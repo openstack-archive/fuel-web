@@ -97,7 +97,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                         return {
                             interfaces: interfaces,
                             nodes: nodes,
-                            bondingConfig: networksMetadata.get('bonding')
+                            bondingConfig: networksMetadata.get('bonding'),
+                            configModels: {
+                                version: app.version,
+                                cluster: cluster,
+                                settings: cluster.get('settings')
+                            }
                         };
                     }, this));
             }
@@ -237,14 +242,9 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
             return !this.isLocked() && !!availableBondTypes;
         },
         getBondType: function() {
-            var configModels = {
-                version: app.version,
-                cluster: this.props.cluster,
-                settings: this.props.cluster.get('settings')
-            };
             return _.compact(_.flatten(_.map(this.props.bondingConfig.availability, function(modeAvailabilityData) {
                 return _.map(modeAvailabilityData, function(condition, name) {
-                    var result = utils.evaluateExpression(condition, configModels).value;
+                    var result = utils.evaluateExpression(condition, this.props.configModels).value;
                     return result && name;
                 }, this);
             }, this)))[0];
@@ -404,6 +404,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                             validate={this.validate}
                                             refresh={this.refresh}
                                             bondingProperties={this.props.bondingConfig.properties}
+                                            configModels={this.props.configModels}
                                             bondType={this.getBondType()}
                                             interfaceSpeeds={interfaceSpeeds[index]}
                                         />;
@@ -453,6 +454,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
         getBondMode: function() {
             var ifc = this.props.interface;
             return ifc.get('mode') || (ifc.get('bond_properties') || {}).mode;
+        },
+        getAvailableModes: function() {
+            var modes = this.props.bondingProperties[this.props.bondType].mode;
+            return _.reduce(modes, function(result, modeSet) {
+                if (modeSet.condition && !utils.evaluateExpression(modeSet.condition, this.props.configModels).value) return result;
+                return result.concat(modeSet.values);
+            }, [], this);
         },
         getBondPropertyValues: function(propertyName, value) {
             var bondType = this.props.bondType;
@@ -648,7 +656,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, dialogs, contro
                                         onChange={this.bondingModeChanged}
                                         value={this.getBondMode()}
                                         label={i18n(configureInterfacesTransNS + 'bonding_mode') + ':'}
-                                        children={this.getBondingOptions(this.getBondPropertyValues('mode', 'values'), 'bonding_modes')}
+                                        children={this.getBondingOptions(this.getAvailableModes(), 'bonding_modes')}
                                     />
                                 </div>
                                 <div className='clearfix'></div>

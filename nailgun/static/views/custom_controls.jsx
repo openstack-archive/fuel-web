@@ -74,7 +74,7 @@ define([
             };
         },
         changeRepos: function(method, index, value) {
-            value = $.trim(value).replace(/\s+/g, ' ');
+            value = _.trim(value).replace(/\s+/g, ' ');
             var repos = _.cloneDeep(this.props.value),
                 os = this.props.cluster.get('release').get('operating_system');
             switch (method) {

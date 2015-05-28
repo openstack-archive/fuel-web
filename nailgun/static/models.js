@@ -55,9 +55,8 @@ define([
     };
 
     var collectionMethods = [
-        'collect', 'find', 'detect', 'filter', 'select', 'reject', 'every',
-        'all', 'some', 'any', 'max', 'min', 'first', 'head', 'take', 'initial',
-        'rest', 'tail', 'drop', 'last'
+        'collect', 'find', 'detect', 'filter', 'select', 'reject',
+        'every', 'all', 'some', 'any'
     ];
 
     _.each(collectionMethods, function(method) {
@@ -320,7 +319,7 @@ define([
         },
         validate: function(attrs) {
             var errors = {};
-            if (!$.trim(attrs.name) || $.trim(attrs.name).length == 0) {
+            if (!_.trim(attrs.name) || _.trim(attrs.name).length == 0) {
                 errors.name = 'Environment name cannot be empty';
             }
             if (!attrs.release) {

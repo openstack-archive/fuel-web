@@ -352,7 +352,12 @@ class Manager(object):
 
         if pseudo:
             for path in ('/sys', '/dev', '/proc'):
-                utils.makedirs_if_not_exists(chroot + path)
+                p = chroot + path
+                if (os.path.exists(p) and
+                        not os.path.isdir(p)):
+                    LOG.warning('Removing file %s to create a directory', path)
+                    os.remove(p)
+                utils.makedirs_if_not_exists(p)
                 fu.mount_bind(chroot, path)
 
         if treat_mtab:

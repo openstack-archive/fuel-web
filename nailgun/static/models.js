@@ -45,30 +45,27 @@ define([
     var collectionMixin = {
         getByIds: function(ids) {
             return this.filter(function(model) {return _.contains(ids, model.id);});
-        },
-        findWhere: function(attrs) {
-            var ret = this.where(attrs);
-            if (ret.length > 0) {
-                return ret[0];
-            }
         }
     };
 
-    var collectionMethods = ['find', 'detect', 'filter', 'select', 'reject', 'every', 'all', 'some', 'any'];
+    var collectionMethods = [
+        'dropRightWhile', 'dropWhile', 'takeRightWhile', 'takeWhile',
+        'findIndex', 'findLastIndex',
+        'findKey', 'findLastKey',
+        'find', 'detect', 'findLast',
+        'filter', 'select', 'reject',
+        'every', 'all', 'some', 'any',
+        'partition'
+    ];
 
     _.each(collectionMethods, function(method) {
         collectionMixin[method] = function() {
             var args = _.toArray(arguments),
-                predicate = args[0];
+                source = args[0];
 
-            if (_.isPlainObject(predicate)) {
+            if (_.isPlainObject(source)) {
                 args[0] = function(model) {
-                    return _.chain(predicate)
-                        .pairs()
-                        .every(function(pair) {
-                            return _.isEqual(model.get(pair[0]), pair[1]);
-                        })
-                        .value();
+                    return _.isMatch(model.attributes, source);
                 };
             }
 
@@ -316,7 +313,7 @@ define([
         },
         validate: function(attrs) {
             var errors = {};
-            if (!$.trim(attrs.name) || $.trim(attrs.name).length == 0) {
+            if (!_.trim(attrs.name) || _.trim(attrs.name).length == 0) {
                 errors.name = 'Environment name cannot be empty';
             }
             if (!attrs.release) {

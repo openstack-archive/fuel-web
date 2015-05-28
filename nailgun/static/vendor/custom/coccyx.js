@@ -70,23 +70,23 @@
     },
 
     tearDownRegisteredSubViews: function() {
-      _(this.subViews).invoke('_tearDown');
+      _.invoke(this.subViews, '_tearDown');
     },
 
     _tearDown: function() {
       var that = this;
       if (this.beforeTearDown) this.beforeTearDown();
       if (this.__parentView) this.__parentView.unregisterSubView(this);
-      _(Coccyx._globalTearDownCallbacks).each(function(callback) {
+      _.each(Coccyx._globalTearDownCallbacks, function(callback) {
         callback.apply(that);
       });
       this.undelegateEvents();
       this.__parentView = null;
 
-      _(this.eventDispatchers).invoke('off', null, null, this);
+      _.invoke(this.eventDispatchers, 'off', null, null, this);
       this.eventDispatchers = {};
 
-      _(this.subViews).invoke('_tearDown');
+      _.invoke(this.subViews, '_tearDown');
       this.subViews = {};
     }
   }

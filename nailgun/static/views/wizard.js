@@ -583,7 +583,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             }
         },
         showWarning: function(message) {
-            this.$('.form-horizontal').before(_.template(warningTemplate, {message: message}));
+            this.$('.form-horizontal').before(_.template(warningTemplate)({message: message}));
         },
         renderCustomElements: function() {
             this.$('.form-group').append(this.renderControls({}));

@@ -26,7 +26,6 @@ from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
 from nailgun.objects import Release
 from nailgun.objects import ReleaseCollection
-from nailgun.settings import settings
 
 
 class ReleaseHandler(SingleHandler):
@@ -70,22 +69,6 @@ class ReleaseNetworksHandler(SingleHandler):
                * 404 (release object not found)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-        networks_metadata = dict(obj['networks_metadata'])
-        if 'experimental' not in settings.VERSION['feature_groups']:
-            networks_metadata['bonding']['properties']['linux'] = {
-                'mode': [
-                    {'values': ["balance-rr", "active-backup", "802.3ad"]}
-                ],
-                'xmit_hash_policy': [
-                    {'values': ["layer2", "layer2+3", "layer3+4",
-                                "encap2+3", "encap3+4"],
-                     'for_modes': ["802.3ad"]}
-                ],
-                'lacp_rate': [
-                    {'values': ["slow", "fast"],
-                     'for_modes': ["802.3ad"]}
-                ]
-            }
         return obj['networks_metadata']
 
     @content

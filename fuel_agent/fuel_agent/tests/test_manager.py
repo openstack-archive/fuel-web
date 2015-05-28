@@ -526,3 +526,94 @@ class TestManager(test_base.BaseTestCase):
             }
         ]
         mock_yaml_dump.assert_called_once_with(metadata, stream=mock_open())
+
+    @mock.patch('fuel_agent.manager.utils.execute')
+    @mock.patch('fuel_agent.manager.utils.makedirs_if_not_exists')
+    @mock.patch('fuel_agent.manager.fu.mount_fs')
+    @mock.patch('fuel_agent.manager.fu.mount_bind')
+    @mock.patch('fuel_agent.manager.os')
+    @mock.patch('fuel_agent.manager.open',
+                create=True, new_callable=mock.mock_open)
+    def test_mount_target(self, mock_open, mock_os, mock_mount_bind,
+                          mock_mount_fs, mock_makedirs, mock_exec):
+        mock_os.path.exists.return_value = False
+        mock_os.path.isdir.return_value = False
+        mock_os.path.islink.return_value = False
+        self.mgr.mount_target('chroot')
+        mock_exists_expected_calls = [mock.call('chroot/sys'),
+                                      mock.call('chroot/dev'),
+                                      mock.call('chroot/proc')]
+        self.assertEqual(mock_exists_expected_calls,
+                         mock_os.path.exists.call_args_list)
+        mock_os.path.islink.assert_called_once_with('chroot/etc/mtab')
+        mock_exec.assert_called_once_with('chroot', 'chroot', 'grep', '-v',
+                                          'rootfs', '/proc/mounts')
+        mock_bind_expected_calls = [mock.call('chroot', '/sys'),
+                                    mock.call('chroot', '/dev'),
+                                    mock.call('chroot', '/proc')]
+        self.assertEqual(mock_bind_expected_calls,
+                         mock_mount_bind.call_args_list)
+        mock_mount_expected_calls = [
+            mock.call('ext4', '/dev/mapper/os-root', 'chroot/'),
+            mock.call('ext2', '/dev/sda3', 'chroot/boot'),
+            mock.call('ext2', '/dev/sda4', 'chroot/tmp'),
+            mock.call('xfs', '/dev/mapper/image-glance',
+                      'chroot/var/lib/glance')]
+        self.assertEqual(mock_mount_expected_calls,
+                         mock_mount_fs.call_args_list)
+        mock_makedirs_expected_calls = [
+            mock.call('chroot/'), mock.call('chroot/boot'),
+            mock.call('chroot/tmp'), mock.call('chroot/var/lib/glance'),
+            mock.call('chroot/sys'), mock.call('chroot/dev'),
+            mock.call('chroot/proc')]
+        self.assertEqual(mock_makedirs_expected_calls,
+                         mock_makedirs.call_args_list)
+        self.assertEqual([], mock_os.remove.call_args_list)
+
+    @mock.patch('fuel_agent.manager.utils.execute')
+    @mock.patch('fuel_agent.manager.utils.makedirs_if_not_exists')
+    @mock.patch('fuel_agent.manager.fu.mount_fs')
+    @mock.patch('fuel_agent.manager.fu.mount_bind')
+    @mock.patch('fuel_agent.manager.os')
+    @mock.patch('fuel_agent.manager.open',
+                create=True, new_callable=mock.mock_open)
+    def test_mount_target_file_exits(self, mock_open, mock_os, mock_mount_bind,
+
+                                     mock_mount_fs, mock_makedirs, mock_exec):
+        mock_os.path.exists.return_value = True
+        mock_os.path.isdir.return_value = False
+        mock_os.path.islink.return_value = False
+        self.mgr.mount_target('chroot')
+        mock_exists_expected_calls = [mock.call('chroot/sys'),
+                                      mock.call('chroot/dev'),
+                                      mock.call('chroot/proc')]
+        self.assertEqual(mock_exists_expected_calls,
+                         mock_os.path.exists.call_args_list)
+        mock_os.path.islink.assert_called_once_with('chroot/etc/mtab')
+        mock_exec.assert_called_once_with('chroot', 'chroot', 'grep', '-v',
+                                          'rootfs', '/proc/mounts')
+        mock_bind_expected_calls = [mock.call('chroot', '/sys'),
+                                    mock.call('chroot', '/dev'),
+                                    mock.call('chroot', '/proc')]
+        self.assertEqual(mock_bind_expected_calls,
+                         mock_mount_bind.call_args_list)
+        mock_mount_expected_calls = [
+            mock.call('ext4', '/dev/mapper/os-root', 'chroot/'),
+            mock.call('ext2', '/dev/sda3', 'chroot/boot'),
+            mock.call('ext2', '/dev/sda4', 'chroot/tmp'),
+            mock.call('xfs', '/dev/mapper/image-glance',
+                      'chroot/var/lib/glance')]
+        self.assertEqual(mock_mount_expected_calls,
+                         mock_mount_fs.call_args_list)
+        mock_makedirs_expected_calls = [
+            mock.call('chroot/'), mock.call('chroot/boot'),
+            mock.call('chroot/tmp'), mock.call('chroot/var/lib/glance'),
+            mock.call('chroot/sys'), mock.call('chroot/dev'),
+            mock.call('chroot/proc')]
+        self.assertEqual(mock_makedirs_expected_calls,
+                         mock_makedirs.call_args_list)
+        mock_remove_expected_calls = [mock.call('chroot/sys'),
+                                      mock.call('chroot/dev'),
+                                      mock.call('chroot/proc')]
+        self.assertEqual(mock_remove_expected_calls,
+                         mock_os.remove.call_args_list)

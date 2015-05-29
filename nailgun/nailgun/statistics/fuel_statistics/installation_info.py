@@ -97,6 +97,13 @@ class InstallationInfo(object):
 
         WhiteListRule(('workloads_collector', 'enabled', 'value'),
                       'workloads_collector_enabled', None),
+
+        WhiteListRule(('public_ssl', 'horizon', 'value'),
+                      'public_ssl_horizon', None),
+        WhiteListRule(('public_ssl', 'services', 'value'),
+                      'public_ssl_services', None),
+        WhiteListRule(('public_ssl', 'cert_source', 'value'),
+                      'public_ssl_cert_source', None),
     )
 
     vmware_attributes_white_list = (

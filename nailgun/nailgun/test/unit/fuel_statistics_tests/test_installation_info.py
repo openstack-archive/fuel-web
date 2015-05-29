@@ -402,7 +402,7 @@ class TestInstallationInfo(BaseTestCase):
             ('access', 'email'), ('access', 'password'), ('access', 'tenant'),
             ('access', 'user'), ('common', 'auth_key'), ('corosync', 'group'),
             ('corosync', 'port'), ('external_dns', 'dns_list'),
-            ('external_mongo', 'hosts_ip'),
+            ('external_mongo', 'hosts_ip'), ('public_ssl', 'cert_data'),
             ('external_mongo', 'mongo_db_name'),
             ('external_mongo', 'mongo_password'),
             ('external_mongo', 'mongo_user'), ('syslog', 'syslog_port'),

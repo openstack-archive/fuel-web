@@ -737,6 +737,56 @@
             regex:
               source: '^\s*(?:(?:\w+(?:-+\w+)*\.)+[a-z]+|\d{1,3}(?:\.\d{1,3}){3})\s*(?:,\s*(?:(?:\w+(?:-+\w+)*\.)+[a-z]+|\d{1,3}(\.\d{1,3}){3})\s*)*$'
               error: "Invalid NTP server list"
+        public_ssl:
+          metadata:
+            label: "Public TLS"
+            weight: 110
+          horizon:
+            value: false
+            label: "HTTPS for Horizon"
+            description: "Secure access to Horizon enabling HTTPS instead of HTTP"
+            weight: 10
+            type: "checkbox"
+          services:
+            value: false
+            label: "TLS for OpenStack public endpoints"
+            description: "Enable TLS termination on HAProxy for OpenStack services"
+            weight: 20
+            type: "checkbox"
+          cert_source:
+            type: "radio"
+            weight: 30
+            label: "Select source for certificate"
+            description: "From where we'll get certificate and private key"
+            value: "self_signed"
+            values:
+              - data: "self_signed"
+                label: "Self-signed"
+                description: "Generate private key and certificate that will be signed by this key"
+              - data: "user_uploaded"
+                label: "I have my own keypair with certificate"
+                description: "Use pre-generated key and certificate"
+            restrictions:
+                - condition: "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
+                  action: "hide"
+          cert_data:
+            value: ""
+            label: "Certificate"
+            description: "Certificate and private key data, placed one after another"
+            weight: 40
+            type: "file"
+            restrictions:
+              - condition: "(settings:public_ssl.cert_source.value != 'user_uploaded') or (settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false)"
+                action: "hide"
+          hostname:
+            value: "public.fuel.local"
+            label: "DNS hostname for public TLS endpoints"
+            description: "Your DNS entries should point to this name. Self-signed certificates also will use this hostname"
+            weight: 50
+            type: "text"
+            restrictions:
+              - condition: "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
+                action: "hide"
         kernel_params:
           metadata:
             label: "Kernel parameters"
@@ -819,16 +869,6 @@
             regex:
               source: '^[1-9]\d*$'
               error: "Invalid number"
-        public_ssl:
-          metadata:
-            label: "HAProxy public SSL hostname"
-            weigth: 100
-          hostname:
-            value: "public.fuel.local"
-            label: "Hostname or IP"
-            type: "text"
-            weight: 10
-            description: "Configures hostname or IP for HAProxy SSL keys generation"
       generated:
         mysql:
           root_password:

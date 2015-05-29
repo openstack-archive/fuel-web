@@ -96,7 +96,9 @@ class UpgradeManager(object):
                 'Could not complete on_success actions due to %s',
                 six.text_type(exc))
 
-        logger.info('*** UPGRADE DONE SUCCESSFULLY')
+        logger.info('*** UPGRADING MASTER NODE DONE SUCCESSFULLY')
+        logger.info('*** PLEASE REBOOT YOUR BOOTSTRAP NODES IN ORDER TO MAKE'
+                    ' SURE THAT THEY USE THE LATEST BOOTSTRAP IMAGE')
 
     def _on_success(self):
         """Do some useful job if upgrade was done successfully.

@@ -413,6 +413,7 @@ class TestInstallationInfo(BaseTestCase):
             ('common', 'use_vcenter'),  # removed attribute
             ('murano_settings', 'murano_repo_url'),
             ('use_fedora_lt', 'kernel'),
+            ('public_ssl', 'cert_data'), ('public_ssl', 'hostname'),
         )
         return filter(lambda x: x not in private_paths, leafs_paths)
 

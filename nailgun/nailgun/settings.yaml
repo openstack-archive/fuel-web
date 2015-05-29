@@ -904,6 +904,9 @@ DUMP:
         to_file: lsmod.txt
       - type: file
         path: /etc/*-release
+      - type: command
+        command: dmesg
+        to_file: dmesg.txt
 
 # performance tests settings
 PERFORMANCE_TESTS_RUN_NUMBER: 10

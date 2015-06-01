@@ -38,7 +38,6 @@ define(function() {
             'react.backbone': 'js/libs/custom/react.backbone',
             stickit: 'js/libs/bower/backbone.stickit/backbone.stickit',
             coccyx: 'js/libs/custom/coccyx',
-            cocktail: 'js/libs/bower/cocktail/Cocktail',
             routefilter: 'js/libs/bower/routefilter/dist/backbone.routefilter.min',
             bootstrap: 'js/libs/bower/bootstrap/dist/js/bootstrap',
             text: 'js/libs/bower/requirejs-text/text',

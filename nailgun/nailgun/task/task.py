@@ -1134,7 +1134,7 @@ class CheckRepositoryConnectionFromMasterNodeTask(object):
 
     @classmethod
     def _get_failed_repositories(cls, task):
-        urls = objects.Cluster.get_repo_urls(task.cluster)
+        urls = objects.Cluster.get_repo_urls_wo_proxies(task.cluster)
         responses = cls._get_responses(urls)
         failed_responses = filter(lambda x: x.status_code != 200, responses)
         return [r.url for r in failed_responses]
@@ -1153,7 +1153,7 @@ class CheckRepoAvailability(BaseNetworkVerification):
             "check_repositories_resp",
             {
                 "nodes": self._get_nodes_to_check(),
-                "urls": objects.Cluster.get_repo_urls(self.task.cluster),
+                "urls": objects.Cluster.get_repo_urls_wo_proxies(self.task.cluster),
             }
         )
         return rpc_message
@@ -1177,7 +1177,7 @@ class CheckRepoAvailabilityWithSetup(object):
 
     @classmethod
     def get_config(cls, cluster):
-        urls = objects.Cluster.get_repo_urls(cluster)
+        urls = objects.Cluster.get_repo_urls_wo_proxies(cluster)
         nodes = []
         errors = []
         # if there is nothing to verify - just skip this task

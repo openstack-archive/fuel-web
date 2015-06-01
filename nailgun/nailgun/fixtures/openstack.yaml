@@ -1215,14 +1215,17 @@
                 name: "mos"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/x86_64"
                 priority: null
+                proxy:
               - type: "rpm"
                 name: "mos-updates"
                 uri: "http://mirror.fuel-infra.org/mos/centos-6/mos6.1/updates"
                 priority: null
+                proxy:
               - type: "rpm"
                 name: "Auxiliary"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/auxiliary"
                 priority: 15
+                proxy:
       generated:
         cobbler:
           profile:
@@ -1270,48 +1273,56 @@
                 suite: "trusty"
                 section: "main universe multiverse"
                 priority: null
+                proxy:
               - type: "deb"
                 name: "ubuntu-updates"
                 uri: "http://archive.ubuntu.com/ubuntu/"
                 suite: "trusty-updates"
                 section: "main universe multiverse"
                 priority: null
+                proxy:
               - type: "deb"
                 name: "ubuntu-security"
                 uri: "http://archive.ubuntu.com/ubuntu/"
                 suite: "trusty-security"
                 section: "main universe multiverse"
                 priority: null
+                proxy:
               - type: "deb"
                 name: "mos"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
                 suite: "mos6.1"
                 section: "main restricted"
                 priority: 1050
+                proxy:
               - type: "deb"
                 name: "mos-updates"
                 uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
                 suite: "mos6.1-updates"
                 section: "main restricted"
                 priority: 1050
+                proxy:
               - type: "deb"
                 name: "mos-security"
                 uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
                 suite: "mos6.1-security"
                 section: "main restricted"
                 priority: 1050
+                proxy:
               - type: "deb"
                 name: "mos-holdback"
                 uri: "http://mirror.fuel-infra.org/mos/ubuntu/"
                 suite: "mos6.1-holdback"
                 section: "main restricted"
                 priority: 1100
+                proxy:
               - type: "deb"
                 name: "Auxiliary"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"
                 suite: "auxiliary"
                 section: "main restricted"
                 priority: 1150
+                proxy:
       generated:
         repo_setup:
           installer_kernel:

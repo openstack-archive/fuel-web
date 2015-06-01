@@ -852,8 +852,13 @@ class Cluster(NailgunObject):
             nodes_to_deploy.extend(controllers_to_deploy)
 
     @classmethod
-    def get_repo_urls(self, instance):
-        repos = instance.attributes.editable['repo_setup']['repos']['value']
+    def get_repo_urls_wo_proxies(self, instance):
+        # NOTE(eli): Currently we don't have implemented
+        # checks for envs with proxy, it's the reason
+        # why we have to remove urls with proxies
+        repos = filter(
+            lambda r: not r.get('proxy'),
+            instance.attributes.editable['repo_setup']['repos']['value'])
         return tuple(set([r['uri'] for r in repos]))
 
 

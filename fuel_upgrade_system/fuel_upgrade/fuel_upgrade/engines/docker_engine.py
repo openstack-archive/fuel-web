@@ -75,7 +75,9 @@ class DockerUpgrader(UpgradeEngine):
         self.stop_fuel_containers()
 
         # Upload new docker images and create containers
-        self.upload_images()
+        self.exec_with_retries(
+            self.upload_images, errors.ExecutedErrorNonZeroExitCode,
+            '', retries=5, interval=4)
         self.create_and_start_new_containers()
 
         # Generate supervisor configs for new containers and restart

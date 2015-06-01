@@ -11,6 +11,7 @@
     roles:
       - controller
       - compute
+      - compute-vmware
       - cinder
       - cinder-vmware
       - ceph-osd
@@ -41,6 +42,17 @@
         limits:
           recommended: 1
         fault_tolerance: "2%"
+      compute-vmware:
+        name: "Compute - nova-compute host for managing vSphere clusters"
+        description: "A node that runs nova-compute with VCDriver, that manages ESXi computing resources via VMware vCenter."
+        conflicts:
+          - controller
+          - compute
+          - cinder
+          - cinder-vmware
+          - ceph-osd
+          - mongo
+          - base-os
       cinder:
         # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
         name: "Storage - Cinder"
@@ -1063,11 +1075,11 @@
                   -
                     name: "vsphere_cluster"
                     type: "text"
-                    label: "VSphere cluster"
-                    description: "VSphere cluster"
+                    label: "vSphere cluster"
+                    description: "vSphere cluster"
                     regex:
                       source: *non_empty_string
-                      error: "Invalid VSphere cluster"
+                      error: "Invalid vSphere cluster"
                   -
                     name: "service_name"
                     type: "text"

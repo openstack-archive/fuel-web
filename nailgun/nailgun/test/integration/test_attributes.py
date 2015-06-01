@@ -459,6 +459,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
                 'name': 'mos',
                 'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/x86_64',
                 'priority': None,
+                'proxy': None
             },
             {
                 'type': 'rpm',
@@ -466,12 +467,14 @@ class TestAlwaysEditable(BaseIntegrationTest):
                 'uri': 'http://mirror.fuel-infra.org/mos/centos-6/mos6.1/'
                        'updates',
                 'priority': None,
+                'proxy': None
             },
             {
                 'type': 'rpm',
                 'name': 'Auxiliary',
                 'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/auxiliary',
                 'priority': 15,
+                'proxy': None
             },
         ])
 

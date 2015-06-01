@@ -47,7 +47,7 @@ class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
             {'type': 'deb', 'uri': self.url, 'suite': 'suite'}]
 
         self.patcher = mock.patch(
-            'nailgun.task.task.objects.Cluster.get_repo_urls',
+            'nailgun.task.task.objects.Cluster.get_repo_urls_wo_proxies',
             new=mock.Mock(return_value=self.mocked_repositories))
         self.mrepos = self.patcher.start()
 
@@ -94,7 +94,7 @@ class TestRepoAvailability(BaseTestCase):
         self.public_ng = next(ng for ng in self.cluster.network_groups
                               if ng.name == 'public')
         self.free_ips = NetworkManager.get_free_ips(self.public_ng, 2)
-        self.repo_urls = objects.Cluster.get_repo_urls(self.cluster)
+        self.repo_urls = objects.Cluster.get_repo_urls_wo_proxies(self.cluster)
         self.controllers = [n for n in self.cluster.nodes
                             if 'controller' in n.all_roles]
         self.online_uids = [n.uid for n in self.cluster.nodes if n.online]

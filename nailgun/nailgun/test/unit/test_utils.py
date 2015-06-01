@@ -196,9 +196,14 @@ class TestGetDebianReleaseFile(base.BaseUnitTest):
             'uri': 'http://some-uri.com/path',
             'suite': 'mysuite',
             'section': 'main university',
+            'proxy': 'http://proxy'
         })
         m_get.assert_called_with(
-            'http://some-uri.com/path/dists/mysuite/Release')
+            'http://some-uri.com/path/dists/mysuite/Release',
+            proxies={
+                'http': 'http://proxy',
+                'https': 'http://proxy',
+                'ftp': 'http://proxy'})
 
     @patch('nailgun.utils.debian.requests.get')
     def test_flat_ubuntu_repo(self, m_get):
@@ -216,7 +221,7 @@ class TestGetDebianReleaseFile(base.BaseUnitTest):
                 'suite': suite,
                 'section': '',
             })
-            m_get.assert_called_with(uri)
+            m_get.assert_called_with(uri, proxies={})
 
     @patch('nailgun.utils.debian.requests.get')
     def test_do_not_silence_http_errors(self, m_get):

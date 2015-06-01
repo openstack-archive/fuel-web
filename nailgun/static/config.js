@@ -34,7 +34,6 @@ define(function() {
             'react.backbone': 'vendor/custom/react.backbone',
             stickit: 'vendor/bower/backbone.stickit/backbone.stickit',
             coccyx: 'vendor/custom/coccyx',
-            cocktail: 'vendor/bower/cocktail/Cocktail',
             routefilter: 'vendor/bower/routefilter/dist/backbone.routefilter.min',
             bootstrap: 'vendor/bower/bootstrap/dist/js/bootstrap',
             text: 'vendor/bower/requirejs-text/text',

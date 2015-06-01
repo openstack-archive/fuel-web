@@ -22,8 +22,6 @@ define(
     'backbone',
     'utils',
     'models',
-    'cocktail',
-    'view_mixins',
     'text!templates/wizard/create_cluster_wizard.html',
     'text!templates/wizard/name_and_release.html',
     'text!templates/wizard/common_wizard_panel.html',
@@ -35,7 +33,7 @@ define(
     'text!templates/wizard/warning.html',
     'text!templates/wizard/text_input.html'
 ],
-function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
+function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, networkPaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {},
@@ -379,6 +377,9 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
     views.WizardPane = Backbone.View.extend({
         template: _.template(commonWizardTemplate),
         constructorName: 'WizardPane',
+        events: {
+            'click span.add-on': 'togglePassword'
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.attachWarningListeners();
@@ -604,11 +605,26 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             this.$('.validation-error').addClass('hide');
             this.$('.help-block').html('');
         },
+        togglePassword: function(e) {
+            var input = this.$(e.currentTarget).prev();
+            if (input.attr('disabled')) {return;}
+            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
+            this.$(e.currentTarget).find('i').toggleClass('hide');
+        },
+        addPasswordToggle: function() {
+            this.$('input[type=password]').each(function() {
+                $(this)
+                    .after('<span class="add-on"><i class="icon-eye"/><i class="icon-eye-off hide"/></span>')
+                    .addClass('input-group-addon')
+                    .parent('.parameter-control').addClass('input-append');
+            });
+        },
         render: function(options) {
             this.$el.html(this.template(options));
             this.renderCustomElements();
             this.$el.i18n();
             this.handleWarnings();
+            this.addPasswordToggle();
 
             if (!_.isUndefined(this.releases) && this.releases.length) {
                 this.releases = new Backbone.Collection(this.releases.where({is_deployable: true}));
@@ -617,7 +633,6 @@ function(require, $, _, i18n, Backbone, utils, models, Cocktail, viewMixins, cre
             return this;
         }
     });
-    Cocktail.mixin(views.WizardPane, viewMixins.toggleablePassword);
 
     clusterWizardPanes.NameAndRelease = views.WizardPane.extend({
         constructorName: 'NameAndRelease',

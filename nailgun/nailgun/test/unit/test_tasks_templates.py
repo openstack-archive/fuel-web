@@ -70,6 +70,28 @@ class TestMakeTask(base.BaseTestCase):
              'type': 'upload_file',
              'uids': [1, 2, 3]})
 
+    def test_make_ubuntu_proxy_repos_task(self):
+        repos = [
+            {'uri': 'http://repo-1:1234/',
+             'proxy': 'http://proxy-1:1233'},
+            {'uri': 'ftp://repo-2:1234/',
+             'proxy': 'ftp://proxy-2:1233'},
+            {'uri': 'https://repo-3:1234/',
+             'proxy': 'https://proxy-3:1233'},
+            {'uri': 'http://repo-4:1234/',
+             'proxy': None}]
+        result = tasks_templates.make_ubuntu_proxy_repos_task([1, 2, 3], repos)
+        self.assertEqual(
+            result,
+            {'parameters': {
+                'data': (
+                    'Acquire::http::Proxy::repo-1 "http://proxy-1:1233";\n'
+                    'Acquire::ftp::Proxy::repo-2 "ftp://proxy-2:1233";\n'
+                    'Acquire::https::Proxy::repo-3 "https://proxy-3:1233";'),
+                'path': '/etc/apt/apt.conf.d/01proxy'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
     def test_make_centos_repo_task_w_priority(self):
         result = tasks_templates.make_centos_repo_task(
             [1, 2, 3],
@@ -84,6 +106,27 @@ class TestMakeTask(base.BaseTestCase):
             {'parameters': {
                 'data': ('[plugin_name]\nname=Plugin plugin_name repository\n'
                          'baseurl=http://url\ngpgcheck=0\npriority=1'),
+                'path': '/etc/yum.repos.d/plugin_name.repo'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
+    def test_make_centos_repo_task_w_proxy(self):
+        result = tasks_templates.make_centos_repo_task(
+            [1, 2, 3],
+            {
+                'name': 'plugin_name',
+                'type': 'rpm',
+                'uri': 'http://url',
+                'proxy': 'http://proxy-url'
+            })
+        self.assertEqual(
+            result,
+            {'parameters': {
+                'data': ('[plugin_name]\n'
+                         'name=Plugin plugin_name repository\n'
+                         'baseurl=http://url\n'
+                         'gpgcheck=0\n'
+                         'proxy=http://proxy-url'),
                 'path': '/etc/yum.repos.d/plugin_name.repo'},
              'type': 'upload_file',
              'uids': [1, 2, 3]})

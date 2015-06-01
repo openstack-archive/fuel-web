@@ -15,6 +15,7 @@
 #    under the License.
 
 import os
+import urlparse
 
 from oslo.serialization import jsonutils
 import requests
@@ -93,6 +94,29 @@ def make_ubuntu_apt_disable_ipv6(uids):
     return make_upload_task(uids, config_content, config_path)
 
 
+def make_ubuntu_proxy_repos_task(uids, repos):
+    proxy_lines = []
+    templates = ['Acquire::http::Proxy::{host} "{proxy}";',
+                 'Acquire::https::Proxy::{host} "{proxy}";',
+                 'Acquire::ftp::Proxy::{host} "{proxy}";']
+
+    for repo in repos:
+        if not repo.get('proxy'):
+            continue
+
+        for template in templates:
+            url_repo = urlparse.urlparse(repo['uri'])
+
+            proxy_lines.append(
+                template.format(
+                    host=url_repo.hostname,
+                    proxy=repo['proxy']))
+
+    config_content = "\n".join(proxy_lines)
+    config_path = '/etc/apt/apt.conf.d/01proxy'
+    return make_upload_task(uids, config_content, config_path)
+
+
 def make_ubuntu_unauth_repos_task(uids):
     # NOTE(kozhukalov): This task is to allow installing packages
     # from unauthenticated repositories. Apt has special
@@ -107,11 +131,13 @@ def make_centos_repo_task(uids, repo):
         '[{name}]',
         'name=Plugin {name} repository',
         'baseurl={uri}',
-        'gpgcheck=0',
-    ]
+        'gpgcheck=0']
 
     if repo.get('priority'):
         repo_content.append('priority={priority}')
+
+    if repo.get('proxy'):
+        repo_content.append('proxy={proxy}')
 
     repo_content = '\n'.join(repo_content).format(**repo)
     repo_path = '/etc/yum.repos.d/{name}.repo'.format(name=repo['name'])

@@ -40,8 +40,14 @@ def get_release_file(repo, retries=1):
         download_uri = os.path.join(
             repo['uri'], repo['suite'].lstrip('/'), 'Release')
 
+    proxies = {}
+    if repo.get('proxy'):
+        proxies['ftp'] = repo['proxy']
+        proxies['http'] = repo['proxy']
+        proxies['https'] = repo['proxy']
+
     for _ in six.moves.range(0, retries):
-        response = requests.get(download_uri)
+        response = requests.get(download_uri, proxies=proxies)
 
         # do not perform retries if release is not found
         if response.status_code == 404:

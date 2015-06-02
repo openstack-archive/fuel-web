@@ -21,7 +21,7 @@ define(function() {
         waitSeconds: 60,
         paths: {
             jquery: 'vendor/bower/jquery/jquery',
-            'jquery-cookie': 'vendor/bower/jquery-cookie/jquery.cookie',
+            'js-cookie': 'vendor/bower/js-cookie/src/js.cookie',
             'jquery-ui': 'vendor/bower/jquery-ui/ui',
             'jquery-autoNumeric': 'vendor/bower/autoNumeric/autoNumeric',
             lodash: 'vendor/bower/lodash/dist/lodash.compat',

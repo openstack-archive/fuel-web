@@ -47,7 +47,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
-                renderOn: 'add remove change'
+                renderOn: 'update change'
             }),
             componentMixins.dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
             componentMixins.dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks'),

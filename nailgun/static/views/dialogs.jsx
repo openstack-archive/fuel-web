@@ -198,7 +198,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 modelOrCollection: function(props) {
                     return props.cluster.get('tasks');
                 },
-                renderOn: 'add remove change:status'
+                renderOn: 'update change:status'
             })
         ],
         getDefaultProps: function() {return {title: i18n('dialog.display_changes.title')};},

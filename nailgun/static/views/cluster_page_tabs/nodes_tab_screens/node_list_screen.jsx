@@ -35,10 +35,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         mixins: [
             componentMixins.pollingMixin(20, true),
             componentMixins.backboneMixin('cluster', 'change:status'),
-            componentMixins.backboneMixin('nodes', 'add remove change'),
+            componentMixins.backboneMixin('nodes', 'update change'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
-                renderOn: 'add remove change:status'
+                renderOn: 'update change:status'
             })
         ],
         getInitialState: function() {
@@ -103,12 +103,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 };
             }
             this.updateInitialRoles();
-            this.props.nodes.on('add remove reset', this.updateInitialRoles, this);
+            this.props.nodes.on('update reset', this.updateInitialRoles, this);
             // hack to prevent node roles update after node polling
             if (this.props.mode != 'list') this.props.nodes.on('change:pending_roles', this.checkRoleAssignment, this);
         },
         componentWillUnmount: function() {
-            this.props.nodes.off('add remove reset', this.updateInitialRoles, this);
+            this.props.nodes.off('update reset', this.updateInitialRoles, this);
             this.props.nodes.off('change:pending_roles', this.checkRoleAssignment, this);
         },
         processRoleLimits: function() {

@@ -13,7 +13,7 @@
     "routefilter": "0.2.1",
     "lodash": "3.9.3",
     "autoNumeric": "1.9.12",
-    "backbone": "1.1.2",
+    "backbone": "1.2.0",
     "backbone.stickit": "0.9.2",
     "i18next": "1.7.1",
     "less": "2.4.0",
@@ -64,5 +64,8 @@
     "test",
     "tests"
   ],
-  "private": true
+  "private": true,
+  "resolutions": {
+    "backbone": "1.2.0"
+  }
 }

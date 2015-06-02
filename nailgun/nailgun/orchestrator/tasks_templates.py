@@ -19,6 +19,7 @@ import os
 from oslo.serialization import jsonutils
 import requests
 import six
+from urlparse import urlparse
 
 from nailgun.logger import logger
 from nailgun.settings import settings
@@ -35,10 +36,24 @@ def make_upload_task(uids, data, path):
 
 
 def make_ubuntu_sources_task(uids, repo):
-    sources_content = 'deb {uri} {suite} {section}'.format(**repo)
+    sources_content = "# Repository: '{name}'\n".format(**repo)
+    sources_content += "deb {uri} {suite} {section}\n".format(**repo)
     sources_path = '/etc/apt/sources.list.d/{name}.list'.format(
         name=repo['name'])
     return make_upload_task(uids, sources_content, sources_path)
+
+
+def make_ubuntu_apt_proxy_task(uids, repo):
+    apt_conf_content = ''
+    if repo.get('proxy'):
+        repo['host'] = urlparse(repo['uri']).netloc
+        apt_conf_content += '# Repository: "{name}"\n'.\
+            format(**repo)
+        repo['host'] = get_repo_host(repo['uri'])
+        apt_conf_content += 'Acquire::Http::Proxy::{host} "{proxy}";\n'.\
+            format(**repo)
+    sources_path = '/etc/apt/apt.conf.d/90-repo-{name}-proxy'.format(**repo)
+    return make_upload_task(uids, apt_conf_content, sources_path)
 
 
 def make_ubuntu_preferences_task(uids, repo):
@@ -109,6 +124,9 @@ def make_centos_repo_task(uids, repo):
         'baseurl={uri}',
         'gpgcheck=0',
     ]
+
+    if repo.get('proxy'):
+        repo_content.append('proxy={proxy}')
 
     if repo.get('priority'):
         repo_content.append('priority={priority}')

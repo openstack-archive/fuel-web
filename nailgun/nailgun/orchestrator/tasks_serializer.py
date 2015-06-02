@@ -192,6 +192,11 @@ class UploadMOSRepo(GenericRolesHook):
                     task = templates.make_ubuntu_preferences_task(uids, repo)
                     if task is not None:
                         yield task
+
+                if repo.get('proxy'):
+                    task = templates.make_ubuntu_apt_proxy_task(uids, repo)
+                    if task is not None:
+                        yield task
             yield templates.make_apt_update_task(uids)
 
 

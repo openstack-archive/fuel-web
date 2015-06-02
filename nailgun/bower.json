@@ -18,9 +18,9 @@
     "i18next": "1.7.1",
     "backbone-deep-model": "0.10.4",
     "less": "2.4.0",
-    "jquery-ui": "~1.11.4",
-    "bootstrap": "~3.3.4",
-    "open-sans-fontface": "~1.4.0"
+    "jquery-ui": "1.11.4",
+    "bootstrap": "3.3.4",
+    "open-sans-fontface": "1.4.0"
   },
   "overrides": {
     "jquery": {

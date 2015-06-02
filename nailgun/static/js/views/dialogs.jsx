@@ -346,6 +346,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 } else if (networkVerificationTask.match({status: 'running'})) {
                     return makeComponent(i18n(this.ns + 'verification_in_progress'));
                 }
+            },
+            // Offline Controllers
+            function(cluster) {
+                var nodes = cluster.get('nodes'),
+                    hasOfflineControllers = nodes.any(function(node) {
+                        return node.hasRole('controller') &&
+                            !node.get('online') &&
+                            !node.get('pending_deletion');
+                    });
+                return hasOfflineControllers &&
+                    {blocker: [
+                        (<span>
+                            {i18n(this.ns + 'offline_controllers')}
+                            {' ' + i18n(this.ns + 'get_more_info') + ' '}
+                            <a href={'#cluster/' + cluster.id + '/nodes'}>
+                                {i18n(this.ns + 'nodes_link')}
+                            </a>
+                        </span>)
+                    ]
+                    };
             }
         ],
         validate: function(cluster) {

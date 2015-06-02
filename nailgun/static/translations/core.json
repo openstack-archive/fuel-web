@@ -690,7 +690,8 @@
                     "get_more_info": "For more information please visit the",
                     "networks_link": "Networks tab",
                     "invalid_settings": "Environment settings are invalid.",
-                    "settings_link": "Settings tab"
+                    "settings_link": "Settings tab",
+                    "offline_nodes": "All __roleName__ nodes must be online."
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",

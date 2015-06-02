@@ -484,7 +484,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 modelOrCollection: function(props) {
                     return props.cluster.get('tasks');
                 },
-                renderOn: 'add remove change:status'
+                renderOn: 'update change:status'
             }),
             componentMixins.dispatcherMixin('hideNetworkVerificationResult', function() {
                 this.setState({hideVerificationResult: true});

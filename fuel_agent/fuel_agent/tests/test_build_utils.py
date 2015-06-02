@@ -154,7 +154,8 @@ class BuildUtilsTestCase(testtools.TestCase):
     def test_clean_apt_settings(self, mock_dirs, mock_files):
         bu.clean_apt_settings('chroot', 'unsigned', 'force_ipv4')
         mock_dirs.assert_called_once_with(
-            'chroot', ['etc/apt/preferences.d', 'etc/apt/sources.list.d'])
+            'chroot', ['etc/apt/preferences.d', 'etc/apt/sources.list.d',
+                       'etc/apt/apt.conf.d'])
         mock_files.assert_called_once_with(
             'chroot', ['etc/apt/sources.list', 'etc/apt/preferences',
                        'etc/apt/apt.conf.d/%s' % 'force_ipv4',
@@ -292,6 +293,38 @@ class BuildUtilsTestCase(testtools.TestCase):
                                     mock.call('resize2fs', '-F', '-M', 'file')]
         mock_parse.assert_called_once_with('dumpe2fs', 'file')
         self.assertEqual(expected_mock_exec_calls, mock_exec.call_args_list)
+
+    @mock.patch.object(os, 'path')
+    def test_add_apt_proxy(self, mock_path):
+        mock_path.return_value = 'fake_path'
+        with mock.patch('six.moves.builtins.open', create=True) as mock_open:
+            file_handle_mock = mock_open.return_value.__enter__.return_value
+            bu.add_apt_proxy('name1', 'http://fake.uri:123', 'fakeproxy',
+                             'chroot')
+            self.assertEqual([mock.call('Acquire::http::Proxy::fake.uri '
+                                        '"fakeproxy";\n')],
+                             file_handle_mock.write.call_args_list)
+        expected_mock_path_calls = [
+            mock.call('chroot', 'etc/apt/apt.conf.d',
+                      'fuel-image-name1-proxy.conf')]
+        self.assertEqual(expected_mock_path_calls,
+                         mock_path.join.call_args_list)
+
+    @mock.patch.object(os, 'path')
+    def test_add_apt_proxy_no_proxy(self, mock_path):
+        mock_path.return_value = 'fake_path'
+        with mock.patch('six.moves.builtins.open', create=True) as mock_open:
+            file_handle_mock = mock_open.return_value.__enter__.return_value
+            bu.add_apt_proxy('name2', 'http://fake.uri:123', None,
+                             'chroot')
+            self.assertEqual([mock.call('Acquire::http::Proxy::fake.uri '
+                                        '"DIRECT";\n')],
+                             file_handle_mock.write.call_args_list)
+        expected_mock_path_calls = [
+            mock.call('chroot', 'etc/apt/apt.conf.d',
+                      'fuel-image-name2-proxy.conf')]
+        self.assertEqual(expected_mock_path_calls,
+                         mock_path.join.call_args_list)
 
     @mock.patch.object(os, 'path')
     def test_add_apt_source(self, mock_path):

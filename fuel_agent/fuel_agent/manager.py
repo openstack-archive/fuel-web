@@ -553,11 +553,13 @@ class Manager(object):
             # we use first repo as the main mirror
             uri = self.driver.operating_system.repos[0].uri
             suite = self.driver.operating_system.repos[0].suite
+            proxy = self.driver.operating_system.repos[0].proxy
 
             LOG.debug('Preventing services from being get started')
             bu.suppress_services_start(chroot)
             LOG.debug('Installing base operating system using debootstrap')
-            bu.run_debootstrap(uri=uri, suite=suite, chroot=chroot)
+            bu.run_debootstrap(uri=uri, suite=suite, chroot=chroot,
+                               proxy=proxy)
 
             # APT-GET
             LOG.debug('Configuring apt inside chroot')
@@ -576,6 +578,14 @@ class Manager(object):
                     uri=repo.uri,
                     suite=repo.suite,
                     section=repo.section,
+                    chroot=chroot)
+                LOG.debug('Adding repository proxy: name={name}, uri={uri},'
+                          'proxy={proxy}'.format(
+                              name=repo.name, uri=repo.uri, proxy=repo.proxy))
+                bu.add_apt_proxy(
+                    name=repo.name,
+                    uri=repo.uri,
+                    proxy=repo.proxy,
                     chroot=chroot)
                 LOG.debug('Adding repository preference: '
                           'name={name}, priority={priority}'.format(
@@ -596,6 +606,7 @@ class Manager(object):
                     'suite': repo.suite,
                     'section': repo.section,
                     'priority': repo.priority,
+                    'proxy': repo.proxy,
                     'meta': repo.meta})
 
             LOG.debug('Preventing services from being get started')

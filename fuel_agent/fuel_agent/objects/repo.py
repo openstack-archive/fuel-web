@@ -21,8 +21,10 @@ class Repo(object):
 
 
 class DEBRepo(Repo):
-    def __init__(self, name, uri, suite, section, meta=None, priority=None):
+    def __init__(self, name, uri, suite, section, meta=None, priority=None,
+                 proxy=None):
         super(DEBRepo, self).__init__(name, uri, priority)
         self.suite = suite
         self.section = section
         self.meta = meta
+        self.proxy = proxy

@@ -360,11 +360,13 @@ class TestManager(test_base.BaseTestCase):
         self.mgr.driver.operating_system = objects.Ubuntu(
             repos=[
                 objects.DEBRepo('ubuntu', 'http://fakeubuntu',
-                                'trusty', 'fakesection', priority=900),
+                                'trusty', 'fakesection', priority=900,
+                                proxy='http://fake.proxy:8888'),
                 objects.DEBRepo('ubuntu_zero', 'http://fakeubuntu_zero',
                                 'trusty', 'fakesection', priority=None),
                 objects.DEBRepo('mos', 'http://fakemos',
-                                'mosX.Y', 'fakesection', priority=1000)],
+                                'mosX.Y', 'fakesection', priority=1000,
+                                proxy='http://1.2.3.4:123')],
             packages=['fakepackage1', 'fakepackage2'])
 
         mock_os.path.exists.return_value = False
@@ -408,9 +410,18 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual([mock.call('/tmp/imgdir')] * 2,
                          mock_bu.suppress_services_start.call_args_list)
         mock_bu.run_debootstrap.assert_called_once_with(
-            uri='http://fakeubuntu', suite='trusty', chroot='/tmp/imgdir')
+            uri='http://fakeubuntu', suite='trusty',
+            proxy='http://fake.proxy:8888', chroot='/tmp/imgdir')
         mock_bu.set_apt_get_env.assert_called_once_with()
         mock_bu.pre_apt_get.assert_called_once_with('/tmp/imgdir')
+        self.assertEqual([
+            mock.call(chroot='/tmp/imgdir', proxy='http://fake.proxy:8888',
+                      name='ubuntu', uri='http://fakeubuntu'),
+            mock.call(chroot='/tmp/imgdir', proxy=None, name='ubuntu_zero',
+                      uri='http://fakeubuntu_zero'),
+            mock.call(chroot='/tmp/imgdir', proxy='http://1.2.3.4:123',
+                      name='mos', uri='http://fakemos')],
+            mock_bu.add_apt_proxy.call_args_list)
         self.assertEqual([
             mock.call(name='ubuntu',
                       uri='http://fakeubuntu',
@@ -495,6 +506,7 @@ class TestManager(test_base.BaseTestCase):
                 'suite': repo.suite,
                 'section': repo.section,
                 'priority': repo.priority,
+                'proxy': repo.proxy,
                 'meta': repo.meta})
         metadata['packages'] = self.mgr.driver.operating_system.packages
         metadata['images'] = [

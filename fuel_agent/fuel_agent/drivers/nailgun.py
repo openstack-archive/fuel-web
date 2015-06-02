@@ -529,7 +529,8 @@ class NailgunBuildImage(BaseDataDriver):
                 uri=repo['uri'],
                 suite=repo['suite'],
                 section=repo['section'],
-                priority=repo['priority']))
+                priority=repo['priority'],
+                proxy=repo.get('proxy')))
 
         self.operating_system = objects.Ubuntu(repos=repos, packages=packages)
 

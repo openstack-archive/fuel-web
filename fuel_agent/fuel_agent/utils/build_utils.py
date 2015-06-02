@@ -84,7 +84,7 @@ ROOT_PASSWORD = '$6$IInX3Cqo$5xytL1VZbZTusOewFnG6couuF0Ia61yS3rbC6P5YbZP2TYcl'\
 
 
 def run_debootstrap(uri, suite, chroot, arch='amd64', eatmydata=False,
-                    attempts=CONF.fetch_packages_attempts):
+                    attempts=CONF.fetch_packages_attempts, proxy=None):
     """Builds initial base system.
 
     debootstrap builds initial base system which is capable to run apt-get.
@@ -95,7 +95,12 @@ def run_debootstrap(uri, suite, chroot, arch='amd64', eatmydata=False,
             suite, chroot, uri]
     if eatmydata:
         cmds.insert(4, '--include=eatmydata')
+    if proxy:
+        LOG.debug('Setting proxy for debootstrap: %s', proxy)
+        os.environ['http_proxy'] = proxy
     stdout, stderr = utils.execute(*cmds, attempts=attempts)
+    if proxy:
+        del os.environ['http_proxy']
     LOG.debug('Running deboostrap completed.\nstdout: %s\nstderr: %s', stdout,
               stderr)
 
@@ -181,7 +186,9 @@ def clean_apt_settings(chroot, allow_unsigned_file=CONF.allow_unsigned_file,
              os.path.join(DEFAULT_APT_PATH['conf_dir'], allow_unsigned_file)]
     remove_files(chroot, files)
     dirs = [DEFAULT_APT_PATH['preferences_dir'],
-            DEFAULT_APT_PATH['sources_dir']]
+            DEFAULT_APT_PATH['sources_dir'],
+            DEFAULT_APT_PATH['conf_dir'],
+            ]
     clean_dirs(chroot, dirs)
 
 
@@ -393,6 +400,18 @@ def parse_release_file(content):
             data[attr].append(dict(zip(columns, group)))
 
     return data
+
+
+def add_apt_proxy(name, uri, proxy, chroot):
+    # NOTE(agordeev): The files have either no or "conf" as filename extension
+    filename = 'fuel-image-{name}-proxy.conf'.format(name=strip_filename(name))
+    # NOTE(agordeev): split by ':' as urlsplit doesn't split host from netloc
+    host = six.moves.urllib.parse.urlsplit(uri).netloc.split(':')[0]
+    entry = 'Acquire::http::Proxy::{host} "{proxy}";\n'.format(
+        host=host, proxy=proxy if proxy else 'DIRECT')
+    with open(os.path.join(chroot, DEFAULT_APT_PATH['conf_dir'], filename),
+              'w') as f:
+        f.write(entry)
 
 
 def add_apt_source(name, uri, suite, section, chroot):

@@ -275,6 +275,34 @@ class TestTaskManagers(BaseIntegrationTest):
         # validation failed
         self.assertEqual(self.env.clusters[0].status, 'new')
 
+    @fake_tasks()
+    def test_deployment_fails_if_node_to_redeploy_is_offline(self):
+        cluster = self.env.create_cluster(
+            api=True,
+            status=consts.CLUSTER_STATUSES.operational)
+        offline_node = self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["controller"],
+            online=False,
+            name="Offline node to be redeployed",
+            status=consts.NODE_STATUSES.ready)
+        self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["controller"],
+            pending_addition=True)
+        self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["compute"],
+            pending_addition=True)
+        supertask = self.env.launch_deployment()
+        self.env.wait_error(
+            supertask,
+            5,
+            'Nodes "{0}" are offline. Remove them from environment '
+            'and try again.'.format(offline_node.full_name)
+        )
+        self.assertEqual(self.env.clusters[0].status, 'error')
+
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_redeployment_works(self):
         self.env.create(

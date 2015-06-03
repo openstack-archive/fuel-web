@@ -1,7 +1,7 @@
 {
   "name": "fuel-web",
   "dependencies": {
-    "jquery": "1.9.1",
+    "jquery": "1.11.3",
     "jquery-cookie": "1.4.1",
     "classnames": "1.1.4",
     "react": "0.13.1",
@@ -22,9 +22,6 @@
     "open-sans-fontface": "~1.4.0"
   },
   "overrides": {
-    "jquery": {
-      "main": "jquery.js"
-    },
     "react": {
       "main": [
         "JSXTransformer.js",

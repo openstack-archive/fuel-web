@@ -293,6 +293,30 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             "{CLUSTER_ID} -o 'mongodb' -s 'neutron nova ceph mysql' -p "
             "/etc/fuel/keys/".format(CLUSTER_ID=self.cluster.id))
 
+    @mock.patch('nailgun.orchestrator.tasks_serializer.open', create=True)
+    def test_upload_vms_info(self, m_open):
+        objects.VirtualMachinesRequestsCollection.create(
+            {'node_id': self.cluster.nodes[0].id,
+             'cluster_id': self.cluster.id,
+             'params': {'cluster_id': 1}})
+        m_open.side_effect = lambda *args: mock.mock_open(
+            read_data='<tag>{cluster_id}</tag><tag>{empty_value}</tag>')()
+        task_config = {
+            'id': 'upload_vms_info',
+            'type': 'upload_files',
+            'role': ['compute'],
+            'parameters': {
+                'template_path': '/etc/puppet/modules/cluster/template.xml',
+                'dst': '/var/lib/vms/'}}
+        task = tasks_serializer.UploadVMSInfo(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'upload_files')
+        self.assertEqual(
+            serialized['parameters']['nodes'][0]['files'],
+            [{'data': '<tag>1</tag><tag></tag>',
+             'dst': '/var/lib/vms/1_vm_conf.xml'}])
+
 
 class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
 

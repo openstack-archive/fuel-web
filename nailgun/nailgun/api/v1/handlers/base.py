@@ -238,6 +238,7 @@ class BaseHandler(object):
     def raise_task(self, task):
         if task.status in [consts.TASK_STATUSES.ready,
                            consts.TASK_STATUSES.error]:
+            import pytest; pytest.set_trace()
             status = 200
         else:
             status = 202

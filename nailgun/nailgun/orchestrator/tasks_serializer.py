@@ -14,6 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+from string import Formatter
+
 import abc
 import six
 import yaml
@@ -26,6 +29,16 @@ from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
+
+
+class TemplateFormatter(Formatter):
+
+    def get_value(self, field_name, args, kwds):
+        try:
+            v = Formatter.get_value(self, field_name, args, kwds)
+        except KeyError as e:
+            return ''
+        return v
 
 
 def get_uids_for_tasks(nodes, tasks):
@@ -244,6 +257,54 @@ class RestartRadosGW(GenericRolesHook):
             if 'ceph-osd' in node.all_roles:
                 return True
         return False
+
+
+class BaseVMSHook(GenericRolesHook):
+
+    def should_execute(self):
+        return bool(objects.VirtualMachinesRequestsCollection.\
+                    get_spawning_computes(self.cluster.id))
+
+    def get_uids(self):
+        return objects.VirtualMachinesRequestsCollection.\
+            get_spawning_computes(self.cluster.id)
+
+
+class UploadVMSInfo(BaseVMSHook):
+    """Hook that uploads info about all nodes in cluster."""
+
+    identity = 'upload_vms_info'
+
+    def serialize(self):
+        uids = self.get_uids()
+        template_path = self.task['parameters']['template_path']
+        nodes = []
+        template = open(template_path).read()
+        for uid in uids:
+            node = {'uid': uid}
+            vms = objects.VirtualMachinesRequestsCollection.\
+                get_all_vms_for_node(uid)
+            files = []
+            for vm in vms:
+                params = {'dst': os.path.join(
+                              self.task['parameters']['dst'],
+                              '{0}_vm_conf.xml'.format(vm.id)),
+                          'data': TemplateFormatter().format(template,
+                                                             **vm.params)}
+                files.append(params)
+            node['files'] = files
+            nodes.append(node)
+        yield templates.make_upload_files_task(uids, nodes)
+
+
+class CreateVMsOnCompute(BaseVMSHook):
+    """Hook that uploads info about all nodes in cluster."""
+
+    identity = 'create_vms'
+
+    def serialize(self):
+        uids = self.get_uids()
+        yield templates.make_shell_task(uids, self.task)
 
 
 class UploadNodesInfo(GenericRolesHook):

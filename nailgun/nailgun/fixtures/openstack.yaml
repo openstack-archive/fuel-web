@@ -26,7 +26,6 @@
           - compute
           - cinder
         has_primary: true
-        require_online: true
         limits:
           min: 1
           overrides:

@@ -346,21 +346,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 } else if (networkVerificationTask.match({status: 'running'})) {
                     return makeComponent(i18n(this.ns + 'verification_in_progress'));
                 }
-            },
-            // Offline nodes
-            function(cluster) {
-                var messages = [],
-                    nodes = cluster.get('nodes');
-                cluster.get('release').get('role_models').each(function(role) {
-                    if (role.get('require_online')) {
-                        nodes.each(function(node) {
-                            if (!node.get('online') && !node.get('pending_deletion') && node.hasRole(role.get('name'))) {
-                                messages.push(i18n(this.ns + 'offline_nodes', {roleName: role.get('label')}));
-                            }
-                        }, this);
-                    }
-                }, this);
-                return {blocker: messages};
             }
         ],
         validate: function(cluster) {

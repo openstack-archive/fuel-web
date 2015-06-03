@@ -810,11 +810,19 @@ class CheckBeforeDeploymentTask(object):
         offline_nodes = db().query(Node).\
             filter(Node.cluster == task.cluster).\
             filter_by(online=False).\
-            filter_by(pending_deletion=False).\
-            filter(not_(Node.status.in_(['ready'])))
+            filter_by(pending_deletion=False)
 
-        if offline_nodes.count():
-            node_names = ','.join(map(lambda n: n.full_name, offline_nodes))
+        offline_nodes_not_ready = [n for n in offline_nodes
+                                   if n.status != consts.NODE_STATUSES.ready]
+        nodes_to_deploy = TaskHelper.nodes_to_deploy(task.cluster)
+        offline_nodes_to_redeploy = [
+            n for n in offline_nodes
+            if n.status == consts.NODE_STATUSES.ready and n in nodes_to_deploy]
+
+        if offline_nodes_not_ready or offline_nodes_to_redeploy:
+            node_names = ','.join(
+                map(lambda n: n.full_name,
+                    offline_nodes_not_ready + offline_nodes_to_redeploy))
             raise errors.NodeOffline(
                 u'Nodes "{0}" are offline.'
                 ' Remove them from environment '

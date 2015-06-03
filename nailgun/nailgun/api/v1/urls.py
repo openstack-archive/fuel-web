@@ -60,6 +60,7 @@ from nailgun.api.v1.handlers.node import NodeAgentHandler
 from nailgun.api.v1.handlers.node import NodeCollectionHandler
 from nailgun.api.v1.handlers.node import NodeHandler
 from nailgun.api.v1.handlers.node import NodesAllocationStatsHandler
+from nailgun.api.v1.handlers.node import VirtualMachinesRequestHandler
 
 from nailgun.api.v1.handlers.plugin import PluginCollectionHandler
 from nailgun.api.v1.handlers.plugin import PluginHandler
@@ -79,6 +80,7 @@ from nailgun.api.v1.handlers.orchestrator import DefaultProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import DeploymentInfo
 from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodesWithTasks
+from nailgun.api.v1.handlers.orchestrator import PrepareDeployHandler
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 from nailgun.api.v1.handlers.orchestrator import TaskDeployGraph
@@ -175,6 +177,8 @@ urls = (
     ClusterUpdateHandler,
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
+    r'/clusters/(?P<cluster_id>\d+)/prepare_deployment/?$',
+    PrepareDeployHandler,
 
 
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
@@ -218,6 +222,9 @@ urls = (
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',
     TaskHandler,
+
+    r'/nodes/vm/(?P<obj_id>\d+)/?$',
+    VirtualMachinesRequestHandler,
 
     r'/plugins/(?P<obj_id>\d+)/?$',
     PluginHandler,

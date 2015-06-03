@@ -27,6 +27,8 @@ from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
+from nailgun.db.sqlalchemy import models
+
 from nailgun.logger import logger
 
 from nailgun import objects
@@ -213,7 +215,6 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
                 u'Cannot execute %s task nodes: %s',
                 task_manager.__class__.__name__, traceback.format_exc())
             raise self.http(400, message=six.text_type(exc))
-
         self.raise_task(task)
 
     @content
@@ -277,6 +278,36 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
         self.checked_data(self.validator.validate_release, cluster=cluster)
 
         return nodes_to_deploy
+
+
+class PrepareDeployHandler(BaseDeploySelectedNodes):
+    """Handler for deployment selected nodes."""
+
+    def get_tasks(self, cluster):
+        tasks = objects.Cluster.get_deployment_tasks(cluster)
+        graph = deployment_graph.DeploymentGraph()
+        graph.add_tasks(tasks)
+        subgraph = graph.find_subgraph(end='create_vms')
+        return [task['id'] for task in subgraph.topology]
+
+    def get_nodes(self, cluster):
+        nodes_ids = objects.VirtualMachinesRequestsCollection.\
+            get_spawning_computes(cluster.id)
+        nodes_to_deploy = objects.NodeCollection.all().filter(
+            models.Node.id.in_(nodes_ids)).all()
+        return nodes_to_deploy
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
+               * 404 (cluster or nodes not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        data = self.get_tasks(cluster)
+        return self.handle_task(cluster, deployment_tasks=data)
 
 
 class DeploySelectedNodes(BaseDeploySelectedNodes):

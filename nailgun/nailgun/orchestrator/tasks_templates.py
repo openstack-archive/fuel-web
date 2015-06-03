@@ -34,6 +34,14 @@ def make_upload_task(uids, data, path):
             'data': data}}
 
 
+def make_upload_files_task(uids, nodes):
+    return {
+        'type': 'upload_files',
+        'uids': uids,
+        'parameters': {
+            'nodes': nodes}}
+
+
 def make_ubuntu_sources_task(uids, repo):
     sources_content = 'deb {uri} {suite} {section}'.format(**repo)
     sources_path = '/etc/apt/sources.list.d/{name}.list'.format(

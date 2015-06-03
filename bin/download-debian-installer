@@ -51,22 +51,13 @@ REMOTE_INITRD_URI=$2
 LOCAL_KERNEL_FILE=${LOCAL_KERNEL_FILE:-/var/www/nailgun/ubuntu/x86_64/images/linux}
 LOCAL_INITRD_FILE=${LOCAL_INITRD_FILE:-/var/www/nailgun/ubuntu/x86_64/images/initrd.gz}
 
+log "Trying to download $REMOTE_KERNEL_URI"
+mkdir -p `dirname $LOCAL_KERNEL_FILE`
+wget -O - -T 120 -a $LOG_FILE -v $REMOTE_KERNEL_URI > $LOCAL_KERNEL_FILE.tmp
 
-log "Checking if any of $LOCAL_KERNEL_FILE and $LOCAL_INITRD_FILE need to be downloaded"
-if ! test -s $LOCAL_KERNEL_FILE -a -s $LOCAL_INITRD_FILE; then
-    log "Looks like at least of of files is zero size"
+log "Trying to download $REMOTE_INITRD_URI"
+mkdir -p `dirname $LOCAL_INITRD_FILE`
+wget -O - -T 120 -a $LOG_FILE -v $REMOTE_INITRD_URI > $LOCAL_INITRD_FILE.tmp
 
-    log "Trying to download $REMOTE_KERNEL_URI"
-    mkdir -p `dirname $LOCAL_KERNEL_FILE`
-    wget -O - -T 120 -a $LOG_FILE -v $REMOTE_KERNEL_URI > $LOCAL_KERNEL_FILE.tmp
-
-    log "Trying to download $REMOTE_INITRD_URI"
-    mkdir -p `dirname $LOCAL_INITRD_FILE`
-    wget -O - -T 120 -a $LOG_FILE -v $REMOTE_INITRD_URI > $LOCAL_INITRD_FILE.tmp
-
-    mv $LOCAL_KERNEL_FILE.tmp $LOCAL_KERNEL_FILE
-    mv $LOCAL_INITRD_FILE.tmp $LOCAL_INITRD_FILE
-else
-    log "Looks like both files $LOCAL_KERNEL_FILE and $LOCAL_INITRD_FILE are available"
-    log "Nothing needs to be done"
-fi
+mv $LOCAL_KERNEL_FILE.tmp $LOCAL_KERNEL_FILE
+mv $LOCAL_INITRD_FILE.tmp $LOCAL_INITRD_FILE

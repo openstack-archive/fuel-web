@@ -39,6 +39,7 @@ def extend_fs(fs_type, fs_dev):
         # must be checked with e2fsck -f
         utils.execute('e2fsck', '-yf', fs_dev, check_exit_code=[0])
         utils.execute('resize2fs', fs_dev, check_exit_code=[0])
+        utils.execute('e2fsck', '-yf', fs_dev, check_exit_code=[0])
     elif fs_type == 'xfs':
         # xfs file system must be mounted
         utils.execute('xfs_growfs', fs_dev, check_exit_code=[0])

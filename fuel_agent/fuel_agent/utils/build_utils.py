@@ -44,7 +44,14 @@ bu_opts = [
     ),
     cfg.IntOpt(
         'sparse_file_size',
-        default=2048,
+        # XXX: Apparently Fuel configures the node root filesystem to span
+        # the whole hard drive. However 2 GB filesystem created with default
+        # options can grow at most to 2 TB (1024x its initial size). This
+        # maximal size can be configured by mke2fs -E resize=NNN option,
+        # however the version of e2fsprogs shipped with CentOS 6.[65] seems
+        # to silently ignore the `resize' option. Therefore make the initial
+        # filesystem a bit bigger so it can grow to 8 TB.
+        default=8192,
         help='Size of sparse file in MiBs'
     ),
     cfg.IntOpt(

@@ -705,6 +705,38 @@ class TestActionLogObject(BaseIntegrationTest):
         self.db.rollback()
 
 
+class TestVirtualMachinesRequestsCollectionObject(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestVirtualMachinesRequestsCollectionObject, self).setUp()
+        self.cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[
+                {'roles': ['compute']},
+                {'roles': ['compute']},
+                {'roles': ['compute']}])
+        objects.VirtualMachinesRequestsCollection.create(
+            {'node_id': self.cluster.nodes[0].id,
+             'cluster_id': self.cluster.id})
+        objects.VirtualMachinesRequestsCollection.create(
+            {'node_id': self.cluster.nodes[1].id,
+             'cluster_id': self.cluster.id})
+        objects.VirtualMachinesRequestsCollection.create(
+            {'node_id': self.cluster.nodes[1].id,
+             'cluster_id': self.cluster.id,
+             'created': True})
+
+    def test_get_all_not_created_vms(self):
+        self.assertEqual(len(
+            objects.VirtualMachinesRequestsCollection.get_spawning_computes(
+                self.cluster.id)), 2)
+
+    def test_get_not_spawned_vms(self):
+        self.assertEqual(len(
+            objects.VirtualMachinesRequestsCollection.get_not_spawned_vms(
+                self.cluster.nodes[1].id)), 1)
+
+
 class TestClusterObject(BaseTestCase):
 
     def setUp(self):

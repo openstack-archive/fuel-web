@@ -34,6 +34,7 @@ from nailgun.db.sqlalchemy.models.node import NodeAttributes
 from nailgun.db.sqlalchemy.models.node import NodeBondInterface
 from nailgun.db.sqlalchemy.models.node import NodeNICInterface
 from nailgun.db.sqlalchemy.models.node import NodeGroup
+from nailgun.db.sqlalchemy.models.node import VirtualMachinesRequests
 
 from nailgun.db.sqlalchemy.models.network import NetworkGroup
 from nailgun.db.sqlalchemy.models.network import IPAddr

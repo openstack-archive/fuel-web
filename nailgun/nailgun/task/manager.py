@@ -505,7 +505,6 @@ class DeploymentTaskManager(TaskManager):
         task_deployment = Task(
             name=consts.TASK_NAMES.deployment, cluster=self.cluster)
         db().add(task_deployment)
-
         deployment_message = self._call_silently(
             task_deployment,
             tasks.DeploymentTask,
@@ -523,7 +522,6 @@ class DeploymentTaskManager(TaskManager):
         )
         # locking nodes
         objects.NodeCollection.lock_nodes(nodes_to_deployment)
-
         task_deployment.cache = deployment_message
 
         for node in nodes_to_deployment:

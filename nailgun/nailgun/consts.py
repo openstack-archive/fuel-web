@@ -299,6 +299,7 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'shell',
     'sync',
     'upload_file',
+    'upload_files',
     'group',
     'stage',
     'skipped',

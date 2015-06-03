@@ -20,7 +20,10 @@ Handlers dealing with nodes
 
 from datetime import datetime
 
+import six
 import web
+
+from oslo.serialization import jsonutils
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
@@ -35,9 +38,7 @@ from nailgun import objects
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import NodeNICInterface
+from nailgun.db.sqlalchemy import models
 
 from nailgun.task.manager import NodeDeletionTaskManager
 
@@ -196,7 +197,7 @@ class NodeNICsHandler(BaseHandler):
     """Node network interfaces handler
     """
 
-    model = NodeNICInterface
+    model = models.NodeNICInterface
     validator = NetAssignmentValidator
     serializer = NodeInterfacesSerializer
 
@@ -232,7 +233,7 @@ class NodeCollectionNICsHandler(BaseHandler):
     """Node collection network interfaces handler
     """
 
-    model = NetworkGroup
+    model = models.NetworkGroup
     validator = NetAssignmentValidator
     serializer = NodeInterfacesSerializer
 
@@ -249,8 +250,8 @@ class NodeCollectionNICsHandler(BaseHandler):
             node_id = objects.Cluster.get_network_manager(
             )._update_attrs(node_data)
             updated_nodes_ids.append(node_id)
-        updated_nodes = db().query(Node).filter(
-            Node.id.in_(updated_nodes_ids)
+        updated_nodes = db().query(models.Node).filter(
+            models.Node.id.in_(updated_nodes_ids)
         ).all()
         return [
             {
@@ -314,8 +315,42 @@ class NodesAllocationStatsHandler(BaseHandler):
         """:returns: Total and unallocated nodes count.
         :http: * 200 (OK)
         """
-        unallocated_nodes = db().query(Node).filter_by(cluster_id=None).count()
+        unallocated_nodes = db().query(models.Node).filter_by(
+            cluster_id=None).count()
         total_nodes = \
-            db().query(Node).count()
+            db().query(models.Node).count()
         return {'total': total_nodes,
                 'unallocated': unallocated_nodes}
+
+
+class VirtualMachinesRequestHandler(CollectionHandler):
+    """Node collection of virtual machines
+    """
+
+    collection = objects.VirtualMachinesRequestsCollection
+
+    @content
+    def GET(self, obj_id):
+        """:returns: All vm's for node.
+        :http: * 200 (OK)
+        """
+        vms = self.collection.get_all_vms_for_node(obj_id)
+        return self.collection.to_json(vms)
+
+    @content
+    def POST(self, obj_id):
+        """:returns: Create vms which will be created on node
+                     during preperation.
+        :http: * 201 (OK)
+        """
+        node = objects.Node.get_by_mac_or_uid(node_uid=obj_id)
+        vms_data = jsonutils.loads(web.data())
+        vms = []
+        vms_params = len(vms_data.get('params', []))
+        vms_numb = vms_params or vms_data.get('vms_number', 0)
+        for i in six.moves.range(vms_numb):
+            vms.append(self.collection.create(
+                {'node_id': node.id,
+                 'cluster_id': node.cluster.id,
+                 'params': vms_params[i] if vms_params else {}}))
+        raise self.http(201, self.collection.to_json(vms))

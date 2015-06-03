@@ -134,6 +134,7 @@ class Node(Base):
     nic_interfaces = relationship("NodeNICInterface", backref="node",
                                   cascade="delete",
                                   order_by="NodeNICInterface.name")
+
     bond_interfaces = relationship("NodeBondInterface", backref="node",
                                    cascade="delete",
                                    order_by="NodeBondInterface.name")
@@ -143,6 +144,10 @@ class Node(Base):
     ip_addrs = relationship("IPAddr", viewonly=True)
     replaced_deployment_info = Column(JSON, default=[])
     replaced_provisioning_info = Column(JSON, default={})
+
+    spawn_vms = relationship("VirtualMachinesRequests", backref="node",
+                             cascade="delete",
+                             order_by="VirtualMachinesRequests.id")
 
     @property
     def interfaces(self):
@@ -404,3 +409,16 @@ class NodeBondInterface(Base):
     @assigned_networks.setter
     def assigned_networks(self, value):
         self.assigned_networks_list = value
+
+
+class VirtualMachinesRequests(Base):
+    __tablename__ = 'virtual_machines_requests'
+    id = Column(Integer, primary_key=True)
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete="CASCADE"),
+        nullable=False)
+    created = Column(Boolean, default=False, nullable=False)
+    cluster_id = Column(Integer, nullable=False)
+    params = Column(JSON, default={}, nullable=False,
+                    server_default='{}')

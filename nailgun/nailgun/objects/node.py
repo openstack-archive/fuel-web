@@ -30,6 +30,7 @@ from sqlalchemy.orm import subqueryload_all
 from nailgun import consts
 
 from nailgun.objects.serializers.node import NodeSerializer
+from nailgun.objects.serializers.node import VirtualMachinesRequestsSerializer
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -845,3 +846,46 @@ class NodeCollection(NailgunCollection):
     @classmethod
     def get_by_group_id(cls, group_id):
         return cls.filter_by(None, group_id=group_id)
+
+
+class VirtualMachinesRequests(NailgunObject):
+    """VirtualMachinesRequests object
+    """
+
+    # SQLAlchemy model for VirtualMachinesRequests
+    model = models.VirtualMachinesRequests
+
+    # Serializer for VirtualMachinesRequests
+    serializer = VirtualMachinesRequestsSerializer
+
+    # VirtualMachinesRequests JSON schema
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "VirtualMachinesRequests",
+        "description": "Serialized VirtualMachinesRequests object",
+        "type": "object",
+        "properties": {"id": {"type": "number"},
+                       "node_id": {"type": "number"},
+                       "created": {"type": "boolean"},
+                       "cluster_id": {"type": "number"}}}
+
+
+class VirtualMachinesRequestsCollection(NailgunCollection):
+    single = VirtualMachinesRequests
+
+    @classmethod
+    def get_not_spawned_vms(cls, node_id):
+        q = cls.all().filter_by(node_id=node_id).filter_by(
+            created=False)
+        return q.all()
+
+    @classmethod
+    def get_all_vms_for_node(cls, node_id):
+        q = cls.all().filter_by(node_id=node_id)
+        return q.all()
+
+    @classmethod
+    def get_spawning_computes(cls, cluster_id):
+        q = cls.all().filter_by(cluster_id=cluster_id).filter_by(
+            created=False)
+        return [vm.node_id for vm in q.all()]

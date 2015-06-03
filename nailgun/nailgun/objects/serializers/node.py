@@ -50,6 +50,16 @@ class NodeSerializer(BasicSerializer):
     )
 
 
+class VirtualMachinesRequestsSerializer(BasicSerializer):
+
+    fields = (
+        'id',
+        'node_id',
+        'created',
+        'cluster_id',
+    )
+
+
 class NodeInterfacesSerializer(BasicSerializer):
 
     nic_fields = (

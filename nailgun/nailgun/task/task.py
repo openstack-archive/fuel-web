@@ -154,7 +154,6 @@ class DeploymentTask(object):
 
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
         orchestrator_graph.only_tasks(deployment_tasks)
-
         #NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
         # done by design
@@ -164,11 +163,9 @@ class DeploymentTask(object):
             orchestrator_graph, task.cluster, nodes)
         post_deployment = stages.post_deployment_serialize(
             orchestrator_graph, task.cluster, nodes)
-
         # After serialization set pending_addition to False
         for node in nodes:
             node.pending_addition = False
-
         rpc_message = make_astute_message(
             task,
             cls._get_deployment_method(task.cluster),

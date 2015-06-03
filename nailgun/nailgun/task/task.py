@@ -810,15 +810,25 @@ class CheckBeforeDeploymentTask(object):
         offline_nodes = db().query(Node).\
             filter(Node.cluster == task.cluster).\
             filter_by(online=False).\
-            filter_by(pending_deletion=False).\
-            filter(not_(Node.status.in_(['ready'])))
+            filter_by(pending_deletion=False)
 
-        if offline_nodes.count():
-            node_names = ','.join(map(lambda n: n.full_name, offline_nodes))
+        offline_nodes_not_ready = offline_nodes.\
+            filter(not_(Node.status.in_(['ready'])))
+        offline_nodes_ready = offline_nodes.filter(Node.status.in_(['ready']))
+        nodes_to_deploy = TaskHelper.nodes_to_deploy(task.cluster)
+        offline_nodes_to_redeploy = []
+        for n in offline_nodes_ready:
+            if n in nodes_to_deploy:
+                offline_nodes_to_redeploy.append(n)
+
+        if offline_nodes_not_ready.count() or offline_nodes_to_redeploy:
+            node_names = \
+                map(lambda n: n.full_name, offline_nodes_not_ready) + \
+                map(lambda n: n.full_name, offline_nodes_to_redeploy)
             raise errors.NodeOffline(
                 u'Nodes "{0}" are offline.'
                 ' Remove them from environment '
-                'and try again.'.format(node_names))
+                'and try again.'.format(','.join(node_names)))
 
     @classmethod
     def _check_controllers_count(cls, task):

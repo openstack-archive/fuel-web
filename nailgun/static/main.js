@@ -25,9 +25,7 @@ require(['./config'], function(config) {
 //>>excludeStart("compressed", pragmas.compressed);
     requirejs.config(config);
 //>>excludeEnd("compressed");
-    require(['app'], function(app) {
-        app.initialize();
-    });
+    require(['app']);
 //>>excludeStart("compressed", pragmas.compressed);
 });
 //>>excludeEnd("compressed");

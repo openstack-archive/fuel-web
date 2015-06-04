@@ -299,6 +299,17 @@ class NailgunClient(object):
         return self.client.put(
             "/api/releases/{0}/".format(release_id), attrs)
 
+    @json_parse
+    def get_releases_details(self, release_id):
+        return self.client.get("/api/releases/{}".format(release_id))
+
+    def get_release_id(self, release_version, operating_system):
+        for release in self.get_releases():
+            if release["version"] == release_version:
+                if release["operating_system"].lower() == \
+                        operating_system.lower():
+                    return release["id"]
+
 
 class UpdatePackagesException(Exception):
     pass
@@ -434,7 +445,7 @@ def get_centos_repos(repopath, ip, httproot, port, baseurl=None):
         repopath=repopath.replace(httproot, ''))
     repoentry = {
         "type": "rpm",
-        "name": "MOS-Updates",
+        "name": "mos-updates",
         "uri": repourl,
         "priority": 20}
     return [repoentry]
@@ -475,7 +486,8 @@ def show_env_conf(repos, showuri=False, ip="10.20.0.2"):
         print(reindent(yaml.dump(yamldata, default_flow_style=False), spaces))
 
 
-def update_env_conf(ip, distro, repos, env_id=None, makedefault=False):
+def update_env_conf(ip, distro, release, repos, env_id=None,
+                    makedefault=False):
     fwc = FuelWebClient(ip)
 
     if env_id is not None:
@@ -483,12 +495,11 @@ def update_env_conf(ip, distro, repos, env_id=None, makedefault=False):
         fwc.update_cluster_repos(env_id, repos)
 
     if makedefault:
-        release_id = None
+        #ubuntu-baseos updates ubuntu release
         if DISTROS.ubuntu in distro:
-            release_id = 2
-        elif distro == DISTROS.centos:
-            release_id = 1
-
+            distro = DISTROS.ubuntu
+        release_id = fwc.get_release_id(distro, release)
+        logger.info("Updating release ID {0}".format(release_id))
         if release_id is not None:
             fwc.update_default_repos(release_id, repos)
 

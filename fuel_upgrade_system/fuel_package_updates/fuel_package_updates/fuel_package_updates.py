@@ -299,6 +299,19 @@ class NailgunClient(object):
         return self.client.put(
             "/api/releases/{0}/".format(release_id), attrs)
 
+    @json_parse
+    def get_releases(self):
+        return self.client.get("/api/releases/")
+
+    def get_release_id(self, operating_system, release_version):
+        for release in self.get_releases():
+            if release["version"] == release_version:
+                if release["operating_system"].lower() == \
+                        operating_system.lower():
+                    return release["id"]
+        logger.error("Release not fot found {0} - {1}".format(operating_system,
+                     release_version))
+
 
 class UpdatePackagesException(Exception):
     pass
@@ -434,7 +447,7 @@ def get_centos_repos(repopath, ip, httproot, port, baseurl=None):
         repopath=repopath.replace(httproot, ''))
     repoentry = {
         "type": "rpm",
-        "name": "MOS-Updates",
+        "name": "mos-updates",
         "uri": repourl,
         "priority": 20}
     return [repoentry]
@@ -475,7 +488,8 @@ def show_env_conf(repos, showuri=False, ip="10.20.0.2"):
         print(reindent(yaml.dump(yamldata, default_flow_style=False), spaces))
 
 
-def update_env_conf(ip, distro, repos, env_id=None, makedefault=False):
+def update_env_conf(ip, distro, release, repos, env_id=None,
+                    makedefault=False):
     fwc = FuelWebClient(ip)
 
     if env_id is not None:
@@ -483,12 +497,11 @@ def update_env_conf(ip, distro, repos, env_id=None, makedefault=False):
         fwc.update_cluster_repos(env_id, repos)
 
     if makedefault:
-        release_id = None
+        #ubuntu-baseos updates ubuntu release
         if DISTROS.ubuntu in distro:
-            release_id = 2
-        elif distro == DISTROS.centos:
-            release_id = 1
-
+            distro = DISTROS.ubuntu
+        release_id = fwc.client.get_release_id(distro, release)
+        logger.info("Updating release ID {0}".format(release_id))
         if release_id is not None:
             fwc.update_default_repos(release_id, repos)
 
@@ -656,8 +669,8 @@ def main():
     if options.admin_pass:
         KEYSTONE_CREDS['password'] = options.admin_pass
     if options.apply:
-        update_env_conf(options.ip, options.distro, repos, options.env,
-                        options.makedefault)
+        update_env_conf(options.ip, options.distro, options.release, repos,
+                        options.env, options.makedefault)
     else:
         show_env_conf(repos, options.showuri, options.ip)
 

@@ -1315,10 +1315,10 @@
       generated:
         repo_setup:
           installer_kernel:
-            remote_relative: "dists/trusty/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux"
+            remote_relative: "dists/trusty-updates/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux"
             local: "/var/www/nailgun/ubuntu/x86_64/images/linux"
           installer_initrd:
-            remote_relative: "dists/trusty/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz"
+            remote_relative: "dists/trusty-updates/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz"
             local: "/var/www/nailgun/ubuntu/x86_64/images/initrd.gz"
         cobbler:
           profile:

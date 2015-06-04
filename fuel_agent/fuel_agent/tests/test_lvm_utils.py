@@ -309,7 +309,8 @@ class TestLvmUtils(test_base.BaseTestCase):
                                        {'name': 'some'}]
         mock_lvdisplay.return_value = [{'name': 'some'}]
         lu.lvcreate('vgname', 'lvname', 1000)
-        mock_exec.assert_called_once_with('lvcreate', '-L', '1000m', '-n',
+        mock_exec.assert_called_once_with('lvcreate', '--wipesignatures', 'n',
+                                          '-L', '1000m', '-n',
                                           'lvname', 'vgname',
                                           check_exit_code=[0])
 
@@ -349,7 +350,8 @@ class TestLvmUtils(test_base.BaseTestCase):
                                        {'name': 'some', 'free': 2000}]
         mock_lvdisplay.return_value = [{'name': 'lvname', 'vg': 'some'}]
         lu.lvcreate('vgname', 'lvname', 1000)
-        mock_exec.assert_called_once_with('lvcreate', '-L', '1000m', '-n',
+        mock_exec.assert_called_once_with('lvcreate', '--wipesignatures', 'n',
+                                          '-L', '1000m', '-n',
                                           'lvname', 'vgname',
                                           check_exit_code=[0])
 

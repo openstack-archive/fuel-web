@@ -212,8 +212,11 @@ def lvcreate(vgname, lvname, size):
               lvdisplay()):
         raise errors.LVAlreadyExistsError(
             'Error while creating lv: lv %s already exists' % lvname)
-    utils.execute('lvcreate', '-L', '%sm' % size, '-n', lvname,
-                  vgname, check_exit_code=[0])
+    # NOTE(agordeev): disable signature wiping to prevent prompt which's wating
+    # for user's input:
+    # "WARNING: <signature> signature detected on <device>. Wipe it? [y/n]"
+    utils.execute('lvcreate', '--wipesignatures', 'n', '-L', '%sm' % size,
+                  '-n', lvname, vgname, check_exit_code=[0])
 
 
 def lvremove(lvpath):

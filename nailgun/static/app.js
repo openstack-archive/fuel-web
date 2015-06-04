@@ -45,7 +45,7 @@ define(
 function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
-    var AppRouter = Backbone.Router.extend({
+    var Router = Backbone.Router.extend({
         routes: {
             login: 'login',
             logout: 'logout',
@@ -57,109 +57,6 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             support: 'showSupportPage',
             capacity: 'showCapacityPage',
             '*default': 'default'
-        },
-        initialize: function() {
-            window.app = this;
-
-            // remove stickit bindings on teardown
-            Coccyx.addTearDownCallback(function() {
-                this.unstickit();
-            });
-
-            // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
-            $.ajaxSetup({cache: false});
-
-            var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {
-                cacheTokenFor: 10 * 60 * 1000,
-                tenant: 'admin'
-            });
-
-            this.version = new models.FuelVersion();
-            this.settings = new models.FuelSettings();
-            this.user = new models.User();
-            this.statistics = new models.NodesStatistics();
-            this.notifications = new models.Notifications();
-
-            this.version.fetch().then(_.bind(function() {
-                this.user.set({authenticated: !this.version.get('auth_required')});
-
-                var originalSync = Backbone.sync;
-                Backbone.sync = function(method, model, options) {
-                    // our server doesn't support PATCH, so use PUT instead
-                    if (method == 'patch') {
-                        method = 'update';
-                    }
-                    if (app.version.get('auth_required') && !this.authExempt) {
-                        // FIXME(vkramskikh): manually moving success/error callbacks
-                        // to deferred-style callbacks. Everywhere in the code we use
-                        // deferreds, but backbone uses success/error callbacks. It
-                        // seems there is a bug somewhere: sometimes in long deferred
-                        // chains with .then() success/error callbacks are called when
-                        // deferred object is not resolved, so 'sync' event is
-                        // triggered but dfd.state() still returns 'pending'. This
-                        // leads to various bugs here and there.
-                        var callbacks = {};
-
-                        return keystoneClient.authenticate()
-                            .fail(function() {
-                                app.logout();
-                            })
-                            .then(_.bind(function() {
-                                options = options || {};
-                                options.headers = options.headers || {};
-                                options.headers['X-Auth-Token'] = keystoneClient.token;
-                                _.each(['success', 'error'], function(callback) {
-                                    if (options[callback]) {
-                                        callbacks[callback] = options[callback];
-                                        delete options[callback];
-                                    }
-                                });
-                                return originalSync.call(this, method, model, options);
-                            }, this))
-                            .done(function() {
-                                if (callbacks.success) {
-                                    callbacks.success.apply(callbacks.success, arguments);
-                                }
-                            })
-                            .fail(function() {
-                                if (callbacks.error) {
-                                    callbacks.error.apply(callbacks.error, arguments);
-                                }
-                            })
-                            .fail(function(response) {
-                                if (response && response.status == 401) {
-                                    app.logout();
-                                }
-                            });
-                    }
-                    return originalSync.call(this, method, model, options);
-                };
-
-                if (app.version.get('auth_required')) {
-                    _.extend(keystoneClient, this.user.pick('token'));
-                    return keystoneClient.authenticate()
-                        .done(function() {
-                            app.user.set({authenticated: true});
-                        });
-                }
-                return $.Deferred().resolve();
-            }, this)).then(_.bind(function() {
-                return this.settings.fetch();
-            }, this)).always(_.bind(function() {
-                this.renderLayout();
-                Backbone.history.start();
-            }, this));
-        },
-        renderLayout: function() {
-            this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
-        },
-        loadPage: function(Page, options) {
-            return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
-                this.setPage(Page, pageOptions);
-            }, this));
-        },
-        setPage: function(Page, options) {
-            this.page = this.rootComponent.setPage(Page, options);
         },
         // pre-route hook
         before: function(currentUrl) {
@@ -230,9 +127,114 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         }
     });
 
-    return {
-        initialize: function() {
-            return new AppRouter();
+    function App() {
+        // remove stickit bindings on teardown
+        Coccyx.addTearDownCallback(function() {
+            this.unstickit();
+        });
+
+        // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
+        $.ajaxSetup({cache: false});
+
+        this.router = new Router();
+        this.keystoneClient = new KeystoneClient('/keystone', {
+            cacheTokenFor: 10 * 60 * 1000,
+            tenant: 'admin'
+        });
+        this.version = new models.FuelVersion();
+        this.settings = new models.FuelSettings();
+        this.user = new models.User();
+        this.statistics = new models.NodesStatistics();
+        this.notifications = new models.Notifications();
+
+        this.fetchData();
+    }
+
+    _.extend(App.prototype, {
+        fetchData: function() {
+            this.version.fetch().then(_.bind(function() {
+                this.user.set({authenticated: !this.version.get('auth_required')});
+                this.patchBackboneSync();
+                if (this.version.get('auth_required')) {
+                    _.extend(this.keystoneClient, this.user.pick('token'));
+                    return this.keystoneClient.authenticate()
+                        .done(_.bind(function() {
+                            this.user.set({authenticated: true});
+                        }, this));
+                }
+                return $.Deferred().resolve();
+            }, this)).then(_.bind(function() {
+                return this.settings.fetch();
+            }, this)).always(_.bind(function() {
+                this.renderLayout();
+                Backbone.history.start();
+            }, this));
+        },
+        renderLayout: function() {
+            this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
+        },
+        loadPage: function(Page, options) {
+            return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {
+                this.setPage(Page, pageOptions);
+            }, this));
+        },
+        setPage: function(Page, options) {
+            this.page = this.rootComponent.setPage(Page, options);
+        },
+        patchBackboneSync: function() {
+            var originalSync = Backbone.sync;
+            Backbone.sync = function(method, model, options) {
+                // our server doesn't support PATCH, so use PUT instead
+                if (method == 'patch') {
+                    method = 'update';
+                }
+                if (app.version.get('auth_required') && !this.authExempt) {
+                    // FIXME(vkramskikh): manually moving success/error callbacks
+                    // to deferred-style callbacks. Everywhere in the code we use
+                    // deferreds, but backbone uses success/error callbacks. It
+                    // seems there is a bug somewhere: sometimes in long deferred
+                    // chains with .then() success/error callbacks are called when
+                    // deferred object is not resolved, so 'sync' event is
+                    // triggered but dfd.state() still returns 'pending'. This
+                    // leads to various bugs here and there.
+                    var callbacks = {};
+
+                    return app.keystoneClient.authenticate()
+                        .fail(function() {
+                            app.logout();
+                        })
+                        .then(_.bind(function() {
+                            options = options || {};
+                            options.headers = options.headers || {};
+                            options.headers['X-Auth-Token'] = app.keystoneClient.token;
+                            _.each(['success', 'error'], function(callback) {
+                                if (options[callback]) {
+                                    callbacks[callback] = options[callback];
+                                    delete options[callback];
+                                }
+                            });
+                            return originalSync.call(this, method, model, options);
+                        }, this))
+                        .done(function() {
+                            if (callbacks.success) {
+                                callbacks.success.apply(callbacks.success, arguments);
+                            }
+                        })
+                        .fail(function() {
+                            if (callbacks.error) {
+                                callbacks.error.apply(callbacks.error, arguments);
+                            }
+                        })
+                        .fail(function(response) {
+                            if (response && response.status == 401) {
+                                app.logout();
+                            }
+                        });
+                }
+                return originalSync.call(this, method, model, options);
+            };
         }
-    };
+    });
+
+    return (window.app = new App());
 });

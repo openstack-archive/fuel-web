@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2014 Mirantis, Inc.
+# Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -23,6 +23,7 @@ from nailgun.api.v1.validators.json_schema import base_types
 single_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Node",
+    "id": "#node",
     "description": "Serialized Node object",
     "type": "object",
     "properties": {
@@ -45,6 +46,29 @@ single_schema = {
                             "name": {"type": "string"},
                             "driver": {"type": "string"},
                             "bus_info": {"type": "string"},
+                            "offload_modes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "state": {
+                                            "type": [
+                                                "boolean",
+                                                "null"
+                                            ]
+                                        },
+                                        "sub": {
+                                            "$ref": "#/properties/meta/"
+                                                    "properties/interfaces/"
+                                                    "items/properties/"
+                                                    "offload_modes"
+
+                                        }
+                                    }
+
+                                }
+                            },
                         }
                     }
                 },
@@ -106,7 +130,6 @@ single_schema = {
         "is_agent": {"type": "boolean"},
         "platform_name": base_types.NULLABLE_STRING,
         "group_id": {"type": "number"},
-        "meta": {"type": "object"},
         "fqdn": base_types.NULLABLE_STRING,
         "kernel_params": base_types.NULLABLE_STRING,
         "progress": {"type": "number"},

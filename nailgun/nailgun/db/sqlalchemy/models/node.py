@@ -338,6 +338,9 @@ class NodeNICInterface(Base):
     driver = Column(Text)
     bus_info = Column(Text)
 
+    offload_modes = Column(JSON, default=[], nullable=False,
+                           server_default='[]')
+
     @property
     def type(self):
         return consts.NETWORK_INTERFACE_TYPES.ether
@@ -404,3 +407,70 @@ class NodeBondInterface(Base):
     @assigned_networks.setter
     def assigned_networks(self, value):
         self.assigned_networks_list = value
+
+    @property
+    def offload_modes(self):
+        tmp = None
+        intersection_dict = {}
+        for interface in self.slaves:
+            modes = interface.offload_modes
+            if tmp is None:
+                tmp = list(modes)
+                intersection_dict = self.__offload_modes_as_flat_dict(tmp)
+                continue
+            intersection_dict = self.__intersect_offload_dicts(
+                intersection_dict,
+                self.__offload_modes_as_flat_dict(modes)
+            )
+
+        return self.__apply_intersection(tmp, intersection_dict)
+
+    @offload_modes.setter
+    def offload_modes(self, new_modes):
+        new_modes_dict = self.__offload_modes_as_flat_dict(new_modes)
+        for interface in self.slaves:
+            self.__update_modes(interface.offload_modes, new_modes_dict)
+
+    def __update_modes(self, modes, update_dict):
+        for mode in modes:
+            if mode['name'] in update_dict:
+                mode['state'] = update_dict[mode['name']]
+            if mode['state']:
+                self.__update_modes(mode['state'], update_dict)
+
+    def __offload_modes_as_flat_dict(self, modes):
+        result = dict()
+        for mode in modes:
+            result[mode["name"]] = mode["state"]
+            if mode["sub"]:
+                result.update(self.__offload_modes_as_flat_dict(mode["sub"]))
+        return result
+
+    def __intersect_offload_dicts(self, dict1, dict2):
+        result = dict(dict1)
+        modes_to_pop = []
+        for mode in result:
+                if mode not in dict2:
+                    modes_to_pop.append(mode)
+                    continue
+                if dict2[mode] is None:
+                    continue
+                if result[mode] is None:
+                    result[mode] = dict2[mode]
+                    continue
+                result[mode] &= dict2[mode]
+        for mode in modes_to_pop:
+            result.pop(mode)
+        return result
+
+    def __apply_intersection(self, modes, intersection_dict):
+        result = list()
+        for mode in list(modes):
+            if mode["name"] not in intersection_dict:
+                continue
+            mode["state"] = intersection_dict[mode["name"]]
+            if mode["sub"]:
+                mode["sub"] = \
+                    self.__apply_intersection(mode["sub"], intersection_dict)
+            result.append(mode)
+        return result

@@ -268,6 +268,97 @@ class TestHandlers(BaseIntegrationTest):
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
 
+    def test_NIC_offload_modes(self):
+        meta = self.env.default_metadata()
+        meta["interfaces"] = []
+        node = self.env.create_node(api=True, meta=meta)
+        new_meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(new_meta, [
+            {'name': 'new_nic',
+             'mac': '00:00:00:00:00:00',
+             'offload_modes': {
+                 'mode_1': True,
+                 'mode_2': False,
+                 'mode_3': None}}])
+        node_data = {'mac': node['mac'], 'meta': new_meta}
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps(node_data),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json_body), 1)
+        resp_nic = resp.json_body[0]
+        nic = new_meta['interfaces'][0]
+        self.assertEqual(resp_nic['offload_modes'], nic['offload_modes'])
+
+    def test_NIC_change_offload_modes(self):
+        meta = self.env.default_metadata()
+        meta["interfaces"] = []
+        node = self.env.create_node(api=True, meta=meta)
+        new_meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(new_meta, [
+            {'name': 'new_nic',
+             'mac': '00:00:00:00:00:00',
+             'offload_modes': {
+                 'mode_1': None,
+                 'mode_2': None,
+                 'mode_3': None}}])
+        node_data = {'mac': node['mac'], 'meta': new_meta}
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps(node_data),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json_body), 1)
+        resp_nic = resp.json_body[0]
+        nic = new_meta['interfaces'][0]
+        self.assertEqual(resp_nic['offload_modes'], nic['offload_modes'])
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json_body), 1)
+
+        resp_node = resp.json_body[0]
+        new_nic = {
+            'name': 'new_nic',
+            'mac': '00:00:00:00:00:00',
+            'offload_modes': {
+                'mode_1': True,
+                'mode_2': False,
+                'mode_3': None
+            }
+        }
+        self.env.set_interfaces_in_meta(resp_node["meta"], [
+            new_nic])
+
+        resp_node.pop('group_id')
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps([resp_node]),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json_body), 1)
+        resp_nic = resp.json_body[0]
+        self.assertEqual(resp_nic['offload_modes'], new_nic['offload_modes'])
+
     def test_NIC_locking_on_update_by_agent(self):
         lock_vs_status = {
             consts.NODE_STATUSES.discover: False,

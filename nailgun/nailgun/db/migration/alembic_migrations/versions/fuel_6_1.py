@@ -309,6 +309,19 @@ def upgrade_schema():
                   nullable=False,
                   server_default='{}'))
 
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('offload_modes',
+                  fields.JSON(),
+                  nullable=False,
+                  server_default='{}'))
+    op.add_column(
+        'node_bond_interfaces',
+        sa.Column('offload_modes',
+                  fields.JSON(),
+                  nullable=False,
+                  server_default='{}'))
+
     move_orchestrator_data_to_attributes(connection)
     op.drop_table('release_orchestrator_data')
 
@@ -349,6 +362,9 @@ def downgrade_schema():
     # Add interface properties
     op.drop_column('node_bond_interfaces', 'interface_properties')
     op.drop_column('node_nic_interfaces', 'interface_properties')
+
+    op.drop_column('node_bond_interfaces', 'offload_modes')
+    op.drop_column('node_nic_interfaces', 'offload_modes')
     # Add bond properties
     op.drop_column('node_bond_interfaces', 'bond_properties')
     op.add_column(

@@ -45,6 +45,12 @@ single_schema = {
                             "name": {"type": "string"},
                             "driver": {"type": "string"},
                             "bus_info": {"type": "string"},
+                            "offload_modes": {
+                                "type": "object",
+                                "properties": {
+                                    "^[a-zA-Z-]+$": {"type": "boolean"},
+                                }
+                            },
                         }
                     }
                 },
@@ -106,7 +112,6 @@ single_schema = {
         "is_agent": {"type": "boolean"},
         "platform_name": base_types.NULLABLE_STRING,
         "group_id": {"type": "number"},
-        "meta": {"type": "object"},
         "fqdn": base_types.NULLABLE_STRING,
         "kernel_params": base_types.NULLABLE_STRING,
         "progress": {"type": "number"},

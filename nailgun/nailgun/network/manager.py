@@ -23,6 +23,8 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 
+from oslo.serialization import jsonutils
+
 import six
 
 from sqlalchemy.orm import joinedload
@@ -30,7 +32,6 @@ from sqlalchemy.sql import not_
 from sqlalchemy.sql import or_
 
 from nailgun import objects
-
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -796,6 +797,8 @@ class NetworkManager(object):
         elif not interface.interface_properties:
             interface.interface_properties = \
                 cls.get_default_interface_properties()
+        if interface_attrs.get('offload_modes'):
+            interface.offload_modes = interface_attrs['offload_modes']
 
     @classmethod
     def __delete_not_found_interfaces(cls, node, interfaces):
@@ -1186,6 +1189,14 @@ class NetworkManager(object):
                 'disable_offloading':
                 iface.interface_properties['disable_offloading']
             }
+        if len(iface.offload_modes) > 0:
+            modified_offload_modes = \
+                {k: v for k, v in iface.offload_modes.iteritems() if v is not None}
+            if len(modified_offload_modes) > 0:
+                properties['ethtool'] = {}
+                properties['ethtool']['offload'] = \
+                    modified_offload_modes
+
         return properties
 
     @classmethod

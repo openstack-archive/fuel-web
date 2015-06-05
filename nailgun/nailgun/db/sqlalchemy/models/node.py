@@ -338,6 +338,9 @@ class NodeNICInterface(Base):
     driver = Column(Text)
     bus_info = Column(Text)
 
+    offload_modes = Column(JSON, default={}, nullable=False,
+                           server_default='{}')
+
     @property
     def type(self):
         return consts.NETWORK_INTERFACE_TYPES.ether
@@ -404,3 +407,33 @@ class NodeBondInterface(Base):
     @assigned_networks.setter
     def assigned_networks(self, value):
         self.assigned_networks_list = value
+
+    @property
+    def offload_modes(self):
+        result = None
+        for interface in self.slaves:
+            modes = interface.offload_modes
+            if result is None:
+                result = dict(modes)
+                continue
+            modes_to_pop = []
+            for mode in result:
+                if mode not in modes:
+                    modes_to_pop.append(mode)
+                    continue
+                if modes[mode] is None:
+                    continue
+                if result[mode] is None:
+                    result[mode] = modes[mode]
+                    continue
+                result[mode] &= modes[mode]
+            for mode in modes_to_pop:
+                result.pop(mode)
+        return result
+
+    @offload_modes.setter
+    def offload_modes(self, new_modes):
+        for interface in self.slaves:
+            for mode, value in new_modes.iteritems():
+                if mode in interface.offload_modes:
+                    interface.offload_modes[mode] = value

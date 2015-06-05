@@ -39,7 +39,10 @@ VALID_MAJORS = (3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108, 109,
 # ID_CDROM e.g. 1 for cdrom device (optional)
 UDEV_PROPERTIES = set(['MAJOR', 'MINOR', 'DEVNAME', 'DEVTYPE', 'DEVPATH',
                        'ID_BUS', 'ID_MODEL', 'ID_SERIAL_SHORT', 'ID_WWN',
-                       'ID_CDROM'])
+                       'ID_CDROM', 'ID_VENDOR'])
+REMOVABLE_VENDORS = [
+    "Adaptec", "IBM", "ServeRA",
+]
 
 # more details about types you can find in dmidecode's manual
 SMBIOS_TYPES = {'bios': '0',
@@ -285,8 +288,14 @@ def list_block_devices(disks=True):
     devs = get_block_devices_from_udev_db()
     for device in devs:
         uspec = udevreport(device)
-        bspec = blockdevreport(device)
         espec = extrareport(device)
+        # NOTE(agordeev): blockdevreport will fail if there's no medium
+        # inserted into removable device.
+        # Accept only devices from REMOVABLE_VENDORS list
+        if (espec.get('removable') == '1' and
+                uspec.get('ID_VENDOR') not in REMOVABLE_VENDORS):
+            continue
+        bspec = blockdevreport(device)
 
         # if device is not disk,skip it
         if disks and not is_disk(device, bspec=bspec, uspec=uspec):

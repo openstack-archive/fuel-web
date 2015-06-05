@@ -244,7 +244,7 @@ function run_agent_tests {
   pushd $ROOT/fuel_agent >> /dev/null
 
   # run tests
-  tox -epy26 || result=1
+  tox -epy27 || result=1
 
   popd >> /dev/null
 
@@ -284,7 +284,7 @@ function run_nailgun_tests {
   pushd $ROOT/nailgun >> /dev/null
   # # run tests
   NAILGUN_CONFIG=$config \
-  tox -epy26 -- $options $TESTS  || result=1
+  tox -epy27 -- $options $TESTS  || result=1
   popd >> /dev/null
   return $result
 }
@@ -380,7 +380,7 @@ function run_upgrade_system_tests {
   else
     # run all tests
     pushd $ROOT/fuel_upgrade_system/fuel_upgrade >> /dev/null
-    tox -epy26 -- -vv $testropts $UPGRADE_TESTS --xunit-file $FUELUPGRADE_XUNIT || result=1
+    tox -epy27 -- -vv $testropts $UPGRADE_TESTS --xunit-file $FUELUPGRADE_XUNIT || result=1
     popd >> /dev/null
 
   fi
@@ -400,7 +400,7 @@ function run_shotgun_tests {
   pushd $ROOT/shotgun >> /dev/null
 
   # run tests
-  tox -epy26 || result=1
+  tox -epy27 || result=1
 
   popd >> /dev/null
 
@@ -413,7 +413,7 @@ function run_tasklib_tests {
   pushd $ROOT/tasklib >> /dev/null
 
   # run tests
-  tox -epy26 || result=1
+  tox -epy27 || result=1
 
   popd >> /dev/null
 

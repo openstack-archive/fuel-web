@@ -29,9 +29,55 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         super(TestNodeNICsBonding, self).setUp()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
-            {"name": "eth0", "mac": "00:00:00:00:00:66"},
-            {"name": "eth1", "mac": "00:00:00:00:00:77"},
-            {"name": "eth2", "mac": "00:00:00:00:00:88"}])
+            {"name": "eth0",
+             "mac": "00:00:00:00:00:66",
+             "offload_modes": [
+                 {
+                     "name": "mode_1",
+                     "state": None,
+                     "sub": []
+                 },
+                 {
+                     "name": "mode_common",
+                     "state": None,
+                     "sub": []
+                 }
+             ]
+             },
+            {"name": "eth1",
+             "mac": "00:00:00:00:00:77",
+             "offload_modes": [
+                 {
+                     "name": "mode_2",
+                     "state": None,
+                     "sub": []
+                 },
+                 {
+                     "name": "mode_common",
+                     "state": None,
+                     "sub": []
+                 }
+             ]
+             },
+            {"name": "eth2",
+             "mac": "00:00:00:00:00:88",
+             "offload_modes": [
+                 {
+                     "name": "mode_1",
+                     "state": None,
+                     "sub": []
+                 },
+                 {
+                     "name": "mode_2",
+                     "state": None,
+                     "sub": []
+                 },
+                 {
+                     "name": "mode_common",
+                     "state": None,
+                     "sub": []
+                 }
+             ]}])
         self.env.create(
             cluster_kwargs={
                 "net_provider": "neutron",

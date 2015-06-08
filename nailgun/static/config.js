@@ -20,7 +20,7 @@ define(function() {
         baseUrl: 'static',
         waitSeconds: 60,
         paths: {
-            jquery: 'vendor/bower/jquery/jquery',
+            jquery: 'vendor/bower/jquery/dist/jquery',
             'js-cookie': 'vendor/bower/js-cookie/src/js.cookie',
             'jquery-ui': 'vendor/bower/jquery-ui/ui',
             'jquery-autoNumeric': 'vendor/bower/autoNumeric/autoNumeric',

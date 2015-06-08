@@ -240,7 +240,7 @@ function($, _, i18n, Backbone, models) {
                 metadata: metadata,
                 availability_zones: new AvailabilityZones(azValues),
                 network: new Network(networkValue),
-                glance:  new Glance(glanceValue)
+                glance: new Glance(glanceValue)
             };
         },
         isFilled: function() {

@@ -12,7 +12,7 @@
     <meta http-equiv="expires" content="0" />
     <meta http-equiv="pragma" content="no-cache" />
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
-    <script src="/static/js/libs/bower/requirejs/require.js"></script>
+    <script src="/static/vendor/bower/requirejs/require.js"></script>
     <script type="text/javascript">
       // checks code taken from https://github.com/Modernizr/Modernizr
       var hasCookies = (function() {
@@ -37,7 +37,7 @@
       }());
 
       if (hasCookies && hasStorage) {
-        requirejs.config({baseUrl: '/static/js', urlArgs: '_=__CACHE_BUST__'});
+        requirejs.config({baseUrl: '/static', urlArgs: '_=__CACHE_BUST__'});
         requirejs(['main']);
       } else {
         document.write('Fuel UI requires Cookies and LocalStorage to work.');

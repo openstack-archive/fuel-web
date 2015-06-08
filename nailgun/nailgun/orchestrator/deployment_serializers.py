@@ -1844,7 +1844,9 @@ def get_serializer_for_cluster(cluster):
         if env_version.startswith(version):
             return serializers[env_mode]
 
-    raise errors.UnsupportedSerializer()
+    # return latest serializer by default
+    latest_version = sorted(six.iterkeys(serializers_map))[-1]
+    return serializers_map[latest_version]
 
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):

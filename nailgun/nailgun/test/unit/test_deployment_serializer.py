@@ -14,7 +14,6 @@
 
 import mock
 
-from nailgun.errors import errors
 from nailgun.test.base import BaseUnitTest
 
 from nailgun.orchestrator import deployment_serializers as ds
@@ -63,12 +62,3 @@ class TestGetSerializer(BaseUnitTest):
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
             ds.DeploymentMultinodeSerializer51)
-
-    @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.utils.'
-        'extract_env_version',
-        return_value='9999.0')
-    def test_unsupported_serializer(self, _):
-        cluster = mock.MagicMock(is_ha_mode=True)
-        with self.assertRaises(errors.UnsupportedSerializer):
-            ds.get_serializer_for_cluster(cluster)

@@ -36,12 +36,50 @@ define([
         }
     };
 
-    var BaseModel = models.BaseModel = Backbone.Model.extend(superMixin);
-    var BaseCollection = models.BaseCollection = Backbone.Collection.extend({
+    // Mixin for adjusting some collection functions to work properly with model.get.
+    // Lodash supports some methods with predicate objects, not functions.
+    // Underscore has only pure predicate functions.
+    // We need to convert predicate objects to functions that use model's
+    // get functionality -- otherwise model.property always returns undefined.
+
+    var collectionMixin = {
         getByIds: function(ids) {
             return this.filter(function(model) {return _.contains(ids, model.id);});
+        },
+        findWhere: function(attrs) {
+            var ret = this.where(attrs);
+            if (ret.length > 0) {
+                return ret[0];
+            }
         }
-    }).extend(superMixin);
+    };
+
+    var collectionMethods = ['find', 'detect', 'filter', 'select', 'reject', 'every', 'all', 'some', 'any'];
+
+    _.each(collectionMethods, function(method) {
+        collectionMixin[method] = function() {
+            var args = _.toArray(arguments),
+                predicate = args[0];
+
+            if (_.isPlainObject(predicate)) {
+                args[0] = function(model) {
+                    return _.chain(predicate)
+                        .pairs()
+                        .every(function(pair) {
+                            return _.isEqual(model.get(pair[0]), pair[1]);
+                        })
+                        .value();
+                };
+            }
+
+            args.unshift(this.models);
+
+            return _[method].apply(_, args);
+        };
+    });
+
+    var BaseModel = models.BaseModel = Backbone.Model.extend(superMixin);
+    var BaseCollection = models.BaseCollection = Backbone.Collection.extend(collectionMixin).extend(superMixin);
 
     var cacheMixin = {
         fetch: function(options) {

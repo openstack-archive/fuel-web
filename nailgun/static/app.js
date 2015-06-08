@@ -40,9 +40,7 @@ define(
     'stickit',
     'routefilter',
     'bootstrap',
-    'less!/static/styles/main',
-    'backbone-lodash-monkeypatch'
-
+    'less!/static/styles/main'
 ],
 function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';

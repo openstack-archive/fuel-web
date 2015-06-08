@@ -63,10 +63,6 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         initialize: function() {
             window.app = this;
 
-            if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
-                $('body').addClass('safari');
-            }
-
             // remove stickit bindings on teardown
             Coccyx.addTearDownCallback(function() {
                 this.unstickit();

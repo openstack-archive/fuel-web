@@ -179,11 +179,11 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', status: 'running'}),
                 lockedCluster = !cluster.isAvailableForSettingsChanges(),
                 hasChanges = this.hasChanges(),
-                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
-                tabClasses = {'openstack-settings wrapper': true, 'changes-locked': locked || lockedCluster};
+                allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+
             return (
-                <div key={this.state.key} className={utils.classNames(tabClasses)}>
-                    <h3>{i18n('cluster_page.settings_tab.title')}</h3>
+                <div key={this.state.key} className='row'>
+                    <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
                     {this.state.loading ?
                         <controls.ProgressBar />
                         :
@@ -204,16 +204,16 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     configModels={this.state.configModels}
                                 />;
                             }, this)}
-                            <div className='row'>
-                                <div className='page-control-box'>
-                                    <div className='page-control-button-placeholder'>
-                                        <button key='loadDefaults' className='btn btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
+                            <div className='col-xs-12 page-buttons'>
+                                <div className='well clearfix'>
+                                    <div className='btn-group pull-right'>
+                                        <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>
                                             {i18n('common.load_defaults_button')}
                                         </button>
-                                        <button key='cancelChanges' className='btn btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
+                                        <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
                                             {i18n('common.cancel_changes_button')}
                                         </button>
-                                        <button key='applyChanges' className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
+                                        <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={locked || !hasChanges || settings.validationError}>
                                             {i18n('common.save_settings_button')}
                                         </button>
                                     </div>
@@ -359,26 +359,26 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 processedGroupRestrictions = this.processRestrictions(this.props.groupName, 'metadata'),
                 isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || (metadata.toggleable && processedGroupRestrictions.result);
             return (
-                <div className='fieldset-group wrapper'>
-                    <legend className='openstack-settings'>
-                        {metadata.toggleable ?
+                <div className='col-xs-12 forms-box'>
+                    <h3>
+                        {metadata.toggleable &&
                             <controls.Input
                                 type='checkbox'
-                                name='metadata'
                                 defaultChecked={metadata.enabled}
-                                label={metadata.label || this.props.groupName}
                                 disabled={isGroupDisabled}
                                 tooltipText={processedGroupRestrictions.message}
                                 onChange={this.props.onChange}
+                                wrapperClassName='pull-left'
                             />
-                            :
-                            metadata.label || this.props.groupName
                         }
-                    </legend>
-                    <div className='settings-group table-wrapper'>
+                        {metadata.label || this.props.groupName}
+                    </h3>
+                    <div>
                         {_.map(sortedSettings, function(settingName) {
-                            var setting = group[settingName],
-                                path = this.props.makePath(this.props.groupName, settingName);
+                            var setting = group[settingName];
+                            if (setting.type == 'hidden') return null;
+
+                            var path = this.props.makePath(this.props.groupName, settingName);
 
                             if (!this.checkRestrictions('hide', path).result) {
                                 var error = (this.props.settings.validationError || {})[path],
@@ -432,7 +432,6 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     toggleable={setting.type == 'password'}
                                     error={error}
                                     disabled={isSettingDisabled}
-                                    wrapperClassName='tablerow-wrapper'
                                     tooltipText={processedSettingRestrictions.message}
                                     onChange={this.props.onChange}
                                 />;

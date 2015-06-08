@@ -40,7 +40,7 @@
     'use strict';
 
     var collectionBehavior = {
-        changeOptions: 'add remove reset sort',
+        changeOptions: 'update reset sort',
         updateScheduler: function(func) { return _.debounce(func, 0, {leading: true, trailing: true}); }
     };
 

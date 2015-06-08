@@ -32,7 +32,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         mixins: [
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('tasks');},
-                renderOn: 'add remove change:status'
+                renderOn: 'update change:status'
             }),
             componentMixins.backboneMixin('cluster', 'change:status')
         ],
@@ -102,9 +102,9 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
 
     var HealthcheckTabContent = React.createClass({
         mixins: [
-            componentMixins.backboneMixin('tests', 'add remove change'),
-            componentMixins.backboneMixin('testsets', 'add remove change:checked'),
-            componentMixins.backboneMixin('testruns', 'add remove change'),
+            componentMixins.backboneMixin('tests', 'update change'),
+            componentMixins.backboneMixin('testsets', 'update change:checked'),
+            componentMixins.backboneMixin('testruns', 'update change'),
             componentMixins.pollingMixin(3)
         ],
         shouldDataBeFetched: function() {

@@ -38,7 +38,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             componentMixins.backboneMixin('user'),
             componentMixins.backboneMixin('version'),
             componentMixins.backboneMixin('statistics'),
-            componentMixins.backboneMixin('notifications', 'add remove change:status'),
+            componentMixins.backboneMixin('notifications', 'update change:status'),
             componentMixins.pollingMixin(20)
         ],
         togglePopover: function(popoverName) {

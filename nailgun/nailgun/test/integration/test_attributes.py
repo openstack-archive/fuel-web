@@ -411,7 +411,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
         super(TestAlwaysEditable, self).setUp()
         self.env.create(
             release_kwargs={
-                'version': '2014.2-6.1',
+                'version': '2014.2-7.0',
                 'operating_system': consts.RELEASE_OS.centos})
         self.cluster = self.env.clusters[0]
 

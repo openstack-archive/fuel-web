@@ -20,12 +20,15 @@ var argv = require('minimist')(process.argv.slice(2));
 
 var fs = require('fs');
 var path = require('path');
+var glob = require('glob');
 var spawn = require('child_process').spawn;
 var rimraf = require('rimraf');
+var es = require('event-stream');
 var _ = require('lodash-node');
 
 var gulp = require('gulp');
 var gutil = require('gulp-util');
+var shell = require('gulp-shell');
 var runSequence = require('run-sequence');
 
 var bower = require('gulp-bower');
@@ -101,14 +104,90 @@ gulp.task('i18n:validate', function() {
 gulp.task('bower:fetch', bower);
 
 gulp.task('bower:copy-main', function() {
-    var bowerDir = 'static/vendor/bower/';
-    rimraf.sync(bowerDir);
-    return gulp.src(mainBowerFiles({checkExistence: true}), {base: 'bower_components'})
-        .pipe(gulp.dest(bowerDir));
+    var dirs = [
+        {dirName: 'static/vendor/bower', includeDev: 'inclusive'},
+        {dirName: 'static/tests/bower', includeDev: 'exclusive'}
+    ];
+    var streams = dirs.map(function(dir) {
+        rimraf.sync(dir.dirName);
+        return gulp.src(mainBowerFiles({checkExistence: true, includeDev: dir.includeDev}), {base: 'bower_components'})
+            .pipe(gulp.dest(dir.dirName));
+    });
+    return es.merge(streams);
 });
 
 gulp.task('bower', function(cb) {
     runSequence('bower:fetch', 'bower:copy-main', cb);
+});
+
+var selenium = require('selenium-standalone');
+var seleniumProcess = null;
+function shutdownSelenium() {
+    if (seleniumProcess) {
+        seleniumProcess.kill();
+        seleniumProcess = null;
+    }
+}
+
+gulp.task('selenium:fetch', function(cb) {
+    var defaultVersion = '2.45.0';
+    selenium.install({version: argv.version || defaultVersion}, cb);
+});
+
+gulp.task('selenium', ['selenium:fetch'], function(cb) {
+    var port = process.env.SELENIUM_SERVER_PORT || 4444;
+    selenium.start(
+        {seleniumArgs: ['--port', port], spawnOptions: {stdio: 'pipe'}},
+        function(err, child) {
+            if (err) throw err;
+            child.on('exit', function() {
+                if (seleniumProcess) {
+                    gutil.log(gutil.colors.yellow('Selenium process died unexpectedly. Probably port', port, 'is already in use.'));
+                }
+            });
+            ['exit', 'uncaughtException', 'SIGTERM', 'SIGINT'].forEach(function(event) {
+                process.on(event, shutdownSelenium);
+            });
+            seleniumProcess = child;
+            cb();
+        }
+    );
+});
+
+function runIntern(params) {
+    return function() {
+        var baseDir = 'static';
+        var runner = './node_modules/.bin/intern-runner';
+        var browser = params.browser || argv.browser || 'phantomjs';
+        var options = [['config', 'tests/intern-' + browser + '.js']];
+        var suiteOptions = [];
+        ['suites', 'functionalSuites'].forEach(function(suiteType) {
+            if (params[suiteType]) {
+                var suiteFiles = glob.sync(path.relative(baseDir, params[suiteType]), {cwd: baseDir});
+                suiteOptions = suiteOptions.concat(suiteFiles.map(function(suiteFile) {
+                    return [suiteType, suiteFile.replace(/\.js$/, '')];
+                }));
+            }
+        });
+        if (!suiteOptions.length) {
+            throw new Error('No matching suites');
+        }
+        options = options.concat(suiteOptions);
+        var command = [path.relative(baseDir, runner)].concat(options.map(function(o) {
+            return o.join('=');
+        })).join(' ');
+        gutil.log('Executing', command);
+        return shell.task(command, {cwd: baseDir})();
+    };
+}
+
+gulp.task('intern:unit', runIntern({suites: argv.suites || 'static/tests/unit/**/*.js'}));
+
+gulp.task('unit-tests', function(cb) {
+    runSequence('selenium', 'intern:unit', function(err) {
+        shutdownSelenium();
+        cb(err);
+    });
 });
 
 gulp.task('jison', function() {
@@ -117,7 +196,14 @@ gulp.task('jison', function() {
         .pipe(gulp.dest('static/expression/'));
 });
 
-var jsFiles = ['static/**/*.js', 'static/**/*.jsx', '!static/vendor/**', '!static/expression/parser.js'];
+var jsFiles = [
+    'static/**/*.js',
+    'static/**/*.jsx',
+    '!static/vendor/**',
+    '!static/expression/parser.js',
+    'static/tests/**/*.js',
+    '!static/tests/bower/**/*.js'
+];
 var styleFiles = 'static/**/*.less';
 
 gulp.task('jscs', function() {

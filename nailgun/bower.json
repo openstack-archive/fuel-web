@@ -21,6 +21,9 @@
     "bootstrap": "3.3.4",
     "open-sans-fontface": "1.4.0"
   },
+  "devDependencies": {
+    "es5-shim": "4.1.0"
+  },
   "overrides": {
     "jquery": {
       "main": "jquery.js"

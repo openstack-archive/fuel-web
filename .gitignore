@@ -24,6 +24,7 @@ lock
 node_modules
 bower_components
 nailgun/static/vendor/bower
+nailgun/static/tests/bower
 
 *.egg
 .testrepository

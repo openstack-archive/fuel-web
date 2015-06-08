@@ -411,7 +411,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
         super(TestAlwaysEditable, self).setUp()
         self.env.create(
             release_kwargs={
-                'version': '2014.2-6.1',
+                'version': '2014.2-7.0',
                 'operating_system': consts.RELEASE_OS.centos})
         self.cluster = self.env.clusters[0]
 
@@ -457,20 +457,20 @@ class TestAlwaysEditable(BaseIntegrationTest):
             {
                 'type': 'rpm',
                 'name': 'mos',
-                'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/x86_64',
+                'uri': 'http://127.0.0.1:8080/2014.2-7.0/centos/x86_64',
                 'priority': None,
             },
             {
                 'type': 'rpm',
                 'name': 'mos-updates',
-                'uri': 'http://mirror.fuel-infra.org/mos/centos-6/mos6.1/'
+                'uri': 'http://mirror.fuel-infra.org/mos/centos-6/mos7.0/'
                        'updates',
                 'priority': None,
             },
             {
                 'type': 'rpm',
                 'name': 'Auxiliary',
-                'uri': 'http://127.0.0.1:8080/2014.2-6.1/centos/auxiliary',
+                'uri': 'http://127.0.0.1:8080/2014.2-7.0/centos/auxiliary',
                 'priority': 15,
             },
         ])

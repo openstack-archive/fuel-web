@@ -1,8 +1,14 @@
+nailgun (7.0.0-1) trusty; urgency=low
+
+  * Update version to 7.0.0
+
+ -- Aleksandra Fedorova <afedorova@mirantis.com>  Mon, 08 Jun 2015 18:15:00 +0300
+
 nailgun (6.1.0-1) trusty; urgency=low
 
   * Update version to 6.1.0
 
- -- Matthew Mosesohn <mmosesohn@miirantis.com> Wed, 22 Apr 2015 14:44:00 +0300
+ -- Matthew Mosesohn <mmosesohn@mirantis.com>  Wed, 22 Apr 2015 14:44:00 +0300
 
 nailgun (6.0.0-1) trusty; urgency=low
 

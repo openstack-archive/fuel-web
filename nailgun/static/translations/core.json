@@ -156,7 +156,7 @@
                 "privacy_policy": "Usage stats will include your name, company and email once you login to your Mirantis account",
                 "privacy_policy_link": "Read Privacy Policy",
                 "register": {
-                    "register_installation": "Connect this installation with your Mirantis account and get free support for next 30 days!",
+                    "register_installation": "Connect this installation with your Mirantis account and receive important notifications about security updates and other improvements.",
                     "link_text": "Register Now",
                     "create_account": "Create Account",
                     "retrieve_password": "Retrieve Password",
@@ -201,7 +201,7 @@
                 "log_text": "If you have encountered some bugs or errors, you may need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
                 "contact_support": "Contact Support",
                 "register_fuel_title": "Connect Mirantis Account",
-                "register_fuel_content": "This will ensure that you recieve important notifications about issues and new versions of Mirantis products. In addition, you will recieve complementary access to our basic support services for the next 30 days!",
+                "register_fuel_content": "This will ensure that you receive important notifications about security updates and other improvements. In addition you will be notified about new versions of Mirantis products.",
                 "product_registered_title": "Connect Mirantis Account",
                 "product_registered_content": "This OpenStack installation is connected to",
                 "master_node_uuid": "Master Node UUID",

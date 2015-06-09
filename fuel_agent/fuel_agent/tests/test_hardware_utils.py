@@ -379,6 +379,44 @@ E: UDEV_LOG=3""", '')
         self.assertEqual(mock_ereport.call_args_list, [mock.call('/dev/fake'),
                          mock.call('/dev/fake1'), mock.call('/dev/sr0')])
 
+    @mock.patch.object(hu, 'get_block_devices_from_udev_db')
+    @mock.patch.object(hu, 'is_disk')
+    @mock.patch.object(hu, 'extrareport')
+    @mock.patch.object(hu, 'blockdevreport')
+    @mock.patch.object(hu, 'udevreport')
+    def test_list_block_devices_removable_vendors(self, mock_ureport,
+                                                  mock_breport, mock_ereport,
+                                                  mock_isdisk, mock_get_devs):
+        mock_get_devs.return_value = ['/dev/no_vendor_id',
+                                      '/dev/wrong_vendor_id',
+                                      '/dev/right_vendor_id']
+        mock_isdisk.return_value = True
+        mock_ureport.side_effect = [
+            {},
+            {'ID_VENDOR': 'Cisco'},
+            {'ID_VENDOR': 'IBM'},
+        ]
+        mock_ereport.return_value = {'removable': '1'}
+        mock_breport.return_value = {'key1': 'value1'}
+        expected = [{
+            'device': '/dev/right_vendor_id',
+            'uspec': {'ID_VENDOR': 'IBM'},
+            'bspec': {'key1': 'value1'},
+            'espec': {'removable': '1'}
+        }]
+        self.assertEqual(hu.list_block_devices(), expected)
+        self.assertEqual(
+            mock_ureport.call_args_list,
+            [mock.call('/dev/no_vendor_id'),
+             mock.call('/dev/wrong_vendor_id'),
+             mock.call('/dev/right_vendor_id')])
+        mock_breport.assert_called_once_with('/dev/right_vendor_id')
+        self.assertEqual(
+            mock_ereport.call_args_list,
+            [mock.call('/dev/no_vendor_id'),
+             mock.call('/dev/wrong_vendor_id'),
+             mock.call('/dev/right_vendor_id')])
+
     def test_match_device_devlinks(self):
         # should return true if at least one by-id link from first uspec
         # matches by-id link from another uspec

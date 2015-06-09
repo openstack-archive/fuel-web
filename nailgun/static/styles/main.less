@@ -1987,9 +1987,18 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 // Disks styles
 .disk-box {
-  label {
-    .font-semibold;
+  @colors: green, blue, orange, gray, pure-red, black, red;
+  .generate-colors(length(@colors));
+  .generate-colors(@n, @i: 1) when (@i =< @n) {
+    .volume-type-@{i} {
+      @color: extract(@colors, @i);
+      background: @@color;
+    }
+    .generate-colors(@n, (@i + 1));
   }
+
+  label {.font-semibold;}
+
   .disk-visual {
     @disk-visual-block-height: 50px;
     @disk-visual-block-padding: 4px;
@@ -2010,6 +2019,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
       .close-btn {
         position: absolute;
+        z-index: 1000;
         top: 0;
         right: @disk-visual-block-padding;
         cursor: pointer;
@@ -2027,43 +2037,57 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .disk-info-box {
       .form-group {
         margin-bottom: 0;
-        label {
-          text-transform: capitalize;
-        }
-        p {
-          padding: 0;
-        }
+        label {text-transform: capitalize;}
+        p {padding: 0;}
       }
     }
     .disk-utility-box {
       @disk-form-margin: 5px;
       .form-group {
-        margin-bottom: @disk-form-margin;
+        margin: 0;
         .volume-group-flag {
           display: inline-block;
           width: 10px;
         }
-        .volume-group-use-all-allowed-btn button {
-          font-size: @base-font-size - 4px;
-          padding: 0;
-          text-transform: uppercase;
-        }
-        .volume-group-size-label {
-          padding: 0;
-        }
         .volume-group-input {
           padding-right: @disk-form-margin;
         }
-        label, .volume-group-use-all-allowed-btn, .volume-group-size-label {
-          padding-top: 6px;
+        .volume-group-range, .volume-group-input {
+          label, .help-block {display: none;}
+        }
+        .volume-group-label {
+          margin: 0;
+          padding-top: @disk-form-margin;
+        }
+        .volume-group-size-label {
+          padding: @disk-form-margin;
+          text-align: right;
+        }
+        input[type=range] {
+          /*fix for FF unable to apply focus style bug */
+          border: 1px solid transparent;
+          margin-top: @disk-form-margin;
+          &:focus {outline: none;}
+          &:focus::-webkit-slider-runnable-track {background: transparent;}
+          &:disabled {opacity: 0.4;}
+        }
+        input[type=number] {
+          position: relative;
+          top: -2px;
         }
       }
-      .volume-group-error {
+      .volume-group {margin-bottom: @disk-form-margin;}
+      .volume-group-notice {
         font-size: @base-font-size - 2px;
-        margin: 0 @disk-form-margin * 2 @disk-form-margin * 2;
+        color: @blue;
+        margin: 0 @disk-form-margin @disk-form-margin * 2 0;
       }
     }
   }
+}
+
+.node-disks + .page-buttons {
+  margin-top: 30px;
 }
 
 // Interfaces styles

@@ -52,7 +52,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
     controls.Input = React.createClass({
         mixins: [tooltipMixin],
         propTypes: {
-            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number']).isRequired,
+            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range']).isRequired,
             name: React.PropTypes.node,
             label: React.PropTypes.node,
             description: React.PropTypes.node,
@@ -62,6 +62,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             tooltipText: React.PropTypes.node,
             toggleable: React.PropTypes.bool,
             onChange: React.PropTypes.func,
+            onInput: React.PropTypes.func,
             extraContent: React.PropTypes.node
         },
         getInitialState: function() {
@@ -79,24 +80,37 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
         debouncedChange: _.debounce(function() {
             return this.onChange();
         }, 200, {leading: true}),
+        debouncedInput: _.debounce(function() {
+            return this.onInput();
+        }, 10, {leading: true}),
         onChange: function() {
             if (this.props.onChange) {
                 var input = this.getInputDOMNode();
                 return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
             }
         },
+        onInput: function() {
+            if (this.props.onInput) {
+                var input = this.getInputDOMNode();
+                return this.props.onInput(this.props.name, input.value);
+            }
+        },
         renderInput: function() {
-            var classes = {'form-control': true};
+            var classes = {'form-control': this.props.type != 'range'};
             classes[this.props.inputClassName] = this.props.inputClassName;
             var props = {
                     ref: 'input',
                     key: 'input',
                     type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
-                    className: utils.classNames(classes),
-                    // debounced onChange callback is supported for uncontrolled inputs
-                    onChange: this.props.value ? this.onChange : this.debouncedChange
-                },
-                Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
+                    className: utils.classNames(classes)
+                };
+            if (this.props.type == 'range') {
+                props.onInput = this.debouncedInput;
+            } else {
+                // debounced onChange callback is supported for uncontrolled inputs
+                props.onChange = this.props.value ? this.onChange : this.debouncedChange;
+            }
+            var Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,
                 isCheckboxOrRadio = this.isCheckboxOrRadio(),
                 inputWrapperClasses = {

@@ -92,6 +92,12 @@ class Nailgun(BaseDataDriver):
         return filter(disk_filter, self.partition_data())
 
     @property
+    def small_ks_disks(self):
+        """Get those disks which are smaller than 2T
+        """
+        return [d for d in self.ks_disks if d['size'] <= 2097152]
+
+    @property
     def ks_vgs(self):
         vg_filter = lambda x: x['type'] == 'vg'
         return filter(vg_filter, self.partition_data())
@@ -227,14 +233,28 @@ class Nailgun(BaseDataDriver):
                     continue
 
                 if volume['type'] in ('partition', 'pv', 'raid'):
-                    if volume.get('mount') != '/boot' \
-                            or not self._boot_partition_done:
+                    if volume.get('mount') != '/boot':
                         LOG.debug('Adding partition on disk %s: size=%s' %
                                   (disk['name'], volume['size']))
                         prt = parted.add_partition(size=volume['size'])
                         LOG.debug('Partition name: %s' % prt.name)
-                    if volume.get('mount') == '/boot':
-                        self._boot_partition_done = True
+
+                    elif volume.get('mount') == '/boot' \
+                            and not self._boot_partition_done \
+                            and (disk in self.small_ks_disks or
+                                 not self.small_ks_disks):
+                        # NOTE(kozhukalov): On some hardware GRUB is not able
+                        # to see disks larger than 2T due to firmware bugs,
+                        # so we'd better avoid placing /boot on such
+                        # huge disks if it is possible.
+                            LOG.debug('Adding /boot partition on disk %s: '
+                                      'size=%s', disk['name'], volume['size'])
+                            prt = parted.add_partition(size=volume['size'])
+                            LOG.debug('Partition name: %s', prt.name)
+                            self._boot_partition_done = True
+                    else:
+                        LOG.debug('No need to create partition. Continuing.')
+                        continue
 
                 if volume['type'] == 'partition':
                     if 'partition_guid' in volume:
@@ -306,6 +326,11 @@ class Nailgun(BaseDataDriver):
                 LOG.debug('Adding configdrive partition on disk %s: size=20' %
                           disk['name'])
                 parted.add_partition(size=20, configdrive=True)
+
+            # checking if /boot is created
+            if not self._boot_partition_done or not self._boot_done:
+                raise errors.WrongPartitionSchemeError(
+                    '/boot partition has not been created for some reasons')
 
         LOG.debug('Looping over all volume groups in provision data')
         for vg in self.ks_vgs:

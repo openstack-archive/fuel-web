@@ -68,12 +68,12 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
                 {url: 'login', condition: function() {
                     return app.version.get('auth_required') && !app.user.get('authenticated');
                 }},
-                {url: 'welcome', condition: function() {
-                    return !app.settings.get('statistics.user_choice_saved.value');
+                {url: 'welcome', condition: function(previousUrl) {
+                    return previousUrl != 'logout' && !app.settings.get('statistics.user_choice_saved.value');
                 }}
             ];
             _.each(specialRoutes, function(route) {
-                if (route.condition()) {
+                if (route.condition(currentUrl)) {
                     if (currentUrl != route.url) {
                         preventRouting = true;
                         this.navigate(route.url, {trigger: true, replace: true});

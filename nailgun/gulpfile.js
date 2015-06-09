@@ -206,6 +206,12 @@ var jsFiles = [
 ];
 var styleFiles = 'static/**/*.less';
 
+gulp.task('jscs:fix', function() {
+    return gulp.src(jsFiles, {base: '.'})
+        .pipe(jscs(_.extend({fix: true}, jscsConfig)))
+        .pipe(gulp.dest('.'));
+});
+
 gulp.task('jscs', function() {
     return gulp.src(jsFiles)
         .pipe(jscs(jscsConfig));

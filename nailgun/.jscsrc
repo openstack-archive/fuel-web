@@ -28,7 +28,7 @@
     "disallowKeywords": ["with"],
     "disallowMultipleLineStrings": true,
     "disallowMultipleLineBreaks": true,
-    "disallowMultipleSpaces": true,
+    "disallowMultipleSpaces": {"allowEOLComments": true},
     "disallowMixedSpacesAndTabs": true,
     "disallowTrailingComma": true,
     "disallowKeywordsOnNewLine": ["else"],

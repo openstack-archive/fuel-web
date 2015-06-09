@@ -92,6 +92,10 @@ class Nailgun(BaseDataDriver):
         return filter(disk_filter, self.partition_data())
 
     @property
+    def small_ks_disks(self, maxsize=2097152):
+        return [d for d in self.ks_disks if d['size'] <= maxsize]
+
+    @property
     def ks_vgs(self):
         vg_filter = lambda x: x['type'] == 'vg'
         return filter(vg_filter, self.partition_data())
@@ -227,14 +231,24 @@ class Nailgun(BaseDataDriver):
                     continue
 
                 if volume['type'] in ('partition', 'pv', 'raid'):
-                    if volume.get('mount') != '/boot' \
-                            or not self._boot_partition_done:
+                    if volume.get('mount') != '/boot':
                         LOG.debug('Adding partition on disk %s: size=%s' %
                                   (disk['name'], volume['size']))
                         prt = parted.add_partition(size=volume['size'])
                         LOG.debug('Partition name: %s' % prt.name)
-                    if volume.get('mount') == '/boot':
-                        self._boot_partition_done = True
+
+                    if volume.get('mount') == '/boot' \
+                            and not self._boot_partition_done:
+                        # NOTE(kozhukalov): On some hardware GRUB is not able
+                        # to see disks larger than 2T, so we need to avoid
+                        # placing /boot on such huge disks if it is possible.
+                        if disk in self.small_ks_disks \
+                                or not self.small_ks_disks:
+                            LOG.debug('Adding partition on disk %s: size=%s',
+                                      disk['name'], volume['size'])
+                            prt = parted.add_partition(size=volume['size'])
+                            LOG.debug('Partition name: %s', prt.name)
+                            self._boot_partition_done = True
 
                 if volume['type'] == 'partition':
                     if 'partition_guid' in volume:

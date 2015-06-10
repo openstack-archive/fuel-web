@@ -20,7 +20,7 @@ from collections import defaultdict
 from netaddr import IPNetwork
 
 from nailgun import consts
-from nailgun.objects import Node
+from nailgun.objects import Cluster
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 
 
@@ -82,7 +82,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """Assign fixed_interfaces and vlan_interface.
         They should be equal.
         """
-        net_manager = Node.get_network_manager(node)
+        net_manager = Cluster.get_network_manager(node.cluster)
         fixed_interface = net_manager._get_interface_by_network_name(
             node.id, 'fixed')
 
@@ -253,7 +253,7 @@ class NovaNetworkDeploymentSerializer61(NovaNetworkDeploymentSerializer):
             ('fixed', '')  # will be determined in code below
         ]
 
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
 
         # populate IP address information to endpoints
         netgroups = {}

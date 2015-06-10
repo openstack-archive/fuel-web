@@ -67,8 +67,8 @@ class TestGetSerializer(BaseUnitTest):
         'nailgun.orchestrator.deployment_serializers.utils.'
         'extract_env_version',
         return_value='9999.0')
-    def test_usage_of_latest_serializer_in_case_of_new_release(self, _):
-        cluster = mock.MagicMock(is_ha_mode=False)
+    def test_usage_of_latest_serializer_in_case_of_new_release_ha(self, _):
+        cluster = mock.MagicMock(is_ha_mode=True)
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
-            ds.DeploymentMultinodeSerializer61)
+            ds.DeploymentHASerializer70)

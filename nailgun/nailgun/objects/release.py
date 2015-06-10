@@ -161,6 +161,16 @@ class Release(NailgunObject):
                 StrictVersion(consts.FUEL_GRANULAR_DEPLOY))
 
     @classmethod
+    def is_external_mongo_enabled(cls, instance):
+        """Check if external mongo is available for release
+
+        :param instance: a Release instance
+        :returns: boolean
+        """
+        return (StrictVersion(instance.fuel_version) >=
+                StrictVersion(consts.FUEL_EXTERNAL_MONGO))
+
+    @classmethod
     def get_deployment_tasks(cls, instance):
         """Get deployment graph based on release version."""
         env_version = extract_env_version(instance.version)

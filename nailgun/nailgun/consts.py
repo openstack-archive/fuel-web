@@ -317,6 +317,8 @@ MASTER_ROLE = 'master'
 FUEL_GRANULAR_DEPLOY = '6.1'
 # version of fuel when we added remote repos
 FUEL_REMOTE_REPOS = '6.1'
+# version of fuel when external mongo was added
+FUEL_EXTERNAL_MONGO = '6.1'
 
 OSWL_RESOURCE_TYPES = Enum(
     'vm',

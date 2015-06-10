@@ -963,18 +963,23 @@ class CheckBeforeDeploymentTask(object):
         """Mongo nodes shouldn't be present in environment
         if external mongo is chosen.
         """
-        components = objects.Attributes.merged_attrs(
-            task.cluster.attributes).get("additional_components", None)
-        if (components and components["ceilometer"]["value"]
-            and components["mongo"]["value"]
-                and len(objects.Cluster.get_nodes_by_role(
-                        task.cluster, 'mongo')) > 0):
-                    raise errors.ExtMongoCheckerError
-        if (components and components["ceilometer"]["value"]
-            and not components["mongo"]["value"]
-                and len(objects.Cluster.get_nodes_by_role(
-                        task.cluster, 'mongo')) == 0):
-                    raise errors.MongoNodesCheckError
+        attributes = objects.Attributes.merged_attrs(
+            task.cluster.attributes)
+
+        # we're not interested in checks for release where we didn't
+        # have external mongo feature
+        if 'external_mongo' not in attributes:
+            components = attributes.get("additional_components", None)
+            if (components and components["ceilometer"]["value"]
+                and components["mongo"]["value"]
+                    and len(objects.Cluster.get_nodes_by_role(
+                            task.cluster, 'mongo')) > 0):
+                        raise errors.ExtMongoCheckerError
+            if (components and components["ceilometer"]["value"]
+                and not components["mongo"]["value"]
+                    and len(objects.Cluster.get_nodes_by_role(
+                            task.cluster, 'mongo')) == 0):
+                        raise errors.MongoNodesCheckError
 
     @classmethod
     def _check_vmware_consistency(cls, task):

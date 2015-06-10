@@ -246,8 +246,8 @@ class NodeCollectionNICsHandler(BaseHandler):
             self.validator.validate_collection_structure_and_data)
         updated_nodes_ids = []
         for node_data in data:
-            node_id = objects.Cluster.get_network_manager(
-            )._update_attrs(node_data)
+            node_id = objects.Cluster.get_network_manager()._update_attrs(
+                node_data)
             updated_nodes_ids.append(node_id)
         updated_nodes = db().query(Node).filter(
             Node.id.in_(updated_nodes_ids)
@@ -275,8 +275,8 @@ class NodeNICsDefaultHandler(BaseHandler):
 
     def get_default(self, node):
         if node.cluster:
-            return objects.Node.get_network_manager(
-                node
+            return objects.Cluster.get_network_manager(
+                node.cluster
             ).get_default_interfaces_configuration(node)
 
 

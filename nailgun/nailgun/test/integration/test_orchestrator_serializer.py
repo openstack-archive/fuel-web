@@ -733,7 +733,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         self.assertEqual(resp_put.status_code, 200)
 
     def check_gateways(self, node, scheme, is_public):
-        nm = objects.Node.get_network_manager(node)
+        nm = objects.Cluster.get_network_manager(node.cluster)
         ep = scheme['endpoints']
         if is_public:
             gw = nm.get_node_network_by_netname(node, 'public')['gateway']
@@ -1738,7 +1738,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 if is_public:
                     need_public_nodes_count.add(int(node['uid']))
 
-                net_man = objects.Node.get_network_manager(node_db)
+                net_man = objects.Cluster.get_network_manager(node_db.cluster)
                 self.assertEqual(
                     net_man.get_ip_by_network_name(
                         node_db, 'public') is not None,

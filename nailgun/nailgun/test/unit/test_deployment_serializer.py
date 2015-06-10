@@ -71,4 +71,4 @@ class TestGetSerializer(BaseUnitTest):
         cluster = mock.MagicMock(is_ha_mode=False)
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
-            ds.DeploymentMultinodeSerializer61)
+            ds.DeploymentHASerializer70)

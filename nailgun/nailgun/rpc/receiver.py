@@ -497,8 +497,8 @@ class NailgunReceiver(object):
                 )
                 public_net = filter(
                     lambda n: n['name'] == 'public' and 'ip' in n,
-                    objects.Node.get_network_manager(
-                        controller
+                    objects.Cluster.get_network_manager(
+                        controller.cluster
                     ).get_node_networks(controller)
                 )
                 if public_net:

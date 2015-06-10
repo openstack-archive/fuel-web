@@ -1726,3 +1726,43 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(self.db.query(models.Task).count(), 0)
+
+    @patch('nailgun.task.task.CheckBeforeDeploymentTask._check_mongo_nodes')
+    def test_no_mongo_check_for_old_envs(self, check_mongo):
+        cluster = self.env.create(
+            release_kwargs={
+                'version': "2014.2-6.0"
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['mongo'], 'pending_addition': True},
+            ])
+
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': cluster['id']}
+            ),
+            headers=self.default_headers)
+
+        self.assertEqual(check_mongo.call_count, 0)
+
+    @patch('nailgun.task.task.CheckBeforeDeploymentTask._check_mongo_nodes')
+    def test_mongo_check_for_old_envs(self, check_mongo):
+        cluster = self.env.create(
+            release_kwargs={
+                'version': "2014.2.2-6.1"
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['mongo'], 'pending_addition': True},
+            ])
+
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': cluster['id']}
+            ),
+            headers=self.default_headers)
+
+        self.assertEqual(check_mongo.call_count, 1)

@@ -803,3 +803,53 @@ class NeutronNetworkDeploymentSerializer61(
         else:
             phys = [netgroup['dev']]
         return phys
+
+
+class NeutronNetworkDeploymentSerializer70(
+    NeutronNetworkDeploymentSerializer61
+):
+
+    @classmethod
+    def network_provider_cluster_attrs(cls, cluster):
+        """Cluster attributes."""
+        attrs = {'quantum': True,
+                 'quantum_settings': cls.neutron_attrs(cluster)}
+
+        if cluster.mode == 'multinode':
+            for node in cluster.nodes:
+                if cls._node_has_role_by_name(node, 'controller'):
+                    net_manager = Node.get_network_manager(node)
+                    mgmt_cidr = net_manager.get_node_network_by_netname(
+                        node,
+                        'management'
+                    )['ip']
+                    attrs['management_vip'] = mgmt_cidr.split('/')[0]
+                    break
+
+        return attrs
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(NeutronNetworkDeploymentSerializer70, cls).\
+            generate_l2(cluster)
+        l2.pop("segmentation_type")
+        l2.pop("tunnel_id_ranges")
+        return l2
+
+    @classmethod
+    def neutron_attrs(cls, cluster):
+        """Network configuration for Neutron
+        """
+        attrs = dict(L2=cls.generate_l2(cluster), L3=cls.generate_l3(cluster))
+
+        # NOTE: Not sure this should be in 7.0
+        if cluster.release.operating_system == 'RHEL':
+            attrs['amqp'] = {'provider': 'qpid-rh'}
+
+        # NOTE: Not sure this should be in 7.0
+        cluster_attrs = Cluster.get_attributes(cluster).editable
+        if 'nsx_plugin' in cluster_attrs and \
+                cluster_attrs['nsx_plugin']['metadata']['enabled']:
+            attrs['L2']['provider'] = 'nsx'
+
+        return attrs

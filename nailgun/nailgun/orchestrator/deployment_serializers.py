@@ -49,6 +49,8 @@ from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer
 from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer61
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkDeploymentSerializer70
 
 
 class DeploymentMultinodeSerializer(GraphBasedSerializer):
@@ -467,6 +469,83 @@ class DeploymentHASerializer61(DeploymentHASerializer,
         return images_data
 
 
+class DeploymentHASerializer70(DeploymentHASerializer):
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer70
+
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer70, self).serialize_node(node, role)
+        serialized_node.update({
+            "network_metadata": {
+                "roles": {
+                    "neutron/private": {
+                        "tenant_networks": {
+                            "enabled": True,
+                            "type": "vlan",
+                            "segm_range": [
+                                1000,
+                                1200
+                            ],
+                            "networks": [
+                                {
+                                    "name": "admin__vlan",
+                                    "segm_id": 1000,
+                                    "subnet": "192.128.111.0/24",
+                                    "gateway": "192.128.111.1",
+                                    "tenant_name": "admin",
+                                    "mtu": "0 (by default)"
+                                }
+                            ]
+                        }
+                    },
+                    "neutron/mesh": {
+                        "tenant_networks": {
+                            "enabled": True,
+                            "type": "vxlan",
+                            "segm_range": [
+                                10000,
+                                65535
+                            ],
+                            "networks": [
+                                {
+                                    "name": "admin__vxlan",
+                                    "segm_id": 10000,
+                                    "subnet": "192.128.112.0/24",
+                                    "gateway": "192.128.112.1",
+                                    "tenant_name": "admin",
+                                    "mtu": 0
+                                }
+                            ]
+                        }
+                    },
+                    "neutron/floating": {
+                        "floating_subnets": [
+                            {
+                                "name": "floating__sub_1",
+                                "subnet": "10.109.6.0/24",
+                                "range": {
+                                    "start": "10.109.6.128",
+                                    "end": "10.109.6.254"
+                                },
+                                "gw": "10.109.6.1"
+                            },
+                            {
+                                "name": "floating__sub_2",
+                                "subnet": "10.20.30.0/24",
+                                "range": {
+                                    "start": "10.20.30.17",
+                                    "end": "10.20.30.254"
+                                },
+                                "gw": "10.20.30.1"
+                            }
+                        ]
+                    }
+                }
+            }
+        })
+        return serialized_node
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -490,6 +569,10 @@ def get_serializer_for_cluster(cluster):
             'multinode': DeploymentMultinodeSerializer61,
             'ha': DeploymentHASerializer61,
         },
+        '7.0': {
+            'ha': DeploymentHASerializer70,
+            'multinode': DeploymentHASerializer70,
+        }
     }
 
     env_version = utils.extract_env_version(cluster.release.version)
@@ -498,9 +581,7 @@ def get_serializer_for_cluster(cluster):
         if env_version.startswith(version):
             return serializers[env_mode]
 
-    # return latest serializer by default
-    latest_version = sorted(six.iterkeys(serializers_map))[-1]
-    return serializers_map[latest_version][env_mode]
+    raise errors.UnsupportedSerializer()
 
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):

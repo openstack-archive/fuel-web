@@ -673,21 +673,6 @@ class Node(NailgunObject):
             )
 
     @classmethod
-    def get_network_manager(cls, instance=None):
-        """Get network manager for Node instance.
-        If instance is None then default NetworkManager is returned
-
-        :param instance: Node instance
-        :param cluster_id: Cluster ID
-        :returns: None
-        """
-        if not instance.cluster:
-            from nailgun.network.manager import NetworkManager
-            return NetworkManager
-        else:
-            return Cluster.get_network_manager(instance.cluster)
-
-    @classmethod
     def remove_from_cluster(cls, instance):
         """Remove Node from Cluster.
         Also drops networks assignment for Node and clears both

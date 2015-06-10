@@ -38,6 +38,10 @@ from nailgun.db import NoCacheQuery
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import Task
 
+from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
+from nailgun.network.neutron import NeutronManager70
+
 from nailgun import objects
 
 
@@ -746,3 +750,22 @@ class TestClusterObject(BaseTestCase):
         bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
+
+
+class TestClusterObjectGetNetworkManager(BaseTestCase):
+    def setUp(self):
+        super(TestClusterObjectGetNetworkManager, self).setUp()
+        self.env.create(cluster_kwargs={'net_provider': 'neutron'})
+
+    def test_get_default(self):
+        nm = objects.Cluster.get_network_manager()
+        self.assertEqual(nm, NetworkManager)
+
+    def test_get_neutron(self):
+        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        self.assertEqual(nm, NeutronManager)
+
+    def test_get_neutron_70(self):
+        self.env.clusters[0].release.version = '2014.2.2-7.0'
+        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        self.assertEqual(nm, NeutronManager70)

@@ -1021,7 +1021,7 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_info = []
 
-        nm = objects.Node.get_network_manager(node)
+        nm = objects.Cluster.get_network_manager(node.cluster)
         for node in nodes_db:
             ips = assigned_ips[node.id]
             other_nets = nm.get_networks_not_on_node(node)

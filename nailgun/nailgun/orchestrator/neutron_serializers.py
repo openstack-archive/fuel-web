@@ -42,7 +42,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if cluster.mode == 'multinode':
             for node in cluster.nodes:
                 if cls._node_has_role_by_name(node, 'controller'):
-                    net_manager = Node.get_network_manager(node)
+                    net_manager = Cluster.get_network_manager(cluster)
                     mgmt_cidr = net_manager.get_node_network_by_netname(
                         node,
                         'management'
@@ -77,7 +77,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             Cluster.get_attributes(node.cluster).editable.get('storage', {})
 
         # Get network manager
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
 
         # Init mellanox dict
         node_attrs['neutron_mellanox'] = {}
@@ -208,7 +208,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             attrs['endpoints']['br-ex'] = {}
             attrs['roles']['ex'] = 'br-ex'
 
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
         iface_types = consts.NETWORK_INTERFACE_TYPES
 
         # Add a dynamic data to a structure.
@@ -518,7 +518,7 @@ class NeutronNetworkDeploymentSerializer60(
         # Include information about all subnets that don't belong to this node.
         # This is used during deployment to configure routes to all other
         # networks in the environment.
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
         other_nets = nm.get_networks_not_on_node(node)
 
         netgroup_mapping = [
@@ -673,7 +673,7 @@ class NeutronNetworkDeploymentSerializer61(
             attrs['roles']['ex'] = 'br-ex'
             attrs['roles']['neutron/floating'] = 'br-floating'
 
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
 
         # Populate IP and GW information to endpoints.
         netgroup_mapping = [
@@ -803,3 +803,129 @@ class NeutronNetworkDeploymentSerializer61(
         else:
             phys = [netgroup['dev']]
         return phys
+
+
+class NeutronNetworkDeploymentSerializer70(
+    NeutronNetworkDeploymentSerializer61
+):
+    @classmethod
+    def generate_network_metadata(cls, cluster):
+        base_mac = cluster.network_config.base_mac
+        nameservers = cluster.network_config.dns_nameservers
+        private_segm_range = cluster.network_config.vlan_range
+        private_subnet = cluster.network_config.internal_cidr
+        private_gateway = cluster.network_config.internal_gateway
+        floating_range = cluster.network_config.floating_ranges[0]
+        public_cidr, public_gw = db().query(
+            NetworkGroup.cidr,
+            NetworkGroup.gateway
+        ).filter_by(
+            group_id=Cluster.get_default_group(cluster).id,
+            name='public'
+        ).first()
+
+        roles = dict()
+        roles["neutron/private"] = {
+            "tenant_networks": {
+                "enabled": True,
+                "type": "vlan",
+                "segm_range": private_segm_range,
+                "networks": [
+                    {
+                        "name": "admin__vlan",
+                        "segm_id": private_segm_range[0],
+                        "subnet": private_subnet,
+                        "gateway": private_gateway,
+                        "tenant_name": "admin",
+                        "mtu": "0 (by default)"
+                    }
+                ]
+            }
+        }
+        roles["neutron/mesh"] = {
+            "tenant_networks": {
+                "enabled": True,
+                "type": "vxlan",
+                "segm_range": [
+                    10000,
+                    65535
+                ],
+                "networks": [
+                    {
+                        "name": "admin__vxlan",
+                        "segm_id": 10000,
+                        "subnet": "192.128.112.0/24",
+                        "gateway": "192.128.112.1",
+                        "tenant_name": "admin",
+                        "mtu": 0
+                    }
+                ]
+            }
+        }
+        roles["neutron/floating"] = {
+            "floating_subnets": [
+                {
+                    "name": "floating__sub_1",
+                    "subnet": public_cidr,
+                    "range": {
+                        "start": floating_range[0],
+                        "end": floating_range[1]
+                    },
+                    "gw": public_gw
+                },
+            ]
+        }
+
+        roles["neutron/api"] = {
+            "tenant_networks": [
+                {
+                    "base_mac": base_mac,
+                    "l2_population": False,
+                    "use_dvr": False,
+                    "nameservers": nameservers
+                },
+            ]
+        }
+
+        return dict(roles=roles)
+
+    @classmethod
+    def network_provider_node_attrs(cls, cluster, node):
+        """Serialize node, then it will be
+        merged with common attributes
+        """
+        node_attrs = super(NeutronNetworkDeploymentSerializer70,
+                           cls).network_provider_node_attrs(cluster, node)
+        node_attrs['network_metadata'] = cls.generate_network_metadata(cluster)
+        return node_attrs
+
+    @classmethod
+    def network_provider_cluster_attrs(cls, cluster):
+        """Cluster attributes."""
+        return {'quantum': True,
+                'quantum_settings': cls.neutron_attrs(cluster)}
+
+    @classmethod
+    def neutron_attrs(cls, cluster):
+        """Network configuration for Neutron
+        """
+        attrs = dict()
+
+        # NOTE: Let it be here until we know how NSX will be done in 7.0.
+        cluster_attrs = Cluster.get_attributes(cluster).editable
+        if 'nsx_plugin' in cluster_attrs and \
+                cluster_attrs['nsx_plugin']['metadata']['enabled']:
+            attrs['L2']['provider'] = 'nsx'
+
+        return attrs
+
+    @classmethod
+    def generate_network_scheme(cls, node):
+        attrs = super(NeutronNetworkDeploymentSerializer70,
+                      cls).generate_network_scheme(node)
+
+        if node.cluster.network_config.segmentation_type == 'vlan':
+            attrs['roles']['neutron/mesh'] = 'br-mgmt'
+            attrs['roles']['neutron/private'] = 'br-prv'
+
+        return attrs

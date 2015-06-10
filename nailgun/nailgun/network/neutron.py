@@ -59,3 +59,7 @@ class NeutronManager(NetworkManager):
         else:
             props.append('bond_mode=%s' % bond.mode)
         return props
+
+
+class NeutronManager70(NeutronManager):
+    pass

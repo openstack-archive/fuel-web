@@ -89,8 +89,8 @@ class TestStopDeployment(BaseIntegrationTest):
             n_db = objects.Node.get_by_uid(n["uid"])
             self.assertEqual(
                 n["admin_ip"],
-                objects.Node.get_network_manager(
-                    n_db
+                objects.Cluster.get_network_manager(
+                    n_db.cluster
                 ).get_admin_ip_for_node(n_db.id)
             )
 

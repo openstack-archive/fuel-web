@@ -18,6 +18,7 @@
 Cluster-related objects and collections
 """
 
+from distutils.version import StrictVersion
 from sqlalchemy import or_
 import yaml
 
@@ -45,6 +46,7 @@ from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
+from nailgun.utils import extract_env_version
 from nailgun.utils import traverse
 
 
@@ -322,6 +324,10 @@ class Cluster(NailgunObject):
             return NetworkManager
 
         if instance.net_provider == 'neutron':
+            version = extract_env_version(instance.release.version)
+            if StrictVersion(version) >= StrictVersion'7.0':
+                from nailgun.network.neutron import NeutronManager70
+                return NeutronManager70
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:

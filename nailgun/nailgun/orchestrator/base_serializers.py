@@ -243,7 +243,7 @@ class NetworkDeploymentSerializer(object):
     @staticmethod
     def get_admin_ip_w_prefix(node):
         """Getting admin ip and assign prefix from admin network."""
-        network_manager = Node.get_network_manager(node)
+        network_manager = Cluster.get_network_manager(node.cluster)
         admin_ip = network_manager.get_admin_ip_for_node(node.id)
         admin_ip = IPNetwork(admin_ip)
 

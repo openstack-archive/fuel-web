@@ -154,7 +154,7 @@ class ProvisioningSerializer(object):
                     'intel_iommu=' not in pm_data['kernel_params']):
                         pm_data['kernel_params'] += ' intel_iommu=on'
 
-        net_manager = objects.Node.get_network_manager(node)
+        net_manager = objects.Cluster.get_network_manager(node.cluster)
         gw = net_manager.get_default_gateway(node.id)
         serialized_node['ks_meta'].update({'gw': gw})
         serialized_node['ks_meta'].update(
@@ -169,7 +169,7 @@ class ProvisioningSerializer(object):
     def serialize_interfaces(cls, node):
         interfaces = {}
         interfaces_extra = {}
-        net_manager = objects.Node.get_network_manager(node)
+        net_manager = objects.Cluster.get_network_manager(node.cluster)
         admin_ip = net_manager.get_admin_ip_for_node(node.id)
         admin_netmask = str(netaddr.IPNetwork(
             net_manager.get_admin_network_group(node.id).cidr

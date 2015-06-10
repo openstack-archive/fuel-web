@@ -28,7 +28,6 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.errors import errors
 from nailgun import objects
 from nailgun import utils
 from nailgun.volumes import manager as volume_manager
@@ -45,6 +44,8 @@ from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer60
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer61
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkDeploymentSerializer70
 from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer
 from nailgun.orchestrator.nova_serializers import \
@@ -467,6 +468,10 @@ class DeploymentHASerializer61(DeploymentHASerializer,
         return images_data
 
 
+class DeploymentHASerializer70(DeploymentHASerializer):
+    neutron_network_serializer = NeutronNetworkDeploymentSerializer70
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -490,6 +495,11 @@ def get_serializer_for_cluster(cluster):
             'multinode': DeploymentMultinodeSerializer61,
             'ha': DeploymentHASerializer61,
         },
+        '7.0': {
+            # Since Multinode isn't supported, use HA serializer for both cases
+            'multinode': DeploymentHASerializer70,
+            'ha': DeploymentHASerializer70,
+        }
     }
 
     env_version = utils.extract_env_version(cluster.release.version)

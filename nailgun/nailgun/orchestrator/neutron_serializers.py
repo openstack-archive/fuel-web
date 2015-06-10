@@ -22,6 +22,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.objects import Node
@@ -803,3 +804,120 @@ class NeutronNetworkDeploymentSerializer61(
         else:
             phys = [netgroup['dev']]
         return phys
+
+
+class NeutronNetworkDeploymentSerializer70(
+    NeutronNetworkDeploymentSerializer61
+):
+
+    @classmethod
+    def generate_network_metadata(cls, cluster):
+        private_segm_range = cluster.network_config.vlan_range
+        private_subnet = cluster.network_config.internal_cidr
+        private_gateway = cluster.network_config.internal_gateway
+        segm_type = cluster.network_config.segmentation_type
+        floating_range = cluster.network_config.segmentation_type
+        public_cidr, public_gw = db().query(
+            NetworkGroup.cidr,
+            NetworkGroup.gateway
+        ).filter_by(
+            group_id=Cluster.get_default_group(cluster).id,
+            name='public'
+        ).first()
+
+        metadata = {
+            "network_metadata": {
+                "roles": {
+                    "neutron/private": {
+                        "tenant_networks": {
+                            "enabled": True,
+                            "type": segm_type,
+                            "segm_range": private_segm_range,
+                            "networks": [
+                                {
+                                    "name": "admin__vlan",
+                                    "segm_id": private_segm_range[0],
+                                    "subnet": private_subnet,
+                                    "gateway": private_gateway,
+                                    "tenant_name": "admin",
+                                    "mtu": "0 (by default)"
+                                }
+                            ]
+                        }
+                    },
+                    "neutron/mesh": {
+                        "tenant_networks": {
+                            "enabled": True,
+                            "type": "vxlan",
+                            "segm_range": [
+                                10000,
+                                65535
+                            ],
+                            "networks": [
+                                {
+                                    "name": "admin__vxlan",
+                                    "segm_id": 10000,
+                                    "subnet": "192.128.112.0/24",
+                                    "gateway": "192.128.112.1",
+                                    "tenant_name": "admin",
+                                    "mtu": 0
+                                }
+                            ]
+                        }
+                    },
+                    "neutron/floating": {
+                        "floating_subnets": [
+                            {
+                                "name": "floating__sub_1",
+                                "subnet": public_cidr,
+                                "range": {
+                                    "start": floating_range[0],
+                                    "end": floating_range[1]
+                                },
+                                "gw": public_gw
+                            },
+                        ]
+                    }
+                }
+            }
+        }
+        return metadata
+
+    @classmethod
+    def network_provider_node_attrs(cls, cluster, node):
+        """Serialize node, then it will be
+        merged with common attributes
+        """
+        node_attrs = super(NeutronNetworkDeploymentSerializer70,
+              cls).network_provider_node_attrs(
+            cluster, node)
+        node_attrs['network_metadata'] = cls.generate_network_metadata(cluster)
+        return node_attrs
+
+    @classmethod
+    def network_provider_cluster_attrs(cls, cluster):
+        """Cluster attributes."""
+        return {'quantum': True,
+                'quantum_settings': cls.neutron_attrs(cluster)}
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(NeutronNetworkDeploymentSerializer70, cls).\
+            generate_l2(cluster)
+        l2.pop("segmentation_type")
+        l2.pop("tunnel_id_ranges")
+        return l2
+
+    @classmethod
+    def neutron_attrs(cls, cluster):
+        """Network configuration for Neutron
+        """
+        attrs = dict(L2=cls.generate_l2(cluster), L3=cls.generate_l3(cluster))
+
+        # NOTE: Let it be here until we know how NSX will be done in 7.0.
+        cluster_attrs = Cluster.get_attributes(cluster).editable
+        if 'nsx_plugin' in cluster_attrs and \
+                cluster_attrs['nsx_plugin']['metadata']['enabled']:
+            attrs['L2']['provider'] = 'nsx'
+
+        return attrs

@@ -499,7 +499,6 @@ def get_serializer_for_cluster(cluster):
             'ha': DeploymentHASerializer61,
         },
         '7.0': {
-            # Multinode is not supported anymore
             'ha': DeploymentHASerializer70,
         }
     }

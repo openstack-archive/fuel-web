@@ -88,6 +88,19 @@ class TestDeploymentAttributesSerialization70(
 ):
     segmentation_type = consts.NEUTRON_SEGMENT_TYPES.vlan
 
+    def test_provider_cluster_attrs(self):
+        for node in self.serialized_for_astute:
+            quantum_settings = node['quantum_settings']
+            self.assertNotIn('L2', quantum_settings)
+            self.assertNotIn('L3', quantum_settings)
+
+            self.assertIsNot(quantum_settings['database']['passwd'], '')
+            self.assertIsNot(quantum_settings['keystone']['admin_password'],
+                             '')
+            self.assertIsNot(
+                quantum_settings['metadata']['metadata_proxy_shared_secret'],
+                '')
+
     def test_network_scheme(self):
         for node in self.serialized_for_astute:
             roles = node['network_scheme']['roles']
@@ -1003,3 +1016,82 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                     node_attrs['network_roles'],
                     network_roles
                 )
+
+    def test_network_metadata(self):
+        for node in self.serialized_for_astute:
+            roles = node['network_metadata']['roles']
+
+            # 'neutron/private' role test
+            neutron_private_expected = {
+                "tenant_networks": {
+                    "enabled": True,
+                    "type": "vlan",
+                    "segm_range": [1000, 1030],
+                    "networks": [
+                        {
+                            "name": "admin__vlan",
+                            "segm_id": 1000,
+                            "subnet": '192.168.111.0/24',
+                            "gateway": '192.168.111.1',
+                            "tenant_name": "admin",
+                            "mtu": 0
+                        }
+                    ]
+                }
+            }
+            self.assertEqual(roles['neutron/private'],
+                             neutron_private_expected)
+
+            # 'neutron/mesh' role test
+            neutron_mesh_expected = {
+                "tenant_networks": {
+                    "enabled": True,
+                    "type": "vxlan",
+                    "segm_range": [
+                        10000,
+                        65535
+                    ],
+                    "networks": [
+                        {
+                            "name": "admin__vxlan",
+                            "segm_id": 10000,
+                            "subnet": "192.128.112.0/24",
+                            "gateway": "192.128.112.1",
+                            "tenant_name": "admin",
+                            "mtu": 0
+                        }
+                    ]
+                }
+            }
+            self.assertEqual(roles['neutron/mesh'], neutron_mesh_expected)
+
+            # 'neutron/floating' role test
+            neutron_floating_expected = {
+                "floating_subnets": [
+                    {
+                        "name": "floating__sub_1",
+                        "subnet": '172.16.0.0/24',
+                        "range": {
+                            "start": '172.16.0.130',
+                            "end": '172.16.0.254'
+                        },
+                        "gw": '172.16.0.1'
+                    },
+                ]
+            }
+            self.assertEqual(roles['neutron/floating'],
+                             neutron_floating_expected)
+
+            # 'neutron/api' role test
+            neutron_api_expected = {
+                "tenant_networks": [
+                    {
+                        "base_mac": "fa:16:3e:00:00:00",
+                        "l2_population": False,
+                        "use_dvr": False,
+                        "nameservers": ['8.8.4.4', '8.8.8.8']
+                    },
+                ]
+            }
+            self.assertEqual(roles['neutron/api'],
+                             neutron_api_expected)

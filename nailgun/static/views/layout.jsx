@@ -198,7 +198,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                             return (
                                 <li key={locale} className={utils.classNames({active: locale == currentLocale})}>
                                     <a onClick={_.partial(this.changeLocale, locale)}>
-                                        {i18n.getLocaleName(locale)}
+                                        {i18n.getLanguageName(locale)}
                                     </a>
                                 </li>
                             );

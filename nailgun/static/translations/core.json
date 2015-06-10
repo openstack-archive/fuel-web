@@ -2,6 +2,7 @@
     "en-US": {
         "translation": {
             "language": "EN",
+            "language_name": "English",
             "common": {
                 "title": "Fuel Dashboard",
                 "select_all": "Select All",
@@ -784,6 +785,7 @@
     "zh-CN": {
         "translation": {
             "language": "CN",
+            "language_name": "中国语文",
             "common": {
                 "title": "Fuel Dashboard",
                 "select_all": "选择全部",
@@ -1307,6 +1309,7 @@
     "ja-JP": {
         "translation": {
             "language": "JA",
+            "language_name": "日本語",
             "common": {
                 "title": "Fuel ダッシュボード",
                 "select_all": "全部選択",
@@ -1766,6 +1769,7 @@
     "ko-KR": {
         "translation": {
             "language": "KO",
+            "language_name": "한국말",
             "common": {
                 "title": "Fuel 대시보드",
                 "select_all": "모두선택",

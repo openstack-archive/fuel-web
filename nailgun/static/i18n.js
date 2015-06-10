@@ -30,6 +30,9 @@ define([
         getLocaleName: function(locale) {
             return i18n('language', {lng: locale});
         },
+        getLanguageName: function(locale) {
+            return i18n('language_name', {lng: locale});
+        },
         getAvailableLocales: function() {
             return _.keys(translations).sort();
         },

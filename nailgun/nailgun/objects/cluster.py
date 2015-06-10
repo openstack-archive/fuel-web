@@ -318,10 +318,15 @@ class Cluster(NailgunObject):
         :returns: NetworkManager/NovaNetworkManager/NeutronManager
         """
         if not instance:
+            import mock
             from nailgun.network.manager import NetworkManager
-            return NetworkManager
+            # return NetworkManager
+            return mock.Mock()
 
         if instance.net_provider == 'neutron':
+            if instance.release_id == '7.0':
+                from nailgun.network.neutron import NeutronManager70
+                return NeutronManager70
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:

@@ -18,6 +18,7 @@ import copy
 import datetime
 import hashlib
 import jsonschema
+import mock
 import six
 import uuid
 
@@ -28,6 +29,7 @@ from oslo.serialization import jsonutils
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import BaseTestCase
+from nailgun.test.base import BaseUnitTest
 from nailgun.test.base import reverse
 
 from nailgun.errors import errors
@@ -37,6 +39,11 @@ from nailgun import consts
 from nailgun.db import NoCacheQuery
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import Task
+
+from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
+from nailgun.network.neutron import NeutronManager70
+from nailgun.network.nova_network import NovaNetworkManager
 
 from nailgun import objects
 
@@ -746,3 +753,28 @@ class TestClusterObject(BaseTestCase):
         bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
+
+
+class TestClusterObjectGetNetworkManager(BaseUnitTest):
+    def setUp(self):
+        super(TestClusterObjectGetNetworkManager, self).setUp()
+        self.cluster = mock.Mock()
+
+    def test_get_default(self):
+        nm = objects.Cluster.get_network_manager()
+        self.assertEqual(nm, NetworkManager)
+
+    def test_get_neutron(self):
+        self.cluster.net_provider = 'neutron'
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        self.assertEqual(nm, NeutronManager)
+
+    def test_get_neutron_70(self):
+        self.cluster.net_provider = 'neutron'
+        self.cluster.release_id = '7.0'
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        self.assertEqual(nm, NeutronManager70)
+
+    def test_get_nova(self):
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        self.assertEqual(nm, NovaNetworkManager)

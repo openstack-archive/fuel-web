@@ -34,6 +34,9 @@ unless Process.euid == 0
   exit 1
 end
 
+# disable the garbage collector
+GC.disable
+
 ENV['PATH'] = "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 
 AGENT_CONFIG = "/etc/nailgun-agent/config.yaml"

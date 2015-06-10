@@ -320,8 +320,12 @@ class Cluster(NailgunObject):
         if not instance:
             from nailgun.network.manager import NetworkManager
             return NetworkManager
+            return None
 
         if instance.net_provider == 'neutron':
+            if instance.release_id == '7.0':
+                from nailgun.network.neutron import NeutronManager70
+                return NeutronManager70
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:

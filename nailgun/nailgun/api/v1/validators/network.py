@@ -265,8 +265,8 @@ class NetAssignmentValidator(BasicValidator):
                 "or during deployment.".format(db_node.id))
         interfaces = node['interfaces']
         db_interfaces = db_node.nic_interfaces
-        network_group_ids = objects.Node.get_network_manager(
-            db_node
+        network_group_ids = objects.Cluster.get_network_manager(
+            db_node.cluster
         ).get_node_networkgroups_ids(db_node)
 
         bonded_eth_ids = set()

@@ -322,6 +322,9 @@ class Cluster(NailgunObject):
             return NetworkManager
 
         if instance.net_provider == 'neutron':
+            if instance.release_id == '7.0':
+                from nailgun.network.neutron import NeutronManager70
+                return NeutronManager70
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:

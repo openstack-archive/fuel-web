@@ -42,7 +42,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if cluster.mode == 'multinode':
             for node in cluster.nodes:
                 if cls._node_has_role_by_name(node, 'controller'):
-                    net_manager = Node.get_network_manager(node)
+                    net_manager = Cluster.get_network_manager(cluster)
                     mgmt_cidr = net_manager.get_node_network_by_netname(
                         node,
                         'management'
@@ -77,7 +77,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             Cluster.get_attributes(node.cluster).editable.get('storage', {})
 
         # Get network manager
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
 
         # Init mellanox dict
         node_attrs['neutron_mellanox'] = {}
@@ -208,7 +208,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             attrs['endpoints']['br-ex'] = {}
             attrs['roles']['ex'] = 'br-ex'
 
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
         iface_types = consts.NETWORK_INTERFACE_TYPES
 
         # Add a dynamic data to a structure.
@@ -518,7 +518,7 @@ class NeutronNetworkDeploymentSerializer60(
         # Include information about all subnets that don't belong to this node.
         # This is used during deployment to configure routes to all other
         # networks in the environment.
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
         other_nets = nm.get_networks_not_on_node(node)
 
         netgroup_mapping = [
@@ -673,7 +673,7 @@ class NeutronNetworkDeploymentSerializer61(
             attrs['roles']['ex'] = 'br-ex'
             attrs['roles']['neutron/floating'] = 'br-floating'
 
-        nm = Node.get_network_manager(node)
+        nm = Cluster.get_network_manager(node.cluster)
 
         # Populate IP and GW information to endpoints.
         netgroup_mapping = [

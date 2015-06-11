@@ -384,9 +384,6 @@ define([
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
         },
-        isSelectable: function() {
-            return this.get('status') != 'error' || this.get('cluster');
-        },
         hasRole: function(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
@@ -408,6 +405,9 @@ define([
             if (this.get('pending_addition')) return 'pending_addition';
             if (this.get('pending_deletion')) return 'pending_deletion';
             return status;
+        },
+        getLabel: function(label) {
+            return this.get('labels')[label];
         }
     });
 

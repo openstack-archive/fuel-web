@@ -88,6 +88,7 @@ class Node(Base):
     error_msg = Column(String(255))
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)
+    labels = Column(JSON, nullable=False, server_default='{}')
     roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                    default=[], nullable=False, server_default='{}')
     pending_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),

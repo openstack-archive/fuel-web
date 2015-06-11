@@ -93,9 +93,11 @@ def upgrade():
     extend_nic_model_upgrade()
     upgrade_cluster_ui_settings()
     upgrade_cluster_bond_settings()
+    upgrade_node_labels()
 
 
 def downgrade():
+    downgrade_node_labels()
     downgrade_cluster_ui_settings()
     extend_nic_model_downgrade()
     extend_releases_model_downgrade()
@@ -604,3 +606,14 @@ def upgrade_cluster_bond_settings():
             id=release_id,
             networks=jsonutils.dumps(networks_meta)
         )
+
+
+def upgrade_node_labels():
+    op.add_column(
+        'nodes',
+        sa.Column('labels', fields.JSON(), server_default='{}', nullable=False)
+    )
+
+
+def downgrade_node_labels():
+    op.drop_column('nodes', 'labels')

@@ -34,7 +34,7 @@
               message: "Multi-node environment can not have more than one Controller node."
             - condition: "cluster:mode == 'ha_compact'"
               recommended: 3
-              message: "At least 3 Controller nodes are recommended for HA deployment."
+              message: "At least 3 Controller nodes are recommended for Highly Available (HA) environments. Deployments with less than 3 Controller nodes are not recommended for production environments."
       compute:
         name: "Compute"
         description: "A Compute node creates, manages and terminates virtual machine instances."

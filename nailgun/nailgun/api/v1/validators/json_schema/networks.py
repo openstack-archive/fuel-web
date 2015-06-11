@@ -19,10 +19,7 @@ from nailgun import consts
 VIPS = {
     'type': 'array',
     'uniqueItems': True,
-    'items': {
-        'type': 'string',
-        'enum': list(consts.NETWORK_VIP_TYPES),
-    },
+    'items': {'type': 'string'},
 }
 
 NETWORK = {

@@ -138,6 +138,7 @@ single_schema = {
         "error_type": base_types.NULLABLE_ENUM(list(consts.NODE_ERRORS)),
         "error_msg": {"type": "string"},
         "online": {"type": "boolean"},
+        "labels": {"type": "object"},
         "roles": {"type": "array"},
         "pending_roles": {"type": "array"},
         "agent_checksum": {"type": "string"}

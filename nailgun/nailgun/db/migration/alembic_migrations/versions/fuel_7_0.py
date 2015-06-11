@@ -24,6 +24,9 @@ Create Date: 2015-06-24 12:08:04.838393
 revision = '1e50a4903910'
 down_revision = '37608259013'
 
+from nailgun.utils.migration import drop_enum
+
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -41,11 +44,13 @@ def upgrade():
     op.create_unique_constraint(
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
+    extend_ip_addrs_model_upgrade()
     extend_plugin_model_upgrade()
 
 
 def downgrade():
     extend_plugin_model_downgrade()
+    extend_ip_addrs_model_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
     op.alter_column(
@@ -53,6 +58,14 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+
+
+def extend_ip_addrs_model_upgrade():
+    op.alter_column('ip_addrs', 'vip_type',
+                    type_=sa.String(length=50),
+                    existing_type=sa.Enum('haproxy', 'vrouter',
+                    name='network_vip_types'))
+    drop_enum('network_vip_types')
 
 
 def extend_plugin_model_upgrade():
@@ -101,6 +114,13 @@ def extend_plugin_model_upgrade():
             server_default='[]'
         )
     )
+
+
+def extend_ip_addrs_model_downgrade():
+    vrouter_enum = sa.Enum('haproxy', 'vrouter',
+                           name='network_vip_types')
+    vrouter_enum.create(op.get_bind(), checkfirst=False)
+    op.alter_column('ip_addrs', 'vip_type', type_=vrouter_enum)
 
 
 def extend_plugin_model_downgrade():

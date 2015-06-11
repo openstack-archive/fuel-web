@@ -422,6 +422,16 @@
                         "filter_by": "Filter By",
                         "filter_placeholder": "Node name/mac",
                         "search_placeholder": "Search by node name, MAC or IP address",
+                        "manage_labels": "Manage Labels",
+                        "add_label": "Add Label",
+                        "not_assigned_label": "No label \"__label__\"",
+                        "label_key": "Name",
+                        "label_value": "Value",
+                        "selected_nodes_amount": "__count__ selected node",
+                        "selected_nodes_amount_plural": "__count__ selected nodes",
+                        "bulk_label_action_start": "Here you can change labels of ",
+                        "bulk_label_action_end": ". Use checkbox control to add or delete label from the selected nodes, and text fields to update label name or value.",
+                        "label_value_warning": "This label has different values within the selected nodes. If you change label value, this new value will be applied to all the selected node that has the label.",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "more_than": "More than ",
@@ -431,8 +441,13 @@
                         "node_management_error": {
                             "title": "Node Management Error",
                             "saving_warning": "Unable to apply changes",
+                            "labels_warning": "Unable to apply labels",
                             "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
                             "interfaces_configuration_warning": "Only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
+                        },
+                        "labels_error": {
+                            "label_already_exists": "Label already exists",
+                            "invalid_label": "Invalid label"
                         }
                     },
                     "node": {

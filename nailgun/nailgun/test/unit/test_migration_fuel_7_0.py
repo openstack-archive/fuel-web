@@ -683,3 +683,16 @@ class TestClusterBondMetaMigration(base.BaseAlembicMigrationTest):
             where(self.meta.tables['releases'].c.name == 'test_name_2'))
         bond_meta = jsonutils.loads(result.fetchone()[0])['bonding']
         self.assertEqual(bond_meta['properties']['ovs']['mode'], ovs_meta)
+
+
+class TestNodeLabelsMigration(base.BaseAlembicMigrationTest):
+    def test_node_labels_field_exists_and_has_default_value(self):
+        nodes_table = self.meta.tables['nodes']
+        self.assertIn('labels', nodes_table.c)
+
+        default_labels = jsonutils.loads(
+            db.execute(
+                sa.select([nodes_table.c.labels])
+            ).fetchone()[0]
+        )
+        self.assertItemsEqual(default_labels, {})

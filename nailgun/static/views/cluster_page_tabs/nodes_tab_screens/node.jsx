@@ -230,7 +230,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         },
         renderRoleList: function(roles) {
             return (
-                <ul className='clearfix'>
+                <ul>
                     {_.map(roles, function(role) {
                         return (
                             <li
@@ -247,6 +247,28 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         showDeleteNodesDialog: function() {
             if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
             dialogs.DeleteNodesDialog.show({nodes: [this.props.node], cluster: this.props.cluster});
+        },
+        renderLabels: function() {
+            var labels = this.props.node.get('labels');
+            return (
+                <div className='node-labels'>
+                    {!_.isEmpty(labels) &&
+                        <div>
+                            <i className='glyphicon glyphicon-tag pull-left' />
+                            <ul>
+                                {_.map(_.keys(labels).sort(utils.natsort), function(key) {
+                                    var value = labels[key];
+                                    return (
+                                        <li key={key + value} className='label'>
+                                            {key + ' "' + (_.isNull(value) ? '' : value) + '"'}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    }
+                </div>
+            );
         },
         render: function() {
             var ns = 'cluster_page.nodes_tab.node.',
@@ -338,6 +360,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                             {this.renderRoleList(roles)}
                                         </div>
                                     }
+                                    {this.renderLabels()}
                                     <div className={utils.classNames(statusClasses)}>
                                         <i className='glyphicon glyphicon-time' />
                                         {_.contains(['provisioning', 'deploying'], status) ?
@@ -389,6 +412,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 {this.renderRoleList(roles)}
                             </div>
                         </div>
+                        {this.renderLabels()}
                         <div className='node-action'>
                             {!!node.get('cluster') &&
                                 ((this.props.locked || !node.hasChanges()) ?

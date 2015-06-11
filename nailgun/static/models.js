@@ -385,7 +385,7 @@ define([
             });
         },
         isSelectable: function() {
-            return this.get('status') != 'error' || this.get('cluster');
+            return true;
         },
         hasRole: function(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
@@ -408,6 +408,9 @@ define([
             if (this.get('pending_addition')) return 'pending_addition';
             if (this.get('pending_deletion')) return 'pending_deletion';
             return status;
+        },
+        getLabel: function(label) {
+            return this.get('labels')[label];
         }
     });
 
@@ -430,6 +433,9 @@ define([
         resources: function(resourceName) {
             var resources = this.map(function(node) {return node.resource(resourceName);});
             return _.reduce(resources, function(sum, n) {return sum + n;}, 0);
+        },
+        getLabelValues: function(label) {
+            return this.invoke('getLabel', label);
         }
     });
 

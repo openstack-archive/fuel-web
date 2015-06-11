@@ -802,8 +802,10 @@ class CheckBeforeDeploymentTask(object):
         cls._check_ceph(task)
         cls._check_volumes(task)
         cls._check_public_network(task)
-        cls._check_mongo_nodes(task)
         cls._check_vmware_consistency(task)
+
+        if objects.Release.is_external_mongo_enabled(task.cluster.release):
+            cls._check_mongo_nodes(task)
 
     @classmethod
     def _check_nodes_are_online(cls, task):

@@ -13,16 +13,12 @@
 #    under the License.
 
 from nailgun.api.v1.validators.json_schema import base_types
-from nailgun import consts
 
 
 VIPS = {
     'type': 'array',
     'uniqueItems': True,
-    'items': {
-        'type': 'string',
-        'enum': list(consts.NETWORK_VIP_TYPES),
-    },
+    'items': {'type': 'string'},
 }
 
 NETWORK = {

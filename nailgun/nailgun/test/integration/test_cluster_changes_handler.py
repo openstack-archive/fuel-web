@@ -1581,7 +1581,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(
             task.message,
             "Not enough controllers, multinode mode requires at least 1 "
-            "controller")
+            "controller(s)")
 
     def test_occurs_error_not_enough_controllers_for_ha(self):
         self.env.create(
@@ -1594,7 +1594,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(
             task.message,
             'Not enough controllers, ha_compact '
-            'mode requires at least 1 controller')
+            'mode requires at least 1 controller(s)')
 
     def test_occurs_error_not_enough_osds_for_ceph(self):
         cluster = self.env.create(

@@ -1312,9 +1312,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
     margin-bottom: @management-panel-indent * 3;
     button.btn {
       margin-right: @management-panel-indent;
+      &.btn-labels {
+        margin-right: @management-panel-indent * 3;
+      }
     }
     .search {
-      min-width: 350px;
+      min-width: 310px;
       position: relative;
       .form-group {
         margin: 0;
@@ -1441,6 +1444,55 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .form-control {
       width: auto;
       float: left;
+    }
+  }
+
+  .labels {
+    p {
+      color: @base-text-color + 50%;
+      & + div {
+        margin-top: @management-panel-indent * 3;
+      }
+      strong {
+        text-decoration: underline;
+      }
+    }
+    .forms-box {
+      margin-top: @management-panel-indent * 3;
+      margin-bottom: 0;
+      .checkbox-group {
+        padding: 0;
+        margin: 0;
+        position: relative;
+        top: 31px;
+        width: 25px;
+      }
+      > div + .btn-add-label {
+        margin-top: @management-panel-indent;
+        margin-left: 35px;
+      }
+      .form-group {
+        margin-bottom: @management-panel-indent;
+        padding-right: 0;
+        position: relative;
+        label {
+          width: auto;
+          padding: 0;
+          padding-left: 13px;
+          margin: 0 0 3px;
+          .font-semibold;
+        }
+        &.has-warning {
+          label {
+            position: absolute;
+            left: @default-input-width + 15;
+            top: -6px;
+          }
+          .form-control {
+            border-color: @orange;
+          }
+        }
+      }
     }
   }
 }
@@ -1597,7 +1649,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         }
 
         .node-name {
-          width: 35%;
+          width: 25%;
           .name {
             height: 32px;
             padding-top: 8px;
@@ -1649,7 +1701,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
         .node-status {
           width: 20%;
-          text-align: center;
           .font-semibold;
           .node-text-mixin;
           span {
@@ -1686,6 +1737,22 @@ button, .btn:not(.btn-link) {.font-semibold;}
           background: url(@common-icons-sprite) no-repeat 0 0;
           &:hover {
             background: url(@common-icons-sprite) no-repeat -@node-button-size 0;
+          }
+        }
+
+        .node-labels {
+          width: 20%;
+          position: relative;
+          .glyphicon {
+            position: absolute;
+            top: 18px;
+            font-size: @base-font-size + 2;
+          }
+          ul {
+            margin: 0;
+            display: table-cell;
+            vertical-align: middle;
+            height: @node-inner-height;
           }
         }
       }
@@ -1966,6 +2033,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .font-semibold;
       ul {
         padding: 0;
+        display: inline;
         li {
           display: inline-block;
           float: left;
@@ -1979,6 +2047,26 @@ button, .btn:not(.btn-link) {.font-semibold;}
             content: "";
           }
         }
+      }
+    }
+
+    .node-labels {
+      text-align: left;
+      ul {
+        padding-left: 20px;
+      }
+      .glyphicon {
+        font-size: @base-font-size - 2;
+      }
+      .label {
+        color: @base-text-color;
+        border-radius: 5px;
+        background: @gray + 70%;
+        padding: 2px 6px 1px;
+        margin-right: 3px;
+        font-size: @base-font-size - 4;
+        text-transform: uppercase;
+        .font-semibold;
       }
     }
   }
@@ -3297,4 +3385,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
   &:hover {
     text-decoration: none;
   }
+}
+
+.tooltip-inner {
+  max-width: none;
+  min-width: 300px;
 }

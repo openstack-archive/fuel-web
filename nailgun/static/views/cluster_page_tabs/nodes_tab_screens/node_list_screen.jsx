@@ -228,7 +228,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var cluster = this.props.cluster,
                 locked = !!cluster.tasks({group: 'deployment', status: 'running'}).length,
                 nodes = this.props.nodes,
-                processedRoleData = this.processRoleLimits();
+                processedRoleData = this.processRoleLimits(),
+                labels = _.chain(nodes.pluck('labels')).map(_.keys).flatten().uniq().value();
 
             // filter nodes
             var filteredNodes = nodes.filter(function(node) {
@@ -246,6 +247,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 return _.all(this.state.activeFilters, function(values, filter) {
                     if (!_.contains(this.props.filters, filter) || !values.length) {
                         return true;
+                    }
+
+                    // labels
+                    if (_.contains(labels, filter)) {
+                        return _.contains(activeFilters, node.get('labels')[filter]);
                     }
 
                     if (filter == 'roles') {
@@ -487,7 +493,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return {
                 actionInProgress: false,
                 isSearchButtonVisible: !!this.props.search,
-                activeSearch: !!this.props.search
+                activeSearch: !!this.props.search,
+                labels: this.getLabels(),
+                labelErrors: {}
             };
         },
         getFilterOptions: function(filter) {
@@ -576,6 +584,18 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 }
             }, this));
         },
+        getLabels: function(newProps) {
+            var nodes = (newProps || this.props).nodes;
+            return nodes.reduce(function(result, node) {
+                return _.intersection(result, _.keys(node.get('labels')));
+            }, _.chain(nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value());
+        },
+        componentWillReceiveProps: function(newProps) {
+            this.setState({
+                labels: this.getLabels(newProps),
+                labelsKey: _.now()
+            });
+        },
         componentWillUnmount: function() {
             $('html').off('click.search');
         },
@@ -597,6 +617,42 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             this.props.resetFilters();
             this.setState({filtersKey: _.now()});
         },
+        setNewLabel: function(name, value) {
+            this.setState({newLabel: value});
+        },
+        addLabel: function() {
+            var label = this.state.newLabel;
+            if (label && !_.contains(this.state.labels, label)) {
+                this.setState({
+                    labels: _.union(this.state.labels, [label])
+                });
+            }
+        },
+        removeLabel: function(label) {
+            this.setState({
+                labels: _.difference(this.state.labels, [label])
+            });
+        },
+        applyLabels: function() {
+            var labels = {};
+            _.each(this.state.labels, function(label) {
+                labels[label] = this.refs[label].getInputDOMNode().value;
+            }, this);
+
+            var nodes = new models.Nodes(this.props.nodes.map(function(node) {
+                return {id: node.id, labels: labels};
+            }));
+            Backbone.sync('update', nodes)
+                .done(_.bind(function() {
+                    this.props.cluster.fetchRelated('nodes');
+                }, this))
+                .fail(_.bind(function(response) {
+                    utils.showErrorDialog({
+                        message: i18n('cluster_page.nodes_tab.node_management_panel.node_management_error.labels_warning'),
+                        response: response
+                    });
+                }, this));
+        },
         toggleSorters: function() {
             this.setState({
                 areSortersVisible: !this.state.areSortersVisible,
@@ -614,6 +670,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <i className='btn btn-link glyphicon glyphicon-minus-sign' onClick={_.partial(this.removeFilter, filter)} />
             );
+        },
+        toggleLabels: function() {
+            this.setState({
+                areFiltersVisible: false,
+                areSortersVisible: false
+            });
         },
         renderDeleteSorterButton: function(sorter) {
             var isDefaultSorter = _.any(this.props.defaultSorting, function(defaultSorter) {
@@ -647,13 +709,17 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }, this);
 
             var activeSorters, inactiveSorters;
-            var filtersToDisplay, inactiveFilters, filtersWithChosenValues;
+            var filtersToDisplay, inactiveFilters, filtersWithChosenValues, hiddenLabelsForFilters;
+            var nodesLabels = _.chain(this.props.screenNodes.pluck('labels')).map(_.keys).flatten().uniq().value().sort(utils.natsort);
             if (this.props.mode != 'edit') {
                 activeSorters = _.flatten(_.map(this.props.activeSorters, _.keys));
                 inactiveSorters = _.difference(this.props.sorters, activeSorters);
                 filtersToDisplay = _.extend(_.zipObject(this.props.defaultFilters, _.times(this.props.defaultFilters.length, function() {return [];})), this.props.activeFilters);
                 inactiveFilters = _.difference(this.props.filters, _.keys(filtersToDisplay));
                 filtersWithChosenValues = _.omit(this.props.activeFilters, function(values) {return !values.length;});
+                hiddenLabelsForFilters = _.compact(_.map(nodesLabels, function(label) {
+                    if (!_.contains(this.state.visibleFilters, label)) return {name: label, label: label};
+                }, this));
             }
 
             return (
@@ -681,6 +747,16 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 </div>
                             </div>
                             {this.props.mode != 'edit' && [
+                                <button
+                                    key='labels-btn'
+                                    className='btn btn-default pull-left'
+                                    disabled={!this.props.nodes.length}
+                                    data-toggle='collapse'
+                                    data-target='.labels'
+                                    onClick={this.toggleLabels}
+                                >
+                                    <i className='glyphicon glyphicon-tag' />
+                                </button>,
                                 <button
                                     key='sorters-btn'
                                     disabled={!this.props.screenNodes.length}
@@ -799,6 +875,80 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                 ]
                             }
                         </div>
+                        {this.props.mode != 'edit' && !!this.props.nodes.length &&
+                            <div className='col-xs-12 labels collapse' key='labels' ref='labels'>
+                                <div className='well clearfix' key={this.state.labelsKey}>
+                                    <div className='well-heading'>
+                                        <i className='glyphicon glyphicon-tag' /> {i18n(ns + 'manage_labels')}
+                                    </div>
+                                    <div className='forms-box'>
+                                        {_.map(this.state.labels, function(label) {
+                                            var values = _.chain(this.props.nodes.pluck('labels')).filter(function(labels) {
+                                                    return labels[label];
+                                                }).pluck(label).uniq().value();
+                                            return <controls.Input
+                                                type='text'
+                                                key={label}
+                                                ref={label}
+                                                name={label}
+                                                defaultValue={values.length > 1 ? '' : values[0]}
+                                                label={label}
+                                                maxLength={100}
+                                                extraContent={
+                                                    <button className='btn btn-link' onClick={_.partial(this.removeLabel, label)}>
+                                                        <i className='glyphicon glyphicon-remove-sign' />
+                                                    </button>
+                                                }
+                                            />;
+                                        }, this)}
+                                        <controls.Input
+                                            type='text'
+                                            label='Add new label'
+                                            ref='newLabel'
+                                            wrapperClassName='add-new-label'
+                                            value={this.state.newLabel}
+                                            onChange={this.setNewLabel}
+                                            maxLength={100}
+                                            onFocus={_.bind(function() {
+                                                this.setState({showAutocompletion: true});
+                                                $('html').on('click.autocompletion', _.bind(function(e) {
+                                                    if (this.state.showAutocompletion && !$(e.target).closest($(this.refs.newLabel.getInputDOMNode()).parent()).length) {
+                                                        this.setState({showAutocompletion: false});
+                                                        $('html').off('click.autocompletion');
+                                                    }
+                                                }, this));
+                                            }, this)}
+                                            extraContent={
+                                                <div>
+                                                    <button className='btn btn-link text-success' onClick={this.addLabel}>
+                                                        <i className='glyphicon glyphicon-plus-sign' />
+                                                    </button>
+                                                    {this.state.showAutocompletion &&
+                                                        <ul className='autocompletion'>
+                                                            {_.compact(_.map(nodesLabels, function(label) {
+                                                                if (this.state.newLabel && _.startsWith(label, this.state.newLabel)) {
+                                                                    return <li key={label} onClick={_.bind(function() {this.setNewLabel(label);}, this)}>{label}</li>;
+                                                                }
+                                                            }, this))}
+                                                        </ul>
+                                                    }
+                                                </div>
+                                            }
+                                        />
+                                    </div>
+                                    <div className='control-buttons text-right'>
+                                        <div className='btn-group' role='group'>
+                                            <button className='btn btn-default' data-toggle='collapse' data-target='.labels'>
+                                                {i18n('common.cancel_button')}
+                                            </button>
+                                            <button className='btn btn-success' data-toggle='collapse' data-target='.labels' onClick={this.applyLabels}>
+                                                {i18n('common.apply_button')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                         {this.props.mode != 'edit' && !!this.props.screenNodes.length && [
                             this.state.areSortersVisible && (
                                 <div className='col-xs-12 sorters' key='sorters'>
@@ -940,7 +1090,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                                         if (!_.contains(this.props.sorters, sorterName)) return null;
                                                         return (
                                                             <span key={sorterName}>
-                                                                {i18n('cluster_page.nodes_tab.sorters.' + sorterName)}
+                                                                {i18n('cluster_page.nodes_tab.sorters.' + sorterName, {defaultValue: sorterName})}
                                                                 <i
                                                                     className={utils.classNames({
                                                                         glyphicon: true,
@@ -1117,6 +1267,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                             total: utils.showMemorySize(node.resource('ram'))
                         });
                     }
+
+                    // group by labels
+                    //var labelValue = node.get('labels')[sorter];
+                    //return sorter + ' "' + (_.isUndefined(labelValue) ? 'Not specified' : labelValue) + '"';
+
                     return i18n('node_details.' + (sorter == 'interfaces' ? 'interfaces_amount' : sorter), {count: node.resource(sorter)});
                 }, this)).join('; ');
             }, this);

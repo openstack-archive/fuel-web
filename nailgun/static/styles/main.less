@@ -1260,7 +1260,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       margin-right: @management-panel-indent;
     }
     .search {
-      min-width: 350px;
+      min-width: 320px;
       position: relative;
       .form-group {
         margin: 0;
@@ -1378,6 +1378,52 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .form-control {
       width: auto;
       float: left;
+    }
+  }
+
+  .labels {
+    .form-group {
+      margin-bottom: 5px;
+      &:last-child {
+        margin-bottom: 0;
+      }
+      label {
+        margin: 1px 5px 0 0;
+        min-width: 150px;
+        + div {
+          float: left;
+        }
+      }
+      &.add-new-label {
+        margin-top: 20px;
+        label {
+          .font-bold;
+        }
+        input + div {
+          float: left;
+          position: relative;
+          ul.autocompletion {
+            background: @white;
+            cursor: default;
+            left: -@default-input-width;
+            padding: 0;
+            position: absolute;
+            width: @default-input-width;
+            li {
+              list-style-type: none;
+              padding: @indent / 2  @indent @indent / 2 @indent * 3;
+              &:hover {
+                background: @gray + 90%;
+              }
+            }
+          }
+        }
+      }
+      &.has-error {
+        .help-block {
+          display: block !important;
+        }
+      }
     }
   }
 }
@@ -1616,6 +1662,18 @@ button, .btn:not(.btn-link) {.font-semibold;}
             background: url(@common-icons-sprite) no-repeat -@node-button-size 0;
           }
         }
+
+        .node-labels {
+          .label {
+            color: @base-text-color;
+            border-radius: 5px;
+            background: @gray + 50%;
+            padding: 1px 6px;
+            margin-left: 3px;
+            font-size: @base-font-size - 4;
+            .font-semibold;
+          }
+        }
       }
     }
 
@@ -1796,6 +1854,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
           li {
             color: @base-text-color;
           }
+          .node-labels {
+            i, li {
+              top: 0;
+            }
+          }
         }
 
         .hardware-info {
@@ -1894,6 +1957,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .font-semibold;
       ul {
         padding: 0;
+        display: inline;
         li {
           display: inline-block;
           float: left;
@@ -1905,6 +1969,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
           }
           &:last-child:after {
             content: "";
+          }
+        }
+        &.node-labels {
+          i, li {
+            position: relative;
+            top: 2px;
           }
         }
       }

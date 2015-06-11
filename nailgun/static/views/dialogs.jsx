@@ -908,8 +908,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         deleteNodes: function() {
             this.setState({actionInProgress: true});
             var nodes = new models.Nodes(this.props.nodes.map(function(node) {
-                if (node.get('pending_addition')) return {id: node.id, cluster_id: null, pending_addition: false, pending_roles: []};
-                return {id: node.id, pending_deletion: true};
+                var data = {id: node.id, labels: {}};
+                if (node.get('pending_addition')) return _.extend(data, {cluster_id: null, pending_addition: false, pending_roles: []});
+                return _.extend(data, {pending_deletion: true});
             }));
             Backbone.sync('update', nodes)
                 .then(_.bind(function() {

@@ -175,6 +175,7 @@ def upgrade():
                         'error_msg', sa.String(length=255), nullable=True),
                     sa.Column('timestamp', sa.DateTime(), nullable=False),
                     sa.Column('online', sa.Boolean(), nullable=True),
+                    sa.Column('labels', JSON(), nullable=False),
                     sa.Column(
                         'agent_checksum', sa.String(length=40), nullable=True),
                     sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),

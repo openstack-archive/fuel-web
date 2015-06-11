@@ -74,7 +74,7 @@ class NodeCollectionHandler(CollectionHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster', 'uuid', 'network_data',
+              'error_type', 'online', 'labels', 'cluster', 'uuid', 'network_data',
               'group_id')
 
     validator = NodeValidator

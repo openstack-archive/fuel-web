@@ -97,9 +97,11 @@ def upgrade():
     upgrade_cluster_bond_settings()
     extensions_field_upgrade()
     set_deployable_false_for_old_releases()
+    upgrade_node_labels()
 
 
 def downgrade():
+    downgrade_node_labels()
     extensions_field_downgrade()
     downgrade_cluster_ui_settings()
     extend_nic_model_downgrade()
@@ -682,3 +684,14 @@ def extensions_field_downgrade():
 def set_deployable_false_for_old_releases():
     connection = op.get_bind()
     upgrade_release_set_deployable_false(connection, ['2014.2.2-6.1'])
+
+
+def upgrade_node_labels():
+    op.add_column(
+        'nodes',
+        sa.Column('labels', fields.JSON(), server_default='{}', nullable=False)
+    )
+
+
+def downgrade_node_labels():
+    op.drop_column('nodes', 'labels')

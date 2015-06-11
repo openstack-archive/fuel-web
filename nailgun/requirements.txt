@@ -35,7 +35,7 @@ keystonemiddleware>=1.2.0
 # we might still need keystone command
 python-keystoneclient>=0.11,<=1.4.0
 python-novaclient>=2.17.0,<=2.24.1
-python-cinderclient>=1.0.7
+python-cinderclient>=1.0.7,<=1.2.1
 networkx>=1.8
 pydot-ng>=1.0.0
 ordereddict>=1.1

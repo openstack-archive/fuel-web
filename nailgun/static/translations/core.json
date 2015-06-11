@@ -413,6 +413,11 @@
                         "filter_by": "Filter By",
                         "filter_placeholder": "Node name/mac",
                         "search_placeholder": "Search by node name, MAC or IP address",
+                        "manage_all_labels": "Manage Labels",
+                        "manage_node_labels": "Manage labels for __count__ selected node",
+                        "manage_node_labels_plural": "Manage labels for __count__ selected nodes",
+                        "not_assigned_label": "No label \"__label__\"",
+                        "no_labels": "No labels to manage.",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "more_than": "More than ",
@@ -422,8 +427,13 @@
                         "node_management_error": {
                             "title": "Node Management Error",
                             "saving_warning": "Unable to apply changes",
+                            "labels_warning": "Unable to apply labels",
                             "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
                             "interfaces_configuration_warning": "Only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
+                        },
+                        "labels_error": {
+                            "label_already_exists": "Label already exists",
+                            "invalid_label": "Invalid label"
                         }
                     },
                     "node": {

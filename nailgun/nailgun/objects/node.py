@@ -86,6 +86,7 @@ class Node(NailgunObject):
             },
             "error_msg": {"type": "string"},
             "online": {"type": "boolean"},
+            "labels": {"type": "object"},
             "roles": {"type": "array"},
             "pending_roles": {"type": "array"},
             "agent_checksum": {"type": "string"}

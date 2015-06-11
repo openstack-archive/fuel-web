@@ -75,7 +75,7 @@ class NodeCollectionHandler(CollectionHandler):
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
               'error_type', 'online', 'cluster', 'uuid', 'network_data',
-              'group_id')
+              'group_id', 'labels')
 
     validator = NodeValidator
     collection = objects.NodeCollection

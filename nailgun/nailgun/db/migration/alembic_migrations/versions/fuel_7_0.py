@@ -94,9 +94,11 @@ def upgrade():
     upgrade_cluster_ui_settings()
     upgrade_cluster_bond_settings()
     extensions_field_upgrade()
+    upgrade_node_labels()
 
 
 def downgrade():
+    downgrade_node_labels()
     extensions_field_downgrade()
     downgrade_cluster_ui_settings()
     extend_nic_model_downgrade()
@@ -636,3 +638,14 @@ def extensions_field_upgrade():
 def extensions_field_downgrade():
     for table_name in ['nodes', 'releases', 'clusters']:
         op.drop_column(table_name, 'extensions')
+
+
+def upgrade_node_labels():
+    op.add_column(
+        'nodes',
+        sa.Column('labels', fields.JSON(), server_default='{}', nullable=False)
+    )
+
+
+def downgrade_node_labels():
+    op.drop_column('nodes', 'labels')

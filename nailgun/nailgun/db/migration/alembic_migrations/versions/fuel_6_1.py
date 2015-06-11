@@ -157,7 +157,6 @@ def upgrade_schema():
     vrouter_enum = sa.Enum('haproxy', 'vrouter',
                            name='network_vip_types')
     vrouter_enum.create(op.get_bind(), checkfirst=False)
-
     op.add_column(
         'ip_addrs',
         sa.Column('vip_type', vrouter_enum, nullable=True)

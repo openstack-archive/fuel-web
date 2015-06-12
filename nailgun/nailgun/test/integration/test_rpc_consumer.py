@@ -37,11 +37,14 @@ from nailgun import consts
 from nailgun import objects
 
 
-class TestVerifyNetworks(BaseIntegrationTest):
+class BaseReciverTestCase(BaseIntegrationTest):
 
     def setUp(self):
-        super(TestVerifyNetworks, self).setUp()
+        super(BaseReciverTestCase, self).setUp()
         self.receiver = rcvr.NailgunReceiver()
+
+
+class TestVerifyNetworks(BaseIntegrationTest):
 
     def nodes_message(self, nodes, networks):
         nodes_message = []
@@ -740,7 +743,6 @@ class TestDhcpCheckTask(BaseIntegrationTest):
 
     def setUp(self):
         super(TestDhcpCheckTask, self).setUp()
-        self.receiver = rcvr.NailgunReceiver()
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -831,7 +833,6 @@ class TestClusterUpdate(BaseIntegrationTest):
 
     def setUp(self):
         super(TestClusterUpdate, self).setUp()
-        self.receiver = rcvr.NailgunReceiver()
         cluster_id = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -919,10 +920,6 @@ class TestClusterUpdate(BaseIntegrationTest):
 
 
 class TestConsumer(BaseIntegrationTest):
-
-    def setUp(self):
-        super(TestConsumer, self).setUp()
-        self.receiver = rcvr.NailgunReceiver()
 
     def test_node_deploy_resp(self):
         self.env.create(
@@ -1440,3 +1437,35 @@ class TestConsumer(BaseIntegrationTest):
 
         self.assertEqual(node2.status, consts.NODE_STATUSES.error)
         self.assertEqual(node2.error_type, consts.NODE_ERRORS.provision)
+
+
+class TestResetEnvironment(BaseReciverTestCase):
+
+    @mock.patch('nailgun.rpc.receiver.logs_utils.delete_node_logs')
+    def test_delete_logs_after_reset(self, mock_delete_logs):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False, "status": consts.NODE_STATUSES.ready},
+            ]
+        )
+        cluster = self.env.clusters[0]
+
+        node = self.env.nodes[0]
+
+        task = Task(
+            uuid=str(uuid.uuid4()),
+            name=consts.TASK_NAMES.reset_environment,
+            cluster_id=cluster.id)
+        self.db.add(task)
+        self.db.flush()
+
+        resp = {
+            'task_uuid': task.uuid,
+            'status': consts.TASK_STATUSES.ready,
+            'nodes': [
+                {'uid': node.uid},
+            ]
+        }
+        self.receiver.reset_environment_resp(**resp)
+        mock_delete_logs.assert_called_once_with(node)

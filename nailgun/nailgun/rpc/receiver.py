@@ -737,6 +737,7 @@ class NailgunReceiver(object):
             ).all()
 
             for node in update_nodes:
+                logs_utils.delete_node_logs(node)
                 objects.Node.reset_to_discover(node)
 
             if ia_nodes:
@@ -1146,8 +1147,7 @@ class NailgunReceiver(object):
             message = ('These nodes: "{0}" failed to connect to '
                        'some of these repositories: "{1}"').format(
                            '", "'.join([str(id) for id in failed_nodes_ids]),
-                           '", "'.join(failed_urls)
-                       )
+                           '", "'.join(failed_urls))
 
             status = consts.TASK_STATUSES.error
 
@@ -1187,7 +1187,7 @@ class NailgunReceiver(object):
         if failed_nodes:
             msg = ('Repo availability verification using public network'
                    ' failed on following nodes {0}.\n '.format(
-                   ', '.join(failed_nodes)))
+                       ', '.join(failed_nodes)))
         if failed_repos:
             msg += ('Following repos are not available - {0}\n. '.format(
                     ', '.join(failed_repos)))

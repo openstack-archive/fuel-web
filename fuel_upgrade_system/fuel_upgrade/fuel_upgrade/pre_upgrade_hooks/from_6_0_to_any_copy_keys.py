@@ -55,7 +55,7 @@ class MoveKeysHook(PreUpgradeHookBase):
         if not utils.file_exists(self.dst_path):
             os.makedirs(self.dst_path)
 
-        container_name = u'{0}{1}-astute'.format(
+        container_name = '{0}{1}-astute'.format(
             self.config.container_prefix, self.config.from_version)
         try:
             utils.exec_cmd('docker cp {0}:{1} {2}'.format(

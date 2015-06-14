@@ -65,7 +65,7 @@ class VersionFile(object):
         * creates new version yaml file
         * and creates symlink to /etc/fuel/version.yaml
         """
-        logger.info(u'Switch version file to new version')
+        logger.info('Switch version file to new version')
 
         utils.create_dir_if_not_exists(os.path.dirname(
             self.dst_new_version_file))
@@ -81,5 +81,5 @@ class VersionFile(object):
     def switch_to_previous(self):
         """Switch version file symlink to previous version
         """
-        logger.info(u'Switch current version file to previous version')
+        logger.info('Switch current version file to previous version')
         utils.symlink(self.previous_version_file, self.current_version_file)

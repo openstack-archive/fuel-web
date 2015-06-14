@@ -122,33 +122,33 @@ class SupervisorClient(object):
     def start_all_services(self):
         """Stops all processes
         """
-        logger.info(u'Start all services')
+        logger.info('Start all services')
         self.supervisor.startAllProcesses()
 
     def stop_all_services(self):
         """Stops all processes
         """
-        logger.info(u'Stop all services')
+        logger.info('Stop all services')
         self.supervisor.stopAllProcesses()
 
     def restart_and_wait(self):
         """Restart supervisor and wait untill it will be available
         """
-        logger.info(u'Restart supervisor')
+        logger.info('Restart supervisor')
         self.supervisor.restart()
 
         all_processes = utils.wait_for_true(
             lambda: self.get_all_processes_safely() is not None,
             timeout=self.config.supervisor['restart_timeout'])
 
-        logger.debug(u'List of supervisor processes %s', all_processes)
+        logger.debug('List of supervisor processes %s', all_processes)
 
     def start(self, service_name):
         """Start the process under supervisor
 
         :param str service_name: name of supervisor's process
         """
-        logger.debug(u'Start supervisor process %s', service_name)
+        logger.debug('Start supervisor process %s', service_name)
         self.supervisor.startProcess(service_name)
 
     def get_all_processes_safely(self):
@@ -174,7 +174,7 @@ class SupervisorClient(object):
                          `autostart` - run the service on supervisor start
         """
         logger.info(
-            u'Generate supervisor configs for services %s', services)
+            'Generate supervisor configs for services %s', services)
 
         for service in services:
             self.generate_config(

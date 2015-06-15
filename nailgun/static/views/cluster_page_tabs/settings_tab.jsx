@@ -54,6 +54,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
         },
         getInitialState: function() {
             var settings = this.props.cluster.get('settings');
+            var activeGroupName = _.first(_.sortBy(_.keys(settings.attributes), function(groupName) {
+                return settings.get(groupName + '.metadata.weight');
+            }));
             return {
                 configModels: {
                     cluster: this.props.cluster,
@@ -65,7 +68,8 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 },
                 settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
                 initialAttributes: _.cloneDeep(settings.attributes),
-                actionInProgress: false
+                actionInProgress: false,
+                activeGroupName: activeGroupName
             };
         },
         componentDidMount: function() {
@@ -170,6 +174,9 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             settings.set(name, value);
             settings.isValid({models: this.state.configModels});
         },
+        onSubtabClick: function(groupName) {
+            this.setState({activeGroupName: groupName});
+        },
         render: function() {
             var cluster = this.props.cluster,
                 settings = cluster.get('settings'),
@@ -184,7 +191,18 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             return (
                 <div key={this.state.key} className='row'>
                     <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
-                    {_.map(sortedSettingGroups, function(groupName) {
+                    <SettingSubtabs
+                        settings={settings}
+                        groupNames={sortedSettingGroups}
+                        activeGroupName={this.state.activeGroupName}
+                        makePath={settings.makePath}
+                        configModels={this.state.configModels}
+                        onClick={this.onSubtabClick}
+                    />
+                    {_.compact(_.map(sortedSettingGroups, function(groupName) {
+                        if (groupName != this.state.activeGroupName) {
+                            return null;
+                        }
                         return <SettingGroup
                             key={groupName}
                             cluster={this.props.cluster}
@@ -199,7 +217,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                             lockedCluster={lockedCluster}
                             configModels={this.state.configModels}
                         />;
-                    }, this)}
+                    }, this))}
                     <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group pull-right'>
@@ -215,6 +233,48 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                             </div>
                         </div>
                     </div>
+                </div>
+            );
+        }
+    });
+
+    var SettingSubtabs = React.createClass({
+        checkRestrictions: function(action, path) {
+            return this.props.settings.checkRestrictions(this.props.configModels, action, path);
+        },
+        render: function() {
+            var errors = this.props.settings.validationError,
+                invalidSections = {};
+            _.forEach(errors, function(error, key) {
+                invalidSections [_.first(key.split('.'))] = true;
+            });
+            return (
+                <div className='col-xs-2'>
+                    <ul className='nav nav-pills nav-stacked'>
+                    {
+                        this.props.groupNames.map(function(groupName) {
+                            var group = this.props.settings.get(groupName),
+                                metadata = group.metadata;
+                            if (this.checkRestrictions('hide', this.props.makePath(groupName, 'metadata')).result) {
+                                return null;
+                            }
+                            var isDisabled = this.checkRestrictions('disable', this.props.makePath(groupName, 'metadata')).result;
+                            var hasErrors = invalidSections[groupName];
+                            return (
+                                <li
+                                    key={groupName}
+                                    role='presentation'
+                                    className={utils.classNames({active: groupName == this.props.activeGroupName})}
+                                    onClick={_.partial(this.props.onClick, groupName)}
+                                >
+                                    {isDisabled && <i className='subtab-icon glyphicon-warning-sign'/>}
+                                    {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}
+                                    <a className={'subtab-link-' + groupName}>{metadata.label}</a>
+                                </li>
+                            );
+                        }, this)
+                    }
+                    </ul>
                 </div>
             );
         }
@@ -353,7 +413,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                 processedGroupRestrictions = this.processRestrictions(this.props.groupName, 'metadata'),
                 isGroupDisabled = this.props.locked || (this.props.lockedCluster && !metadata.always_editable) || (metadata.toggleable && processedGroupRestrictions.result);
             return (
-                <div className='col-xs-12 forms-box'>
+                <div className='col-xs-10 forms-box'>
                     <h3>
                         {metadata.toggleable &&
                             <controls.Input
@@ -366,7 +426,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                 wrapperClassName='pull-left'
                             />
                         }
-                        {metadata.label || this.props.groupName}
+                        <span className={'subtab-group-' + this.props.groupName}>{metadata.label || this.props.groupName}</span>
                     </h3>
                     <div>
                         {_.map(sortedSettings, function(settingName) {

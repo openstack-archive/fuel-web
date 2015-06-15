@@ -1314,17 +1314,22 @@
             "language_name": "日本語",
             "common": {
                 "title": "Fuel ダッシュボード",
-                "select_all": "全部選択",
-                "load_defaults_button": "ディフォルトロード",
-                "cancel_changes_button": "変更取り消し",
+                "select_all": "すべてを選択",
+                "load_defaults_button": "デフォルトを読み込み",
+                "cancel_changes_button": "変更をキャンセル",
                 "apply_button": "適用",
                 "rename_button": "リネーム",
                 "delete_button": "削除",
+                "remove_button": "リムーブ",
                 "stop_button": "停止",
                 "reset_button": "リセット",
-                "save_settings_button": "設定保存",
-                "cancel_button": "取り消し",
-                "apply_changes_button": "変更適用",
+                "save_settings_button": "設定を保存",
+                "close_button": "閉じる",
+                "cancel_button": "キャンセル",
+                "update_button": "更新",
+                "rollback_button": "ロールバック",
+                "retry_button": "更新のリトライ",
+                "apply_changes_button": "変更を適用",
                 "not_available": "N/A",
                 "size": {
                     "byte": "byte",
@@ -1336,11 +1341,19 @@
                 },
                 "node":"__count__ ノード",
                 "node_plural":"__count__ ノード",
-                "important": "大切",
+                "important": "重要",
                 "success": "成功",
                 "error": "エラー",
-                "see_logs": "ログを参照してください",
-                "copyright": "著作権 © 2013-2014 Mirantis. 無断複写·転載禁じ"
+                "see_logs": "ログを参照",
+                "copyright": "Copyright © 2013-2015 Mirantis. All rights reserved.",
+                "version": "バージョン",
+                "change_password": "パスワードを変更",
+                "logout": "ログアウト",
+                "role_limits": {
+                    "min": "少なくとも __limitValue__ つの __roleName__ ノードが必要です (現在 __count__ つが選択されています)。",
+                    "max": "最大で __limitValue__ つの __roleName__ ノードが許可されます。",
+                    "recommended": "__roleName__ は少なくとも __limitValue__ つのノードで構成することをお勧めします(現在 __count__ つが選択されています)。"
+                }
             },
             "node_details": {
                 "cpu": "CPU",
@@ -1353,25 +1366,117 @@
             },
             "cluster": {
                 "status": {
-                    "new": "新しい",
-                    "deployment": "デプロイしています",
+                    "new": "新規",
+                    "deployment": "デプロイ中",
                     "operational": "使用可能",
                     "error": "エラー",
-                    "remove": "削除しています",
-                    "stopped": "停止"
+                    "remove": "削除中",
+                    "stopped": "停止中",
+                    "update": "更新",
+                    "update_error": "更新エラー"
                 },
                 "mode": {
-                    "ha_compact": "高可用性を備えた複数ノード",
-                    "multinode": "複数ノード"
+                    "ha_compact": "マルチノード(HA構成)",
+                    "multinode": "マルチノード"
                 }
             },
             "network": {
-                "fuelweb_admin": "管理 (PXE)",
-                "fixed": "バーチャルマシン (固定)",
+                "fuelweb_admin": "Fuel管理 (PXE)",
+                "fixed": "VM (固定)",
                 "public": "パブリック",
                 "floating": "フローティング",
-                "management": "運営",
-                "storage": "ストレージ"
+                "management": "マネジメント",
+                "storage": "ストレージ",
+                "private": "プライベート"
+            },
+            "login_page": {
+                "username": "ユーザー名",
+                "password": "パスワード",
+                "login_error": "ログインできません",
+                "log_in": "ログイン",
+                "title": "ログイン"
+            },
+            "statistics": {
+                "help_to_improve": "Mirantis OpenStackを使用した設定、機能、そして、デプロイアクションの情報をMirantisに送信して、製品をより良いものにする手助けをしてください。",
+                "help_to_improve_community": "FuelとOpenStackを使用した設定、機能、そして、デプロイアクションの情報を送信して、製品をより良いものにする手助けをしてください。",
+                "learn_whats_collected": "収集される情報について",
+                "statistics_user_info": "統計情報を送信することに同意する場合は、\"fuel_stats_user\"の名前で、新しいユーザーがOpenStackの環境に追加されることに注意してください。 fuel_stats_userは、OpenStackのワークロードに関する情報を収集します。",
+                "statistics_includes_full": "利用統計には以下の情報が含まれます。パスワードやIPアドレス、ノード名は含まれません。",
+                "actions_title": "アクション:",
+                "actions": {
+                    "operation_type": "オペレーションタイプ (クラスタの追加、ノードの追加、デプロイ情報、ノードの削除など)",
+                    "operation_time": "オペレーションの開始と終了の時間",
+                    "actual_time": "操作が完了するまでにかかった時間",
+                    "network_verification": "ネットワークの検証 - 何を使用しているかと検証結果",
+                    "ostf_results": "OSTFの使用とテスト結果"
+                },
+                "settings_title": "環境設定:",
+                "settings": {
+                    "envronments_amount": "環境の数",
+                    "nistribution": "ディストリビューション / OS",
+                    "network_type": "ネットワークタイプ",
+                    "kernel_parameters": "カーネルパラメータ",
+                    "admin_network_parameters": "管理ネットワークのパラメータ",
+                    "pxe_parameters": "PXEパラメータ",
+                    "dns_parameters": "DNSパラメータ",
+                    "storage_options": "ストレージオプション",
+                    "related_projects": "関連するプロジェクト",
+                    "modified_settings": "設定タブの設定変更",
+                    "networking_configuration": "ネットワーク設定"
+                },
+                "node_settings_title": "ノード設定:",
+                "node_settings": {
+                    "deployed_nodes_amount": "デプロイ済みのノード数",
+                    "deployed_roles": "各ノードをデプロイしたロール",
+                    "disk_layout": "ディスクレイアウト",
+                    "interfaces_configuration": "インターフェース設定"
+                },
+                "system_info_title": "システム情報:",
+                "system_info": {
+                    "hypervisor": "ハイパーバイザー",
+                    "hardware_info": "ハードウェア情報",
+                    "fuel_version": "Fuelバージョン情報",
+                    "openstack_version": "OpenStackバージョン情報"
+                },
+                "setting_labels": {
+                    "send_anonymous_statistic": "Mirantisへ統計情報を送信",
+                    "send_anonymous_statistic_community": "統計情報を送信",
+                    "send_user_info": "Mirantisサポートが私を手助けできるようにエラーレポートに私を特定できる情報を含めます",
+                    "send_user_info_community": "Mirantisサポートが私を手助けできるようにエラーレポートに私を特定できる情報を含めます",
+                    "name": "お名前",
+                    "email": "Email",
+                    "company": "会社名"
+                },
+                "errors": {
+                    "name": "あなたのお名前を入力してください",
+                    "email": "正しいメールアドレスを入力してください",
+                    "company": "会社名を入力してください"
+                }
+            },
+            "welcome_page": {
+                "title": "Mirantis OpenStackへようこそ",
+                "title_community": "FuelとOpenStackへようこそ",
+                "start_fuel": "Fuelの使用を開始",
+                "connect_now": "今すぐ接続",
+                "connect_later": "後で接続",
+                "change_settings": "ユーザープロファイル情報を更新することでいつでも設定を変更できます。",
+                "thanks": "Mirantis OpenStackの向上に貢献してくれてありがとうございます！",
+                "thanks_community": "FuelとOpenStackの向上に貢献してくれてありがとうございます！",
+                "statistics_collector": "収集した統計情報のためのWeb UIを開発中です。次で利用できるようになります",
+                "privacy_policy": "使用統計情報には、Mirantisアカウントにログイン後のあなたの名前、会社名、そして電子メールが含まれます。",
+                "privacy_policy_link": "プライバシーポリシーを読む",
+                "register": {
+                    "register_installation": "あなたのMirantisアカウントとこのインストールを紐づけてセキュリティ更新プログラムおよびその他の改善に関する重要な通知を受信します。",
+                    "link_text": "いますぐ登録",
+                    "create_account": "アカウントの作成",
+                    "retrieve_password": "パスワードを取得",
+                    "connection_error": " このマシンはインターネットに接続されていないようです。接続を確認して、もう一度お試しください",
+                    "required_fields": "すべてのフィールドが必須であることに注意してください。",
+                    "welcome_phrase": {
+                        "thanks": "ありがとうございます",
+                        "content": "すべての設定が完了しました！"
+                    }
+                }
             },
             "navbar": {
                 "environments": "環境",
@@ -1379,9 +1484,9 @@
                 "support": "サポート",
                 "stats": {
                     "total": ["トータル", "ノード"],
-                    "total_plural": ["トータル", "複数ノード"],
-                    "unallocated": ["未割り当て", "ノード"],
-                    "unallocated_plural": ["未割り当て", "複数ノード"]
+                    "total_plural": ["トータル", "ノード"],
+                    "unallocated": ["未割当", "ノード"],
+                    "unallocated_plural": ["未割当", "ノード"]
                 }
             },
             "breadcrumbs": {
@@ -1396,31 +1501,42 @@
                 "title": "通知"
             },
             "notifications_popover": {
-                "view_all_button": "全部表示",
-                "no_notifications_text": "表示する通知はありません。"
+                "view_all_button": "すべてを表示",
+                "no_notifications_text": "表示する通知はありません"
             },
             "support_page": {
                 "title": "サポート",
-                "contact_text": "問題を報告するか、単に改善を提案する必要がある場合は、下のボタンをクリックします.できるだけ早くご連絡いたします。",
-                "irc_text": "ご質問がある場合は、IRCチャネルで、開発者に尋ねることができます。",
-                "log_text": "いくつかのバグやエラーが発生した場合は、導入と操作ログとサポートチームを提供する必要があります。下のボタンをクリックすることにより、一度にすべてをダウンロードすることができます。",
-                "contact_support": "お問い合わせ·サポート",
-                "register_fuel_title": "Fuelに登録",
-                "register_fuel_content": "登録すると、問題やMirantis製品の新しいバージョンに関する重要な通知を受け取ることが保証されます。さらに、次の30日間、基本的なサポート·サービスを得えます！",
+                "contact_text": "問題を報告または、改善の提案を行う場合は下のボタンをクリックしてください。できるだけ早く連絡させていただきます。",
+                "irc_text": "ご質問がある場合は、IRCチャネルで開発者に直接聞くことができます",
+                "log_text": "バグやエラーが発生した場合、デプロイメントと操作のログをサポートチームへ提供する必要があります。下のボタンをクリックすると、一度にすべてのログをダウンロードすることができます。",
+                "contact_support": "サポートへのお問い合わせ",
+                "register_fuel_title": "Mirantisアカウントへのお問い合わせ",
+                "register_fuel_content": "登録いただくと、問題やMirantis製品の新しいバージョンについての重要な通知を受け取ることができます。また、Mirantis製品の新しいバージョンについて通知されます。",
+                "product_registered_title": "Mirantisアカウントの登録",
+                "product_registered_content": "このOpenStackのインストールは次のものに接続されています:",
+                "master_node_uuid": "マスターノード UUID",
+                "manage_account": "アカウントの管理",
                 "download_diagnostic_snapshot_text": "診断スナップショットをダウンロード",
-                "gen_logs_snapshot_text": "ログスナップショットを生成しています...",
-                "gen_diagnostic_snapshot_text": "診断スナップショットを生成します",
+                "gen_logs_snapshot_text": "ログのスナップショットを生成しています...",
+                "gen_diagnostic_snapshot_text": "診断スナップショットを生成",
                 "diagnostic_snapshot": "診断スナップショット",
-                "capacity_audit": "容量監査",
-                "capacity_audit_text": "良いリソースを管理するため、とのOpenStackの役割が展開されているかを調べるためには、このレポートを実行することができます。",
-                "view_capacity_audit": "容量監査を見る"
+                "capacity_audit": "キャパシティ監査",
+                "capacity_audit_text": "リソースをより良く管理するための情報として、あなたの環境でどのようなOpenStackのロールが展開されているかを調べるためにこのレポートを実行します。",
+                "view_capacity_audit": "キャパシティ監査を表示",
+                "send_statistics_title": "仕様統計情報を送信",
+                "save_changes": "変更を保存",
+                "documentation_link": "ドキュメントに移動",
+                "community_title": "Fuelドキュメント",
+                "mirantis_title": "Mirantis OpenStack ドキュメント",
+                "community_text": "このページには、最新のFuelドキュメントが含まれています。あなたはそれをオンラインで読むか、PDFでダウンロードすることができます。",
+                "mirantis_text": "このページには、最新のMirantis OpenStack ドキュメントが含まれています。あなたはそれをオンラインで読むか、PDFでダウンロードすることができます。"
             },
             "release_page": {
                 "title": "リリース",
                 "name": "OpenStack リリース",
                 "version": "バージョン",
                 "state": "ステータス",
-                "no_releases_message": "利用可能なリリースはありません。",
+                "no_releases_message": "利用できるリリースはありません。",
                 "release": {
                     "available": "アクティブ",
                     "error": "エラー",
@@ -1429,9 +1545,9 @@
             },
             "clusters_page": {
                 "title": "OpenStack環境",
-                "create_cluster_text": "新OpenStack環境生成",
+                "create_cluster_text": "OpenStack環境を作成",
                 "cluster_hardware_nodes": "ノード",
-                "cluster_hardware_cpu": "CPU (cores)",
+                "cluster_hardware_cpu": "CPU (コア)",
                 "cluster_hardware_hdd": "HDD",
                 "cluster_hardware_ram": "RAM"
             },
@@ -1445,159 +1561,258 @@
                     "actions": "アクション"
                 },
                 "nodes_tab": {
-                    "roles": "役割",
+                    "roles": "ロール",
                     "hardware_info": "ハードウェア情報",
-                    "roles_and_hardware_info": "役割とハードウェア情報",
-                    "assign_roles": "役割割り当て",
+                    "roles_and_hardware_info": "ロールとハードウェア情報",
+                    "assign_roles": "ロールの割り当て",
+                    "breadcrumbs": {
+                        "add": "ノードの追加",
+                        "edit": "ロールの編集",
+                        "disks": "ディスク設定",
+                        "interfaces": "インターフェース設定"
+                    },
                     "configure_interfaces": {
-                        "title": "__name__上インターフェイス設定",
-                        "title_plural": "__count__ nodes上インターフェイス設定",
-                        "bond_button": "ボンドインターフェイス",
-                        "unbond_button": "ボンドインターフェイス取り消し",
-                        "bond_speed_warning": "異なる速度のボンドインターフェイスを生成することはお勧めしません。",
+                        "title": "__name__上のインターフェース設定",
+                        "title_plural": "__count__ ノード上のインターフェース設定",
+                        "vlan_id": "VLAN ID",
+                        "vlan_id_plural": "VLAN ID",
+                        "mac": "MAC",
+                        "bond_button": "ボンディングインターフェース",
+                        "unbond_button": "アンボンディングインターフェース",
+                        "bond_speed_warning": "異なる速度のボンディングインターフェースには推奨されません",
                         "speed": "スピード",
                         "bonding_mode": "モード",
                         "bonding_modes": {
-                            "active-backup": "アクティブなバックアップ",
-                            "balance-slb": "バランス SLB",
-                            "lacp-balance-tcp": "LACP バランス TCP"
+                            "active-backup": "アクティブバックアップ",
+                            "balance-slb": "バランス-slb",
+                            "lacp-balance-tcp": "LACP バランス TCP",
+                            "balance-rr": "バランス-rr",
+                            "balance-xor": "バランス-xor",
+                            "balance-tlb": "バランス-tlb",
+                            "balance-alb": "バランス-alb",
+                            "broadcast": "ブロードキャスト",
+                            "802_3ad": "802.3ad(LACP)"
                         },
-                        "drag_and_drop_description": "論理ネットワーク間のインタフェースをドラッグアンドドロップすることができます。",
+                        "hash_policy": {
+                            "layer2": "layer2",
+                            "layer2+3": "layer2+3",
+                            "layer3+4": "layer3+4",
+                            "encap2+3": "encap2+3",
+                            "encap3+4": "encap3+4"
+                        },
+                        "lacp_rate": "LACP Rate",
+                        "lacp_rates": {
+                            "slow": "Slow",
+                            "fast": "Fast"
+                        },
+                        "bonding_policy": "Xmit ハッシュポリシー",
+                        "drag_and_drop_description": "インターフェース間の論理ネットワークをドラッグ＆ドロップできます。",
+                        "configuration_error": {
+                            "title": "インターフェース設定エラー",
+                            "saving_warning": "変更を適用できませんでした",
+                            "load_defaults_warning": "デフォルト設定を読み込めませんでした"
+                        },
+                        "node_loading_error": {
+                            "title": "ノード読み出しエラー",
+                            "load_error": "一部のノードのロードに失敗しました"
+                        },
                         "validation": {
-                            "too_many_untagged_networks": "タグなしのネットワークが同じインターフェイスに割り当てることはできません。"
-                        }
+                            "too_many_untagged_networks": "タグなしのネットワークは同じインタフェースに割り当てることはできません",
+                            "invalid_mtu": "無効なMTU値です"
+                        },
+                        "disable_offloading": "オフロードを無効にする",
+                        "mtu": "MTU"
                     },
                     "configure_disks": {
-                        "title": "__name__上ディスク設定",
-                        "title_plural": "__count__ nodes上ディスク設定",
+                        "title": "__name__上のディスク設定",
+                        "title_plural": "__count__ノードのディスク設定",
                         "disk_information": "ディスク情報",
                         "volume_groups": "ボリュームグループ",
                         "total_space": "総容量",
-                        "unallocated": "未割当量",
-                        "use_all_allowed_space": "全許可量を使用"
+                        "unallocated": "未割当",
+                        "use_all_allowed_space": "使用可能なすべての容量を使用",
+                        "configuration_error": {
+                            "title": "ディスク設定エラー",
+                            "saving_warning": "変更を適用できませんでした",
+                            "load_defaults_warning": "デフォルト設定を読み込めませんでした"
+                        }
                     },
                     "node_management_panel": {
-                        "group_by": "グループ毎に",
-                        "filter_by": "フィルタ毎に",
+                        "group_by": "グループごと",
+                        "filter_by": "フィルター",
                         "filter_placeholder": "ノード名/mac",
-                        "edit_roles_button": "役割変更",
+                        "edit_roles_button": "ロールの編集",
                         "add_nodes_button": "ノードの追加",
-                        "cant_configure_disks": "ディスク設定ができません。",
-                        "cant_configure_interfaces": "インターフェイス設定ができません。",
-                        "disks_configuration_warning": "同一のディスク容量を持つノードのみ同じアクションで一緒に設定することができます。",
-                        "interfaces_configuration_warning": "同一のネットワークインターフェース数を持つ未展開ノードのみ同じアクションで一緒に設定することができます。"
+                        "node_management_error": {
+                            "title": "ノード管理エラー",
+                            "saving_warning": "変更を適用できませんでした",
+                            "disks_configuration_warning": "同じディスク容量を持つノードは、同じアクションで一緒に設定することができます。",
+                            "interfaces_configuration_warning": "同じ数のネットワークインターフェイスをもつ未デプロイのノードは同じアクションで一緒に設定することができます。"
+                        }
                     },
                     "node": {
                         "status": {
-                            "discover": "発見状",
-                            "offline": "オフライン状",
+                            "discover": "検出済み",
+                            "offline": "オフライン",
                             "error": "エラー",
-                            "pending_addition": "追加待ち",
-                            "pending_deletion": "削除待ち",
-                            "ready": "使用可能",
-                            "provisioning": "__os__ インストール中",
-                            "provisioned": "__os__ インストール終了",
-                            "deploying": "OpenStack インストール中"
+                            "pending_addition": "追加処理の保留中",
+                            "pending_deletion": "削除処理の保留中",
+                            "ready": "準備完了",
+                            "removing": "リムーブ中",
+                            "provisioning": "__os__ のインストールをしています",
+                            "provisioned": "__os__ のインストールが完了しました",
+                            "deploying": "OpenStackをインストールしています"
                         },
-                        "view_logs": "ログを見る",
-                        "discard_addition": "追加取消",
-                        "discard_deletion": "削除取消",
-                        "discard_role_changes": "役割変更取消",
-                        "edit_name": "名変更",
-                        "unallocated": "割り当てられていない"
+                        "remove": "リムーブ",
+                        "discard_addition": "追加処理の破棄",
+                        "discard_deletion": "削除処理の破棄",
+                        "view_logs": "ログを表示",
+                        "edit_name": "名前の編集",
+                        "unallocated": "未割り当て"
                     },
-                    "back_to_nodes_button": "ノードリストに戻る",
-                    "unallocated_nodes": "割り当てられてないノード",
-                    "no_selected_nodes": "変更必要選択されたノードはありません。",
-                    "disk_configuration_reset_warning": "ディスク設定は、役割変更後のデフォルトにリセットされます。",
-                    "no_nodes_in_environment": "ノードを追加するには、[追加]ノードのオプションを選択し、割り当てたいノードを選択し、役割を割り当てます。",
-                    "no_nodes_in_fuel": "この操作は一つ以上の未割り当てのノードのプールが必要とします。プールに追加するには、ネットワーク（別名PXEブート）から起動するようにノードを設定します。Fuelは自動的にノードをプロビジョニングし見つけます。",
-                    "role_conflict": "この役割は、すでに選択された他の役割と組み合わせることはできません。",
-                    "no_filtered_nodes_warning": "フィルタ値に一致するノードはありません。",
-                    "filtered_nodes_count":"__count__ nodeの__filteredNodesCount__",
-                    "filtered_nodes_count_plural": "__count__ nodesの__filteredNodesCount__"
+                    "back_to_nodes_button": "ノード一覧へ戻る",
+                    "unallocated_nodes": "未割り当てのノード",
+                    "no_selected_nodes": "編集のために選択されたノードはありません。",
+                    "disk_configuration_reset_warning": "ディスクの設定はロールが変更されるとリセットされます。",
+                    "no_nodes_in_environment": "環境にノードを追加するにはノードの追加オプションを選択し、割り当てたいノードを選択し、それぞれにロールを設定します。",
+                    "no_nodes_in_fuel": "一つ以上の未割り当てのノードがこの操作には必要です。プールに追加するにはネットワークから起動(別名:PXEブート)するようにノードを設定します。Fuelは自動的にプロビジョニングを行い、ノードを検出します。",
+                    "role_conflict": "このロールは、すでに選択済みの他のロールと組み合わせることはできません。",
+                    "node_deletion_error": {
+                        "title": "ノード削除エラー",
+                        "node_deletion_warning": "ノードを削除できませんでした"
+                    },
+                    "no_filtered_nodes_warning": "フィルターの値に一致するノードはありません。",
+                    "filtered_nodes_count":"__count__ ノード中 __filteredNodesCount__ ノード",
+                    "filtered_nodes_count_plural": "__count__ ノード中 __filteredNodesCount__ ノード"
                 },
                 "settings_tab": {
-                    "title": "OpenStack 設定"
+                    "settings_error": {
+                        "title": "OpenStack設定エラー",
+                        "load_defaults_warning": "デフォルトの設定を読み込めませんでした",
+                        "saving_warning": "変更を適用できませんでした"
+                    },
+                    "title": "OpenStack設定",
+                    "dependent_role_warning": "この環境には __roles__ ノードが含まれています",
+                    "dependent_role_warning_plural": "この環境には __roles__ ノードが含まれています",
+                    "dependent_settings_warning": "__settings__ はアクティブです",
+                    "dependent_settings_warning_plural": "__settings__ はアクティブです",
+                    "images_ceph_warning": "The environment contains controllers",
+                    "custom_repo_configuration": {
+                        "add_repo_button": "リポジトリを追加",
+                        "labels": {
+                            "name": "名前",
+                            "uri": "URI",
+                            "priority": "プライオリティ"
+                        },
+                        "placeholders": {
+                            "priority": "なし"
+                        },
+                        "errors": {
+                            "empty_name": "名前が空白です",
+                            "invalid_name": "名前が不正です",
+                            "invalid_repo": "リポジトリのフォーマットが不正です",
+                            "invalid_priority": "プライオリティが不正です"
+                        }
+                    }
                 },
                 "actions_tab": {
                     "title": "アクション",
-                    "rename_environment": "環境の名前の変更",
-                    "delete_environment": "環境の削除",
-                    "alert_delete": "各ノードをクリーンアップし、未割り当てノードのプールに戻します。",
-                    "reset_environment": "環境のしなおし",
-                    "reset_environment_description": "環境の設定を変更して再デプロイすることができます。",
-                    "reset_environment_warning": "この操作は、既存の環境を削除、すべての既存のノードをデプロイ前の状態に戻します。",
-                    "reset_disabled_for_new_cluster": "まだデプロイされていない環境はリセットできません。",
-                    "repeated_reset_disabled": "現環境はすでにリセット中です。",
-                    "reset_disabled_for_deploying_cluster": "デプロイ中の環境はリセットできません。デプロイプロセスを停止するには[デプロイ停止]を使ってください。"
+                    "rename_environment": "環境の名前変更",
+                    "delete_environment": "環境を削除",
+                    "alert_delete": "各ノードをクリーンアップし、未割り当てのノードとしてプールに戻します。削除されたノードのすべてのログも削除されます。",
+                    "reset_environment": "環境のリセット",
+                    "reset_environment_description": "環境や再デプロイのために設定を変更できるようにします。",
+                    "reset_environment_warning": "このアクションは既にあるすべてのノードをリセットし、デプロイ前の状態にし、既存の環境を削除します。",
+                    "reset_disabled_for_new_cluster": "環境のリセットはデプロイされていない環境では使用できません。",
+                    "reset_disabled_for_deploying_cluster": "環境のリセットはデプロイ中の環境には使用できません。",
+                    "repeated_reset_disabled": "現在の環境はすでにリセットされています。",
+                    "update_environment": "環境のアップデート",
+                    "update_environment_description": "選択したリリースに環境をアップデートすることができます。",
+                    "update_disabled_for_new_cluster": "環境のアップデートはまだデプロイされていない環境には使用できません。",
+                    "update_disabled_for_deploying_cluster": "環境のアップデートはデプロイ中の環境には使用できません。",
+                    "repeated_update_disabled": "現在の環境はすでにアップデートされています。",
+                    "rollback_environment": "環境のロールバック",
+                    "no_releases_to_update_message": "すでに最新のリリースがインストールされています。",
+                    "rollback_warning_message": "__release__ への環境のアップデートは失敗しました。",
+                    "rollback_message": "アップデートをリトライするか、環境をロールバックすることができます。",
+                    "rename_error": {
+                        "title": "環境の名前変更ができませんでした"
+                    }
                 },
                 "network_tab": {
-                    "title": "ネットワーク 設定",
+                    "title": "ネットワーク設定",
                     "flatdhcp_manager": "FlatDHCP Manager",
                     "vlan_manager": "VLAN Manager",
-                    "verify_networks_button": "ネットワーク確認",
-                    "network_verification": "ネットワーク確認",
-                    "neutron_segmentation": "__segment_type__ 分割によるNeutron",
+                    "verify_networks_button": "ネットワークの確認",
+                    "network_verification": "ネットワークを検証",
+                    "neutron_segmentation": "__segment_type__ セグメンテーションとのNeutron",
                     "untagged": "タグなし",
-                    "range_start": "始め",
-                    "range_end": "終わり",
+                    "range_start": "開始",
+                    "range_end": "終了",
                     "verify_networks": {
-                        "step_0": "ネットワーク検証は4段階で行われます。",
-                        "success_alert": "検証が成功しました。ネットワークは正しく設定されてします。",
+                        "step_0": "ネットワーク検証は、以下のチェックを実行します:",
+                        "step_1": "1. 環境内のすべてのノード間のL2接続をチェックします。",
+                        "step_2": "2. すべてのノードでDHCPを発見できるかをチェックします。",
+                        "step_3": "3. マスターノードからパッケージリポジトリへの接続をチェックします。",
+                        "step_4": "4. パブリック＆管理（PXE）ネットワークを介してスレーブノードからパッケージリポジトリへの接続をチェックします",
+                        "success_alert": "検証が成功しました。ネットワークは正しく設定されています。",
+                        "verification_error": {
+                            "title": "ネットワーク検証エラー",
+                            "start_verification_warning": "ネットワークの検証を開始できませんでした"
+                        },
                         "fail_alert": "検証が失敗しました。",
                         "node_name": "ノード名",
-                        "node_mac_address": "ノードのMACアドレス",
-                        "node_interface": "ノードインタフェース",
-                        "expected_vlan": "期待されているVLAN（受信されていない）"
+                        "node_mac_address": "ノード MACアドレス",
+                        "node_interface": "ノードインタフェイス",
+                        "expected_vlan": "期待されるVLAN (受信できなかった)"
                     },
                     "network": {
-                        "ip_range": "IP Range",
-                        "gateway": "Gateway",
+                        "ip_ranges": "IPの範囲",
+                        "gateway": "ゲートウェイ",
                         "cidr": "CIDR",
-                        "use_vlan_tagging": "タグ付きVLAN使用"
+                        "use_vlan_tagging": "タグ付きVLANを使用する"
                     },
                     "networking_parameters": {
-                        "fixed_networks_cidr": "固定ネットワークCIDR",
+                        "fixed_networks_cidr": "固定ネットワークの CIDR",
                         "fixed_network_size": "固定ネットワークのサイズ",
                         "fixed_networks_amount": "固定ネットワークの数",
-                        "fixed_vlan_range": "固定VLAN ID範囲",
-                        "use_vlan_tagging_fixed": "固定ネットワークにタグ付きVLAN使用",
-                        "nova_configuration": "Nova-network 設定",
-                        "dns_nameservers": "DNSサーバー",
+                        "fixed_vlan_range": "固定VLAN IDのレンジ",
+                        "use_vlan_tagging_fixed": "固定ネットワークのためにタグ付きVLANを使う",
+                        "nova_configuration": "Nova-network設定",
+                        "dns_nameservers": "ゲストOS用のDNSサーバ",
                         "l2_configuration": "Neutron L2 設定",
                         "l3_configuration": "Neutron L3 設定",
-                        "gre_id_range": "Tunnel ID 範囲",
-                        "vlan_range": "VLAN ID 範囲",
+                        "gre_id_range": "トンネルID レンジ",
+                        "vlan_range": "VLAN ID レンジ",
                         "base_mac": "ベースMACアドレス",
-                        "internal_cidr": "内部ネットワークCIDR",
+                        "internal_cidr": "内部ネットワーク CIDR",
                         "internal_gateway": "内部ネットワークゲートウェイ",
-                        "floating_ranges": "フローティングIP範囲"
+                        "floating_ranges": "フローティングIPレンジ"
                     },
                     "validation": {
-                        "large_network": "ネットワークが大きすぎます。",
-                        "small_network": "ネットワークが小さすぎます。",
-                        "invalid_cidr": "CIDRが不当です。",
-                        "invalid_ip_start": "IP範囲始めが不当です。",
-                        "invalid_ip_end": "IP範囲末端が不当です。",
-                        "invalid_ip_range": "IP範囲の始めがIP範囲端よりも大きです。",
-                        "empty_ip_range": "少なくとも1つのIP範囲を指定してください。",
-                        "invalid_vlan": "VLAN IDが不当です。",
-                        "forbidden_vlan": "このVLAN IDは、他のネットワークによって使われています。別のIDを選択してください。",
-                        "invalid_netmask": "ネットマスクが不当です。",
-                        "invalid_gateway": "ゲートウェイが不当です。",
-                        "invalid_amount": "ネットワーク量が不当です。",
-                        "gateway_is_out_of_ip_range": "ゲートウェイアドレスはIPアドレスの範囲外にあります。",
-                        "gateway_is_out_of_internal_ip_range": "ゲートウェイアドレスは、内部ネットワークのIPアドレスの範囲外にあります。",
-                        "need_more_vlan": "定義されたネットワークの数は、利用可能なよりも多くのVLAN IDを必要とします。 VLAN IDの範囲フィールドを確認してください。",
-                        "invalid_nameserver": "ネームサーバが不当です。",
-                        "invalid_id_start": "ID範囲始めが不当です。",
-                        "invalid_id_end": "ID範囲端が不当です。",
-                        "invalid_id_range": "ID範囲の始めがID範囲端よりも大きです。",
-                        "vlan_intersection": "他のネットワークのVLANのIDとの交点があります。別のIDの範囲を設定してください。",
-                        "invalid_mac": "MACアドレスが無効です。",
-                        "ip_start_is_out_of_ip_range": "始まるIPはIP範囲外にあります。",
-                        "ip_end_is_out_of_ip_range": "終わるIPはIP範囲外にあります。"
+                        "large_network": "ネットワークが大きすぎます",
+                        "small_network": "ネットワークが小さすぎます",
+                        "invalid_cidr": "CIDRが不正です",
+                        "invalid_ip_start": "IPレンジの開始が不正です",
+                        "invalid_ip_end": "IPレンジの終了が不正です",
+                        "invalid_ip_range": "IPレンジの開始がIPレンジの終了より大きいです",
+                        "empty_ip_range": "少なくとも、1つのIPレンジを指定してください",
+                        "invalid_vlan": "VLAN IDが不正です",
+                        "forbidden_vlan": "このVLAN IDは他のネットワークで使用されています。違うIDを使用してください",
+                        "invalid_netmask": "ネットマスクが不正です",
+                        "invalid_gateway": "ゲートウェイが不正です",
+                        "invalid_amount": "ネットワークの数が不正です",
+                        "gateway_is_out_of_ip_range": "このゲートウェイアドレスはネットワークCIDRの範囲外です",
+                        "gateway_is_out_of_internal_ip_range": "このゲートウェイアドレスは内部ネットワークのIPレンジ外です",
+                        "need_more_vlan": "定義されたネットワークの数は、利用可能なVLAN IDよりも多くのVLAN IDを必要とします。VLAN IDレンジのフィールドを確認してください。",
+                        "invalid_nameserver": "ネームサーバが不正です",
+                        "invalid_id_start": "IDレンジの開始が不正です",
+                        "invalid_id_end": "IDレンジの終了が不正です",
+                        "invalid_id_range": "IDレンジの開始がIDレンジの終了よりも大きいです",
+                        "vlan_intersection": "他のネットワークとVLAN IDが重複しています。違うIDレンジを設定してください",
+                        "invalid_mac": "MACアドレスが不正です",
+                        "ip_start_is_out_of_ip_range": "IPの開始がIPレンジの範囲外です",
+                        "ip_end_is_out_of_ip_range": "IPの終了がIPレンジの範囲外です"
                     }
                 },
                 "logs_tab": {
@@ -1606,164 +1821,272 @@
                     "node": "ノード",
                     "source": "ソース",
                     "min_level": "最小レベル",
+                    "level": "レベル",
                     "show": "表示",
-                    "log_alert": "ログを取得することができません。",
-                    "source_alert": "ログソースを取得することができません。",
-                    "date": "日付",
+                    "log_alert": "ログを取得できませんでした。",
+                    "source_alert": "ログソースを取得できませんでした。",
+                    "date": "日時",
                     "message": "メッセージ",
-                    "bottom_text": "以前のいくつかの行がスキップされました。多くの行を表示します。",
+                    "bottom_text": "未表示の以前のログがあります。以前のログを表示",
                     "all_logs": "すべて",
-                    "no_log_text": "現在のフィルタに一致するログエントリがありません。"
+                    "no_log_text": "現在のフィルタに合致するログはありません。"
                 },
                 "healthcheck_tab": {
-                    "title": "OpenStack ヘルスチェック",
-                    "run_tests_button": "テスト実行",
-                    "stop_tests_button": "テスト停止",
-                    "deploy_alert": "テストを実行する前に、OpenStackの環境をデプロイしてください。",
+                    "title": "OpenStackヘルスチェック",
+                    "run_tests_button": "テストの実行",
+                    "stop_tests_button": "テストの停止",
+                    "deploy_alert": "テストを開始する前にOpenStack環境をデプロイする必要があります。",
                     "not_available_alert": "OSTFサーバが利用できません。",
-                    "expected_duration": "期待時間",
-                    "actual_duration": "実際期間",
-                    "status": "ステータス"
+                    "expected_duration": "予想される所要時間",
+                    "actual_duration": "実際の所要時間",
+                    "status": "ステータス",
+                    "provide_credentials": "資格情報の設定",
+                    "credentials_description": "デプロイ後、資格情報を変更した場合はチェックを実行するために新しい資格情報を設定する必要があります。資格情報はどこにも保存されません。",
+                    "password_label": "パスワード",
+                    "password_description": "管理者のパスワード",
+                    "user_label": "ユーザー名",
+                    "user_description": "管理者のユーザー名",
+                    "tenant_label": "テナント",
+                    "tenant_description": "管理者のテナント(プロジェクト)名"
                 },
-                "discard_changes": "変更取消",
-                "deploy_changes": "変更デプロイ",
+                "discard_changes": "変更を破棄",
+                "deploy_changes": "変更をデプロイ",
                 "reset_environment": "リセット中",
                 "stop_deployment": "停止中",
-                "stop_deployment_button": "デプロイ停止",
-                "deployment_mode": "環境デプロイモード:",
-                "openstack_release": "OpenStack リリース:",
-                "environment_status": "環境の状況:",
-                "cluster_was_modified_from_cli": "この環境のいくつかのデプロイパラメータは、FuleCLIから変更されてます。FuleCLIからの変更は、ブラウザから行われた設定よりも優先されます。注意して行ってください。"
+                "stop_deployment_button": "デプロイの停止",
+                "deployment_mode": "デプロイモード",
+                "show_details_button": "追加の情報を表示",
+                "hide_details_button": "追加の情報を非表示",
+                "openstack_release": "OpenStackリリース",
+                "environment_status": "ステータス",
+                "cluster_was_modified_from_cli": "この環境のいくつかのデプロイ・パラメータはFuel CLIから変更されています。Fuel CLIから変更されたものはお使いのブラウザから行われた設定よりも優先されます。注意してください。",
+                "unavailable_release": "__name__のリリースは使用できません。この環境はデプロイできませんでした。"
             },
             "capacity_page": {
-                "title": "容量監査",
-                "license_usage": "ライセンス使用状況レポート",
-                "fuel_version": "Fuel バージョン",
+                "title": "キャパシティ監査",
+                "license_usage": "License Usage Report",
+                "fuel_version": "Fuelバージョン",
                 "fuel_uuid": "Fuel UUID",
                 "env_name": "環境名",
                 "node_count": "ノード数",
-                "total_number_alloc_nodes": "割り当てられたノードの総数",
-                "total_number_unalloc_nodes": "未割り当てノードの総数",
-                "node_role": "ノードの役割(s)",
+                "total_number_alloc_nodes": "割り当て済みノードの合計",
+                "total_number_unalloc_nodes": "未割り当てノードの合計",
+                "node_role": "ノードの役割",
                 "nodes_with_config": "設定されたノードの数",
-                "download_report": "レポートをダウンロード",
-                "loading": "読み込んでいます..."
+                "download_report": "レポートのダウンロード",
+                "loading": "読み込み中..."
             },
             "dialog": {
                 "create_cluster_wizard": {
-                    "title": "新しいOpenStackの環境を作成します。",
-                    "prev": "前に",
-                    "next": "次に",
+                    "title": "新しいOpenStack環境を作成",
+                    "prev": "前へ",
+                    "next": "次へ",
                     "create": "作成",
+                    "configuration_failed_warning": "OpenStack環境は作成されましたが、設定に失敗しました。設定は手動で行うことができます。",
                     "name_release": {
                         "title": "名前とリリース",
                         "name": "名前",
-                        "release_label": "OpenStack リリース"
+                        "release_label": "OpenStackリリース",
+                        "existing_environment": "\"__name__\"という名前の環境はすでに存在します",
+                        "Ubuntu_connectivity_alert": "デフォルトではパッケージは外部のリポジトリから取得されます。Fuelマスターノードがインターネットにアクセスできることを確認してください。\n別のリポジトリを指定または、ローカルミラーを作成するにはデプロイ前に設定タブを確認してください。",
+                        "CentOS_connectivity_alert": "Fuelマスターノードがインターネットにアクセスできることを確認してください。\n別のリポジトリを指定または、ローカルミラーを作成するにはデプロイ前に設定タブを確認してください。"
                     },
                     "mode": {
                         "title": "デプロイモード"
                     },
                     "compute": {
-                        "title": "Compute",
-                        "kvm_description": "ハードウェア上でのOpenStack実行する場合、ハイパーバイザとして、このタイプを選択してください。",
-                        "qemu_description": "仮想ホスト上でのOpenStack実行する場合、ハイパーバイザとして、このタイプを選択してください。"
+                        "title": "コンピュート",
+                        "kvm": "KVM",
+                        "qemu": "QEMU",
+                        "vcenter": "vCenter",
+                        "kvm_description": "ハードウェア上でOpenStackを実行する場合、ハイパーバイザーはこのタイプを選択してください",
+                        "qemu_description": "仮想ホスト上でOpenStackを実行する場合、ハイパーバイザーはこのタイプを選択してください",
+                        "vcenter_description": "ESXiサーバとともにvCenter環境をハイパーバイザーとして使用する場合、このタイプを選択してください",
+                        "vcenter_ip": "ホスト名",
+                        "vcenter_ip_description": "vCenterのホスト名またはIPアドレス",
+                        "vcenter_username": "ユーザー名",
+                        "vcenter_username_description": "vCenterの管理者ユーザー名",
+                        "vcenter_password": "パスワード",
+                        "vcenter_password_description": "vCenterの管理者パスワード",
+                        "vcenter_cluster": "クラスタ",
+                        "vcenter_cluster_description": "vCenterのクラスタ名。複数のクラスタがある場合はカンマでクラスタ名を区切ってください。",
+                        "vcenter_ip_warning": "ホスト名またはIPv4アドレスが不正です",
+                        "vcenter_user_warning": "ユーザー名は空白にはできません",
+                        "vcenter_password_warning": "パスワードは空白にはできません",
+                        "vcenter_cluster_warning": "クラスターリストが不正です"
                     },
                     "network": {
-                        "title": "ネットワーク",
-                        "alert": "Neutronは__releaseName__ではサポートされていません。",
-                        "nova_network": "Nova-Network",
-                        "neutr_gre": "GREセグメンテーションを伴うNeutron",
-                        "neutr_vlan": "VLANセグメンテーションを伴うNeutron"
+                        "title": "ネットワーク設定",
+                        "description": "プライベート（ゲスト）ネットワーク構成を選択します。ここで選択したものはウィザード終了後に変更することはできません。詳細については次を参照してください",
+                        "description_link": "Mirantis OpenStackプランニングガイド ネットワークトポロジー編",
+                        "release_alert": "__NameAndRelease.release_name__ ではNeutronがサポートされません",
+                        "hypervisor_alert": "VLANまたはGREセグメンテーションとNeutronはコンピュートオプションとして __Compute.vcenter__ では使用できません。",
+                        "nova_network": "(非推奨)レガシーネットワーキング(nova-network)",
+                        "nova_network_description": "VMware vCenterを使用するか、パブリックとフローティングIPのアドレスが異なるサブネットが必要な場合は、このオプションを選択してください。 OpenStackでは、今後のリリースでnova-networkが非推奨になることに注意してください。",
+                        "neutr_gre": "Neutron(GREセグメンテーション)",
+                        "neutr_gre_description": "ネットワーク機器がGREセグメンテーションをサポートしている必要があります。このオプションは、65535までのネットワークをサポートします。",
+                        "neutr_vlan": "Neutron(VLANセグメンテーション)-デフォルト",
+                        "neutr_vlan_description": "ネットワーク機器がVLANセグメンテーション用に設定されている必要があります。このオプションは、4095までのネットワークをサポートします。"
                     },
                     "storage": {
                         "title": "ストレージバックエンド",
-                        "alert": "Cephは__releaseName__ではサポートされていません。",
+                        "alert": "__NameAndRelease.release_name__ ではCephはサポートされません",
+                        "ceph_description": "Cephストレージを使用しますか？",
+                        "ceph_enable": "はい、Cephを使用します",
+                        "ceph_disable": "いいえ、デフォルトプロバイダを使用します",
+                        "ceph_help": "CephはGlanceイメージ、NovaとCinderのボリューム、そしてSwiftオブジェクトへの共有バックエンドを提供し、いくつかのケースではそれらの間にコピー・オン・ライトを提供します。Cephは、クラスタ内の複数のノードにCeph-OSDのロールを割り当てる必要があります（構成されたレプリケーションファクターと少なくとも同数）。各コンポーネントと設定ページのレプリケーションファクターのためのストレージバックエンドのオプションを制御することができます。",
                         "default": "デフォルト",
                         "ceph": "Ceph",
+                        "lvm": "LVM",
+                        "swift": "Swiftオブジェクトストレージ",
                         "cinder": "Cinder",
-                        "cinder_help": "デフォルトで、Cinderブロック·ストレージは、iSCSI経由で共有されるLVMボリュームを使用しています。 Cephバックエンドは2つ以上のCeph-OSDノードとKVMハイパーバイザーを必要とします。",
+                        "cinder_help": "デフォルトでは、CinderブロックストレージはiSCSI経由でLVMボリュームを共有します。Cephバックエンドは2つ以上のCeph-OSDノードとKVMハイパーバイザーが必要です。",
                         "glance": "Glance",
-                        "glance_help": "デフォルトで、Glanceイメージサービスは、HAデプロイモードではSwiftオブジェクトストレージを使用し、HAがないマルチノードモードではコントローラーノード上のローカルストレージを使用しています。 Cephバックエンドは2つ以上のCeph-OSDノードを必要とします。"
+                        "glance_help": "デフォルトでは、GlanceイメージサービスはSwiftオブジェクトストレージを使用します。Cephバックエンドでは2つ以上のCeph-OSDノードが必要です。"
                     },
                     "additional": {
                         "title": "追加サービス",
-                        "release_alert": "追加サービスは __releaseName__ではサポートされていません。",
-                        "network_mode_alert": "Muranoは現在のネットワークモードではサポートされていません。 Neutronネットワークを選択してください。",
-                        "install_sahara": "Saharaインストール",
-                        "install_sahara_description": "Saharaは、様々なベンダーのディストリビューションを活用するOpenStack上Hadoopクラスターのオンデマンドプロビジョニングをできるようにします。",
-                        "install_murano": "Muranoインストール",
-                        "install_murano_description": "Active Directory、IIS、ApacheやMicrosoftのSQLとASP.NETなどのWindowsまたはLinuxベースのデータセンター·サービスをOpenStack上で可能にします。",
-                        "install_ceilometer": "Ceilometerインストール(OpenStack Telemetry)",
-                        "install_ceilometer_description": "CeilometerはOpenStackのクラウドの計量と監視を提供します。"
+                        "release_alert": "追加サービスは __NameAndRelease.release_name__ では使用できません",
+                        "network_mode_alert": "MuranoはネットワークオプションとしてNeutronが必要です。",
+                        "install_sahara": "Saharaのインストール",
+                        "install_sahara_description": "Saharaは様々なベンダーディストリビューションでデプロイされたOpenStack上にHadoopクラスタのオンデマンドプロビジョニングを可能にします。",
+                        "install_murano": "Muranoのインストール",
+                        "install_murano_description": "Muranoはアプリケーションカタログです。アプリケーション開発者およびクラウドの管理者がブラウズ可能なカテゴライズされたカタログの中でさまざまなクラウド対応アプリケーションを公開するために使用されます。これは、クラウド·ユーザー（経験の浅いものを含む）によって使用され、ピックアップするために必要なアプリケーションやサービスを「ボタンを押す」ような操作だけで信頼性の高い環境を構成することができます。",
+                        "install_ceilometer": "Ceilometer(OpenStack テレメトリー)のインストール",
+                        "install_ceilometer_description": "CeilometerはOpenStackクラウドのメータリングおよびモニタリング機能を提供します。"
                     },
                     "ready": {
-                        "title": "終了",
-                        "env_select_deploy": "ご環境は今デプロイの準備ができている！[作成]ボタンをクリックした後、Fuel中で追加設定を選択するか、",
-                        "or_make_config_choice": "または追加設定を決めることができます。",
-                        "console": "コンソール.",
-                        "deploy": "変更をデプロイする",
+                        "title": "完了",
+                        "env_select_deploy": "環境をデプロイする準備ができました！作成ボタンをクリックした後で、環境を選択",
+                        "or_make_config_choice": "またはFuelで追加の構成を選択することができます",
+                        "console": "コンソール。",
+                        "deploy": "変更をデプロイ",
                         "env": "環境"
+                    },
+                    "create_cluster_error": {
+                        "title": "OpenStack環境作成エラー"
                     }
                 },
                 "dismiss_settings": {
                     "title": "確認",
                     "important": "重要",
-                    "stay_button": "ページに留まリます。",
-                    "leave_button": "変更を破棄してページを去リます。",
-                    "default_message": "設定が変更されたが保存されませんでした。変更を破棄し、ページを去リたいですか？",
-                    "verify_message": "ネットワーク検証が進行中です。変更を保存またはタブに留まる必要があります。"
+                    "stay_button": "このページに留まる",
+                    "leave_button": "ページから離れ、変更を破棄",
+                    "default_message": "このページでの変更が保存されていません。変更を破棄してこのページから離れてもよろしいですか？",
+                    "verify_message": "ネットワークの検証が進行中です。変更を保存するか、このタブから移動しないでください。"
                 },
                 "display_changes": {
-                    "title": "変更をデプロイする",
-                    "added_node": "__count__ノードを追加しました。",
-                    "added_node_plural": "__count__複数ノードを追加しました。",
-                    "deleted_node": "__count__ノードを削除しました。",
-                    "deleted_node_plural": "__count__複数ノードを削除しました。",
+                    "title": "変更をデプロイ",
+                    "added_node": "__count__ノードを追加。",
+                    "added_node_plural": "__count__ノードを追加。",
+                    "deleted_node": "__count__ノードを削除。",
+                    "deleted_node_plural": "__count__ノードを削除。",
                     "settings_changes": {
-                        "attributes": "OpenStack 設定",
-                        "networks": "ネットワーク 設定",
-                        "disks": "以下のノードのディスク設定："
+                        "attributes": "OpenStack設定を変更。",
+                        "networks": "ネットワーク設定を変更。",
+                        "disks": "以下のノードのディスク構成を変更:",
+                        "interfaces": "以下のノードのインタフェイス構成を変更:"
                     },
                     "warnings": {
+                        "no_deployment": "環境の設定が無効です。デプロイは開始できません。次の警告を確認してください。",
+                        "connectivity_alert": "デフォルトではパッケージやパッケージの更新は、リポジトリから取得されます。 Fuelノードがインタネットにアクセスできることを確認してください。\n別のリポジトリを指定またはローカルミラーを作成するには、デプロイ前に設定タブを確認してください。"
                     },
-                    "deploy": "デプロイしました。",
-                    "redeployment_needed": "一部のノードは、デプロイ後のエラーになりました。再デプロイが必要です。"
+                    "deploy": "デプロイ",
+                    "redeployment_needed": "いくつかのノードはデプロイ後にステータスがエラーになっています。再デプロイが必要です。",
+                    "locked_settings_alert": "環境設定とノードの設定はデプロイ後に変更できなくなりますので注意してください。",
+                    "verification_not_performed": "デプロイ前にネットワーク設定を確認することをおすすめします。",
+                    "verification_in_progress": "ネットワークの検証が進行中です。",
+                    "verification_failed": "ネットワークの検証がエラーのために失敗しました。",
+                    "get_more_info": "詳しい情報は次を参照してください:",
+                    "networks_link": "ネットワークタブ",
+                    "invalid_settings": "環境設定が不正です。",
+                    "settings_link": "設定タブ"
                 },
                 "show_node": {
-                    "manufacturer_label": "メーカー",
+                    "manufacturer_label": "製造元",
                     "mac_address_label": "MACアドレス",
                     "fqdn_label": "FQDN",
                     "ssh_console": "SSHコンソール",
-                    "network_configuration_button": "インターフェイス設定",
-                    "disk_configuration_button": "ディスク設定",
-                    "close_button": "終了",
+                    "network_configuration_button": "インターフェースの設定",
+                    "disk_configuration_button": "ディスクの設定",
+                    "default_dialog_title": "ノード情報",
+                    "close_button": "閉じる",
                     "total": "合計",
                     "bytes": "バイト",
                     "drive": "ドライブ",
-                    "drive_plural": "複数ドライブ"
+                    "drive_plural": "ドライブ"
+                },
+                "delete_nodes": {
+                    "title": "ノードの削除",
+                    "message": "本当に選択したノードを削除してもよろしいですか？"
                 },
                 "discard_changes": {
-                    "title": "変更取消",
+                    "title": "変更を破棄",
                     "discard_button": "破棄",
-                    "alert_text": "これらの変更を破棄してもよろしいですか？",
-                    "cant_discard": "ノードの変更を破棄することはできません。"
+                    "alert_text": "本当に変更を破棄してもよろしいですか？",
+                    "cant_discard": "ノードの変更を破棄することができません"
+                },
+                "remove_node": {
+                    "default_message": "Fuelはデータベースからこのノードを削除します。この操作ではノードのMBRやそのほかのデータは削除されません。ノードの起動した場合、ブートストラップ（ディスカバリー）システムが起動され、新規または未割り当てのサーバとしてFuelに再表示されます。",
+                    "title": "ノードの削除"
                 },
                 "remove_cluster": {
                     "title": "環境の削除",
-                    "incomplete_actions_text": "未完了のアクションがあります。環境を削除しても、失敗して、不整合な状態につながる可能性があります。",
-                    "node_returned_text": "各ノードは、クリーンアップされて未割り当てノードのプールに戻されます。"
+                    "incomplete_actions_text": "完了していないアクションがあります。 環境を削除すると、失敗し、一貫性のない状態につながる可能性があります。",
+                    "node_returned_text": "各ノードは、クリーンアップされ、未割り当てのノードのプールに戻されます。削除されたノードのすべてのログも削除されます。",
+                    "default_text": "本当に環境を削除してもよろしいですか？",
+                    "enter_environment_name": "確認のために環境  \"__name__\" の名前を入力してください。"
                 },
                 "stop_deployment": {
-                    "title": "デプロイ停止",
-                    "text": "デプロイを停止してもよろしいですか？ノードのデプロイ進行状況が失われ、それらのノードは、デプロイ前の状態にリセットされます。",
-                    "provisioning_warning": "デプロイを停止してもよろしいですか？まだプロビジョニングされていないノード上の任意の進行状況が失われ、それらのノードは、デプロイ前の状態にリセットされます。"
+                    "title": "デプロイの中止",
+                    "text": "デプロイを停止しても本当によろしいですか？完全に環境をリセットしない限り、デプロイが成功しない場合があります。注意して使用してください！",
+                    "provisioning_warning": "デプロイを停止しても本当によろしいですか？まだプロビジョニングされていないノード上の現時点までの処理が失われノードはデプロイ前の状態にリセットされます。",
+                    "stop_deployment_error": {
+                        "title": "デプロイの中止がエラーとなりました",
+                        "stop_deployment_warning": "デプロイの中止ができませんでした"
+                    }
                 },
                 "reset_environment": {
-                    "title": "環境を元に戻す",
-                    "text": "この環境をリセットしてもよろしいですか？環境内のすべてのノードが削除され、デプロイ前の状態に戻ります。"
+                    "title": "環境のリセット",
+                    "text": "本当にこの環境をリセットしてもよろしいですか？ 環境内のすべてのノードが削除され、デプロイ前の状態に戻ります。ディスクおよびインターフェイス設定もデフォルトにリセットされます。",
+                    "enter_environment_name": "確認のために環境名 \"__name__\" を入力してください。"
                 },
-                "error_occured": {
-                    "alert_text": "サーバーエラーが発生しました。管理者に連絡してください。"
+                "update_environment": {
+                    "title": "環境のアップデート",
+                    "text": "本当に環境をアップデートしてもよろしいですか？",
+                    "downgrade_warning": "本当に以前のリリースに環境をアップデートしてもよろしいですか？"
+                },
+                "rollback_environment": {
+                    "title": "環境のロールバック",
+                    "text": "本当に環境をロールバックしてもよろしいですか？"
+                },
+                "retry_environment": {
+                    "text": "本当に環境のアップデートをリトライしてもよろしいですか？"
+                },
+                "error_dialog": {
+                    "title": "エラー",
+                    "warning": "サーバエラーが発生しました。管理者に連絡してください。"
+                },
+                "change_password": {
+                    "title": "パスワードの変更",
+                    "current_password": "現在のパスワード",
+                    "new_password": "新しいパスワード",
+                    "confirm_new_password": "新しいパスワードの確認",
+                    "wrong_current_password": "パスワードが違います",
+                    "new_password_mismatch": "パスワードが一致しません"
+                },
+                "registration": {
+                    "title": "アカウントの作成",
+                    "i_agree": "私は読み、同意します",
+                    "terms_and_conditions": "利用規約",
+                    "agree_error": "利用規約に同意する必要があります"
+                },
+                "retrieve_password": {
+                    "title": "パスワードを取得",
+                    "send_new_password": "新しいパスワードの送信",
+                    "submit_email": "Mirantisアカウントのメールアドレスを送信してください、そのアドレスに新しいパスワードを送ります。",
+                    "done": "完了。",
+                    "check_email": "新しいパスワードのために電子メールをチェックしてください"
                 }
             }
         }

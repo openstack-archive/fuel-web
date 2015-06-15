@@ -25,6 +25,12 @@ casper.then(function() {
 });
 
 casper.then(function() {
+    this.test.comment('Switch to common subtab');
+    this.click('a.subtab-link-common');
+    this.test.assertSelectorAppears('span.subtab-group-common', 'Common subtab is selected');
+});
+
+casper.then(function() {
     this.test.comment('Testing cluster OpenStack settings: Save button interractions');
     this.click('input[type=checkbox]');
     this.test.assertExists('.btn-apply-changes:not(:disabled)', 'Save settings button is enabled if there are changes');

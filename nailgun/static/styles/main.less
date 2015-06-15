@@ -139,7 +139,7 @@
 }
 
 .glyphicon-danger-sign {
-  .icon-default-styles(-12px, -132px);
+  .icon-default-styles(-13px, -132px);
   width: 16px;
 }
 
@@ -1020,6 +1020,36 @@ button, .btn:not(.btn-link) {.font-semibold;}
     background: url(@common-icons-sprite) no-repeat 0px -40px;
     width: 40px;
     height: 40px;
+  }
+
+  .settings-tab {
+    .nav-pills:last-child {
+      margin-bottom: 20px;
+    }
+    .nav-pills > li {
+      user-select: none;
+      width: 100%;
+      &:not(.active) {
+        cursor: pointer;
+      }
+      &.active {
+        & > a {
+          background-color: @blue;
+        }
+      }
+      & > a {
+        padding-left: 25px;
+      }
+    }
+    .subtab-icon {
+      position: absolute;
+      left: 5px;
+      top: 50%;
+      margin-top: -8px;
+      z-index: 1;
+      width: 15px;
+      height: 15px;
+    }
   }
 
   .logs-tab {
@@ -2527,7 +2557,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         left: @default-input-width * 2.5 + @base-indent * 4 + 60px;
       }
       &.repo-uri .form-control {
-        @repo-uri-width: @default-input-width * 1.5;
+        @repo-uri-width: @default-input-width * 1.3;
         width: @repo-uri-width;
         max-width: @repo-uri-width;
       }

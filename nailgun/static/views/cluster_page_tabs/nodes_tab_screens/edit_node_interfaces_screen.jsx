@@ -390,7 +390,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                             );
                         }, this))}
                     </div>
-                    <div className='col-xs-12 page-buttons'>
+                    <div className='col-xs-12 page-buttons content-elements'>
                         <div className='well clearfix'>
                             <div className='btn-group'>
                                 <button className='btn btn-default btn-return' onClick={this.returnToNodeList} disabled={!returnEnabled}>

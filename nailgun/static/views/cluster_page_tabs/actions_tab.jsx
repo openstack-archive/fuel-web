@@ -62,7 +62,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
         },
         render: function() {
             return (
-                <div className={'action-item ' + this.props.className}>
+                <div className={'action-item content-elements ' + this.props.className}>
                     <div className='panel panel-default'>
                         <div className='panel-heading font-bold'>{this.props.title}</div>
                         <div className='panel-body'>

@@ -245,6 +245,28 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.task.task.rpc.cast')
+    def test_start_deployment_on_selected_nodes_with_tasks(self, mcast):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+
+        self.emulate_nodes_provisioning(controller_nodes)
+
+        nodes_uids = [n.uid for n in controller_nodes]
+
+        controller_to_deploy = nodes_uids[0]
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodesWithTasks",
+            [controller_to_deploy]
+        )
+        self.send_put(deploy_action_url, ['deploy_legacy'])
+
+        self.check_deployment_call_made([nodes_uids[0]], mcast)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.task.task.rpc.cast')
     def test_deployment_of_node_is_forbidden(self, mcast):
         # cluster is in ha mode so for the sanity of the check
         # lets operate on non-controller node

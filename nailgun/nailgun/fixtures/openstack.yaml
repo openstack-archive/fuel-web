@@ -592,7 +592,6 @@
             weight: 20
             restrictions:
               - condition: "settings:additional_components.murano.value == false"
-                action: "hide"
           murano_repo_url:
             value: "http://storage.apps.openstack.org/"
             label: "Murano Repository URL"
@@ -605,7 +604,6 @@
             weight: 20
             restrictions:
               - condition: "settings:additional_components.mongo.value == false"
-                action: "hide"
           hosts_ip:
             value: ""
             label: "MongoDB hosts IP"

@@ -126,7 +126,7 @@ function($, _, i18n, React, utils, models, componentMixins, controls) {
             return (
                 <div className='row'>
                     <div className='title'>{i18n('cluster_page.logs_tab.title')}</div>
-                    <div className='col-xs-12'>
+                    <div className='col-xs-12 content-elements'>
                         <LogFilterBar
                             cluster={this.props.cluster}
                             tabOptions={this.props.tabOptions}

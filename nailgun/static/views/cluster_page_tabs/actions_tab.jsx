@@ -43,7 +43,7 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                 task = cluster.task({group: 'deployment', status: 'running'}),
                 isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
             return (
-                <div className='row'>
+                <div className='row content-elements'>
                     <div className='title'>{i18n('cluster_page.actions_tab.title')}</div>
                     <RenameEnvironmentAction cluster={cluster}/>
                     <ResetEnvironmentAction cluster={cluster} task={task} />

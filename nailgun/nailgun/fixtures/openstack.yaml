@@ -622,6 +622,7 @@
             weight: 20
             restrictions:
               - condition: "settings:additional_components.murano.value == false"
+                message: "Murano is not enabled on the Additional Components section"
                 action: "hide"
           murano_repo_url:
             value: "http://storage.apps.openstack.org/"
@@ -635,6 +636,7 @@
             weight: 20
             restrictions:
               - condition: "settings:additional_components.mongo.value == false"
+                message: "Ceilometer and MongoDB are not enabled on the Additional Components section"
                 action: "hide"
           hosts_ip:
             value: ""

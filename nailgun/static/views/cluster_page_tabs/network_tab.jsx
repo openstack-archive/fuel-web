@@ -957,9 +957,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return (
                 <div>
                     <div className='page-control-box'>
-                        <div className='verification-box'>
+                        <div className='verification-box row'>
                             <hr/>
-                            <div className='verification-network-placeholder'>
+                            <div className='verification-network-placeholder col-xs-7'>
                                 <div className='router-box'>
                                     <div className='verification-router'></div>
                                 </div>
@@ -976,7 +976,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                                     })}
                                 </div>
                             </div>
-                            <div className='verification-text-placeholder'>
+                            <div className='verification-text-placeholder col-xs-5'>
                                 <ol>
                                     {_.times(5, function(index) {
                                         return <li key={index}>{i18n(ns + 'step_' + index)}</li>;

@@ -265,22 +265,33 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
     def get_nodes(self, cluster):
         nodes_to_deploy = super(
             BaseDeploySelectedNodes, self).get_nodes(cluster)
+        self.validate(cluster, nodes_to_deploy)
+        return nodes_to_deploy
+
+    def validate(self, cluster, nodes_to_deploy):
+        self.checked_data(self.validator.validate_nodes_to_deploy,
+                          nodes=nodes_to_deploy, cluster_id=cluster.id)
+
+        self.checked_data(self.validator.validate_release, cluster=cluster)
+
+
+class DeploySelectedNodes(BaseDeploySelectedNodes):
+    """Handler for deployment selected nodes."""
+
+    def get_nodes(self, cluster):
+        nodes_to_deploy = super(
+            DeploySelectedNodes, self).get_nodes(cluster)
+        # NOTE(dshulyak) we still need to rerun all controllers
+        # if all tasks are added to execution
         if cluster.is_ha_mode:
             nodes_to_deploy = TaskHelper.nodes_to_deploy_ha(
                 cluster,
                 nodes_to_deploy
             )
 
-        self.checked_data(self.validator.validate_nodes_to_deploy,
-                          nodes=nodes_to_deploy, cluster_id=cluster.id)
-
-        self.checked_data(self.validator.validate_release, cluster=cluster)
+        self.validate(cluster, nodes_to_deploy)
 
         return nodes_to_deploy
-
-
-class DeploySelectedNodes(BaseDeploySelectedNodes):
-    """Handler for deployment selected nodes."""
 
     @content
     def PUT(self, cluster_id):

@@ -37,14 +37,14 @@
               message: "At least 3 Controller nodes are recommended for Highly Available (HA) environments. Deployments with less than 3 Controller nodes are not recommended for production environments."
       compute:
         name: "Compute"
-        description: "A Compute node creates, manages and terminates virtual machine instances."
+        description: "A Compute node creates, manages, and terminates virtual machine instances."
         limits:
           recommended: 1
         fault_tolerance: "2%"
       cinder:
         # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
         name: "Storage - Cinder"
-        description: "Cinder provides scheduling of block storage resources, typically delivered over iSCSI and other compatible backend storage systems. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+        description: "Cinder provides scheduling of block storage resources, typically delivered over iSCSI and other compatible backend storage systems. Block storage can be used for database storage, expandable file systems, or to provide a server with access to raw block level devices."
         limits:
           recommended: 1
         restrictions:

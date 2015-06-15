@@ -710,7 +710,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
 .footer {
   display: block;
-  width: @page-width;
+  max-width: @page-width;
   margin-left: auto;
   margin-right: auto;
   color: @base-dark-color + 60%;
@@ -2366,7 +2366,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .range-row-header {
       font-weight: bold;
       font-size: @base-font-size - 2;
-      margin-left: @default-label-width + 14px;
+      padding-left: @default-label-width + 29;
       div {
         float: left;
         // needed here to place label on correct places over ranges
@@ -2392,6 +2392,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .range-row {
         margin-top: -@base-indent * 5;
         padding-left: 0;
+        margin-left: 0 !important;
         &.offset-left {
           margin-left: @default-label-width - 5;
         }

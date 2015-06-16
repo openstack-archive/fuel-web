@@ -47,6 +47,11 @@
                     "recommended": "It is recommended to have at least __limitValue__ of __roleName__ nodes (__count__ selected currently)."
                 }
             },
+            "controls": {
+                "file": {
+                    "placeholder": "No file selected"
+                }
+            },
             "node_details": {
                 "cpu": "CPU",
                 "hdd": "HDD",

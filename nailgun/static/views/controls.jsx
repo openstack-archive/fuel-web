@@ -52,7 +52,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
     controls.Input = React.createClass({
         mixins: [tooltipMixin],
         propTypes: {
-            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range']).isRequired,
+            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range', 'file']).isRequired,
             name: React.PropTypes.node,
             label: React.PropTypes.node,
             description: React.PropTypes.node,
@@ -83,10 +83,21 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
         debouncedInput: _.debounce(function() {
             return this.onInput();
         }, 10, {leading: true}),
+        readFile: function() {
+            var reader = new FileReader(),
+                input = this.getInputDOMNode();
+            reader.onload = (function(e) {
+                return this.props.onChange(this.props.name, reader.result);
+            }).bind(this);
+            reader.readAsText(input.files[0]);
+        },
         onChange: function() {
             if (this.props.onChange) {
                 var input = this.getInputDOMNode();
-                return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
+                return this.props.onChange(
+                    this.props.name,
+                    this.props.type == 'checkbox' ? input.checked : input.value
+                );
             }
         },
         onInput: function() {
@@ -108,7 +119,10 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                 props.onInput = this.debouncedInput;
             } else {
                 // debounced onChange callback is supported for uncontrolled inputs
-                props.onChange = (_.isUndefined(this.props.value) && _.isUndefined(this.props.сhecked)) ? this.debouncedChange : this.onChange;
+                props.onChange = this.props.type == 'file' ?
+                    this.readFile :
+                    ((_.isUndefined(this.props.value) && _.isUndefined(this.props.сhecked)) ?
+                        this.onChange : this.debouncedChange);
             }
             var Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,

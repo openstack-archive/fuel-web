@@ -20,6 +20,7 @@ import nailgun
 
 from nailgun import objects
 
+from nailgun.db.sqlalchemy.models.notification import Notification
 from nailgun.db.sqlalchemy.models.task import Task
 
 from nailgun.test.base import BaseIntegrationTest
@@ -66,6 +67,16 @@ class TestStopDeployment(BaseIntegrationTest):
             self.assertEqual(n.online, False)
             self.assertEqual(n.roles, [])
             self.assertNotEqual(n.pending_roles, [])
+
+        notification = self.db.query(Notification).filter_by(
+            cluster_id=stop_task.cluster_id
+        ).order_by(
+            Notification.datetime.desc()
+        ).first()
+
+        self.assertRegexpMatches(
+            notification.message,
+            'Please reset the environment if you want to redeploy it.')
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

@@ -228,6 +228,9 @@ def grub2_cfg(kernel_params='', chroot=''):
                 format(kernel_params=kernel_params), line)
             line = retimeout.sub('GRUB_HIDDEN_TIMEOUT=5', line)
             new_content += line
+    # NOTE(agordeev): explicitly add record fail timeout, in order to
+    # prevent user confirmation appearing if unexpected reboot occured.
+    new_content += '\nGRUB_RECORDFAIL_TIMEOUT=5\n'
     with open(grub_defaults, 'wb') as f:
         f.write(new_content)
     cmd = [guess_grub2_mkconfig(chroot), '-o', guess_grub2_conf(chroot)]

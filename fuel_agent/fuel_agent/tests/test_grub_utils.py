@@ -392,7 +392,9 @@ GRUB_CMDLINE_LINUX="kernel-params-orig"
 bar"""
         new_content = """foo
 GRUB_CMDLINE_LINUX="kernel-params-new"
-bar"""
+bar
+GRUB_RECORDFAIL_TIMEOUT=5
+"""
 
         # mock_open = mock.mock_open(read_data=orig_content)
         with mock.patch(OPEN_FUNCTION_NAME,

@@ -114,6 +114,15 @@ class McollectiveConfig
   end
 end
 
+class Offloading
+  def initialize(name, sub)
+    @name, @sub = name, sub
+  end
+
+  def to_json(options = {})
+    {'name' => @name, 'state' => nil, 'sub' => @sub}.to_json()
+  end
+end
 
 class NodeAgent
   def initialize(logger, url=nil)
@@ -193,6 +202,38 @@ class NodeAgent
     interfaces
   end
 
+  # transform input array into array of the objects
+  # Example:
+  # [{
+  #     "state":null,
+  #     "sub":[
+  #         {
+  #             "state":null,
+  #             "sub":[],
+  #             "name":"tx-checksum-ipv6"
+  #         },
+  #         ...........
+  #     ],
+  #     "name":"tx-checksumming"
+  # },
+  # {
+  #     "state":null,
+  #     "sub":[],
+  #     "name":"generic-segmentation-offload"
+  # },
+  # .............
+  # ]
+  def _parse_offloading(offloading_arr)
+    return [] if offloading_arr.empty?
+    inner = []
+    current = offloading_arr.shift()
+    while offloading_arr.any? && offloading_arr.first().start_with?("\t") do
+      inner << offloading_arr.shift()[1..-1]
+    end
+    res = _parse_offloading(offloading_arr)
+    res << Offloading.new(current, _parse_offloading(inner))
+  end
+
   def _detailed
     detailed_meta = {
       :system => _system_info,
@@ -237,6 +278,31 @@ class NodeAgent
             int_meta[:ip] = addr
             int_meta[:netmask] = addrinfo[:netmask] if addrinfo[:netmask]
           end
+        end
+        begin
+          # this staff will put all non-fixed offloading mode into array
+          # collect names of non-fixed offloading modes
+          # Example of ethtool -k ethX output:
+          # tx-checksumming: on
+          # 	tx-checksum-ipv4: on
+          # 	tx-checksum-ip-generic: off [fixed]
+          # 	tx-checksum-ipv6: on
+          # 	tx-checksum-fcoe-crc: off [fixed]
+          # 	tx-checksum-sctp: on
+          # scatter-gather: on
+          # 	tx-scatter-gather: on
+          # 	tx-scatter-gather-fraglist: off [fixed]
+          # generic-segmentation-offload: on
+          offloading_data = `ethtool -k #{int}`.split("\n").reject { |offloading|
+                                 offloading.include?("Features for") ||
+                                 offloading.include?("fixed")
+                            }.map { |offloading|
+                                 offloading.split(':')[0]
+                            }
+          # transform raw data into array of objects
+          int_meta[:offloading_modes] = _parse_offloading(offloading_data)
+        rescue
+          int_meta[:offloading_modes] = nil
         end
         detailed_meta[:interfaces] << int_meta
       end

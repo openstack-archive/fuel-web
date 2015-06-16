@@ -22,7 +22,8 @@
     "open-sans-fontface": "1.4.0"
   },
   "devDependencies": {
-    "es5-shim": "4.1.0"
+    "es5-shim": "4.1.0",
+    "sinon": "1.15.3"
   },
   "overrides": {
     "react": {
@@ -55,6 +56,13 @@
         "dist/css/bootstrap.css",
         "dist/css/bootstrap.css.map",
         "dist/fonts/*"
+      ]
+    },
+    "sinon": {
+      "main": [
+        "lib/sinon.js",
+        "lib/sinon/*",
+        "lib/sinon/util/*"
       ]
     }
   },

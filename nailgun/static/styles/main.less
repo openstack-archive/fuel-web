@@ -1896,6 +1896,14 @@ button, .btn:not(.btn-link) {.font-semibold;}
     input, textarea {
       float: left;
     }
+    input[type=file] {
+      opacity: 0;
+      position: absolute;
+    }
+    input.file-name[readonly] {
+      background-color: white;
+      cursor: pointer;
+    }
     input, textarea, select {
       max-width: @default-input-width;
       width: @default-input-width;

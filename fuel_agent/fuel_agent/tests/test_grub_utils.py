@@ -351,7 +351,7 @@ title Default (kernel-version)
     def test_grub1_cfg_kernel_initrd_are_set(self):
         config = """
 default=0
-timeout=5
+timeout=10
 title Default (kernel-version-set)
     kernel /kernel-version-set kernel-params
     initrd /initrd-version-set
@@ -361,7 +361,8 @@ title Default (kernel-version-set)
         with mock.patch(OPEN_FUNCTION_NAME, new=mock_open, create=True):
             gu.grub1_cfg(kernel='kernel-version-set',
                          initrd='initrd-version-set',
-                         chroot='/target', kernel_params='kernel-params')
+                         chroot='/target', kernel_params='kernel-params',
+                         grub_timeout=10)
         mock_open.assert_called_once_with('/target/boot/grub/grub.conf', 'wb')
         mock_open_file = mock_open()
         mock_open_file.write.assert_called_once_with(config)
@@ -392,7 +393,9 @@ GRUB_CMDLINE_LINUX="kernel-params-orig"
 bar"""
         new_content = """foo
 GRUB_CMDLINE_LINUX="kernel-params-new"
-bar"""
+bar
+GRUB_RECORDFAIL_TIMEOUT=10
+"""
 
         # mock_open = mock.mock_open(read_data=orig_content)
         with mock.patch(OPEN_FUNCTION_NAME,
@@ -401,7 +404,8 @@ bar"""
             mock_open.return_value = mock.MagicMock(spec=file)
             handle = mock_open.return_value.__enter__.return_value
             handle.__iter__.return_value = StringIO.StringIO(orig_content)
-            gu.grub2_cfg(kernel_params='kernel-params-new', chroot='/target')
+            gu.grub2_cfg(kernel_params='kernel-params-new', chroot='/target',
+                         grub_timeout=10)
 
             self.assertEqual(
                 mock_open.call_args_list,

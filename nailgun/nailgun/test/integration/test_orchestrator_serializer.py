@@ -1840,6 +1840,18 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertEqual(
                 'private' in (fact['network_scheme']['roles']), False)
 
+    def test_vxlan_segmentation(self):
+        cluster = self.create_env('ha_compact', 'vxlan')
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+
+        for fact in facts:
+            self.assertEqual(
+                fact['quantum_settings']['L2']['segmentation_type'], 'vxlan')
+            self.assertEqual(
+                'br-prv' in fact['network_scheme']['endpoints'], False)
+            self.assertEqual(
+                'private' in (fact['network_scheme']['roles']), False)
+
     def test_gw_added_but_default_gw_is_ex_or_admin(self):
         self.new_env_release_version = '2014.2.-6.0'
         cluster = self.create_env('ha_compact', 'gre')

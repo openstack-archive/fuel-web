@@ -20,7 +20,8 @@
  * Based on https://github.com/react-bootstrap/react-bootstrap/blob/master/src/Input.jsx
 **/
 
-define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], function($, _, React, utils, componentMixins) {
+define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'],
+    function(i18n, $, _, React, utils, componentMixins) {
     'use strict';
 
     var controls = {};
@@ -52,7 +53,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
     controls.Input = React.createClass({
         mixins: [tooltipMixin],
         propTypes: {
-            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range']).isRequired,
+            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range', 'file']).isRequired,
             name: React.PropTypes.node,
             label: React.PropTypes.node,
             description: React.PropTypes.node,
@@ -66,7 +67,11 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
             extraContent: React.PropTypes.node
         },
         getInitialState: function() {
-            return {visible: false};
+            return {
+                visible: false,
+                fileName: this.props.defaultValue && this.props.defaultValue.name || null,
+                content: this.props.defaultValue && this.props.defaultValue.content || null
+            };
         },
         togglePassword: function() {
             this.setState({visible: !this.state.visible});
@@ -83,10 +88,41 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
         debouncedInput: _.debounce(function() {
             return this.onInput();
         }, 10, {leading: true}),
+        pickFile: function() {
+            this.getInputDOMNode().click();
+        },
+        saveFile: function(fileName, content) {
+            this.setState({
+                fileName: fileName,
+                content: content
+            });
+            return this.props.onChange(
+                this.props.name,
+                {name: fileName, content: content}
+            );
+        },
+        removeFile: function() {
+            this.refs.form.getDOMNode().reset();
+            this.saveFile(null, null);
+        },
+        readFile: function() {
+            var reader = new FileReader(),
+                input = this.getInputDOMNode();
+
+            if (input.files.length) {
+                reader.onload = (function() {
+                    return this.saveFile(input.value.replace(/^.*[\\\/]/g, ''), reader.result);
+                }).bind(this);
+                reader.readAsBinaryString(input.files[0]);
+            }
+        },
         onChange: function() {
             if (this.props.onChange) {
                 var input = this.getInputDOMNode();
-                return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
+                return this.props.onChange(
+                    this.props.name,
+                    this.props.type == 'checkbox' ? input.checked : input.value
+                );
             }
         },
         onInput: function() {
@@ -106,6 +142,8 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                 };
             if (this.props.type == 'range') {
                 props.onInput = this.debouncedInput;
+            } else if (this.props.type == 'file') {
+                props.onChange = this.readFile;
             } else {
                 // debounced onChange callback is supported for uncontrolled inputs
                 props.onChange = (_.isUndefined(this.props.value) && _.isUndefined(this.props.checked)) ? this.debouncedChange : this.onChange;
@@ -118,9 +156,26 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                     'custom-tumbler': isCheckboxOrRadio,
                     textarea: this.props.type == 'textarea'
                 };
+            if (this.props.type == 'file') {
+                input = <form ref='form'>{input}</form>;
+            }
             return (
                 <div key='input-group' className={utils.classNames(inputWrapperClasses)}>
                     {input}
+                    {this.props.type == 'file' &&
+                        <div className='input-group'>
+                            <input
+                                className='form-control file-name'
+                                type='text'
+                                placeholder={i18n('controls.file.placeholder')}
+                                value={this.state.fileName && '[' + utils.showSize(this.state.content.length) + '] ' + this.state.fileName}
+                                onClick={this.pickFile}
+                                readOnly />
+                                <div className='input-group-addon' onClick={this.state.fileName ? this.removeFile : this.pickFile}>
+                                    <i className={this.state.fileName ? 'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'} />
+                                </div>
+                        </div>
+                    }
                     {this.props.toggleable &&
                         <div className='input-group-addon' onClick={this.togglePassword}>
                             <i className={this.state.visible ? 'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'} />

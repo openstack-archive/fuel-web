@@ -77,6 +77,7 @@ attribute_schema = {
                 'select',
                 'text',
                 'textarea',
+                'file',
             ]
         },
         #'value': None,  # custom validation depending on type

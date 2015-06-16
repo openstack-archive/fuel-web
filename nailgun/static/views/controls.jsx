@@ -52,7 +52,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
     controls.Input = React.createClass({
         mixins: [tooltipMixin],
         propTypes: {
-            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range']).isRequired,
+            type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range', 'file']).isRequired,
             name: React.PropTypes.node,
             label: React.PropTypes.node,
             description: React.PropTypes.node,
@@ -83,16 +83,34 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
         debouncedInput: _.debounce(function() {
             return this.onInput();
         }, 10, {leading: true}),
+        readFile: function(input, callback) {
+            var reader = new FileReader();
+            reader.onload = (function(e) {
+                return callback(this.props.name, reader.result);
+            }).bind(this);
+            reader.readAsText(input.files[0]);
+        },
         onChange: function() {
             if (this.props.onChange) {
                 var input = this.getInputDOMNode();
-                return this.props.onChange(this.props.name, this.props.type == 'checkbox' ? input.checked : input.value);
+                if (this.props.type == 'file') {
+                    this.readFile(input, this.props.onChange);
+                } else {
+                    return this.props.onChange(
+                        this.props.name,
+                        this.props.type == 'checkbox' ? input.checked : input.value
+                    );
+                }
             }
         },
         onInput: function() {
             if (this.props.onInput) {
                 var input = this.getInputDOMNode();
-                return this.props.onInput(this.props.name, input.value);
+                if (this.props.type == 'file') {
+                    this.readFile(input, this.props.onInput);
+                } else {
+                    return this.props.onInput(this.props.name, input.value);
+                }
             }
         },
         renderInput: function() {

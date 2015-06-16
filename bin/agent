@@ -114,6 +114,15 @@ class McollectiveConfig
   end
 end
 
+class Offload
+  def initialize(name, sub)
+    @name, @sub = name, sub
+  end
+
+  def to_json(options = {})
+    {'name' => @name, 'state' => nil, 'sub' => @sub}.to_json()
+  end
+end
 
 class NodeAgent
   def initialize(logger, url=nil)
@@ -193,6 +202,19 @@ class NodeAgent
     interfaces
   end
 
+  def _parse_offload(offload_arr)
+    return [] if offload_arr.empty?
+    inner = []
+    current = offload_arr.shift()
+    offload_arr.delete_if do |offload|
+      break if !offload.start_with?("\t")
+      inner << offload[1..-1]
+      true
+    end
+    res = _parse_offload(offload_arr)
+    res << Offload.new(current, _parse_offload(inner))
+  end
+
   def _detailed
     detailed_meta = {
       :system => _system_info,
@@ -238,6 +260,15 @@ class NodeAgent
             int_meta[:netmask] = addrinfo[:netmask] if addrinfo[:netmask]
           end
         end
+        # collect names of non-fixed offloading modes
+        offload_data = `ethtool -k #{int}`.split("\n").reject { |offload|
+                                                     offload.include?("Features for") ||
+                                                     offload.include?("fixed")
+                                                }.map { |offload|
+                                                     offload.split(':')[0]
+                                                }
+        # transform raw data into array of objects
+        int_meta[:offload_modes] = _parse_offload(offload_data)
         detailed_meta[:interfaces] << int_meta
       end
     rescue Exception => e

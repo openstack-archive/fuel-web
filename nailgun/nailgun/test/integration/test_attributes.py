@@ -469,6 +469,13 @@ class TestAlwaysEditable(BaseIntegrationTest):
             },
             {
                 'type': 'rpm',
+	            'name': 'mos-security',
+                'uri': 'http://mirror.fuel-infra.org/mos/centos-6/mos7.0/'
+                       'security',
+                'priority': None,
+            },
+            {
+                'type': 'rpm',
                 'name': 'Auxiliary',
                 'uri': 'http://127.0.0.1:8080/2014.2-7.0/centos/auxiliary',
                 'priority': 15,

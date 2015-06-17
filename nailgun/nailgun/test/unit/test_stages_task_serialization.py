@@ -139,7 +139,7 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         task = tasks_serializer.UploadMOSRepo(
             task_config, self.cluster, self.nodes)
         serialized = list(task.serialize())
-        self.assertEqual(len(serialized), 4)
+        self.assertEqual(len(serialized), 5)
         self.assertEqual(serialized[0]['type'], 'upload_file')
         self.assertEqual(serialized[1]['type'], 'upload_file')
         self.assertEqual(serialized[2]['type'], 'upload_file')

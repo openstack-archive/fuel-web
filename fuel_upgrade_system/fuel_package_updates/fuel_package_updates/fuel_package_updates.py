@@ -47,6 +47,7 @@ logger = logging.getLogger(__name__)
 distros_dict = {
     'ubuntu': 'ubuntu',
     'centos': 'centos',
+    'centos_security': 'centos-security',
     'ubuntu_baseos': 'ubuntu-baseos',
 }
 DISTROS = namedtuple('Distros', distros_dict.keys())(**distros_dict)
@@ -67,12 +68,17 @@ class Settings(object):
     supported_releases = (OPENSTACK_RELEASE, )
     updates_destinations = {
         DISTROS.centos: r'/var/www/nailgun/{0}/centos/updates',
+        DISTROS.centos_security: r'/var/www/nailgun/{0}/centos/security',
         DISTROS.ubuntu: r'/var/www/nailgun/{0}/ubuntu/updates',
         DISTROS.ubuntu_baseos: os.path.join(r'/var/www/nailgun/{0}/ubuntu/',
                                             UBUNTU_CODENAME),
     }
     mirror_base = "http://mirror.fuel-infra.org/mos"
     default_mirrors = {
+        DISTROS.centos_security: '{0}/{1}/mos{2}/security/'.format(
+            mirror_base,
+            CENTOS_VERSION,
+            FUEL_VER),
         DISTROS.centos: '{0}/{1}/mos{2}/updates/'.format(mirror_base,
                                                          CENTOS_VERSION,
                                                          FUEL_VER),
@@ -453,6 +459,19 @@ def get_centos_repos(repopath, ip, httproot, port, baseurl=None):
     return [repoentry]
 
 
+def get_centos_security_repos(repopath, ip, httproot, port, baseurl=None):
+    repourl = baseurl or "http://{ip}:{port}{repopath}".format(
+        ip=ip,
+        port=port,
+        repopath=repopath.replace(httproot, ''))
+    repoentry = {
+        "type": "rpm",
+        "name": "mos-security",
+        "uri": repourl,
+        "priority": 20}
+    return [repoentry]
+
+
 def reindent(s, numSpaces):
     s = string.split(s, '\n')
     s = [(numSpaces * ' ') + line for line in s]
@@ -663,6 +682,10 @@ def main():
     elif options.distro == DISTROS.centos:
         repos = get_centos_repos(updates_path, options.ip, settings.httproot,
                                  settings.port, options.baseurl)
+    elif options.distro == DISTROS.centos_security:
+        repos = get_centos_security_repos(updates_path, options.ip,
+                                          settings.httproot, settings.port,
+                                          options.baseurl)
     else:
         raise UpdatePackagesException('Unknown distro "{0}"'.format(
             options.distro))

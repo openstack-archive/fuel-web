@@ -210,9 +210,11 @@ class TestInstallationInfo(BaseTestCase):
             },
             nodes_kwargs=[
                 {'status': consts.NODE_STATUSES.discover,
-                 'roles': ['controller', 'compute']},
+                 'roles': ['controller', 'compute'],
+                 'meta': {}},
                 {'roles': [],
-                 'pending_roles': ['compute']}
+                 'pending_roles': ['compute'],
+                 'meta': {'cpu': {}}}
             ]
         )
         self.env.make_bond_via_api(
@@ -233,6 +235,7 @@ class TestInstallationInfo(BaseTestCase):
 
             self.assertEquals(node_info['manufacturer'], node.manufacturer)
             self.assertEquals(node_info['platform_name'], node.platform_name)
+            self.assertEquals(node_info['meta'], node.meta)
 
             self.assertEquals(node_info['pending_addition'],
                               node.pending_addition)

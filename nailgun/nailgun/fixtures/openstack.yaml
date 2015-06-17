@@ -1220,6 +1220,10 @@
                 uri: "http://mirror.fuel-infra.org/mos/centos-6/mos6.1/updates"
                 priority: null
               - type: "rpm"
+                name: "mos-security"
+                uri: "http://mirror.fuel-infra.org/mos/centos-6/mos6.1/security"
+                priority: null
+              - type: "rpm"
                 name: "Auxiliary"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/centos/auxiliary"
                 priority: 15

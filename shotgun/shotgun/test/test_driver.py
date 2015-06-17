@@ -71,7 +71,7 @@ class TestDriver(base.BaseTestCase):
             command, stdout=mock.ANY)
         shotgun.driver.fabric.api.settings.assert_called_with(
             host_string="remote_host", timeout=2, command_timeout=10,
-            warn_only=True, key_filename=None)
+            warn_only=True, key_filename=None, abort_on_prompts=True)
         self.assertEqual(result, out)
 
     @mock.patch('shotgun.driver.utils.execute')
@@ -130,7 +130,7 @@ class TestDriver(base.BaseTestCase):
         mfabget.assert_called_with(remote_path, target_path)
         mfabset.assert_called_with(
             host_string="remote_host", key_filename="path_to_key",
-            timeout=2, warn_only=True)
+            timeout=2, warn_only=True, abort_on_prompts=True)
 
         mexecute.reset_mock()
         driver = shotgun.driver.Driver({}, None)

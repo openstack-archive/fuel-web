@@ -81,10 +81,14 @@ class Driver(object):
                     timeout=2,                  # a network connection timeout
                     command_timeout=10,         # a command execution timeout
                     warn_only=True,             # don't exit on error
+                    abort_on_prompts=True,      # non-interactive mode
                 ):
                     logger.debug("Running remote command: "
                                  "host: %s command: %s", self.host, command)
-                    output = fabric.api.run(command, stdout=raw_stdout)
+                    try:
+                        output = fabric.api.run(command, stdout=raw_stdout)
+                    except SystemExit:
+                        logger.error("Fabric aborted this iteration")
                     # NOTE(prmtl): because of pty=True (default) and
                     # combine_stderr=True (default) stderr is combined
                     # with stdout
@@ -110,11 +114,15 @@ class Driver(object):
                     key_filename=self.ssh_key,  # a path to ssh key
                     timeout=2,                  # a network connection timeout
                     warn_only=True,             # don't exit on error
+                    abort_on_prompts=True,      # non-interactive mode
                 ):
                     logger.debug("Getting remote file: %s %s",
                                  path, target_path)
                     utils.execute('mkdir -p "{0}"'.format(target_path))
-                    return fabric.api.get(path, target_path)
+                    try:
+                        return fabric.api.get(path, target_path)
+                    except SystemExit:
+                        logger.error("Fabric aborted this iteration")
             else:
                 logger.debug("Getting local file: cp -r %s %s",
                              path, target_path)

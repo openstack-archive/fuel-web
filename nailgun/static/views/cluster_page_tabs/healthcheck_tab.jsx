@@ -77,7 +77,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     <div className='title'>
                         {i18n('cluster_page.healthcheck_tab.title')}
                     </div>
-                    <div className='col-xs-12'>
+                    <div className='col-xs-12 content-elements'>
                         {this.state.loadingFailure ?
                                 <div className='alert alert-danger'>
                                     {i18n('cluster_page.healthcheck_tab.not_available_alert')}

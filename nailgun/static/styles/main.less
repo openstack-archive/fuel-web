@@ -243,6 +243,14 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 }
 
+.content-elements:last-child::after {
+  display: block;
+  margin: 20px 0;
+  margin-bottom: -20px;
+  content: "";
+  height: 0;
+}
+
 // ALERTS
 
 .alert {
@@ -965,6 +973,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
           }
         }
       }
+      tfoot td {
+        padding-bottom: 0;
+      }
     }
     button.show-more-entries {
       padding-left: 0;
@@ -1655,12 +1666,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
       padding: 0;
       border: 0;
     }
-  }
-}
-
-.releases-page {
-  .table {
-    margin-bottom: 0;
   }
 }
 

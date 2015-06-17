@@ -174,7 +174,7 @@ function($, _, i18n, Backbone, React, utils, models, ComponentMixins, controls) 
                                 />);
                             }, this)}
                         </div>
-                        <div className='col-xs-12 page-buttons'>
+                        <div className='col-xs-12 page-buttons content-elements'>
                             <div className='well clearfix'>
                                 <div className='btn-group'>
                                     <button onClick={this.returnToNodeList} className='btn btn-default btn-return'>{i18n('cluster_page.nodes_tab.back_to_nodes_button')}</button>

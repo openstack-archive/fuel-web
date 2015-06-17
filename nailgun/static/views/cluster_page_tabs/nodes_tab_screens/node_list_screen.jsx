@@ -543,7 +543,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <div className='node-list row'>
                     {!!groups.length && <div className='col-xs-12 node-list-header'>{this.renderSelectAllCheckbox()}</div>}
-                    <div className='col-xs-12'>
+                    <div className='col-xs-12 content-elements'>
                         {groups.length ?
                             groups.map(function(group) {
                                 return <NodeGroup {...this.props}

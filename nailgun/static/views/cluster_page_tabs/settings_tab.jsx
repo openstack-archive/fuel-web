@@ -204,7 +204,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                                     configModels={this.state.configModels}
                                 />;
                             }, this)}
-                            <div className='col-xs-12 page-buttons'>
+                            <div className='col-xs-12 page-buttons content-elements'>
                                 <div className='well clearfix'>
                                     <div className='btn-group pull-right'>
                                         <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || lockedCluster}>

@@ -695,7 +695,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
                 isCancelChangesDisabled = isLocked || !hasChanges,
                 isSaveChangesDisabled = error || isLocked || !hasChanges;
             return (
-                <div className='col-xs-12 page-buttons'>
+                <div className='col-xs-12 page-buttons content-elements'>
                     <div className='well clearfix'>
                         <div className='btn-group pull-right'>
                             <button key='verify_networks' className='btn btn-default verify-networks-btn' onClick={this.verifyNetworks}

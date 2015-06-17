@@ -55,7 +55,7 @@ function(_, i18n, React, models, controls, componentMixins) {
                     </div>
                     <div className='content-box'>
                         <div className='row'>
-                            <div className='col-xs-12'>
+                            <div className='col-xs-12 content-elements'>
                                 <controls.Table
                                     head={_.map(this.props.columns, function(column) {
                                         return {label: i18n('release_page.' + column), className: column};

@@ -81,6 +81,7 @@ class Driver(object):
                     timeout=2,                  # a network connection timeout
                     command_timeout=10,         # a command execution timeout
                     warn_only=True,             # don't exit on error
+                    abort_on_prompts=True,      # non-interactive mode
                 ):
                     logger.debug("Running remote command: "
                                  "host: %s command: %s", self.host, command)
@@ -110,6 +111,7 @@ class Driver(object):
                     key_filename=self.ssh_key,  # a path to ssh key
                     timeout=2,                  # a network connection timeout
                     warn_only=True,             # don't exit on error
+                    abort_on_prompts=True,      # non-interactive mode
                 ):
                     logger.debug("Getting remote file: %s %s",
                                  path, target_path)

@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.objects import ClusterCollection
@@ -194,6 +196,28 @@ class InstallationInfo(object):
                 pass
         return result_attrs
 
+    def get_node_meta(self, node):
+        meta = node.meta if node.meta is not None else {}
+        to_copy = ['cpu', 'memory', 'disks']
+        result = {}
+
+        for param in to_copy:
+            result[param] = meta.get(param)
+
+        system = copy.deepcopy(meta.get('system', {}))
+        system.pop('fqdn', None)
+        system.pop('serial', None)
+        result['system'] = system
+
+        interfaces = copy.deepcopy(meta.get('interfaces', []))
+        result['interfaces'] = []
+        for interface in interfaces:
+            data = copy.deepcopy(interface)
+            data.pop('mac')
+            result['interfaces'].append(data)
+
+        return result
+
     def get_nodes_info(self, nodes):
         nodes_info = []
         for node in nodes:
@@ -209,7 +233,7 @@ class InstallationInfo(object):
 
                 'manufacturer': node.manufacturer,
                 'platform_name': node.platform_name,
-                'meta': node.meta,
+                'meta': self.get_node_meta(node),
 
                 'pending_addition': node.pending_addition,
                 'pending_deletion': node.pending_deletion,

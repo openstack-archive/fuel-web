@@ -288,9 +288,7 @@ gulp.task('rjs', function() {
 
             var rjs = spawn('./node_modules/.bin/r.js', ['-o', configFile]);
             rjs.stdout.on('data', function(data) {
-                _(data.toString().split('\n')).compact().map(function(line) {
-                    gutil.log(line);
-                });
+                _(data.toString().split('\n')).compact().each(_.ary(gutil.log, 1)).value();
             });
             rjs.on('close', cb);
         }))

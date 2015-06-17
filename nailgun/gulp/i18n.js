@@ -17,7 +17,7 @@ function validate(translations, locales) {
                 return _.isPlainObject(value) ? processPiece(localBase, value) : localBase;
             });
         }
-        return _.uniq(_.flatten(processPiece(null, translations.translation))).sort();
+        return _.uniq(_.flatten(processPiece(null, translations.translation), true)).sort();
     }
 
     _.each(_.union(locales, [baseLocale]), function(locale) {

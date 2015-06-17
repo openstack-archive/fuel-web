@@ -68,7 +68,7 @@ nodes in your cluster",
 DNS (space separated)",
                                "value": domain},
                 "TEST_DNS": {"label": "Hostname to test DNS:",
-                             "value": "www.google.com",
+                             "value": "mirror.fuel-infra.org",
                              "tooltip": "DNS record to resolve to see if DNS \
 is accessible"}
             }
@@ -178,7 +178,9 @@ is accessible"}
             #and present a strongly worded warning
             msg = "If you continue without DNS, you may not be able to access"\
                   + " external data necessary for installation needed for " \
-                  + "some OpenStack Releases."
+                  + "some OpenStack Releases.\n\n" \
+                  + "You will also not have access to download " \
+                  + "updates for Fuel on the master node."
 
             dialog.display_dialog(
                 self, widget.TextLabel(msg), "Empty DNS Warning")

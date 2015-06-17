@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import mock
 from oslotest import base as test_base
 
@@ -403,16 +404,180 @@ LIST_BLOCK_DEVICES_SAMPLE = [
      'size': 500107862016},
 ]
 
+SINGLE_DISK_KS_SPACES = [
+    {
+        "name": "sda",
+        "extra": ["sda"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "mount": "/",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext4",
+                "name": "Root"
+            },
+        ],
+        "type": "disk",
+        "id": "sda",
+        "size": 102400
+    }
+]
+
+NO_BOOT_KS_SPACES = [
+    {
+        "name": "sda",
+        "extra": ["sda"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext4",
+                "name": "Root"
+            },
+        ],
+        "type": "disk",
+        "id": "sda",
+        "size": 102400
+    }
+]
+
+FIRST_DISK_HUGE_KS_SPACES = [
+    {
+        "name": "sda",
+        "extra": ["sda"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "mount": "/",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext4",
+                "name": "Root"
+            },
+        ],
+        "type": "disk",
+        "id": "sda",
+        "size": 2097153 # 2T + 1M
+    },
+    {
+        "name": "sdb",
+        "extra": ["sdb"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "mount": "/tmp",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext2",
+                "name": "TMP"
+            },
+        ],
+        "type": "disk",
+        "id": "sdb",
+        "size": 65535
+    }
+]
+
+MANY_HUGE_DISKS_KS_SPACES = [
+    {
+        "name": "sda",
+        "extra": ["sda"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "mount": "/",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext4",
+                "name": "Root"
+            },
+        ],
+        "type": "disk",
+        "id": "sda",
+        "size": 2097153 # 2T + 1M
+    },
+    {
+        "name": "sdb",
+        "extra": ["sdb"],
+        "free_space": 1024,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "mount": "/tmp",
+                "size": 200,
+                "type": "partition",
+                "file_system": "ext2",
+                "name": "TMP"
+            },
+        ],
+        "type": "disk",
+        "id": "sdb",
+        "size": 2097153 # 2T + 1M
+    }
+]
 
 class TestNailgun(test_base.BaseTestCase):
-
-    @mock.patch('yaml.load')
-    @mock.patch.object(utils, 'init_http_request')
-    @mock.patch.object(hu, 'list_block_devices')
-    def setUp(self, mock_lbd, mock_http, mock_yaml):
-        super(TestNailgun, self).setUp()
-        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        self.drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
 
     def test_match_device_by_id_matches(self):
         # matches by 'by-id' links
@@ -525,8 +690,12 @@ class TestNailgun(test_base.BaseTestCase):
         }
         self.assertFalse(nailgun.match_device(fake_hu_disk, fake_ks_disk))
 
-    def test_configdrive_scheme(self):
-        cd_scheme = self.drv.configdrive_scheme
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
+    @mock.patch.object(hu, 'list_block_devices')
+    def test_configdrive_scheme(self, mock_lbd, mock_http, mock_yaml):
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        cd_scheme = nailgun.Nailgun(PROVISION_SAMPLE_DATA).configdrive_scheme
         self.assertEqual(['fake_authorized_key1', 'fake_authorized_key2',
                           'fake_auth_key'], cd_scheme.common.ssh_auth_keys)
         self.assertEqual('node-1.domain.tld', cd_scheme.common.hostname)
@@ -573,10 +742,13 @@ class TestNailgun(test_base.BaseTestCase):
             ],
             cd_scheme.common.ks_repos)
 
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(hu, 'list_block_devices')
-    def test_partition_scheme(self, mock_lbd):
+    def test_partition_scheme(self, mock_lbd, mock_http_req, mock_yaml):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        p_scheme = self.drv.partition_scheme
+        drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
+        p_scheme = drv.partition_scheme
         self.assertEqual(5, len(p_scheme.fss))
         self.assertEqual(4, len(p_scheme.pvs))
         self.assertEqual(3, len(p_scheme.lvs))
@@ -588,8 +760,9 @@ class TestNailgun(test_base.BaseTestCase):
     @mock.patch.object(hu, 'list_block_devices')
     def test_image_scheme(self, mock_lbd, mock_http_req, mock_yaml):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        p_scheme = self.drv.partition_scheme
-        i_scheme = self.drv.image_scheme
+        drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
+        p_scheme = drv.partition_scheme
+        i_scheme = drv.image_scheme
         expected_images = []
         for fs in p_scheme.fss:
             if fs.mount not in PROVISION_SAMPLE_DATA['ks_meta']['image_data']:
@@ -622,9 +795,9 @@ class TestNailgun(test_base.BaseTestCase):
         type(mock_http_req.return_value).text = prop_mock
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
         p_data = PROVISION_SAMPLE_DATA.copy()
-        self.drv = nailgun.Nailgun(p_data)
-        p_scheme = self.drv.partition_scheme
-        i_scheme = self.drv.image_scheme
+        drv = nailgun.Nailgun(p_data)
+        p_scheme = drv.partition_scheme
+        i_scheme = drv.image_scheme
         mock_http_req.assert_called_once_with(
             'http://fake.host.org:123/imgs/fake_image.yaml')
         expected_images = []
@@ -651,15 +824,23 @@ class TestNailgun(test_base.BaseTestCase):
                 img.size, fake_image_meta['images'][0]['raw_size'])
             self.assertEqual(img.md5, fake_image_meta['images'][0]['raw_md5'])
 
-    def test_getlabel(self):
-        self.assertEqual('', self.drv._getlabel(None))
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
+    @mock.patch.object(hu, 'list_block_devices')
+    def test_getlabel(self, mock_lbd, mock_http_req, mock_yaml):
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
+        self.assertEqual('', drv._getlabel(None))
         long_label = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         self.assertEqual(' -L %s ' % long_label[:12],
-                         self.drv._getlabel(long_label))
+                         drv._getlabel(long_label))
 
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(hu, 'list_block_devices')
-    def test_disk_dev_not_found(self, mock_lbd):
+    def test_disk_dev_not_found(self, mock_lbd, mock_http_req, mock_yaml):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
         fake_ks_disk = {
             "name": "fake",
             "extra": [
@@ -667,33 +848,38 @@ class TestNailgun(test_base.BaseTestCase):
                 "disk/by-id/fake_ata_dont_matches"
             ]
         }
-        self.assertRaises(errors.DiskNotFoundError, self.drv._disk_dev,
+        self.assertRaises(errors.DiskNotFoundError, drv._disk_dev,
                           fake_ks_disk)
 
-    def test_get_partition_count(self):
-        self.assertEqual(3, self.drv._get_partition_count('Boot'))
-        self.assertEqual(1, self.drv._get_partition_count('TMP'))
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
+    @mock.patch.object(hu, 'list_block_devices')
+    def test_get_partition_count(self, mock_lbd, mock_http_req, mock_yaml):
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(PROVISION_SAMPLE_DATA)
+        self.assertEqual(3, drv._get_partition_count('Boot'))
+        self.assertEqual(1, drv._get_partition_count('TMP'))
 
     @mock.patch('yaml.load')
     @mock.patch.object(utils, 'init_http_request')
     @mock.patch.object(hu, 'list_block_devices')
     def test_partition_scheme_ceph(self, mock_lbd, mock_http_req, mock_yaml):
         #TODO(agordeev): perform better testing of ceph logic
-        p_data = PROVISION_SAMPLE_DATA.copy()
+        p_data = copy.deepcopy(PROVISION_SAMPLE_DATA)
         for i in range(0, 3):
             p_data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(
                 CEPH_JOURNAL)
             p_data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(
                 CEPH_DATA)
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        self.drv = nailgun.Nailgun(p_data)
-        p_scheme = self.drv.partition_scheme
+        drv = nailgun.Nailgun(p_data)
+        p_scheme = drv.partition_scheme
         self.assertEqual(5, len(p_scheme.fss))
         self.assertEqual(4, len(p_scheme.pvs))
         self.assertEqual(3, len(p_scheme.lvs))
         self.assertEqual(2, len(p_scheme.vgs))
         self.assertEqual(3, len(p_scheme.parteds))
-        self.assertEqual(3, self.drv._get_partition_count('ceph'))
+        self.assertEqual(3, drv._get_partition_count('ceph'))
         #NOTE(agordeev): (-2, -1, -1) is the list of ceph data partition counts
         #                corresponding to (sda, sdb, sdc) disks respectively.
         for disk, part in enumerate((-2, -1, -1)):
@@ -704,49 +890,112 @@ class TestNailgun(test_base.BaseTestCase):
     @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
     @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
     def test_grub_centos_26(self, mock_lbd, mock_http_req, mock_yaml):
-        data = PROVISION_SAMPLE_DATA.copy()
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
         data['profile'] = 'centos'
         data['ks_meta']['kernel_lt'] = 0
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        self.drv = nailgun.Nailgun(data)
-        self.assertEqual(self.drv.grub.kernel_params,
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(drv.grub.kernel_params,
                          ' ' + data['ks_meta']['pm_data']['kernel_params'])
-        self.assertEqual(self.drv.grub.kernel_regexp, r'^vmlinuz-2\.6.*')
-        self.assertEqual(self.drv.grub.initrd_regexp, r'^initramfs-2\.6.*')
-        self.assertIsNone(self.drv.grub.version)
-        self.assertIsNone(self.drv.grub.kernel_name)
-        self.assertIsNone(self.drv.grub.initrd_name)
+        self.assertEqual(drv.grub.kernel_regexp, r'^vmlinuz-2\.6.*')
+        self.assertEqual(drv.grub.initrd_regexp, r'^initramfs-2\.6.*')
+        self.assertIsNone(drv.grub.version)
+        self.assertIsNone(drv.grub.kernel_name)
+        self.assertIsNone(drv.grub.initrd_name)
 
     @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
     @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
     @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
     def test_grub_centos_lt(self, mock_lbd, mock_http_req, mock_yaml):
-        data = PROVISION_SAMPLE_DATA.copy()
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
         data['profile'] = 'centos'
         data['ks_meta']['kernel_lt'] = 1
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        self.drv = nailgun.Nailgun(data)
-        self.assertEqual(self.drv.grub.kernel_params,
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(drv.grub.kernel_params,
                          ' ' + data['ks_meta']['pm_data']['kernel_params'])
-        self.assertIsNone(self.drv.grub.kernel_regexp)
-        self.assertIsNone(self.drv.grub.initrd_regexp)
-        self.assertIsNone(self.drv.grub.version)
-        self.assertIsNone(self.drv.grub.kernel_name)
-        self.assertIsNone(self.drv.grub.initrd_name)
+        self.assertIsNone(drv.grub.kernel_regexp)
+        self.assertIsNone(drv.grub.initrd_regexp)
+        self.assertIsNone(drv.grub.version)
+        self.assertIsNone(drv.grub.kernel_name)
+        self.assertIsNone(drv.grub.initrd_name)
 
     @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
     @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
     @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
     def test_grub_ubuntu(self, mock_lbd, mock_http_req, mock_yaml):
-        data = PROVISION_SAMPLE_DATA.copy()
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
         data['profile'] = 'ubuntu'
         data['ks_meta']['kernel_lt'] = 0
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
-        self.drv = nailgun.Nailgun(data)
-        self.assertEqual(self.drv.grub.kernel_params,
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(drv.grub.kernel_params,
                          ' ' + data['ks_meta']['pm_data']['kernel_params'])
-        self.assertIsNone(self.drv.grub.version)
-        self.assertIsNone(self.drv.grub.kernel_regexp)
-        self.assertIsNone(self.drv.grub.initrd_regexp)
-        self.assertIsNone(self.drv.grub.kernel_name)
-        self.assertIsNone(self.drv.grub.initrd_name)
+        self.assertIsNone(drv.grub.version)
+        self.assertIsNone(drv.grub.kernel_regexp)
+        self.assertIsNone(drv.grub.initrd_regexp)
+        self.assertIsNone(drv.grub.kernel_name)
+        self.assertIsNone(drv.grub.initrd_name)
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_boot_partition_ok_single_disk(self, mock_lbd,
+                                        mock_http_req, mock_yaml):
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
+        data['ks_meta']['pm_data']['ks_spaces'] = SINGLE_DISK_KS_SPACES
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(
+            drv.partition_scheme.fs_by_mount('/boot').device,
+            '/dev/sda3')
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_boot_partition_ok_many_normal_disks(self, mock_lbd,
+                                                 mock_http_req, mock_yaml):
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(
+            drv.partition_scheme.fs_by_mount('/boot').device,
+            '/dev/sda3')
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_boot_partition_ok_first_disk_huge(self, mock_lbd,
+                                               mock_http_req, mock_yaml):
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
+        data['ks_meta']['pm_data']['ks_spaces'] = FIRST_DISK_HUGE_KS_SPACES
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(
+            drv.partition_scheme.fs_by_mount('/boot').device,
+            '/dev/sdb3')
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_boot_partition_ok_many_huge_disks(self, mock_lbd,
+                                               mock_http_req, mock_yaml):
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
+        data['ks_meta']['pm_data']['ks_spaces'] = MANY_HUGE_DISKS_KS_SPACES
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        drv = nailgun.Nailgun(data)
+        self.assertEqual(
+            drv.partition_scheme.fs_by_mount('/boot').device,
+            '/dev/sda3')
+
+    @mock.patch('fuel_agent.drivers.nailgun.yaml.load')
+    @mock.patch('fuel_agent.drivers.nailgun.utils.init_http_request')
+    @mock.patch('fuel_agent.drivers.nailgun.hu.list_block_devices')
+    def test_boot_partition_no_boot(self, mock_lbd,
+                                    mock_http_req, mock_yaml):
+        data = copy.deepcopy(PROVISION_SAMPLE_DATA)
+        data['ks_meta']['pm_data']['ks_spaces'] = NO_BOOT_KS_SPACES
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+
+        self.assertRaises(errors.WrongPartitionSchemeError,
+            nailgun.Nailgun, data)

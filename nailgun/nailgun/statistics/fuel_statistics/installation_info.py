@@ -209,6 +209,7 @@ class InstallationInfo(object):
 
                 'manufacturer': node.manufacturer,
                 'platform_name': node.platform_name,
+                'meta': node.meta,
 
                 'pending_addition': node.pending_addition,
                 'pending_deletion': node.pending_deletion,

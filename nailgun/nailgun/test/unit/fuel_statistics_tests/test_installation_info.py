@@ -214,7 +214,9 @@ class TestInstallationInfo(BaseTestCase):
                  'meta': {}},
                 {'roles': [],
                  'pending_roles': ['compute'],
-                 'meta': {'cpu': {}}}
+                 'meta': {'cpu': {},
+                          'interfaces': [{'mac': 'x', 'name': 'eth0'}],
+                          'disks': [{'name': 'a', 'disk': 'a'}]}}
             ]
         )
         self.env.make_bond_via_api(
@@ -235,7 +237,12 @@ class TestInstallationInfo(BaseTestCase):
 
             self.assertEquals(node_info['manufacturer'], node.manufacturer)
             self.assertEquals(node_info['platform_name'], node.platform_name)
-            self.assertEquals(node_info['meta'], node.meta)
+
+            self.assertIn('meta', node_info)
+            for iface in node_info['meta']['interfaces']:
+                self.assertNotIn('mac', iface)
+            self.assertNotIn('fqdn', node_info['meta']['system'])
+            self.assertNotIn('serial', node_info['meta']['system'])
 
             self.assertEquals(node_info['pending_addition'],
                               node.pending_addition)

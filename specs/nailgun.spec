@@ -54,6 +54,51 @@ Requires:    python-networkx-core >= 1.8.0
 Requires:    python-cinderclient >= 1.0.7
 Requires:    pydot-ng >= 1.0.0
 Requires:    python-ordereddict >= 1.1
+Requires:    node-backbone
+Requires:    node-backbone.stickit
+Requires:    node-bootstrap
+Requires:    node-bower
+Requires:    node-casperjs
+Requires:    node-classnames
+Requires:    node-es5-shim
+Requires:    node-esprima-fb
+Requires:    node-event-stream
+Requires:    node-glob
+Requires:    node-gulp
+Requires:    node-gulp-autoprefixer
+Requires:    node-gulp-bower
+Requires:    node-gulp-filter
+Requires:    node-gulp-intermediate
+Requires:    node-gulp-jison
+Requires:    node-gulp-jscs
+Requires:    node-gulp-jshint
+Requires:    node-gulp-less
+Requires:    node-gulp-lintspaces
+Requires:    node-gulp-react
+Requires:    node-gulp-replace
+Requires:    node-gulp-shell
+Requires:    node-gulp-util
+Requires:    node-i18next
+Requires:    node-intern
+Requires:    node-jquery
+Requires:    node-jquery-ui
+Requires:    node-js-cookie
+Requires:    node-jshint-stylish
+Requires:    node-less
+Requires:    node-lodash
+Requires:    node-lodash-node 
+Requires:    node-main-bower-files 
+Requires:    node-minimist 
+Requires:    node-open-sans-fontface
+Requires:    node-phantomjs
+Requires:    node-react
+Requires:    node-require-css
+Requires:    node-requirejs
+Requires:    node-requirejs-text
+Requires:    node-rimraf
+Requires:    node-run-sequence
+Requires:    node-selenium-standalone
+Requires:    node-uglify-js
 # Workaroud for babel bug
 Requires:    pytz
 

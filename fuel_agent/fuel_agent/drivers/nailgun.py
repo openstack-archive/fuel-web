@@ -272,6 +272,8 @@ class Nailgun(BaseDataDriver):
                             device=prt.name, mount=volume['mount'],
                             fs_type=volume.get('file_system', 'xfs'),
                             fs_label=self._getlabel(volume.get('disk_label')))
+                        if volume['mount'] == '/boot' and not self._boot_done:
+                            self._boot_done = True
 
                 if volume['type'] == 'pv':
                     LOG.debug('Creating pv on partition: pv=%s vg=%s' %

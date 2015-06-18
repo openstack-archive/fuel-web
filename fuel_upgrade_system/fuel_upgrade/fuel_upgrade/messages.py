@@ -63,3 +63,18 @@ there are no running tasks.
 Use `--no-check` as a parameter for upgrade script to skip all
 pre-upgrade checks.
 """
+
+
+update_your_master_node = """
+Both updates and security repos were setuped. If you want to
+retrieve latest updates make sure you have access to these repos
+and run:
+
+    # yum update
+    # dockerctl destroy all
+    # dockerctl start all
+
+For more details, check out Fuel documentation at
+
+    http://docs.mirantis.com/fuel
+"""

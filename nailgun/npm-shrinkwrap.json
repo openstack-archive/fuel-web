@@ -4948,8 +4948,8 @@
       }
     },
     "lodash-node": {
-      "version": "2.4.1",
-      "from": "lodash-node@~2.4.1"
+      "version": "3.9.3",
+      "from": "lodash-node@3.9.3"
     },
     "main-bower-files": {
       "version": "2.6.2",

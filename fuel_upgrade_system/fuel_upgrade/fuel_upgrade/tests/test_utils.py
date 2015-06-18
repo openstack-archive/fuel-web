@@ -15,10 +15,13 @@
 #    under the License.
 
 from copy import deepcopy
-import requests
+import os
 import StringIO
 import subprocess
+import textwrap
 import urllib2
+
+import requests
 import yaml
 
 import mock
@@ -563,6 +566,32 @@ class TestUtils(BaseTestCase):
         walk.return_value = [('/fake/path', '', '1'), ('/fake/path', '', '2')]
         files = list(utils.iterfiles_filter('/fake/path', '*1'))
         self.assertEqual(files, expected_files[:1])
+
+    def test_render_template_to_file(self):
+        template_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), '../templates/nailgun.repo'))
+
+        with open(template_path, 'r') as f:
+            template = f.read()
+
+        mopen = mock.mock_open(read_data=template)
+        with mock.patch('__builtin__.open', mopen, create=True):
+            utils.render_template_to_file('mocked', 'mocked', {
+                'name': 'mos6.1-updates',
+                'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
+                           'mos6.1/updates/',
+                'gpgcheck': 0,
+                'skip_if_unavailable': 1,
+            })
+
+            content = mopen().write.call_args[0][0]
+            self.assertEqual(content, textwrap.dedent('''\
+              [mos6.1-updates]
+              name=mos6.1-updates
+              baseurl=http://mirror.fuel-infra.org/mos/centos-6/mos6.1/updates/
+              gpgcheck=0
+              skip_if_unavailable=1
+            '''))
 
 
 class TestVersionedFile(BaseTestCase):

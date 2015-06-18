@@ -1,4 +1,5 @@
-[${version}_nailgun]
-name=Nailgun Local Repo
-baseurl=file:${repo_path}
-gpgcheck=0
+[${name}]
+name=${name}
+baseurl=${baseurl}
+gpgcheck=${gpgcheck}
+skip_if_unavailable=${skip_if_unavailable}

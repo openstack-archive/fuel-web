@@ -31,5 +31,6 @@ class PluginSerializer(BasicSerializer):
         "authors",
         "licenses",
         "homepage",
-        "fuel_version"
+        "fuel_version",
+        "clusters"
     )

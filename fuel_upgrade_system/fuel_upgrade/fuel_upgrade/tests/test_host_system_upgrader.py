@@ -56,8 +56,12 @@ class TestHostSystemUpgrader(BaseTestCase):
         utils_mock.render_template_to_file.assert_called_once_with(
             '{0}/nailgun.repo'.format(templates_path),
             '/etc/yum.repos.d/9999_nailgun.repo',
-            {'version': '9999',
-             'repo_path': '/var/www/nailgun/2014.1.1-5.1/centos/x86_64'})
+            {
+                'name': '9999_nailgun',
+                'baseurl': 'file:/var/www/nailgun/2014.1.1-5.1/centos/x86_64',
+                'gpgcheck': 0,
+                'skip_if_unavailable': 0,
+            })
 
     @mock.patch('fuel_upgrade.engines.host_system.utils')
     def test_run_puppet(self, utils_mock):

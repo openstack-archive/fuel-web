@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 import mock
 
 from fuel_upgrade.engines.host_system import HostSystemUpgrader
@@ -180,3 +182,28 @@ class TestUpgradeManager(BaseTestCase):
         self.assertEqual(
             utils_mock.remove.call_args_list,
             [mock.call('file1'), mock.call('file2')])
+
+        templates_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '../templates'))
+        utils_mock.render_template_to_file.assert_has_calls([
+            mock.call(
+                '{0}/nailgun.repo'.format(templates_path),
+                '/etc/yum.repos.d/mos9999-updates.repo',
+                {
+                    'name': 'mos9999-updates',
+                    'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
+                               'mos9999/updates/',
+                    'gpgcheck': 0,
+                    'skip_if_unavailable': 1,
+                }),
+            mock.call(
+                '{0}/nailgun.repo'.format(templates_path),
+                '/etc/yum.repos.d/mos9999-security.repo',
+                {
+                    'name': 'mos9999-security',
+                    'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
+                               'mos9999/security/',
+                    'gpgcheck': 0,
+                    'skip_if_unavailable': 1,
+                }),
+        ])

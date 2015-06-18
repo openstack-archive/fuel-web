@@ -128,8 +128,12 @@ class HostSystemUpgrader(UpgradeEngine):
         utils.render_template_to_file(
             self.repo_template_path,
             self.repo_config_path,
-            {'version': self.version,
-             'repo_path': self.host_system_config['repo_master']})
+            {
+                'name': '{0}_nailgun'.format(self.version),
+                'baseurl': self.host_system_config['repo_master'],
+                'gpgcheck': 0,
+                'skip_if_unavailable': 0,
+            })
         utils.exec_cmd('yum clean all')
 
     def install_packages(self):

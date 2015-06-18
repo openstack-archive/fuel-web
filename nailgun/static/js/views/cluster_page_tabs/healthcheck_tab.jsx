@@ -139,11 +139,13 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
         runTests: function() {
             var testruns = new models.TestRuns(),
                 oldTestruns = new models.TestRuns(),
-                selectedTests = this.props.tests.where({checked: true});
+                selectedTests = new models.Tests(this.props.tests.where({checked: true})),
+                testsetIds = this.props.testsets.pluck('id');
+
             this.setState({actionInProgress: true});
-            _.each(selectedTests, function(test) {
-                var testsetId = test.get('testset'),
-                    testrunConfig = {tests: _.pluck(selectedTests, 'id')},
+
+            _.each(testsetIds, function(testsetId) {
+                var testrunConfig = {tests: _.pluck(selectedTests.where({testset: testsetId}), 'id')},
                     addCredentials = _.bind(function(obj) {
                         obj.ostf_os_access_creds = {
                             ostf_os_username: this.state.credentials.user,
@@ -152,6 +154,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                         };
                         return obj;
                     }, this);
+
                 if (this.props.testruns.where({testset: testsetId}).length) {
                     _.each(this.props.testruns.where({testset: testsetId}), function(testrun) {
                         _.extend(testrunConfig, addCredentials({
@@ -171,6 +174,7 @@ function($, _, i18n, Backbone, React, models, utils, componentMixins, controls) 
                     testruns.add(new models.TestRun(testrunConfig));
                 }
             }, this);
+
             var requests = [];
             if (testruns.length) {
                 requests.push(Backbone.sync('create', testruns));

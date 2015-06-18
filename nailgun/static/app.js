@@ -32,6 +32,7 @@ define(
     'jsx!views/cluster_page',
     'jsx!views/clusters_page',
     'jsx!views/releases_page',
+    'jsx!views/plugins_page',
     'jsx!views/notifications_page',
     'jsx!views/support_page',
     'jsx!views/capacity_page',
@@ -42,7 +43,7 @@ define(
     'bootstrap',
     'less!/static/styles/main'
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, PluginsPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var Router = Backbone.Router.extend({
@@ -53,6 +54,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             clusters: 'listClusters',
             'cluster/:id(/:tab)(/:opt1)(/:opt2)': 'showCluster',
             releases: 'listReleases',
+            plugins: 'listPlugins',
             notifications: 'showNotifications',
             support: 'showSupportPage',
             capacity: 'showCapacityPage',
@@ -108,6 +110,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         },
         listReleases: function() {
             app.loadPage(ReleasesPage);
+        },
+        listPlugins: function() {
+            app.loadPage(PluginsPage);
         },
         showNotifications: function() {
             app.loadPage(NotificationsPage);

@@ -83,6 +83,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
                 elements: [
                     {label: 'environments', url: '#clusters'},
                     {label: 'releases', url: '#releases'},
+                    {label: 'plugins', url: '#plugins'},
                     {label: 'support', url: '#support'}
                 ]
             };

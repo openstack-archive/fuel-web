@@ -16,9 +16,11 @@
 
 import glob
 import logging
+import os
 
 import six
 
+from fuel_upgrade import messages
 from fuel_upgrade import utils
 from fuel_upgrade.version_file import VersionFile
 
@@ -127,6 +129,22 @@ class UpgradeManager(object):
         # we run upgrade from.
         for version_file in glob.glob(self._config.version_files_mask):
             utils.remove(version_file)
+
+        self._setup_update_repos()
+
+    def _setup_update_repos(self):
+        """Setup updates/security repos on master node.
+        """
+        template = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'templates', 'nailgun.repo')
+
+        for repo in self._config.master_node_repos:
+            destination = '{0}.repo'.format(
+                os.path.join('/etc/yum.repos.d', repo['name']))
+            utils.render_template_to_file(template, destination, repo)
+
+        logger.warning(messages.update_your_master_node)
 
     def rollback(self):
         logger.debug('Run rollback')

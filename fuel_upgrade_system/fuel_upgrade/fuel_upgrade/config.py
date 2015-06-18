@@ -226,7 +226,7 @@ def get_host_system(update_path, new_version):
             'dst': join('/var', 'www', 'nailgun')},
 
         'repo_master': join(
-            '/var/www/nailgun', openstack_version, 'centos/x86_64'),
+            'file:/var/www/nailgun', openstack_version, 'centos/x86_64'),
     }
 
 
@@ -594,5 +594,23 @@ def config(update_path, admin_password):
 
     # Config for host system upgarde engine
     host_system = get_host_system(update_path, new_version)
+
+    # the repos that will be added if upgrade is succeed
+    master_node_repos = [
+        {
+            'name': 'mos{0}-updates'.format(new_version),
+            'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
+                       'mos{0}/updates/'.format(new_version),
+            'gpgcheck': 0,
+            'skip_if_unavailable': 1,
+        },
+        {
+            'name': 'mos{0}-security'.format(new_version),
+            'baseurl': 'http://mirror.fuel-infra.org/mos/centos-6/'
+                       'mos{0}/security/'.format(new_version),
+            'gpgcheck': 0,
+            'skip_if_unavailable': 1,
+        }
+    ]
 
     return locals()

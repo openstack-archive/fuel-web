@@ -16,11 +16,24 @@ import os
 import re
 import shutil
 
+from oslo.config import cfg
+
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import utils
 
 LOG = logging.getLogger(__name__)
+
+gu_opts = [
+    cfg.IntOpt(
+        'grub_timeout',
+        default=5,
+        help='Timeout in secs for GRUB'
+    ),
+]
+
+CONF = cfg.CONF
+CONF.register_opts(gu_opts)
 
 
 def guess_grub2_conf(chroot=''):
@@ -188,7 +201,7 @@ def grub1_stage1(chroot=''):
 
 
 def grub1_cfg(kernel=None, initrd=None,
-              kernel_params='', chroot=''):
+              kernel_params='', chroot='', grub_timeout=CONF.grub_timeout):
 
     if not kernel:
         kernel = guess_kernel(chroot=chroot)
@@ -197,12 +210,13 @@ def grub1_cfg(kernel=None, initrd=None,
 
     config = """
 default=0
-timeout=5
+timeout={grub_timeout}
 title Default ({kernel})
     kernel /{kernel} {kernel_params}
     initrd /{initrd}
     """.format(kernel=kernel, initrd=initrd,
-               kernel_params=kernel_params)
+               kernel_params=kernel_params,
+               grub_timeout=grub_timeout)
     with open(chroot + '/boot/grub/grub.conf', 'wb') as f:
         f.write(config)
 
@@ -216,7 +230,7 @@ def grub2_install(install_devices, chroot=''):
         utils.execute(*cmd, run_as_root=True, check_exit_code=[0])
 
 
-def grub2_cfg(kernel_params='', chroot=''):
+def grub2_cfg(kernel_params='', chroot='', grub_timeout=CONF.grub_timeout):
     grub_defaults = chroot + guess_grub2_default(chroot=chroot)
     rekerparams = re.compile(r'^.*GRUB_CMDLINE_LINUX=.*')
     retimeout = re.compile(r'^.*GRUB_HIDDEN_TIMEOUT=.*')
@@ -226,8 +240,13 @@ def grub2_cfg(kernel_params='', chroot=''):
             line = rekerparams.sub(
                 'GRUB_CMDLINE_LINUX="{kernel_params}"'.
                 format(kernel_params=kernel_params), line)
-            line = retimeout.sub('GRUB_HIDDEN_TIMEOUT=5', line)
+            line = retimeout.sub('GRUB_HIDDEN_TIMEOUT={grub_timeout}'.
+                                 format(grub_timeout=grub_timeout), line)
             new_content += line
+    # NOTE(agordeev): explicitly add record fail timeout, in order to
+    # prevent user confirmation appearing if unexpected reboot occured.
+    new_content += '\nGRUB_RECORDFAIL_TIMEOUT={grub_timeout}\n'.\
+                   format(grub_timeout=grub_timeout)
     with open(grub_defaults, 'wb') as f:
         f.write(new_content)
     cmd = [guess_grub2_mkconfig(chroot), '-o', guess_grub2_conf(chroot)]

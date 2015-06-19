@@ -17,8 +17,6 @@ define(function() {
     'use strict';
 
     return {
-        baseUrl: 'static',
-        waitSeconds: 60,
         paths: {
             jquery: 'vendor/bower/jquery/dist/jquery',
             'js-cookie': 'vendor/bower/js-cookie/src/js.cookie',

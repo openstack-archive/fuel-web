@@ -19,7 +19,8 @@
     "less": "2.4.0",
     "jquery-ui": "1.11.4",
     "bootstrap": "3.3.4",
-    "open-sans-fontface": "1.4.0"
+    "open-sans-fontface": "1.4.0",
+    "system.js": "0.18.1"
   },
   "devDependencies": {
     "es5-shim": "4.1.0"
@@ -56,6 +57,9 @@
         "dist/css/bootstrap.css.map",
         "dist/fonts/*"
       ]
+    },
+    "system.js": {
+      "main": "dist/system.js"
     }
   },
   "ignore": [

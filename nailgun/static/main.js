@@ -14,18 +14,8 @@
  * under the License.
  **/
 
-//>>excludeStart("compressed", pragmas.compressed);
-requirejs.config({
-    urlArgs: '_=' + (new Date()).getTime()
-});
-require(['./config'], function(config) {
+System.import('config.js').then(function(config) {
     'use strict';
-//>>excludeEnd("compressed");
-    requirejs.config({baseUrl: 'static'});
-//>>excludeStart("compressed", pragmas.compressed);
-    requirejs.config(config);
-//>>excludeEnd("compressed");
-    require(['app']);
-//>>excludeStart("compressed", pragmas.compressed);
+    System.config(config);
+    System.import('app.js');
 });
-//>>excludeEnd("compressed");

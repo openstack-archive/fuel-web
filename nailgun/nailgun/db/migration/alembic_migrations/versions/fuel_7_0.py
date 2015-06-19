@@ -27,15 +27,18 @@ down_revision = '37608259013'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.utils.migration import upgrade_network_groups_metadata_6_1_to_7_0
 from nailgun.db.sqlalchemy.models import fields
 
 
 def upgrade():
     upgrade_schema()
+    upgrade_data()
 
 
 def downgrade():
     downgrade_schema()
+    downgrade_data()
 
 
 def upgrade_schema():
@@ -132,3 +135,24 @@ def extend_plugin_model_downgrade():
 
 def extend_releases_model_downgrade():
     op.drop_column('releases', 'network_roles_metadata')
+
+
+def upgrade_data():
+    connection = op.get_bind()
+
+    upgrade_network_groups_metadata_6_1_to_7_0(connection)
+    # update = sa.sql.text(
+    #     """UPDATE releases
+    #     SET roles_metadata = :roles, attributes_metadata = :attrs,
+    #     networks_metadata = :networks
+    #     WHERE id = :id""")
+    #
+    # connection.execute(update, modes=jsonutils.dumps(
+    #     ['ha_compact', 'multinode']))
+    #
+    # upgrade_master_node_settings(connection)
+    # upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)
+    # upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection)
+    # upgrade_cluster_attributes_6_0_to_6_1(connection)
+    # upgrade_vip_types_6_0_to_6_1(connection)
+    # upgrade_network_groups_metadata_6_0_to_6_1(connection)

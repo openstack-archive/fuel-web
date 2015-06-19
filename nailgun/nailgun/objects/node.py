@@ -17,6 +17,7 @@
 """
 Node-related objects and collections
 """
+import itertools
 import operator
 import traceback
 
@@ -154,9 +155,17 @@ class Node(NailgunObject):
         """
         if Cluster.should_assign_public_to_all_nodes(instance.cluster):
             return True
+
         ctrl = set(['primary-controller', 'controller', 'zabbix-server'])
         if ctrl & (set(instance.roles) or set(instance.pending_roles)):
             return True
+
+        roles = itertools.chain(instance.role_list, instance.pending_roles)
+        for role in roles:
+            roles_metadata = instance.cluster.release.roles_metadata
+            if roles_metadata.get(role, {}).get('public_ip_required'):
+                return True
+
         return False
 
     @classmethod

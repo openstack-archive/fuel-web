@@ -27,6 +27,7 @@
           - compute
           - cinder
         has_primary: true
+        public_ip_required: true
         limits:
           min: 1
           overrides:

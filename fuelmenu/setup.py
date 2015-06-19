@@ -40,8 +40,6 @@ setuptools.setup(
         'OrderedDict>=1.1',
         'PyYAML>=3.10',
         'netifaces>=0.5',
-        'ethtool>=0.6',
-        #'pypcap',
         'urwid>=1.1.1',
     ],
     include_package_data=True,

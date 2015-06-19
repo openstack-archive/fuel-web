@@ -223,6 +223,7 @@ class TestNodeObject(BaseIntegrationTest):
                 {'roles': ['controller', 'cinder'], 'pending_addition': True},
                 {'roles': ['compute', 'cinder'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True, 'public_ip_required': True},
                 {'roles': [], 'pending_roles': ['cinder'],
                  'pending_addition': True},
                 {'roles': [], 'pending_roles': ['controller'],
@@ -239,7 +240,7 @@ class TestNodeObject(BaseIntegrationTest):
 
         nodes_w_public_count = sum(int(objects.Node.should_have_public(node))
                                    for node in self.env.nodes)
-        self.assertEqual(nodes_w_public_count, 2)
+        self.assertEqual(nodes_w_public_count, 1)
 
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
@@ -256,7 +257,7 @@ class TestNodeObject(BaseIntegrationTest):
 
         nodes_w_public_count = sum(int(objects.Node.should_have_public(node))
                                    for node in self.env.nodes)
-        self.assertEqual(nodes_w_public_count, 5)
+        self.assertEqual(nodes_w_public_count, 6)
 
     def test_removing_from_cluster(self):
         self.env.create(

@@ -157,6 +157,17 @@ class Node(NailgunObject):
         ctrl = set(['primary-controller', 'controller', 'zabbix-server'])
         if ctrl & (set(instance.roles) or set(instance.pending_roles)):
             return True
+
+        for role in instance.role_list:
+            if instance.cluster.release.roles_metadata[role.name].\
+                    get('need_public_ip', []):
+                return True
+
+        for role in instance.pending_role_list:
+            if instance.cluster.release.roles_metadata[role.name].\
+                    get('need_public_ip', []):
+                return True
+
         return False
 
     @classmethod

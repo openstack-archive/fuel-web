@@ -28,6 +28,7 @@ from oslo.serialization import jsonutils
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import BaseTestCase
+from nailgun.test.base import BaseUnitTest
 from nailgun.test.base import reverse
 
 from nailgun.errors import errors

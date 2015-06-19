@@ -17,9 +17,10 @@ define(function() {
     'use strict';
 
     return {
-        baseUrl: 'static',
-        waitSeconds: 60,
+        transpiler: 'babel',
+        babelOptions: {blacklist: []},
         paths: {
+            '*': '*.js',
             jquery: 'vendor/bower/jquery/dist/jquery',
             'js-cookie': 'vendor/bower/js-cookie/src/js.cookie',
             lodash: 'vendor/bower/lodash/lodash',

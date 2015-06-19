@@ -13,7 +13,7 @@
     <meta http-equiv="pragma" content="no-cache" />
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" type="text/css" href="/static/styles/layout.css">
-    <script src="/static/vendor/bower/requirejs/require.js"></script>
+    <script src="/static/vendor/bower/system.js/dist/system.js"></script>
     <script type="text/javascript">
       (function() {
         'use strict';
@@ -53,9 +53,8 @@
         }());
 
         if (hasCookies && hasStorage) {
-          requirejs.config({baseUrl: '/static', urlArgs: '_=__CACHE_BUST__'});
-          requirejs.onError = showError;
-          requirejs(['main']);
+          System.config({baseURL: 'static'});
+          System.import('main.js');
         } else {
           showError('Fuel UI requires Cookies and LocalStorage to work');
         }

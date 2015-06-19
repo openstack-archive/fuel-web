@@ -53,6 +53,17 @@ class Plugin(Base):
     licenses = Column(JSON, server_default='[]', nullable=False)
     homepage = Column(Text, nullable=True)
     package_version = Column(String(32), nullable=False)
+    attributes_metadata = Column(JSON, default={}, nullable=True)
+    volumes_metadata = Column(JSON, default={}, nullable=True)
+    roles_metadata = Column(JSON, default={}, nullable=True)
+    deployment_tasks = Column(JSON, default={}, nullable=True)
+    # TODO(apopovych): To support old plugins versions we need separate
+    # tasks which runs directly during deployment(stored in `deployment_tasks`
+    # attribute) and which executes before/after of deployment process
+    # (also called pre/post deployment tasks and stored in `tasks`
+    # attribute). In future `deployment_tasks` and `tasks` should have
+    # one format and this attribute will be removed.
+    tasks = Column(JSON, default={}, nullable=True)
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")

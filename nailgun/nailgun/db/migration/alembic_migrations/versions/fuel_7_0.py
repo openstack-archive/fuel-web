@@ -27,15 +27,18 @@ down_revision = '37608259013'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.utils.migration import upgrade_network_groups_metadata_6_1_to_7_0
 from nailgun.db.sqlalchemy.models import fields
 
 
 def upgrade():
     upgrade_schema()
+    upgrade_data()
 
 
 def downgrade():
     downgrade_schema()
+    downgrade_data()
 
 
 def upgrade_schema():
@@ -132,3 +135,12 @@ def extend_plugin_model_downgrade():
 
 def extend_releases_model_downgrade():
     op.drop_column('releases', 'network_roles_metadata')
+
+
+def upgrade_data():
+    connection = op.get_bind()
+    upgrade_network_groups_metadata_6_1_to_7_0(connection)
+
+
+def downgrade_data():
+    pass

@@ -598,3 +598,19 @@ def upgrade_cluster_attributes_6_0_to_6_1(connection):
             update_query,
             editable=jsonutils.dumps(attributes),
             attr_id=attr_id)
+
+
+def upgrade_network_groups_metadata_6_1_to_7_0(connection):
+    select_query = text("SELECT id, roles_metadata FROM releases")
+    update_query = text("UPDATE releases SET roles_metadata = :roles_metadata "
+                        "WHERE id = :id")
+
+    for id, roles_metadata in connection.execute(select_query):
+        roles_metadata = jsonutils.loads(roles_metadata)
+        for role, role_info in six.iteritems(roles_metadata):
+            if role in ['controller', 'zabbix-server']:
+                role_info['public_ip_required'] = True
+        connection.execute(
+            update_query,
+            id=id,
+            roles_metadata=jsonutils.dumps(roles_metadata))

@@ -15,6 +15,7 @@
 
 import alembic
 from oslo.serialization import jsonutils
+import six
 import sqlalchemy as sa
 
 from nailgun.db import db
@@ -32,9 +33,17 @@ _RELEASE = {
     'operating_system': 'ubuntu',
     'state': 'available',
     'roles_metadata': jsonutils.dumps({
-        "mongo": {
-            "name": "Mongo",
-            "description": "Mongo role"
+        "controller": {
+            "name": "Controller",
+            "description": "Controller role"
+        },
+        "zabbix-server": {
+            "name": "Zabbix Server",
+            "description": "Zabbix Server role"
+        },
+        "cinder": {
+            "name": "Cinder",
+            "description": "Cinder role"
         }
     }),
     'attributes_metadata': jsonutils.dumps({
@@ -201,11 +210,6 @@ class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
             result.fetchone()[0], _RELEASE['state'])
 
         result = db.execute(
-            sa.select([self.meta.tables['releases'].c.roles_metadata]))
-        self.assertEqual(
-            result.fetchone()[0], _RELEASE['roles_metadata'])
-
-        result = db.execute(
             sa.select([self.meta.tables['releases'].c.attributes_metadata]))
         self.assertEqual(
             result.fetchone()[0], _RELEASE['attributes_metadata'])
@@ -227,3 +231,13 @@ class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
         # check attributes_metadata value is empty
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), {})
+
+    def test_releases_roles_metadata(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.roles_metadata]))
+        roles_metadata = jsonutils.loads(result.fetchone()[0])
+        for role, role_info in six.iteritems(roles_metadata):
+            if role in ['controller', 'zabbix-server']:
+                self.assertTrue(role_info['public_ip_required'])
+            else:
+                self.assertFalse(role_info.get('public_ip_required'))

@@ -25,6 +25,8 @@ revision = '1e50a4903910'
 down_revision = '37608259013'
 
 from alembic import op
+from oslo.serialization import jsonutils
+import six
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
@@ -32,6 +34,7 @@ from nailgun.db.sqlalchemy.models import fields
 
 def upgrade():
     upgrade_schema()
+    upgrade_network_groups_metadata()
 
 
 def downgrade():
@@ -132,3 +135,20 @@ def extend_plugin_model_downgrade():
 
 def extend_releases_model_downgrade():
     op.drop_column('releases', 'network_roles_metadata')
+
+
+def upgrade_network_groups_metadata():
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT id, roles_metadata FROM releases")
+    update_query = sa.sql.text(
+        "UPDATE releases SET roles_metadata = :roles_metadata WHERE id = :id")
+
+    for id, roles_metadata in connection.execute(select_query):
+        roles_metadata = jsonutils.loads(roles_metadata)
+        for role, role_info in six.iteritems(roles_metadata):
+            if role in ['controller', 'zabbix-server']:
+                role_info['public_ip_required'] = True
+        connection.execute(
+            update_query,
+            id=id,
+            roles_metadata=jsonutils.dumps(roles_metadata))

@@ -17,6 +17,8 @@
       - mongo
       - base-os
     roles_metadata:
+      primary-controller:
+        public_ip_required: true
       controller:
         name: "Controller"
         description: "The Controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well."
@@ -26,6 +28,7 @@
           - compute
           - cinder
         has_primary: true
+        public_ip_required: true
         limits:
           min: 1
           overrides:
@@ -94,6 +97,24 @@
             message: "Ceilometer should be enabled."
           - condition: "settings:additional_components.mongo.value == true"
             message: "You are already using external MongoDB."
+<<<<<<< HEAD
+=======
+      zabbix-server:
+        name: "Zabbix Server"
+        description: "Zabbix monitoring system server."
+        conflicts:
+          - controller
+          - compute
+          - cinder
+          - ceph-osd
+          - mongo
+        public_ip_required: true
+        limits:
+          max: 1
+        restrictions:
+          - condition: "not ('experimental' in version:feature_groups)"
+            action: "hide"
+>>>>>>> Enable public IP in new/custom roles
       base-os:
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."

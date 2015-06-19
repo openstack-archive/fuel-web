@@ -216,19 +216,22 @@ class TestNodeObject(BaseIntegrationTest):
             kernel_params)
 
     def test_should_have_public(self):
+        nodes = [
+            {'roles': ['controller', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute'], 'pending_addition': True},
+            {'roles': ['mongo'], 'pending_addition': True},
+            {'roles': [], 'pending_roles': ['cinder'],
+             'pending_addition': True},
+            {'roles': [], 'pending_roles': ['controller'],
+             'pending_addition': True}]
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron'},
-            nodes_kwargs=[
-                {'roles': ['controller', 'cinder'], 'pending_addition': True},
-                {'roles': ['compute', 'cinder'], 'pending_addition': True},
-                {'roles': ['compute'], 'pending_addition': True},
-                {'roles': [], 'pending_roles': ['cinder'],
-                 'pending_addition': True},
-                {'roles': [], 'pending_roles': ['controller'],
-                 'pending_addition': True}])
+            nodes_kwargs=nodes)
 
         cluster = self.env.clusters[0]
+        cluster.release.roles_metadata['mongo']['public_ip_required'] = True
         attrs = cluster.attributes.editable
         self.assertEqual(
             attrs['public_network_assignment']['assign_to_all_nodes']['value'],
@@ -239,7 +242,7 @@ class TestNodeObject(BaseIntegrationTest):
 
         nodes_w_public_count = sum(int(objects.Node.should_have_public(node))
                                    for node in self.env.nodes)
-        self.assertEqual(nodes_w_public_count, 2)
+        self.assertEqual(nodes_w_public_count, 3)
 
         attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
             True
@@ -256,7 +259,7 @@ class TestNodeObject(BaseIntegrationTest):
 
         nodes_w_public_count = sum(int(objects.Node.should_have_public(node))
                                    for node in self.env.nodes)
-        self.assertEqual(nodes_w_public_count, 5)
+        self.assertEqual(nodes_w_public_count, len(nodes))
 
     def test_removing_from_cluster(self):
         self.env.create(

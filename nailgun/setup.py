@@ -73,9 +73,6 @@ if __name__ == "__main__":
                   ('oswl_cleaner = nailgun.statistics.oswl.helpers:'
                    'delete_expired_oswl_entries'),
               ],
-              'nose.plugins.0.10': [
-                  'db = nailgun.test.db_plugin:DbPlugin'
-              ]
           },
           data_files=recursive_data_files([('share/nailgun', 'static')])
           )

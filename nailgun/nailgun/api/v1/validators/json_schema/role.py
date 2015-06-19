@@ -108,6 +108,10 @@ ROLE_META_INFO = {
             "type": "boolean",
             "description": ("During orchestration this role"
                             " will be splitted into primary-role and role.")},
+        "need_public_ip": {
+            "type": "boolean",
+            "description": "Specify if role need public IP address."},
+
         "update_required": {
             "type": "array",
             "description": ("Specified roles will be selected for deployment,"

@@ -53,6 +53,11 @@ class Plugin(Base):
     licenses = Column(JSON, server_default='[]', nullable=False)
     homepage = Column(Text, nullable=True)
     package_version = Column(String(32), nullable=False)
+    attributes_metadata = Column(JSON, default={}, nullable=False)
+    volumes_metadata = Column(JSON, default={}, nullable=False)
+    roles_metadata = Column(JSON, default={}, nullable=False)
+    deployment_tasks = Column(JSON, default={}, nullable=False)
+    tasks = Column(JSON, default={}, nullable=False)
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")

@@ -80,6 +80,16 @@ class TestRoleApi(BaseRoleTest):
             self.release.id, self.role_data, expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
+    def test_create_role_w_invalid_volumes_roles_mapping(self):
+        keys = ['id', 'allocate_size']
+        for k in keys:
+            self.role_data['volumes_roles_mapping'][0][k] = 'some_string'
+            resp = self.env.create_role(
+                self.release.id, self.role_data, expect_errors=True)
+            self.assertEqual(400, resp.status_code)
+            self.assertIn('Failed validating', resp.body)
+            self.assertIn('volumes_roles_mapping', resp.body)
+
     def test_delete_role(self):
 
         self.env.create_role(self.release.id, self.role_data)

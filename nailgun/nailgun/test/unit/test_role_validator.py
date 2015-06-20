@@ -12,18 +12,44 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from nailgun.api.v1.validators.json_schema import role
 from nailgun.api.v1.validators.role import RoleValidator
+from nailgun.errors import errors
 from nailgun.test.base import BaseUnitTest
 
 
-class TestNodeAssignmentValidator(BaseUnitTest):
+class TestRoleVolumeAllocationsValidationBySchema(BaseUnitTest):
+    invalid_data = [1, 'some_string', dict(), list()]
+    ids = ['os', 'image', 'vm', 'cinder', 'ceph', 'cephjournal', 'mongo']
+    allocation_sizes = ['all', 'min', 'full-disk']
 
-    def test_allocate_volumes_validator(self):
-        volumes = [{'allocate_size': 'all', 'id': 'os'}]
-        RoleValidator.validate_schema(volumes, role.VOLUME_ALLOCATIONS)
+    def assertInvalidData(self, volumes):
+        self.assertRaises(
+            errors.InvalidData, RoleValidator.validate_schema,
+            volumes, role.VOLUME_ALLOCATIONS)
 
-    def test_meta_validator(self):
+    def test_properties_allocate_size(self):
+        for size in self.allocation_sizes:
+            volumes = [{'allocate_size': size, 'id': self.ids[0]}]
+            RoleValidator.validate_schema(volumes, role.VOLUME_ALLOCATIONS)
+
+        for size in self.invalid_data:
+            volumes = [{'allocate_size': size, 'id': self.ids[0]}]
+            self.assertInvalidData(volumes)
+
+    def test_properties_id(self):
+        for i in self.ids:
+            volumes = [{'allocate_size': self.allocation_sizes[0], 'id': i}]
+            RoleValidator.validate_schema(volumes, role.VOLUME_ALLOCATIONS)
+
+    def test_full_restriction(self):
+        full_restriction = {'condition': "some_string"}
+        RoleValidator.validate_schema(full_restriction, role.FULL_RESTRICTION)
+
+    def test_restrictions(self):
+        restrictions = ["conidtion", {'condition': "some condition"}]
+        RoleValidator.validate_schema(restrictions, role.RESTRICTIONS)
+
+    def test_meta_info(self):
         meta = {'name': 'Some Name', 'description': 'Some Description'}
         RoleValidator.validate_schema(meta, role.ROLE_META_INFO)

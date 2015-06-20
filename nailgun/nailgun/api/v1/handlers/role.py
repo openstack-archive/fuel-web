@@ -52,8 +52,9 @@ class RoleHandler(base.SingleHandler):
             * 200 (OK)
             * 404 (no such object found)
         """
-        data = self.checked_data()
         release = self.get_object_or_404(objects.Release, release_id)
+        data = self.checked_data(
+            self.validator.validate_update, instance=release)
         objects.Release.update_role(release, data)
         return RoleSerializer.serialize_from_release(release, role_name)
 

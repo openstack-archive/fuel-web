@@ -97,6 +97,13 @@
       base-os:
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
+        conflicts:
+      - controller
+      - compute
+      - cinder
+      - cinder-vmware
+      - ceph-osd
+      - mongo
     networks_metadata:
       bonding:
         availability:

@@ -81,6 +81,26 @@ class TestRoleApi(BaseRoleTest):
             self.release.id, self.role_data, expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
+    def test_create_role_w_invalid_volumes_allocate_size(self):
+        self.role_data['volumes_roles_mapping'][0]['allocate_size'] = \
+            'some_string'
+        resp = self.env.create_role(
+            self.release.id, self.role_data, expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertIn('Failed validating', resp.body)
+        self.assertIn('volumes_roles_mapping', resp.body)
+
+    def test_update_role_w_invalid_volumes_id(self):
+        self.role_data['volumes_roles_mapping'][0]['id'] = 'some_string'
+        resp = self.env.update_role(
+            self.release.id,
+            self.role_data['name'],
+            self.role_data,
+            expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertIn('Volume allocation with id=some_string for role '
+                      '\'my_role\' is not found in DB!', resp.body)
+
     def test_delete_role(self):
 
         self.env.create_role(self.release.id, self.role_data)

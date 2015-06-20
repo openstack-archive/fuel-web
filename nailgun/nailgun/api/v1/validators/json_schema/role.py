@@ -21,7 +21,9 @@ VOLUME_ALLOCATION = {
     'properties': {
         'allocate_size': {'type': 'string',
                           'enum': ['all', 'min', 'full-disk']},
-        'id': {'type': 'string'}}}
+        'id': {'type': 'string',
+               'enum': ['os', 'image', 'vm', 'cinder', 'ceph', 'cephjournal',
+                        'mongo']}}}
 
 
 VOLUME_ALLOCATIONS = {

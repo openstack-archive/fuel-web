@@ -163,3 +163,43 @@ volumes_roles_mapping:
     def test_create_role(self):
         resp = self.env.create_role(self.release.id, self.role_data)
         self.assertEqual(resp.json['meta'], self.role_data['meta'])
+
+
+class TestFullDataRoleFailed(BaseRoleTest):
+
+    ROLE = """
+---
+name: new_controller
+meta:
+    name: "Controller"
+    description: "The controller initiates orchestration activities."
+    conflicts:
+      - compute
+    update_required:
+      - compute
+      - cinder
+    has_primary: true
+    limits:
+      min: 1
+      overrides:
+        - condition: "cluster:mode == 'multinode'"
+          max: 1
+          message: "Multi-node environment can not have more."
+    restrictions:
+        - "cluster:mode == 'multinode'"
+        - multinode: true
+        - condition: "cluster:mode == 'multinode'"
+          action: hide
+          message: "Multi-node environment can not have more."
+volumes_roles_mapping:
+    - id: wrong_value
+      allocate_size: all
+"""
+
+    def test_create_role_w_volumes_roles_mapping_allocate_size(self):
+        resp = self.env.create_role(self.release.id, self.role_data,
+                                    expect_errors=True)
+        # self.assertEqual(resp.json['meta'], self.role_data['meta'])
+        self.assertEqual(400, resp.status_code)
+        self.assertIn('Failed validating', resp.body)
+        self.assertIn('volumes_roles_mapping', resp.body)

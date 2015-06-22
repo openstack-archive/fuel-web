@@ -826,17 +826,28 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
 
     dialogs.DiscardSettingsChangesDialog = React.createClass({
         mixins: [dialogMixin],
-        getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
+        getDefaultProps: function() {
+            return {
+                title: i18n('dialog.dismiss_settings.title'),
+                message: i18n('dialog.dismiss_settings.default_message')
+            };
+        },
+        propTypes: {
+            href: React.PropTypes.string,
+            cb: React.PropTypes.func,
+            message: React.PropTypes.string,
+            hideLeaveButton: React.PropTypes.bool
+        },
         proceed: function() {
             this.close();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(this.props.cb, this.props));
+            if (this.props.cb) this.props.cb();
+            app.navigate(this.props.href, {trigger: true, replace: true});
         },
         renderBody: function() {
-            var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;
             return (
                 <div className='text-danger dismiss-settings-dialog'>
                     {this.renderImportantLabel()}
-                    {message}
+                    {this.props.message}
                 </div>
             );
         },
@@ -846,7 +857,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     {i18n('dialog.dismiss_settings.stay_button')}
                 </button>
             ];
-            if (!this.props.verification) buttons.push(
+            if (!this.props.hideLeaveButton) buttons.push(
                 <button key='leave' className='btn btn-danger' onClick={this.proceed}>
                     {i18n('dialog.dismiss_settings.leave_button')}
                 </button>

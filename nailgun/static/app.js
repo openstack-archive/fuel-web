@@ -22,6 +22,7 @@ define(
     'backbone',
     'react',
     'utils',
+    'dispatcher',
     'jsx!views/layout',
     'coccyx',
     'models',
@@ -42,7 +43,7 @@ define(
     'bootstrap',
     'less!/static/styles/main'
 ],
-function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function($, _, i18n, Backbone, React, utils, dispatcher, layoutComponents, Coccyx, models, KeystoneClient, RootComponent, LoginPage, WelcomePage, ClusterPage, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var Router = Backbone.Router.extend({
@@ -172,7 +173,8 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             }, this));
         },
         setPage: function(Page, options) {
-            this.page = this.rootComponent.setPage(Page, options);
+            dispatcher.trigger('setPage', Page, options);
+            //this.page = this.rootComponent.setPage(Page, options);
         },
         navigate: function() {
             this.router.navigate.apply(this.router, arguments);

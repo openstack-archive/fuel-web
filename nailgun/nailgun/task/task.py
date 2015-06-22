@@ -833,13 +833,16 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def _check_controllers_count(cls, task):
         cluster = task.cluster
+        min_controllers = objects.Release.get_min_controller_count(
+            cluster.release)
+
         controllers = objects.Cluster.get_nodes_by_role(
             task.cluster, 'controller')
         # we should make sure that cluster has at least one controller
-        if len(controllers) < 1:
+        if len(controllers) < min_controllers:
             raise errors.NotEnoughControllers(
-                "Not enough controllers, %s mode requires at least 1 "
-                "controller" % (cluster.mode))
+                "Not enough controllers, %s mode requires at least %s "
+                "controller(s)" % (cluster.mode, min_controllers))
 
         if cluster.status in (
                 consts.CLUSTER_STATUSES.operational,

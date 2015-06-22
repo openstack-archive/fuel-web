@@ -20,12 +20,13 @@ define(
     'i18n',
     'backbone',
     'react',
+    'utils',
     'jsx!views/dialogs',
     'jsx!component_mixins',
     'models',
     'jsx!views/statistics_mixin'
 ],
-function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisticsMixin) {
+function($, _, i18n, Backbone, React, utils, dialogs, componentMixins, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -164,18 +165,25 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
     var StatisticsSettings = React.createClass({
         mixins: [
             statisticsMixin,
+            componentMixins.noLeaveCheckMixin,
             componentMixins.backboneMixin('statistics')
         ],
+        getDefaultProps: function() {
+            return {eventNamespace: 'unsavedchangesStatisticsSettings'};
+        },
+        hasChanges: function() {
+            var settings = this.props.settings.get('statistics'),
+                statistics = this.props.statistics.get('statistics');
+            return _.any(this.props.statsCheckboxes, function(field) {
+                return !_.isEqual(settings[field].value, statistics[field].value);
+            }, this);
+        },
         render: function() {
             var statistics = this.props.statistics.get('statistics'),
                 sortedSettings = _.chain(_.keys(statistics))
                     .without('metadata')
                     .sortBy(function(settingName) {return statistics[settingName].weight;}, this)
-                    .value(),
-                initialData = this.props.settings.get('statistics'),
-                hasChanges = _.any(this.props.statsCheckboxes, function(field) {
-                    return !_.isEqual(initialData[field].value, statistics[field].value);
-                });
+                    .value();
             return (
                 <SupportPageElement
                     className='img-statistics'
@@ -189,7 +197,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                         <p>
                             <button
                                 className='btn btn-default'
-                                disabled={this.state.actionInProgress || !hasChanges}
+                                disabled={this.state.actionInProgress || !this.hasChanges()}
                                 onClick={this.prepareStatisticsToSave}
                             >
                                 {i18n('support_page.save_changes')}

@@ -1,0 +1,1 @@
+fuel_agent/cloud-init-templates/*.jinja2 /usr/share/fuel-agent/cloud-init-templates

@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbone'], function($, _, Backbone, dispatcher, React) {
+define(['jquery', 'underscore', 'i18n', 'backbone', 'dispatcher', 'react', 'react.backbone'], function($, _, i18n, Backbone, dispatcher, React) {
     'use strict';
 
     return {
@@ -104,6 +104,30 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
                 } else {
                     this.goToNodeList();
                 }
+            }
+        },
+        noLeaveCheckMixin: {
+            onPageLeave: function(e) {
+                var dialogs = require('jsx!views/dialogs'),
+                    href = $(e.currentTarget).attr('href'),
+                    options = this.state.noLeaveCheckOptions ? this.state.noLeaveCheckOptions : {};
+                options.redirect = function() {app.navigate(href, {trigger: true});};
+
+                if (Backbone.history.getHash() != href.substr(1) && this.hasChanges()) {
+                    e.preventDefault();
+                    dialogs.DiscardSettingsChangesDialog.show(options);
+                }
+            },
+            componentWillMount: function() {
+                $(window).on('beforeunload.' + this.props.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
+                $('body').on('click.' + this.props.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onPageLeave, this));
+            },
+            componentWillUnmount: function() {
+                $(window).off('beforeunload.' + this.props.eventNamespace);
+                $('body').off('click.' + this.props.eventNamespace);
+            },
+            onBeforeunloadEvent: function() {
+                if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
             }
         }
     };

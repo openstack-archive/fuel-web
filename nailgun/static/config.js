@@ -22,7 +22,6 @@ define(function() {
         paths: {
             jquery: 'vendor/bower/jquery/dist/jquery',
             'js-cookie': 'vendor/bower/js-cookie/src/js.cookie',
-            'jquery-ui': 'vendor/bower/jquery-ui/ui',
             'jquery-autoNumeric': 'vendor/bower/autoNumeric/autoNumeric',
             lodash: 'vendor/bower/lodash/lodash',
             underscore: 'vendor/bower/lodash/lodash',
@@ -32,6 +31,7 @@ define(function() {
             JSXTransformer: 'vendor/bower/react/JSXTransformer',
             jsx: 'vendor/bower/jsx-requirejs-plugin/js/jsx',
             'react.backbone': 'vendor/custom/react.backbone',
+            'react-dnd': 'vendor/bower/react-dnd/dist/ReactDnD.min',
             stickit: 'vendor/bower/backbone.stickit/backbone.stickit',
             coccyx: 'vendor/custom/coccyx',
             routefilter: 'vendor/bower/routefilter/dist/backbone.routefilter.min',

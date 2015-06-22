@@ -25,14 +25,12 @@ define(
     'dispatcher',
     'jsx!views/controls',
     'jsx!component_mixins',
-    'jquery-ui/sortable'
+    'react-dnd'
 ],
-function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins) {
+function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins, DND) {
     'use strict';
 
-    var EditNodeInterfacesScreen, NodeInterface;
-
-    EditNodeInterfacesScreen = React.createClass({
+    var EditNodeInterfacesScreen = React.createClass({
         mixins: [
             ComponentMixins.nodeConfigurationScreenMixin,
             ComponentMixins.backboneMixin('interfaces', 'change:checked change:slaves change:bond_properties change:interface_properties reset sync'),
@@ -415,7 +413,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         }
     });
 
-    NodeInterface = React.createClass({
+    var NodeInterface = React.createClass({
         mixins: [
             ComponentMixins.backboneMixin('cluster', 'change:status'),
             ComponentMixins.backboneMixin('interface', 'change:checked change:mode change:bond_properties change:interface_properties'),
@@ -463,16 +461,16 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             this.props.refresh();
         },
         componentDidMount: function() {
-            $(this.refs.networks.getDOMNode()).sortable({
-                connectWith: '.ifc-networks',
-                items: '.network-group-block:not(.disabled)',
-                containment: $('.ifc-list'),
-                disabled: this.props.locked,
-                receive: this.dragStop,
-                remove: this.dragStart,
-                start: this.dragStart,
-                stop: this.dragStop
-            }).disableSelection();
+            //$(this.refs.networks.getDOMNode()).sortable({
+            //    connectWith: '.ifc-networks',
+            //    items: '.network-group-block:not(.disabled)',
+            //    containment: $('.ifc-list'),
+            //    disabled: this.props.locked,
+            //    receive: this.dragStop,
+            //    remove: this.dragStart,
+            //    start: this.dragStart,
+            //    stop: this.dragStop
+            //}).disableSelection();
         },
         componentDidUpdate: function() {
             this.props.validate();
@@ -687,32 +685,13 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     _.map(assignedNetworksGrouped, function(networkGroup) {
                                         var network = networkGroup[0].getFullNetwork(networks);
                                         if (!network) return;
-
-                                        var classes = {
-                                                'network-group-block pull-left': true,
-                                                disabled: locked || network.get('meta').unmovable
-                                            },
-                                            vlanRange = network.getVlanRange(networkingParameters);
-                                        return (
-                                            <div key={'network-group-' + network.id} className={utils.classNames(classes)}>
-                                                {_.map(networkGroup, function(interfaceNetwork) {
-                                                    var networkName = interfaceNetwork.get('name');
-                                                    return (
-                                                        <div key={'network-' + networkName} className='network-block pull-left' data-name={networkName}>
-                                                            <div className='network-name'>
-                                                                {i18n('network.' + networkName, {defaultValue: networkName})}
-                                                            </div>
-                                                            {vlanRange &&
-                                                                <div className='vlan-id'>
-                                                                    {i18n(ns + 'vlan_id', {count: _.uniq(vlanRange).length})}:
-                                                                    {_.uniq(vlanRange).join('-')}
-                                                                </div>
-                                                            }
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        );
+                                        return <DraggableNetworkGroup
+                                            key={'network-group-' + network.id}
+                                            locked={locked}
+                                            network={network}
+                                            networkingParameters={networkingParameters}
+                                            networkGroup={networkGroup}
+                                        />;
                                     }, this)
                                 :
                                     <div className='no-networks-message'>{i18n(ns + 'drag_and_drop_description')}</div>
@@ -749,6 +728,58 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             );
         }
     });
+
+    var NetworkGroup = React.createClass({
+        statics: {
+            source: {
+                beginDrag: function(props) {
+                    return {id: props.network.id};
+                },
+                canDrag: function(props) {
+                    return !(props.locked || props.network.get('meta').unmovable);
+                }
+            },
+            collect: function(connect, monitor) {
+                return {
+                    connectDragSource: connect.dragSource(),
+                    isDragging: monitor.isDragging()
+                };
+            }
+        },
+        render: function() {
+            var network = this.props.network,
+                networkingParameters = this.props.networkingParameters,
+                classes = {
+                    'network-group-block pull-left': true,
+                    disabled: !this.constructor.source.canDrag(this.props),
+                    dragging: this.props.isDragging
+                },
+                vlanRange = network.getVlanRange(networkingParameters);
+
+            return this.props.connectDragSource(
+                <div className={utils.classNames(classes)}>
+                    {_.map(this.props.networkGroup, function(interfaceNetwork) {
+                        var networkName = interfaceNetwork.get('name');
+                        return (
+                            <div key={'network-' + networkName} className='network-block pull-left' data-name={networkName}>
+                                <div className='network-name'>
+                                    {i18n('network.' + networkName, {defaultValue: networkName})}
+                                </div>
+                                {vlanRange &&
+                                    <div className='vlan-id'>
+                                        {i18n('cluster_page.nodes_tab.configure_interfaces.vlan_id', {count: _.uniq(vlanRange).length})}:
+                                        {_.uniq(vlanRange).join('-')}
+                                    </div>
+                                }
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+    });
+
+    var DraggableNetworkGroup = DND.DragSource('network_group', NetworkGroup.source, NetworkGroup.collect)(NetworkGroup);
 
     return EditNodeInterfacesScreen;
 });

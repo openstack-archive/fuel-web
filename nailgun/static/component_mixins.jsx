@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbone'], function($, _, Backbone, dispatcher, React) {
+define(['jquery', 'underscore', 'i18n', 'backbone', 'dispatcher', 'react', 'react.backbone'], function($, _, i18n, Backbone, dispatcher, React) {
     'use strict';
 
     return {
@@ -105,7 +105,8 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             },
             showDiscardChangesDialog: function() {
                 var dialogs = require('jsx!views/dialogs');
-                dialogs.DiscardSettingsChangesDialog.show({cb: this.goToNodeList});
+                // TODO: Needs to check possibility to use onLeaveCheckMixin in this place
+                dialogs.DiscardSettingsChangesDialog.show({redirect: this.goToNodeList});
             },
             returnToNodeList: function() {
                 if (this.hasChanges()) {
@@ -113,6 +114,30 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
                 } else {
                     this.goToNodeList();
                 }
+            }
+        },
+        onLeaveCheckMixin: {
+            onLeave: function(e) {
+                var dialogs = require('jsx!views/dialogs'),
+                    href = $(e.currentTarget).attr('href');
+
+                if (Backbone.history.getHash() != href.substr(1) && this.hasChanges()) {
+                    e.preventDefault();
+                    dialogs.DiscardSettingsChangesDialog.show(_.extend(this.state.onLeaveCheckOptions || {}, {
+                        redirect: function() {app.navigate(href, {trigger: true});}
+                    }));
+                }
+            },
+            componentWillMount: function() {
+                $(window).on('beforeunload.' + this.state.onLeaveCheckOptions.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
+                $('body').on('click.' + this.state.onLeaveCheckOptions.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onLeave, this));
+            },
+            componentWillUnmount: function() {
+                $(window).off('beforeunload.' + this.state.onLeaveCheckOptions.eventNamespace);
+                $('body').off('click.' + this.state.onLeaveCheckOptions.eventNamespace);
+            },
+            onBeforeunloadEvent: function() {
+                if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
             }
         }
     };

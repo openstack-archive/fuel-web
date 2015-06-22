@@ -20,12 +20,13 @@ define(
     'i18n',
     'backbone',
     'react',
+    'utils',
     'jsx!views/dialogs',
     'jsx!component_mixins',
     'models',
     'jsx!views/statistics_mixin'
 ],
-function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisticsMixin) {
+function($, _, i18n, Backbone, React, utils, dialogs, componentMixins, models, statisticsMixin) {
     'use strict';
 
     var SupportPage = React.createClass({
@@ -166,16 +167,39 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             statisticsMixin,
             componentMixins.backboneMixin('statistics')
         ],
+        getDefaultProps: function() {
+            return {eventNamespace: 'unsavedchangesStatisticsSettings'};
+        },
+        onPageLeave: function(e) {
+            var href = $(e.currentTarget).attr('href');
+            if (Backbone.history.getHash() != href.substr(1) && this.hasChanges()) {
+                e.preventDefault();
+                dialogs.DiscardSettingsChangesDialog.show({cb: function() {
+                    app.navigate(href, {trigger: true});
+                }});
+            }
+        },
+        componentWillMount: function() {
+            $(window).on('beforeunload.' + this.props.eventNamespace, _.bind(utils.onBeforeunloadEvent, this));
+            $('body').on('click.' + this.props.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onPageLeave, this));
+        },
+        componentWillUnmount: function() {
+            $(window).off('beforeunload.' + this.props.eventNamespace);
+            $('body').off('click.' + this.props.eventNamespace);
+        },
+        hasChanges: function() {
+            var settingsStats = this.props.settings.get('statistics'),
+                statisticsStats = this.props.statistics.get('statistics');
+            return _.any(this.props.statsCheckboxes, function(field) {
+                    return !_.isEqual(settingsStats[field].value, statisticsStats[field].value);
+                }, this);
+        },
         render: function() {
             var statistics = this.props.statistics.get('statistics'),
                 sortedSettings = _.chain(_.keys(statistics))
                     .without('metadata')
                     .sortBy(function(settingName) {return statistics[settingName].weight;}, this)
-                    .value(),
-                initialData = this.props.settings.get('statistics'),
-                hasChanges = _.any(this.props.statsCheckboxes, function(field) {
-                    return !_.isEqual(initialData[field].value, statistics[field].value);
-                });
+                    .value();
             return (
                 <SupportPageElement
                     className='img-statistics'
@@ -189,7 +213,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                         <p>
                             <button
                                 className='btn btn-default'
-                                disabled={this.state.actionInProgress || !hasChanges}
+                                disabled={this.state.actionInProgress || !this.hasChanges()}
                                 onClick={this.prepareStatisticsToSave}
                             >
                                 {i18n('support_page.save_changes')}

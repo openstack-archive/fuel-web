@@ -822,7 +822,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         getDefaultProps: function() {return {title: i18n('dialog.dismiss_settings.title'), defaultMessage: i18n('dialog.dismiss_settings.default_message')};},
         proceed: function() {
             this.close();
-            dispatcher.trigger('networkConfigurationUpdated', _.bind(this.props.cb, this.props));
         },
         renderBody: function() {
             var message = this.props.verification ? i18n('dialog.dismiss_settings.verify_message') : this.props.defaultMessage;

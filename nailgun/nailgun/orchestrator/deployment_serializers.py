@@ -1224,8 +1224,13 @@ class NeutronNetworkDeploymentSerializer61(
                 'management': 'br-mgmt',
                 'storage': 'br-storage',
                 'fw-admin': 'br-fw-admin',
+                # Fix me later, but hard code for now
+                'ceph/replication': 'br-storage',
+                'ceph/public': 'br-mgmt',
+                'ceph/radosgw': 'br-ex',
             },
         }
+
 
         is_public = objects.Node.should_have_public(node)
         if is_public:

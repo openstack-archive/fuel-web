@@ -999,6 +999,8 @@
           description: "dialog.create_cluster_wizard.additional.install_sahara_description"
           bind: "settings:additional_components.sahara.value"
           weight: 10
+          restrictions:
+            - "Compute.hypervisor == 'qemu'": "dialog.create_cluster_wizard.additional.qemu_alert"
         murano:
           type: "checkbox"
           label: "dialog.create_cluster_wizard.additional.install_murano"
@@ -1007,6 +1009,7 @@
           weight: 20
           restrictions:
             - "Network.manager == 'nova-network'": "dialog.create_cluster_wizard.additional.network_mode_alert"
+            - "Compute.hypervisor == 'qemu'": "dialog.create_cluster_wizard.additional.qemu_alert"
         ceilometer:
           type: "checkbox"
           label: "dialog.create_cluster_wizard.additional.install_ceilometer"

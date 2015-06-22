@@ -342,6 +342,9 @@ define([
             if (_.isString(model1Value)) return utils.natsort(model1Value, model2Value, options);
             var result = model1Value - model2Value;
             return options.desc ? -result : result;
+        },
+        onBeforeunloadEvent: function() {
+            if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
         }
     };
 

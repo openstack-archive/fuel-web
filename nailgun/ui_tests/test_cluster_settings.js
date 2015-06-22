@@ -26,9 +26,9 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster OpenStack settings: Save button interractions');
-    this.click('input[type=checkbox]');
+    this.click('input[name=debug]');
     this.test.assertExists('.btn-apply-changes:not(:disabled)', 'Save settings button is enabled if there are changes');
-    this.click('input[type=checkbox]');
+    this.click('input[name=debug]');
     this.test.assertSelectorAppears('.btn-apply-changes:disabled', 'Save settings button is disabled again if there are no changes');
 });
 

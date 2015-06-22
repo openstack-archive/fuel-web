@@ -1716,19 +1716,25 @@ button, .btn:not(.btn-link) {.font-semibold;}
     width: 830px;
     height: 485px;
     .modal-body {
-      height: 305px;
-    }
-    .wizard-steps-nav {
-      padding-left: 0;
-      li {
-        cursor: pointer;
-      }
-      .wizard-step {
-        &.available {
-          a {
-            color: @green;
+      @wizard-body-height: 305px;
+      @wizard-body-padding: 15px;
+      height: @wizard-body-height;
+      .wizard-steps-nav {
+        padding-left: 0;
+        li {
+          cursor: pointer;
+        }
+        .wizard-step {
+          &.available {
+            a {
+              color: @green;
+            }
           }
         }
+      }
+      .pane-content {
+        max-height: @wizard-body-height - @wizard-body-padding;
+        overflow-y: auto;
       }
     }
   }

@@ -2215,10 +2215,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
 
           position: static;
           min-height: @network-block-height + @base-ifc-indent;
+          margin-right: 5px;
 
-          .no-networks-message {
-            height: 0;
+          &.over {
+            background-color: red;
           }
+
           .network-group-block {
             height: @network-block-height;
             margin-bottom: @base-ifc-indent;
@@ -2249,6 +2251,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
                   opacity: 0.7;
                 }
               }
+            }
+            &.dragging {
+              opacity: 0.5;
             }
           }
         }

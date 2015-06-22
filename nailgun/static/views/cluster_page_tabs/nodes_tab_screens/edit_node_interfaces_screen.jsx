@@ -25,14 +25,14 @@ define(
     'dispatcher',
     'jsx!views/controls',
     'jsx!component_mixins',
-    'jquery-ui/sortable'
+    'react-dnd'
 ],
-function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins) {
+function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins, DND) {
     'use strict';
 
-    var EditNodeInterfacesScreen, NodeInterface;
+    var ns = 'cluster_page.nodes_tab.configure_interfaces.';
 
-    EditNodeInterfacesScreen = React.createClass({
+    var EditNodeInterfacesScreen = React.createClass({
         mixins: [
             ComponentMixins.nodeConfigurationScreenMixin,
             ComponentMixins.backboneMixin('interfaces', 'change:checked change:slaves change:bond_properties change:interface_properties reset sync'),
@@ -98,12 +98,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         componentDidMount: function() {
             this.validate();
         },
-        getDraggedNetworks: function() {
-            return this.draggedNetworks || null;
-        },
-        setDraggedNetworks: function(networks) {
-            this.draggedNetworks = networks;
-        },
         interfacesPickFromJSON: function(json) {
             // Pick certain interface fields that have influence on hasChanges.
             return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties', 'interface_properties']);
@@ -135,7 +129,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             }, this)).done(_.bind(function() {
                 this.setState({actionInProgress: false});
             }, this)).fail(_.bind(function(response) {
-                var errorNS = 'cluster_page.nodes_tab.configure_interfaces.configuration_error.';
+                var errorNS = ns + 'configuration_error.';
 
                 utils.showErrorDialog({
                     title: i18n(errorNS + 'title'),
@@ -199,7 +193,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     dispatcher.trigger('networkConfigurationUpdated');
                 }, this))
                 .fail(function(response) {
-                    var errorNS = 'cluster_page.nodes_tab.configure_interfaces.configuration_error.';
+                    var errorNS = ns + 'configuration_error.';
 
                     utils.showErrorDialog({
                         title: i18n(errorNS + 'title'),
@@ -309,8 +303,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             return _.uniq(speeds).length > 1 || !_.compact(speeds).length;
         },
         render: function() {
-            var ns = 'cluster_page.nodes_tab.configure_interfaces.',
-                nodes = this.props.nodes,
+            var nodes = this.props.nodes,
                 nodeNames = nodes.pluck('name'),
                 interfaces = this.props.interfaces,
                 locked = this.isLocked(),
@@ -415,7 +408,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         }
     });
 
-    NodeInterface = React.createClass({
+    var NodeInterface = React.createClass({
         mixins: [
             ComponentMixins.backboneMixin('cluster', 'change:status'),
             ComponentMixins.backboneMixin('interface', 'change:checked change:mode change:bond_properties change:interface_properties'),
@@ -462,56 +455,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         onModelChange: function() {
             this.props.refresh();
         },
-        componentDidMount: function() {
-            $(this.refs.networks.getDOMNode()).sortable({
-                connectWith: '.ifc-networks',
-                items: '.network-group-block:not(.disabled)',
-                containment: $('.ifc-list'),
-                disabled: this.props.locked,
-                receive: this.dragStop,
-                remove: this.dragStart,
-                start: this.dragStart,
-                stop: this.dragStop
-            }).disableSelection();
-        },
         componentDidUpdate: function() {
             this.props.validate();
-        },
-        dragStart: function(e, ui) {
-            var networkNames = $(ui.item).find('.network-block').map(function(index, el) {
-                // NOTE(pkaminski): .data('name') returns an incorrect result here.
-                // This is probably caused by jQuery .data cache (attr reads directly from DOM).
-                // http://api.jquery.com/data/#data-html5
-                return $(el).attr('data-name');
-            });
-            if (e.type == 'sortstart') {
-                // NOTE(pkaminski): Save initial networks state -- this is used for blocking
-                // of dragging within one interface -- see also this.dragStop
-                this.initialNetworks = this.props.interface.get('assigned_networks').pluck('name');
-            }
-            if (e.type == 'sortremove') {
-                $(this.refs.networks.getDOMNode()).sortable('cancel');
-                this.props.interface.get('assigned_networks').remove(this.props.getDraggedNetworks());
-            } else {
-                this.props.setDraggedNetworks(this.props.interface.get('assigned_networks').filter(function(network) {
-                        return _.contains(networkNames, network.get('name'));
-                    })[0]
-                );
-            }
-        },
-        dragStop: function(e) {
-            var networks;
-            if (e.type == 'sortreceive') {
-                this.props.interface.get('assigned_networks').add(this.props.getDraggedNetworks());
-            } else if (e.type == 'sortstop') {
-                // Block dragging within an interface
-                networks = this.props.interface.get('assigned_networks').pluck('name');
-                if (!_.xor(networks, this.initialNetworks).length) {
-                    $(this.refs.networks.getDOMNode()).sortable('cancel');
-                }
-                this.initialNetworks = [];
-            }
-            this.props.setDraggedNetworks(null);
         },
         bondingChanged: function(name, value) {
             this.props.interface.set({checked: value});
@@ -540,7 +485,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             return _.map(bondingModes, function(mode) {
                 return (
                     <option key={'option-' + mode} value={mode}>
-                        {i18n('cluster_page.nodes_tab.configure_interfaces.' + attributeName + '.' + mode.replace('.', '_'))}
+                        {i18n(ns + attributeName + '.' + mode.replace('.', '_'))}
                     </option>);
             }, this);
         },
@@ -557,8 +502,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             this.props.interface.set('interface_properties', interfaceProperties);
         },
         render: function() {
-            var ns = 'cluster_page.nodes_tab.configure_interfaces.',
-                ifc = this.props.interface,
+            var ifc = this.props.interface,
                 cluster = this.props.cluster,
                 locked = this.props.locked,
                 networkConfiguration = cluster.get('networkConfiguration'),
@@ -577,19 +521,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                         'ifc-offline': slaveDown
                     };
                 },
-                assignedNetworksGrouped = [],
-                networksToAdd = [],
                 bondProperties = ifc.get('bond_properties'),
                 interfaceProperties = ifc.get('interface_properties') || null;
-
-            assignedNetworks.each(function(interfaceNetwork) {
-                if (interfaceNetwork.getFullNetwork(networks).get('name') != 'floating') {
-                    if (networksToAdd.length) assignedNetworksGrouped.push(networksToAdd);
-                    networksToAdd = [];
-                }
-                networksToAdd.push(interfaceNetwork);
-            });
-            if (networksToAdd.length) assignedNetworksGrouped.push(networksToAdd);
 
             return (
                 <div className='ifc-container'>
@@ -682,41 +615,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     }, this)}
                                 </div>
                             </div>
-                            <div className='ifc-networks col-xs-9' ref='networks'>
-                                {assignedNetworks.length ?
-                                    _.map(assignedNetworksGrouped, function(networkGroup) {
-                                        var network = networkGroup[0].getFullNetwork(networks);
-                                        if (!network) return;
-
-                                        var classes = {
-                                                'network-group-block pull-left': true,
-                                                disabled: locked || network.get('meta').unmovable
-                                            },
-                                            vlanRange = network.getVlanRange(networkingParameters);
-                                        return (
-                                            <div key={'network-group-' + network.id} className={utils.classNames(classes)}>
-                                                {_.map(networkGroup, function(interfaceNetwork) {
-                                                    var networkName = interfaceNetwork.get('name');
-                                                    return (
-                                                        <div key={'network-' + networkName} className='network-block pull-left' data-name={networkName}>
-                                                            <div className='network-name'>
-                                                                {i18n('network.' + networkName, {defaultValue: networkName})}
-                                                            </div>
-                                                            {vlanRange &&
-                                                                <div className='vlan-id'>
-                                                                    {i18n(ns + 'vlan_id', {count: _.uniq(vlanRange).length})}:
-                                                                    {_.uniq(vlanRange).join('-')}
-                                                                </div>
-                                                            }
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        );
-                                    }, this)
-                                :
-                                    <div className='no-networks-message'>{i18n(ns + 'drag_and_drop_description')}</div>
-                                }
+                            <div className='col-xs-9'>
+                                <NetworkDropTarget
+                                    {... _.pick(this.props, ['interface', 'interfaces', 'locked'])}
+                                    networks={networks}
+                                    networkingParameters={networkingParameters}
+                                />
                             </div>
                         </div>
 
@@ -749,6 +653,104 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             );
         }
     });
+
+    var NetworkContainer = React.createClass({
+        statics: {
+            target: {
+                drop: function(props, monitor) {
+                    var targetInterface = props.interface;
+                    var sourceInterface = props.interfaces.get(monitor.getItem().interfaceId);
+                    var sourceNetwork = sourceInterface.get('assigned_networks').remove(monitor.getItem().networkId);
+                    targetInterface.get('assigned_networks').add(sourceNetwork);
+                },
+                canDrop: function(props, monitor) {
+                    return monitor.getItem().interfaceId != props.interface.id;
+                }
+            },
+            collect: function(connect, monitor) {
+                return {
+                    connectDropTarget: connect.dropTarget(),
+                    isOver: monitor.isOver(),
+                    canDrop: monitor.canDrop()
+                };
+            }
+        },
+        render: function() {
+            var networks = this.props.networks,
+                assignedNetworks = this.props.interface.get('assigned_networks');
+
+            return this.props.connectDropTarget(
+                <div className={utils.classNames({
+                    'ifc-networks': true,
+                    over: this.props.isOver && this.props.canDrop
+                })}>
+                    {assignedNetworks.length ?
+                        assignedNetworks.map(function(interfaceNetwork) {
+                            var network = interfaceNetwork.getFullNetwork(networks);
+                            if (!network) return;
+                            return <DraggableNetwork
+                                key={'network-' + network.id}
+                                {... _.pick(this.props, ['locked', 'interface', 'networkingParameters'])}
+                                interfaceNetwork={interfaceNetwork}
+                                network={network}
+                            />;
+                        }, this)
+                    :
+                        i18n(ns + 'drag_and_drop_description')
+                    }
+                </div>
+            );
+        }
+    });
+    var NetworkDropTarget = DND.DropTarget('network', NetworkContainer.target, NetworkContainer.collect)(NetworkContainer);
+
+    var Network = React.createClass({
+        statics: {
+            source: {
+                beginDrag: function(props) {
+                    return {
+                        networkId: props.network.id,
+                        interfaceId: props.interface.id
+                    };
+                },
+                canDrag: function(props) {
+                    return !(props.locked || props.network.get('meta').unmovable);
+                }
+            },
+            collect: function(connect, monitor) {
+                return {
+                    connectDragSource: connect.dragSource(),
+                    isDragging: monitor.isDragging()
+                };
+            }
+        },
+        render: function() {
+            var network = this.props.network,
+                interfaceNetwork = this.props.interfaceNetwork,
+                networkingParameters = this.props.networkingParameters,
+                classes = {
+                    'network-block pull-left': true,
+                    disabled: !this.constructor.source.canDrag(this.props),
+                    dragging: this.props.isDragging
+                },
+                vlanRange = network.getVlanRange(networkingParameters);
+
+            return this.props.connectDragSource(
+                <div className={utils.classNames(classes)}>
+                    <div className='network-name'>
+                        {i18n('network.' + interfaceNetwork.get('name'), {defaultValue: interfaceNetwork.get('name')})}
+                    </div>
+                    {vlanRange &&
+                        <div className='vlan-id'>
+                            {i18n(ns + 'vlan_id', {count: _.uniq(vlanRange).length})}:
+                            {_.uniq(vlanRange).join('-')}
+                        </div>
+                    }
+                </div>
+            );
+        }
+    });
+    var DraggableNetwork = DND.DragSource('network', Network.source, Network.collect)(Network);
 
     return EditNodeInterfacesScreen;
 });

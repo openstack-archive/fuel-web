@@ -25,9 +25,9 @@ define(
     'dispatcher',
     'jsx!views/controls',
     'jsx!component_mixins',
-    'jquery-ui/sortable'
+    'react-dnd'
 ],
-function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins) {
+function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins, DND) {
     'use strict';
 
     var EditNodeInterfacesScreen, NodeInterface;
@@ -463,16 +463,16 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             this.props.refresh();
         },
         componentDidMount: function() {
-            $(this.refs.networks.getDOMNode()).sortable({
-                connectWith: '.ifc-networks',
-                items: '.network-group-block:not(.disabled)',
-                containment: $('.ifc-list'),
-                disabled: this.props.locked,
-                receive: this.dragStop,
-                remove: this.dragStart,
-                start: this.dragStart,
-                stop: this.dragStop
-            }).disableSelection();
+            //$(this.refs.networks.getDOMNode()).sortable({
+            //    connectWith: '.ifc-networks',
+            //    items: '.network-group-block:not(.disabled)',
+            //    containment: $('.ifc-list'),
+            //    disabled: this.props.locked,
+            //    receive: this.dragStop,
+            //    remove: this.dragStart,
+            //    start: this.dragStart,
+            //    stop: this.dragStop
+            //}).disableSelection();
         },
         componentDidUpdate: function() {
             this.props.validate();

@@ -164,7 +164,9 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             }, this));
         },
         renderLayout: function() {
-            this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
+            var wrappedRootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));
+            // RootComponent is wrapped with React-DnD, extracting link to it using ref
+            this.rootComponent = wrappedRootComponent.refs.child;
         },
         loadPage: function(Page, options) {
             return (Page.fetchData ? Page.fetchData.apply(Page, options) : $.Deferred().resolve()).done(_.bind(function(pageOptions) {

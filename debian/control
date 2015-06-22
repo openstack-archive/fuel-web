@@ -1,9 +1,10 @@
 Source: nailgun
-Section: unknown
-Priority: net
-Maintainer: Mirantis Producta <product@mirantis.com>
-Build-Depends: debhelper (>= 8.0.0), python-setuptools
-X-Python-Version: 2.6, 2.7
+Section: python
+Priority: extra
+Maintainer: Mirantis Product <product@mirantis.com>
+Build-Depends: debhelper (>= 8.0.0)
+Build-Depends-Indep: python-setuptools, python-pbr
+X-Python-Version: 2.7
 Standards-Version: 3.9.2
 Homepage: mirantis.com
 
@@ -33,4 +34,35 @@ Package: nailgun-net-check
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, python-pypcap, vlan, python-scapy, cliff-tablib, python-stevedore, python-daemonize, python-yaml, tcpdump, python-requests
 Description: NailGun client net-check
+ .
+
+Package: fuel-agent
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends},
+  python-babel,
+  python-eventlet,
+  python-iso8601,
+  python-oslo.config,
+  python-oslo.serialization,
+  python-pbr,
+  python-requests,
+  python-six,
+  python-stevedore,
+  python-jinja2,
+  python-urllib3,
+  python-yaml,
+  bzip2,
+  cloud-utils,
+  dmidecode,
+  ethtool,
+  gdisk,
+  genisoimage,
+  lvm2,
+  mdadm,
+  openssh-client,
+  parted,
+  pciutils,
+  xfsprogs
+Description: Fuel image based provisioning agent
+ Fuel image based provisioning agent running on the discovery nodes
  .

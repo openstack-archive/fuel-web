@@ -39,6 +39,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
     var ClusterPage = React.createClass({
         mixins: [
             componentMixins.pollingMixin(5),
+            componentMixins.onLeaveCheckMixin,
             componentMixins.backboneMixin('cluster', 'change:name change:is_customized change:release'),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {return props.cluster.get('nodes');}
@@ -160,19 +161,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             }, this);
             return $.when.apply($, requests);
         },
-        onTabLeave: function(e) {
-            var href = $(e.currentTarget).attr('href');
-            if (Backbone.history.getHash() != href.substr(1) && this.hasChanges()) {
-                e.preventDefault();
-                dialogs.DiscardSettingsChangesDialog.show({
-                    verification: this.props.cluster.tasks({group: 'network', status: 'running'}).length,
-                    cb: _.bind(function() {
-                        this.revertChanges();
-                        app.navigate(href, {trigger: true});
-                    }, this)
-                });
-            }
-        },
         shouldDataBeFetched: function() {
             return this.props.cluster.task({group: ['deployment', 'network'], status: 'running'});
         },
@@ -194,18 +182,24 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
         refreshCluster: function() {
             return $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes'), this.props.cluster.fetchRelated('tasks'));
         },
-        componentWillUnmount: function() {
-            $(window).off('beforeunload.' + this.eventNamespace);
-            $('body').off('click.' + this.eventNamespace);
-        },
         revertChanges: function() {
             this.refs.tab.revertChanges();
         },
         hasChanges: function() {
             return _.result(this.refs.tab, 'hasChanges');
         },
-        onBeforeunloadEvent: function() {
-            if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
+        getInitialState: function() {
+            var checkVerificationTask = _.bind(function() {
+                return !!this.props.cluster.task({group: 'network', status: 'running'});
+            }, this);
+            return {
+                eventNamespace: 'unsavedchanges' + this.props.activeTab,
+                onLeaveCheckOptions: {
+                    forbidRedirect: function() {return checkVerificationTask();},
+                    message: function() {return checkVerificationTask() && i18n('dialog.dismiss_settings.verify_message');},
+                    cb: _.bind(dispatcher.trigger, dispatcher, 'networkConfigurationUpdated', this.revertChanges)
+                }
+            };
         },
         componentWillMount: function() {
             this.props.cluster.on('change:release_id', function() {
@@ -214,9 +208,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     this.props.cluster.set({release: release});
                 }, this));
             }, this);
-            this.eventNamespace = 'unsavedchanges' + this.props.activeTab;
-            $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
-            $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },
         getAvailableTabs: function(cluster) {
             return _.filter(this.constructor.getTabs(), function(tabData) {

@@ -164,18 +164,25 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
     var StatisticsSettings = React.createClass({
         mixins: [
             statisticsMixin,
+            componentMixins.onLeaveCheckMixin,
             componentMixins.backboneMixin('statistics')
         ],
+        getInitialState: function() {
+            return {eventNamespace: 'unsavedChangesStatisticsSettings'};
+        },
+        hasChanges: function() {
+            var initialSettings = this.props.settings.get('statistics'),
+                currentSettings = this.props.statistics.get('statistics');
+            return _.any(this.props.statsCheckboxes, function(field) {
+                return !_.isEqual(initialSettings[field].value, currentSettings[field].value);
+            });
+        },
         render: function() {
             var statistics = this.props.statistics.get('statistics'),
                 sortedSettings = _.chain(_.keys(statistics))
                     .without('metadata')
                     .sortBy(function(settingName) {return statistics[settingName].weight;}, this)
-                    .value(),
-                initialData = this.props.settings.get('statistics'),
-                hasChanges = _.any(this.props.statsCheckboxes, function(field) {
-                    return !_.isEqual(initialData[field].value, statistics[field].value);
-                });
+                    .value();
             return (
                 <SupportPageElement
                     className='img-statistics'
@@ -189,7 +196,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                         <p>
                             <button
                                 className='btn btn-default'
-                                disabled={this.state.actionInProgress || !hasChanges}
+                                disabled={this.state.actionInProgress || !this.hasChanges()}
                                 onClick={this.prepareStatisticsToSave}
                             >
                                 {i18n('support_page.save_changes')}

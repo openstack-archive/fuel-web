@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbone'], function($, _, Backbone, dispatcher, React) {
+define(['jquery', 'underscore', 'i18n', 'backbone', 'dispatcher', 'react', 'react.backbone'], function($, _, i18n, Backbone, dispatcher, React) {
     'use strict';
 
     return {
@@ -93,9 +93,6 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
 
                 if (nodes.length && nodes.length == ids.length) {return nodes;}
             },
-            goToNodeList: function() {
-                app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
-            },
             isLockedScreen: function() {
                 var nodesAvailableForChanges = this.props.nodes.any(function(node) {
                     return node.get('pending_addition') || node.get('status') == 'error';
@@ -105,14 +102,44 @@ define(['jquery', 'underscore', 'backbone', 'dispatcher', 'react', 'react.backbo
             },
             showDiscardChangesDialog: function() {
                 var dialogs = require('jsx!views/dialogs');
-                dialogs.DiscardSettingsChangesDialog.show({cb: this.goToNodeList});
+                // TODO: need to check possibility to use onLeaveCheckMixin in this place
+                dialogs.DiscardSettingsChangesDialog.show({
+                    href: '#cluster/' + this.props.cluster.id + '/nodes'
+                });
             },
             returnToNodeList: function() {
                 if (this.hasChanges()) {
                     this.showDiscardChangesDialog();
                 } else {
-                    this.goToNodeList();
+                    app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
                 }
+            }
+        },
+        onLeaveCheckMixin: {
+            onLeave: function(e) {
+                var dialogs = require('jsx!views/dialogs'),
+                    href = $(e.currentTarget).attr('href'),
+                    options = this.state.onLeaveCheckOptions || {};
+
+                if (Backbone.history.getHash() != href.substr(1) && _.result(this, 'hasChanges')) {
+                    e.preventDefault();
+                    dialogs.DiscardSettingsChangesDialog.show({
+                        message: _.result(options, 'message') || undefined,
+                        href: !_.result(options, 'forbidRedirect') ? href : false,
+                        cb: options.cb
+                    });
+                }
+            },
+            componentWillMount: function() {
+                $(window).on('beforeunload.' + this.state.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
+                $('body').on('click.' + this.state.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onLeave, this));
+            },
+            componentWillUnmount: function() {
+                $(window).off('beforeunload.' + this.state.eventNamespace);
+                $('body').off('click.' + this.state.eventNamespace);
+            },
+            onBeforeunloadEvent: function() {
+                if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
             }
         }
     };

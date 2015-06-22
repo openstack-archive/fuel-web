@@ -166,16 +166,37 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
             statisticsMixin,
             componentMixins.backboneMixin('statistics')
         ],
+        onPageLeave: function(e) {
+            var href = $(e.currentTarget).attr('href');
+            if (this.hasChanges()) {
+                e.preventDefault();
+                dialogs.DiscardSettingsChangesDialog.show({cb: function() {
+                    app.navigate(href, {trigger: true});
+                }});
+            }
+        },
+        onBeforeunloadEvent: function() {
+            if (this.hasChanges()) return i18n('dialog.dismiss_settings.default_message');
+        },
+        componentWillMount: function() {
+            $(window).on('beforeunload.unsavedchanges', _.bind(this.onBeforeunloadEvent, this));
+            $('body').on('click.unsavedchanges', 'a[href^=#]:not(.no-leave-check)', _.bind(this.onPageLeave, this));
+        },
+        componentWillUnmount: function() {
+            $(window).off('beforeunload.unsavedchanges');
+            $('body').off('click.unsavedchanges');
+        },
+        hasChanges: function() {
+            return _.any(this.props.statsCheckboxes, _.bind(function(field) {
+                    return !_.isEqual(this.props.settings.get('statistics')[field].value, this.props.statistics.get('statistics')[field].value);
+                }, this));
+        },
         render: function() {
             var statistics = this.props.statistics.get('statistics'),
                 sortedSettings = _.chain(_.keys(statistics))
                     .without('metadata')
                     .sortBy(function(settingName) {return statistics[settingName].weight;}, this)
-                    .value(),
-                initialData = this.props.settings.get('statistics'),
-                hasChanges = _.any(this.props.statsCheckboxes, function(field) {
-                    return !_.isEqual(initialData[field].value, statistics[field].value);
-                });
+                    .value();
             return (
                 <SupportPageElement
                     className='img-statistics'
@@ -189,7 +210,7 @@ function($, _, i18n, Backbone, React, dialogs, componentMixins, models, statisti
                         <p>
                             <button
                                 className='btn btn-default'
-                                disabled={this.state.actionInProgress || !hasChanges}
+                                disabled={this.state.actionInProgress || !this.hasChanges()}
                                 onClick={this.prepareStatisticsToSave}
                             >
                                 {i18n('support_page.save_changes')}

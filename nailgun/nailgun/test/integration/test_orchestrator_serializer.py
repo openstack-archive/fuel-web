@@ -207,6 +207,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.db.flush()
 
         node_db = self.db.query(Node).get(node['id'])
+        vms_conf = [{'id': 1, 'cluster_id': self.cluster.id}]
+        objects.Node.set_vms_conf(node_db, vms_conf)
 
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
 
@@ -216,6 +218,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEqual(serialized_data['online'], node_db.online)
         self.assertEqual(serialized_data['fqdn'],
                          'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
+        self.assertEqual(serialized_data['vms_conf'], vms_conf)
         self.assertEqual(
             serialized_data['glance'],
             {'image_cache_max_size': manager.calc_glance_cache_size(

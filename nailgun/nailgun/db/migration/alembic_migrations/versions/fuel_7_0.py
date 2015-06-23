@@ -31,9 +31,37 @@ import sqlalchemy as sa
 from alembic import op
 from oslo.serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
 from nailgun.utils.migration import drop_enum
+from nailgun.utils.migration import upgrade_enum
+
+
+task_names_old = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+    'dump',
+    'capacity_log',
+    'create_stats_user',
+    'remove_stats_user'
+)
+task_names_new = consts.TASK_NAMES
 
 
 def upgrade():
@@ -52,6 +80,8 @@ def upgrade():
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
     migrate_volumes_into_extension_upgrade()
+    upgrade_task_names()
+    vms_conf_upgrade()
 
 
 def downgrade():
@@ -59,6 +89,8 @@ def downgrade():
     extend_plugin_model_downgrade()
     extend_ip_addrs_model_downgrade()
     extend_node_model_downgrade()
+    downgrade_task_names()
+    vms_conf_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
     op.alter_column(
@@ -94,6 +126,42 @@ def extend_ip_addrs_model_upgrade():
                     existing_type=sa.Enum('haproxy', 'vrouter',
                     name='network_vip_types'))
     drop_enum('network_vip_types')
+
+
+def upgrade_task_names():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_old,             # old options
+        task_names_new              # new options
+    )
+
+
+def downgrade_task_names():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_new,             # old options
+        task_names_old              # new options
+    )
+
+
+def vms_conf_upgrade():
+    op.add_column(
+        'node_attributes',
+        sa.Column(
+            'vms_conf',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'
+        )
+    )
+
+
+def vms_conf_downgrade():
+    op.drop_column('node_attributes', 'vms_conf')
 
 
 def extend_plugin_model_upgrade():

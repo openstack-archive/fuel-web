@@ -226,6 +226,7 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
             'fqdn': node.fqdn,
             'status': node.status,
             'role': role,
+            'vms_conf': node.attributes.vms_conf,
             # TODO (eli): need to remove, requried
             # for the fake thread only
             'online': node.online

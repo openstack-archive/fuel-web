@@ -27,6 +27,10 @@ from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 
+from nailgun import consts
+
+from nailgun.db.sqlalchemy import models
+
 from nailgun.logger import logger
 
 from nailgun import objects
@@ -273,6 +277,34 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
                           nodes=nodes_to_deploy, cluster_id=cluster.id)
 
         self.checked_data(self.validator.validate_release, cluster=cluster)
+
+
+class PrepareDeployHandler(BaseDeploySelectedNodes):
+    """Handler for deployment selected nodes."""
+
+    def get_tasks(self, cluster):
+        tasks = objects.Cluster.get_deployment_tasks(cluster)
+        graph = deployment_graph.DeploymentGraph()
+        graph.add_tasks(tasks)
+        subgraph = graph.find_subgraph(end='create_vms')
+        return [task['id'] for task in subgraph.topology]
+
+    def get_nodes(self, cluster):
+        nodes_to_deploy = objects.Cluster.\
+            get_nodes_by_role(cluster, consts.VIRTUAL_NODE_TYPES.kvm)
+        return nodes_to_deploy
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
+               * 404 (cluster or nodes not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        data = self.get_tasks(cluster)
+        return self.handle_task(cluster, deployment_tasks=data)
 
 
 class DeploySelectedNodes(BaseDeploySelectedNodes):

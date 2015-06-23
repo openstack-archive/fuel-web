@@ -79,6 +79,7 @@ from nailgun.api.v1.handlers.orchestrator import DefaultProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import DeploymentInfo
 from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodesWithTasks
+from nailgun.api.v1.handlers.orchestrator import PrepareDeployHandler
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 from nailgun.api.v1.handlers.orchestrator import TaskDeployGraph
@@ -175,6 +176,8 @@ urls = (
     ClusterUpdateHandler,
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
+     r'/clusters/(?P<cluster_id>\d+)/prepare_deployment/?$',
+    PrepareDeployHandler,
 
 
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',

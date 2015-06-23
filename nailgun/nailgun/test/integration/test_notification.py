@@ -24,7 +24,7 @@ from nailgun.errors import errors
 from nailgun import notifier
 from nailgun.rpc import receiver as rcvr
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestNotification(BaseIntegrationTest):

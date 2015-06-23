@@ -32,9 +32,9 @@ from nailgun.db import syncdb
 from nailgun.settings import settings
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import EnvironmentManager
-from nailgun.test.base import reverse
 from nailgun.test.base import test_db_driver
 from nailgun.test.performance.profiler import ProfilerMiddleware
+from nailgun.utils import reverse
 
 import pytest
 

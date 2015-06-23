@@ -21,7 +21,7 @@ from oslo.serialization import jsonutils
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.urls import urls
 from nailgun import objects
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class SampleGenerator(object):

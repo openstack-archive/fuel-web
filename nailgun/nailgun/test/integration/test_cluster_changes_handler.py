@@ -31,7 +31,7 @@ from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 from nailgun.volumes import manager
 
 

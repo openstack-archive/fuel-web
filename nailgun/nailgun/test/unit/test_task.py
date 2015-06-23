@@ -22,7 +22,7 @@ from nailgun.errors import errors
 from nailgun import objects
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseTestCase
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 from nailgun.volumes.manager import VolumeManager
 
 

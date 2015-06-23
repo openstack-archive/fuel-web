@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import os
 import shutil
 import tempfile
@@ -30,9 +31,61 @@ from nailgun.errors import errors
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 from nailgun.task.task import DumpTask
+from nailgun.test.base import BaseAuthenticationIntegrationTest
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
+
+
+class TestSnapshotDownload(BaseAuthenticationIntegrationTest):
+
+    def setUp(self):
+        super(BaseAuthenticationIntegrationTest, self).setUp()
+
+        resp = self.app.post(
+            '/keystone/v2.0/tokens',
+            jsonutils.dumps({
+                'auth': {
+                    'tenantName': 'admin',
+                    'passwordCredentials': {
+                        'username': settings.FAKE_KEYSTONE_USERNAME,
+                        'password': settings.FAKE_KEYSTONE_PASSWORD,
+                    },
+                },
+            })
+        )
+
+        self.token = resp.json['access']['token']['id'].encode('utf-8')
+        self.headers = copy.deepcopy(self.default_headers)
+
+    def test_snapshot_download_handler(self):
+        snap_name = "fuel-snapshot-2015-06-23_11-32-13.tar.xz"
+        self.headers['X-Auth-Token'] = self.token
+        resp = self.app.get(
+            reverse('SnapshotDownloadHandler',
+                    kwargs={'snapshot_name': snap_name}),
+            headers=self.headers,
+        )
+
+        self.assertEqual(200, resp.status_code)
+        self.assertIn('X-Accel-Redirect', resp.headers)
+        self.assertEqual('/dump/' + snap_name,
+                         resp.headers['X-Accel-Redirect'])
+
+    def test_snapshot_download_handler_wo_auth(self):
+        snap_name = "fuel-snapshot-2015-06-23_11-32-13.tar.xz"
+        resp = self.app.get(
+            reverse('SnapshotDownloadHandler',
+                    kwargs={'snapshot_name': snap_name}),
+            headers=self.default_headers,  # without auth token
+            expect_errors=True,
+        )
+
+        self.assertEqual(401, resp.status_code)
+
+        # It's very important to do not show X-Accel-Redirect value to
+        # an unauthenticated user
+        self.assertNotIn('X-Accel-Redirect', resp.headers)
 
 
 class TestLogs(BaseIntegrationTest):

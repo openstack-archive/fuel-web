@@ -100,6 +100,9 @@ from nailgun.api.v1.handlers.tasks import TaskHandler
 
 from nailgun.api.v1.handlers.version import VersionHandler
 
+from nailgun.api.v1.handlers.vms import NodeVMsHandler
+from nailgun.api.v1.handlers.vms import SpawnVmsHandler
+
 from nailgun.api.v1.handlers.removed import RemovedIn51RedHatAccountHandler
 from nailgun.api.v1.handlers.removed import RemovedIn51RedHatSetupHandler
 
@@ -175,6 +178,8 @@ urls = (
     ClusterUpdateHandler,
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
+    r'/clusters/(?P<cluster_id>\d+)/spawn_vms/?$',
+    SpawnVmsHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,
@@ -207,6 +212,8 @@ urls = (
     NodeNICsDefaultHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
+    r'/nodes/(?P<node_id>\d+)/vms_conf/?$',
+    NodeVMsHandler,
     r'/tasks/?$',
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',

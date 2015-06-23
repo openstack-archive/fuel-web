@@ -221,6 +221,20 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'image_cache_max_size': manager.calc_glance_cache_size(
                 VolumeManagerExtension.get_volumes(node_db))})
 
+    def test_serialize_node_vms_conf(self):
+        node = self.env.create_node(
+            api=True, cluster_id=self.cluster.id, pending_addition=True)
+
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        self.db.flush()
+
+        node_db = self.db.query(Node).get(node['id'])
+        vms_conf = [{'id': 1, 'cluster_id': self.cluster.id}]
+        objects.Node.set_vms_conf(node_db, vms_conf)
+
+        serialized_data = self.serializer.serialize_node(node_db, 'controller')
+        self.assertEqual(serialized_data['vms_conf'], vms_conf)
+
     def test_node_list(self):
         node_list = self.serializer.get_common_attrs(self.cluster)['nodes']
 

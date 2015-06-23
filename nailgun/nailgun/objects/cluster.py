@@ -18,8 +18,10 @@
 Cluster-related objects and collections
 """
 
+import copy
 from distutils.version import StrictVersion
 import six
+
 import yaml
 
 import sqlalchemy as sa
@@ -857,6 +859,28 @@ class Cluster(NailgunObject):
     def get_repo_urls(self, instance):
         repos = instance.attributes.editable['repo_setup']['repos']['value']
         return tuple(set([r['uri'] for r in repos]))
+
+    @classmethod
+    def get_nodes_to_spawn_vms(cls, instance):
+        nodes = []
+        for node in cls.get_nodes_by_role(instance,
+                                          consts.VIRTUAL_NODE_TYPES.kvm):
+            for vm in node.attributes.vms_conf:
+                if not vm.get('created'):
+                    nodes.append(node)
+                    break
+        return nodes
+
+    @classmethod
+    def mark_vms_as_created(cls, instance):
+        nodes = cls.get_nodes_by_role(instance, consts.VIRTUAL_NODE_TYPES.kvm)
+        for node in nodes:
+            vms_conf = copy.deepcopy(node.attributes.vms_conf)
+            for vm in vms_conf:
+                if not vm.get('created'):
+                    vm['created'] = True
+            node.attributes.vms_conf = vms_conf
+        db().flush()
 
 
 class ClusterCollection(NailgunCollection):

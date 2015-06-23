@@ -105,6 +105,8 @@ class TaskManager(object):
 
 class ApplyChangesTaskManager(TaskManager):
 
+    deployment_type = consts.TASK_NAMES.deployment
+
     def _lock_required_tasks(self):
         names = (
             consts.TASK_NAMES.deploy,
@@ -147,7 +149,7 @@ class ApplyChangesTaskManager(TaskManager):
             db().delete(task)
         db().flush()
 
-    def execute(self):
+    def execute(self, nodes_to_deployment=None, deployment_tasks=None):
         logger.info(
             u"Trying to start deployment at cluster '{0}'".format(
                 self.cluster.name or self.cluster.id
@@ -167,7 +169,8 @@ class ApplyChangesTaskManager(TaskManager):
         db().add(supertask)
 
         nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
-        nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
+        nodes_to_deploy = nodes_to_deployment or \
+            TaskHelper.nodes_to_deploy(self.cluster)
         nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
 
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
@@ -179,17 +182,21 @@ class ApplyChangesTaskManager(TaskManager):
 
         # we should have task committed for processing in other threads
         db().commit()
-
+        nodes_ids_to_deploy = ([node.id for node in nodes_to_deployment]
+                               if nodes_to_deployment else None)
         mule.call_task_manager_async(
             self.__class__,
             '_execute_async',
             self.cluster.id,
-            supertask.id
+            supertask.id,
+            nodes_to_deployment=nodes_ids_to_deploy,
+            deployment_tasks=deployment_tasks
         )
 
         return supertask
 
-    def _execute_async(self, supertask_id):
+    def _execute_async(self, supertask_id, deployment_tasks=None,
+                       nodes_to_deployment=None):
         """Function for execute task in the mule
         :param supertask_id: id of parent task
         """
@@ -199,7 +206,10 @@ class ApplyChangesTaskManager(TaskManager):
         supertask = objects.Task.get_by_uid(supertask_id)
 
         try:
-            self._execute_async_content(supertask)
+            self._execute_async_content(
+                supertask,
+                deployment_tasks=deployment_tasks,
+                nodes_to_deployment=nodes_to_deployment)
         except Exception as e:
             logger.exception('Error occurred when running task')
             data = {
@@ -211,7 +221,8 @@ class ApplyChangesTaskManager(TaskManager):
             objects.Task.update(supertask, data)
             db().commit()
 
-    def _execute_async_content(self, supertask):
+    def _execute_async_content(self, supertask, deployment_tasks=None,
+                               nodes_to_deployment=None):
         """Processes supertask async in mule
         :param supertask: SqlAlchemy task object
         """
@@ -219,6 +230,11 @@ class ApplyChangesTaskManager(TaskManager):
         nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
         nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
         nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
+        if nodes_to_deployment:
+            nodes_to_deploy = [node for node in nodes_to_deploy
+                               if node.id in nodes_to_deployment]
+            nodes_to_provision = [node for node in nodes_to_provision
+                                  if node.id in nodes_to_deployment]
 
         objects.Cluster.adjust_nodes_lists_on_controller_removing(
             self.cluster, nodes_to_delete, nodes_to_deploy)
@@ -227,7 +243,8 @@ class ApplyChangesTaskManager(TaskManager):
         # Run validation if user didn't redefine
         # provisioning and deployment information
 
-        if (not objects.Cluster.get_provisioning_info(self.cluster) and
+        if not(nodes_to_deployment) and \
+            (not objects.Cluster.get_provisioning_info(self.cluster) and
                 not objects.Cluster.get_deployment_info(self.cluster)):
             try:
                 self.check_before_deployment(supertask)
@@ -298,7 +315,7 @@ class ApplyChangesTaskManager(TaskManager):
             logger.debug("There are nodes to deploy: %s",
                          " ".join([n.fqdn for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask(
-                consts.TASK_NAMES.deployment)
+                self.deployment_type)
 
             # we should have task committed for processing in other threads
             db().commit()
@@ -306,6 +323,7 @@ class ApplyChangesTaskManager(TaskManager):
                 task_deployment,
                 tasks.DeploymentTask,
                 nodes_to_deploy,
+                deployment_tasks=deployment_tasks,
                 method_name='message'
             )
 
@@ -438,6 +456,11 @@ class ApplyChangesTaskManager(TaskManager):
         db().delete(check_before)
         db().refresh(supertask)
         db().flush()
+
+
+class SpawnVMsTaskManager(ApplyChangesTaskManager):
+
+    deployment_type = consts.TASK_NAMES.spawn_vms
 
 
 class ProvisioningTaskManager(TaskManager):

@@ -38,8 +38,7 @@ from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator.stages import post_deployment_serialize
 from nailgun.orchestrator.stages import pre_deployment_serialize
 from nailgun.task.helpers import TaskHelper
-from nailgun.task.manager import DeploymentTaskManager
-from nailgun.task.manager import ProvisioningTaskManager
+from nailgun.task import manager
 
 
 class NodesFilterMixin(object):
@@ -232,7 +231,7 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     """Handler for provisioning selected nodes."""
 
     validator = ProvisionSelectedNodesValidator
-    task_manager = ProvisioningTaskManager
+    task_manager = manager.ProvisioningTaskManager
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_provision(cluster)
@@ -257,7 +256,7 @@ class ProvisionSelectedNodes(SelectedNodesBase):
 class BaseDeploySelectedNodes(SelectedNodesBase):
 
     validator = DeploySelectedNodesValidator
-    task_manager = DeploymentTaskManager
+    task_manager = manager.DeploymentTaskManager
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)
@@ -273,6 +272,48 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
                           nodes=nodes_to_deploy, cluster_id=cluster.id)
 
         self.checked_data(self.validator.validate_release, cluster=cluster)
+
+
+class SpawnVmsHandler(BaseDeploySelectedNodes):
+    """Handler for provision and spawn vms on kvm-virt nodes."""
+
+    task_manager = manager.SpawnVMsTaskManager
+
+    def get_tasks(self, cluster):
+        tasks = objects.Cluster.get_deployment_tasks(cluster)
+        graph = deployment_graph.DeploymentGraph()
+        graph.add_tasks(tasks)
+        subgraph = graph.find_subgraph(end='create_vms')
+        return [task['id'] for task in subgraph.topology]
+
+    def get_nodes(self, cluster):
+        return objects.Cluster.get_nodes_to_spawn_vms(cluster)
+
+    def handle_task(self, cluster, **kwargs):
+        nodes = self.get_nodes(cluster)
+
+        try:
+            task_manager = self.task_manager(cluster_id=cluster.id)
+            task = task_manager.execute(nodes_to_deployment=nodes, **kwargs)
+        except Exception as exc:
+            logger.warn(
+                u'Cannot execute %s task nodes: %s',
+                task_manager.__class__.__name__, traceback.format_exc())
+            raise self.http(400, message=six.text_type(exc))
+
+        self.raise_task(task)
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
+               * 404 (cluster or nodes not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        data = self.get_tasks(cluster)
+        return self.handle_task(cluster, deployment_tasks=data)
 
 
 class DeploySelectedNodes(BaseDeploySelectedNodes):

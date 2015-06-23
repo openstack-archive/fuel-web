@@ -27,7 +27,35 @@ down_revision = '37608259013'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import upgrade_enum
+
+
+task_names_old = (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+    'dump',
+    'capacity_log',
+    'create_stats_user',
+    'remove_stats_user'
+)
+task_names_new = consts.TASK_NAMES
 
 
 def upgrade():
@@ -42,10 +70,12 @@ def upgrade():
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
     extend_plugin_model_upgrade()
+    upgrade_task_names()
 
 
 def downgrade():
     extend_plugin_model_downgrade()
+    downgrade_task_names()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
     op.alter_column(
@@ -53,6 +83,26 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+
+
+def upgrade_task_names():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_old,             # old options
+        task_names_new              # new options
+    )
+
+
+def downgrade_task_names():
+    upgrade_enum(
+        "tasks",                    # table
+        "name",                     # column
+        "task_name",                # ENUM name
+        task_names_new,             # old options
+        task_names_old              # new options
+    )
 
 
 def extend_plugin_model_upgrade():

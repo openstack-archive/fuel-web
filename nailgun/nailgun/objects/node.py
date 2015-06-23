@@ -526,6 +526,7 @@ class Node(NailgunObject):
 
         * don't update provisioning or error state back to discover
         * don't update volume information if disks arrays is empty
+        * don't update vms_conf information if vms_conf arrays is empty
 
         :param data: dictionary of key-value pairs as object fields
         :returns: Node instance
@@ -553,6 +554,11 @@ class Node(NailgunObject):
                 )
             )
             meta['disks'] = instance.meta['disks']
+
+        # don't update vms_conf, if agent has sent an empty array
+        if len(meta.get('vms_confs', [])) == 0 and\
+           instance.meta.get('vms_confs'):
+            meta['vms_confs'] = instance.meta['vms_confs']
 
         # don't update volume information, if it is locked by node status
         if 'disks' in meta and cls.hardware_info_locked(instance):

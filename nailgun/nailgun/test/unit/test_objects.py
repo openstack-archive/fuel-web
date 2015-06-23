@@ -307,9 +307,11 @@ class TestNodeObject(BaseIntegrationTest):
 
     def test_update_by_agent(self):
         node_db = self.env.create_node()
+        meta = copy.deepcopy(node_db.meta)
+        meta['vms_confs'] = [{'id': 1}]
         data = {
             "status": node_db.status,
-            "meta": copy.deepcopy(node_db.meta),
+            "meta": copy.deepcopy(meta),
             "mac": node_db.mac,
         }
 
@@ -325,6 +327,11 @@ class TestNodeObject(BaseIntegrationTest):
             objects.Node.update_by_agent(node_db, copy.deepcopy(data))
 
             self.assertEqual(node_db.status, status)
+            # check if vms are not replaced by agent
+            self.assertItemsEqual(node_db.meta['vms_confs'][0], {'id': 1})
+            data['meta'].pop('vms_confs', None)
+            objects.Node.update_by_agent(node_db, copy.deepcopy(data))
+            self.assertItemsEqual(node_db.meta['vms_confs'][0], {'id': 1})
 
     def test_node_roles_to_pending_roles(self):
         self.env.create(

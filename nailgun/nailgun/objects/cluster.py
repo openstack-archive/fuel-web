@@ -18,6 +18,7 @@
 Cluster-related objects and collections
 """
 
+import copy
 from sqlalchemy import or_
 import yaml
 
@@ -656,7 +657,6 @@ class Cluster(NailgunObject):
         if not role:
             logger.warning("%s role doesn't exist", role_name)
             return []
-
         nodes = db().query(models.Node).filter_by(cluster_id=instance.id)
         deployed_nodes = nodes.join(
             models.Node.role_list, aliased=True).filter(
@@ -855,6 +855,28 @@ class Cluster(NailgunObject):
     def get_repo_urls(self, instance):
         repos = instance.attributes.editable['repo_setup']['repos']['value']
         return tuple(set([r['uri'] for r in repos]))
+
+    @classmethod
+    def get_nodes_to_spawn_vms(cls, instance):
+        nodes = []
+        for node in cls.get_nodes_by_role(instance,
+                                          consts.VIRTUAL_NODE_TYPES.kvm):
+            for vm in node.meta.get('vms_confs', []):
+                if not vm.get('created'):
+                    nodes.append(node)
+                    break
+        return nodes
+
+    @classmethod
+    def mark_vms_as_created(cls, instance):
+        nodes = cls.get_nodes_by_role(instance, consts.VIRTUAL_NODE_TYPES.kvm)
+        for node in nodes:
+            meta = copy.deepcopy(node.meta)
+            for vm in meta.get('vms_confs', []):
+                if not vm.get('created'):
+                    vm['created'] = True
+            node.meta = meta
+        db().flush()
 
 
 class ClusterCollection(NailgunCollection):

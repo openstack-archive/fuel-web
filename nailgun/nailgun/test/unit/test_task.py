@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from mock import patch
 from oslo.serialization import jsonutils
 
@@ -33,7 +34,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller']},
-                {'roles': ['compute']},
+                {'roles': ['compute', 'kvm-virt']},
                 {'roles': ['cinder']}])
 
     def node_should_be_error_with_type(self, node, error_type):
@@ -158,6 +159,41 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
             self.db.flush()
 
             self.assertEqual(self.cluster.status, 'new')
+
+    def test_update_vms(self):
+        kvm_node = None
+        for node in self.cluster.nodes:
+            node.status = 'ready'
+            node.progress = 100
+            if 'kvm-virt' in node.roles:
+                kvm_node = node
+
+        meta = copy.deepcopy(kvm_node.meta)
+        meta['vms_confs'] = [{'id': 1}]
+        data = {
+            "meta": copy.deepcopy(meta),
+            "mac": kvm_node.mac,
+            "status": 'ready',
+            "progress": 100,
+        }
+
+        objects.Node.update_by_agent(kvm_node, copy.deepcopy(data))
+        self.db.commit()
+        self.cluster.nodes[0].status = 'deploying'
+        self.cluster.nodes[0].progress = 24
+        task = Task(name='deploy', cluster=self.cluster, status='ready')
+        self.db.add(task)
+        self.db.commit()
+
+        objects.Task._update_cluster_data(task)
+        self.db.commit()
+
+        nodes = objects.Cluster.get_nodes_by_role(
+            self.cluster,
+            consts.VIRTUAL_NODE_TYPES.kvm)
+        self.assertItemsEqual(
+            nodes[0].meta['vms_confs'][0],
+            {'id': 1, 'created': True})
 
 
 class TestCheckBeforeDeploymentTask(BaseTestCase):

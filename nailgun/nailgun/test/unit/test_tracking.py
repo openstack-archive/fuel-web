@@ -17,7 +17,7 @@
 import mock
 
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestTracking(BaseIntegrationTest):

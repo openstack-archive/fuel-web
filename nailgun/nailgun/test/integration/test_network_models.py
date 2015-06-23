@@ -26,7 +26,7 @@ from nailgun.consts import NODE_STATUSES
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestNetworkModels(BaseIntegrationTest):

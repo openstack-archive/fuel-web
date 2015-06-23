@@ -20,7 +20,7 @@ from nailgun import objects
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo
 from nailgun.test.base import BaseMasterNodeSettignsTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):

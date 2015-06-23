@@ -20,7 +20,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestNodeGroups(BaseIntegrationTest):

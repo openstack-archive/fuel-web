@@ -22,7 +22,7 @@ from nailgun import consts
 from nailgun import objects
 from nailgun.orchestrator.deployment_graph import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class BaseGraphTasksTests(BaseIntegrationTest):

@@ -58,7 +58,7 @@ from nailgun import objects
 
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 from nailgun.volumes import manager
 
 

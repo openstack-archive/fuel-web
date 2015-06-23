@@ -14,6 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
+import os
+from string import Formatter
+
 import abc
 import six
 import yaml
@@ -26,6 +30,18 @@ from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
+
+
+class TemplateFormatter(Formatter):
+    """Formatter which set empty value in place of keywords
+    which are not available."""
+
+    def get_value(self, field_name, args, kwds):
+        try:
+            v = Formatter.get_value(self, field_name, args, kwds)
+        except KeyError:
+            return ''
+        return v
 
 
 def get_uids_for_tasks(nodes, tasks):
@@ -79,11 +95,6 @@ def get_uids_for_roles(nodes, roles):
 @six.add_metaclass(abc.ABCMeta)
 class DeploymentHook(object):
 
-    def should_execute(self):
-        """Should be used to define conditions when task should be executed."""
-
-        return True
-
     @abc.abstractmethod
     def serialize(self):
         """Serialize task in expected by orchestrator format.
@@ -95,9 +106,10 @@ class DeploymentHook(object):
 
 class ExpressionBasedTask(DeploymentHook):
 
-    def __init__(self, task, cluster):
+    def __init__(self, task, cluster, nodes):
         self.task = task
         self.cluster = cluster
+        self.nodes = nodes
 
     @property
     def _expression_context(self):
@@ -117,25 +129,17 @@ class GenericNodeHook(ExpressionBasedTask):
 
     hook_type = abc.abstractproperty
 
-    def __init__(self, task, cluster, node):
-        self.node = node
-        super(GenericNodeHook, self).__init__(task, cluster)
-
 
 class PuppetHook(GenericNodeHook):
 
     hook_type = 'puppet'
 
     def serialize(self):
-        yield templates.make_puppet_task([self.node['uid']], self.task)
+        yield templates.make_puppet_task([self.nodes['uid']], self.task)
 
 
 class StandartConfigRolesHook(ExpressionBasedTask):
     """Role hooks that serializes task based on config file only."""
-
-    def __init__(self, task, cluster, nodes):
-        self.nodes = nodes
-        super(StandartConfigRolesHook, self).__init__(task, cluster)
 
     def get_uids(self):
         return get_uids_for_roles(self.nodes, self.task['role'])
@@ -246,6 +250,59 @@ class RestartRadosGW(GenericRolesHook):
         return False
 
 
+class BaseVMSHook(GenericRolesHook):
+
+    def should_execute(self):
+        return len(self.get_nodes()) > 0
+
+    def get_uids(self):
+        return [node.id for node in self.get_nodes()]
+
+    def get_nodes(self):
+        return objects.Cluster.get_nodes_to_spawn_vms(self.cluster)
+
+
+class UploadVMSInfo(BaseVMSHook):
+    """Hook that uploads info about all nodes in cluster."""
+
+    identity = 'upload_vms_info'
+
+    def serialize(self):
+        nodes = self.get_nodes()
+        template_path = self.task['parameters']['template_path']
+        template = open(template_path).read()
+        uids = []
+        nodes_infos = []
+        for node in nodes:
+            uids.append(node.id)
+            node_info = {'uid': node.id}
+            vms = node.meta.get('vms_confs', [])
+            files = []
+            for vm in vms:
+                template_params = deepcopy(vm)
+                template_params['name'] = '{0}_vm'.format(vm['id'])
+                params = {'dst': os.path.join(
+                    self.task['parameters']['dst'],
+                    '{0}_vm.xml'.format(vm['id'])),
+                    'data': TemplateFormatter().format(template,
+                                                       **template_params)}
+                files.append(params)
+            node_info['files'] = files
+            nodes_infos.append(node_info)
+        yield templates.make_upload_files_task(uids, nodes_infos)
+
+
+class CreateVMsOnCompute(BaseVMSHook):
+    """Hook that uploads info about all nodes in cluster."""
+
+    identity = 'create_vms'
+    hook_type = 'puppet'
+
+    def serialize(self):
+        uids = self.get_uids()
+        yield templates.make_puppet_task(uids, self.task)
+
+
 class UploadNodesInfo(GenericRolesHook):
     """Hook that uploads info about all nodes in cluster."""
 
@@ -303,8 +360,9 @@ class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
     stage_serializers = [UploadMOSRepo, RsyncPuppet, CopyKeys, RestartRadosGW,
-                         UploadNodesInfo, UpdateHosts, GenerateKeys]
-    deploy_serializers = [PuppetHook]
+                         UploadNodesInfo, UpdateHosts, GenerateKeys,
+                         UploadVMSInfo]
+    deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):
         """Task serializers for stage (pre/post) are different from
@@ -333,13 +391,18 @@ class TaskSerializers(object):
         self._stage_serializers_map[serializer.identity] = serializer
 
     def add_deploy_serializer(self, serializer):
-        self._deploy_serializers_map[serializer.hook_type] = serializer
+        if getattr(serializer, 'identity', None):
+            self._deploy_serializers_map[serializer.identity] = serializer
+        else:
+            self._deploy_serializers_map[serializer.hook_type] = serializer
 
     def get_deploy_serializer(self, task):
         if 'type' not in task:
             raise errors.InvalidData('Task %s should have type', task)
 
-        if task['type'] in self._deploy_serializers_map:
+        if task.get('id') and task.get('id') in self._deploy_serializers_map:
+            return self._deploy_serializers_map[task['id']]
+        elif task['type'] in self._deploy_serializers_map:
             return self._deploy_serializers_map[task['type']]
         else:
             # Currently we are not supporting anything except puppet as main

@@ -202,6 +202,7 @@ class Task(NailgunObject):
                 cls.__update_cluster_status(cluster, 'operational')
 
                 Cluster.clear_pending_changes(cluster)
+                Cluster.mark_vms_as_created(cluster)
 
             elif instance.status == 'error' and \
                     not TaskHelper.before_deployment_error(instance):

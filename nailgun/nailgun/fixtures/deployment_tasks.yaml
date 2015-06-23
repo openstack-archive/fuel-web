@@ -1,9 +1,17 @@
 - id: deploy_start
   type: stage
+  requires: [pre_deployment_end]
 
 - id: deploy_end
   type: stage
   requires: [deploy_start]
+
+- id: pre_deployment_start
+  type: stage
+
+- id: pre_deployment_end
+  type: stage
+  requires: [pre_deployment_start]
 
 - id: primary-controller
   type: group
@@ -78,6 +86,35 @@
     strategy:
       type: parallel
 
+- id: upload_vms_info
+  type: upload_files
+  role: [compute]
+  requires: [pre_deployment_start]
+  required_for: [pre_deployment_end]
+  parameters:
+    template_path: /etc/puppet/modules/cluster/template.xml
+    dst: /var/lib/vms/
+
+- id: create_vms
+  type: puppet
+  groups: [compute]
+  requires: [netconfig]
+  required_for: [deploy_end]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cluster/generate_vms.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: netconfig
+  type: puppet
+  groups: [compute]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/netconfig/netconfig.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
 - id: deploy_legacy
   type: puppet
   groups: [primary-controller, controller,
@@ -89,3 +126,11 @@
     puppet_manifest: /etc/puppet/manifests/site.pp
     puppet_modules: /etc/puppet/modules
     timeout: 3600
+
+- id: kvm-virt
+  type: group
+  role: [kvm-virt]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: parallel

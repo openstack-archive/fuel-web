@@ -517,6 +517,26 @@ class TestTaskObject(BaseIntegrationTest):
 
         self.assertEquals(self.cluster.status, 'operational')
 
+    def test_update_vms_conf(self):
+        kvm_node = self.cluster.nodes[0]
+        kvm_node.roles = [consts.VIRTUAL_NODE_TYPES.kvm]
+        self.db.flush()
+        objects.Node.set_vms_conf(kvm_node,
+                                  [{'id': 1, 'cluster_id': self.cluster.id}])
+        task = Task(name=consts.TASK_NAMES.spawn_vms,
+                    cluster=self.cluster, status='ready')
+        self.db.add(task)
+        self.db.flush()
+
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
+
+        for node in self.cluster.nodes:
+            if consts.VIRTUAL_NODE_TYPES.kvm in node.roles:
+                self.assertTrue(node.attributes.vms_conf[0].get('created'))
+            else:
+                self.assertNotEquals(node.status, 'ready')
+
     def test_update_if_parent_task_is_ready_all_nodes_should_be_ready(self):
         for node in self.cluster.nodes:
             node.status = 'ready'

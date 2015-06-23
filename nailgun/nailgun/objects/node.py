@@ -292,6 +292,19 @@ class Node(NailgunObject):
             logger.warning(traceback.format_exc())
 
     @classmethod
+    def set_vms_conf(cls, instance, vms_conf):
+        """Set vms_conf for Node instance from JSON data.
+
+        :param instance: Node instance
+        :param volumes_data: JSON with new vms_conf data
+        :returns: None
+        """
+        db().query(models.NodeAttributes).filter_by(
+            node_id=instance.id).update({'vms_conf': vms_conf})
+        db().flush()
+        db().refresh(instance)
+
+    @classmethod
     def update_volumes(cls, instance):
         """Update volumes for Node instance.
         Adds pending "disks" changes for Cluster which Node belongs to
@@ -868,3 +881,7 @@ class NodeCollection(NailgunCollection):
     @classmethod
     def get_by_group_id(cls, group_id):
         return cls.filter_by(None, group_id=group_id)
+
+    @classmethod
+    def get_by_ids(cls, ids):
+        return db.query(models.Node).filter(models.Node.id.in_(ids)).all()

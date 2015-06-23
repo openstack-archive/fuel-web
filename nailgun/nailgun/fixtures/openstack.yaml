@@ -1084,6 +1084,12 @@
                     regex:
                       source: *non_empty_string
                       error: "Invalid datastore regex"
+                  -
+                    name: "target_node"
+                    type: "text"
+                    value: "controllers"
+                    label: "Target node"
+                    description: "Target node for nova-compute service"
           -
             name: "network"
             type: "object"
@@ -1158,6 +1164,7 @@
                   vsphere_cluster: ""
                   service_name: ""
                   datastore_regex: ""
+                  target_node: "controllers"
               cinder:
                 enable: true
           network:

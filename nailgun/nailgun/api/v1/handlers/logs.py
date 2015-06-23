@@ -420,6 +420,20 @@ class LogSourceCollectionHandler(BaseHandler):
         return settings.LOGS
 
 
+class SnapshotDownloadHandler(BaseHandler):
+
+    def GET(self, snapshot_name):
+        """:returns: empty response
+        :resheader X-Accel-Redirect: snapshot_name
+        :http: * 200 (OK)
+               * 401 (Unauthorized)
+               * 404 (Snapshot with given name does not exist)
+        """
+
+        web.header('X-Accel-Redirect', '/dump/' + snapshot_name)
+        return ''
+
+
 class LogSourceByNodeCollectionHandler(BaseHandler):
     """Log source by node collection handler
     """

@@ -16,11 +16,7 @@
 
 import copy
 
-from oslo.serialization import jsonutils
-
 from nailgun.test.base import BaseAuthenticationIntegrationTest
-
-from nailgun.settings import settings
 
 
 class TestAuthToken(BaseAuthenticationIntegrationTest):
@@ -31,21 +27,7 @@ class TestAuthToken(BaseAuthenticationIntegrationTest):
 
     def setUp(self):
         super(TestAuthToken, self).setUp()
-
-        resp = self.app.post(
-            '/keystone/v2.0/tokens',
-            jsonutils.dumps({
-                'auth': {
-                    'tenantName': 'admin',
-                    'passwordCredentials': {
-                        'username': settings.FAKE_KEYSTONE_USERNAME,
-                        'password': settings.FAKE_KEYSTONE_PASSWORD,
-                    },
-                },
-            })
-        )
-
-        self.token = resp.json['access']['token']['id'].encode('utf-8')
+        self.token = self.get_auth_token()
         self.headers = copy.deepcopy(self.default_headers)
 
     def test_no_token_error(self):

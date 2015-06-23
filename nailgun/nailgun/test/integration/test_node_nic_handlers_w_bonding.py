@@ -20,7 +20,7 @@ from nailgun.consts import BOND_MODES
 from nailgun.consts import BOND_XMIT_HASH_POLICY
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestNodeNICsBonding(BaseIntegrationTest):

@@ -16,7 +16,7 @@
 from mock import patch
 from nailgun.api.v1.handlers.removed import RemovedIn51Handler as Handler
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class BaseTestRemovedResources(BaseIntegrationTest):

@@ -23,7 +23,7 @@ from oslo.serialization import jsonutils
 from nailgun.errors import errors
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 from nailgun.volumes.manager import Disk
 from nailgun.volumes.manager import DisksFormatConvertor
 from nailgun.volumes.manager import only_disks

@@ -18,8 +18,8 @@ import functools
 from mock import patch
 from nailgun.objects.task import Task
 from nailgun.test.base import fake_tasks
-from nailgun.test.base import reverse
 from nailgun.test.performance.base import BaseIntegrationLoadTestCase
+from nailgun.utils import reverse
 
 
 class IntegrationClusterTests(BaseIntegrationLoadTestCase):

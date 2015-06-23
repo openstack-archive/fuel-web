@@ -59,7 +59,7 @@ from nailgun import objects
 from nailgun.extensions.volume_manager import manager
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class OrchestratorSerializerTestBase(BaseIntegrationTest):

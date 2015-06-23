@@ -26,7 +26,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestHandlers(BaseIntegrationTest):

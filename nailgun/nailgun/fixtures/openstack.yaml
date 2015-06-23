@@ -16,6 +16,7 @@
       - ceph-osd
       - mongo
       - base-os
+      - kvm-virt
     roles_metadata:
       controller:
         name: "Controller"
@@ -98,6 +99,10 @@
       base-os:
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
+      kvm-virt:
+        name: "Virtual - spawn virtual machines"
+        description: "Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
+
     networks_metadata:
       bonding:
         availability:
@@ -268,6 +273,8 @@
         # Ubuntu which doesn't allow to do that:
         # https://bugs.launchpad.net/fuel/+bug/1278964
         base-os:
+          - {allocate_size: "min", id: "os"}
+        kvm-virt:
           - {allocate_size: "min", id: "os"}
       volumes:
         - id: "os"

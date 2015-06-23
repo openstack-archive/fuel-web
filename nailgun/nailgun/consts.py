@@ -202,6 +202,7 @@ TASK_NAMES = Enum(
     'stop_deployment',
     'reset_environment',
     'update',
+    'spawn_vms',
 
     'node_deletion',
     'cluster_deletion',
@@ -280,6 +281,13 @@ NOVA_SERVICE_TYPE = Enum(
     'compute',
 )
 
+VIRTUAL_NODE_TYPES = Enum(
+    "kvm-virt",
+    names=(
+        "kvm"
+    )
+)
+
 OPENSTACK_IMAGES_SETTINGS = Enum(
     "OS-EXT-IMG-SIZE:size",
     "byte",
@@ -299,6 +307,7 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'shell',
     'sync',
     'upload_file',
+    'upload_files',
     'group',
     'stage',
     'skipped',

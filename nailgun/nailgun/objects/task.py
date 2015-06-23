@@ -211,6 +211,12 @@ class Task(NailgunObject):
 
                 cls.__update_cluster_status(cluster, 'error')
 
+        elif instance.name == consts.TASK_NAMES.spawn_vms:
+            if instance.status == consts.TASK_STATUSES.ready:
+                Cluster.mark_vms_as_created(cluster)
+            elif instance.status == consts.TASK_STATUSES.error and \
+                    not TaskHelper.before_deployment_error(instance):
+                cls.__update_cluster_status(cluster, 'error')
         elif instance.name == 'deployment' and instance.status == 'error':
             cls.__update_cluster_status(cluster, 'error')
 

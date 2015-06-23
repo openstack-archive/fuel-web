@@ -188,6 +188,7 @@ class TestHandlers(BaseIntegrationTest):
                     'role': role,
                     'online': node.online,
                     'fail_if_error': is_critical,
+                    'vms_conf': [],
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
                     'priority': 100,
 
@@ -365,7 +366,8 @@ class TestHandlers(BaseIntegrationTest):
                          'IP',
                          'tasks',
                          'uids',
-                         'percentage'])
+                         'percentage',
+                         'vms_conf'])
         self.datadiff(
             args[1][1],
             deployment_msg,
@@ -376,7 +378,8 @@ class TestHandlers(BaseIntegrationTest):
                          'IP',
                          'tasks',
                          'priority',
-                         'workloads_collector'])
+                         'workloads_collector',
+                         'vms_conf'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -587,6 +590,7 @@ class TestHandlers(BaseIntegrationTest):
                     'fail_if_error': is_critical,
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
                     'priority': 100,
+                    'vms_conf': [],
                     'network_scheme': {
                         "version": "1.0",
                         "provider": "ovs",
@@ -1036,6 +1040,7 @@ class TestHandlers(BaseIntegrationTest):
                     'fail_if_error': is_critical,
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
                     'priority': 100,
+                    'vms_conf': [],
 
                     'network_scheme': {
                         "version": "1.0",
@@ -1288,7 +1293,8 @@ class TestHandlers(BaseIntegrationTest):
                          'IP',
                          'tasks',
                          'priority',
-                         'workloads_collector'])
+                         'workloads_collector',
+                         'vms_conf'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

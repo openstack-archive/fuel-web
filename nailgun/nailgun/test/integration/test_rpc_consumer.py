@@ -30,7 +30,7 @@ from nailgun.rpc import receiver as rcvr
 from nailgun.settings import settings
 from nailgun.task import helpers
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 from nailgun import consts
 

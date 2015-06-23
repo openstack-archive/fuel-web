@@ -38,8 +38,7 @@ from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator.stages import post_deployment_serialize
 from nailgun.orchestrator.stages import pre_deployment_serialize
 from nailgun.task.helpers import TaskHelper
-from nailgun.task.manager import DeploymentTaskManager
-from nailgun.task.manager import ProvisioningTaskManager
+from nailgun.task import manager
 
 
 class NodesFilterMixin(object):
@@ -232,7 +231,7 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     """Handler for provisioning selected nodes."""
 
     validator = ProvisionSelectedNodesValidator
-    task_manager = ProvisioningTaskManager
+    task_manager = manager.ProvisioningTaskManager
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_provision(cluster)
@@ -257,7 +256,7 @@ class ProvisionSelectedNodes(SelectedNodesBase):
 class BaseDeploySelectedNodes(SelectedNodesBase):
 
     validator = DeploySelectedNodesValidator
-    task_manager = DeploymentTaskManager
+    task_manager = manager.DeploymentTaskManager
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)

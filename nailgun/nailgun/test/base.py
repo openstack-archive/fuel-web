@@ -39,9 +39,9 @@ import web
 from webtest import app
 
 import nailgun
-from nailgun.api.v1.urls import urls
 
 from nailgun import consts
+from nailgun.settings import settings
 
 from nailgun.db import db
 from nailgun.db import flush
@@ -69,6 +69,7 @@ from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
+from nailgun.utils import reverse
 
 
 class TimeoutError(Exception):
@@ -1051,6 +1052,22 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
             ConnectionMonitorMiddleware, NailgunFakeKeystoneAuthMiddleware))
         syncdb()
 
+    def get_auth_token(self):
+        resp = self.app.post(
+            '/keystone/v2.0/tokens',
+            jsonutils.dumps({
+                'auth': {
+                    'tenantName': 'admin',
+                    'passwordCredentials': {
+                        'username': settings.FAKE_KEYSTONE_USERNAME,
+                        'password': settings.FAKE_KEYSTONE_PASSWORD,
+                    },
+                },
+            })
+        )
+
+        return resp.json['access']['token']['id'].encode('utf-8')
+
 
 class BaseUnitTest(TestCase):
     pass
@@ -1089,23 +1106,6 @@ def fake_tasks(fake_rpc=True,
             )(func)
         return func
     return wrapper
-
-
-def reverse(name, kwargs=None):
-    urldict = dict(zip(urls[1::2], urls[::2]))
-    url = urldict[name]
-    urlregex = re.compile(url)
-    for kwarg in urlregex.groupindex:
-        if kwarg not in kwargs:
-            raise KeyError("Invalid argument specified")
-        url = re.sub(
-            r"\(\?P<{0}>[^)]+\)".format(kwarg),
-            str(kwargs[kwarg]),
-            url,
-            1
-        )
-    url = re.sub(r"\??\$", "", url)
-    return "/api" + url
 
 
 # this method is for development and troubleshooting purposes

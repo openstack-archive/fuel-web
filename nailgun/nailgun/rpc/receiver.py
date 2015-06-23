@@ -40,6 +40,7 @@ from nailgun.network import connectivity_check
 from nailgun.network import utils as net_utils
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import logs as logs_utils
+from nailgun.utils import reverse
 
 
 class NailgunReceiver(object):
@@ -1086,8 +1087,10 @@ class NailgunReceiver(object):
             dumpfile = os.path.basename(msg)
             notifier.notify('done', 'Snapshot is ready. '
                             'Visit Support page to download')
+            dumpfile_url = reverse('SnapshotDownloadHandler',
+                                   kwargs={'snapshot_name': dumpfile})
             data = {'status': status, 'progress': progress,
-                    'message': '/dump/{0}'.format(dumpfile)}
+                    'message': dumpfile_url}
             objects.Task.update(task, data)
 
     @classmethod

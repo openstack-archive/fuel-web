@@ -546,7 +546,7 @@ class NetworkManager(object):
         net_cidr = IPNetwork(net.cidr)
         ip_addr = cls.get_admin_ip_for_node(node)
         if ip_addr:
-            ip_addr =  "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
+            ip_addr = "{0}/{1}".format(ip_addr, net_cidr.prefixlen)
 
         return {
             'name': net.name,

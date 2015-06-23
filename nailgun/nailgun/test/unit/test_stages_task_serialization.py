@@ -15,6 +15,7 @@
 #    under the License.
 
 import mock
+from oslo.serialization import jsonutils
 import yaml
 
 from nailgun import consts
@@ -292,6 +293,39 @@ class TestHooksSerializers(BaseTaskSerializationTest):
             "sh /etc/puppet/modules/osnailyfacter/modular/generate_keys.sh -i "
             "{CLUSTER_ID} -o 'mongodb' -s 'neutron nova ceph mysql' -p "
             "/etc/fuel/keys/".format(CLUSTER_ID=self.cluster.id))
+
+    @mock.patch('nailgun.orchestrator.tasks_serializer.open', create=True)
+    def test_upload_vms_info(self, m_open):
+        resp = self.app.put(
+            base.reverse('NodeCollectionHandler'),
+            jsonutils.dumps([{'id': self.cluster.nodes[0].id,
+                              'roles': ['kvm-virt'],
+                              'meta': {
+                                  'vms_confs': [{
+                                      'id': 1,
+                                      'cluster_id': self.cluster.id}]}}]),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        m_open.side_effect = lambda *args: mock.mock_open(
+            read_data='<tag>{cluster_id}</tag><tag>{name}</tag>'
+            '<tag>{empty_value}</tag>')()
+        task_config = {
+            'id': 'upload_vms_info',
+            'type': 'upload_files',
+            'role': ['compute'],
+            'parameters': {
+                'template_path': '/etc/puppet/modules/cluster/template.xml',
+                'dst': '/var/lib/vms/'}}
+        task = tasks_serializer.UploadVMSInfo(
+            task_config, self.cluster, self.nodes)
+        serialized = next(task.serialize())
+        self.assertEqual(serialized['type'], 'upload_files')
+        self.assertEqual(
+            serialized['parameters']['nodes'][0]['files'],
+            [{'data': '<tag>{cluster}</tag><tag>{vm}_vm</tag><tag></tag>'.
+              format(cluster=self.cluster.id, vm=1),
+             'dst': '/var/lib/vms/{vm}_vm.xml'.format(vm=1)}])
 
 
 class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):

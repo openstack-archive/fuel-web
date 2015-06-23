@@ -20,7 +20,7 @@ from oslo.serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestHandlers(BaseIntegrationTest):

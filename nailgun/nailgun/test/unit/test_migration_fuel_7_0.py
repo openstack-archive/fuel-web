@@ -411,7 +411,8 @@ class TestMigrateVolumesIntoExtension(base.BaseAlembicMigrationTest):
     def test_data_are_moved_into_buffer_table(self):
         # "volumes" column got deleted
         columns = [t.name for t in self.meta.tables['node_attributes'].columns]
-        self.assertItemsEqual(columns, ['id', 'node_id', 'interfaces'])
+        self.assertItemsEqual(columns, ['id', 'node_id', 'interfaces',
+                                        'vms_conf'])
 
         # The data are stored in the buffer
         table_name = extensions_migration_buffer_table_name

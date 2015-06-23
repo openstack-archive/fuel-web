@@ -21,6 +21,11 @@ oslo.config>=1.2.1
 # - keystonemiddleware
 # - python-cinderclient
 oslo.serialization>=1.0.0,<=1.5.0
+# NOTE(eli): specified version of keystonemiddleware doesn't
+# work properly with 2.0.0 version of oslo.i18n which is
+# released on pypi
+# See: https://bugs.launchpad.net/fuel/+bug/1468053
+oslo.i18n>=1.3.0,<=1.7.0
 ply==3.4
 psycopg2==2.5.1
 pycrypto==2.6.1

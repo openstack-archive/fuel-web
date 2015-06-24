@@ -97,7 +97,6 @@ class TestCluster(BaseIntegrationTest):
                                 'status': consts.TASK_STATUSES.ready})
     def test_get_primary_node(self):
         self.env.create(
-            api=True,
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'pending_addition': True},

@@ -20,11 +20,11 @@ from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.role import RoleValidator
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.objects.serializers.role import RoleSerializer
 
 
 class RoleHandler(base.SingleHandler):
 
-    single = objects.Role
     validator = RoleValidator
 
     def get_role_or_404(self, release_id, role_name):
@@ -42,8 +42,8 @@ class RoleHandler(base.SingleHandler):
             * 200 (OK)
             * 404 (no such object found)
         """
-        role = self.get_role_or_404(release_id, role_name)
-        return self.single.to_json(role)
+        release = self.get_object_or_404(objects.Release, release_id)
+        return RoleSerializer.serialize(release, role_name)
 
     @content
     def PUT(self, release_id, role_name):
@@ -51,11 +51,10 @@ class RoleHandler(base.SingleHandler):
             * 200 (OK)
             * 404 (no such object found)
         """
-        role = self.get_role_or_404(release_id, role_name)
-        data = self.checked_data(instance=role)
-
-        updated = self.single.update(role, data)
-        return self.single.to_json(updated)
+        data = self.checked_data()
+        release = self.get_object_or_404(objects.Release, release_id)
+        objects.Release.update_role(release, data)
+        return RoleSerializer.serialize(release, role_name)
 
     def DELETE(self, release_id, role_name):
         """:http:
@@ -63,21 +62,19 @@ class RoleHandler(base.SingleHandler):
             * 400 (cannot delete object)
             * 404 (no such object found)
         """
-        role = self.get_role_or_404(release_id, role_name)
+        release = self.get_object_or_404(objects.Release, release_id)
 
         try:
-            self.validator.validate_delete(role)
+            self.validator.validate_delete(release, role_name)
         except errors.CannotDelete as exc:
             raise self.http(400, exc.message)
 
-        self.single.delete(role)
+        objects.Release.remove_role(release, role_name)
         raise self.http(204)
 
 
 class RoleCollectionHandler(base.CollectionHandler):
 
-    single = objects.Role
-    collection = objects.RoleCollection
     validator = RoleValidator
 
     @content
@@ -88,21 +85,19 @@ class RoleCollectionHandler(base.CollectionHandler):
             * 409 (object with such parameters already exists)
         """
         data = self.checked_data()
+
         role_name = data['name']
+        release = self.get_object_or_404(objects.Release, release_id)
 
-        role = self.single.get_by_release_id_role_name(release_id, role_name)
-
-        if role:
+        if role_name in release.roles_metadata:
             raise self.http(
                 409,
                 'Role with name {name} already '
                 'exists for release {release}'.format(
                     name=role_name, release=release_id))
 
-        release = self.get_object_or_404(objects.Release, release_id)
-        role = self.single.create(release, data)
-
-        raise self.http(201, self.single.to_json(role))
+        objects.Release.update_role(release, data)
+        raise self.http(201, RoleSerializer.serialize(release, role_name))
 
     @content
     def GET(self, release_id):
@@ -110,4 +105,5 @@ class RoleCollectionHandler(base.CollectionHandler):
             * 200 (OK)
         """
         release = self.get_object_or_404(objects.Release, release_id)
-        return self.collection.to_json(release.role_list)
+        role_names = release.roles_metadata.keys()
+        return [RoleSerializer.serialize(release, name) for name in role_names]

@@ -18,7 +18,6 @@ import datetime
 import six
 import web
 
-from sqlalchemy import or_
 from sqlalchemy.orm import exc
 
 from nailgun import consts
@@ -166,12 +165,12 @@ class TaskHelper(object):
                     node.needs_reprovision,
                     node.needs_redeploy]):
                 nodes_to_deploy.append(node)
-                for role in node.pending_role_list:
+                for role_name in node.pending_roles:
                     update_required.update(
-                        roles_metadata[role.name].get('update_required', []))
-                    if role.name not in cluster_roles:
+                        roles_metadata[role_name].get('update_required', []))
+                    if role_name not in cluster_roles:
                         update_once.update(
-                            roles_metadata[role.name].get('update_once', []))
+                            roles_metadata[role_name].get('update_once', []))
         cls.add_required_for_update_nodes(
             cluster, nodes_to_deploy, update_required | update_once)
         if cluster.is_ha_mode:
@@ -247,16 +246,19 @@ class TaskHelper(object):
         # if list contain at least one controller
         if cls.__has_controller_nodes(nodes):
             # retrive all controllers from cluster
-            controller_nodes = db().query(Node). \
-                filter(or_(
-                    Node.role_list.any(name='controller'),
-                    Node.pending_role_list.any(name='controller'),
-                    Node.role_list.any(name='primary-controller'),
-                    Node.pending_role_list.any(name='primary-controller')
-                )). \
+            cluster_nodes = db().query(Node). \
                 filter(Node.cluster == cluster). \
                 filter(False == Node.pending_deletion). \
-                order_by(Node.id).all()
+                order_by(Node.id)
+
+            for node in cluster_nodes:
+                node_roles = set(node.roles + node.pending_roles)
+                if any([
+                    'primary-controller' in node_roles,
+                    'controller' in node_roles,
+
+                ]):
+                    controller_nodes.append(node)
 
         return sorted(set(nodes + controller_nodes),
                       key=lambda node: node.id)

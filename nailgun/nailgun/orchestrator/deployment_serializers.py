@@ -504,10 +504,9 @@ def get_serializer_for_cluster(cluster):
         }
     }
 
-    env_version = utils.extract_env_version(cluster.release.version)
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
     for version, serializers in six.iteritems(serializers_map):
-        if env_version.startswith(version):
+        if cluster.release.fuel_version.startswith(version):
             return serializers[env_mode]
 
     # return latest serializer by default
@@ -519,7 +518,7 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode
     """
     objects.Cluster.set_primary_roles(cluster, nodes)
-    env_version = utils.extract_env_version(cluster.release.version)
+    env_version = cluster.release.fuel_version
 
     # Only assign IPs for private (GRE) network in 6.1+
     if any([env_version.startswith(v) for v in ['5.0', '5.1', '6.0']]):

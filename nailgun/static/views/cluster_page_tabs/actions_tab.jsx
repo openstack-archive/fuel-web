@@ -15,6 +15,7 @@
 **/
 define(
 [
+    'jquery',
     'underscore',
     'i18n',
     'react',
@@ -24,7 +25,7 @@ define(
     'jsx!views/dialogs',
     'jsx!component_mixins'
 ],
-function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
+function($, _, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
     'use strict';
 
     var releases = new models.Releases();
@@ -38,6 +39,13 @@ function(_, i18n, React, utils, models, dispatcher, dialogs, componentMixins) {
                 return props.cluster.task({group: 'deployment', status: 'running'});
             }})
         ],
+        componentDidMount: function() {
+            var sameHightPanes = $(this.getDOMNode()).find('.panel'),
+                maxHeight = _.max(sameHightPanes.map(function() {
+                    return $(this).height();
+                }).get());
+            sameHightPanes.height(maxHeight);
+        },
         render: function() {
             var cluster = this.props.cluster,
                 task = cluster.task({group: 'deployment', status: 'running'}),

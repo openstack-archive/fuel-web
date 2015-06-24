@@ -18,7 +18,7 @@ import datetime
 import six
 import web
 
-from sqlalchemy import or_
+import sqlalchemy as sa
 from sqlalchemy.orm import exc
 
 from nailgun import consts
@@ -166,12 +166,12 @@ class TaskHelper(object):
                     node.needs_reprovision,
                     node.needs_redeploy]):
                 nodes_to_deploy.append(node)
-                for role in node.pending_role_list:
+                for role_name in node.pending_roles:
                     update_required.update(
-                        roles_metadata[role.name].get('update_required', []))
-                    if role.name not in cluster_roles:
+                        roles_metadata[role_name].get('update_required', []))
+                    if role_name not in cluster_roles:
                         update_once.update(
-                            roles_metadata[role.name].get('update_once', []))
+                            roles_metadata[role_name].get('update_once', []))
         cls.add_required_for_update_nodes(
             cluster, nodes_to_deploy, update_required | update_once)
         if cluster.is_ha_mode:
@@ -247,16 +247,13 @@ class TaskHelper(object):
         # if list contain at least one controller
         if cls.__has_controller_nodes(nodes):
             # retrive all controllers from cluster
-            controller_nodes = db().query(Node). \
-                filter(or_(
-                    Node.role_list.any(name='controller'),
-                    Node.pending_role_list.any(name='controller'),
-                    Node.role_list.any(name='primary-controller'),
-                    Node.pending_role_list.any(name='primary-controller')
-                )). \
-                filter(Node.cluster == cluster). \
-                filter(False == Node.pending_deletion). \
-                order_by(Node.id).all()
+            controller_nodes = db().query(Node).filter_by(
+                cluster_id=cluster.id,
+                pending_deletion=False
+            ).filter(sa.or_(
+                Node.roles.any('controller'),
+                Node.pending_roles.any('controller')
+            )).order_by(Node.id).all()
 
         return sorted(set(nodes + controller_nodes),
                       key=lambda node: node.id)
@@ -267,8 +264,7 @@ class TaskHelper(object):
         at least one controller.
         """
         for node in nodes:
-            if 'controller' in node.all_roles or \
-               'primary-controller' in node.all_roles:
+            if 'controller' in set(node.roles + node.pending_roles):
                 return True
         return False
 

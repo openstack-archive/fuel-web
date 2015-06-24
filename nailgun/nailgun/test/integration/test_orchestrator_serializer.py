@@ -85,7 +85,7 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         return self.db.query(Node).\
             filter_by(cluster_id=cluster_id,
                       pending_deletion=False).\
-            filter(Node.role_list.any(name='controller')).\
+            filter(Node.roles.any('controller')).\
             order_by(Node.id)
 
     def add_default_params(self, nodes):

@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 
 import alembic
 from oslo.serialization import jsonutils
@@ -28,76 +29,12 @@ from nailgun.test import base
 _prepare_revision = '37608259013'
 _test_revision = '1e50a4903910'
 
-_RELEASE = {
-    'name': 'test_name',
-    'version': '2015.2-7.0',
-    'operating_system': 'ubuntu',
-    'state': 'available',
-    'roles_metadata': jsonutils.dumps({
-        "controller": {
-            "name": "Controller",
-            "description": "Controller role"
-        },
-        "zabbix-server": {
-            "name": "Zabbix Server",
-            "description": "Zabbix Server role"
-        },
-        "cinder": {
-            "name": "Cinder",
-            "description": "Cinder role"
-        }
-    }),
-    'attributes_metadata': jsonutils.dumps({
-        'editable': {
-            'storage': {
-                'volumes_lvm': {},
-            },
-            'common': {},
-        },
-        'generated': {
-            'cobbler': {'profile': {
-                'generator_arg': 'ubuntu_1204_x86_64'}}},
-    }),
-    'networks_metadata': jsonutils.dumps({
-        'neutron': {
-            'networks': [
-                {
-                    'assign_vip': True,
-                },
-            ]
-        }
-
-    }),
-    'is_deployable': True
-}
-
 
 def setup_module(module):
     dropdb()
     alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
     prepare()
     alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
-
-
-def prepare_nodes_with_attributes(meta):
-    for i in range(2):
-        db.execute(
-            meta.tables['nodes'].insert(),
-            [{'uuid': 'uuid{0}'.format(i),
-              'status': 'ready',
-              'mac': 'mac:{0}'.format(i),
-              'timestamp': '12-12-2015'}])
-
-    ids = [i[0] for i in db.execute(
-        sa.select([meta.tables['nodes'].c.id]))]
-
-    for idx in ids:
-        db.execute(
-            meta.tables['node_attributes'].insert(),
-            [{'node_id': idx,
-              'volumes': jsonutils.dumps([{'volume': idx}])}])
-
-    return ids
 
 
 def prepare():
@@ -120,14 +57,146 @@ def prepare():
             'fuel_version': jsonutils.dumps(['6.1', '7.0']),
         }])
 
-    db.execute(meta.tables['releases'].insert(), [_RELEASE])
+    result = db.execute(
+        meta.tables['releases'].insert(),
+        [{
+            'name': 'test_name',
+            'version': '2014.2-6.0',
+            'operating_system': 'ubuntu',
+            'state': 'available',
+            'roles': jsonutils.dumps([
+                'controller',
+                'compute',
+                'mongo',
+            ]),
+            'roles_metadata': jsonutils.dumps({
+                'controller': {
+                    'name': 'Controller',
+                    'description': 'Controller role',
+                    'has_primary': True,
+                },
+                'zabbix-server': {
+                    'name': 'Zabbix Server',
+                    'description': 'Zabbix Server role'
+                },
+                'cinder': {
+                    'name': 'Cinder',
+                    'description': 'Cinder role'
+                },
+                'mongo': {
+                    'name': 'Telemetry - MongoDB',
+                    'description': 'mongo is',
+                    'has_primary': True,
+                }
+            }),
+            'attributes_metadata': jsonutils.dumps({}),
+            'networks_metadata': jsonutils.dumps({}),
+            'is_deployable': True,
+        }])
+    releaseid = result.inserted_primary_key[0]
 
-    node_ids = prepare_nodes_with_attributes(meta)
+    result = db.execute(
+        meta.tables['nodes'].insert(),
+        [
+            {
+                'uuid': 'one',
+                'cluster_id': None,
+                'group_id': None,
+                'status': 'ready',
+                'meta': '{}',
+                'mac': 'aa:aa:aa:aa:aa:aa',
+                'pending_addition': True,
+                'pending_deletion': False,
+                'timestamp': datetime.datetime.utcnow(),
+            }
+        ])
+    nodeid_a = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['nodes'].insert(),
+        [
+            {
+                'uuid': 'two',
+                'cluster_id': None,
+                'group_id': None,
+                'status': 'discover',
+                'meta': '{}',
+                'mac': 'bb:bb:bb:bb:bb:bb',
+                'pending_addition': True,
+                'pending_deletion': False,
+                'timestamp': datetime.datetime.utcnow(),
+            }
+        ])
+    nodeid_b = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['nodes'].insert(),
+        [
+            {
+                'uuid': 'three',
+                'cluster_id': None,
+                'group_id': None,
+                'status': 'discover',
+                'meta': '{}',
+                'mac': 'cc:cc:cc:cc:cc:cc',
+                'pending_addition': True,
+                'pending_deletion': False,
+                'timestamp': datetime.datetime.utcnow(),
+            }
+        ])
+    nodeid_c = result.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['node_attributes'].insert(),
+        [
+            {
+                'node_id': nodeid_a,
+                'volumes': jsonutils.dumps([{'volume': nodeid_a}])
+            },
+            {
+                'node_id': nodeid_b,
+                'volumes': jsonutils.dumps([{'volume': nodeid_b}])
+            },
+            {
+                'node_id': nodeid_c,
+                'volumes': jsonutils.dumps([{'volume': nodeid_c}])
+            },
+        ])
+
+    result = db.execute(
+        meta.tables['roles'].insert(),
+        [
+            {'release_id': releaseid, 'name': 'controller'},
+        ])
+    controllerroleid = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['roles'].insert(),
+        [
+            {'release_id': releaseid, 'name': 'mongo'},
+        ])
+    mongoroleid = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['node_roles'].insert(),
+        [
+            {'role': controllerroleid, 'node': nodeid_a, 'primary': False},
+            {'role': controllerroleid, 'node': nodeid_b, 'primary': False},
+            {'role': controllerroleid, 'node': nodeid_c, 'primary': True},
+            {'role': mongoroleid, 'node': nodeid_a, 'primary': False},
+        ])
+
+    result = db.execute(
+        meta.tables['pending_node_roles'].insert(),
+        [
+            {'role': mongoroleid, 'node': nodeid_b, 'primary': True},
+            {'role': mongoroleid, 'node': nodeid_c, 'primary': False},
+        ])
 
     db.execute(
         meta.tables['node_bond_interfaces'].insert(),
         [{
-            'node_id': node_ids[0],
+            'node_id': nodeid_a,
             'name': 'test_bond_interface',
             'mode': 'active-backup',
             'bond_properties': jsonutils.dumps(
@@ -137,7 +206,7 @@ def prepare():
     db.execute(
         meta.tables['node_nic_interfaces'].insert(),
         [{
-            'node_id': node_ids[0],
+            'node_id': nodeid_a,
             'name': 'test_interface',
             'mac': '00:00:00:00:00:01',
             'max_speed': 200,
@@ -243,7 +312,7 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
             jsonutils.loads(result.fetchone()[0]), [])
 
 
-class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
+class TestPublicIpRequired(base.BaseAlembicMigrationTest):
 
     def test_public_ip_required(self):
         result = db.execute(
@@ -357,7 +426,7 @@ class TestMigrateVolumesIntoExtension(base.BaseAlembicMigrationTest):
         names = [r[1] for r in records]
         self.assertEqual(
             list(names),
-            ['volume_manager'] * 2)
+            ['volume_manager'] * 3)
 
         # Check the data, each dict has node_id and volumes
         volumes = [jsonutils.loads(r[2]) for r in records]
@@ -365,3 +434,45 @@ class TestMigrateVolumesIntoExtension(base.BaseAlembicMigrationTest):
             self.assertEqual(
                 volume['volumes'],
                 [{'volume': volume['node_id']}])
+
+
+class TestSchemalessRoles(base.BaseAlembicMigrationTest):
+
+    def test_nodes_has_roles_attrs(self):
+        result = db.execute(
+            sa.select([
+                self.meta.tables['nodes'].c.roles,
+                self.meta.tables['nodes'].c.pending_roles,
+                self.meta.tables['nodes'].c.primary_roles,
+            ]).order_by(self.meta.tables['nodes'].c.id))
+
+        nodes = [
+            (roles, pending_roles, primary_roles)
+            for roles, pending_roles, primary_roles in result
+        ]
+
+        # node_a
+        roles, pending_roles, primary_roles = nodes[0]
+
+        self.assertItemsEqual(['controller', 'mongo'], roles)
+        self.assertItemsEqual([], pending_roles)
+        self.assertItemsEqual([], primary_roles)
+
+        # node_b
+        roles, pending_roles, primary_roles = nodes[1]
+
+        self.assertItemsEqual(['controller'], roles)
+        self.assertItemsEqual(['mongo'], pending_roles)
+        self.assertItemsEqual(['mongo'], primary_roles)
+
+        # node_c
+        roles, pending_roles, primary_roles = nodes[2]
+
+        self.assertItemsEqual(['controller'], roles)
+        self.assertItemsEqual(['mongo'], pending_roles)
+        self.assertItemsEqual(['controller'], primary_roles)
+
+    def test_old_tables_are_dropped(self):
+        self.assertNotIn('node_roles', self.meta.tables)
+        self.assertNotIn('pending_node_roles', self.meta.tables)
+        self.assertNotIn('roles', self.meta.tables)

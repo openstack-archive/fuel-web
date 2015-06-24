@@ -27,7 +27,6 @@ class ReleaseSerializer(BasicSerializer):
         "description",
         "operating_system",
         "modes_metadata",
-        "roles",
         "roles_metadata",
         "wizard_metadata",
         "state",
@@ -42,5 +41,18 @@ class ReleaseSerializer(BasicSerializer):
         release_dict = \
             super(ReleaseSerializer, cls).serialize(instance, fields)
         release_dict["is_deployable"] = Release.is_deployable(instance)
+
+        # TODO(ikalnitsky): Remove this list when new 'weight'-based
+        # approach will be implemented. It'll be implemented soon,
+        # so hardcoding is ok for now.
+        release_dict['roles'] = [
+            'controller',
+            'compute',
+            'cinder',
+            'cinder-vmware',
+            'ceph-osd',
+            'mongo',
+            'base-os',
+        ]
 
         return release_dict

@@ -56,10 +56,10 @@ from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
 
+from nailgun.extensions.volume_manager import manager
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
-from nailgun.volumes import manager
 
 
 class OrchestratorSerializerTestBase(BaseIntegrationTest):

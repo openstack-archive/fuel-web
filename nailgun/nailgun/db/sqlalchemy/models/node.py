@@ -35,8 +35,8 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
+from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun.logger import logger
-from nailgun.volumes.manager import VolumeManager
 
 
 class NodeRoles(Base):

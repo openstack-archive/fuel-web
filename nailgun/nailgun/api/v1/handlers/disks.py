@@ -24,7 +24,7 @@ from nailgun.api.v1.validators.node import NodeDisksValidator
 
 from nailgun import objects
 
-from nailgun.volumes.manager import DisksFormatConvertor
+from nailgun.extensions.volume_manager.manager import DisksFormatConvertor
 
 
 class NodeDisksHandler(BaseHandler):

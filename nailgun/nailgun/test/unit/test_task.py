@@ -19,11 +19,11 @@ from oslo.serialization import jsonutils
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun import objects
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import reverse
-from nailgun.volumes.manager import VolumeManager
 
 
 class TestHelperUpdateClusterStatus(BaseTestCase):

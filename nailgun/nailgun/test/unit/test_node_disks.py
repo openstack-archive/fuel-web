@@ -21,13 +21,13 @@ import string
 from oslo.serialization import jsonutils
 
 from nailgun.errors import errors
+from nailgun.extensions.volume_manager.manager import Disk
+from nailgun.extensions.volume_manager.manager import DisksFormatConvertor
+from nailgun.extensions.volume_manager.manager import only_disks
+from nailgun.extensions.volume_manager.manager import only_vg
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
-from nailgun.volumes.manager import Disk
-from nailgun.volumes.manager import DisksFormatConvertor
-from nailgun.volumes.manager import only_disks
-from nailgun.volumes.manager import only_vg
 
 
 class TestNodeDisksHandlers(BaseIntegrationTest):

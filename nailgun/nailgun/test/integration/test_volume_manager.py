@@ -17,9 +17,9 @@
 from mock import patch
 from oslo.serialization import jsonutils
 
+from nailgun.extensions.volume_manager import manager
 from nailgun.test import base
 from nailgun.test.base import reverse
-from nailgun.volumes import manager
 
 
 class TestVolumeManagerHelpers(base.BaseIntegrationTest):

@@ -503,13 +503,20 @@ class NailgunReceiver(object):
                 )
                 if public_net:
                     horizon_ip = public_net[0]['ip'].split('/')[0]
+                    if (task.cluster.attributes.editable['ssl']
+                            ['horizon']['value'] == 'true'):
+                        protocol = 'https'
+                    else:
+                        protocol = 'http'
+
                     message = (
                         u"{0} of environment '{1}' is done. "
                         "Access the OpenStack dashboard (Horizon) at "
-                        "http://{2}/ or via internal network at http://{3}/"
+                        "{2}://{3}/ or via internal network at http://{4}/"
                     ).format(
                         task_name,
                         task.cluster.name,
+                        protocol,
                         horizon_ip,
                         controller.ip
                     )

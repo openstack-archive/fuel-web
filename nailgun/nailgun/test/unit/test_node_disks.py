@@ -222,6 +222,21 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         response = self.get(node_db.id)
         self.assertEqual(response, expect_disks)
 
+    def test_volumes_keep_flag_update(self):
+        node_db = self.create_node()
+        disks = self.get(node_db.id)
+        for disk in disks:
+            for volume in disk['volumes']:
+                volume['keep'] = True
+
+        expect_disks = deepcopy(disks)
+
+        response = self.put(node_db.id, disks)
+        self.assertEqual(response, expect_disks)
+
+        response = self.get(node_db.id)
+        self.assertEqual(response, expect_disks)
+
     def test_os_vg_one_disk_ubuntu(self):
         self.env.create(
             release_kwargs={
@@ -327,6 +342,18 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         self.assertEqual(response.status_code, 400)
         self.assertRegexpMatches(response.json_body["message"],
                                  "'size' is a required property")
+
+    def test_validator_invalid_keep_flags(self):
+        node = self.create_node()
+        disks = self.get(node.id)
+
+        for volume in disks[0]['volumes']:
+            volume['keep'] = True
+
+        response = self.put(node.id, disks, True)
+        self.assertEqual(response.status_code, 400)
+        self.assertRegexpMatches(response.json_body["message"],
+                                 "^All volumes should have equal `keep`")
 
 
 class TestNodeDefaultsDisksHandler(BaseIntegrationTest):

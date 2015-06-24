@@ -168,7 +168,7 @@ def lvdisplay():
         '-C',
         '--noheading',
         '--units', 'm',
-        #NOTE(agordeev): lv_path had been removed from options
+        # NOTE(agordeev): lv_path had been removed from options
         # since versions of lvdisplay prior 2.02.68 don't have it.
         '--options', 'lv_name,lv_size,vg_name,lv_uuid',
         '--separator', ';',
@@ -188,7 +188,7 @@ def lvdisplay_parse(output):
             'size': utils.parse_unit(lv_params[1], 'm'),
             'vg': lv_params[2],
             'uuid': lv_params[3],
-            #NOTE(agordeev): simulate lv_path with '/dev/$vg_name/$lv_name'
+            # NOTE(agordeev): simulate lv_path with '/dev/$vg_name/$lv_name'
             'path': '/dev/%s/%s' % (lv_params[2], lv_params[0])
         })
     LOG.debug('Found logical volumes: {0}'.format(lvs))

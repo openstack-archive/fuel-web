@@ -19,6 +19,7 @@ import tempfile
 import zlib
 
 from oslo.config import cfg
+import six
 
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
@@ -38,8 +39,8 @@ CONF = cfg.CONF
 CONF.register_opts(au_opts)
 
 
+@six.add_metaclass(abc.ABCMeta)
 class Target(object):
-    __metaclass__ = abc.ABCMeta
 
     def __iter__(self):
         return self
@@ -117,7 +118,7 @@ class HttpUrl(Target):
 class GunzipStream(Target):
     def __init__(self, stream):
         self.stream = iter(stream)
-        #NOTE(agordeev): toggle automatic header detection on
+        # NOTE(agordeev): toggle automatic header detection on
         self.decompressor = zlib.decompressobj(zlib.MAX_WBITS | 32)
 
     def next(self):

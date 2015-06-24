@@ -35,7 +35,9 @@ LOG = logging.getLogger(__name__)
 
 
 def match_device(hu_disk, ks_disk):
-    """Tries to figure out if hu_disk got from hu.list_block_devices
+    """Check if hu_disk and ks_disk are the same device
+
+    Tries to figure out if hu_disk got from hu.list_block_devices
     and ks_spaces_disk given correspond to the same disk device. This
     is the simplified version of hu.match_device
 
@@ -88,24 +90,26 @@ class Nailgun(BaseDataDriver):
 
     @property
     def ks_disks(self):
-        disk_filter = lambda x: x['type'] == 'disk' and x['size'] > 0
-        return filter(disk_filter, self.partition_data())
+        return filter(
+            lambda x: x['type'] == 'disk' and x['size'] > 0,
+            self.partition_data())
 
     @property
     def small_ks_disks(self):
-        """Get those disks which are smaller than 2T
-        """
+        """Get those disks which are smaller than 2T"""
         return [d for d in self.ks_disks if d['size'] <= 2097152]
 
     @property
     def ks_vgs(self):
-        vg_filter = lambda x: x['type'] == 'vg'
-        return filter(vg_filter, self.partition_data())
+        return filter(
+            lambda x: x['type'] == 'vg',
+            self.partition_data())
 
     @property
     def hu_disks(self):
         """Actual disks which are available on this node
-        it is a list of dicts which are formatted other way than
+
+        It is a list of dicts which are formatted other way than
         ks_spaces disks. To match both of those formats use
         _match_device method.
         """
@@ -437,7 +441,7 @@ class Nailgun(BaseDataDriver):
         LOG.debug('--- Preparing image scheme ---')
         data = self.data
         image_scheme = objects.ImageScheme()
-        #FIXME(agordeev): this piece of code for fetching additional image
+        # FIXME(agordeev): this piece of code for fetching additional image
         # meta data should be factored out of this particular nailgun driver
         # into more common and absract data getter which should be able to deal
         # with various data sources (local file, http(s), etc.) and different

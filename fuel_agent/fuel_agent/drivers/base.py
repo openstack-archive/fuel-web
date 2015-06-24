@@ -18,7 +18,8 @@ import six
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseDataDriver(object):
-    """Data driver API is to be put here.
+    """Data driver API
+
     For example, data validation methods,
     methods for getting object schemes, etc.
     """

@@ -270,7 +270,9 @@ def get_block_devices_from_udev_db():
 
 
 def list_block_devices(disks=True):
-    """Gets list of block devices, tries to guess which of them are disks
+    """Gets list of block devices
+
+    Tries to guess which of them are disks
     and returns list of dicts representing those disks.
 
     :returns: A list of dict representing disks available on a node.
@@ -316,7 +318,8 @@ def list_block_devices(disks=True):
 
 
 def match_device(uspec1, uspec2):
-    """Tries to find out if uspec1 and uspec2 are uspecs from the same device.
+    """Tries to find out if uspec1 and uspec2 are uspecs from the same device
+
     It compares only some fields in uspecs (not all of them) which, we believe,
     is enough to say exactly whether uspecs belong to the same device or not.
 

@@ -91,20 +91,6 @@ class ReleaseValidator(BasicValidator):
                 log_message=True
             )
 
-        if "roles" in d:
-            new_roles = set(d["roles"])
-            assigned_roles_names = set([
-                r.name for r in instance.role_list
-                if r.nodes or r.pending_nodes
-            ])
-            if not assigned_roles_names <= new_roles:
-                raise errors.InvalidData(
-                    "Cannot delete roles already "
-                    "assigned to nodes: {0}".format(
-                        ", ".join(assigned_roles_names - new_roles)
-                    ),
-                    log_message=True
-                )
         return d
 
     @classmethod

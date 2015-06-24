@@ -192,6 +192,7 @@ class Node(NailgunObject):
 
         roles = data.pop("roles", None)
         pending_roles = data.pop("pending_roles", None)
+        primary_roles = data.pop("primary_roles", None)
 
         new_node_meta = data.pop("meta", {})
         new_node_cluster_id = data.pop("cluster_id", None)
@@ -212,6 +213,8 @@ class Node(NailgunObject):
             cls.update_roles(new_node, roles)
         if pending_roles is not None:
             cls.update_pending_roles(new_node, pending_roles)
+        if primary_roles is not None:
+            cls.update_primary_roles(new_node, primary_roles)
 
         # creating attributes
         cls.create_attributes(new_node)
@@ -590,16 +593,15 @@ class Node(NailgunObject):
             )
             return
 
-        if new_roles:
-            instance.role_list = db().query(models.Role).filter_by(
-                release_id=instance.cluster.release_id,
-            ).filter(
-                models.Role.name.in_(new_roles)
-            ).all()
-        else:
-            instance.role_list = []
+        logger.debug(
+            u"Updating roles for node {0}: {1}".format(
+                instance.id,
+                new_roles
+            )
+        )
+
+        instance.roles = new_roles
         db().flush()
-        db().refresh(instance)
 
     @classmethod
     def update_pending_roles(cls, instance, new_pending_roles):
@@ -627,21 +629,51 @@ class Node(NailgunObject):
         )
 
         if new_pending_roles == []:
-            instance.pending_role_list = []
             #TODO(enchantner): research why the hell we need this
             Cluster.clear_pending_changes(
                 instance.cluster,
                 node_id=instance.id
             )
-        else:
-            instance.pending_role_list = db().query(models.Role).filter_by(
-                release_id=instance.cluster.release_id,
-            ).filter(
-                models.Role.name.in_(new_pending_roles)
-            ).all()
 
+        instance.pending_roles = new_pending_roles
         db().flush()
-        db().refresh(instance)
+
+    @classmethod
+    def update_primary_roles(cls, instance, new_primary_roles):
+        """Update primary_roles for Node instance.
+        Logs an error if node doesn't belong to Cluster
+
+        :param instance: Node instance
+        :param new_primary_roles: list of new pending role names
+        :returns: None
+        """
+        if not instance.cluster_id:
+            logger.warning(
+                u"Attempting to assign pending roles to node "
+                u"'{0}' which isn't added to cluster".format(
+                    instance.name or instance.id
+                )
+            )
+            return
+
+        for role in new_primary_roles:
+            if role not in set(instance.roles + instance.pending_roles):
+                logger.warning(
+                    u"Could not mark node {0} as primary for {1} role, "
+                    u"because there's no assigned {1} role.".format(
+                        instance.id, role)
+                )
+                return
+
+        logger.debug(
+            u"Updating primary roles for node {0}: {1}".format(
+                instance.id,
+                new_primary_roles
+            )
+        )
+
+        instance.primary_roles = new_primary_roles
+        db().flush()
 
     @classmethod
     def add_into_cluster(cls, instance, cluster_id):
@@ -712,6 +744,7 @@ class Node(NailgunObject):
         instance.cluster_id = None
         instance.group_id = None
         instance.kernel_params = None
+        instance.primary_roles = []
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)
@@ -720,8 +753,9 @@ class Node(NailgunObject):
     def move_roles_to_pending_roles(cls, instance):
         """Move roles to pending_roles
         """
-        instance.pending_roles += instance.roles
+        instance.pending_roles = instance.pending_roles + instance.roles
         instance.roles = []
+        instance.primary_roles = []
         db().flush()
 
     @classmethod
@@ -749,15 +783,13 @@ class Node(NailgunObject):
 
     @classmethod
     def all_roles(cls, instance):
-        roles = []
-        associations = (instance.role_associations +
-                        instance.pending_role_associations)
-        for assoc in associations:
-            if assoc.primary:
-                roles.append('primary-{0}'.format(assoc.role_obj.name))
-            else:
-                roles.append(assoc.role_obj.name)
-        return sorted(roles)
+        roles = set(instance.roles + instance.pending_roles)
+        roles -= set(instance.primary_roles)
+
+        primary_roles = set([
+            'primary-{0}'.format(role) for role in instance.primary_roles])
+
+        return sorted(roles | primary_roles)
 
 
 class NodeCollection(NailgunCollection):
@@ -776,8 +808,6 @@ class NodeCollection(NailgunCollection):
         """
         options = (
             joinedload('cluster'),
-            joinedload('role_list'),
-            joinedload('pending_role_list'),
             subqueryload_all('nic_interfaces.assigned_networks_list'),
             subqueryload_all('bond_interfaces.assigned_networks_list'),
             subqueryload_all('ip_addrs.network_data')

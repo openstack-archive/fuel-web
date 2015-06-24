@@ -25,7 +25,6 @@ from oslo.serialization import jsonutils
 
 import nailgun
 from nailgun.api.v1.handlers.logs import read_backwards
-from nailgun.db.sqlalchemy.models import Role
 from nailgun.errors import errors
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
@@ -491,7 +490,6 @@ class TestLogs(BaseIntegrationTest):
         """
 
         def dump_task_with_bad_model(*args, **kwargs):
-            self.db.add(Role())
             raise errors.DumpRunning()
 
         dump_manager().execute.side_effect = dump_task_with_bad_model

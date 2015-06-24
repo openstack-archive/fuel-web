@@ -27,7 +27,6 @@ from nailgun import objects
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
 from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
-from nailgun.utils import extract_env_version
 
 
 class ProvisioningSerializer(object):
@@ -320,9 +319,8 @@ def get_serializer_for_cluster(cluster):
         '6.0': ProvisioningSerializer,
     }
 
-    env_version = extract_env_version(cluster.release.version)
     for version, serializer in six.iteritems(serializers_map):
-        if env_version.startswith(version):
+        if cluster.release.environment_version.startswith(version):
             return serializer
 
     # by default, we should return latest serializer

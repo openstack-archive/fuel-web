@@ -71,7 +71,7 @@ CONF = cfg.CONF
 CONF.register_opts(u_opts)
 
 
-#NOTE(agordeev): signature compatible with execute from oslo
+# NOTE(agordeev): signature compatible with execute from oslo
 def execute(*cmd, **kwargs):
     command = ' '.join(cmd)
     LOG.debug('Trying to execute command: %s', command)
@@ -137,8 +137,10 @@ def execute(*cmd, **kwargs):
 
 
 def parse_unit(s, unit, ceil=True):
-    """Converts '123.1unit' string into 124 if ceil is True
-    and converts '123.9unit' into 123 if ceil is False.
+    """Converts '123.1unit' string into ints
+
+    If ceil is True it will be rounded up (124)
+    and and down (123) if ceil is False.
     """
 
     flt = locale.atof(s.split(unit)[0])
@@ -227,6 +229,7 @@ def init_http_request(url, byte_range=0):
 
 def makedirs_if_not_exists(path, mode=0o755):
     """Create directory if it does not exist
+
     :param path: Directory path
     :param mode: Directory mode (Default: 0o755)
     """
@@ -235,8 +238,7 @@ def makedirs_if_not_exists(path, mode=0o755):
 
 
 def grouper(iterable, n, fillvalue=None):
-    """Collect data into fixed-length chunks or blocks
-    """
+    """Collect data into fixed-length chunks or blocks"""
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 

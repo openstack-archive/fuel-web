@@ -192,7 +192,7 @@ class Manager(object):
                     LOG.debug("Skipping udev rule %s de-blacklisting" % src)
         utils.execute('udevadm', 'control', '--reload-rules',
                       check_exit_code=[0])
-        #NOTE(agordeev): re-create all the links which were skipped by udev
+        # NOTE(agordeev): re-create all the links which were skipped by udev
         # while blacklisted
         # NOTE(agordeev): do subsystem match, otherwise it will stuck
         utils.execute('udevadm', 'trigger', '--subsystem-match=block',
@@ -475,7 +475,9 @@ class Manager(object):
     # into a set of smaller ones
     # https://bugs.launchpad.net/fuel/+bug/1444090
     def do_build_image(self):
-        """Building OS images includes the following steps
+        """Building OS images
+
+        Includes the following steps
         1) create temporary sparse files for all images (truncate)
         2) attach temporary files to loop devices (losetup)
         3) create file systems on these loop devices

@@ -149,7 +149,6 @@ class EnvironmentManager(object):
             'name': u"release_name_" + version,
             'version': version,
             'description': u"release_desc" + version,
-            'roles': self.get_default_roles(),
             'modes': ['ha_compact', 'multinode'],
         })
 
@@ -502,7 +501,7 @@ class EnvironmentManager(object):
         return meta['interfaces']
 
     def get_default_roles(self):
-        return ['controller', 'compute', 'cinder', 'ceph-osd', 'mongo']
+        return list(self.get_default_roles_metadata.keys())
 
     def get_default_volumes_metadata(self):
         return self.read_fixtures(

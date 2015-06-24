@@ -43,7 +43,8 @@ class BaseTaskSerializationTest(base.BaseTestCase):
             self.env.create_node(
                 roles=['controller'], cluster_id=self.cluster.id),
             self.env.create_node(
-                roles=['primary-controller'], cluster_id=self.cluster.id),
+                roles=['controller'], primary_roles=['controller'],
+                cluster_id=self.cluster.id),
             self.env.create_node(
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]

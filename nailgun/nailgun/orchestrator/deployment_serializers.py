@@ -19,7 +19,7 @@
 from copy import deepcopy
 from itertools import groupby
 
-from sqlalchemy import or_
+import sqlalchemy as sa
 from sqlalchemy.orm import joinedload
 
 import math
@@ -149,12 +149,13 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         rounded up to the nearest power of 2.
         """
         osd_num = 0
-        nodes = db().query(Node). \
-            filter(or_(
-                Node.role_list.any(name='ceph-osd'),
-                Node.pending_role_list.any(name='ceph-osd'))). \
-            filter(Node.cluster == cluster). \
-            options(joinedload('attributes'))
+        nodes = db().query(Node).filter(
+            Node.cluster == cluster
+        ).filter(sa.or_(
+            Node.roles.any('ceph-osd'),
+            Node.pending_roles.any('ceph-osd')
+        )).options(joinedload('attributes'))
+
         for node in nodes:
             for disk in node.attributes.volumes:
                 for part in disk.get('volumes', []):

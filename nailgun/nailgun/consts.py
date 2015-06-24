@@ -310,6 +310,8 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.stage,
                   ORCHESTRATOR_TASK_TYPES.skipped)
 
+ROLE_NAME_MAX_SIZE = 64
+
 ALL_ROLES = '*'
 MASTER_ROLE = 'master'
 

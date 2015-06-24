@@ -19,8 +19,10 @@ Cluster-related objects and collections
 """
 
 from distutils.version import StrictVersion
-from sqlalchemy import or_
+import six
 import yaml
+
+import sqlalchemy as sa
 
 from nailgun.objects.serializers.cluster import ClusterSerializer
 from nailgun.orchestrator import graph_configuration
@@ -38,7 +40,6 @@ from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Release
-from nailgun.objects import Role
 
 from nailgun.plugins.manager import PluginManager
 
@@ -579,13 +580,23 @@ class Cluster(NailgunObject):
         return False
 
     @classmethod
+    def get_roles(cls, instance):
+        """Returns a dictionary of node roles available for deployment.
+
+        :param instance: cluster instance
+        :returns: a dictionary of roles metadata
+        """
+        # TODO(ikalnitsky): merge here release roles with plugins one
+        return instance.release.roles_metadata
+
+    @classmethod
     def set_primary_role(cls, instance, nodes, role_name):
         """Method for assigning primary attribute for specific role.
         - verify that there is no primary attribute of specific role
         assigned to cluster nodes with this role in role list
         or pending role list, and this node is not marked for deletion
         - if there is no primary role assigned, filter nodes which have current
-        role in roles_list or pending_role_list
+        role in roles or pending_roles
         - if there is nodes with ready state - they should have higher priority
         - if role was in primary_role_list - change primary attribute
         for that association, same for role_list, this is required
@@ -595,38 +606,31 @@ class Cluster(NailgunObject):
         :param nodes: list of Node db objects
         :param role_name: string with known role name
         """
-        all_roles = instance.release.role_list
-        role = next((r for r in all_roles if r.name == role_name), None)
-        if role is None:
+        if role_name not in cls.get_roles(instance):
             logger.warning(
                 'Trying to assign primary for non-existing role %s', role_name)
             return
+
         node = cls.get_primary_node(instance, role_name)
         if not node:
+            # get nodes with a given role name which are not going to be
+            # removed
             filtered_nodes = []
             for node in nodes:
                 if (not node.pending_deletion and (
-                        role in node.role_list
-                        or role in node.pending_role_list)):
+                        role_name in set(node.roles + node.pending_roles))):
                     filtered_nodes.append(node)
             filtered_nodes = sorted(filtered_nodes, key=lambda node: node.id)
+
             if filtered_nodes:
                 primary_node = next((
                     node for node in filtered_nodes
                     if node.status == consts.NODE_STATUSES.ready),
                     filtered_nodes[0])
-                if role in primary_node.role_list:
-                    associations = primary_node.role_associations
-                elif role in primary_node.pending_role_list:
-                    associations = primary_node.pending_role_associations
-                else:
-                    logger.warning((
-                        'Role %s neither in pending, nor role.'
-                        ' You hit strange bug'), role_name)
-                    return
-                for assoc in associations:
-                    if assoc.role == role.id:
-                        assoc.primary = True
+
+                primary_node.primary_roles = list(primary_node.primary_roles)
+                primary_node.primary_roles.append(role_name)
+
         db().flush()
 
     @classmethod
@@ -640,8 +644,8 @@ class Cluster(NailgunObject):
         """
         if not instance.is_ha_mode:
             return
-        roles_metadata = instance.release.roles_metadata
-        for role, meta in roles_metadata.items():
+        roles_metadata = cls.get_roles(instance)
+        for role, meta in six.iteritems(roles_metadata):
             if meta.get('has_primary'):
                 cls.set_primary_role(instance, nodes, role)
 
@@ -655,22 +659,18 @@ class Cluster(NailgunObject):
         :type: string
         """
 
-        role = db().query(models.Role).filter_by(
-            release_id=instance.release_id, name=role_name).first()
-
-        if not role:
+        if role_name not in cls.get_roles(instance):
             logger.warning("%s role doesn't exist", role_name)
             return []
 
-        nodes = db().query(models.Node).filter_by(cluster_id=instance.id)
-        deployed_nodes = nodes.join(
-            models.Node.role_list, aliased=True).filter(
-                models.Role.id == role.id).all()
-        pending_nodes = nodes.join(
-            models.Node.pending_role_list, aliased=True).filter(
-                models.Role.id == role.id).all()
+        nodes = db().query(models.Node).filter_by(
+            cluster_id=instance.id
+        ).filter(sa.or_(
+            models.Node.roles.any(role_name),
+            models.Node.pending_roles.any(role_name)
+        )).all()
 
-        return deployed_nodes + pending_nodes
+        return nodes
 
     @classmethod
     def get_primary_node(cls, instance, role_name):
@@ -684,41 +684,38 @@ class Cluster(NailgunObject):
         :returns: node db object or None
         """
         logger.debug("Getting primary node for role: %s", role_name)
-        role = Role.get_by_release_id_role_name(instance.release_id,
-                                                role_name)
-        if role is None:
+
+        if role_name not in cls.get_roles(instance):
             logger.debug("Role not found: %s", role_name)
             return None
 
-        node = db().query(models.Node).filter_by(
-            pending_deletion=False).filter(or_(
-                models.Node.role_associations.any(role=role.id, primary=True),
-                models.Node.pending_role_associations.any(
-                    role=role.id, primary=True))).filter(
-                        models.Node.cluster == instance).first()
-        if node is None:
+        primary_node = db().query(models.Node).filter_by(
+            pending_deletion=False,
+            cluster_id=instance.id
+        ).filter(
+            models.Node.primary_roles.any(role_name)
+        ).first()
+
+        if primary_node is None:
             logger.debug("Not found primary node for role: %s", role_name)
         else:
             logger.debug("Found primary node: %s for role: %s",
-                         node.id, role_name)
-        return node
+                         primary_node.id, role_name)
+        return primary_node
 
     @classmethod
     def get_controllers_group_id(cls, instance):
-        roles_id = db().query(models.Role).filter_by(
-            release_id=instance.release_id).\
-            filter_by(name='controller').first().id
-        controller = db().query(models.Node).\
-            filter_by(cluster_id=instance.id).\
-            filter(False == models.Node.pending_deletion).\
-            join(models.Node.role_list, aliased=True).\
-            filter(models.Role.id == roles_id).first()
+        nodes = db().query(models.Node).filter_by(
+            cluster_id=instance.id
+        ).filter(
+            False == models.Node.pending_deletion
+        )
+
+        controller = nodes.filter(models.Node.roles.any('controller')).first()
         if not controller or not controller.group_id:
-            controller = db().query(models.Node).\
-                filter(False == models.Node.pending_deletion).\
-                filter_by(cluster_id=instance.id).\
-                join(models.Node.pending_role_list, aliased=True).\
-                filter(models.Role.id == roles_id).first()
+            controller = nodes.filter(
+                models.Node.pending_roles.any('controller')).first()
+
         if controller and controller.group_id:
             return controller.group_id
         return cls.get_default_group(instance).id

@@ -29,7 +29,6 @@ from nailgun.objects import NailgunObject
 from nailgun.objects.serializers import release as release_serializer
 from nailgun.orchestrator import graph_configuration
 from nailgun.settings import settings
-from nailgun.utils import extract_env_version
 
 
 class Release(NailgunObject):
@@ -157,7 +156,7 @@ class Release(NailgunObject):
         :param instance: a Release instance
         :returns: boolean
         """
-        return (StrictVersion(instance.fuel_version) >=
+        return (StrictVersion(instance.environment_version) >=
                 StrictVersion(consts.FUEL_GRANULAR_DEPLOY))
 
     @classmethod
@@ -167,13 +166,13 @@ class Release(NailgunObject):
         :param instance: a Release instance
         :returns: boolean
         """
-        return (StrictVersion(instance.fuel_version) >=
+        return (StrictVersion(instance.environment_version) >=
                 StrictVersion(consts.FUEL_EXTERNAL_MONGO))
 
     @classmethod
     def get_deployment_tasks(cls, instance):
         """Get deployment graph based on release version."""
-        env_version = extract_env_version(instance.version)
+        env_version = instance.environment_version
         if instance.deployment_tasks:
             return instance.deployment_tasks
         elif env_version.startswith('5.0'):

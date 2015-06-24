@@ -46,7 +46,6 @@ from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
-from nailgun.utils import extract_env_version
 from nailgun.utils import traverse
 
 
@@ -324,7 +323,7 @@ class Cluster(NailgunObject):
             return NetworkManager
 
         if instance.net_provider == 'neutron':
-            ver = extract_env_version(instance.release.version)
+            ver = instance.release.environment_version
             if StrictVersion(ver) >= StrictVersion(consts.FUEL_NEUTRON_ONLY):
                 from nailgun.network.neutron import NeutronManager70
                 return NeutronManager70

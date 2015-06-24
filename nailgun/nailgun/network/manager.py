@@ -913,9 +913,9 @@ class NetworkManager(object):
         if cluster_db.is_ha_mode:
             ip = cls.assign_vip(cluster_db, "public")
         elif cluster_db.mode in ('singlenode', 'multinode'):
-            controller = db().query(Node).filter_by(
-                cluster_id=cluster_id
-            ).filter(Node.role_list.any(name='controller')).first()
+            nodes = db().query(Node).filter_by(cluster_id=cluster_id)
+            controller = next(
+                (n for n in nodes if 'controller' in n.roles), None)
 
             public_net = filter(
                 lambda network: network['name'] == 'public',

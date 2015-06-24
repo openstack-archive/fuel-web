@@ -46,6 +46,10 @@ disks_simple_format_schema = {
                         'size': {
                             'description': 'Volume size',
                             'type': 'integer'
+                        },
+                        'keep_data': {
+                            'description': 'Flag to preserve partition',
+                            'type': 'boolean'
                         }
                     }
                 }

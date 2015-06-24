@@ -16,6 +16,7 @@
 
 import six
 
+from nailgun import consts
 from nailgun.logger import logger
 
 
@@ -25,3 +26,12 @@ def delete_entities(conn, *entities):
         channel = conn.channel()
         bound_entity = entity(channel)
         bound_entity.delete()
+
+
+def get_protocol_for_horizon(cluster):
+    attr_value = cluster.attributes.editable.\
+        get('public_ssl', {}).get('horizon')
+    if attr_value == 'true':
+        return consts.PROTOCOL.https
+    else:
+        return consts.PROTOCOL.http

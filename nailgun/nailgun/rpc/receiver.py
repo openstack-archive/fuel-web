@@ -28,6 +28,7 @@ from sqlalchemy import or_
 from nailgun import consts
 from nailgun import notifier
 from nailgun import objects
+from nailgun.rpc import utils
 from nailgun.settings import settings
 
 from nailgun.consts import TASK_STATUSES
@@ -504,15 +505,18 @@ class NailgunReceiver(object):
                 )
                 if public_net:
                     horizon_ip = public_net[0]['ip'].split('/')[0]
+                    protocol = utils.get_protocol_for_horizon(task.cluster)
                     message = (
-                        u"{0} of environment '{1}' is done. "
+                        u"{task} of environment '{name}' is done. "
                         "Access the OpenStack dashboard (Horizon) at "
-                        "http://{2}/ or via internal network at http://{3}/"
+                        "{proto}://{horizon_address}/ or via internal "
+                        "network at http://{controller_address}/"
                     ).format(
-                        task_name,
-                        task.cluster.name,
-                        horizon_ip,
-                        controller.ip
+                        task=task_name,
+                        name=task.cluster.name,
+                        proto=protocol,
+                        horizon_address=horizon_ip,
+                        controller_address=controller.ip
                     )
                 else:
                     message = u"{0} of environment '{1}' is done".format(

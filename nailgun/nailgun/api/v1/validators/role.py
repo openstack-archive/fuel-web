@@ -22,11 +22,13 @@ from nailgun.errors import errors
 class RoleValidator(BasicValidator):
 
     @classmethod
-    def validate_delete(cls, instance):
-        if instance.nodes or instance.pending_nodes:
-            raise errors.CannotDelete(
-                "Can't delete roles that is assigned to some node."
-            )
+    def validate_delete(cls, release, role_name):
+        for cluster in release.clusters:
+            for node in cluster.nodes:
+                if role_name in node.roles or role_name in node.pending_roles:
+                    raise errors.CannotDelete(
+                        "Can't delete roles that is assigned to some node."
+                    )
 
     @classmethod
     def validate(cls, data, instance=None):

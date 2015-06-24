@@ -27,9 +27,6 @@ from nailgun.objects.oswl import OpenStackWorkloadStatsCollection
 from nailgun.objects.release import Release
 from nailgun.objects.release import ReleaseCollection
 
-from nailgun.objects.role import Role
-from nailgun.objects.role import RoleCollection
-
 from nailgun.objects.cluster import Attributes
 from nailgun.objects.cluster import Cluster
 from nailgun.objects.cluster import ClusterCollection

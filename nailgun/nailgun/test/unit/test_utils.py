@@ -25,7 +25,6 @@ from nailgun.test import base
 from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import dict_merge
-from nailgun.utils import extract_env_version
 from nailgun.utils import flatten
 from nailgun.utils import get_fuel_release_versions
 from nailgun.utils import grouper
@@ -56,19 +55,6 @@ class TestUtils(base.BaseIntegrationTest):
                                            "transparency": 100,
                                            "dict": {"stuff": "hz",
                                                     "another_stuff": "hz"}}})
-
-    def test_extract_env_version(self):
-        # format: input, output pairs
-        test_cases = [
-            ('2014.1', '5.0'),
-            ('2014.1-5.0', '5.0'),
-            ('2014.1.1-5.0.1', '5.0.1'),
-            ('2014.1.1-5.0.1-X', '5.0.1'),
-            ('2014.1.1-5.1', '5.1'),
-        ]
-
-        for input_, output in test_cases:
-            self.assertEqual(extract_env_version(input_), output)
 
     @patch('nailgun.utils.glob.glob', return_value=['test.yaml'])
     @patch('__builtin__.open', mock_open(read_data='test_data'))

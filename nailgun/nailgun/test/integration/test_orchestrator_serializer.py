@@ -97,10 +97,8 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
 
     @property
     def serializer(self):
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.0'):
-            return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.0'
+        return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def serialize(self, cluster):
         objects.NodeCollection.prepare_for_deployment(cluster.nodes)
@@ -374,11 +372,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'role': 'ceph-osd'}
         ]
         self.add_default_params(nodes)
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.0'):
-            serializer = DeploymentMultinodeSerializer(
-                AstuteGraph(self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.0'
+        serializer = DeploymentMultinodeSerializer(
+            AstuteGraph(self.cluster_mock))
         serializer.set_deployment_priorities(nodes)
         expected_priorities = [
             {'role': 'mongo', 'priority': 100},
@@ -398,11 +394,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'role': 'controller'},
             {'role': 'ceph-osd'}
         ]
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.0'):
-            serializer = DeploymentMultinodeSerializer(
-                AstuteGraph(self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.0'
+        serializer = DeploymentMultinodeSerializer(
+            AstuteGraph(self.cluster_mock))
         serializer.set_critical_nodes(nodes)
         expected_ciritial_roles = [
             {'role': 'mongo', 'fail_if_error': False},
@@ -1205,10 +1199,8 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.0'):
-            return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.0'
+        return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def test_set_deployment_priorities(self):
         nodes = [
@@ -1345,10 +1337,8 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
 
     @property
     def serializer(self):
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.1'):
-            return DeploymentHASerializer51(AstuteGraph(self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.1'
+        return DeploymentHASerializer51(AstuteGraph(self.cluster_mock))
 
     def test_set_deployment_priorities(self):
         nodes = [
@@ -1416,10 +1406,8 @@ class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
     @property
     def serializer(self):
         self.cluster_mock.pending_release_id = '111'
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.0'):
-            return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.0'
+        return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def test_set_deployment_priorities(self):
         nodes = [
@@ -2111,10 +2099,8 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.0'):
-            return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.0'
+        return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     def test_node_list(self):
         serialized_nodes = self.serializer.node_list(self.cluster.nodes)
@@ -2303,19 +2289,13 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
 
     @property
     def serializer_ha(self):
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.0'):
-            return DeploymentHASerializer(AstuteGraph(
-                self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.0'
+        return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
 
     @property
     def serializer_mn(self):
-        with mock.patch(
-                'nailgun.objects.release.extract_env_version',
-                return_value='5.0'):
-            return DeploymentMultinodeSerializer(
-                AstuteGraph(self.cluster_mock))
+        self.cluster_mock.release.fuel_version = '5.0'
+        return DeploymentMultinodeSerializer(AstuteGraph(self.cluster_mock))
 
     def test_mongo_roles_equals_in_defferent_modes(self):
         cluster = self.create_env()

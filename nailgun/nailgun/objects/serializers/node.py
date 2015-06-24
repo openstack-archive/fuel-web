@@ -20,7 +20,6 @@ from nailgun import consts
 
 from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.settings import settings
-from nailgun.utils import extract_env_version
 
 
 class NodeSerializer(BasicSerializer):
@@ -104,7 +103,7 @@ class NodeInterfacesSerializer(BasicSerializer):
         Returns current Fuel version by default.
         """
         if instance.node.cluster:
-            return extract_env_version(instance.node.cluster.release.version)
+            return instance.node.cluster.release.fuel_version
         return settings.VERSION["release"]
 
     @classmethod

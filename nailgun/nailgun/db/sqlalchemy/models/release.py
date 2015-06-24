@@ -106,10 +106,24 @@ class Release(Base):
 
     @property
     def fuel_version(self):
-        try:
-            version = self.version.split('-')[1]
-        except IndexError:
-            version = ''
+        """Returns environment version based on release version.
+
+        A release version consists of 'OSt' and 'MOS' versions:
+            '2014.1.1-5.0.2'
+
+        so we need to extract 'MOS' version and returns it as result.
+
+        :returns: an environment version
+        """
+        # unfortunately, Fuel 5.0 didn't has an env version in release_version
+        # so we need to handle that special case
+        if self.version == '2014.1':
+            version = '5.0'
+        else:
+            try:
+                version = self.version.split('-')[1]
+            except IndexError:
+                version = ''
 
         return version
 

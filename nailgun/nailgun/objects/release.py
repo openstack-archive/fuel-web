@@ -29,7 +29,6 @@ from nailgun.objects import NailgunObject
 from nailgun.objects.serializers import release as release_serializer
 from nailgun.orchestrator import graph_configuration
 from nailgun.settings import settings
-from nailgun.utils import extract_env_version
 
 
 class Release(NailgunObject):
@@ -173,7 +172,7 @@ class Release(NailgunObject):
     @classmethod
     def get_deployment_tasks(cls, instance):
         """Get deployment graph based on release version."""
-        env_version = extract_env_version(instance.version)
+        env_version = instance.fuel_version
         if instance.deployment_tasks:
             return instance.deployment_tasks
         elif env_version.startswith('5.0'):

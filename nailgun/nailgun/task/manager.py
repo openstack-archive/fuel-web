@@ -880,9 +880,9 @@ class VerifyNetworksTaskManager(TaskManager):
                 verify_task.add_subtask(
                     tasks.MulticastVerificationTask(multicast))
 
-            # we have remote connectivity checks sicne fuel 6.1, so
-            # we should not create those tasks for old envs
-            if StrictVersion(self.cluster.fuel_version) >= \
+            # we have remote connectivity checks since fuel 6.1,
+            # so we should not create those tasks for old envs
+            if StrictVersion(self.cluster.release.environment_version) >= \
                     StrictVersion(consts.FUEL_REMOTE_REPOS):
 
                 # repo connectivity check via default gateway

@@ -26,7 +26,9 @@ from nailgun.test.integration.test_orchestrator_serializer import \
 
 
 class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
-    @mock.patch('nailgun.utils.extract_env_version', return_value='7.0')
+    @mock.patch('nailgun.db.sqlalchemy.models.release.Release'
+                '.environment_version',
+                new_callable=mock.PropertyMock(return_value='7.0'))
     def setUp(self, *args):
         super(TestDeploymentAttributesSerialization70, self).setUp()
         self.cluster = self.create_env('ha_compact')

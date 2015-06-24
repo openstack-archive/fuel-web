@@ -99,12 +99,8 @@ class ZabbixManager(object):
     @classmethod
     def get_zabbix_node(cls, cluster):
         zabbix_nodes = filter(
-            lambda node: filter(
-                lambda role: role.name == 'zabbix-server',
-                node.role_list
-            ),
-            cluster.nodes
-        )
+            lambda node: 'zabbix-server' in node.roles,
+            cluster.nodes)
 
         if not zabbix_nodes:
             return None

@@ -486,9 +486,10 @@ class NailgunReceiver(object):
         if task.cluster.mode in ('singlenode', 'multinode'):
             # determining horizon url - it's an IP
             # of a first cluster controller
-            controller = db().query(Node).filter_by(
-                cluster_id=task.cluster_id
-            ).filter(Node.role_list.any(name='controller')).first()
+            nodes = db().query(Node).filter_by(cluster_id=task.cluster_id)
+            controller = next((
+                n for n in nodes if 'controller' in n.roles), None)
+
             if controller:
                 logger.debug(
                     u"Controller is found, node_id=%s, "

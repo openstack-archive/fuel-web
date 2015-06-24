@@ -216,7 +216,9 @@ def lvcreate(vgname, lvname, size):
     # on allocated volume. '--yes' should be passed to avoid waiting for
     # user's confirmation:
     # "WARNING: <signature> signature detected on <device>. Wipe it? [y/n]"
-    utils.execute('lvcreate', '--yes', '-L', '%sm' % size, '-n', lvname,
+    # FIXME: the version of lvm2 shipped with Ubuntu 14.04 does not support
+    # --yes option. fuel-agent should properly decomission the storage.
+    utils.execute('lvcreate', '-L', '%sm' % size, '-n', lvname,
                   vgname, check_exit_code=[0])
 
 

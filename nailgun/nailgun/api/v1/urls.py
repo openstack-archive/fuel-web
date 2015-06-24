@@ -35,9 +35,14 @@ from nailgun.api.v1.handlers.cluster import ClusterUpdateHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesHandler
 
-from nailgun.api.v1.handlers.disks import NodeDefaultsDisksHandler
-from nailgun.api.v1.handlers.disks import NodeDisksHandler
-from nailgun.api.v1.handlers.disks import NodeVolumesInformationHandler
+# TODO(eli): should be moved into separate extension, as a part of blueprint:
+# https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
+from nailgun.extensions.volume_manager.handlers.disks \
+    import NodeDefaultsDisksHandler
+from nailgun.extensions.volume_manager.handlers.disks \
+    import NodeDisksHandler
+from nailgun.extensions.volume_manager.handlers.disks \
+    import NodeVolumesInformationHandler
 
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig

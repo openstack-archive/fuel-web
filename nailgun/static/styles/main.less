@@ -114,6 +114,14 @@
   visibility: hidden;
 }
 
+.break-word() {
+  /* the following code refers to https://css-tricks.com/almanac/properties/w/word-break/ */
+  word-wrap: break-word;
+  hyphens: auto;
+  -moz-hyphens: auto; /* for word-wrap to work in FF */
+  word-break: break-word; /* non standard for webkit */
+}
+
 // ICONS
 
 .glyphicon-warning-sign {
@@ -970,6 +978,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
             font-family: monospace;
             white-space: pre-wrap;
             font-size: 90%;
+            .break-word;
           }
         }
       }

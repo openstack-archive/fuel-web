@@ -23,13 +23,10 @@ from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.expression import not_
 
 from nailgun import consts
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
-from nailgun.db.sqlalchemy.models.node import Role
 
 
 class Release(Base):
@@ -62,13 +59,6 @@ class Release(Base):
     deployment_tasks = Column(JSON, default=[])
     vmware_attributes_metadata = Column(JSON, default=[])
     modes = Column(JSON, default=[])
-
-    role_list = relationship(
-        "Role",
-        backref="release",
-        cascade="all,delete",
-        order_by="Role.id"
-    )
     clusters = relationship(
         "Cluster",
         primaryjoin="Release.id==Cluster.release_id",
@@ -76,29 +66,7 @@ class Release(Base):
         cascade="all,delete"
     )
 
-    #TODO(enchantner): get rid of properties
-
-    @property
-    def roles(self):
-        return [role.name for role in self.role_list]
-
-    @roles.setter
-    def roles(self, new_roles):
-        db().query(Role).filter(
-            not_(Role.name.in_(new_roles))
-        ).filter(
-            Role.release_id == self.id
-        ).delete(synchronize_session='fetch')
-
-        added_roles = self.roles
-        for role in new_roles:
-            if role not in added_roles:
-                new_role = Role(
-                    name=role,
-                    release=self
-                )
-                db().add(new_role)
-                added_roles.append(role)
+    # TODO(enchantner): get rid of properties
 
     @property
     def openstack_version(self):

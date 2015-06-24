@@ -13,12 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy import not_
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql as psql
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import release
+from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Release
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 
 
@@ -55,7 +57,7 @@ class ReleaseValidator(BasicValidator):
                 log_message=True
             )
 
-        if db().query(Release).filter_by(
+        if db().query(models.Release).filter_by(
             name=d["name"],
             version=d["version"]
         ).first():
@@ -79,11 +81,11 @@ class ReleaseValidator(BasicValidator):
         d = cls.validate_json(data)
         cls._validate_common(d)
 
-        if db().query(Release).filter_by(
+        if db().query(models.Release).filter_by(
             name=d.get("name", instance.name),
             version=d.get("version", instance.version)
         ).filter(
-            not_(Release.id == instance.id)
+            sa.not_(models.Release.id == instance.id)
         ).first():
             raise errors.AlreadyExists(
                 "Release with the same name "
@@ -91,20 +93,30 @@ class ReleaseValidator(BasicValidator):
                 log_message=True
             )
 
-        if "roles" in d:
-            new_roles = set(d["roles"])
-            assigned_roles_names = set([
-                r.name for r in instance.role_list
-                if r.nodes or r.pending_nodes
-            ])
-            if not assigned_roles_names <= new_roles:
-                raise errors.InvalidData(
-                    "Cannot delete roles already "
-                    "assigned to nodes: {0}".format(
-                        ", ".join(assigned_roles_names - new_roles)
-                    ),
-                    log_message=True
+        if 'roles_metadata' in d:
+            new_roles = set(d['roles_metadata'])
+            clusters = [cluster.id for cluster in instance.clusters]
+
+            new_roles_array = sa.cast(
+                psql.array(new_roles),
+                psql.ARRAY(sa.String(consts.ROLE_NAME_MAX_SIZE)))
+
+            node = db().query(models.Node).filter(
+                models.Node.cluster_id.in_(clusters)
+            ).filter(sa.not_(sa.and_(
+                models.Node.roles.contained_by(new_roles_array),
+                models.Node.pending_roles.contained_by(new_roles_array)
+            ))).first()
+
+            if node:
+                used_role = set(node.roles + node.pending_roles)
+                used_role -= new_roles
+
+                raise errors.CannotDelete(
+                    "Cannot delete roles already assigned "
+                    "to nodes: {0}".format(','.join(used_role))
                 )
+
         return d
 
     @classmethod

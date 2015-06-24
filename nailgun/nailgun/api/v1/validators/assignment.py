@@ -82,25 +82,25 @@ class NodeAssignmentValidator(AssignmentValidator):
 
     @classmethod
     def validate_roles(cls, cluster, roles):
-        release = cluster.release
+        available_roles = objects.Cluster.get_roles(cluster)
         roles = set(roles)
-        not_valid_roles = roles - set(release.roles)
+        not_valid_roles = roles - set(available_roles)
+
         if not_valid_roles:
             raise errors.InvalidData(
-                u"{0} are not valid roles for node in {1} release"
-                .format(u", ".join(not_valid_roles), release.name),
+                u"{0} are not valid roles for node in environment {1}"
+                .format(u", ".join(not_valid_roles), cluster.id),
                 log_message=True
             )
-        roles_metadata = release.roles_metadata
-        if roles_metadata:
-            cls.check_roles_for_conflicts(roles, roles_metadata)
-            cls.check_roles_requirement(
-                roles,
-                roles_metadata,
-                {
-                    'settings': cluster.attributes.editable,
-                    'cluster': cluster,
-                })
+
+        cls.check_roles_for_conflicts(roles, available_roles)
+        cls.check_roles_requirement(
+            roles,
+            available_roles,
+            {
+                'settings': cluster.attributes.editable,
+                'cluster': cluster,
+            })
 
     @classmethod
     def check_roles_for_conflicts(cls, roles, roles_metadata):

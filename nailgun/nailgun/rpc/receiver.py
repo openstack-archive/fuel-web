@@ -489,7 +489,10 @@ class NailgunReceiver(object):
             # of a first cluster controller
             controller = db().query(Node).filter_by(
                 cluster_id=task.cluster_id
-            ).filter(Node.role_list.any(name='controller')).first()
+            ).filter(
+                Node.roles.any('controller')
+            ).first()
+
             if controller:
                 logger.debug(
                     u"Controller is found, node_id=%s, "

@@ -23,7 +23,6 @@ import six
 from sqlalchemy import func
 from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
-from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import object_mapper
 
 import nailgun.rpc as rpc
@@ -140,7 +139,7 @@ class DeploymentTask(object):
 
             if n.id in nodes_ids:
                 if n.pending_roles:
-                    n.roles += n.pending_roles
+                    n.roles = n.roles + n.pending_roles
                     n.pending_roles = []
 
                 # If reciever for some reasons didn't update
@@ -1102,10 +1101,8 @@ class GenerateCapacityLogTask(object):
             "uuid": settings.FUEL_KEY
         }
 
-        nodes = db().query(Node).options(
-            joinedload('role_list'))
         roles_stat = {}
-        for node in nodes:
+        for node in db().query(Node):
             if node.roles:
                 roles_list = '+'.join(sorted(node.roles))
                 if roles_list in roles_stat:

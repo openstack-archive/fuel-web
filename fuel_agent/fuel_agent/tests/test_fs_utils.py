@@ -16,7 +16,7 @@ import mock
 from oslotest import base as test_base
 
 from fuel_agent import errors
-from fuel_agent.utils import fs_utils as fu
+from fuel_agent.utils import fs as fu
 from fuel_agent.utils import utils
 
 

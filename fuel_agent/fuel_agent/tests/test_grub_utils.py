@@ -24,7 +24,7 @@ else:
     OPEN_FUNCTION_NAME = 'builtins.open'
 
 from fuel_agent import errors
-from fuel_agent.utils import grub_utils as gu
+from fuel_agent.utils import grub as gu
 from fuel_agent.utils import utils
 
 
@@ -205,7 +205,7 @@ class TestGrubUtils(test_base.BaseTestCase):
         self.assertEqual(gu.guess_grub_install('/target'),
                          '/usr/sbin/grub2-install')
 
-    @mock.patch('fuel_agent.utils.grub_utils.utils.guess_filename')
+    @mock.patch('fuel_agent.utils.grub.utils.guess_filename')
     def test_guess_kernel(self, mock_guess):
         mock_guess.return_value = 'vmlinuz-version'
         self.assertEqual(gu.guess_kernel('/target'), 'vmlinuz-version')
@@ -223,7 +223,7 @@ class TestGrubUtils(test_base.BaseTestCase):
         mock_guess.return_value = None
         self.assertRaises(errors.GrubUtilsError, gu.guess_kernel, '/target')
 
-    @mock.patch('fuel_agent.utils.grub_utils.utils.guess_filename')
+    @mock.patch('fuel_agent.utils.grub.utils.guess_filename')
     def test_guess_initrd(self, mock_guess):
         mock_guess.return_value = 'initrd-version'
         self.assertEqual(gu.guess_initrd('/target'), 'initrd-version')

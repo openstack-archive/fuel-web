@@ -16,7 +16,7 @@ import mock
 from oslotest import base as test_base
 
 from fuel_agent import errors
-from fuel_agent.utils import lvm_utils as lu
+from fuel_agent.utils import lvm as lu
 from fuel_agent.utils import utils
 
 

@@ -21,8 +21,8 @@ import mock
 from oslo.config import cfg
 
 from fuel_agent import errors
-from fuel_agent.utils import build_utils as bu
-from fuel_agent.utils import hardware_utils as hu
+from fuel_agent.utils import build as bu
+from fuel_agent.utils import hardware as hu
 from fuel_agent.utils import utils
 
 
@@ -160,7 +160,7 @@ class BuildUtilsTestCase(testtools.TestCase):
                        'etc/apt/apt.conf.d/%s' % 'force_ipv4',
                        'etc/apt/apt.conf.d/%s' % 'unsigned'])
 
-    @mock.patch('fuel_agent.utils.build_utils.open',
+    @mock.patch('fuel_agent.utils.build.open',
                 create=True, new_callable=mock.mock_open)
     @mock.patch.object(os, 'path')
     @mock.patch.object(bu, 'clean_apt_settings')
@@ -186,9 +186,9 @@ class BuildUtilsTestCase(testtools.TestCase):
         self.assertEqual(mock_path_join_expected_calls,
                          mock_path.join.call_args_list)
 
-    @mock.patch('fuel_agent.utils.build_utils.open',
+    @mock.patch('fuel_agent.utils.build.open',
                 create=True, new_callable=mock.mock_open)
-    @mock.patch('fuel_agent.utils.build_utils.time.sleep')
+    @mock.patch('fuel_agent.utils.build.time.sleep')
     @mock.patch.object(os, 'kill')
     @mock.patch.object(os, 'readlink', return_value='chroot')
     @mock.patch.object(utils, 'execute')
@@ -333,7 +333,7 @@ class BuildUtilsTestCase(testtools.TestCase):
                          mock_path.join.call_args_list)
 
     @mock.patch.object(os, 'path')
-    @mock.patch('fuel_agent.utils.build_utils.utils.init_http_request',
+    @mock.patch('fuel_agent.utils.build.utils.init_http_request',
                 return_value=mock.Mock(text=_fake_ubuntu_release))
     def test_add_apt_preference(self, mock_get, mock_path):
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:
@@ -371,7 +371,7 @@ class BuildUtilsTestCase(testtools.TestCase):
                          mock_path.join.call_args_list)
 
     @mock.patch.object(os, 'path')
-    @mock.patch('fuel_agent.utils.build_utils.utils.init_http_request',
+    @mock.patch('fuel_agent.utils.build.utils.init_http_request',
                 return_value=mock.Mock(text=_fake_ubuntu_release))
     def test_add_apt_preference_multuple_sections(self, mock_get, mock_path):
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:
@@ -414,7 +414,7 @@ class BuildUtilsTestCase(testtools.TestCase):
                          mock_path.join.call_args_list)
 
     @mock.patch.object(os, 'path')
-    @mock.patch('fuel_agent.utils.build_utils.utils.init_http_request',
+    @mock.patch('fuel_agent.utils.build.utils.init_http_request',
                 return_value=mock.Mock(text=_fake_ubuntu_release))
     def test_add_apt_preference_no_sections(self, mock_get, mock_path):
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:

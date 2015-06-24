@@ -19,7 +19,7 @@ import zlib
 from oslo.config import cfg
 
 from fuel_agent import errors
-from fuel_agent.utils import artifact_utils as au
+from fuel_agent.utils import artifact as au
 from fuel_agent.utils import utils
 
 

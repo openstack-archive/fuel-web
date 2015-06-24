@@ -17,8 +17,8 @@ from oslotest import base as test_base
 import six
 
 from fuel_agent import errors
-from fuel_agent.utils import hardware_utils as hu
-from fuel_agent.utils import md_utils as mu
+from fuel_agent.utils import hardware as hu
+from fuel_agent.utils import md as mu
 from fuel_agent.utils import utils
 
 
@@ -30,7 +30,7 @@ else:
 
 class TestMdUtils(test_base.BaseTestCase):
 
-    @mock.patch('fuel_agent.utils.md_utils.utils.execute')
+    @mock.patch('fuel_agent.utils.md.utils.execute')
     def test_mddisplay_nostate_detail(self, mock_exec):
         mock_exec.return_value = (
             """/dev/md127:

@@ -24,12 +24,12 @@ from fuel_agent import manager
 from fuel_agent import objects
 from fuel_agent.objects import partition
 from fuel_agent.tests import test_nailgun
-from fuel_agent.utils import artifact_utils as au
-from fuel_agent.utils import fs_utils as fu
-from fuel_agent.utils import hardware_utils as hu
-from fuel_agent.utils import lvm_utils as lu
-from fuel_agent.utils import md_utils as mu
-from fuel_agent.utils import partition_utils as pu
+from fuel_agent.utils import artifact as au
+from fuel_agent.utils import fs as fu
+from fuel_agent.utils import hardware as hu
+from fuel_agent.utils import lvm as lu
+from fuel_agent.utils import md as mu
+from fuel_agent.utils import partition as pu
 from fuel_agent.utils import utils
 
 CONF = cfg.CONF

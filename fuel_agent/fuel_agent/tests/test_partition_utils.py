@@ -17,7 +17,7 @@ from oslotest import base as test_base
 import time
 
 from fuel_agent import errors
-from fuel_agent.utils import partition_utils as pu
+from fuel_agent.utils import partition as pu
 from fuel_agent.utils import utils
 
 

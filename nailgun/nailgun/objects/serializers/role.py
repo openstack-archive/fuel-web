@@ -20,13 +20,11 @@ from nailgun.objects.serializers.base import BasicSerializer
 class RoleSerializer(BasicSerializer):
 
     @classmethod
-    def serialize(cls, role, fields=None):
-        release = role.release
-        meta = release.roles_metadata[role.name]
-        volumes = release.volumes_metadata['volumes_roles_mapping'][role.name]
+    def serialize(cls, release, role_name):
+        meta = release.roles_metadata[role_name]
+        volumes = release.volumes_metadata['volumes_roles_mapping'][role_name]
 
         return {
-            'id': role.id,
-            'name': role.name,
+            'name': role_name,
             'meta': meta,
             'volumes_roles_mapping': volumes}

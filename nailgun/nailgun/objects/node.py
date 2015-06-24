@@ -590,16 +590,15 @@ class Node(NailgunObject):
             )
             return
 
-        if new_roles:
-            instance.role_list = db().query(models.Role).filter_by(
-                release_id=instance.cluster.release_id,
-            ).filter(
-                models.Role.name.in_(new_roles)
-            ).all()
-        else:
-            instance.role_list = []
+        logger.debug(
+            u"Updating roles for node {0}: {1}".format(
+                instance.id,
+                new_roles
+            )
+        )
+
+        instance.roles = new_roles
         db().flush()
-        db().refresh(instance)
 
     @classmethod
     def update_pending_roles(cls, instance, new_pending_roles):
@@ -627,21 +626,14 @@ class Node(NailgunObject):
         )
 
         if new_pending_roles == []:
-            instance.pending_role_list = []
             #TODO(enchantner): research why the hell we need this
             Cluster.clear_pending_changes(
                 instance.cluster,
                 node_id=instance.id
             )
-        else:
-            instance.pending_role_list = db().query(models.Role).filter_by(
-                release_id=instance.cluster.release_id,
-            ).filter(
-                models.Role.name.in_(new_pending_roles)
-            ).all()
 
+        instance.pending_roles = new_pending_roles
         db().flush()
-        db().refresh(instance)
 
     @classmethod
     def add_into_cluster(cls, instance, cluster_id):
@@ -712,6 +704,7 @@ class Node(NailgunObject):
         instance.cluster_id = None
         instance.group_id = None
         instance.kernel_params = None
+        instance.primary_roles = []
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)
@@ -722,6 +715,7 @@ class Node(NailgunObject):
         """
         instance.pending_roles += instance.roles
         instance.roles = []
+        instance.primary_roles = []
         db().flush()
 
     @classmethod
@@ -749,15 +743,13 @@ class Node(NailgunObject):
 
     @classmethod
     def all_roles(cls, instance):
-        roles = []
-        associations = (instance.role_associations +
-                        instance.pending_role_associations)
-        for assoc in associations:
-            if assoc.primary:
-                roles.append('primary-{0}'.format(assoc.role_obj.name))
-            else:
-                roles.append(assoc.role_obj.name)
-        return sorted(roles)
+        roles = set(instance.roles + instance.pending_roles)
+        roles -= set(instance.primary_roles)
+
+        primary_roles = set([
+            'primary-{0}'.format(role) for role in instance.primary_roles])
+
+        return sorted(roles | primary_roles)
 
 
 class NodeCollection(NailgunCollection):
@@ -776,8 +768,6 @@ class NodeCollection(NailgunCollection):
         """
         options = (
             joinedload('cluster'),
-            joinedload('role_list'),
-            joinedload('pending_role_list'),
             subqueryload_all('nic_interfaces.assigned_networks_list'),
             subqueryload_all('bond_interfaces.assigned_networks_list'),
             subqueryload_all('ip_addrs.network_data')

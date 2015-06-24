@@ -25,7 +25,6 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import Unicode
-from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 
 from nailgun import consts
@@ -37,40 +36,6 @@ from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun.logger import logger
-
-
-class NodeRoles(Base):
-    __tablename__ = 'node_roles'
-    id = Column(Integer, primary_key=True)
-    role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
-    node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
-    primary = Column(Boolean, default=False, nullable=False)
-
-    role_obj = relationship("Role")
-
-
-class PendingNodeRoles(Base):
-    __tablename__ = 'pending_node_roles'
-    id = Column(Integer, primary_key=True)
-    role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
-    node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
-    primary = Column(Boolean, default=False, nullable=False)
-
-    role_obj = relationship("Role")
-
-
-class Role(Base):
-    __tablename__ = 'roles'
-    __table_args__ = (
-        UniqueConstraint('name', 'release_id'),
-    )
-    id = Column(Integer, primary_key=True)
-    release_id = Column(
-        Integer,
-        ForeignKey('releases.id', ondelete='CASCADE'),
-        nullable=False
-    )
-    name = Column(String(50), nullable=False)
 
 
 class NodeGroup(Base):
@@ -115,18 +80,10 @@ class Node(Base):
     error_msg = Column(String(255))
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)
-    role_list = relationship(
-        "Role",
-        secondary=NodeRoles.__table__,
-        backref=backref("nodes", cascade="all,delete")
-    )
-    role_associations = relationship("NodeRoles", viewonly=True)
-    pending_role_associations = relationship("PendingNodeRoles", viewonly=True)
-    pending_role_list = relationship(
-        "Role",
-        secondary=PendingNodeRoles.__table__,
-        backref=backref("pending_nodes", cascade="all,delete")
-    )
+    roles = Column(JSON, default=[], nullable=False)
+    pending_roles = Column(JSON, default=[], nullable=False)
+    primary_roles = Column(JSON, default=[], nullable=False)
+
     attributes = relationship("NodeAttributes",
                               backref=backref("node"),
                               uselist=False,
@@ -190,52 +147,9 @@ class Node(Base):
         return u'%s (id=%s, mac=%s)' % (self.name, self.id, self.mac)
 
     @property
-    def roles(self):
-        return [role.name for role in self.role_list]
-
-    @roles.setter
-    def roles(self, new_roles):
-        if not self.cluster:
-            logger.warning(
-                u"Attempting to assign roles to node "
-                u"'{0}' which isn't added to cluster".format(
-                    self.name or self.id
-                )
-            )
-            return
-        if new_roles:
-            self.role_list = db().query(Role).filter_by(
-                release_id=self.cluster.release_id,
-            ).filter(
-                Role.name.in_(new_roles)
-            ).all()
-        else:
-            self.role_list = []
-
-    @property
-    def pending_roles(self):
-        return [role.name for role in self.pending_role_list]
-
-    @property
     def all_roles(self):
         """Returns all roles, self.roles and self.pending_roles."""
         return set(self.pending_roles + self.roles)
-
-    @pending_roles.setter
-    def pending_roles(self, new_roles):
-        if not self.cluster:
-            logger.warning(
-                u"Attempting to assign pending_roles to node "
-                u"'{0}' which isn't added to cluster".format(
-                    self.name or self.id
-                )
-            )
-            return
-        self.pending_role_list = db().query(Role).filter_by(
-            release_id=self.cluster.release_id,
-        ).filter(
-            Role.name.in_(new_roles)
-        ).all()
 
     @property
     def admin_interface(self):

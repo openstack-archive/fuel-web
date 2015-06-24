@@ -348,10 +348,15 @@ class TestLvmUtils(test_base.BaseTestCase):
         mock_vgdisplay.return_value = [{'name': 'vgname', 'free': 2000},
                                        {'name': 'some', 'free': 2000}]
         mock_lvdisplay.return_value = [{'name': 'lvname', 'vg': 'some'}]
+        mock_exec.return_value = [('--yes', ''), ('', '')]
+        expected_calls = [
+            mock.call('lvcreate', '--help'),
+            mock.call('lvcreate', '--yes', '-L', '1000m',
+                      '-n', 'lvname', 'vgname',
+                      check_exit_code=[0])
+        ]
         lu.lvcreate('vgname', 'lvname', 1000)
-        mock_exec.assert_called_once_with('lvcreate', '--yes', '-L', '1000m',
-                                          '-n', 'lvname', 'vgname',
-                                          check_exit_code=[0])
+        self.assertEqual(mock_exec.call_args_list, expected_calls)
 
     @mock.patch.object(utils, 'execute')
     def test_lvdisplay(self, mock_exec):

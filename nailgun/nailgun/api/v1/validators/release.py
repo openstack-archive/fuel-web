@@ -94,7 +94,7 @@ class ReleaseValidator(BasicValidator):
         if "roles" in d:
             new_roles = set(d["roles"])
             assigned_roles_names = set([
-                r.name for r in instance.role_list
+                r for r in instance.roles
                 if r.nodes or r.pending_nodes
             ])
             if not assigned_roles_names <= new_roles:

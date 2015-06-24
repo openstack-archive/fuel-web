@@ -81,11 +81,12 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         self.assertEqual(len(self.filter_by_role(nodes, role)), count)
 
     def get_controllers(self, cluster_id):
-        return self.db.query(Node).\
+        nodes = self.db.query(Node).\
             filter_by(cluster_id=cluster_id,
                       pending_deletion=False).\
-            filter(Node.role_list.any(name='controller')).\
             order_by(Node.id)
+
+        return [n for n in nodes if 'controller' in n.roles]
 
     def add_default_params(self, nodes):
         """Adds neceserry default parameters to nodes

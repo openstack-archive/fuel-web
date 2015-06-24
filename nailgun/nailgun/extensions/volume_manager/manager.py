@@ -195,7 +195,8 @@ class DisksFormatConvertor(object):
                     {
                         "size": 938905,
                         "type": "pv",
-                        "vg": "os"
+                        "vg": "os",
+                        "keep": true
                     }
                 ]
             }
@@ -210,6 +211,7 @@ class DisksFormatConvertor(object):
                     {
                         "name": "os",
                         "size": 938905,
+                        "keep": true
                     }
                 ]
             }
@@ -224,8 +226,11 @@ class DisksFormatConvertor(object):
         volume_manager = node.volume_manager
         for disk in disks:
             for volume in disk['volumes']:
-                full_format = volume_manager.set_volume_size(
-                    disk['id'], volume['name'], volume['size'])
+                volume_manager.set_volume_size(disk['id'],
+                                               volume['name'],
+                                               volume['size'])
+                full_format = volume_manager.set_volume_flags(disk['id'],
+                                                              volume)
 
         return full_format
 
@@ -290,6 +295,9 @@ class DisksFormatConvertor(object):
             volume_simple = {
                 'name': volume['vg'],
                 'size': size}
+
+            if volume.get('keep', False):
+                volume_simple['keep'] = True
 
             volumes_simple_format.append(volume_simple)
 
@@ -547,6 +555,14 @@ class Disk(object):
                 volume['size'] = size
                 self.free_space -= size
 
+    def set_keep_flag(self, name, value):
+        """Set keep flag
+        """
+        for volume in self.volumes:
+            if volume.get('type') == 'pv' and \
+               volume.get('vg') == name:
+                volume['keep'] = bool(value)
+
     def reset(self):
         self.volumes = []
         self.free_space = self.size
@@ -648,6 +664,25 @@ class VolumeManager(object):
                 self.volumes[idx] = self.expand_generators(vg_template)
 
         self.__logger('Updated volume size %s' % self.volumes)
+        return self.volumes
+
+    def set_volume_flags(self, disk_id, volume):
+        """Set flags of volume
+        """
+        volume_name = volume['name']
+        self.__logger('Update volume flags for disk=%s volume_name=%s' %
+                      (disk_id, volume_name))
+
+        disk = filter(lambda disk: disk.id == disk_id, self.disks)[0]
+
+        if volume.get('keep', False):
+            disk.set_keep_flag(volume_name, volume.get('keep'))
+
+        for idx, volume in enumerate(self.volumes):
+            if volume.get('id') == disk.id:
+                self.volumes[idx] = disk.render()
+
+        self.__logger('Updated volume flags %s' % self.volumes)
         return self.volumes
 
     def get_space_type(self, volume_name):

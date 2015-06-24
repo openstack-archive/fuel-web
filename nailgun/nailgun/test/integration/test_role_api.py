@@ -17,7 +17,6 @@
 
 import yaml
 
-from nailgun import objects
 from nailgun.test import base
 
 
@@ -44,9 +43,7 @@ class TestRoleApi(BaseRoleTest):
     """
 
     def test_get_all_roles(self):
-
         self.env.create_role(self.release.id, self.role_data)
-        all_roles = objects.RoleCollection.all()
 
         resp = self.app.get(
             base.reverse(
@@ -55,9 +52,13 @@ class TestRoleApi(BaseRoleTest):
             headers=self.default_headers,
         )
 
-        self.assertItemsEqual(
-            [r.id for r in all_roles],
-            [r['id'] for r in resp.json])
+        self.assertEqual(
+            len(self.release.roles_metadata.keys()),
+            len(resp.json))
+
+        created_role = next((
+            role for role in resp.json if role['name'] == 'my_role'))
+        self.assertEqual(created_role, self.role_data)
 
     def test_create_role(self):
         resp = self.env.create_role(self.release.id, self.role_data)

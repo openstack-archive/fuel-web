@@ -13,20 +13,30 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import sqlalchemy as sa
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import role
+from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 
 
 class RoleValidator(BasicValidator):
 
     @classmethod
-    def validate_delete(cls, instance):
-        if instance.nodes or instance.pending_nodes:
+    def validate_delete(cls, release, role_name):
+        clusters = [cluster.id for cluster in release.clusters]
+        node = db().query(models.Node).filter(
+            models.Node.cluster_id.in_(clusters)
+        ).filter(sa.not_(sa.and_(
+            models.Node.roles.any(role_name),
+            models.Node.pending_roles.any(role_name)
+        ))).first()
+
+        if node:
             raise errors.CannotDelete(
-                "Can't delete roles that is assigned to some node."
-            )
+                "Can't delete roles that is assigned to some node.")
 
     @classmethod
     def validate(cls, data, instance=None):

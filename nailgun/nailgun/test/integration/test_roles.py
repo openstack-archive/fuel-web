@@ -15,9 +15,7 @@
 #    under the License.
 
 from oslo.serialization import jsonutils
-from sqlalchemy.exc import IntegrityError
 
-from nailgun.db.sqlalchemy.models import Role
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -33,8 +31,8 @@ class TestRoles(BaseIntegrationTest):
         test_role_name = "testrole"
 
         release_json = resp.json_body[0]
-        old_roles = set(release_json["roles"])
-        release_json["roles"].append(test_role_name)
+        old_roles = set(release_json["roles_metadata"].keys())
+        release_json["roles_metadata"][test_role_name] = {}
 
         resp = self.app.put(
             reverse('ReleaseHandler',
@@ -42,9 +40,9 @@ class TestRoles(BaseIntegrationTest):
             jsonutils.dumps(release_json),
             headers=self.default_headers
         )
-        new_roles = resp.json_body["roles"]
+        new_roles = set(resp.json_body["roles_metadata"].keys())
         self.assertIn(test_role_name, new_roles)
-        self.assertLessEqual(old_roles, set(new_roles))
+        self.assertLessEqual(old_roles, new_roles)
 
     def test_roles_add_and_remove(self):
         self.env.create_release()
@@ -55,10 +53,10 @@ class TestRoles(BaseIntegrationTest):
         test_role_name = "testrole"
 
         release_json = resp.json_body[0]
-        old_roles = release_json["roles"]
-        release_json["roles"].append(test_role_name)
-        release_json["roles"].remove(old_roles[0])
-        expected_roles = list(release_json["roles"])
+        old_roles = release_json["roles_metadata"].keys()
+        release_json["roles_metadata"][test_role_name] = {}
+        release_json["roles_metadata"].pop(old_roles[0])
+        expected_roles = list(release_json["roles_metadata"].keys())
 
         resp = self.app.put(
             reverse('ReleaseHandler',
@@ -66,60 +64,8 @@ class TestRoles(BaseIntegrationTest):
             jsonutils.dumps(release_json),
             headers=self.default_headers
         )
-        new_roles = resp.json_body["roles"]
+        new_roles = resp.json_body["roles_metadata"].keys()
         self.assertEqual(expected_roles, new_roles)
-
-    def test_roles_add_duplicated_through_handler(self):
-        self.env.create_release()
-        resp = self.app.get(
-            reverse('ReleaseCollectionHandler'),
-            headers=self.default_headers
-        )
-        test_role_name = "testrole"
-
-        release_json = resp.json_body[0]
-        old_roles = release_json["roles"]
-        release_json["roles"].append(test_role_name)
-        expected_roles = list(release_json["roles"])
-        # add some duplicates
-        release_json["roles"].extend(old_roles)
-
-        resp = self.app.put(
-            reverse('ReleaseHandler',
-                    kwargs={"obj_id": release_json["id"]}),
-            jsonutils.dumps(release_json),
-            headers=self.default_headers
-        )
-        new_roles = resp.json_body["roles"]
-        self.assertEqual(expected_roles, new_roles)
-
-    def test_roles_add_duplicated_to_db_directly(self):
-        self.env.create_release()
-        resp = self.app.get(
-            reverse('ReleaseCollectionHandler'),
-            headers=self.default_headers
-        )
-        release_json = resp.json_body[0]
-        old_roles = list(release_json["roles"])
-
-        role = Role(name=old_roles[0],
-                    release_id=release_json["id"])
-        added = True
-        try:
-            self.db.add(role)
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            added = False
-        self.assertFalse(added)
-
-        resp = self.app.get(
-            reverse('ReleaseCollectionHandler'),
-            headers=self.default_headers
-        )
-        release_json = resp.json_body[0]
-        new_roles = list(release_json["roles"])
-        self.assertEqual(old_roles, new_roles)
 
     def test_roles_delete(self):
         self.env.create_release()
@@ -129,9 +75,9 @@ class TestRoles(BaseIntegrationTest):
         )
 
         release_json = resp.json_body[0]
-        old_roles = release_json["roles"]
-        removed_role = release_json["roles"][0]
-        release_json["roles"] = release_json["roles"][1:]
+        old_roles = release_json["roles_metadata"].keys()
+        removed_role = old_roles[0]
+        release_json["roles_metadata"].pop(removed_role)
 
         resp = self.app.put(
             reverse('ReleaseHandler',
@@ -139,7 +85,7 @@ class TestRoles(BaseIntegrationTest):
             jsonutils.dumps(release_json),
             headers=self.default_headers
         )
-        new_roles = resp.json_body["roles"]
+        new_roles = resp.json_body["roles_metadata"].keys()
         self.assertLess(len(new_roles), len(old_roles))
         self.assertNotIn(removed_role, new_roles)
 
@@ -155,10 +101,7 @@ class TestRoles(BaseIntegrationTest):
         )
 
         release_json = resp.json_body[0]
-
-        old_roles = set(release_json["roles"])
-        old_roles.remove("controller")
-        release_json["roles"] = list(old_roles)
+        release_json["roles_metadata"].pop("controller")
 
         resp = self.app.put(
             reverse(

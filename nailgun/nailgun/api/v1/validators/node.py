@@ -269,6 +269,7 @@ class NodeDisksValidator(BasicValidator):
         cls.validate_schema(dict_data, disks_simple_format_schema)
         cls.at_least_one_disk_exists(dict_data)
         cls.sum_of_volumes_not_greater_than_disk_size(dict_data)
+        cls.check_keep_data_flag_for_volumes_with_same_role(dict_data)
         # in case of Ubuntu we should allocate OS on one disk only
         # https://bugs.launchpad.net/fuel/+bug/1308592
         if node and node.cluster \
@@ -301,6 +302,26 @@ class NodeDisksValidator(BasicValidator):
             if volumes_size > disk['size']:
                 raise errors.InvalidData(
                     u'Not enough free space on disk: %s' % disk)
+
+    @classmethod
+    def check_keep_data_flag_for_volumes_with_same_role(cls, data):
+        names_with_keep_data = set()
+        for disk in data:
+            for volume in disk['volumes']:
+                if volume.get('keep_data', False):
+                    names_with_keep_data.add(volume['name'])
+        incorrect_names = set()
+        for disk in data:
+            for volume in disk['volumes']:
+                if volume['name'] in names_with_keep_data and \
+                        not volume.get('keep_data', False):
+                    incorrect_names.add(volume['name'])
+
+        if len(incorrect_names) > 0:
+            s = ', '.join(incorrect_names)
+            raise errors.InvalidData(u'All volumes with the same name should'
+                                     u' have the same value for `keep_data` '
+                                     u'flag, incorrect volumes: {0}'.format(s))
 
 
 class NodesFilterValidator(BasicValidator):

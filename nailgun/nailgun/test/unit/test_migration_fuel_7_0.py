@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 
 import alembic
 from oslo.serialization import jsonutils
@@ -26,49 +27,6 @@ from nailgun.test import base
 
 _prepare_revision = '37608259013'
 _test_revision = '1e50a4903910'
-
-_RELEASE = {
-    'name': 'test_name',
-    'version': '2015.2-7.0',
-    'operating_system': 'ubuntu',
-    'state': 'available',
-    'roles_metadata': jsonutils.dumps({
-        "controller": {
-            "name": "Controller",
-            "description": "Controller role"
-        },
-        "zabbix-server": {
-            "name": "Zabbix Server",
-            "description": "Zabbix Server role"
-        },
-        "cinder": {
-            "name": "Cinder",
-            "description": "Cinder role"
-        }
-    }),
-    'attributes_metadata': jsonutils.dumps({
-        'editable': {
-            'storage': {
-                'volumes_lvm': {},
-            },
-            'common': {},
-        },
-        'generated': {
-            'cobbler': {'profile': {
-                'generator_arg': 'ubuntu_1204_x86_64'}}},
-    }),
-    'networks_metadata': jsonutils.dumps({
-        'neutron': {
-            'networks': [
-                {
-                    'assign_vip': True,
-                },
-            ]
-        }
-
-    }),
-    'is_deployable': True
-}
 
 
 def setup_module(module):
@@ -99,7 +57,124 @@ def prepare():
             'fuel_version': jsonutils.dumps(['6.1', '7.0']),
         }])
 
-    db.execute(meta.tables['releases'].insert(), [_RELEASE])
+    result = db.execute(
+        meta.tables['releases'].insert(),
+        [{
+            'name': 'test_name',
+            'version': '2014.2-6.0',
+            'operating_system': 'ubuntu',
+            'state': 'available',
+            'roles': jsonutils.dumps([
+                'controller',
+                'compute',
+                'mongo',
+            ]),
+            'roles_metadata': jsonutils.dumps({
+                'controller': {
+                    'name': 'Controller',
+                    'description': 'Controller role',
+                    'has_primary': True,
+                },
+                'zabbix-server': {
+                    'name': 'Zabbix Server',
+                    'description': 'Zabbix Server role'
+                },
+                'cinder': {
+                    'name': 'Cinder',
+                    'description': 'Cinder role'
+                },
+                'mongo': {
+                    'name': 'Telemetry - MongoDB',
+                    'description': 'mongo is',
+                    'has_primary': True,
+                }
+            }),
+            'attributes_metadata': jsonutils.dumps({}),
+            'networks_metadata': jsonutils.dumps({}),
+            'is_deployable': True,
+        }])
+    releaseid = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['nodes'].insert(),
+        [
+            {
+                'uuid': 'one',
+                'cluster_id': None,
+                'group_id': None,
+                'status': 'discover',
+                'meta': '{}',
+                'mac': 'aa:aa:aa:aa:aa:aa',
+                'pending_addition': True,
+                'pending_deletion': False,
+                'timestamp': datetime.datetime.utcnow(),
+            }
+        ])
+    nodeid_a = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['nodes'].insert(),
+        [
+            {
+                'uuid': 'two',
+                'cluster_id': None,
+                'group_id': None,
+                'status': 'discover',
+                'meta': '{}',
+                'mac': 'bb:bb:bb:bb:bb:bb',
+                'pending_addition': True,
+                'pending_deletion': False,
+                'timestamp': datetime.datetime.utcnow(),
+            }
+        ])
+    nodeid_b = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['nodes'].insert(),
+        [
+            {
+                'uuid': 'three',
+                'cluster_id': None,
+                'group_id': None,
+                'status': 'discover',
+                'meta': '{}',
+                'mac': 'cc:cc:cc:cc:cc:cc',
+                'pending_addition': True,
+                'pending_deletion': False,
+                'timestamp': datetime.datetime.utcnow(),
+            }
+        ])
+    nodeid_c = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['roles'].insert(),
+        [
+            {'release_id': releaseid, 'name': 'controller'},
+        ])
+    controllerroleid = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['roles'].insert(),
+        [
+            {'release_id': releaseid, 'name': 'mongo'},
+        ])
+    mongoroleid = result.inserted_primary_key[0]
+
+    result = db.execute(
+        meta.tables['node_roles'].insert(),
+        [
+            {'role': controllerroleid, 'node': nodeid_a, 'primary': False},
+            {'role': controllerroleid, 'node': nodeid_b, 'primary': False},
+            {'role': controllerroleid, 'node': nodeid_c, 'primary': True},
+            {'role': mongoroleid, 'node': nodeid_a, 'primary': False},
+        ])
+
+    result = db.execute(
+        meta.tables['pending_node_roles'].insert(),
+        [
+            {'role': mongoroleid, 'node': nodeid_b, 'primary': True},
+            {'role': mongoroleid, 'node': nodeid_c, 'primary': False},
+        ])
 
     db.commit()
 
@@ -192,7 +267,8 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
             jsonutils.loads(result.fetchone()[0]), [])
 
 
-class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
+class TestPublicIpRequired(base.BaseAlembicMigrationTest):
+
     def test_public_ip_required(self):
         result = db.execute(
             sa.select([self.meta.tables['releases'].c.roles_metadata]))
@@ -202,3 +278,45 @@ class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
                 self.assertTrue(role_info['public_ip_required'])
             else:
                 self.assertFalse(role_info.get('public_ip_required'))
+
+
+class TestSchemalessRoles(base.BaseAlembicMigrationTest):
+
+    def test_nodes_has_roles_attrs(self):
+        result = db.execute(
+            sa.select([
+                self.meta.tables['nodes'].c.roles,
+                self.meta.tables['nodes'].c.pending_roles,
+                self.meta.tables['nodes'].c.primary_roles,
+            ]).order_by(self.meta.tables['nodes'].c.id))
+
+        nodes = [
+            (jsonutils.loads(a), jsonutils.loads(b), jsonutils.loads(c))
+            for a, b, c in result
+        ]
+
+        # node_a
+        roles, pending_roles, primary_roles = nodes[0]
+
+        self.assertItemsEqual(['controller', 'mongo'], roles)
+        self.assertItemsEqual([], pending_roles)
+        self.assertItemsEqual([], primary_roles)
+
+        # node_b
+        roles, pending_roles, primary_roles = nodes[1]
+
+        self.assertItemsEqual(['controller'], roles)
+        self.assertItemsEqual(['mongo'], pending_roles)
+        self.assertItemsEqual(['mongo'], primary_roles)
+
+        # node_c
+        roles, pending_roles, primary_roles = nodes[2]
+
+        self.assertItemsEqual(['controller'], roles)
+        self.assertItemsEqual(['mongo'], pending_roles)
+        self.assertItemsEqual(['controller'], primary_roles)
+
+    def test_old_tables_are_dropped(self):
+        self.assertNotIn('node_roles', self.meta.tables)
+        self.assertNotIn('pending_node_roles', self.meta.tables)
+        self.assertNotIn('roles', self.meta.tables)

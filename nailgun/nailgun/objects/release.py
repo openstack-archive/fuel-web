@@ -17,12 +17,13 @@
 """
 Release object and collection
 """
+
+import copy
+
 from distutils.version import StrictVersion
-from sqlalchemy import not_
 import yaml
 
 from nailgun import consts
-from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -80,63 +81,57 @@ class Release(NailgunObject):
     @classmethod
     def create(cls, data):
         """Create Release instance with specified parameters in DB.
-        Corresponding roles are created in DB using names specified
-        in "roles" field. See :func:`update_roles`
 
         :param data: dictionary of key-value pairs as object fields
         :returns: Release instance
         """
-        roles = data.pop("roles", None)
-        new_obj = super(Release, cls).create(data)
-        if roles:
-            cls.update_roles(new_obj, roles)
-        return new_obj
+        # in order to be compatible with old API, let's drop input
+        # roles array. since fuel 7.0 we don't use it anymore, and
+        # we don't require it even for old releases.
+        data.pop("roles", None)
+        return super(Release, cls).create(data)
 
     @classmethod
     def update(cls, instance, data):
         """Update existing Release instance with specified parameters.
-        Corresponding roles are updated in DB using names specified
-        in "roles" field. See :func:`update_roles`
 
         :param instance: Release instance
         :param data: dictionary of key-value pairs as object fields
         :returns: Release instance
         """
-        roles = data.pop("roles", None)
-        super(Release, cls).update(instance, data)
-        if roles is not None:
-            cls.update_roles(instance, roles)
-        return instance
+        # in order to be compatible with old API, let's drop input
+        # roles array. since fuel 7.0 we don't use it anymore, and
+        # we don't require it even for old releases.
+        data.pop("roles", None)
+        return super(Release, cls).update(instance, data)
 
     @classmethod
-    def update_roles(cls, instance, roles):
-        """Update existing Release instance with specified roles.
+    def update_role(cls, instance, role):
+        """Update existing Release instance with specified role.
         Previous ones are deleted.
 
-        IMPORTANT NOTE: attempting to remove roles that are already
-        assigned to nodes will lead to an Exception.
-
-        :param instance: Release instance
-        :param roles: list of new roles names
+        :param instance: a Release instance
+        :param role: a role dict
         :returns: None
         """
-        db().query(models.Role).filter(
-            not_(models.Role.name.in_(roles))
-        ).filter(
-            models.Role.release_id == instance.id
-        ).delete(synchronize_session='fetch')
-        db().refresh(instance)
+        # mark sqlalchemy's attribute as dirty, so it will be flushed
+        # when needed
+        instance.roles_metadata = copy.deepcopy(instance.roles_metadata)
+        instance.volumes_metadata = copy.deepcopy(instance.volumes_metadata)
 
-        added_roles = instance.roles
-        for role in roles:
-            if role not in added_roles:
-                new_role = models.Role(
-                    name=role,
-                    release=instance
-                )
-                db().add(new_role)
-                added_roles.append(role)
-        db().flush()
+        instance.roles_metadata[role['name']] = role['meta']
+        instance.volumes_metadata['volumes_roles_mapping'][role['name']] = \
+            role.get('volumes_roles_mapping', [])
+
+    @classmethod
+    def remove_role(cls, instance, role_name):
+        # mark sqlalchemy's attribute as dirty, so it will be flushed
+        # when needed
+        instance.roles_metadata = copy.deepcopy(instance.roles_metadata)
+        instance.volumes_metadata = copy.deepcopy(instance.volumes_metadata)
+
+        instance.roles_metadata.pop(role_name, None)
+        instance.volumes_metadata['volumes_roles_mapping'].pop(role_name, None)
 
     @classmethod
     def is_deployable(cls, instance):

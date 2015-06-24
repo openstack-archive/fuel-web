@@ -27,9 +27,6 @@ from nailgun.db.sqlalchemy.models.cluster import VmwareAttributes
 from nailgun.db.sqlalchemy.models.release import Release
 
 from nailgun.db.sqlalchemy.models.node import Node
-from nailgun.db.sqlalchemy.models.node import NodeRoles
-from nailgun.db.sqlalchemy.models.node import PendingNodeRoles
-from nailgun.db.sqlalchemy.models.node import Role
 from nailgun.db.sqlalchemy.models.node import NodeAttributes
 from nailgun.db.sqlalchemy.models.node import NodeBondInterface
 from nailgun.db.sqlalchemy.models.node import NodeNICInterface

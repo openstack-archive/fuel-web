@@ -149,6 +149,7 @@ class EnvironmentManager(object):
             'name': u"release_name_" + version,
             'version': version,
             'description': u"release_desc" + version,
+            # TODO: remove 'roles'
             'roles': self.get_default_roles(),
             'modes': ['ha_compact', 'multinode'],
         })

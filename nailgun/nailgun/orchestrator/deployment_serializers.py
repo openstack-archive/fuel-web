@@ -19,7 +19,6 @@
 from copy import deepcopy
 from itertools import groupby
 
-from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
 import math
@@ -150,11 +149,15 @@ class DeploymentMultinodeSerializer(GraphBasedSerializer):
         """
         osd_num = 0
         nodes = db().query(Node). \
-            filter(or_(
-                Node.role_list.any(name='ceph-osd'),
-                Node.pending_role_list.any(name='ceph-osd'))). \
             filter(Node.cluster == cluster). \
             options(joinedload('attributes'))
+
+        nodes = six.moves.filter(
+            lambda node:
+            'ceph-osd' in set(node.roles + node.pending_roles),
+            nodes
+        )
+
         for node in nodes:
             for disk in node.attributes.volumes:
                 for part in disk.get('volumes', []):

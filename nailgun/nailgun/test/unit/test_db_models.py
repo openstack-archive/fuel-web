@@ -17,6 +17,8 @@
 from random import randint
 
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Release
+
 from nailgun.test.base import BaseTestCase
 
 
@@ -33,3 +35,17 @@ class TestDbModels(BaseTestCase):
         cluster = Cluster(**cluster_data)
         self.db.add(cluster)
         self.db.commit()
+
+    def test_release_environment_version(self):
+        test_cases = (
+            ('2014.1', '5.0'),
+            ('2014.1-5.0', '5.0'),
+            ('2014.1.1-5.0.1', '5.0.1'),
+            ('2014.1.1-5.0.1-X', '5.0.1'),
+            ('2014.1.1-5.1', '5.1'),
+        )
+
+        for version, enviroment_version in test_cases:
+            self.assertEqual(
+                Release(version=version).environment_version,
+                enviroment_version)

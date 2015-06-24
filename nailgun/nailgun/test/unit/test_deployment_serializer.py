@@ -23,52 +23,37 @@ class TestGetSerializer(BaseUnitTest):
     """Test cases for `get_serializer_for_cluster` function.
     """
 
-    @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.utils.'
-        'extract_env_version',
-        return_value='5.0')
-    def test_retreiving_ha_for_5_0(self, _):
+    def test_retreiving_ha_for_5_0(self):
         cluster = mock.MagicMock(is_ha_mode=True)
+        cluster.release.environment_version = '5.0'
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
             ds.DeploymentHASerializer50)
 
-    @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.utils.'
-        'extract_env_version',
-        return_value='5.0')
-    def test_retreiving_multinode_for_5_0(self, _):
+    def test_retreiving_multinode_for_5_0(self):
         cluster = mock.MagicMock(is_ha_mode=False)
+        cluster.release.environment_version = '5.0'
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
             ds.DeploymentMultinodeSerializer50)
 
-    @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.utils.'
-        'extract_env_version',
-        return_value='5.1')
-    def test_retreiving_ha_for_5_1(self, _):
+    def test_retreiving_ha_for_5_1(self):
         cluster = mock.MagicMock(is_ha_mode=True)
+        cluster.release.environment_version = '5.1'
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
             ds.DeploymentHASerializer51)
 
-    @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.utils.'
-        'extract_env_version',
-        return_value='5.1')
-    def test_retreiving_multinode_for_5_1(self, _):
+    def test_retreiving_multinode_for_5_1(self):
         cluster = mock.MagicMock(is_ha_mode=False)
+        cluster.release.environment_version = '5.1'
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
             ds.DeploymentMultinodeSerializer51)
 
-    @mock.patch(
-        'nailgun.orchestrator.deployment_serializers.utils.'
-        'extract_env_version',
-        return_value='9999.0')
-    def test_usage_of_latest_serializer_in_case_of_new_release_ha(self, _):
+    def test_usage_of_latest_serializer_in_case_of_new_release(self):
         cluster = mock.MagicMock(is_ha_mode=True)
+        cluster.release.environment_version = '9999.0'
         self.assertIs(
             ds.get_serializer_for_cluster(cluster),
             ds.DeploymentHASerializer70)

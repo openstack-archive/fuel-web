@@ -42,9 +42,11 @@ def upgrade():
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
     extend_plugin_model_upgrade()
+    extend_releases_model_upgrade()
 
 
 def downgrade():
+    extend_releases_model_downgrade()
     extend_plugin_model_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
@@ -103,9 +105,22 @@ def extend_plugin_model_upgrade():
     )
 
 
+def extend_releases_model_upgrade():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'network_roles_metadata',
+            fields.JSON(),
+            server_default='{}'))
+
+
 def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'tasks')
     op.drop_column('plugins', 'deployment_tasks')
     op.drop_column('plugins', 'roles_metadata')
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
+
+
+def extend_releases_model_downgrade():
+    op.drop_column('releases', 'network_roles_metadata')

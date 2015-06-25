@@ -26,6 +26,41 @@ from nailgun.test import base
 _prepare_revision = '37608259013'
 _test_revision = '1e50a4903910'
 
+_RELEASE = {
+    'name': 'test_name',
+    'version': '2015.2-7.0',
+    'operating_system': 'ubuntu',
+    'state': 'available',
+    'roles_metadata': jsonutils.dumps({
+        "mongo": {
+            "name": "Mongo",
+            "description": "Mongo role"
+        }
+    }),
+    'attributes_metadata': jsonutils.dumps({
+        'editable': {
+            'storage': {
+                'volumes_lvm': {},
+            },
+            'common': {},
+        },
+        'generated': {
+            'cobbler': {'profile': {
+                'generator_arg': 'ubuntu_1204_x86_64'}}},
+    }),
+    'networks_metadata': jsonutils.dumps({
+        'neutron': {
+            'networks': [
+                {
+                    'assign_vip': True,
+                },
+            ]
+        }
+
+    }),
+    'is_deployable': True,
+}
+
 
 def setup_module(module):
     dropdb()
@@ -54,6 +89,8 @@ def prepare():
             ]),
             'fuel_version': jsonutils.dumps(['6.1', '7.0']),
         }])
+
+    db.execute(meta.tables['releases'].insert(), [_RELEASE])
 
     db.commit()
 
@@ -144,3 +181,14 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['plugins'].c.tasks]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
+
+    def test_network_roles_metadata_exists_and_empty(self):
+        # check attributes_metadata field exists
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.network_roles_metadata]))
+        # check attributes_metadata value is empty
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), {})

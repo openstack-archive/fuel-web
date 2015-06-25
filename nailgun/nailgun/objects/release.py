@@ -67,6 +67,7 @@ class Release(NailgunObject):
             "volumes_metadata": {"type": "object"},
             "modes_metadata": {"type": "object"},
             "roles_metadata": {"type": "object"},
+            "network_roles_metadata": {"type": "object"},
             "wizard_metadata": {"type": "object"},
             "roles": {"type": "array"},
             "clusters": {"type": "array"},

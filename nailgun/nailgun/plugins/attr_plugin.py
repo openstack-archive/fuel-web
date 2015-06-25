@@ -24,6 +24,7 @@ import yaml
 
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
 
 
@@ -38,6 +39,7 @@ class ClusterAttributesPluginBase(object):
     """
 
     environment_config_name = 'environment_config.yaml'
+    plugin_metadata = 'metadata.yaml'
     task_config_name = 'tasks.yaml'
 
     def __init__(self, plugin):
@@ -56,10 +58,28 @@ class ClusterAttributesPluginBase(object):
         plugin related scripts and repositories
         """
 
+    def sync_metadata_to_db(self):
+        """Sync metadata from config yaml files into DB
+        """
+        self._sync_plugin_metadata()
+
+    def _sync_plugin_metadata(self):
+        metadata_file_path = os.path.join(
+            self.plugin_path, self.plugin_metadata)
+
+        if os.path.exists(metadata_file_path):
+            metadata = self._load_config(metadata_file_path)
+            Plugin.update(self.plugin, metadata)
+
     def _load_config(self, config):
         if os.access(config, os.R_OK):
             with open(config, "r") as conf:
-                return yaml.load(conf.read())
+                try:
+                    return yaml.load(conf.read())
+                except yaml.YAMLError as exc:
+                    logger.warning(exc)
+                    raise errors.ParseError(
+                        'Problem with loading YAML file {0}'.format(config))
         else:
             logger.warning("Config {0} is not readable.".format(config))
 
@@ -263,9 +283,39 @@ class ClusterAttributesPluginV2(ClusterAttributesPluginBase):
         return major
 
 
+class PluginAdapterV3(ClusterAttributesPluginV2):
+    """Plugin wrapper class for package version >= 3.0.0
+    """
+
+    node_roles_config_name = 'node_roles.yaml'
+    volumes_config_name = 'volumes.yaml'
+    deployment_tasks_config_name = 'deployment_tasks.yaml'
+
+    def sync_metadata_to_db(self):
+        super(PluginAdapterV3, self).sync_metadata_to_db()
+
+        db_config_metadata_mapping = {
+            'attributes_metadata': self.environment_config_name,
+            'roles_metadata': self.node_roles_config_name,
+            'volumes_metadata': self.volumes_config_name,
+            'deployment_tasks': self.deployment_tasks_config_name,
+            'tasks': self.task_config_name
+        }
+
+        for attribute, config in six.iteritems(db_config_metadata_mapping):
+            config_file_path = os.path.join(self.plugin_path, config)
+            if os.path.exists(config_file_path):
+                attribute_data = self._load_config(config_file_path)
+                # Plugin columns have constraints for nullable data, so
+                # we need to check it
+                if attribute_data:
+                    Plugin.update(self.plugin, {attribute: attribute_data})
+
+
 __version_mapping = {
     '1.0.': ClusterAttributesPluginV1,
-    '2.0.': ClusterAttributesPluginV2
+    '2.0.': ClusterAttributesPluginV2,
+    '3.0.': PluginAdapterV3
 }
 
 

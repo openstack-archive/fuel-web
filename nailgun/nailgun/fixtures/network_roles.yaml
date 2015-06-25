@@ -1,0 +1,52 @@
+---
+  network_roles:
+    -
+      id: "management"
+      properties:
+        subnet: {}
+        gateway: {}
+        vip:
+          name: ""
+          title: "some_title"
+          exclusive: true
+      metadata: {}
+    -
+      id: "neutron/private"
+      properties:
+        subnet: {}
+        gateway: {}
+        vip:
+          name: ""
+          exclusive: true
+      metadata:
+        private_vlan:
+          properties:
+            ui_order:
+              - "vlan_range"
+              - "cidr"
+              - "gateway"
+            vlan_range:
+              title: "some title"
+              default:
+                - 1000
+                - 4000
+            cidr: {}
+            gateway: {}
+    -
+      id: "neutron/mesh"
+      properties:
+        subnet: {}
+        gateway: {}
+        vip:
+          name: ""
+          exclusive: true
+      metadata: {}
+    -
+      id: "neutron/floating"
+      properties:
+        subnet: {}
+        gateway: {}
+        vip:
+          name: ""
+          exclusive: true
+      metadata: {}

@@ -18,9 +18,10 @@ define(
     'jquery',
     'underscore',
     'i18n',
-    'react'
+    'react',
+    'dispatcher'
 ],
-function($, _, i18n, React) {
+function($, _, i18n, React, dispatcher) {
     'use strict';
 
     var LoginPage = React.createClass({
@@ -64,6 +65,11 @@ function($, _, i18n, React) {
                         username: username,
                         token: keystoneClient.token
                     });
+
+                    if (password == 'admin') {
+                        dispatcher.trigger('showDefaultPasswordWarning');
+                    }
+
                     return app.settings.fetch({cache: true});
                 }, this))
                 .done(_.bind(function() {

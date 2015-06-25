@@ -37,6 +37,7 @@ def setup_module(module):
 def prepare():
     meta = base.reflect_db_metadata()
 
+    # TODO(apopovych): rewrite with default plugin metadata from base
     db.execute(
         meta.tables['plugins'].insert(),
         [{

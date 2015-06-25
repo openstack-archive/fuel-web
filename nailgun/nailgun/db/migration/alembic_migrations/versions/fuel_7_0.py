@@ -31,6 +31,14 @@ from nailgun.db.sqlalchemy.models import fields
 
 
 def upgrade():
+    upgrade_schema()
+
+
+def downgrade():
+    downgrade_schema()
+
+
+def upgrade_schema():
     op.create_foreign_key(
         None, 'network_groups', 'nodegroups', ['group_id'], ['id'])
     op.create_foreign_key(
@@ -42,17 +50,19 @@ def upgrade():
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
     extend_plugin_model_upgrade()
+    extend_releases_model_upgrade()
 
 
-def downgrade():
-    extend_plugin_model_downgrade()
-
+def downgrade_schema():
     op.drop_constraint(None, 'oswl_stats', type_='unique')
     op.alter_column(
         'oswl_stats', 'resource_checksum', existing_type=sa.TEXT(),
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+
+    extend_plugin_model_downgrade()
+    extend_releases_model_downgrade()
 
 
 def extend_plugin_model_upgrade():
@@ -103,9 +113,22 @@ def extend_plugin_model_upgrade():
     )
 
 
+def extend_releases_model_upgrade():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'network_roles_metadata',
+            fields.JSON(),
+            server_default='{}'))
+
+
 def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'tasks')
     op.drop_column('plugins', 'deployment_tasks')
     op.drop_column('plugins', 'roles_metadata')
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
+
+
+def extend_releases_model_downgrade():
+    op.drop_column('releases', 'network_roles_metadata')

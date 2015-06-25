@@ -858,6 +858,15 @@ class Cluster(NailgunObject):
         repos = instance.attributes.editable['repo_setup']['repos']['value']
         return tuple(set([r['uri'] for r in repos]))
 
+    @classmethod
+    def get_network_roles(cls, cluster):
+        """Method for receiving network roles for particular cluster
+
+        :param cluster: nailgun.db.sqlalchemy.models.Cluster instance
+        :returns: List of network roles' descriptions
+        """
+        return cluster.release.network_roles_metadata
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

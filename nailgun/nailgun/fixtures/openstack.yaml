@@ -90,6 +90,165 @@
       base-os:
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
+    network_roles_metadata:
+      -
+        id: "admin/pxe"
+        default_mapping: "fuelweb_admin"
+        properties:
+          << : *default_network_roles_metadata_properties
+          gateway: true
+      -
+        id: "keystone/api"
+        default_mapping: "management"
+        properties: &default_network_roles_metadata_properties
+          subnet: true
+          gateway: false
+          vip: []
+      -
+        id: "swift/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "neutron/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "sahara/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ceilometer/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "cinder/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "glance/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "heat/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "nova/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "murano/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "horizon"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/memcache"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/database"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/messaging"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/corosync"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mgmt/vip"
+        default_mapping: "management"
+        properties:
+          << : *default_network_roles_metadata_properties
+          vip:
+            -
+              name: "haproxy"
+              shared: true
+            -
+              name: "vrouter"
+              shared: false
+      -
+        id: "public/vip"
+        default_mapping: "public"
+        properties:
+          subnet: true
+          gateway: true
+          vip:
+            -
+              name: "haproxy"
+              shared: true
+            -
+              name: "vrouter"
+              shared: false
+      -
+        id: "neutron/private"
+        default_mapping: "private"
+        properties:
+          << : *default_network_roles_metadata_properties
+          subnet: false
+      -
+        id: "neutron/mesh"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "neutron/floating"
+        default_mapping: "public"
+        properties:
+          << : *default_network_roles_metadata_properties
+          subnet: false
+      -
+        id: "swift/replication"
+        default_mapping: "storage"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ceph/public"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ceph/radosgw"
+        default_mapping: "public"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ceph/replication"
+        default_mapping: "storage"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "cinder/iscsi"
+        default_mapping: "storage"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "mongo/db"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "fw-admin"
+        default_mapping: "fuelweb_admin"
+        properties:
+            << : *default_network_roles_metadata_properties
+            gateway: true
+      -
+        id: "management"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
+        id: "ex"
+        default_mapping: "public"
+        properties:
+          << : *default_network_roles_metadata_properties
+          gateway: true
+      -
+        id: "storage"
+        default_mapping: "storage"
+        properties: *default_network_roles_metadata_properties
     networks_metadata:
       bonding:
         availability:

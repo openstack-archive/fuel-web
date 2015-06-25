@@ -43,3 +43,12 @@ class PluginValidator(BasicValidator):
     @classmethod
     def validate_create(cls, data):
         return cls.validate(data)
+
+
+class PluginSyncValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data):
+        parsed = super(PluginSyncValidator, cls).validate(data)
+        cls.validate_schema(parsed, plugin.SYNC_SCHEMA)
+        return parsed

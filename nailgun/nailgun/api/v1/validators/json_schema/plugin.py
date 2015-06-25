@@ -27,6 +27,7 @@ PLUGIN_RELEASE_SCHEMA = {
     'required': ['version', 'os', 'mode']
 }
 
+
 PLUGIN_SCHEMA = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'title': 'plugin',
@@ -74,4 +75,16 @@ TASK_SCHEMA = {
                 {'type': 'string'}]
         }
     }
+}
+
+
+SYNC_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'ids': {
+            'type': 'array',
+            'items': {'type': 'string'}
+        }
+    },
+    'required': ['ids']
 }

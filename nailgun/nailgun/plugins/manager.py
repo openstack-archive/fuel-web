@@ -79,3 +79,8 @@ class PluginManager(object):
             attr_pl.set_cluster_tasks(cluster)
             attr_plugins.append(attr_pl)
         return attr_plugins
+
+    @classmethod
+    def sync_plugins_metadata(cls):
+        for plugin in PluginCollection.all_newest():
+            pass

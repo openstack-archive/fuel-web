@@ -44,3 +44,13 @@ class PluginCollectionHandler(base.CollectionHandler):
         if obj:
             raise self.http(409, self.collection.single.to_json(obj))
         return super(PluginCollectionHandler, self).POST()
+
+
+class PluginSyncHandler(base.BaseHandler):
+
+    single = objects.Plugin
+
+    def POST(self):
+        """:returns JSONized
+        """
+        pass

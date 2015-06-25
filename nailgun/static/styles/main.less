@@ -336,7 +336,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   &, .close {color: @red;}
 }
 
-.deploy-alert {
+.global-alert {
   background: @base-dark-color - 20%;
   font-size: @base-font-size - 1px;
   .text-shadow;
@@ -375,6 +375,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
       .text-success;
     }
   }
+}
+
+.default-password-alert {
+  margin-top: 20px;
+  &, .close {color: @orange + 50%;}
+  .global-alert;
 }
 
 // CUSTOM CHECKBOX/RADIOBUTTON

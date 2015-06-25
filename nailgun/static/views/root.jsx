@@ -26,10 +26,17 @@ define([
 
     var RootComponent = React.createClass({
         mixins: [
-            componentMixins.dispatcherMixin('updatePageLayout', 'updateTitle')
+            componentMixins.dispatcherMixin('updatePageLayout', 'updateTitle'),
+            componentMixins.dispatcherMixin('showDefaultPasswordWarning', 'showDefaultPasswordWarning')
         ],
+        showDefaultPasswordWarning: function() {
+            this.setState({showDefaultPasswordWarning: true});
+        },
+        hideDefaultPasswordWarning: function() {
+            this.setState({showDefaultPasswordWarning: false});
+        },
         getInitialState: function() {
-            return {};
+            return {showDefaultPasswordWarning: false};
         },
         setPage: function(Page, pageOptions) {
             this.setState({
@@ -54,7 +61,8 @@ define([
                     <div className='clamp'>
                         {!Page.hiddenLayout && [
                             <layoutComponents.Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
-                            <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />
+                            <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
+                            this.state.showDefaultPasswordWarning && <layoutComponents.DefaultPasswordWarning close={this.hideDefaultPasswordWarning} />
                         ]}
                         <div id='content'>
                             <Page ref='page' {...this.state.pageOptions} />

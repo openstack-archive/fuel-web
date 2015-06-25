@@ -124,6 +124,17 @@ class TestPluginBase(base.BaseTestCase):
         self.assertEqual(
             expected, self.attr_plugin.master_scripts_path(self.cluster))
 
+    def test_sync_metada_to_db(self):
+        plugin_metadata = self.env.get_default_plugin_metadata()
+
+        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
+            load_conf.return_value = plugin_metadata
+            self.attr_plugin.sync_metadata_to_db()
+
+            for key, val in six.iteritems(plugin_metadata):
+                self.assertEqual(
+                    getattr(self.plugin, key), val)
+
 
 class TestPluginV1(TestPluginBase):
 
@@ -163,6 +174,53 @@ class TestPluginV2(TestPluginBase):
         self.assertEqual(
             self.attr_plugin.path_name,
             '{0}-{1}'.format(self.plugin.name, '0.1'))
+
+
+class TestPluginV3(TestPluginBase):
+
+    __test__ = True
+    package_version = '3.0.0'
+
+    def test_sync_metada_to_db(self):
+        plugin_metadata = self.env.get_default_plugin_metadata()
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        roles_metadata = self.env.get_default_plugin_node_roles_config()
+        volumes_metadata = self.env.get_default_plugin_volumes_config()
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        tasks = self.env.get_default_plugin_tasks()
+
+        mocked_metadata = {
+            self._find_path('metadata'): plugin_metadata,
+            self._find_path('environment_config'): attributes_metadata,
+            self._find_path('node_roles'): roles_metadata,
+            self._find_path('volumes'): volumes_metadata,
+            self._find_path('deployment_tasks'): deployment_tasks,
+            self._find_path('tasks'): tasks,
+        }
+
+        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
+            load_conf.side_effect = lambda key: mocked_metadata[key]
+            self.attr_plugin.sync_metadata_to_db()
+
+            for key, val in six.iteritems(plugin_metadata):
+                self.assertEqual(
+                    getattr(self.plugin, key), val)
+
+            self.assertEqual(
+                self.plugin.attributes_metadata, attributes_metadata)
+            self.assertEqual(
+                self.plugin.roles_metadata, roles_metadata)
+            self.assertEqual(
+                self.plugin.volumes_metadata, volumes_metadata)
+            self.assertEqual(
+                self.plugin.deployment_tasks, deployment_tasks)
+            self.assertEqual(
+                self.plugin.tasks, tasks)
+
+    def _find_path(self, config_name):
+        return os.path.join(
+            self.attr_plugin.plugin_path,
+            '{0}.yaml'.format(config_name))
 
 
 class TestClusterCompatiblityValidation(base.BaseTestCase):

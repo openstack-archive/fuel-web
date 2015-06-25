@@ -14,10 +14,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import traceback
+
+import six
+
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators import plugin
+from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun import objects
+from nailgun.plugins.manager import PluginManager
 
 
 class PluginHandler(base.SingleHandler):
@@ -44,3 +51,36 @@ class PluginCollectionHandler(base.CollectionHandler):
         if obj:
             raise self.http(409, self.collection.single.to_json(obj))
         return super(PluginCollectionHandler, self).POST()
+
+
+class PluginSyncHandler(base.BaseHandler):
+
+    single = objects.Plugin
+    validator = plugin.PluginSyncValidator
+
+    @content
+    def POST(self):
+        """:returns: JSONized REST object.
+        :http: * 200 (plugins successfully synced)
+               * 404 (plugin not found in db)
+               * 500 (problem with synchronization)
+        """
+        data = self.checked_data()
+        ids = data.get('ids', [])
+
+        try:
+            synced_plugin_ids = PluginManager.sync_plugins_metadata(ids)
+        except errors.ObjectNotFound as exc:
+            logger.warn(
+                'Plugin not found: %s',
+                traceback.format_exc()
+            )
+            raise self.http(404, msg=six.text_type(exc))
+        except Exception as exc:
+            logger.warn(
+                'Problem with metadata synchronization: %s',
+                traceback.format_exc()
+            )
+            raise self.http(500, msg=six.text_type(exc))
+
+        raise self.http(200, {'ids': synced_plugin_ids})

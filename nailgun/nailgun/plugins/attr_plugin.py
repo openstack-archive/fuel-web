@@ -24,6 +24,7 @@ import yaml
 
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
 
 
@@ -54,6 +55,10 @@ class ClusterAttributesPluginBase(object):
     def path_name(self):
         """A name which is used to create path to
         plugin related scripts and repositories
+        """
+
+    def sync_metadata_to_db(self):
+        """Sync metadata from config yaml files into DB
         """
 
     def _load_config(self, config):
@@ -263,9 +268,39 @@ class ClusterAttributesPluginV2(ClusterAttributesPluginBase):
         return major
 
 
+class PluginV3(ClusterAttributesPluginV2):
+    """Plugin wrapper class for package version >= 3.0.0
+    """
+
+    node_roles_config_name = 'node_roles.yaml'
+    volumes_config_name = 'volumes.yaml'
+    deployment_tasks_config_name = 'deployment_tasks.yaml'
+
+    def sync_metadata_to_db(self):
+        db_metadata_mapping = {
+            'attributes_metadata': self.environment_config_name,
+            'roles_metadata': self.node_roles_config_name,
+            'volumes_metadata': self.volumes_config_name,
+            'deployment_tasks': self.deployment_tasks_config_name,
+            'tasks': self.task_config_name
+        }
+
+        for attribute, config_file in six.iteritems(db_metadata_mapping):
+            config_file_path = os.path.join(self.plugin_path, config_file)
+            if os.path.exists(config_file_path):
+                attribute_data = self._load_config(config_file_path)
+                # Plugin columns have constraints for nullable data, so
+                # we need to check it
+                if attribute_data:
+                    Plugin.update(self.plugin, {attribute: attribute_data})
+
+        return self.plugin.id
+
+
 __version_mapping = {
     '1.0.': ClusterAttributesPluginV1,
-    '2.0.': ClusterAttributesPluginV2
+    '2.0.': ClusterAttributesPluginV2,
+    '3.0.': PluginV3
 }
 
 

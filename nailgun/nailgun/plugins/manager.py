@@ -79,3 +79,22 @@ class PluginManager(object):
             attr_pl.set_cluster_tasks(cluster)
             attr_plugins.append(attr_pl)
         return attr_plugins
+
+    @classmethod
+    def sync_plugins_metadata(cls, plugin_ids):
+        if plugin_ids:
+            plugins = [
+                Plugin.get_by_uid(uid, fail_if_not_found=True)
+                for uid in plugin_ids
+            ]
+        else:
+            plugins = PluginCollection.all_newest()
+
+        synced_plugin_ids = []
+        for plugin in plugins:
+            plugin_wrapper = wrap_plugin(plugin)
+            plugin_id = plugin_wrapper.sync_metadata_to_db()
+            if plugin_id:
+                synced_plugin_ids.append(plugin_id)
+
+        return synced_plugin_ids

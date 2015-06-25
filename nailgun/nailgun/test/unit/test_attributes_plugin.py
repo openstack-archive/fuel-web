@@ -165,6 +165,56 @@ class TestPluginV2(TestPluginBase):
             '{0}-{1}'.format(self.plugin.name, '0.1'))
 
 
+class TestPluginV3(TestPluginBase):
+
+    __test__ = True
+    package_version = '3.0.0'
+
+    @mock.patch('nailgun.plugins.attr_plugin.os.access')
+    @mock.patch('nailgun.plugins.attr_plugin.os.path.exists')
+    def test_sync_metada_to_db(self, maccess, mexists):
+        maccess.return_value = True
+        mexists.return_value = True
+
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        roles_metadata = self.env.get_default_plugin_node_roles_config()
+        volumes_metadata = self.env.get_default_plugin_volumes_config()
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        tasks = self.env.get_default_plugin_tasks()
+
+        find_path = lambda config_name: os.path.join(
+            self.attr_plugin.plugin_path,
+            '{0}.yaml'.format(config_name))
+
+        mocked_metadata = {
+            find_path('environment_config'): attributes_metadata,
+            find_path('node_roles'): roles_metadata,
+            find_path('volumes'): volumes_metadata,
+            find_path('deployment_tasks'): deployment_tasks,
+            find_path('tasks'): tasks,
+        }
+
+        def side_effect(key):
+            return mocked_metadata[key]
+
+        with mock.patch.object(self.attr_plugin, '_load_config') as load_conf:
+            load_conf.side_effect = side_effect
+            plugin_id = self.attr_plugin.sync_metadata_to_db()
+
+            self.assertEqual(
+                self.plugin.id, plugin_id)
+            self.assertEqual(
+                self.plugin.attributes_metadata, attributes_metadata)
+            self.assertEqual(
+                self.plugin.roles_metadata, roles_metadata)
+            self.assertEqual(
+                self.plugin.volumes_metadata, volumes_metadata)
+            self.assertEqual(
+                self.plugin.deployment_tasks, deployment_tasks)
+            self.assertEqual(
+                self.plugin.tasks, tasks)
+
+
 class TestClusterCompatiblityValidation(base.BaseTestCase):
 
     def setUp(self):

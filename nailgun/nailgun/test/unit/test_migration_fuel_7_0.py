@@ -80,7 +80,6 @@ def setup_module(module):
 
 def prepare():
     meta = base.reflect_db_metadata()
-
     db.execute(
         meta.tables['plugins'].insert(),
         [{

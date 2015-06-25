@@ -79,3 +79,17 @@ class PluginManager(object):
             attr_pl.set_cluster_tasks(cluster)
             attr_plugins.append(attr_pl)
         return attr_plugins
+
+    @classmethod
+    def sync_plugins_metadata(cls, plugin_ids=None):
+        """Sync metadata for plugins by given ids. If there is not
+        ids all newest plugins will be synced
+        """
+        if plugin_ids:
+            plugins = PluginCollection.get_by_uids(plugin_ids)
+        else:
+            plugins = PluginCollection.all_newest()
+
+        for plugin in plugins:
+            plugin_wrapper = wrap_plugin(plugin)
+            plugin_wrapper.sync_metadata_to_db()

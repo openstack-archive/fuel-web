@@ -62,6 +62,7 @@ from nailgun.api.v1.handlers.node import NodesAllocationStatsHandler
 
 from nailgun.api.v1.handlers.plugin import PluginCollectionHandler
 from nailgun.api.v1.handlers.plugin import PluginHandler
+from nailgun.api.v1.handlers.plugin import PluginSyncHandler
 
 from nailgun.api.v1.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
@@ -215,6 +216,8 @@ urls = (
     PluginHandler,
     r'/plugins/?$',
     PluginCollectionHandler,
+    r'/plugins/sync/?$',
+    PluginSyncHandler,
 
     r'/notifications/?$',
     NotificationCollectionHandler,

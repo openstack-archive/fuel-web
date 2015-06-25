@@ -366,3 +366,10 @@ class TestMigrateVolumesIntoExtension(base.BaseAlembicMigrationTest):
             self.assertEqual(
                 volume['volumes'],
                 [{'volume': volume['node_id']}])
+
+    def test_network_roles_metadata_exists_and_empty(self):
+        # check attributes_metadata field exists
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.network_roles_metadata]))
+        # check attributes_metadata value is empty
+        self.assertEqual(jsonutils.loads(result.fetchone()[0]), [])

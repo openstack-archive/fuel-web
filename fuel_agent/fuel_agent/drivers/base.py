@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import abc
+import copy
+
 import six
 
 
@@ -25,4 +27,4 @@ class BaseDataDriver(object):
     """
 
     def __init__(self, data):
-        self.data = data
+        self.data = copy.deepcopy(data)

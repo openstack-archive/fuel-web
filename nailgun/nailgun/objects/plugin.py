@@ -64,3 +64,18 @@ class PluginCollection(base.NailgunCollection):
             newest_plugins.append(newest_plugin)
 
         return newest_plugins
+
+    @classmethod
+    def get_by_uids(cls, plugin_ids=[]):
+        """Returns plugins by given ids. If ids list is empty
+        returns all plugins
+        :param plugin_ids: list of plugin ids
+        :type plugin_ids: list
+
+        :returns: iterable (SQLAlchemy query)
+        """
+        if plugin_ids:
+            return cls.filter_by_id_list(
+                cls.all(), plugin_ids)
+        else:
+            return cls.all()

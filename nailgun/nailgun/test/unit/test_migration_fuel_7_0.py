@@ -44,7 +44,7 @@ _RELEASE = {
         "cinder": {
             "name": "Cinder",
             "description": "Cinder role"
-        }
+        },
     }),
     'attributes_metadata': jsonutils.dumps({
         'editable': {
@@ -67,7 +67,7 @@ _RELEASE = {
         }
 
     }),
-    'is_deployable': True
+    'is_deployable': True,
 }
 
 
@@ -192,7 +192,7 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
             jsonutils.loads(result.fetchone()[0]), [])
 
 
-class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
+class TestReleaseNodeRolesMetadataMigration(base.BaseAlembicMigrationTest):
     def test_public_ip_required(self):
         result = db.execute(
             sa.select([self.meta.tables['releases'].c.roles_metadata]))
@@ -202,3 +202,13 @@ class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
                 self.assertTrue(role_info['public_ip_required'])
             else:
                 self.assertFalse(role_info.get('public_ip_required'))
+
+
+class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
+    def test_network_roles_metadata_exists_and_empty(self):
+        # check attributes_metadata field exists
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.network_roles_metadata]))
+        # check attributes_metadata value is empty
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), {})

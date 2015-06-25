@@ -52,9 +52,11 @@ def upgrade():
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
     migrate_volumes_into_extension_upgrade()
+    extend_releases_model_upgrade()
 
 
 def downgrade():
+    extend_releases_model_downgrade()
     migrate_volumes_into_extension_downgrade()
     extend_plugin_model_downgrade()
     extend_ip_addrs_model_downgrade()
@@ -151,6 +153,15 @@ def extend_ip_addrs_model_downgrade():
     op.alter_column('ip_addrs', 'vip_type', type_=vrouter_enum)
 
 
+def extend_releases_model_upgrade():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'network_roles_metadata',
+            fields.JSON(),
+            server_default='[]'))
+
+
 def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'tasks')
     op.drop_column('plugins', 'deployment_tasks')
@@ -218,3 +229,6 @@ def migrate_volumes_into_extension_downgrade():
     op.add_column(
         'node_attributes',
         sa.Column('volumes', fields.JSON(), nullable=True))
+
+def extend_releases_model_downgrade():
+    op.drop_column('releases', 'network_roles_metadata')

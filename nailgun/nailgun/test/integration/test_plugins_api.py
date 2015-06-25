@@ -134,6 +134,17 @@ class BasePluginTest(base.BaseIntegrationTest):
                     headers=self.default_headers)
                 return resp
 
+    def sync_plugins(self, sample=None, expect_errors=False, plugin_ids=[]):
+        plugin_sync_data = sample or {'ids': plugin_ids}
+        resp = self.app.post(
+            base.reverse('PluginSyncHandler'),
+            jsonutils.dumps(plugin_sync_data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+        return resp
+
 
 class TestPluginsApi(BasePluginTest):
 
@@ -218,6 +229,80 @@ class TestPluginsApi(BasePluginTest):
 
         self.disable_plugin(cluster, 'multiversion_plugin')
         self.assertEqual(len(cluster.plugins), 0)
+
+    def test_sync_all_plugins(self):
+        plugin_ids = self._create_new_and_old_version_plugins_for_sync()
+
+        resp = self.sync_plugins()
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json['ids'], plugin_ids)
+
+    def test_sync_specific_plugins(self):
+        plugin_ids = self._create_new_and_old_version_plugins_for_sync()
+        specific_plugins_ids = plugin_ids[:1]
+
+        resp = self.sync_plugins(plugin_ids=specific_plugins_ids)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json['ids'], specific_plugins_ids)
+
+    def test_sync_failed_when_plugin_not_found(self):
+        plugin_ids = self._create_new_and_old_version_plugins_for_sync()
+        ids = [plugin_ids.pop() + 1]
+        resp = self.sync_plugins(plugin_ids=ids, expect_errors=True)
+        self.assertEqual(resp.status_code, 404)
+
+    def _create_new_and_old_version_plugins_for_sync(self):
+        plugin_ids = []
+
+        old_version_plugin = {
+            'name': 'test_name_0',
+            'version': '0.1.1',
+            'fuel_version': ['6.0'],
+            'title': 'Test plugin',
+            'package_version': '1.0.0',
+            'releases': [
+                {'os': 'Ubuntu',
+                 'mode': ['ha', 'multinode'],
+                 'version': '2014.2.1-5.1'}
+            ],
+        }
+        resp = self.create_plugin(sample=old_version_plugin)
+        self.assertEqual(resp.status_code, 201)
+
+        new_version_plugin_1 = {
+            'name': 'test_name_1',
+            'version': '0.1.1',
+            'fuel_version': ['7.0'],
+            'title': 'Test plugin',
+            'package_version': '3.0.0',
+            'releases': [
+                {'os': 'Ubuntu',
+                 'mode': ['ha', 'multinode'],
+                 'version': '2014.2.1-5.1'}
+            ],
+        }
+        resp = self.create_plugin(sample=new_version_plugin_1)
+        self.assertEqual(resp.status_code, 201)
+        # Only plugins with version 3.0.0 will be synced
+        plugin_ids.append(resp.json['id'])
+
+        new_version_plugin_2 = {
+            'name': 'test_name_2',
+            'version': '0.1.1',
+            'fuel_version': ['7.0'],
+            'title': 'Test plugin',
+            'package_version': '3.0.0',
+            'releases': [
+                {'os': 'Ubuntu',
+                 'mode': ['ha', 'multinode'],
+                 'version': '2014.2.1-5.1'}
+            ],
+        }
+        resp = self.create_plugin(sample=new_version_plugin_2)
+        self.assertEqual(resp.status_code, 201)
+        plugin_ids.append(resp.json['id'])
+
+        return plugin_ids
 
 
 class TestPrePostHooks(BasePluginTest):
@@ -343,4 +428,21 @@ class TestPluginValidation(BasePluginTest):
             ]
         }
         resp = self.create_plugin(sample=sample, expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+
+
+class TestPluginSyncValidation(BasePluginTest):
+
+    def test_valid(self):
+        resp = self.sync_plugins()
+        self.assertEqual(resp.status_code, 200)
+
+    def test_ids_not_present(self):
+        sample = {'test': '1'}
+        resp = self.sync_plugins(sample=sample, expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+
+    def test_ids_not_array_type(self):
+        sample = {'ids': {}}
+        resp = self.sync_plugins(sample=sample, expect_errors=True)
         self.assertEqual(resp.status_code, 400)

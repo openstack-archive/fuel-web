@@ -64,6 +64,9 @@ function($, _, i18n, React) {
                         username: username,
                         token: keystoneClient.token
                     });
+
+                    app.showDefaultPasswordWarning = (password == 'admin');
+
                     return app.settings.fetch({cache: true});
                 }, this))
                 .done(_.bind(function() {

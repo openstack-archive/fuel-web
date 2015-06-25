@@ -30,6 +30,10 @@ define([
         getInitialState: function() {
             return {};
         },
+        closeWarning: function() {
+            app.showDefaultPasswordWarning = false;
+            this.forceUpdate();
+        },
         setPage: function(Page, pageOptions) {
             this.setState({
                 Page: Page,
@@ -56,6 +60,12 @@ define([
                             <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />
                         ]}
                         <div id='content'>
+                            {app.showDefaultPasswordWarning &&
+                                <div className='alert alert-warning'>
+                                    <button className='close' onClick={this.closeWarning}>&times;</button>
+                                    {i18n('common.default_password_warning')}
+                                </div>
+                            }
                             <Page ref='page' {...this.state.pageOptions} />
                         </div>
                         {!Page.hiddenLayout && <div id='footer-spacer'></div>}

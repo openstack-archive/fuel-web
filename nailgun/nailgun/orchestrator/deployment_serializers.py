@@ -28,9 +28,9 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun import objects
 from nailgun import utils
-from nailgun.volumes import manager as volume_manager
 
 from nailgun.orchestrator.base_serializers import GraphBasedSerializer
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin

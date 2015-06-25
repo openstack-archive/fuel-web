@@ -1,0 +1,270 @@
+- pk: 1
+  id: "admin/pxe"
+  default_mapping: "br-fw-admin"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 2
+  id: "keystone/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 3
+  id: "swift/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 4
+  id: "neutron/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 5
+  id: "sahara/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 6
+  id: "ceilometer/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 7
+  id: "cinder/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 8
+  id: "glance/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 9
+  id: "heat/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 10
+  id: "nova/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 11
+  id: "murano/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 12
+  id: "horizon"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 13
+  id: "mgmt/api"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 14
+  id: "mgmt/database"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 15
+  id: "mgmt/messaging"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 16
+  id: "mgmt/corosync"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 17
+  id: "mgmt/vip"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip:
+      -
+        name: "haproxy"
+        exclusive: false
+      -
+        name: "vrouter"
+        exclusive: true
+  metadata: {}
+- pk: 18
+  id: "public/vip"
+  default_mapping: "br-ex"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip:
+      -
+        name: "haproxy"
+        exclusive: false
+      -
+        name: "vrouter"
+        exclusive: true
+  metadata: {}
+- pk: 19
+  id: "neutron/private"
+  default_mapping: "br-prv"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 20
+  id: "neutron/mesh"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 21
+  id: "neutron/floating"
+  default_mapping: "br-floating"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 22
+  id: "swift/public"
+  default_mapping: "br-ex"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 23
+  id: "swift/replication"
+  default_mapping: "br-storage"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 24
+  id: "ceph/public"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 25
+  id: "ceph/radosgw"
+  default_mapping: "br-ex"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 26
+  id: "ceph/replication"
+  default_mapping: "br-storage"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 27
+  id: "cinder/iscsi"
+  default_mapping: "br-storage"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 28
+  id: "mongo/db"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 29
+  id: "fw-admin"
+  default_mapping: "br-fw-admin"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+-
+  pk: 30
+  id: "management"
+  default_mapping: "br-mgmt"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+-
+  pk: 31
+  id: "ex"
+  default_mapping: "br-ex"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}
+- pk: 32
+  id: "storage"
+  default_mapping: "br-storage"
+  properties:
+    subnet: {}
+    gateway: {}
+    vip: []
+  metadata: {}

@@ -40,6 +40,7 @@
                 "version": "Version",
                 "username": "Username",
                 "change_password": "Change password",
+                "default_password_warning": "Please change your default admin password as soon as possible",
                 "logout": "Logout",
                 "role_limits": {
                     "min": "At least __limitValue__ __roleName__ nodes are required (__count__ selected currently).",

@@ -616,6 +616,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
           width: 90%;
           float: left;
           margin: 0;
+          /* the following code refers to https://css-tricks.com/almanac/properties/w/word-break/ */
+          word-wrap: break-word;
+          hyphens: auto;
+          -moz-hyphens: auto; /* for word-wrap to work in FF */
+          word-break: break-word; /* non standard for webkit */
         }
         &.clickable {
           p {

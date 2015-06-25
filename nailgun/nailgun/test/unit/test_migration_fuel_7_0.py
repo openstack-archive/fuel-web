@@ -22,9 +22,43 @@ from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
 
-
 _prepare_revision = '37608259013'
 _test_revision = '1e50a4903910'
+
+_RELEASE = {
+    'name': 'test_name',
+    'version': '2015.2-7.0',
+    'operating_system': 'ubuntu',
+    'state': 'available',
+    'roles_metadata': jsonutils.dumps({
+        "mongo": {
+            "name": "Mongo",
+            "description": "Mongo role"
+        }
+    }),
+    'attributes_metadata': jsonutils.dumps({
+        'editable': {
+            'storage': {
+                'volumes_lvm': {},
+            },
+            'common': {},
+        },
+        'generated': {
+            'cobbler': {'profile': {
+                'generator_arg': 'ubuntu_1204_x86_64'}}},
+    }),
+    'networks_metadata': jsonutils.dumps({
+        'neutron': {
+            'networks': [
+                {
+                    'assign_vip': True,
+                },
+            ]
+        }
+
+    }),
+    'is_deployable': True,
+}
 
 
 def setup_module(module):
@@ -55,11 +89,13 @@ def prepare():
             'fuel_version': jsonutils.dumps(['6.1', '7.0']),
         }])
 
+    db.execute(meta.tables['releases'].insert(), [_RELEASE])
+
     db.commit()
 
 
 class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
-
+    
     def test_old_fields_exists(self):
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.name]))
@@ -144,3 +180,50 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['plugins'].c.tasks]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
+    def test_old_fields_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.name]))
+        self.assertEqual(
+            result.fetchone()[0], _RELEASE['name'])
+
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.operating_system]))
+        self.assertEqual(
+            result.fetchone()[0], _RELEASE['operating_system'])
+
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.state]))
+        self.assertEqual(
+            result.fetchone()[0], _RELEASE['state'])
+
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.roles_metadata]))
+        self.assertEqual(
+            result.fetchone()[0], _RELEASE['roles_metadata'])
+
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.attributes_metadata]))
+        self.assertEqual(
+            result.fetchone()[0], _RELEASE['attributes_metadata'])
+
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.networks_metadata]))
+        self.assertEqual(
+            result.fetchone()[0], _RELEASE['networks_metadata'])
+
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.is_deployable]))
+        self.assertEqual(
+            result.fetchone()[0], _RELEASE['is_deployable'])
+
+    def test_new_fields_exists_and_empty(self):
+        # check attributes_metadata field exists
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.network_roles_metadata]))
+        # check attributes_metadata value is empty
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), {})
+

@@ -50,15 +50,20 @@ def upgrade():
     extend_ip_addrs_model_upgrade()
     extend_node_model_upgrade()
     extend_plugin_model_upgrade()
+    extend_releases_model_upgrade()
     upgrade_node_roles_metadata()
     migrate_volumes_into_extension_upgrade()
 
 
 def downgrade():
+<<<<<<< HEAD
     migrate_volumes_into_extension_downgrade()
+=======
+    extend_node_model_downgrade()
+    extend_releases_model_downgrade()
+>>>>>>> 56537c7... Add network roles metadata
     extend_plugin_model_downgrade()
     extend_ip_addrs_model_downgrade()
-    extend_node_model_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
     op.alter_column(
@@ -151,6 +156,15 @@ def extend_ip_addrs_model_downgrade():
     op.alter_column('ip_addrs', 'vip_type', type_=vrouter_enum)
 
 
+def extend_releases_model_upgrade():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'network_roles_metadata',
+            fields.JSON(),
+            server_default='[]'))
+
+
 def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'tasks')
     op.drop_column('plugins', 'deployment_tasks')
@@ -176,6 +190,7 @@ def upgrade_node_roles_metadata():
             roles_metadata=jsonutils.dumps(roles_metadata))
 
 
+<<<<<<< HEAD
 def migrate_volumes_into_extension_upgrade():
     """Migrate data into intermediate table, from
     which specific extensions will be able to retrieve
@@ -218,3 +233,7 @@ def migrate_volumes_into_extension_downgrade():
     op.add_column(
         'node_attributes',
         sa.Column('volumes', fields.JSON(), nullable=True))
+=======
+def extend_releases_model_downgrade():
+    op.drop_column('releases', 'network_roles_metadata')
+>>>>>>> 56537c7... Add network roles metadata

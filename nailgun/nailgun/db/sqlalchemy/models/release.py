@@ -57,6 +57,7 @@ class Release(Base):
     volumes_metadata = Column(JSON, default={})
     modes_metadata = Column(JSON, default={})
     roles_metadata = Column(JSON, default={})
+    network_roles_metadata = Column(JSON, default={}, server_default='{}')
     wizard_metadata = Column(JSON, default={})
     is_deployable = Column(Boolean, default=True, nullable=False)
     deployment_tasks = Column(JSON, default=[])

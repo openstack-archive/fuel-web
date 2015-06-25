@@ -25,10 +25,21 @@ define([
 
     var RootComponent = React.createClass({
         mixins: [
-            componentMixins.dispatcherMixin('updatePageLayout', 'updateTitle')
+            componentMixins.dispatcherMixin('updatePageLayout', 'updateTitle'),
+            componentMixins.dispatcherMixin('shouldDefaultPasswordWarningBeShown', 'updateDefaultPasswordWarningState')
         ],
+        updateDefaultPasswordWarningState: function(state) {
+            this.setState({
+                showDefaultPasswordWarning: state
+            });
+        },
         getInitialState: function() {
-            return {};
+            return {showDefaultPasswordWarning: false};
+        },
+        closeWarning: function() {
+            this.setState({
+                showDefaultPasswordWarning: false
+            });
         },
         setPage: function(Page, pageOptions) {
             this.setState({
@@ -56,6 +67,12 @@ define([
                             <layoutComponents.Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />
                         ]}
                         <div id='content'>
+                            {this.state.showDefaultPasswordWarning &&
+                                <div className='alert alert-warning'>
+                                    <button className='close' onClick={this.closeWarning}>&times;</button>
+                                    {i18n('common.default_password_warning')}
+                                </div>
+                            }
                             <Page ref='page' {...this.state.pageOptions} />
                         </div>
                         {!Page.hiddenLayout && <div id='footer-spacer'></div>}

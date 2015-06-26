@@ -14,5 +14,30 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.extensions.base import BaseExtension
-from nailgun.extensions.base import get_all_extensions
+
+import abc
+import six
+
+
+def get_all_extensions():
+    # TODO(eli): implement extensions autodiscovery
+    # should be done as a part of blueprint
+    # https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
+    from nailgun.extensions.volume_manager.extension \
+        import VolumeManagerExtension
+
+    return [VolumeManagerExtension]
+
+
+@six.add_metaclass(abc.ABCMeta)
+class BaseExtension(object):
+
+    # If extension provides API, define here urls in then
+    # next format:
+    # [
+    #   {
+    #     "uri": r'/new/url',
+    #     "handler": HandlerClass
+    #   }
+    # ]
+    urls = []

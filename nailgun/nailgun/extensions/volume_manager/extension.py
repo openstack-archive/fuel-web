@@ -14,5 +14,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.extensions.base import BaseExtension
-from nailgun.extensions.base import get_all_extensions
+
+from .handlers.disks import NodeDefaultsDisksHandler
+from .handlers.disks import NodeDisksHandler
+from .handlers.disks import NodeVolumesInformationHandler
+
+from nailgun.extensions import BaseExtension
+
+
+class VolumeManagerExtension(BaseExtension):
+
+    urls = [
+        {'uri': r'/nodes/(?P<node_id>\d+)/disks/?$',
+         'handler': NodeDisksHandler},
+        {'uri': r'/nodes/(?P<node_id>\d+)/disks/defaults/?$',
+         'handler': NodeDefaultsDisksHandler},
+        {'uri': r'/nodes/(?P<node_id>\d+)/volumes/?$',
+         'handler': NodeVolumesInformationHandler}]

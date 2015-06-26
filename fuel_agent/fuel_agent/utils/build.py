@@ -55,6 +55,19 @@ bu_opts = [
         help='Size of sparse file in MiBs'
     ),
     cfg.IntOpt(
+        'preserved_free_space',
+        # NOTE(agordeev): Some amount of free space should be preserved in
+        # produced images. Having images 98% full makes resizing more difficult
+        # than it should (and might exercise unusual code path in resize2fs).
+        # As a rule of thumb at least 25% of free blocks is necessary for a
+        # safe (and efficient) resize operation. Note that various cloud
+        # images shipped by CentOS, Ubuntu, and Debian have quite a lot of
+        # free space exactly for this reason.
+        # https://bugs.launchpad.net/ubuntu/+source/e2fsprogs/+bug/1415077
+        default=40,
+        help='Amount of preserved free space in image in percents'
+    ),
+    cfg.IntOpt(
         'loop_device_major_number',
         default=7,
         help='System-wide major number for loop device'
@@ -333,15 +346,35 @@ def deattach_loop(loop, check_exit_code=[0]):
                           check_exit_code=check_exit_code)
 
 
-def shrink_sparse_file(filename):
+def shrink_sparse_file(filename,
+                       preserved_free_space=CONF.preserved_free_space):
     """Shrinks file to its size of actual data. Only ext fs are supported."""
     utils.execute('e2fsck', '-y', '-f', filename)
-    utils.execute('resize2fs', '-F', '-M', filename)
     data = hu.parse_simple_kv('dumpe2fs', filename)
     block_count = int(data['block count'])
     block_size = int(data['block size'])
-    with open(filename, 'rwb+') as f:
-        f.truncate(block_count * block_size)
+    free_blocks = int(data['free blocks'])
+    used_blocks = block_count - free_blocks
+    desired_blocks = int(round(used_blocks *
+                               (1 + preserved_free_space / 100.0)))
+    desired_size = desired_blocks * block_size
+    # NOTE(agordeev): estimated minimum depends on resize2fs version
+    # https://bugs.launchpad.net/ubuntu/+source/e2fsprogs/+bug/1415077
+    minimum_blocks = int(hu.parse_simple_kv('resize2fs', '-P', filename)[
+        'estimated minimum size of the filesystem'])
+    if (minimum_blocks <= desired_blocks and
+       desired_size <= CONF.sparse_file_size * (2 ** 20)):
+        # NOTE(agordeev): preserve some amount of free space
+        # in order to produce more resize friendly images
+        utils.execute('resize2fs', '-F', filename, str(desired_blocks))
+        with open(filename, 'rwb+') as f:
+            f.truncate(desired_size)
+    else:
+        raise errors.WrongResizeSize(
+            "Wrong size to resize {filename}: desired blocks {desired_blocks} "
+            "minimum blocks {minimum_blocks}".format(
+                filename=filename, desired_blocks=desired_blocks,
+                minimum_blocks=minimum_blocks))
 
 
 def strip_filename(name):

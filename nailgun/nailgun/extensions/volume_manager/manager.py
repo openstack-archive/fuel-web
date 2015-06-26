@@ -689,8 +689,8 @@ class VolumeManager(object):
             'calc_swap_size': self._calc_swap_size,
             # 15G <= root <= 50G
             'calc_root_size': self._calc_root_size,
-            # boot = 200MB
-            'calc_boot_size': lambda: 200,
+            # boot = 300MB
+            'calc_boot_size': lambda: 300,
             # boot records size = 300MB
             'calc_boot_records_size': lambda: 300,
             # let's think that size of mbr is 10MB

@@ -315,17 +315,19 @@ define(
                             tooltipText={disable.glance.message}
                         />
                     }
-                    <div className='col-xs-12 page-buttons'>
-                        <div className='btn-group pull-right'>
-                            <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={defaultsDisabled}>
-                                {i18n('vmware.reset_to_defaults')}
-                            </button>
-                            <button className='btn btn-default btn-revert-changes' onClick={this.onCancel} disabled={!this.hasChanges}>
-                                {i18n('vmware.cancel')}
-                            </button>
-                            <button className='btn btn-success btn-apply-changes' onClick={this.onSave} disabled={saveDisabled}>
-                                {i18n('vmware.apply')}
-                            </button>
+                    <div className='col-xs-12 page-buttons content-elements'>
+                        <div className='well clearfix'>
+                            <div className='btn-group pull-right'>
+                                <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={defaultsDisabled}>
+                                    {i18n('vmware.reset_to_defaults')}
+                                </button>
+                                <button className='btn btn-default btn-revert-changes' onClick={this.onCancel} disabled={!this.hasChanges}>
+                                    {i18n('vmware.cancel')}
+                                </button>
+                                <button className='btn btn-success btn-apply-changes' onClick={this.onSave} disabled={saveDisabled}>
+                                    {i18n('vmware.apply')}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

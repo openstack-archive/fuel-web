@@ -24,6 +24,9 @@ from nailgun.extensions import BaseExtension
 
 class VolumeManagerExtension(BaseExtension):
 
+    name = 'volume_manager'
+    version = '1.0.0'
+
     urls = [
         {'uri': r'/nodes/(?P<node_id>\d+)/disks/?$',
          'handler': NodeDisksHandler},

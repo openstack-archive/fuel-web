@@ -38,14 +38,15 @@
 @node-border-color-offline: @base-node-border;
 
 // Other Colors
-@white:    #ffffff;
-@black:    #000000;
-@red:      #c94b4b;
-@pure-red: #ff0000;
-@green:    #54a854;
-@blue:     #4e85aa; //#688db4;
-@orange:   #bc6e12;
-@gray:     #8c8c8c;
+@white:      #ffffff;
+@black:      #000000;
+@red:        #c94b4b;
+@pure-red:   #ff0000;
+@green:      #54a854;
+@blue:       #4e85aa; //#688db4;
+@orange:     #bc6e12;
+@gray:       #8c8c8c;
+@light-blue: #eaf0f2;
 
 @alert-success-bg: #cae8c6;
 @alert-info-bg:    #c1d4e1;
@@ -797,8 +798,17 @@ button, .btn:not(.btn-link) {.font-semibold;}
     padding: 10px 30px 30px 30px;
     box-sizing: border-box;
     > div {text-align: center;}
-    h1 {margin-bottom: @vertical-offset;}
-    .notice {color:@gray;}
+    h1 {margin-bottom: @vertical-offset + 10;}
+    .notice {
+      color:@gray;
+      font-size: @base-font-size - 2;
+      width: 80%;
+      margin: 0 auto;
+    }
+    .register_installation {
+      width: 80%;
+      margin: 0 auto 30px auto;
+    }
     .happy-cloud {
       padding: 30px;
       .cloud-smile {
@@ -807,7 +817,10 @@ button, .btn:not(.btn-link) {.font-semibold;}
         background-image: url(../img/cloud-smile.png);
         background-repeat: no-repeat;
         margin: 0 auto;
-        + div {margin-top: @vertical-offset;}
+        + div {
+          margin-top: @vertical-offset;
+          font-size: @base-font-size + 6;
+        }
       }
       span {color: @green - 30%;}
     }
@@ -825,7 +838,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .register-trial {
       padding: @vertical-offset 10px 4px 10px;
       margin: 0 -30px 7px;
-      background-color: @gray + 100%;
+      background-color: @light-blue;
     }
   }
 }
@@ -840,8 +853,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
   .help-block {font-style: italic;}
   .statistics-disclaimer-box {
-    background-color: @gray + 80%;
-    border: 1px solid @gray + 40%;
+    background-color: @gray + 100%;
+    border: 1px solid @gray + 84%;
     overflow-y: auto;
     padding: 20px;
     margin-bottom: 16px;
@@ -859,7 +872,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     help-block {text-align: right;}
     .links-container {
       min-height: 20px;
-      margin: 15px 0 15px;
+      margin: 15px 0 20px;
     }
     .btn-link {padding: 0;}
   }
@@ -872,7 +885,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       input {width: 100%;}
       select {width: 100%;}
     }
-    .checkbox-group {margin-top: @vertical-offset;}
+    .checkbox-group {margin-top: @vertical-offset + 10;}
   }
 }
 

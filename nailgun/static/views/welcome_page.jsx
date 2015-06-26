@@ -67,7 +67,8 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                 featureGroups = app.version.get('feature_groups'),
                 isMirantisIso = _.contains(featureGroups, 'mirantis'),
                 statsCollectorLink = 'https://stats.fuel-infra.org/',
-                privacyPolicyLink = 'https://www.mirantis.com/company/privacy-policy/';
+                privacyPolicyLink = 'https://www.mirantis.com/company/privacy-policy/',
+                username = this.props.settings.get('statistics').name.value;
             var disabled = this.state.actionInProgress || this.state.locked,
                 buttonProps = {
                     disabled: disabled,
@@ -86,7 +87,7 @@ function(_, i18n, React, models, componentMixins, statisticsMixin) {
                                             <div className='happy-cloud'>
                                                 <div className='cloud-smile' />
                                                 <div className='row'>
-                                                    <div className='col-xs-8 col-xs-offset-2'>{i18n(ns + 'register.welcome_phrase.thanks')} {this.props.settings.get('statistics').name.value}, {i18n(ns + 'register.welcome_phrase.content')}</div>
+                                                    <div className='col-xs-8 col-xs-offset-2'>{i18n(ns + 'register.welcome_phrase.thanks')}{username ? ' ' + username : ''}, {i18n(ns + 'register.welcome_phrase.content')}</div>
                                                 </div>
                                             </div>
                                         :

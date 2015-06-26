@@ -268,6 +268,9 @@ class Manager(object):
                       '-volid', 'cidata', '-joliet', '-rock', ud_output_path,
                       md_output_path)
 
+        self._add_configdrive_image()
+
+    def _add_configdrive_image(self):
         configdrive_device = self.driver.partition_scheme.configdrive_device()
         if configdrive_device is None:
             raise errors.WrongPartitionSchemeError(
@@ -283,6 +286,11 @@ class Manager(object):
             size=size,
             md5=md5,
         )
+
+    def do_configdrive_mos(self):
+        LOG.debug('--- Adding configdrive (do_configdrive_mos) ---')
+        if self.driver.is_configdrive_needed():
+            self._add_configdrive_image()
 
     def do_copyimage(self):
         LOG.debug('--- Copying images (do_copyimage) ---')
@@ -470,6 +478,14 @@ class Manager(object):
         self.do_copyimage()
         self.do_bootloader()
         LOG.debug('--- Provisioning END (do_provisioning) ---')
+
+    def do_provisioning_mos(self):
+        LOG.debug('--- Provisioning (do_provisioning_mos) ---')
+        self.do_partitioning()
+        self.do_configdrive_mos()
+        self.do_copyimage()
+        self.do_bootloader()
+        LOG.debug('--- Provisioning END (do_provisioning_mos) ---')
 
     # TODO(kozhukalov): Split this huge method
     # into a set of smaller ones

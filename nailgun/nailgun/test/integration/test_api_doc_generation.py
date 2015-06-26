@@ -57,14 +57,6 @@ class TestAPIDocGeneration(BaseIntegrationTest):
         handlers_path = ('/'.join(path.split('/')[:-2])) + "/api/v1/handlers/"
         classes = self.load_from_path(handlers_path)
 
-        # TODO(eli): Remove this hack when urls definition will be moved
-        # into extensions directory, should be done as a part of blueprint
-        # https://blueprints.launchpad.net/fuel/+spec
-        #                                 /volume-manager-refactoring
-        extensions_path = ('/'.join(path.split('/')[:-2])) + \
-            '/extensions/volume_manager/handlers/'
-        classes.extend(self.load_from_path(extensions_path))
-
         names = set()
         unique_classes = []
         urls_ = []

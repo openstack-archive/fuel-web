@@ -39,7 +39,7 @@ import web
 from webtest import app
 
 import nailgun
-from nailgun.api.v1.urls import urls
+from nailgun.api.v1.urls import get_all_urls
 
 from nailgun import consts
 
@@ -1092,6 +1092,7 @@ def fake_tasks(fake_rpc=True,
 
 
 def reverse(name, kwargs=None):
+    urls = get_all_urls()[0]
     urldict = dict(zip(urls[1::2], urls[::2]))
     url = urldict[name]
     urlregex = re.compile(url)

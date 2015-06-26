@@ -16,6 +16,8 @@
 
 import web
 
+from nailgun.extensions import get_all_extensions
+
 from nailgun.api.v1.handlers.assignment import NodeAssignmentHandler
 from nailgun.api.v1.handlers.assignment import NodeUnassignmentHandler
 
@@ -34,15 +36,6 @@ from nailgun.api.v1.handlers.cluster import ClusterStopDeploymentHandler
 from nailgun.api.v1.handlers.cluster import ClusterUpdateHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesHandler
-
-# TODO(eli): should be moved into separate extension, as a part of blueprint:
-# https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
-from nailgun.extensions.volume_manager.handlers.disks \
-    import NodeDefaultsDisksHandler
-from nailgun.extensions.volume_manager.handlers.disks \
-    import NodeDisksHandler
-from nailgun.extensions.volume_manager.handlers.disks \
-    import NodeVolumesInformationHandler
 
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
@@ -181,7 +174,6 @@ urls = (
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
 
-
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
@@ -203,12 +195,6 @@ urls = (
     NodeAgentHandler,
     r'/nodes/(?P<obj_id>\d+)/?$',
     NodeHandler,
-    r'/nodes/(?P<node_id>\d+)/disks/?$',
-    NodeDisksHandler,
-    r'/nodes/(?P<node_id>\d+)/disks/defaults/?$',
-    NodeDefaultsDisksHandler,
-    r'/nodes/(?P<node_id>\d+)/volumes/?$',
-    NodeVolumesInformationHandler,
     r'/nodes/interfaces/?$',
     NodeCollectionNICsHandler,
     r'/nodes/interfaces/default_assignment/?$',
@@ -274,12 +260,58 @@ urls = [i if isinstance(i, str) else i.__name__ for i in urls]
 _locals = locals()
 
 
+def get_extensions_urls():
+    """Method is used to retrieve the data about
+    handlers and urls from extensions and convert
+    them into web.py consumable format.
+
+    :returns: dict in the next format:
+      {'urls': (r'/url/', 'ClassName'),
+       'handlers': [{
+         'class': ClassName,
+         'name': 'ClassName'}]}
+    """
+    urls = []
+    handlers = []
+    for extension in get_all_extensions():
+        for url in extension.urls:
+            # TODO(eli): handler name should be extension specific
+            # not to have problems when several extensions use
+            # the same name for handler classes.
+            # Should be done as a part of blueprint:
+            # https://blueprints.launchpad.net/fuel/+spec
+            #                                 /volume-manager-refactoring
+            handler_name = url['handler'].__name__
+            handlers.append({
+                'class': url['handler'],
+                'name': handler_name})
+
+            urls.extend((url['uri'], handler_name))
+
+    return {'urls': urls, 'handlers': handlers}
+
+
+def get_all_urls():
+    """Merges urls and handlers from core with
+    urls and handlers from extensions
+    """
+    ext_urls = get_extensions_urls()
+    all_urls = list(urls)
+    all_urls.extend(ext_urls['urls'])
+
+    for handler in ext_urls['handlers']:
+        _locals[handler['name']] = handler['class']
+
+    return [all_urls, _locals]
+
+
 def app():
-    return web.application(urls, _locals)
+    return web.application(*get_all_urls())
 
 
 def public_urls():
-    return {r'/nodes/?$': ['POST'],
-            r'/nodes/agent/?$': ['PUT'],
-            r'/version/?$': ['GET'],
-            }
+    return {
+        r'/nodes/?$': ['POST'],
+        r'/nodes/agent/?$': ['PUT'],
+        r'/version/?$': ['GET']
+    }

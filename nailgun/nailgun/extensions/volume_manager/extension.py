@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 
 from .handlers.disks import NodeDefaultsDisksHandler
 from .handlers.disks import NodeDisksHandler
@@ -26,6 +27,11 @@ class VolumeManagerExtension(BaseExtension):
 
     name = 'volume_manager'
     version = '1.0.0'
+
+    @classmethod
+    def alembic_migrations_path(cls):
+        return os.path.join(os.path.dirname(__file__),
+                            'alembic_migrations', 'migrations')
 
     urls = [
         {'uri': r'/nodes/(?P<node_id>\d+)/disks/?$',

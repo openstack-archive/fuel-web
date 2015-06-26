@@ -874,6 +874,11 @@ DUMP:
         to_file: sysctl.txt
 
       - type: dir
+        path: /var/lib/cloud
+      - type: file
+        path: /var/log/cloud-init*.log
+
+      - type: dir
         path: /etc/sysconfig/network-scripts
       - type: dir
         path: /etc/network/interfaces.d

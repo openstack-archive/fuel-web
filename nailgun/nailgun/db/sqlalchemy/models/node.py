@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import copy
 
 import uuid
 
@@ -338,6 +339,9 @@ class NodeNICInterface(Base):
     driver = Column(Text)
     bus_info = Column(Text)
 
+    offload_modes = Column(JSON, default=[], nullable=False,
+                           server_default='[]')
+
     @property
     def type(self):
         return consts.NETWORK_INTERFACE_TYPES.ether
@@ -352,6 +356,22 @@ class NodeNICInterface(Base):
     @assigned_networks.setter
     def assigned_networks(self, value):
         self.assigned_networks_list = value
+
+    @classmethod
+    def offload_modes_as_flat_dict(cls, modes):
+        """Represents multilevel structure of offload modes
+        as flat dictionary for easy merging.
+        :param modes: list of offload modes
+        :return: flat dictionary {mode['name']: mode['state']}
+        """
+        result = dict()
+        if modes is None:
+            return result
+        for mode in modes:
+            result[mode["name"]] = mode["state"]
+            if mode["sub"]:
+                result.update(cls.offload_modes_as_flat_dict(mode["sub"]))
+        return result
 
 
 class NodeBondInterface(Base):
@@ -404,3 +424,55 @@ class NodeBondInterface(Base):
     @assigned_networks.setter
     def assigned_networks(self, value):
         self.assigned_networks_list = value
+
+    @property
+    def offload_modes(self):
+        tmp = None
+        intersection_dict = {}
+        for interface in self.slaves:
+            modes = interface.offload_modes
+            if tmp is None:
+                tmp = modes
+                intersection_dict = \
+                    interface.offload_modes_as_flat_dict(tmp)
+                continue
+            intersection_dict = self._intersect_offload_dicts(
+                intersection_dict,
+                interface.offload_modes_as_flat_dict(modes)
+            )
+
+        return self._apply_intersection(tmp, intersection_dict)
+
+    @offload_modes.setter
+    def offload_modes(self, new_modes):
+        new_modes_dict = NodeNICInterface.offload_modes_as_flat_dict(new_modes)
+        for interface in self.slaves:
+            self._update_modes(interface.offload_modes, new_modes_dict)
+
+    def _update_modes(self, modes, update_dict):
+        for mode in modes:
+            if mode['name'] in update_dict:
+                mode['state'] = update_dict[mode['name']]
+            if mode['sub']:
+                self._update_modes(mode['sub'], update_dict)
+
+    def _intersect_offload_dicts(self, dict1, dict2):
+        result = dict()
+        for mode in dict1:
+            if mode in dict2:
+                result[mode] = dict1[mode] and dict2[mode]
+        return result
+
+    def _apply_intersection(self, modes, intersection_dict):
+        result = list()
+        if modes is None:
+            return result
+        for mode in copy.deepcopy(modes):
+            if mode["name"] not in intersection_dict:
+                continue
+            mode["state"] = intersection_dict[mode["name"]]
+            if mode["sub"]:
+                mode["sub"] = \
+                    self._apply_intersection(mode["sub"], intersection_dict)
+            result.append(mode)
+        return result

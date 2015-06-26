@@ -264,7 +264,7 @@ class Node(NailgunObject):
         )
 
     @classmethod
-    def update_interfaces(cls, instance):
+    def update_interfaces(cls, instance, update_by_agent=False):
         """Update interfaces for Node instance using Cluster
         network manager (see :func:`get_network_manager`)
 
@@ -273,7 +273,7 @@ class Node(NailgunObject):
         """
         try:
             network_manager = Cluster.get_network_manager(instance.cluster)
-            network_manager.update_interfaces_info(instance)
+            network_manager.update_interfaces_info(instance, update_by_agent)
 
             db().refresh(instance)
         except errors.InvalidInterfacesInfo as exc:
@@ -410,6 +410,8 @@ class Node(NailgunObject):
         pending_roles = data.pop("pending_roles", None)
         new_meta = data.pop("meta", None)
 
+        update_by_agent = data.pop("is_agent", False)
+
         disks_changed = None
         if new_meta and "disks" in new_meta and "disks" in instance.meta:
             key = operator.itemgetter("name")
@@ -434,7 +436,7 @@ class Node(NailgunObject):
                 logger.info("Interfaces are locked for update on node %s",
                             instance.human_readable_name)
             else:
-                cls.update_interfaces(instance)
+                cls.update_interfaces(instance, update_by_agent)
 
         cluster_changed = False
         if "cluster_id" in data:

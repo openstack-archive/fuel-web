@@ -153,6 +153,12 @@ def load_settings_parsers(subparsers):
         'dump_settings', help='dump current settings to YAML'
     )
 
+def load_extensions_parsers(subparsers):
+    extensions_parser = subparsers.add_parser(
+        'extensions', help='extensions related actions')
+
+    load_alembic_parsers(extensions_parser)
+
 
 def action_dumpdata(params):
     import logging
@@ -214,6 +220,22 @@ def action_dropdb(params):
 def action_migrate(params):
     from nailgun.db.migration import action_migrate_alembic
     action_migrate_alembic(params)
+
+
+def action_extensions(params):
+    from nailgun.logger import logger
+    from nailgun.db.migration import action_migrate_alembic
+    from nailgun.extensions import get_all_extensions
+
+    for extension in get_all_extensions():
+        if extension.alembic_migrations_path():
+            logger.info('Running command for extension {0} {1}'.format(
+                extension.name, extension.version))
+            action_migrate_alembic(params, extension=extension)
+        else:
+            logger.info(
+                'Extension {0} {1} does not have migrations. '
+                'Skipping...'.format(extension.name, extension.version))
 
 
 def action_test(params):
@@ -302,6 +324,7 @@ if __name__ == "__main__":
     load_test_parsers(subparsers)
     load_shell_parsers(subparsers)
     load_settings_parsers(subparsers)
+    load_extensions_parsers(subparsers)
 
     params, other_params = parser.parse_known_args()
     sys.argv.pop(1)

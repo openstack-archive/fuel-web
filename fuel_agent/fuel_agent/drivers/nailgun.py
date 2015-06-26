@@ -18,6 +18,7 @@ import os
 import six
 import yaml
 
+from oslo.config import cfg
 from six.moves.urllib.parse import urljoin
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import urlsplit
@@ -32,6 +33,9 @@ from fuel_agent.utils import utils
 
 
 LOG = logging.getLogger(__name__)
+
+CONF = cfg.CONF
+CONF.import_opt('config_drive_path', 'fuel_agent.manager')
 
 
 def match_device(hu_disk, ks_disk):
@@ -151,6 +155,9 @@ class Nailgun(BaseDataDriver):
 
     def _num_ceph_osds(self):
         return self._get_partition_count('ceph')
+
+    def is_configdrive_needed(self):
+        return True
 
     def parse_partition_scheme(self):
         LOG.debug('--- Preparing partition scheme ---')
@@ -329,7 +336,8 @@ class Nailgun(BaseDataDriver):
                         self._boot_done = True
 
             # this partition will be used to put there configdrive image
-            if partition_scheme.configdrive_device() is None:
+            if (partition_scheme.configdrive_device() is None and
+                self.is_configdrive_needed()):
                 LOG.debug('Adding configdrive partition on disk %s: size=20' %
                           disk['name'])
                 parted.add_partition(size=20, configdrive=True)
@@ -487,6 +495,22 @@ class Nailgun(BaseDataDriver):
                 md5=imeta.get('raw_md5'),
             )
         return image_scheme
+
+
+class Ironic(Nailgun):
+    def __init__(self, data):
+        super(Ironic, self).__init__(data)
+
+    def is_configdrive_needed(self):
+        return os.path.isfile(CONF.config_drive_path)
+
+    def parse_configdrive_scheme(self):
+        pass
+
+    def parse_partition_scheme(self):
+        self._boot_partition_done = True
+        self._boot_done = True
+        return super(Ironic, self).parse_partition_scheme()
 
 
 class NailgunBuildImage(BaseDataDriver):

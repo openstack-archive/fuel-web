@@ -48,6 +48,10 @@ def provision():
     main(['do_provisioning'])
 
 
+def provision_mos():
+    main(['do_provisioning_mos'])
+
+
 def partition():
     main(['do_partitioning'])
 

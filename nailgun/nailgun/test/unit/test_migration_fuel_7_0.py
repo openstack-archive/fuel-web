@@ -101,6 +101,45 @@ def prepare():
 
     db.execute(meta.tables['releases'].insert(), [_RELEASE])
 
+    db.execute(
+        meta.tables['nodes'].insert(),
+        [{
+            'node_id': 1,
+            'uuid': 'test_uuid',
+            'status': 'ready',
+            'mac': '00:00:00:00:00:01',
+            'timestamp': '2015-07-01 12:34:56.123',
+
+        }])
+
+    db.execute(
+        meta.tables['node_bond_interfaces'].insert(),
+        [{
+            'node_id': 1,
+            'name': 'test_bond_interface',
+            'mode': 'active-backup',
+            'bond_properties': jsonutils.dumps(
+                {'test_property': 'test_value'})
+        }])
+
+    db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [{
+            'node_id': 1,
+            'name': 'test_interface',
+            'mac': '00:00:00:00:00:01',
+            'max_speed': 200,
+            'current_speed': 100,
+            'ip_addr': '10.20.0.2',
+            'netmask': '255.255.255.0',
+            'state': 'test_state',
+            'interface_properties': jsonutils.dumps(
+                {'test_property': 'test_value'}),
+            'parent_id': 1,
+            'driver': 'test_driver',
+            'bus_info': 'some_test_info'
+        }])
+
     db.commit()
 
 
@@ -163,6 +202,70 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), ['6.1', '7.0'])
 
+        # check node_nic_interfaces fields
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.node_id]))
+        self.assertEqual(
+            result.fetchone()[0], 1)
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.name]))
+        self.assertEqual(
+            result.fetchone()[0], 'test_interface')
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.mac]))
+        self.assertEqual(
+            result.fetchone()[0], '00:00:00:00:00:01')
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.max_speed]))
+        self.assertEqual(
+            result.fetchone()[0], 200)
+
+        result = db.execute(
+            sa.select(
+                [self.meta.tables['node_nic_interfaces'].c.current_speed]))
+        self.assertEqual(
+            result.fetchone()[0], 100)
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.ip_addr]))
+        self.assertEqual(
+            result.fetchone()[0], '10.20.0.2')
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.netmask]))
+        self.assertEqual(
+            result.fetchone()[0], '255.255.255.0')
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.state]))
+        self.assertEqual(
+            result.fetchone()[0], 'test_state')
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces']
+                       .c.interface_properties]))
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]),
+            {'test_property': 'test_value'})
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.parent_id]))
+        self.assertEqual(
+            result.fetchone()[0], 1)
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.driver]))
+        self.assertEqual(
+            result.fetchone()[0], 'test_driver')
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces'].c.bus_info]))
+        self.assertEqual(
+            result.fetchone()[0], 'some_test_info')
+
     def test_new_fields_exists_and_empty(self):
         # check attributes_metadata field exists
         result = db.execute(
@@ -188,6 +291,19 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
 
         result = db.execute(
             sa.select([self.meta.tables['plugins'].c.tasks]))
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), [])
+
+        # check node_nic_interfaces fields
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces']
+                       .c.offloading_modes]))
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), [])
+        # the same for bond interfaces
+        result = db.execute(
+            sa.select([self.meta.tables['node_bond_interfaces']
+                       .c.offloading_modes]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
 

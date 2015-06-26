@@ -160,5 +160,9 @@ class WrongDeviceError(BaseError):
     pass
 
 
+class WrongResizeSize(BaseError):
+    pass
+
+
 class UnexpectedProcessError(BaseError):
     pass

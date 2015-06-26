@@ -290,17 +290,46 @@ class BuildUtilsTestCase(testtools.TestCase):
 
     @mock.patch.object(hu, 'parse_simple_kv')
     @mock.patch.object(utils, 'execute')
-    def test_shrink_sparse_file(self, mock_exec, mock_parse):
-        mock_parse.return_value = {'block count': 1, 'block size': 2}
+    def test_shrink_sparse_file_ok(self, mock_exec, mock_parse):
+        mock_parse.side_effect = [{'block count': 100, 'block size': 2,
+                                   'free blocks': 25},
+                                  {'estimated minimum size of the filesystem':
+                                   '100'}]
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:
             file_handle_mock = mock_open.return_value.__enter__.return_value
             bu.shrink_sparse_file('file')
             mock_open.assert_called_once_with('file', 'rwb+')
-            file_handle_mock.truncate.assert_called_once_with(1 * 2)
+            # 75 * 1.4 = 105
+            file_handle_mock.truncate.assert_called_once_with(105 * 2)
         expected_mock_exec_calls = [mock.call('e2fsck', '-y', '-f', 'file'),
-                                    mock.call('resize2fs', '-F', '-M', 'file')]
-        mock_parse.assert_called_once_with('dumpe2fs', 'file')
+                                    mock.call('resize2fs', '-F', 'file',
+                                              '105')]
+        expected_mock_parse_calls = [mock.call('dumpe2fs', 'file'),
+                                     mock.call('resize2fs', '-P', 'file')]
+        self.assertEqual(expected_mock_parse_calls, mock_parse.call_args_list)
         self.assertEqual(expected_mock_exec_calls, mock_exec.call_args_list)
+
+    @mock.patch.object(hu, 'parse_simple_kv')
+    @mock.patch.object(utils, 'execute')
+    def test_shrink_sparse_file_minimum(self, mock_exec, mock_parse):
+        # trying to resize to size lower than estimated minumun
+        mock_parse.side_effect = [{'block count': 100, 'block size': 2,
+                                   'free blocks': 25},
+                                  {'estimated minimum size of the filesystem':
+                                   '150'}]
+        self.assertRaises(errors.WrongResizeSize, bu.shrink_sparse_file,
+                          'file')
+
+    @mock.patch.object(hu, 'parse_simple_kv')
+    @mock.patch.object(utils, 'execute')
+    def test_shrink_sparse_file_wrong_resize(self, mock_exec, mock_parse):
+        # trying to resize to size that is equal to the initial size
+        mock_parse.side_effect = [{'block count': 2 ** 20 * 8192,
+                                   'block size': 1, 'free blocks': 0},
+                                  {'estimated minimum size of the filesystem':
+                                   '150'}]
+        self.assertRaises(errors.WrongResizeSize, bu.shrink_sparse_file,
+                          'file')
 
     @mock.patch.object(os, 'path')
     def test_add_apt_source(self, mock_path):

@@ -94,9 +94,17 @@ CONF.register_cli_opts(cli_opts)
 LOG = logging.getLogger(__name__)
 
 
-class Manager(object):
+class BaseManager(object):
+
     def __init__(self, data):
         self.driver = utils.get_driver(CONF.data_driver)(data)
+
+
+class Manager(BaseManager):
+
+    @property
+    def partition_scheme(self):
+        return self.driver.partition_scheme
 
     def do_partitioning(self):
         LOG.debug('--- Partitioning disks (do_partitioning) ---')
@@ -471,9 +479,12 @@ class Manager(object):
         self.do_bootloader()
         LOG.debug('--- Provisioning END (do_provisioning) ---')
 
+
+class ImageBuildManager(Manager):
     # TODO(kozhukalov): Split this huge method
     # into a set of smaller ones
     # https://bugs.launchpad.net/fuel/+bug/1444090
+
     def do_build_image(self):
         """Building OS images
 

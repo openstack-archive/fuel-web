@@ -329,6 +329,18 @@ class TestManager(test_base.BaseTestCase):
         self.assertRaises(errors.ImageChecksumMismatchError,
                           self.mgr.do_copyimage)
 
+
+class TestImageBuildManager(test_base.BaseTestCase):
+
+    @mock.patch('yaml.load')
+    @mock.patch.object(utils, 'init_http_request')
+    @mock.patch.object(hu, 'list_block_devices')
+    def setUp(self, mock_lbd, mock_http, mock_yaml):
+        super(TestImageBuildManager, self).setUp()
+        mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
+        self.mgr = manager.ImageBuildManager(
+            test_nailgun.PROVISION_SAMPLE_DATA)
+
     @mock.patch('fuel_agent.manager.bu', create=True)
     @mock.patch('fuel_agent.manager.fu', create=True)
     @mock.patch('fuel_agent.manager.utils', create=True)
@@ -347,11 +359,11 @@ class TestManager(test_base.BaseTestCase):
 
         loops = [objects.Loop(), objects.Loop()]
 
-        self.mgr.driver.image_scheme = objects.ImageScheme([
+        self.mgr.driver._image_scheme = objects.ImageScheme([
             objects.Image('file:///fake/img.img.gz', loops[0], 'ext4', 'gzip'),
             objects.Image('file:///fake/img-boot.img.gz',
                           loops[1], 'ext2', 'gzip')])
-        self.mgr.driver.partition_scheme = objects.PartitionScheme()
+        self.mgr.driver._partition_scheme = objects.PartitionScheme()
         self.mgr.driver.partition_scheme.add_fs(
             device=loops[0], mount='/', fs_type='ext4')
         self.mgr.driver.partition_scheme.add_fs(

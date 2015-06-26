@@ -188,18 +188,15 @@ class TestNailgunBuildImage(test_base.BaseTestCase):
     @mock.patch('fuel_agent.objects.Fs')
     @mock.patch('fuel_agent.objects.PartitionScheme')
     @mock.patch('fuel_agent.objects.ImageScheme')
-    @mock.patch.object(NailgunBuildImage, '__init__')
+    @mock.patch.object(NailgunBuildImage, 'parse_operating_system')
     def test_parse_schemes(
-            self, mock_init, mock_imgsch, mock_partsch,
+            self, mock_parse_os, mock_imgsch, mock_partsch,
             mock_fs, mock_img, mock_loop):
-        mock_init.return_value = None
         data = {
             'image_data': IMAGE_DATA_SAMPLE,
             'output': '/some/local/path',
         }
-        driver = NailgunBuildImage()
-        driver.data = data
-        driver.parse_schemes()
+        driver = NailgunBuildImage(data)
 
         mock_fs_expected_calls = []
         mock_img_expected_calls = []

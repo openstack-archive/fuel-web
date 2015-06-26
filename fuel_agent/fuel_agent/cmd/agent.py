@@ -18,7 +18,7 @@ from oslo.config import cfg
 from oslo_serialization import jsonutils as json
 import six
 
-from fuel_agent import manager as manager
+from fuel_agent import manager
 from fuel_agent.openstack.common import log as logging
 from fuel_agent import version
 
@@ -37,8 +37,6 @@ cli_opts = [
 
 CONF = cfg.CONF
 CONF.register_cli_opts(cli_opts)
-CONF(sys.argv[1:], project='fuel-agent',
-     version=version.version_info.release_string())
 
 logging.setup('fuel-agent')
 LOG = logging.getLogger(__name__)
@@ -65,7 +63,7 @@ def bootloader():
 
 
 def build_image():
-    main(['do_build_image'])
+    main(['do_build_image'], manager_class=manager.ImageBuildManager)
 
 
 def print_err(line):
@@ -80,8 +78,20 @@ def handle_exception(exc):
     sys.exit(-1)
 
 
-def main(actions=None):
+def main(actions=None, manager_class=None, args=None):
+    if manager_class is None:
+        manager_class = manager.Manager
+
+    if args is None:
+        args = sys.argv[1:]
+    CONF(args, project='fuel-agent',
+         version=version.version_info.release_string())
+
     try:
+        LOG.debug('Running %s with actions: %s', manager_class, actions)
+        if actions is None:
+            actions = []
+
         if CONF.input_data:
             data = json.loads(CONF.input_data)
         else:
@@ -89,13 +99,9 @@ def main(actions=None):
                 data = json.load(f)
         LOG.debug('Input data: %s', data)
 
-        mgr = manager.Manager(data)
-        if actions:
-            for action in actions:
-                getattr(mgr, action)()
+        mgr = manager_class(data)
+        for action in actions:
+            LOG.debug('Firing action %s', action)
+            getattr(mgr, action)()
     except Exception as exc:
         handle_exception(exc)
-
-
-if __name__ == '__main__':
-    main()

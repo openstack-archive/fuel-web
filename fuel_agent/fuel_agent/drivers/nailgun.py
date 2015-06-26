@@ -22,7 +22,7 @@ from six.moves.urllib.parse import urljoin
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import urlsplit
 
-from fuel_agent.drivers.base import BaseDataDriver
+from fuel_agent.drivers import base
 from fuel_agent.drivers import ks_spaces_validator
 from fuel_agent import errors
 from fuel_agent import objects
@@ -66,7 +66,8 @@ def match_device(hu_disk, ks_disk):
     return False
 
 
-class Nailgun(BaseDataDriver):
+class Nailgun(base.BaseDataDriver):
+
     def __init__(self, data):
         super(Nailgun, self).__init__(data)
 
@@ -78,12 +79,20 @@ class Nailgun(BaseDataDriver):
         # has already been added. we need this to
         # get rid of md over all disks for /boot partition.
         self._boot_done = False
+        self._partition_scheme = self.parse_partition_scheme()
 
-        self.partition_scheme = self.parse_partition_scheme()
         self.grub = self.parse_grub()
         self.configdrive_scheme = self.parse_configdrive_scheme()
         # parsing image scheme needs partition scheme has been parsed
-        self.image_scheme = self.parse_image_scheme()
+        self._image_scheme = self.parse_image_scheme()
+
+    @property
+    def partition_scheme(self):
+        return self._partition_scheme
+
+    @property
+    def image_scheme(self):
+        return self._image_scheme
 
     def partition_data(self):
         return self.data['ks_meta']['pm_data']['ks_spaces']
@@ -489,7 +498,7 @@ class Nailgun(BaseDataDriver):
         return image_scheme
 
 
-class NailgunBuildImage(BaseDataDriver):
+class NailgunBuildImage(base.BaseDataDriver):
 
     # TODO(kozhukalov):
     # This list of packages is used by default only if another
@@ -543,14 +552,27 @@ class NailgunBuildImage(BaseDataDriver):
 
     def __init__(self, data):
         super(NailgunBuildImage, self).__init__(data)
+        self._image_scheme = objects.ImageScheme()
+        self._partition_scheme = objects.PartitionScheme()
         self.parse_schemes()
         self.parse_operating_system()
 
-    def parse_operating_system(self):
+    @property
+    def partition_scheme(self):
+        return self._partition_scheme
+
+    @property
+    def image_scheme(self):
+        return self._image_scheme
+
+    def check_operating_system(self):
         if self.data.get('codename').lower() != 'trusty':
             raise errors.WrongInputDataError(
                 'Currently, only Ubuntu Trusty is supported, given '
                 'codename is {0}'.format(self.data.get('codename')))
+
+    def parse_operating_system(self):
+        self.check_operating_system()
 
         packages = self.data.get('packages', self.DEFAULT_TRUSTY_PACKAGES)
 
@@ -566,9 +588,6 @@ class NailgunBuildImage(BaseDataDriver):
         self.operating_system = objects.Ubuntu(repos=repos, packages=packages)
 
     def parse_schemes(self):
-        self.image_scheme = objects.ImageScheme()
-        self.partition_scheme = objects.PartitionScheme()
-
         for mount, image in six.iteritems(self.data['image_data']):
             filename = os.path.basename(urlsplit(image['uri']).path)
             # Loop does not allocate any loop device

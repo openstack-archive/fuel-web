@@ -117,7 +117,7 @@ function($, _, i18n, React) {
                         </div>
                     </div>
                     {this.state.hasError &&
-                        <p className='text-center text-danger'>{i18n('login_page.login_error')}</p>
+                        <p className='text-danger login-error'>{i18n('login_page.login_error')}</p>
                     }
                     <div className='form-group'>
                         <div className='col-xs-12 text-center'>

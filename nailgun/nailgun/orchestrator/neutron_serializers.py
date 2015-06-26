@@ -853,3 +853,95 @@ class NeutronNetworkDeploymentSerializer70(
         attrs['roles']['mongo/db'] = 'br-mgmt'
 
         return attrs
+
+    @classmethod
+    def generate_network_metadata(cls, cluster):
+        nodes = dict()
+        nm = Cluster.get_network_manager(cluster)
+
+        for n in Cluster.get_nodes_not_for_deletion(cluster):
+            name = Node.make_slave_name(n)
+            node_roles = Node.all_roles(n)
+
+            ip_by_net = {
+                'fuelweb_admin': None,
+                'storage': None,
+                'management': None,
+                'public': None
+            }
+            for net in ip_by_net:
+                netgroup = nm.get_node_network_by_netname(n, net)
+                if netgroup.get('ip'):
+                    ip_by_net[net] = netgroup['ip']
+
+            netw_roles = {
+                'admin/pxe': ip_by_net['fuelweb_admin'],
+                'fw-admin': ip_by_net['fuelweb_admin'],
+
+                'keystone/api': ip_by_net['management'],
+                'neutron/api': ip_by_net['management'],
+                'swift/api': ip_by_net['management'],
+                'sahara/api': ip_by_net['management'],
+                'ceilometer/api': ip_by_net['management'],
+                'cinder/api': ip_by_net['management'],
+                'glance/api': ip_by_net['management'],
+                'heat/api': ip_by_net['management'],
+                'nova/api': ip_by_net['management'],
+                'murano/api': ip_by_net['management'],
+                'horizon': ip_by_net['management'],
+
+                'management': ip_by_net['management'],
+                'mgmt/api': ip_by_net['management'],
+                'mgmt/database': ip_by_net['management'],
+                'mgmt/messaging': ip_by_net['management'],
+                'mgmt/corosync': ip_by_net['management'],
+                'mgmt/vip': ip_by_net['management'],
+
+                'mongo/db': ip_by_net['management'],
+
+                'neutron/mesh': ip_by_net['management'],
+
+                'ceph/public': ip_by_net['management'],
+
+                'neutron/private': None,
+
+                'neutron/floating': None,
+
+                'storage': ip_by_net['storage'],
+                'ceph/replication': ip_by_net['storage'],
+                'swift/replication': ip_by_net['storage'],
+                'cinder/iscsi': ip_by_net['storage'],
+
+            }
+            if Node.should_have_public(n):
+                netw_roles.update({
+                    'ex': ip_by_net['public'],
+                    'public/vip': ip_by_net['public'],
+                    'swift/public': ip_by_net['public'],
+                    'ceph/radosgw': ip_by_net['public'],
+                })
+
+            nodes[name] = {
+                "uid": n.uid,
+                "fqdn": n.fqdn,
+                "name": name,
+                "user_node_name": n.name,
+                "swift_zone": n.uid,
+                "node_roles": node_roles,
+                "network_roles": netw_roles
+            }
+
+        return dict(
+            nodes=nodes,
+            vips=nm.assign_vips_for_net_groups(cluster)
+        )
+
+    @classmethod
+    def network_provider_node_attrs(cls, cluster, node):
+        """Serialize node, then it will be
+        merged with common attributes
+        """
+        node_attrs = super(NeutronNetworkDeploymentSerializer70,
+                           cls).network_provider_node_attrs(cluster, node)
+        node_attrs['network_metadata'] = cls.generate_network_metadata(cluster)
+        return node_attrs

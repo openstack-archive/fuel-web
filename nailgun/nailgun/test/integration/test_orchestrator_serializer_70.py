@@ -73,6 +73,7 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 'mgmt/database': 'br-mgmt',
                 'mgmt/messaging': 'br-mgmt',
                 'mgmt/corosync': 'br-mgmt',
+                'mgmt/memcache': 'br-mgmt',
                 'mgmt/vip': 'br-mgmt',
 
                 'public/vip': 'br-ex',
@@ -81,7 +82,6 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 'neutron/mesh': 'br-mgmt',
                 'neutron/floating': 'br-floating',
 
-                'swift/public': 'br-ex',
                 'swift/replication': 'br-storage',
 
                 'ceph/public': 'br-mgmt',

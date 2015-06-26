@@ -466,7 +466,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                                     name={name}
                                     label={role.get('label')}
                                     description={role.get('description')}
-                                    сhecked={_.contains(this.props.selectedRoles, name)}
+                                    checked={_.contains(this.props.selectedRoles, name)}
                                     disabled={!this.props.nodes.length || processedRestrictions.result}
                                     tooltipText={!!this.props.nodes.length && processedRestrictions.message}
                                     onChange={this.props.selectRoles}

@@ -108,7 +108,7 @@ define(['jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'], funct
                 props.onInput = this.debouncedInput;
             } else {
                 // debounced onChange callback is supported for uncontrolled inputs
-                props.onChange = (_.isUndefined(this.props.value) && _.isUndefined(this.props.сhecked)) ? this.debouncedChange : this.onChange;
+                props.onChange = (_.isUndefined(this.props.value) && _.isUndefined(this.props.checked)) ? this.debouncedChange : this.onChange;
             }
             var Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
                 input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,

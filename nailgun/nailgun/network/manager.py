@@ -30,7 +30,6 @@ from sqlalchemy.sql import not_
 from sqlalchemy.sql import or_
 
 from nailgun import objects
-
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -647,6 +646,9 @@ class NetworkManager(object):
             if 'interface_properties' in iface:
                 current_iface.interface_properties = \
                     iface['interface_properties']
+            if 'offloading_modes' in iface:
+                current_iface.offloading_modes = \
+                    iface['offloading_modes']
         map(db().delete, bond_interfaces_db)
         db().commit()
 
@@ -683,7 +685,7 @@ class NetworkManager(object):
         return node_db.id
 
     @classmethod
-    def update_interfaces_info(cls, node):
+    def update_interfaces_info(cls, node, update_by_agent=False):
         """Update interfaces in case of correct interfaces
         in meta field in node's model
         """
@@ -707,7 +709,8 @@ class NetworkManager(object):
                 None)
 
             if interface_db:
-                cls.__update_existing_interface(interface_db.id, interface)
+                cls.__update_existing_interface(interface_db.id, interface,
+                                                update_by_agent)
             else:
                 cls.__add_new_interface(node, interface)
 
@@ -773,14 +776,14 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def __update_existing_interface(cls, interface_id, interface_attrs):
+    def __update_existing_interface(cls, interface_id, interface_attrs, update_by_agent=False):
         interface = db().query(NodeNICInterface).get(interface_id)
-        cls.__set_interface_attributes(interface, interface_attrs)
+        cls.__set_interface_attributes(interface, interface_attrs, update_by_agent)
         db().add(interface)
         db().flush()
 
     @classmethod
-    def __set_interface_attributes(cls, interface, interface_attrs):
+    def __set_interface_attributes(cls, interface, interface_attrs, update_by_agent=False):
         interface.name = interface_attrs['name']
         interface.mac = interface_attrs['mac']
 
@@ -797,6 +800,16 @@ class NetworkManager(object):
         elif not interface.interface_properties:
             interface.interface_properties = \
                 cls.get_default_interface_properties()
+
+        new_offloading_modes = interface_attrs.get('offloading_modes')
+        old_modes_states = interface.\
+            offloading_modes_as_flat_dict(interface.offloading_modes)
+        if new_offloading_modes:
+            if update_by_agent:
+                for mode in new_offloading_modes:
+                    if mode["name"] in old_modes_states:
+                        mode["state"] = old_modes_states[mode["name"]]
+            interface.offloading_modes = new_offloading_modes
 
     @classmethod
     def __delete_not_found_interfaces(cls, node, interfaces):
@@ -1187,10 +1200,28 @@ class NetworkManager(object):
                 'disable_offloading':
                 iface.interface_properties['disable_offloading']
             }
+        if iface.offloading_modes:
+            modified_offloading_modes = \
+                cls._get_modified_offloading_modes(iface.offloading_modes)
+            if modified_offloading_modes:
+                properties['ethtool'] = {}
+                properties['ethtool']['offload'] = \
+                    modified_offloading_modes
+
         return properties
 
     @classmethod
-    def find_nic_assoc_with_ng(self, node, network_group):
+    def _get_modified_offloading_modes(cls, offloading_modes):
+        result = dict()
+        for mode in offloading_modes:
+            if mode['state'] is not None:
+                result[mode['name']] = mode['state']
+            if mode['sub'] and mode['state'] is not False:
+                result.update(cls._get_modified_offloading_modes(mode['sub']))
+        return result
+
+    @classmethod
+    def find_nic_assoc_with_ng(cls, node, network_group):
         """Will find iface on node that is associated with network_group.
         If interface is a part of bond - check network on that bond
         """

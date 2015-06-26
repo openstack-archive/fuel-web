@@ -31,9 +31,55 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         super(TestNodeNICsBonding, self).setUp()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
-            {"name": "eth0", "mac": "00:00:00:00:00:66"},
-            {"name": "eth1", "mac": "00:00:00:00:00:77"},
-            {"name": "eth2", "mac": "00:00:00:00:00:88"}])
+            {"name": "eth0",
+             "mac": "00:00:00:00:00:66",
+             "offloading_modes": [
+                 {
+                     "name": "mode_1",
+                     "state": None,
+                     "sub": []
+                 },
+                 {
+                     "name": "mode_common",
+                     "state": None,
+                     "sub": []
+                 }
+             ]
+             },
+            {"name": "eth1",
+             "mac": "00:00:00:00:00:77",
+             "offloading_modes": [
+                 {
+                     "name": "mode_2",
+                     "state": None,
+                     "sub": []
+                 },
+                 {
+                     "name": "mode_common",
+                     "state": None,
+                     "sub": []
+                 }
+             ]
+             },
+            {"name": "eth2",
+             "mac": "00:00:00:00:00:88",
+             "offloading_modes": [
+                 {
+                     "name": "mode_3",
+                     "state": None,
+                     "sub": []
+                 },
+                 {
+                     "name": "mode_4",
+                     "state": None,
+                     "sub": []
+                 },
+                 {
+                     "name": "mode_common",
+                     "state": None,
+                     "sub": []
+                 }
+             ]}])
         self.env.create(
             cluster_kwargs={
                 "net_provider": "neutron",
@@ -104,6 +150,13 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             resp.json_body)
         self.assertEqual(len(bonds), 1)
         self.assertEqual(bonds[0]["name"], 'ovs-bond0')
+        bond_offloading_modes = bonds[0]['offloading_modes']
+        self.assertEqual(len(bond_offloading_modes), 1)
+        self.assertDictEqual(
+            bond_offloading_modes[0],
+            {'name': 'mode_common',
+             'state': None,
+             'sub': []})
 
     def nics_bond_create_w_properties(self, put_func):
         self.data.append({
@@ -133,6 +186,13 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             resp.json_body)
         self.assertEqual(len(bonds), 1)
         self.assertEqual(bonds[0]["name"], 'bond0')
+        bond_offloading_modes = bonds[0]['offloading_modes']
+        self.assertEqual(len(bond_offloading_modes), 1)
+        self.assertDictEqual(
+            bond_offloading_modes[0],
+            {'name': 'mode_common',
+             'state': None,
+             'sub': []})
 
     def nics_bond_remove(self, put_func):
         resp = self.env.node_nics_get(self.env.nodes[0]["id"])

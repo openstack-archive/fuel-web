@@ -28,3 +28,11 @@ class BaseDataDriver(object):
 
     def __init__(self, data):
         self.data = copy.deepcopy(data)
+
+    @abc.abstractproperty
+    def partition_scheme(self):
+        """Returns ready PartitionScheme"""
+
+    @abc.abstractproperty
+    def image_scheme(self):
+        """Returns ready ImageScheme"""

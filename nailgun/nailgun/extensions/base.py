@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import abc
 import six
 
@@ -42,6 +41,13 @@ class BaseExtension(object):
     # ]
     urls = []
 
+    @classmethod
+    def alembic_migrations_path(cls):
+        """If extension provides database migrations,
+        the method should return path to alembic migrations
+        """
+        return None
+
     @abc.abstractproperty
     def name(self):
         """Uniq name of the extension."""
@@ -51,3 +57,11 @@ class BaseExtension(object):
         """Version of the extension, follow semantic
         versioning schema (http://semver.org/)
         """
+
+    @classmethod
+    def table_prefix(cls):
+        return '{0}_{1}_'.format(cls.name, cls.version)
+
+    @classmethod
+    def alembic_table_version(cls):
+        return '{0}alembic_version'.format(cls.table_prefix())

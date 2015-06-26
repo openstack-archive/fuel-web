@@ -28,7 +28,7 @@ Nodes API
 Disks API
 ---------
 
-.. automodule:: nailgun.api.v1.handlers.disks
+.. automodule:: nailgun.extensions.volume_manager.handlers.disks
 	:inherited-members:
 
 

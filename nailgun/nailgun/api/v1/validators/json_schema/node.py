@@ -45,6 +45,29 @@ single_schema = {
                             "name": {"type": "string"},
                             "driver": {"type": "string"},
                             "bus_info": {"type": "string"},
+                            "offloading_modes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "state": {
+                                            "type": [
+                                                "boolean",
+                                                "null"
+                                            ]
+                                        },
+                                        "sub": {
+                                            "$ref": "#/properties/meta/"
+                                                    "properties/interfaces/"
+                                                    "items/properties/"
+                                                    "offloading_modes"
+
+                                        }
+                                    }
+
+                                }
+                            },
                         }
                     }
                 },
@@ -106,7 +129,6 @@ single_schema = {
         "is_agent": {"type": "boolean"},
         "platform_name": base_types.NULLABLE_STRING,
         "group_id": {"type": "number"},
-        "meta": {"type": "object"},
         "fqdn": base_types.NULLABLE_STRING,
         "kernel_params": base_types.NULLABLE_STRING,
         "progress": {"type": "number"},

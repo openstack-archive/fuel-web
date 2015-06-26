@@ -770,13 +770,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, componentMixins
             return (
                 <div>
                     {(cluster.get('net_provider') == 'nova_network') ?
-                        <div className='radio-checkbox-group row forms-box nova-managers'>
+                        <div className='col-xs-12 forms-box nova-managers'>
                             <controls.RadioGroup
                                 key='net_provider'
                                 name='net_provider'
                                 values={managers}
                                 onChange={this.onManagerChange}
-                                wrapperClassName='network-managers pull-left'
+                                wrapperClassName='pull-left'
                             />
                         </div>
                     :

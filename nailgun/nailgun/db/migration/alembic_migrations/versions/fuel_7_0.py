@@ -21,6 +21,7 @@ Create Date: 2015-06-24 12:08:04.838393
 """
 
 # revision identifiers, used by Alembic.
+
 revision = '1e50a4903910'
 down_revision = '37608259013'
 
@@ -41,6 +42,18 @@ def upgrade():
     op.create_unique_constraint(
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('offload_modes',
+                  fields.JSON(),
+                  nullable=False,
+                  server_default='[]'))
+    op.add_column(
+        'node_bond_interfaces',
+        sa.Column('offload_modes',
+                  fields.JSON(),
+                  nullable=False,
+                  server_default='[]'))
     extend_plugin_model_upgrade()
 
 
@@ -53,6 +66,9 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+
+    op.drop_column('node_bond_interfaces', 'offload_modes')
+    op.drop_column('node_nic_interfaces', 'offload_modes')
 
 
 def extend_plugin_model_upgrade():

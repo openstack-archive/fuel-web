@@ -291,14 +291,17 @@ class BuildUtilsTestCase(testtools.TestCase):
     @mock.patch.object(hu, 'parse_simple_kv')
     @mock.patch.object(utils, 'execute')
     def test_shrink_sparse_file(self, mock_exec, mock_parse):
-        mock_parse.return_value = {'block count': 1, 'block size': 2}
+        mock_parse.return_value = {'block count': 100, 'block size': 2,
+                                   'free blocks': 25}
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:
             file_handle_mock = mock_open.return_value.__enter__.return_value
             bu.shrink_sparse_file('file')
             mock_open.assert_called_once_with('file', 'rwb+')
-            file_handle_mock.truncate.assert_called_once_with(1 * 2)
+            # 75 * 1.4 = 105
+            file_handle_mock.truncate.assert_called_once_with(105 * 2)
         expected_mock_exec_calls = [mock.call('e2fsck', '-y', '-f', 'file'),
-                                    mock.call('resize2fs', '-F', '-M', 'file')]
+                                    mock.call('resize2fs', '-F', 'file',
+                                              '105')]
         mock_parse.assert_called_once_with('dumpe2fs', 'file')
         self.assertEqual(expected_mock_exec_calls, mock_exec.call_args_list)
 

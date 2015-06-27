@@ -52,8 +52,8 @@ Before using it, please install the following required dependencies:
 
 .. _DevOpsPyPIvenv:
 
-Devops installation in `virtualenv <http://virtualenv.readthedocs.org/en/latest/virtualenv.html>`_
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Devops installation in `virtualenv <http://virtualenv.readthedocs.org/en/latest/>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Install packages needed for building python eggs
 
@@ -258,9 +258,8 @@ Important notes for Sahara and Murano tests
    (md5: b0a0fdc0b4a8833f79701eb25e6807a3) in /tmp before start.
  * Running Murano tests on instances without an Internet connection will fail.
  * For Murano tests execute 'export SLAVE_NODE_MEMORY=5120' before starting.
- * Heat autoscale tests require the image
-   `F17-x86_64-cfntools.qcow2 <https://fedorapeople.org/groups/heat/prebuilt-jeos-images/F17-x86_64-cfntools.qcow2>`_
-   (md5: afab0f79bac770d61d24b4d0560b5f70) be placed in /tmp before starting.
+ * If you need an image For Heat autoscale tests check
+   `prebuilt-jeos-images <https://fedorapeople.org/groups/heat/prebuilt-jeos-images/>`_.
 
 Run single OSTF tests several times
 -----------------------------------

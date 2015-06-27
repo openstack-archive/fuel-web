@@ -770,7 +770,7 @@
             label: "Certificate"
             description: "Certificate and private key data, placed one after another"
             weight: 40
-            type: "text"
+            type: "textarea"
             restrictions:
               - condition: "(settings:public_ssl.cert_source.value != 'user_uploaded') or (settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false)"
                 action: "hide"
@@ -782,6 +782,62 @@
             type: "text"
             restrictions:
               - condition: "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
+                action: "hide"
+        internal_ssl:
+          metadata:
+            label: "Internal SSL"
+            weight: 120
+          enable:
+            type: "checkbox"
+            value: false
+            label: "HTTPS for internal endpoints"
+            description: "Enable access over SSL for internal OpenStack endpoints"
+            weight: 10
+          cert_data:
+            value: ""
+            label: "Certificate"
+            description: "Certificate and private key data, placed one after another"
+            weight: 20
+            type: "textarea"
+            restrictions:
+              - condition: "settings:internal_ssl.enable.value == false"
+                action: "hide"
+          hostname:
+            value: "internal.fuel.local"
+            label: "DNS hostname for internal SSL"
+            description: "Your DNS entries should point to this name"
+            weight: 30
+            type: "text"
+            restrictions:
+              - condition: "settings:internal_ssl.enable.value == false"
+                action: "hide"
+        admin_ssl:
+          metadata:
+            label: "Admin SSL"
+            weight: 130
+          enable:
+            type: "checkbox"
+            value: false
+            label: "HTTPS for admin endpoints"
+            description: "Enable access over SSL for admin OpenStack endpoints"
+            weight: 10
+          cert_data:
+            value: ""
+            label: "Certificate"
+            description: "Certificate and private key data, placed one after another"
+            weight: 20
+            type: "textarea"
+            restrictions:
+              - condition: "settings:admin_ssl.enable.value == false"
+                action: "hide"
+          hostname:
+            value: "internal.fuel.local"
+            label: "DNS hostname for admin SSL"
+            description: "Your DNS entries should point to this name"
+            weight: 30
+            type: "text"
+            restrictions:
+              - condition: "settings:admin_ssl.enable.value == false"
                 action: "hide"
         kernel_params:
           metadata:

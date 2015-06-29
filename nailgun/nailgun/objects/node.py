@@ -18,8 +18,11 @@
 Node-related objects and collections
 """
 import itertools
+import jinja2
 import operator
 import traceback
+
+import yaml
 
 from datetime import datetime
 
@@ -693,6 +696,13 @@ class Node(NailgunObject):
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
+        cls.set_network_template(instance)
+
+    @classmethod
+    def set_network_template(cls, instance):
+        template = instance.cluster.network_config.configuration_template
+        cls.apply_network_template(instance, template)
+        db().flush()
 
     @classmethod
     def add_pending_change(cls, instance, change):
@@ -786,6 +796,7 @@ class Node(NailgunObject):
     def remove_replaced_params(cls, instance):
         instance.replaced_deployment_info = []
         instance.replaced_provisioning_info = {}
+        instance.network_template = None
 
     @classmethod
     def all_roles(cls, instance):
@@ -796,6 +807,45 @@ class Node(NailgunObject):
             'primary-{0}'.format(role) for role in instance.primary_roles])
 
         return sorted(roles | primary_roles)
+
+    @classmethod
+    def apply_network_template(cls, instance, template):
+        if template is None:
+            instance.network_template = None
+            return
+        parsed_template = yaml.safe_load(template)['adv_net_template']
+        # Get the correct nic_mapping for this node so we can
+        # dynamically replace any interface references in any
+        # template for this node.
+        node_group = instance.group_id
+        if node_group not in parsed_template:
+            node_group = 'default'
+
+        node_name = cls.make_slave_name(instance)
+        nic_mapping = parsed_template[node_group]['nic_mapping']
+        if node_name not in nic_mapping:
+            node_name = 'default'
+
+        nic_mapping = nic_mapping[node_name]
+        env = jinja2.Environment(variable_start_string='<%',
+                                 variable_end_string='%>')
+
+        # Replace interface references and re-parse YAML
+        template_object = env.from_string(template)
+        template_for_node = template_object.render(nic_mapping)
+        parsed_template = yaml.load(template_for_node)['adv_net_template']
+
+        output = parsed_template[node_group]
+        output['templates'] = output.pop('network_scheme')
+        output['roles'] = {}
+        output['endpoints'] = {}
+        for v in output['templates'].values():
+            for endpoint in v['endpoints']:
+                output['endpoints'][endpoint] = {}
+            for role, ep in v['roles'].items():
+                output['roles'][role] = ep
+
+        instance.network_template = output
 
 
 class NodeCollection(NailgunCollection):
@@ -885,3 +935,8 @@ class NodeCollection(NailgunCollection):
     @classmethod
     def get_by_ids(cls, ids):
         return db.query(models.Node).filter(models.Node.id.in_(ids)).all()
+
+    @classmethod
+    def reset_network_template(cls, instances):
+        for instance in instances:
+            instance.network_template = None

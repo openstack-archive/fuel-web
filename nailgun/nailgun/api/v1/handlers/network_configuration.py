@@ -195,6 +195,38 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         self.raise_task(task)
 
 
+class TemplateNetworkConfigurationHandler(ProviderHandler):
+    """Neutron Network configuration handler
+    """
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: JSONized network configuration for cluster.
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        return cluster.network_config.configuration_template
+
+    @content
+    def POST(self, cluster_id):
+        """:http:
+            * 201 (object successfully created)
+            * 400 (invalid object data specified)
+            * 409 (object with such parameters already exists)
+        """
+        template = web.data()
+
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        objects.Cluster.set_network_template(cluster, template)
+        raise self.http(200)
+
+    def DELETE(self, cluster_id):
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        objects.Cluster.set_network_template(cluster, None)
+        raise self.http(200)
+
+
 class NetworkConfigurationVerifyHandler(ProviderHandler):
     """Network configuration verify handler base
     """

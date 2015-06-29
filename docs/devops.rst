@@ -223,6 +223,13 @@ Next, you need to define several variables for the future environment
 
     export ISO_PATH=<path_to_iso>
     export NODES_COUNT=<number_nodes>
+
+Optionally you can specify the name of your test environment (it will
+be used as a prefix for the domains and networks names created by
+libvirt, defaults is =fuel_system_test=)
+
+.. code-block:: bash
+
     export ENV_NAME=<name_of_env>
 
 .. code-block:: bash

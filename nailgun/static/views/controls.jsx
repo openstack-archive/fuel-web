@@ -270,10 +270,35 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
     });
 
     controls.ProgressBar = React.createClass({
+        getDefaultProps: function() {
+            return {
+                isTaskNameVisible: false,
+                showProgress: false
+            };
+        },
         render: function() {
+            var isInfinite = this.props.infiniteTask;
             return (
                 <div className='progress'>
-                    <div className='progress-bar progress-bar-striped active' style={{width: '100%'}}></div>
+                    {this.props.isTaskNameVisible ?
+                        <div
+                            className={utils.classNames({
+                                            'progress-bar progress-bar-striped active': true,
+                                            'progress-bar-warning': isInfinite,
+                                            'progress-bar-success': !isInfinite
+                                        })}
+                            style={{width: (isInfinite ? 100 : this.props.progress > 3 ? this.props.progress : 3) + '%'}}
+                        >
+                            {i18n('cluster_page.' + this.props.taskName, {defaultValue: ''})}
+                        </div>
+                    :
+                        this.props.showProgress ?
+                            <div className='progress-bar' role='progressbar' style={{width: _.max([this.props.progress, 3]) + '%'}}>
+                                {this.props.progress + '%'}
+                            </div>
+                        :
+                            <div className='progress-bar progress-bar-striped active' style={{width: '100%'}}></div>
+                    }
                 </div>
             );
         }

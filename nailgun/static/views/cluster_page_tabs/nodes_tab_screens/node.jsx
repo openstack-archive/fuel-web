@@ -185,11 +185,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
         renderNodeProgress: function(showPercentage) {
             var nodeProgress = this.props.node.get('progress');
             return (
-                <div className='progress'>
-                    <div className='progress-bar' role='progressbar' style={{width: _.max([nodeProgress, 3]) + '%'}}>
-                        {showPercentage && (nodeProgress + '%')}
-                    </div>
-                </div>
+                <controls.ProgressBar
+                    showProgress={true}
+                    progress={showPercentage ? nodeProgress : false}
+                />
             );
         },
         renderNodeHardwareSummary: function() {

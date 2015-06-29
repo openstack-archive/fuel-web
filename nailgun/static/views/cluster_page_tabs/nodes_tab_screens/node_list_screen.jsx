@@ -491,7 +491,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
     ManagementPanel = React.createClass({
         getInitialState: function() {
             return {
-                actionInProgress: false,
+                actionInзк: false,
                 isSearchButtonVisible: !!this.props.search,
                 activeSearch: !!this.props.search
             };

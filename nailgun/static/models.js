@@ -478,6 +478,12 @@ define([
                 result = _.contains(utils.composeList(filters.status), this.get('status'));
             }
             return result;
+        },
+        isInfinite: function() {
+            return _.contains(['stop_deployment', 'reset_environment'], this.get('name'));
+        },
+        isStoppableTask: function() {
+            return !_.contains(['stop_deployment', 'reset_environment', 'update', 'spawn_vms'], this.get('name'));
         }
     });
 

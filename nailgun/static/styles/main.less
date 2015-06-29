@@ -1144,6 +1144,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
       &.vmware {
         .tab-icon-sprite-index(6);
       }
+      &.dashboard {
+        .tab-icon-sprite-index(8);
+      }
     }
   }
 }
@@ -2745,5 +2748,155 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .input-wrapper input {
     width: 513px;
     margin-top: 10px;
+  }
+}
+
+// Dashboard tab
+.dashboard-tab {
+  @cluster-info-background: #e7f0f2;
+  .deploy-block{
+    border: 1px solid #d3d3d3;
+    border-radius: 4px;
+    padding: 15px;
+  }
+  .documentation {
+    margin: 10px 0 10px 0;
+    .documentation-link {
+      margin-bottom: 5px;
+      .glyphicon {
+        margin-right: 5px;
+      }
+    }
+  }
+  .cluster-information {
+    background-color: @cluster-info-background;
+    padding-right: 30px;
+    .cluster-info-title {
+      font-weight: bold;
+    }
+    .cluster-info-value,
+    .cluster-info-title {
+      text-align: left;
+      padding: 10px;
+    }
+    .cluster-info-value {
+      &.name {
+        a, .glyphicon {
+          cursor: pointer;
+        }
+        .glyphicon {
+          margin-left: 10px;
+        }
+      }
+    }
+    .rename-block {
+      input[type=text] {
+        width: 150px;
+        float: left;
+      }
+      .rename-environment-btn {
+        width: 80px;
+        float: right;
+      }
+    }
+    .capacity-block {
+      .title {
+        padding-left: 0;
+      }
+      .capacity-item {
+        background-color: white;
+        border: 1px solid;
+        padding: 5px;
+        .capacity-value {
+          font-weight: bold;
+          float: right;
+        }
+      }
+    }
+    .statistics-block {
+      .title {
+        padding-left: 0;
+        margin-top: 10px;
+      }
+      .no-nodes-block {
+        padding-left: 0;
+      }
+    }
+    .chart {
+      position: absolute;
+      top: 30px;
+      left: 260px;
+      polyline {
+        display: none;
+      }
+      text {
+        display: none;
+      }
+      .chart-title {
+        position: absolute;
+        font-size: 20px;
+      }
+    }
+  }
+  .deploy-block {
+    border: 1px solid #d3d3d3;
+    border-radius: 4px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    .deploy-control {
+      margin-top: 10px;
+      .deploy-btn {
+        margin-right: 10px;
+      }
+    }
+    .changes-list {
+      a {cursor: pointer;}
+      .changes-header {
+        font-weight: bold;
+      }
+      .changes-item {
+        padding-bottom: 10px;
+      }
+      .deploy-btn {
+        margin-right: 20px;
+      }
+    }
+    .deploy-readiness {
+      .section-title {
+        font-weight: bold;
+        font-size: 16px;
+      }
+    }
+    .deploy-process {
+      height: auto;
+      .progress {
+        width: 90%;
+      }
+      .stop-deployment-btn {
+        padding: 5px 20px;
+      }
+    }
+  }
+  .action-item {
+    margin-bottom: 10px;
+    .glyphicon {
+      margin-left: 10px;
+    }
+    .popover {
+      display: inline;
+      margin-top: 30px;
+      margin-left: 75px;
+      &.delete {
+        margin-left: 90px;
+      }
+    }
+  }
+  .plugins-block {
+    margin-top: 20px;
+    .plugin-entry {
+      .title {
+        padding-left: 0;
+      }
+    }
   }
 }

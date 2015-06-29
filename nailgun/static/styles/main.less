@@ -38,15 +38,14 @@
 @node-border-color-offline: @base-node-border;
 
 // Other Colors
-@white:      #ffffff;
-@black:      #000000;
-@red:        #c94b4b;
-@pure-red:   #ff0000;
-@green:      #54a854;
-@blue:       #4e85aa; //#688db4;
-@orange:     #bc6e12;
-@gray:       #8c8c8c;
-@light-blue: #eaf0f2;
+@white:    #ffffff;
+@black:    #000000;
+@red:      #c94b4b;
+@pure-red: #ff0000;
+@green:    #54a854;
+@blue:     #4e85aa; //#688db4;
+@orange:   #bc6e12;
+@gray:     #8c8c8c;
 
 @alert-success-bg: #cae8c6;
 @alert-info-bg:    #c1d4e1;
@@ -133,6 +132,11 @@
   &:before, &:after {
     content: none;
   }
+}
+
+.glyphicon-danger-sign {
+  .glyphicon-warning-sign;
+  background: url(@common-icons-sprite) -12px -132px no-repeat;
 }
 
 // BASE SETTINGS
@@ -798,17 +802,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
     padding: 10px 30px 30px 30px;
     box-sizing: border-box;
     > div {text-align: center;}
-    h1 {margin-bottom: @vertical-offset + 10;}
-    .notice {
-      color:@gray;
-      font-size: @base-font-size - 2;
-      width: 80%;
-      margin: 0 auto;
-    }
-    .register_installation {
-      width: 80%;
-      margin: 0 auto 30px auto;
-    }
+    h1 {margin-bottom: @vertical-offset;}
+    .notice {color:@gray;}
     .happy-cloud {
       padding: 30px;
       .cloud-smile {
@@ -817,10 +812,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
         background-image: url(../img/cloud-smile.png);
         background-repeat: no-repeat;
         margin: 0 auto;
-        + div {
-          margin-top: @vertical-offset;
-          font-size: @base-font-size + 6;
-        }
+        + div {margin-top: @vertical-offset;}
       }
       span {color: @green - 30%;}
     }
@@ -838,7 +830,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .register-trial {
       padding: @vertical-offset 10px 4px 10px;
       margin: 0 -30px 7px;
-      background-color: @light-blue;
+      background-color: @gray + 100%;
     }
   }
 }
@@ -853,8 +845,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
   .help-block {font-style: italic;}
   .statistics-disclaimer-box {
-    background-color: @gray + 100%;
-    border: 1px solid @gray + 84%;
+    background-color: @gray + 80%;
+    border: 1px solid @gray + 40%;
     overflow-y: auto;
     padding: 20px;
     margin-bottom: 16px;
@@ -872,7 +864,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     help-block {text-align: right;}
     .links-container {
       min-height: 20px;
-      margin: 15px 0 20px;
+      margin: 15px 0 15px;
     }
     .btn-link {padding: 0;}
   }
@@ -885,7 +877,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       input {width: 100%;}
       select {width: 100%;}
     }
-    .checkbox-group {margin-top: @vertical-offset + 10;}
+    .checkbox-group {margin-top: @vertical-offset;}
   }
 }
 
@@ -1389,16 +1381,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
           width: @node-button-size;
           margin-top: 6px;
           .icon {
-            display: block;
             height: @node-button-size;
-            width: @node-button-size;
             background: url(@common-icons-sprite) no-repeat -@node-button-size -@node-button-size;
             opacity: .6;
             &:hover {
               opacity: 1;
-            }
-            &.icon-logs {
-              background: url(@common-icons-sprite) no-repeat 0 -@node-button-size*5;
             }
           }
         }
@@ -1457,7 +1444,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
 // CLUSTERS PAGE
 
 .login-page {
-  @login-indent: 20px;
   .login-box {
     position: relative;
     background-color: @white;
@@ -1483,7 +1469,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     @logo-height: 260px;
     background: url(../img/fuel-big-logo.png) repeat scroll 0 0 rgba(0, 0, 0, 0);
     position: relative;
-    top: -@logo-height + @login-indent;
+    top: -@logo-height + 20px;
     width: @logo-width;
     height: @logo-height;
     margin: 0 auto -(@logo-height - 40px) auto;
@@ -1497,8 +1483,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
       label {
         font-size: @base-font-size + 1;
         padding-top: 6px;
-        padding-right: 0;
-        text-align: right;
         .glyphicon {
           color: @gray;
         }
@@ -1506,21 +1490,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
 
-  .login-btn {
-    margin-top: @login-indent + 10;
-    padding-left: @login-indent;
-    padding-right: @login-indent;
-  }
-
-  .login-error {
-    position: absolute;
-    left: 0;
-    right: 0;
-    text-align: center;
-  }
-
   .login-footer {
-    margin-top: @login-indent;
+    margin-top: 20px;
     font-size: 12px;
     color: @base-dark-color + 60%;
   }
@@ -1863,6 +1834,11 @@ button, .btn:not(.btn-link) {.font-semibold;}
 }
 
 .node-details-popup {
+  .node-image-outline {
+    width: 200px;
+    height: 58px;
+    background: url("../img/node-image.svg") no-repeat 0 0 transparent;
+  }
   .panel-group {
     margin-top: 10px;
     font-size: @base-font-size - 2;
@@ -1946,14 +1922,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
     input, textarea {
       float: left;
-    }
-    input[type=file] {
-      opacity: 0;
-      position: absolute;
-    }
-    &:not(.disabled) input.file-name[readonly] {
-      background-color: white;
-      cursor: pointer;
     }
     input, textarea, select {
       max-width: @default-input-width;

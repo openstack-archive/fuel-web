@@ -163,6 +163,27 @@ def prepare():
         }])
 
     result = db.execute(
+        meta.tables['networking_configs'].insert(),
+        [{
+            'cluster_id': None,
+            'dns_nameservers': ['8.8.8.8'],
+            'floating_ranges': [],
+            'configuration_template': None,
+        }])
+    db.execute(
+        meta.tables['neutron_config'].insert(),
+        [{
+            'id': result.inserted_primary_key[0],
+            'vlan_range': [],
+            'gre_id_range': [],
+            'base_mac': '00:00:00:00:00:00',
+            'internal_cidr': '10.10.10.00/24',
+            'internal_gateway': '10.10.10.01',
+            'segmentation_type': 'vlan',
+            'net_l23_provider': 'ovs'
+        }])
+
+    result = db.execute(
         meta.tables['nodes'].insert(),
         [
             {
@@ -482,6 +503,19 @@ class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
                       .c.offloading_modes]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestNetworkingTemplatesMigration(base.BaseAlembicMigrationTest):
+    def test_new_fields_exists_and_empty(self):
+        result = db.execute(
+            sa.select([self.meta.tables['networking_configs']
+                       .c.configuration_template]))
+        self.assertIsNone(result.fetchone()[0])
+
+        result = db.execute(
+            sa.select([self.meta.tables['nodes']
+                       .c.network_template]))
+        self.assertIsNone(result.fetchone()[0])
 
 
 class TestInterfacesPxePropertyMigration(base.BaseAlembicMigrationTest):

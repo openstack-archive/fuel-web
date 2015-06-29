@@ -335,5 +335,27 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
         }
     });
 
+    controls.InstructionElement = React.createClass({
+        composeLink: function() {
+            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
+                release = app.version.get('release');
+
+            var link = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-master/' + this.props.link :
+            'https://docs.fuel-infra.org/openstack/fuel/fuel-' + release + '/' + this.props.link;
+            return link;
+        },
+        render: function() {
+            var link = this.composeLink(),
+                namespace = 'cluster_page.dashboard_tab.';
+            return (
+                <span className='instruction'>
+                    {i18n(namespace + this.props.description) + ' '}
+                        <a href={link}>{i18n(namespace + this.props.linkTitle)}</a>
+                    {this.props.explanation && ' ' + i18n(namespace + this.props.explanation)}
+                </span>
+            );
+        }
+    });
+
     return controls;
 });

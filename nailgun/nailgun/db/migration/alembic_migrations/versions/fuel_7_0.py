@@ -85,6 +85,7 @@ def upgrade():
     upgrade_node_roles_metadata()
     node_roles_as_plugin_upgrade()
     migrate_volumes_into_extension_upgrade()
+    networking_templates_upgrade()
     extend_releases_model_upgrade()
     upgrade_task_names()
     vms_conf_upgrade()
@@ -97,6 +98,7 @@ def downgrade():
     downgrade_cluster_ui_settings()
     extend_nic_model_downgrade()
     extend_releases_model_downgrade()
+    networking_templates_downgrade()
     migrate_volumes_into_extension_downgrade()
     node_roles_as_plugin_downgrade()
     extend_plugin_model_downgrade()
@@ -235,6 +237,26 @@ def extend_plugin_model_upgrade():
             server_default='[]'
         )
     )
+
+
+def networking_templates_upgrade():
+    op.add_column(
+        'networking_configs',
+        sa.Column(
+            'configuration_template', fields.JSON(),
+            nullable=True, server_default=None)
+    )
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'network_template', fields.JSON(), nullable=True,
+            server_default=None)
+    )
+
+
+def networking_templates_downgrade():
+    op.drop_column('nodes', 'network_template')
+    op.drop_column('networking_configs', 'configuration_template')
 
 
 def extend_ip_addrs_model_downgrade():

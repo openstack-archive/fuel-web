@@ -349,8 +349,16 @@ define([
                 result = !value1 && !value2 ? 0 : !value1 ? 1 : -1;
             }
             return options.desc ? -result : result;
+        },
+        composeDocumentationLink: function(link) {
+            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
+                release = app.version.get('release');
+
+            var result = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-master/' + link :
+                'https://docs.fuel-infra.org/openstack/fuel/fuel-' + release + '/' + link;
+            return result;
         }
-    };
+};
 
     return utils;
 });

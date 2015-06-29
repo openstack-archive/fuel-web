@@ -54,6 +54,8 @@ from nailgun.api.v1.handlers.network_configuration \
     import NovaNetworkConfigurationHandler
 from nailgun.api.v1.handlers.network_configuration \
     import NovaNetworkConfigurationVerifyHandler
+from nailgun.api.v1.handlers.network_configuration \
+    import TemplateNetworkConfigurationHandler
 
 from nailgun.api.v1.handlers.node import NodeAgentHandler
 from nailgun.api.v1.handlers.node import NodeCollectionHandler
@@ -153,6 +155,8 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
     'neutron/verify/?$',
     NeutronNetworkConfigurationVerifyHandler,
+    r'/clusters/(?P<cluster_id>\d+)/network_configuration/template/?$',
+    TemplateNetworkConfigurationHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/?$',
     DeploymentInfo,

@@ -38,7 +38,7 @@ casper.then(function() {
     this.then(function() {
         // redirect should be made to the cluster page
 
-        this.test.assertUrlMatch(/#cluster\/\d+\/nodes/, 'Redirect to cluster page');
+        this.test.assertUrlMatch(/#cluster\/\d+\/dashboard/, 'Redirect to cluster page');
     });
 });
 

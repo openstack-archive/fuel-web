@@ -163,6 +163,63 @@ class TestAssignmentHandlers(BaseIntegrationTest):
 
         self.assertEquals(404, resp.status_code)
 
+    def test_add_node_with_cluster_network_template(self):
+        net_template = """
+            adv_net_template:
+              default:
+                nic_mapping:
+                  default:
+                    if1: eth0
+                    if2: eth1
+                    if3: eth2
+                    if4: eth3
+                templates_for_node_role:
+                    controller:
+                      - common
+                network_assignments:
+                    storage:
+                      ep: br-storage
+                    private:
+                      ep: br-prv
+                    public:
+                      ep: br-ex
+                    management:
+                      ep: br-mgmt
+                    fuelweb_admin:
+                      ep: br-fw-admin
+                network_scheme:
+                  common:
+                    transformations:
+                      - action: add-br
+                        name: br-mgmt
+                      - action: add-port
+                        bridge: br-mgmt
+                        name: <<if1>>
+                    endpoints:
+                      - br-mgmt
+                    roles:
+                      management: br-mgmt
+        """
+        cluster = self.env.create_cluster(api=False)
+        cluster.network_config.configuration_template = net_template
+
+        node = self.env.create_node()
+        assignment_data = [
+            {
+                "id": node.id,
+                "roles": ['controller']
+            }
+        ]
+        self.app.post(
+            reverse(
+                'NodeAssignmentHandler',
+                kwargs={'cluster_id': cluster.id}
+            ),
+            jsonutils.dumps(assignment_data),
+            headers=self.default_headers
+        )
+        self.assertNotEqual({}, node.network_template)
+
 
 class TestClusterStateUnassigment(BaseIntegrationTest):
 

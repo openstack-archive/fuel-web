@@ -802,9 +802,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                         <div className='node-action'>
                             {!!node.get('cluster') &&
                                 ((this.props.locked || !node.hasChanges()) ?
-                                    <a className='btn btn-link' title={i18n(ns + 'view_logs')} href={this.getNodeLogsLink()}>
-                                        <i className='icon-logs' />
-                                    </a>
+                                    <a className='icon icon-logs' title={i18n(ns + 'view_logs')} href={this.getNodeLogsLink()}></a>
                                 :
                                     <div
                                         className='icon'

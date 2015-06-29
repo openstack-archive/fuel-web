@@ -1376,11 +1376,16 @@ button, .btn:not(.btn-link) {.font-semibold;}
           width: @node-button-size;
           margin-top: 6px;
           .icon {
+            display: block;
             height: @node-button-size;
+            width: @node-button-size;
             background: url(@common-icons-sprite) no-repeat -@node-button-size -@node-button-size;
             opacity: .6;
             &:hover {
               opacity: 1;
+            }
+            &.icon-logs {
+              background: url(@common-icons-sprite) no-repeat 0 -@node-button-size*5;
             }
           }
         }

@@ -659,6 +659,17 @@ class Node(NailgunObject):
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
+        cls.set_network_template(instance)
+
+    @classmethod
+    def set_network_template(cls, instance):
+        try:
+            template = instance.network_template
+        except AttributeError:
+            return
+
+        template = instance.cluster.network_config.configuration_template
+        Cluster.update_node_network_template(template, [instance])
 
     @classmethod
     def add_pending_change(cls, instance, change):
@@ -750,6 +761,7 @@ class Node(NailgunObject):
     def remove_replaced_params(cls, instance):
         instance.replaced_deployment_info = []
         instance.replaced_provisioning_info = {}
+        instance.network_template = {}
 
     @classmethod
     def all_roles(cls, instance):

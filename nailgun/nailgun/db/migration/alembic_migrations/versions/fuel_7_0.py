@@ -28,11 +28,10 @@ from nailgun.utils.migration import drop_enum
 
 
 from alembic import op
+from nailgun.db.sqlalchemy.models import fields
 from oslo.serialization import jsonutils
 import six
 import sqlalchemy as sa
-
-from nailgun.db.sqlalchemy.models import fields
 
 
 def upgrade():
@@ -49,9 +48,11 @@ def upgrade():
     extend_ip_addrs_model_upgrade()
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
+    networking_templates_upgrade()
 
 
 def downgrade():
+    networking_templates_downgrade()
     extend_plugin_model_downgrade()
     extend_ip_addrs_model_downgrade()
 
@@ -117,6 +118,26 @@ def extend_plugin_model_upgrade():
             server_default='[]'
         )
     )
+
+
+def networking_templates_upgrade():
+    op.add_column(
+        'networking_configs',
+        sa.Column(
+            'configuration_template', fields.JSON(),
+            nullable=True, server_default='{}')
+    )
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'network_template', fields.JSON(), nullable=True,
+            server_default='{}')
+    )
+
+
+def networking_templates_downgrade():
+    op.drop_column('nodes', 'network_template')
+    op.drop_column('networking_configs', 'configuration_template')
 
 
 def extend_ip_addrs_model_downgrade():

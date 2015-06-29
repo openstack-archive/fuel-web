@@ -856,6 +856,11 @@ class Cluster(NailgunObject):
         repos = instance.attributes.editable['repo_setup']['repos']['value']
         return tuple(set([r['uri'] for r in repos]))
 
+    @classmethod
+    def set_network_template(cls, instance, template):
+        instance.network_config.configuration_template = template
+        db().flush()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

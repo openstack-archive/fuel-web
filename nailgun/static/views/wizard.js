@@ -330,7 +330,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                             }, this))
                             .done(_.bind(function() {
                                 this.$el.modal('hide');
-                                app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
+                                app.navigate('#cluster/' + this.cluster.id + '/dashboard', {trigger: true});
                             }, this))
                             .fail(_.bind(function() {
                                 this.$el.modal('hide');

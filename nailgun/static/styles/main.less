@@ -1144,6 +1144,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
       &.vmware {
         .tab-icon-sprite-index(6);
       }
+      &.dashboard {
+        .tab-icon-sprite-index(8);
+      }
     }
   }
 }
@@ -2745,5 +2748,183 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .input-wrapper input {
     width: 513px;
     margin-top: 10px;
+  }
+}
+
+// Dashboard tab
+.dashboard-tab {
+  @cluster-info-background: #e7f0f2;
+  @dashboard-gray: rgb(153, 153, 153);
+  .documentation {
+    margin: 10px 0 10px 0;
+    .documentation-link {
+      margin-bottom: 5px;
+      .glyphicon {
+        margin-right: 5px;
+      }
+    }
+  }
+  .cluster-information {
+    background-color: rgb(231, 240, 242);
+    width: 1170px;
+    margin: 0px 0px 10px -20px;
+    padding: 10px 20px;
+    .cluster-info-title {
+      font-weight: 600;
+    }
+    .cluster-info-value,
+    .cluster-info-title {
+      height: 40px;
+      text-align: left;
+      //margin-bottom: 15px;
+
+    }
+    .cluster-info-value {
+      &.name {
+        a, .glyphicon {
+          cursor: pointer;
+        }
+        .glyphicon {
+          margin-left: 10px;
+        }
+      }
+    }
+    .rename-block {
+      height: 40px;
+      input[type=text] {
+        width: 240px;
+        height: 26px;
+        margin: -3px 0 0 -13px;
+        float: left;
+      }
+      .rename-environment-btn {
+        width: 80px;
+        float: right;
+      }
+    }
+    .capacity-block {
+      margin-bottom: 20px;
+      .capacity-item {
+        &.cpu {
+          background-color: @white;
+          border: 1px solid @dashboard-gray;
+          padding: 4px 10px;
+        }
+        &.hdd {
+          background-color: @white;
+          border-top: 1px solid @dashboard-gray;
+          border-bottom: 1px solid @dashboard-gray;
+          padding: 4px 10px;
+        }
+        &.ram {
+          background-color:@white;
+          border: 1px solid @dashboard-gray;
+          padding: 4px 10px;
+        }
+        .capacity-value {
+          font-weight: 600;
+        }
+
+      }
+    }
+    .statistics-block {
+      .cluster-info-value {
+        color: #4e85aa;
+      }
+    }
+    .chart {
+      polyline {
+        display: none;
+      }
+      text {
+        display: none;
+      }
+      .chart-title {
+        position: absolute;
+        font-size: 20px;
+        top: 42px;
+        left: 59px;
+      }
+    }
+  }
+  .deploy-block {
+    padding: 15px;
+    border: 1px solid #d3d3d3;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    .deploy-control {
+      margin-top: 10px;
+      .deploy-btn {
+        margin-right: 10px;
+      }
+    }
+    .changes-list {
+      a {cursor: pointer;}
+      .changes-header {
+        font-weight: bold;
+      }
+      .changes-item {
+        padding-bottom: 10px;
+      }
+      .deploy-btn {
+        margin-right: 20px;
+      }
+    }
+    .deploy-readiness {
+      .section-title {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .btn-add-nodes {
+        float: right;
+      }
+    }
+    .deploy-process {
+      height: auto;
+      .progress {
+        width: 90%;
+      }
+      .stop-deployment-btn {
+        padding: 5px 20px;
+      }
+    }
+  }
+  .delete-environment-btn {
+    margin-left: 20px;
+  }
+  .popover-wrapper {
+    display: inline;
+    .popover {
+      display: block;
+      margin-top: 33px;
+      margin-left: 38px;
+      &.delete {
+        margin-left: 233px;
+      }
+    }
+  }
+  .action-item {
+    margin-bottom: 10px;
+    .glyphicon {
+      margin-left: 10px;
+    }
+    .popover {
+      display: inline;
+      margin-top: 30px;
+      margin-left: 75px;
+      &.delete {
+        margin-left: 90px;
+      }
+    }
+    .delete-alert {
+      color: @red;
+    }
+  }
+  .plugin-entry {
+    margin-bottom: 15px;
+    .title {
+      padding: 0;
+      margin: 0;
+    }
   }
 }

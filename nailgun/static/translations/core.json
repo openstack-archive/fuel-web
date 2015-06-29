@@ -9,7 +9,6 @@
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
                 "apply_button": "Apply",
-                "rename_button": "Rename",
                 "delete_button": "Delete",
                 "remove_button": "Remove",
                 "stop_button": "Stop",
@@ -250,12 +249,12 @@
             },
             "cluster_page": {
                 "tabs": {
+                    "dashboard": "Dashboard",
                     "nodes": "Nodes",
                     "network": "Networks",
                     "settings": "Settings",
                     "logs": "Logs",
-                    "healthcheck": "Health Check",
-                    "actions": "Actions"
+                    "healthcheck": "Health Check"
                 },
                 "nodes_tab": {
                     "roles": "Roles",
@@ -413,9 +412,11 @@
                         }
                     }
                 },
-                "actions_tab": {
-                    "title": "Actions",
-                    "rename_environment": "Rename Environment",
+                "dashboard_tab": {
+                    "title_new": "Where to Start",
+                    "title_ready": "Ready to Deploy?",
+                    "deploy_progress": "Deploying in Progress",
+                    "actions_title": "Actions",
                     "delete_environment": "Delete Environment",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
                     "reset_environment": "Reset Environment",
@@ -435,7 +436,50 @@
                     "rollback_message": "You can retry update, or rollback the environment",
                     "rename_error": {
                         "title": "Unable to Rename the Environment"
-                    }
+                    },
+                    "current_task": "Current task:",
+                    "cluster_info_fields": {
+                        "name": "Name",
+                        "openstack_release": "Openstack Release",
+                        "operating_system": "OS",
+                        "compute": "Compute",
+                        "network": "Network",
+                        "storage_backends": "Storage Backends",
+                        "cpu_cores": "CPU (Cores)",
+                        "hdd": "HDD",
+                        "ram": "RAM",
+                        "capacity": "Capacity",
+                        "statistics": "Node Statistics",
+                        "total": "Total Nodes",
+                        "compute": "Compute",
+                        "controller": "Controller",
+                        "cinder": "Cinder",
+                        "ceph-osd": "Ceph-OSD",
+                        "mongo": "Mongo",
+                        "base-os": "Operating System",
+                        "offline": "Offline",
+                        "error": "Error",
+                        "pending_addition": "Pending Addition",
+                        "pending_deletion": "Pending Deletion",
+                        "operational": "Operational"
+                    },
+                    "mos_documentation": "Mirantis Openstack Documentation",
+                    "documentation_description": "Quick access to the documentation on configuring and deploying environment:",
+                    "no_nodes_warning_add_them": "You don't have any nodes in your environment. Add them first at nodes tab",
+                    "plugin_documentation": "Plugin Documentation",
+                    "technical_bulletins": "Technical Bulletins",
+                    "cluster_information": "Cluster Information",
+                    "summary": "Summary",
+                    "changes_header": "List of Changes",
+                    "can_not_start_deploy": "You cannot start deployment of the OpenStack environment now.",
+                    "add_nodes": "You need to add nodes to the OpenStack Environment.",
+                    "environment_ready_for_deployment": "Your environment is ready for deployment",
+                    "note_recommendations": "Please note our recommendations:",
+                    "stop": "Stop",
+                    "healthcheck": "To check out the OpenStack Healthcheck status go to ",
+                    "healthcheck_tab": "Healthcheck tab",
+                    "documentation": "Documentation",
+                    "go_to_nodes": "Go to Nodes tab"
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -800,7 +844,6 @@
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
                 "apply_button": "应用",
-                "rename_button": "重命名",
                 "delete_button": "删除",
                 "save_settings_button": "保存设置",
                 "cancel_button": "取消",
@@ -1111,9 +1154,8 @@
                         }
                     }
                 },
-                "actions_tab": {
+                "dashboard_tab": {
                     "title": "动作",
-                    "rename_environment": "重命名环境",
                     "delete_environment": "删除环境",
                     "alert_delete": "清除每个节点并放回未分配节点池"
                 },
@@ -1324,7 +1366,6 @@
                 "load_defaults_button": "デフォルトを読み込み",
                 "cancel_changes_button": "変更をキャンセル",
                 "apply_button": "適用",
-                "rename_button": "リネーム",
                 "delete_button": "削除",
                 "remove_button": "リムーブ",
                 "stop_button": "停止",
@@ -1721,9 +1762,8 @@
                         }
                     }
                 },
-                "actions_tab": {
+                "dashboard_tab": {
                     "title": "アクション",
-                    "rename_environment": "環境の名前変更",
                     "delete_environment": "環境を削除",
                     "alert_delete": "各ノードをクリーンアップし、未割り当てのノードとしてプールに戻します。削除されたノードのすべてのログも削除されます。",
                     "reset_environment": "環境のリセット",
@@ -2107,7 +2147,6 @@
                 "load_defaults_button": "초기설정로드",
                 "cancel_changes_button": "변경취소",
                 "apply_button": "적용",
-                "rename_button": "개명",
                 "delete_button": "삭제",
                 "stop_button": "중지",
                 "reset_button": "재설정",
@@ -2328,9 +2367,8 @@
                         }
                     }
                 },
-                "actions_tab": {
+                "dashboard_tab": {
                     "title": "작업",
-                    "rename_environment": "환경이름 바꾸기",
                     "delete_environment": "환경 지우기",
                     "alert_delete": "각 노드를 정리하고 할당되지 않은 노드 풀에 반환합니다.",
                     "reset_environment": "환경 재설정",

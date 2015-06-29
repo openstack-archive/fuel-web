@@ -446,9 +446,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
 
     dialogs.RemoveClusterDialog = React.createClass({
         mixins: [dialogMixin],
-        getInitialState: function() {
-            return {confirmation: false};
-        },
         getDefaultProps: function() {
             return {title: i18n('dialog.remove_cluster.title')};
         },
@@ -461,9 +458,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     app.navigate('#clusters', {trigger: true});
                 }.bind(this))
                 .fail(this.showError);
-        },
-        showConfirmationForm: function() {
-            this.setState({confirmation: true});
         },
         getText: function() {
             var cluster = this.props.cluster,
@@ -479,21 +473,20 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     <div className='text-danger'>
                         {this.renderImportantLabel()}
                         {this.getText()}
+                        <p className='delete-alert'>{i18n('cluster_page.dashboard_tab.alert_delete')}</p>
                     </div>
-                    {this.state.confirmation &&
-                        <div className='confirm-deletion-form'>
-                            {i18n('dialog.remove_cluster.enter_environment_name', {name: clusterName})}
-                            <controls.Input
-                                type='text'
-                                disabled={this.state.actionInProgress}
-                                onChange={_.bind(function(name, value) {
-                                    this.setState({confirmationError: value != clusterName});
-                                }, this)}
-                                onPaste={function(e) {e.preventDefault();}}
-                                autoFocus
-                            />
-                        </div>
-                    }
+                    <div className='confirm-deletion-form'>
+                        {i18n('dialog.remove_cluster.enter_environment_name', {name: clusterName})}
+                        <controls.Input
+                            type='text'
+                            disabled={this.state.actionInProgress}
+                            onChange={_.bind(function(name, value) {
+                                this.setState({confirmationError: value != clusterName});
+                            }, this)}
+                            onPaste={function(e) {e.preventDefault();}}
+                            autoFocus
+                        />
+                    </div>
                 </div>
             );
         },

@@ -9,7 +9,6 @@
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
                 "apply_button": "Apply",
-                "rename_button": "Rename",
                 "delete_button": "Delete",
                 "remove_button": "Remove",
                 "stop_button": "Stop",
@@ -250,12 +249,12 @@
             },
             "cluster_page": {
                 "tabs": {
+                    "dashboard": "Dashboard",
                     "nodes": "Nodes",
                     "network": "Networks",
                     "settings": "Settings",
                     "logs": "Logs",
-                    "healthcheck": "Health Check",
-                    "actions": "Actions"
+                    "healthcheck": "Health Check"
                 },
                 "nodes_tab": {
                     "roles": "Roles",
@@ -413,9 +412,12 @@
                         }
                     }
                 },
-                "actions_tab": {
-                    "title": "Actions",
-                    "rename_environment": "Rename Environment",
+                "dashboard_tab": {
+                    "title_new": "Where to Start",
+                    "title_ready": "Ready to Deploy?",
+                    "deploy_progress": "Deploying in Progress",
+                    "actions_title": "Actions",
+                    "rename_environment": "Rename",
                     "delete_environment": "Delete Environment",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes. All logs from deleted nodes will also be removed.",
                     "reset_environment": "Reset Environment",
@@ -435,7 +437,44 @@
                     "rollback_message": "You can retry update, or rollback the environment",
                     "rename_error": {
                         "title": "Unable to Rename the Environment"
-                    }
+                    },
+                    "current_task": "Current task:",
+                    "cluster_info_fields": {
+                        "name": "Name",
+                        "openstack_release": "Openstack Release",
+                        "operating_system": "OS",
+                        "compute": "Compute",
+                        "network": "Network",
+                        "storage_backends": "Storage Backends",
+                        "healthcheck_status": "Healthcheck Status",
+                        "cpu_cores": "CPU (Cores)",
+                        "hdd": "HDD",
+                        "ram": "RAM",
+                        "capacity": "Capacity",
+                        "statistics": "Node Statistics",
+                        "total": "Total Nodes",
+                        "compute": "Compute",
+                        "controller": "Controller",
+                        "cinder": "Cinder",
+                        "ceph-osd": "Ceph-OSD",
+                        "mongo": "Mongo",
+                        "base-os": "Operating System",
+                        "offline": "Offline",
+                        "error": "Error"
+                    },
+                    "mos_documentation": "Mirantis Openstack Documentation",
+                    "documentation_description": "Quick access to the documentation on configuring and deploying environment:",
+                    "no_nodes_warning_add_them": "You don't have any nodes in your environment. Add them first.",
+                    "plugin_documentation": "Plugin Documentation",
+                    "technical_bulletins": "Technical Bulletins",
+                    "cluster_information": "Cluster Information",
+                    "summary": "Summary",
+                    "changes_header": "List of Changes",
+                    "can_not_start_deploy": "You cannot start deployment of the OpenStack environment now.",
+                    "add_nodes": "You need to add nodes to the OpenStack Environment.",
+                    "all_right": "All Right!",
+                    "environment_ready": "Your environment is ready for deployment.",
+                    "stop": "Stop"
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -800,7 +839,6 @@
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
                 "apply_button": "应用",
-                "rename_button": "重命名",
                 "delete_button": "删除",
                 "save_settings_button": "保存设置",
                 "cancel_button": "取消",
@@ -1324,7 +1362,6 @@
                 "load_defaults_button": "デフォルトを読み込み",
                 "cancel_changes_button": "変更をキャンセル",
                 "apply_button": "適用",
-                "rename_button": "リネーム",
                 "delete_button": "削除",
                 "remove_button": "リムーブ",
                 "stop_button": "停止",
@@ -2107,7 +2144,6 @@
                 "load_defaults_button": "초기설정로드",
                 "cancel_changes_button": "변경취소",
                 "apply_button": "적용",
-                "rename_button": "개명",
                 "delete_button": "삭제",
                 "stop_button": "중지",
                 "reset_button": "재설정",

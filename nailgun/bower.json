@@ -19,7 +19,9 @@
     "less": "2.4.0",
     "jquery-ui": "1.11.4",
     "bootstrap": "3.3.4",
-    "open-sans-fontface": "1.4.0"
+    "open-sans-fontface": "1.4.0",
+    "d3": "3.5.5",
+    "react-d3-components": "0.3.4"
   },
   "devDependencies": {
     "es5-shim": "4.1.0",
@@ -64,6 +66,9 @@
         "lib/sinon/*",
         "lib/sinon/util/*"
       ]
+    },
+    "react-d3-components": {
+      "main": "dist/react-d3-components.js"
     }
   },
   "ignore": [

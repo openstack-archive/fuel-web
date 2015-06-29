@@ -40,6 +40,7 @@ class NetworkingConfig(Base):
         "8.8.8.8"
     ])
     floating_ranges = Column(JSON, default=[])
+    configuration_template = Column(JSON, default={}, nullable=True)
 
     __mapper_args__ = {
         'polymorphic_on': discriminator

@@ -301,7 +301,7 @@ class VmwareAttributesHandler(BaseHandler):
         :http: * 200 (OK)
                * 400 (wrong attributes data specified |
                       cluster doesn't accept vmware configuration)
-               * 403 (attriutes can't be changed)
+               * 403 (attributes can't be changed)
                * 404 (cluster not found in db |
                       cluster has no vmware attributes)
         """

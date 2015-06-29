@@ -212,6 +212,10 @@
   }
 }
 
+.glyphicon-list-alt {
+  .icon-default-styles(-52px, -212px);
+}
+
 
 // BASE SETTINGS
 
@@ -977,7 +981,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     width: 300px;
     margin: 0 auto;
     text-align: left;
-    help-block {text-align: right;}
+    .help-block {text-align: right;}
     .links-container {
       min-height: 20px;
       margin: 15px 0 20px;
@@ -1007,26 +1011,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
       position: relative;
       top: -2px;
     }
-    .cluster-info {
-      display: block;
-      height: 20px;
-      margin-bottom: 10px;
-      overflow: hidden;
-      ul {
-        display: block;
-        list-style: outside none none;
-        margin-bottom: 0;
-        padding-left: 0;
-        li {
-          float: left;
-          margin-right: 18px;
-          font-size: @base-font-size - 3;
-          color: @base-light-color;
-          -webkit-font-smoothing: subpixel-antialiased;
-          .text-shadow;
-        }
-      }
-    }
   }
 
   h4 {
@@ -1040,9 +1024,6 @@ button, .btn:not(.btn-link) {.font-semibold;}
     padding-right: 0px;
     padding-top: 20px;
     box-sizing: border-box;
-  }
-  .deploy-btn {
-    padding: 4px 12px 7px;
   }
   .deploy-icon {
     position: relative;
@@ -1274,6 +1255,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
       }
       &.vmware {
         .tab-icon-sprite-index(6);
+      }
+      &.dashboard {
+        .tab-icon-sprite-index(8);
       }
     }
   }
@@ -2402,22 +2386,15 @@ button, .btn:not(.btn-link) {.font-semibold;}
 }
 
 .display-changes-dialog {
-  .validation-result ul {
-    margin: 10px 0 0;
-    list-style-type: none;
-    li {
-      margin-bottom: 15px;
-      line-height: 1.1;
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-  }
   hr {
     margin: 8px 0 12px 0;
   }
   .glyphicon {
     margin-right: 5px;
+  }
+  .text-warning {color: @base-text-color;}
+  .instruction {
+    display: inline;
   }
 }
 
@@ -3066,7 +3043,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
       margin-top: -@base-indent;
     }
     .range-row-header {
-      font-weight: bold;
+      .font-bold;
       font-size: @base-font-size - 2;
       padding-left: @default-label-width + 29;
       div {
@@ -3278,7 +3255,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     .verification-text-placeholder {
       padding-left: 0;
       li:first-of-type {
-        font-weight: bold;
+        .font-bold;
       }
       li {
         list-style: none outside none;
@@ -3385,5 +3362,224 @@ button, .btn:not(.btn-link) {.font-semibold;}
   padding-left: 0;
   &:hover {
     text-decoration: none;
+  }
+}
+
+// Dashboard tab
+.dashboard-tab {
+  @cluster-info-background: #e7f0f2;
+  @deploy-border: #d3d3d3;
+  @dashboard-gray: rgb(153, 153, 153);
+  @dashboard-offset: 10px;
+  .btn-add-nodes {
+    float: left;
+    margin-top: @dashboard-offset;
+    margin-bottom: @dashboard-offset;
+    .glyphicon {
+      margin-right: @dashboard-offset;
+    }
+  }
+  .informational-block {
+    margin-bottom: @dashboard-offset;
+  }
+  .documentation {
+    margin: @dashboard-offset 0 @dashboard-offset 0;
+    .documentation-link {
+      margin-bottom: 5px;
+      .glyphicon {
+        margin-right: 5px;
+      }
+    }
+  }
+  .cluster-information {
+    background-color: rgb(231, 240, 242);
+    width: @page-width;
+    margin: 0px 0px @dashboard-offset -@dashboard-offset * 2;
+    padding: @dashboard-offset @dashboard-offset * 2;
+    .cluster-info-title {
+      .font-semibold;
+    }
+    .cluster-info-value,
+    .cluster-info-title {
+      text-align: left;
+      height: 30px;
+    }
+    .cluster-info-value {
+      height: 30px;
+      line-height: 13px;
+      margin-bottom: 4px;
+      text-align: left;
+      &.name {
+        a, .glyphicon {
+          cursor: pointer;
+        }
+        .glyphicon {
+          margin-left: @dashboard-offset;
+        }
+      }
+    }
+    .rename-block {
+      height: 30px;
+      input[type=text] {
+        width: 240px;
+        height: 26px;
+        margin: -3px 0 0 -13px;
+        float: left;
+      }
+    }
+    .capacity-block {
+      margin-bottom: @dashboard-offset * 2;
+      .capacity-item {
+        cursor: default;
+        background-color: @white;
+        padding: 4px @dashboard-offset;
+        &.cpu {
+          border: 1px solid @dashboard-gray;
+        }
+        &.hdd {
+          border-top: 1px solid @dashboard-gray;
+          border-bottom: 1px solid @dashboard-gray;
+        }
+        &.ram {
+          border: 1px solid @dashboard-gray;
+        }
+        .capacity-value {
+          .font-semibold;
+        }
+
+      }
+    }
+    .statistics-block {
+      .cluster-info-value {
+        color: #4e85aa;
+      }
+      button {
+        margin-bottom: @dashboard-offset;
+      }
+    }
+  }
+  .deploy-block {
+    padding: 15px 15px 0 15px;
+    border: 1px solid @deploy-border;
+    border-radius: 4px;
+    margin-bottom: @dashboard-offset * 2;
+    .validation-result ol {
+      margin: @dashboard-offset 0 0;
+      padding-left: 15px;
+      &.danger {
+        li {
+          color: @red;
+        }
+      }
+      li {
+        line-height: 1.1;
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+    .deploy-control {
+      .deploy-btn {
+        margin-right: @dashboard-offset;
+      }
+    }
+    .changes-list {
+      margin-bottom: @dashboard-offset * 2;
+      a {cursor: pointer;}
+      .changes-header {
+        .font-bold;
+      }
+      h4 {
+        margin: 0 0 @dashboard-offset 0;
+        padding: 0;
+      }
+      ol {
+        padding: 0 0 0 16px;
+        color: @gray;
+      }
+      .changes-item {
+        margin-bottom: 5px;
+      }
+      .deploy-btn {
+        margin-right: @dashboard-offset * 2;
+      }
+    }
+    .deploy-readiness {
+      .invalid-deploy.instruction {
+        .font-semibold;
+        font-size: @base-font-size - 2;
+        color: @red;
+        margin-top: @dashboard-offset;
+      }
+      h4 {
+        margin: 0 0 @dashboard-offset 0;
+        padding: 0;
+      }
+      p {
+        font-size: @base-font-size - 2;
+        .font-semibold;
+        margin: 0 0 @dashboard-offset 0;
+        padding: 0;
+        color: @base-text-color;
+      }
+      .section-title {
+        .font-bold;
+        font-size: @base-font-size + 2;
+      }
+      .btn-add-nodes {
+        float: left;
+      }
+      li {
+        margin-bottom: @dashboard-offset;
+      }
+      .warnings-block {
+        font-size: @base-font-size - 2;
+        margin-bottom: @dashboard-offset;
+      }
+    }
+    .deploy-process {
+      height: auto;
+      .progress {
+        width: 90%;
+      }
+    }
+  }
+  .dashboard-actions-wrapper {
+    margin: @dashboard-offset 0 @dashboard-offset 0;
+    .reset-environment {
+      margin-right: 87px;
+      .reset-environment-btn {
+        margin-right: 6px;
+      }
+    }
+    .delete-environment {
+      .delete-environment-btn {
+        margin-right: 5px;
+      }
+    }
+  }
+  .popover-wrapper {
+    display: inline;
+    .popover {
+      display: block;
+      margin-top: 33px;
+      &.reset {
+        margin-left: 382px;
+      }
+      &.delete {
+        margin-left: 59px;
+      }
+    }
+    .glyphicon {
+      margin-left: @dashboard-offset;
+      cursor: pointer;
+    }
+  }
+  .plugin-entry {
+    margin-bottom: 15px;
+    .title {
+      padding: 0;
+      margin: 0;
+    }
   }
 }

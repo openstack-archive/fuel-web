@@ -9,7 +9,7 @@ class based on the volumes metadata defined in the openstack.yaml_
 release fixture.
 
 .. _pmanager.py: https://github.com/stackforge/fuel-library/blob/master/deployment/puppet/cobbler/templates/scripts/pmanager.py
-.. _VolumeManager: https://github.com/stackforge/fuel-web/blob/master/nailgun/nailgun/volumes/manager.py
+.. _VolumeManager: https://github.com/stackforge/fuel-web/blob/master/nailgun/nailgun/extensions/volume_manager/manager.py
 .. _openstack.yaml: https://github.com/stackforge/fuel-web/blob/master/nailgun/nailgun/fixtures/openstack.yaml
 
 Volumes are created following best practices for OpenStack and other

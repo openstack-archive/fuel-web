@@ -294,17 +294,16 @@ Pro Puppet. 2nd Edition
 http://www.apress.com/9781430260400
 
 Puppet 2.7 Cookbook
-http://www.packtpub.com/puppet-2-7-for-reliable-secure-systems-cloud-computing-
-cookbook/book
+https://www.packtpub.com/networking-and-servers/puppet-27-cookbook
 
 Puppet 3 Cookbook
-http://www.packtpub.com/puppet-3-cookbook/book
+https://www.packtpub.com/networking-and-servers/puppet-3-cookbook
 
 Puppet 3: Beginners Guide
-http://www.packtpub.com/puppet-3-beginners-guide/book
+https://www.packtpub.com/networking-and-servers/puppet-3-beginner%E2%80%99s-guide
 
 Instant Puppet 3 Starter
-http://www.packtpub.com/puppet-3-starter/book
+https://www.packtpub.com/networking-and-servers/instant-puppet-3-starter-instant
 
 Pulling Strings with Puppet Configuration Management Made Easy
 http://www.apress.com/9781590599785

@@ -21,12 +21,11 @@ define(
     'utils',
     'models',
     'dispatcher',
-    'd3',
+    'react-d3-components',
     'jsx!views/dialogs',
-    'jsx!component_mixins',
-    'jsx!views/pie_chart'
+    'jsx!component_mixins'
 ],
-function(_, i18n, React, utils, models, dispatcher, d3, dialogs, componentMixins, PieChart) {
+function(_, i18n, React, utils, models, dispatcher, ReactD3, dialogs, componentMixins) {
     'use strict';
 
     var releases = new models.Releases();
@@ -41,34 +40,19 @@ function(_, i18n, React, utils, models, dispatcher, d3, dialogs, componentMixins
                 hasNodes = !!nodes.length;
             return (
                 <div className='row'>
+                     {!hasNodes &&
+                         <DeployChangesBlock
+                             cluster={this.props.cluster}
+                         />
+                     }
                     <div className='title'>
                         {i18n('cluster_page.dashboard_tab.title_new')}
                     </div>
                     <div>
-                        {hasNodes ?
-                            <div>
-                                <ChangesBlock
-                                    cluster={this.props.cluster}
-                                />
-                            </div>
-                        :
-                            <div className='col-xs-12'>
-                                <div className='text-warning alert-warning section-wrapper no-nodes'>
-                                    <p>
-                                        <span>
-                                            <i className='glyphicon glyphicon-warning-sign' />
-                                            <span>{i18n('cluster_page.dashboard_tab.no_nodes_warning')}</span>
-                                        </span>
-                                        <a
-                                            className='btn btn-success btn-add-nodes pull-right'
-                                            href={'/#cluster/' + this.props.cluster.id + '/nodes/add'}
-                                        >
-                                            <i className='glyphicon glyphicon-plus' />
-                                            {i18n('cluster_page.nodes_tab.node_management_panel.add_nodes_button')}
-                                        </a>
-                                    </p>
-                                </div>
-                            </div>
+                        {hasNodes &&
+                            <DeployChangesBlock
+                                cluster={this.props.cluster}
+                            />
                         }
                         <DocumentationLinks />
                         <ClusterInfo
@@ -84,11 +68,11 @@ function(_, i18n, React, utils, models, dispatcher, d3, dialogs, componentMixins
         }
     });
 
-    var ChangesBlock = React.createClass({
+    var DeployChangesBlock = React.createClass({
         renderChangedNodesAmount: function(nodes, dictKey) {
             var areNodesPresent = !!nodes.length;
             return (areNodesPresent &&
-                <div>
+                <div className='changes-item' key={dictKey}>
                     {++this.counter + '. ' +i18n('dialog.display_changes.' + dictKey, {count: nodes.length})}
                 </div>
             );
@@ -103,39 +87,69 @@ function(_, i18n, React, utils, models, dispatcher, d3, dialogs, componentMixins
             var cluster = this.props.cluster,
                 nodes = cluster.get('nodes'),
                 isDeploymentImpossible = cluster.get('release').get('state') == 'unavailable' ||
-                    (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment());
+                    (!cluster.get('nodes').hasChanges() && !cluster.needsRedeployment()),
+                namespace = 'cluster_page.dashboard_tab.';
             this.counter = 0;
             return (
-                <div className='col-xs-12 changes-list'>
-                    <div className='row'>
-                        <div className='col-xs-12'>
-                            <p className='changes-header'>
-                                {i18n('cluster_page.dashboard_tab.changes_header') + ':'}
-                            </p>
-                            {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
-                            {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-                        </div>
-                        <div className='col-xs-12 deploy-control'>
-                            <button
-                                key='deploy-changes'
-                                className='btn btn-primary deploy-btn'
-                                disabled={isDeploymentImpossible}
-                                onClick={this.onDeployRequest}
-                            >
-                                <div className='deploy-icon'></div>
-                                {i18n('cluster_page.deploy_changes')}
-                            </button>
-                            {nodes.hasChanges() &&
-                                <a
-                                    href='#'
-                                    key='discard-changes'
-                                    onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
+                <div className='col-xs-12 deploy-block'>
+                    {!isDeploymentImpossible ?
+                        <div className='row'>
+                            <div className='col-xs-6 changes-list'>
+                                {!!nodes.length &&
+                                    <div className='col-xs-12'>
+                                        <p className='changes-header'>
+                                                {i18n(namespace + 'changes_header') + ':'}
+                                        </p>
+                                            {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
+                                            {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                                    </div>
+                                }
+                                <button
+                                    key='deploy-changes'
+                                    className='btn btn-primary deploy-btn'
+                                    disabled={isDeploymentImpossible}
+                                    onClick={this.onDeployRequest}
                                 >
-                                    {i18n('cluster_page.discard_changes')}
-                                </a>
-                            }
+                                    <div className='deploy-icon'></div>
+                                    {i18n('cluster_page.deploy_changes')}
+                                </button>
+                                {nodes.hasChanges() &&
+                                    <a
+                                        key='discard-changes'
+                                        onClick={_.partial(this.showDialog, dialogs.DiscardNodeChangesDialog)}
+                                    >
+                                        {i18n('cluster_page.discard_changes')}
+                                    </a>
+                                }
+                            </div>
+                            <div className='col-xs-6 deploy-readiness'>
+                                <span className='section-title'>{i18n(namespace + 'all_right')}</span>
+                                <br />
+                                <span>{i18n(namespace + 'environment_ready')}</span>
+                            </div>
                         </div>
-                    </div>
+                    :
+                        <div className='row'>
+                            <div className='col-xs-2'>
+                                <button
+                                    key='deploy-changes'
+                                    className='btn btn-primary deploy-btn'
+                                    disabled={isDeploymentImpossible}
+                                    onClick={this.onDeployRequest}
+                                >
+                                    <div className='deploy-icon'></div>
+                                    {i18n('cluster_page.deploy_changes')}
+                                </button>
+                            </div>
+                            <div className='col-xs-10 deploy-readiness'>
+                                <span>{i18n(namespace + 'can_not_start_deploy')}</span>
+                                <br />
+                                {!nodes.length &&
+                                    <span>{i18n(namespace + 'add_nodes')}</span>
+                                }
+                            </div>
+                        </div>
+                    }
                 </div>
             );
         }
@@ -249,7 +263,6 @@ function(_, i18n, React, utils, models, dispatcher, d3, dialogs, componentMixins
                     rams += node.resource('ram');
             }, this);
 
-            this.props.cluster.get('nodes').first().resource('ht_cores');
             return (
                 <div className='row capacity-block'>
                     <div className='title'>{i18n(namespace + 'capacity')}</div>
@@ -269,24 +282,45 @@ function(_, i18n, React, utils, models, dispatcher, d3, dialogs, componentMixins
             );
         },
         getNumberOfNodesWithRole: function(field) {
-            debugger;
-            return field;
+            var nodes = this.props.cluster.get('nodes');
+            if (!nodes.length) return 0;
             switch (field) {
                 case 'compute':
                 case 'controller':
-                case 'storage':
-                    break;
+                case 'cinder':
+                case 'ceph-osd':
+                case 'mongo':
+                case 'base-os':
+                    return _.filter(nodes.invoke('hasRole', field)).length;
                 case 'total':
-                    break;
+                    return nodes.length;
                 case 'offline':
-                    break;
+                    return nodes.where({online: false}).length;
                 case 'error':
-                    break;
+                    return _.filter(nodes.pluck('error_type')).length;
             }
         },
         renderStatistics: function() {
             var namespace = this.props.namespace,
-                fields = ['total', 'compute', 'controller', 'storage', 'offline', 'error'];
+                fields = ['total', 'compute', 'controller', 'cinder', 'ceph-osd', 'mongo', 'base-os', 'offline', 'error'],
+                //@todo: verify
+                colors = ['#f5c118', '#5318f5', '#bbbabf', '#c7c728', '#28c7c7', '#faffff', '#ccc', '#eb1c1c'];
+            console.log(ReactD3);
+
+            var color = d3.scale.ordinal()
+                .domain(_.without(fields, 'total'))
+                .range(colors);
+            var data = {
+                values: _.filter(_.map(_.without(fields, 'total'), function(field) {
+                    if (this.getNumberOfNodesWithRole(field)) {
+                        return {
+                            x: field,
+                            y: this.getNumberOfNodesWithRole(field)
+                        };
+                    }
+                }, this))
+            };
+            console.log(data);
 
             debugger;
             return (
@@ -311,6 +345,12 @@ function(_, i18n, React, utils, models, dispatcher, d3, dialogs, componentMixins
                         }, this)}
                     </div>
                     <div className='col-xs-6 chart'>
+                        <ReactD3.PieChart
+                            data={data}
+                            width={300}
+                            height={200}
+                            colorScale={color}
+                        />
                     </div>
                 </div>
             );
@@ -355,7 +395,9 @@ function(_, i18n, React, utils, models, dispatcher, d3, dialogs, componentMixins
                         </div>
                         <div className='col-xs-6 '>
                             {this.renderClusterCapacity()}
-                            {this.renderStatistics()}
+                            {!!this.props.cluster.get('nodes').length &&
+                                this.renderStatistics()
+                            }
                         </div>
                         <div className='row'>
 

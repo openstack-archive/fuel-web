@@ -42,7 +42,8 @@ define(function() {
             deepModel: 'vendor/custom/deep-model',
             lessLibrary: 'vendor/bower/less/dist/less',
             'require-css': 'vendor/bower/require-css',
-            d3: 'vendor/bower/d3/d3'
+            d3: 'vendor/bower/d3/d3',
+            'react-d3-components': 'vendor/bower/react-d3-components/dist/react-d3-components'
         },
         shim: {
             'expression/parser': {
@@ -79,6 +80,9 @@ define(function() {
             'jquery-autoNumeric': {
                 // non-AMD module, relies on global jQuery
                 deps: ['jquery']
+            },
+            'react-d3-components': {
+                deps: ['d3']
             }
         },
         map: {

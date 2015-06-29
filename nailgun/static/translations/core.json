@@ -409,7 +409,7 @@
                     }
                 },
                 "dashboard_tab": {
-                    "title_new": "Ready to Deploy?",
+                    "title_new": "Where to Start",
                     "actions_title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
@@ -448,7 +448,10 @@
                         "total": "Total Nodes",
                         "compute": "Compute",
                         "controller": "Controller",
-                        "storage": "Storage",
+                        "cinder": "Cinder",
+                        "ceph-osd": "Ceph-OSD",
+                        "mongo": "Mongo",
+                        "base-os": "Operating System",
                         "offline": "Offline",
                         "error": "Error"
                     },
@@ -458,7 +461,11 @@
                     "technical_bulletins": "Technical Bulletins",
                     "cluster_information": "Cluster Information",
                     "summary": "Summary",
-                    "changes_header": "List of Changes"
+                    "changes_header": "List of Changes",
+                    "can_not_start_deploy": "You cannot start deployment of the OpenStack environment now.",
+                    "add_nodes": "You need to add nodes to the OpenStack Environment.",
+                    "all_right": "All Right!",
+                    "environment_ready": "Your environment is ready for deployment."
                 },
                 "network_tab": {
                     "title": "Network Settings",

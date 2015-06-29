@@ -498,10 +498,14 @@ class Cluster(NailgunObject):
         )
         cls.replace_provisioning_info_on_nodes(instance, [], nodes_to_remove)
         cls.replace_deployment_info_on_nodes(instance, [], nodes_to_remove)
+        from nailgun.objects import NodeCollection
+        NodeCollection.reset_nodes_network_templates(nodes_to_remove)
+
         map(
             net_manager.assign_networks_by_default,
             nodes_to_add
         )
+        cls.update_nodes_network_templates(instance, nodes_to_add)
         db().flush()
 
     @classmethod
@@ -915,6 +919,19 @@ class Cluster(NailgunObject):
         :returns: List of network roles' descriptions
         """
         return instance.release.network_roles_metadata
+
+    @classmethod
+    def set_network_template(cls, instance, template):
+        instance.network_config.configuration_template = template
+        cls.update_nodes_network_templates(instance, instance.nodes)
+        db().flush()
+
+    @classmethod
+    def update_nodes_network_templates(cls, instance, nodes):
+        from nailgun.objects import Node
+        template = instance.network_config.configuration_template
+        for node in nodes:
+            Node.apply_network_template(node, template)
 
 
 class ClusterCollection(NailgunCollection):

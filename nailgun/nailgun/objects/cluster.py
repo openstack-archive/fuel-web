@@ -487,6 +487,8 @@ class Cluster(NailgunObject):
         )
         cls.replace_provisioning_info_on_nodes(instance, [], nodes_to_remove)
         cls.replace_deployment_info_on_nodes(instance, [], nodes_to_remove)
+        cls.update_node_network_template(None, nodes_to_remove)
+
         map(
             net_manager.assign_networks_by_default,
             nodes_to_add
@@ -895,6 +897,21 @@ class Cluster(NailgunObject):
                     vm['created'] = True
             node.attributes.vms_conf = vms_conf
         db().flush()
+
+    @classmethod
+    def set_network_template(cls, instance, template):
+        instance.network_config.configuration_template = template
+        cls.update_node_network_template(template, instance.nodes)
+
+    @classmethod
+    def update_node_network_template(cls, template, nodes):
+        for node in nodes:
+            t = None
+            if template:
+                from nailgun.objects import Node
+                t = Node.parse_network_template(node)
+
+            node.network_template = t
 
 
 class ClusterCollection(NailgunCollection):

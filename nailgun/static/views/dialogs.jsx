@@ -209,28 +209,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             })
         ],
         getDefaultProps: function() {return {title: i18n('dialog.display_changes.title')};},
-        getConfigModels: function() {
-            var cluster = this.props.cluster,
-                settings = cluster.get('settings');
-            return {
-                cluster: cluster,
-                settings: settings,
-                version: app.version,
-                release: cluster.get('release'),
-                default: settings,
-                networking_parameters: cluster.get('networkConfiguration').get('networking_parameters')
-            };
-        },
         ns: 'dialog.display_changes.',
-        getInitialState: function() {
-            var alerts = this.validate(this.props.cluster),
-                state = {
-                    alerts: alerts,
-                    isInvalid: !_.isEmpty(alerts.blocker),
-                    hasErrors: !_.isEmpty(alerts.error)
-                };
-            return state;
-        },
         deployCluster: function() {
             this.setState({actionInProgress: true});
             dispatcher.trigger('deploymentTasksUpdated');
@@ -242,177 +221,51 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 }.bind(this))
                 .fail(this.showError);
         },
-        renderChangedNodesAmount: function(nodes, dictKey) {
-            return !!nodes.length && <div>{i18n(this.ns + dictKey, {count: nodes.length})}</div>;
-        },
         renderBody: function() {
-            var cluster = this.props.cluster,
-                nodes = cluster.get('nodes');
+            var cluster = this.props.cluster;
             return (
                 <div className='display-changes-dialog'>
-                    {(this.state.isInvalid || cluster.needsRedeployment()) ?
+                    {cluster.needsRedeployment() ?
                         <div>
                             <div className='text-danger'>
                                 <i className='glyphicon glyphicon-danger-sign' />
-                                <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' : 'redeployment_needed'))}</span>
+                                <span>{i18n(this.ns + 'redeployment_needed')}</span>
                             </div>
-                            <hr />
                         </div>
                     : _.contains(['new', 'stopped'], cluster.get('status')) &&
                         <div>
                             <div className='text-warning'>
                                 <i className='glyphicon glyphicon-warning-sign' />
-                                <span>{i18n(this.ns + 'locked_settings_alert')}</span>
+                                <div className='instruction'>
+                                    {i18n('cluster_page.dashboard_tab.locked_settings_alert') + ' '}
+                                </div>
                             </div>
-                            <hr />
                             <div className='text-warning'>
                                 <i className='glyphicon glyphicon-warning-sign' />
-                                <span dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n(this.ns + 'warnings.connectivity_alert')))}} />
+                                <div className='instruction'>
+                                    {i18n('cluster_page.dashboard_tab.package_information') + ' '}
+                                    <a
+                                        target='_blank'
+                                        href={utils.composeDocumentationLink('operations.html#troubleshooting')}
+                                    >
+                                        {i18n('cluster_page.dashboard_tab.operations_guide')}
+                                    </a>
+                                    {i18n('cluster_page.dashboard_tab.for_more_information_configuration')}
+                                </div>
                             </div>
-                            <hr />
                         </div>
                     }
-                    {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
-                    {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-
-                    {this.showVerificationMessages()}
-                </div>
-            );
-        },
-        validations: [
-            // VCenter
-            function(cluster) {
-                if (cluster.get('settings').get('common.use_vcenter.value')) {
-                    var vcenter = cluster.get('vcenter');
-                    vcenter.setModels(this.getConfigModels()).parseRestrictions();
-                    return !vcenter.isValid() &&
-                        {blocker: [
-                            (<span>{i18n('vmware.has_errors') + ' '}
-                                <a href={'/#cluster/' + cluster.id + '/vmware'}>
-                                    {i18n('vmware.tab_name')}
-                                </a>
-                            </span>)
-                            ]
-                        };
-                    }
-            },
-            // Invalid settings
-            function(cluster) {
-                var configModels = this.getConfigModels(),
-                    areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
-                return areSettingsInvalid &&
-                    {blocker: [
-                        (<span>
-                            {i18n(this.ns + 'invalid_settings')}
-                            {' ' + i18n(this.ns + 'get_more_info') + ' '}
-                            <a href={'#cluster/' + cluster.id + '/settings'}>
-                                {i18n(this.ns + 'settings_link')}
-                            </a>.
-                        </span>)
-                    ]};
-            },
-            // Amount restrictions
-            function(cluster) {
-                var configModels = this.getConfigModels(),
-                    roles = cluster.get('roles'),
-                    validRoles = roles.filter(function(role) {
-                        return !role.checkRestrictions(configModels).result;
-                    }),
-                    limitValidations = _.zipObject(validRoles.map(function(role) {
-                        return [role.get('name'), role.checkLimits(configModels)];
-                    })),
-                    limitRecommendations = _.zipObject(validRoles.map(function(role) {
-                        return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
-                    }));
-                return {
-                    blocker: roles.map(_.bind(
-                        function(role) {
-                            var name = role.get('name'),
-                                limits = limitValidations[name];
-                            return limits && !limits.valid && limits.message;
-                    }, this)),
-                    warning: roles.map(_.bind(
-                        function(role) {
-                            var name = role.get('name'),
-                                recommendation = limitRecommendations[name];
-
-                            return recommendation && !recommendation.valid && recommendation.message;
-                    }, this))
-                };
-            },
-            // Network
-            function(cluster) {
-                var networkVerificationTask = cluster.task({group: 'network'}),
-                    makeComponent = _.bind(function(text, isError) {
-                        var span = (
-                            <span>
-                                {text}
-                                {' ' + i18n(this.ns + 'get_more_info') + ' '}
-                                <a href={'#cluster/' + this.props.cluster.id + '/network'}>
-                                    {i18n(this.ns + 'networks_link')}
-                                </a>.
-                            </span>
-                        );
-                        return isError ? {error: [span]} : {warning: [span]};
-                    }, this);
-
-                if (_.isUndefined(networkVerificationTask)) {
-                    return makeComponent(i18n(this.ns + 'verification_not_performed'));
-                } else if (networkVerificationTask.match({status: 'error'})) {
-                    return makeComponent(i18n(this.ns + 'verification_failed'), true);
-                } else if (networkVerificationTask.match({status: 'running'})) {
-                    return makeComponent(i18n(this.ns + 'verification_in_progress'));
-                }
-            }
-        ],
-        validate: function(cluster) {
-            return _.reduce(
-                this.validations,
-                function(accumulator, validator) {
-                    return _.merge(accumulator, validator.call(this, cluster), function(a, b) {
-                        return a.concat(_.compact(b));
-                    });
-                },
-                {blocker: [], error: [], warning: []},
-                this
-            );
-        },
-        showVerificationMessages: function() {
-            var result = {
-                    danger: _.union(this.state.alerts.blocker, this.state.alerts.error),
-                    warning: this.state.alerts.warning
-                },
-                blockers = this.state.alerts.blocker.length;
-            return (
-                <div className='validation-result'>
-                {
-                    ['danger', 'warning'].map(function(severity) {
-                        if (_.isEmpty(result[severity])) return null;
-                        return (
-                            <ul key={severity} className={'alert alert-' + severity}>
-                                {result[severity].map(function(line, index) {
-                                    return (<li key={severity + index}>
-                                        {severity == 'danger' && index < blockers && <i className='glyphicon glyphicon-danger-sign' />}
-                                        {line}
-                                    </li>);
-                                })}
-                            </ul>
-                        );
-                    }, [])
-                }
+                    <div className='confirmation-question'>
+                        {i18n(this.ns + 'are_you_sure_deploy')}
+                    </div>
                 </div>
             );
         },
         renderFooter: function() {
-            var classes = {
-                'btn start-deployment-btn': true,
-                'btn-danger': this.state.isInvalid || this.state.hasErrors,
-                'btn-success': !(this.state.isInvalid || this.state.hasErrors)
-            };
             return ([
                 <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
                 <button key='deploy'
-                    className={utils.classNames(classes)}
+                    className='btn start-deployment-btn btn-success'
                     disabled={this.state.actionInProgress || this.state.isInvalid}
                     onClick={this.deployCluster}
                 >{i18n(this.ns + 'deploy')}</button>

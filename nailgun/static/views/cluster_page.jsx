@@ -25,15 +25,15 @@ define(
     'dispatcher',
     'jsx!component_mixins',
     'jsx!views/dialogs',
+    'jsx!views/cluster_page_tabs/dashboard_tab',
     'jsx!views/cluster_page_tabs/nodes_tab',
     'jsx!views/cluster_page_tabs/network_tab',
     'jsx!views/cluster_page_tabs/settings_tab',
     'jsx!views/cluster_page_tabs/logs_tab',
-    'jsx!views/cluster_page_tabs/actions_tab',
     'jsx!views/cluster_page_tabs/healthcheck_tab',
     'plugins/vmware/vmware'
 ],
-function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, vmWare) {
+function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins, dialogs, DashboardTab, NodesTab, NetworkTab, SettingsTab, LogsTab, HealthCheckTab, vmWare) {
     'use strict';
 
     var ClusterPage, ClusterInfo, DeploymentResult, DeploymentControl;
@@ -76,13 +76,13 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             },
             getTabs: function() {
                 return [
+                    {url: 'dashboard', tab: DashboardTab},
                     {url: 'nodes', tab: NodesTab},
                     {url: 'network', tab: NetworkTab},
                     {url: 'settings', tab: SettingsTab},
                     {url: 'vmware', tab: vmWare.VmWareTab},
                     {url: 'logs', tab: LogsTab},
-                    {url: 'healthcheck', tab: HealthCheckTab},
-                    {url: 'actions', tab: ActionsTab}
+                    {url: 'healthcheck', tab: HealthCheckTab}
                 ];
             },
             fetchData: function(id, activeTab) {
@@ -244,14 +244,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 <div className='cluster-page' key={cluster.id}>
                     <div className='row'>
                         <ClusterInfo cluster={cluster} />
-                        <DeploymentControl
-                            cluster={cluster}
-                            hasChanges={this.hasChanges}
-                            revertChanges={this.revertChanges}
-                            activeTab={this.props.activeTab}
-                        />
                     </div>
-                    <DeploymentResult cluster={cluster} />
                     {release.get('state') == 'unavailable' &&
                         <div className='alert deploy-alert alert-warning'>
                             {i18n('cluster_page.unavailable_release', {name: release.get('name')})}
@@ -299,24 +292,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             {cluster.get('name')}
                             <div className='title-node-count'>({i18n('common.node', {count: cluster.get('nodes').length})})</div>
                         </h1>
-                        <div className='cluster-info'>
-                            <ul>
-                                <li>
-                                    <b>{i18n('cluster_page.openstack_release')}: </b>
-                                    {cluster.get('release').get('name')} ({cluster.get('release').get('version')})
-                                </li>
-                                <li>
-                                    <b>{i18n('cluster_page.deployment_mode')}: </b>
-                                    {i18n('cluster.mode.' + cluster.get('mode'))}
-                                </li>
-                                <li>
-                                    <b>{i18n('cluster_page.environment_status')}: </b>
-                                    <span className={_.contains(['error', 'update_error'], cluster.get('status')) ? 'text-danger' : ''}>
-                                        {i18n('cluster.status.' + cluster.get('status'))}
-                                    </span>
-                                </li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             );

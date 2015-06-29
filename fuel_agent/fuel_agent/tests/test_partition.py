@@ -196,7 +196,13 @@ class TestParted(test_base.BaseTestCase):
     def test_next_name_with_separator(self, nt_mock, nc_mock):
         nc_mock.return_value = 1
         nt_mock.return_value = 'not_extended'
-        self.prtd.name = 'cciss or loop'
+        self.prtd.name = '/dev/cciss/c0d0'
+        expected_name = '%sp%s' % (self.prtd.name, 1)
+        self.assertEqual(expected_name, self.prtd.next_name())
+        self.prtd.name = '/dev/loop123'
+        expected_name = '%sp%s' % (self.prtd.name, 1)
+        self.assertEqual(expected_name, self.prtd.next_name())
+        self.prtd.name = '/dev/nvme0n1'
         expected_name = '%sp%s' % (self.prtd.name, 1)
         self.assertEqual(expected_name, self.prtd.next_name())
 

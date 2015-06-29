@@ -94,7 +94,8 @@ class Parted(object):
         if self.next_type() == 'extended':
             return None
         separator = ''
-        if any(self.name.startswith(n) for n in ('cciss', 'nvme', 'loop')):
+        special_devices = ('cciss', 'nvme', 'loop')
+        if any(n in self.name for n in special_devices):
             separator = 'p'
         return '%s%s%s' % (self.name, separator, self.next_count())
 

@@ -246,8 +246,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return !!nodes.length && <div>{i18n(this.ns + dictKey, {count: nodes.length})}</div>;
         },
         renderBody: function() {
-            var cluster = this.props.cluster,
-                nodes = cluster.get('nodes');
+            var cluster = this.props.cluster;
             return (
                 <div className='display-changes-dialog'>
                     {(this.state.isInvalid || cluster.needsRedeployment()) ?
@@ -256,7 +255,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                 <i className='glyphicon glyphicon-danger-sign' />
                                 <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' : 'redeployment_needed'))}</span>
                             </div>
-                            <hr />
                         </div>
                     : _.contains(['new', 'stopped'], cluster.get('status')) &&
                         <div>
@@ -267,15 +265,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <hr />
                             <div className='text-warning'>
                                 <i className='glyphicon glyphicon-warning-sign' />
-                                <span dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n(this.ns + 'warnings.connectivity_alert')))}} />
+                                <span>{i18n(this.ns + 'package_information')}</span>
                             </div>
                             <hr />
+                            <div className='text-warning'>
+                                <i className='glyphicon glyphicon-warning-sign' />
+                                <span dangerouslySetInnerHTML={{__html: utils.linebreaks(_.escape(i18n(this.ns + 'warnings.connectivity_alert')))}} />
+                            </div>
                         </div>
                     }
-                    {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
-                    {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
-
-                    {this.showVerificationMessages()}
                 </div>
             );
         },
@@ -375,32 +373,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 },
                 {blocker: [], error: [], warning: []},
                 this
-            );
-        },
-        showVerificationMessages: function() {
-            var result = {
-                    danger: _.union(this.state.alerts.blocker, this.state.alerts.error),
-                    warning: this.state.alerts.warning
-                },
-                blockers = this.state.alerts.blocker.length;
-            return (
-                <div className='validation-result'>
-                {
-                    ['danger', 'warning'].map(function(severity) {
-                        if (_.isEmpty(result[severity])) return null;
-                        return (
-                            <ul key={severity} className={'alert alert-' + severity}>
-                                {result[severity].map(function(line, index) {
-                                    return (<li key={severity + index}>
-                                        {severity == 'danger' && index < blockers && <i className='glyphicon glyphicon-danger-sign' />}
-                                        {line}
-                                    </li>);
-                                })}
-                            </ul>
-                        );
-                    }, [])
-                }
-                </div>
             );
         },
         renderFooter: function() {

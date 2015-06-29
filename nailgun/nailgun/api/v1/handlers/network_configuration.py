@@ -195,6 +195,47 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         self.raise_task(task)
 
 
+class TemplateNetworkConfigurationHandler(ProviderHandler):
+    """Neutron Network configuration handler
+    """
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: network template for cluster (yaml format)
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        template = cluster.network_config.configuration_template
+        return template if template else None
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: {}
+        :http: * 200 (OK)
+               * 400 (invalid object data specified)
+               * 403 (change of configuration is forbidden)
+               * 404 (cluster not found in db)
+        """
+        template = web.data()
+
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self.check_if_network_configuration_locked(cluster)
+        objects.Cluster.set_network_template(cluster, template)
+        raise self.http(200)
+
+    def DELETE(self, cluster_id):
+        """:returns: {}
+        :http: * 204 (object successfully deleted)
+               * 403 (change of configuration is forbidden)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self.check_if_network_configuration_locked(cluster)
+        objects.Cluster.set_network_template(cluster, None)
+        raise self.http(204)
+
+
 class NetworkConfigurationVerifyHandler(ProviderHandler):
     """Network configuration verify handler base
     """

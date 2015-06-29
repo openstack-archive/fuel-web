@@ -103,6 +103,8 @@ class Node(Base):
     ip_addrs = relationship("IPAddr", viewonly=True)
     replaced_deployment_info = Column(JSON, default=[])
     replaced_provisioning_info = Column(JSON, default={})
+    network_template = Column(JSON, default=None, server_default=None,
+                              nullable=True)
 
     @property
     def interfaces(self):

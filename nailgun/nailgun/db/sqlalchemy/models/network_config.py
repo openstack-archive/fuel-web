@@ -19,6 +19,7 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Text
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
@@ -40,6 +41,7 @@ class NetworkingConfig(Base):
         "8.8.8.8"
     ])
     floating_ranges = Column(JSON, default=[])
+    configuration_template = Column(JSON, default={}, nullable=True)
 
     __mapper_args__ = {
         'polymorphic_on': discriminator

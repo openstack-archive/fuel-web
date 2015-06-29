@@ -470,6 +470,8 @@ class Cluster(NailgunObject):
         )
         cls.replace_provisioning_info_on_nodes(instance, [], nodes_to_remove)
         cls.replace_deployment_info_on_nodes(instance, [], nodes_to_remove)
+        cls.update_node_network_template(None, nodes_to_remove)
+
         map(
             net_manager.assign_networks_by_default,
             nodes_to_add
@@ -861,6 +863,55 @@ class Cluster(NailgunObject):
     def get_repo_urls(self, instance):
         repos = instance.attributes.editable['repo_setup']['repos']['value']
         return tuple(set([r['uri'] for r in repos]))
+
+    @classmethod
+    def parse_template(cls, config_template, node):
+        output = {}
+        template = yaml.load(config_template)
+        # Get the correct nic_mapping for this node so we can
+        # dynamically replace any interface references in any
+        # template for this node.
+        ng = node.group_id
+        if ng not in template['adv_net_template']:
+            ng = 'default'
+
+        key = 'node-%i'.format(node.id)
+        nic_mapping = template['adv_net_template'][ng]['nic_mapping']
+        if key not in nic_mapping:
+            key = 'default'
+
+        nic_mapping = nic_mapping[key]
+
+        # This is kind of gross
+        parsed_template = config_template.replace("<<", "{").replace(">>","}")
+        template = yaml.load(parsed_template.format(**nic_mapping))
+
+        output = template['adv_net_template'][ng]
+        output['templates'] = \
+            {k: v for k,v in output['network_scheme'].items()}
+        output['roles'] = {}
+        output['endpoints'] = {}
+        for v in output['templates'].values():
+            for endpoint in v['endpoints']:
+                output['endpoints'][endpoint] = {}
+            for role, ep in v['roles'].items():
+                output['roles'][role] = ep
+
+        return output
+
+    @classmethod
+    def set_network_template(cls, instance, template):
+        instance.network_config.configuration_template = template
+        cls.update_node_network_template(template, instance.nodes)
+
+    @classmethod
+    def update_node_network_template(cls, template, nodes):
+        for node in nodes:
+            t = {}
+            if template:
+                t = cls.parse_template(template, node)
+
+            node.network_template = t
 
 
 class ClusterCollection(NailgunCollection):

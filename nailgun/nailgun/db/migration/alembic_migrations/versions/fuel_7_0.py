@@ -28,6 +28,7 @@ from alembic import op
 from oslo.serialization import jsonutils
 import six
 import sqlalchemy as sa
+from nailgun.db.sqlalchemy.models import fields
 
 from nailgun.db.sqlalchemy.models import fields
 
@@ -42,6 +43,19 @@ def upgrade():
         nullable=False)
     op.create_unique_constraint(
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
+    op.add_column(
+        'networking_configs',
+        sa.Column(
+            'configuration_template', fields.JSON(),
+            nullable=True, server_default='{}')
+    )
+
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'network_template', fields.JSON(), nullable=True,
+            server_default='{}')
+    )
 
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
@@ -56,6 +70,8 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+    op.drop_column('nodes', 'network_template')
+    op.drop_column('networking_configs', 'configuration_template')
 
 
 def extend_plugin_model_upgrade():

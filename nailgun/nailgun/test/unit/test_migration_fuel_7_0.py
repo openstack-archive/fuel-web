@@ -430,6 +430,19 @@ class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
             jsonutils.loads(result.fetchone()[0]), [])
 
 
+class TestNetworkingTemplatesMigration(base.BaseAlembicMigrationTest):
+    def test_new_fields_exists_and_empty(self):
+        result = db.execute(
+            sa.select([self.meta.tables['networking_configs']
+                       .c.configuration_template]))
+        self.assertEqual(result.fetchone(), None)
+
+        result = db.execute(
+            sa.select([self.meta.tables['nodes']
+                       .c.network_template]))
+        self.assertEqual(result.fetchone()[0], None)
+
+
 class TestInterfacesPxePropertyMigration(base.BaseAlembicMigrationTest):
 
     def test_old_fields_exists(self):

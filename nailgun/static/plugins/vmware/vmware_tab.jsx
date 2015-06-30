@@ -208,25 +208,43 @@ define(
         statics: {
             isVisible: function(cluster) {
                 return cluster.get('settings').get('common.use_vcenter').value;
+            },
+            fetchData: function(options) {
+                if(!options.cluster.get('vcenter_defaults')) {
+                    var defaultModel = new vmwareModels.VCenter({id: options.cluster.id});
+                    defaultModel.loadDefaults = true;
+                    options.cluster.set({vcenter_defaults: defaultModel});
+                }
+                return $.when(
+                    options.cluster.get('vcenter').fetch(),
+                    options.cluster.get('vcenter_defaults').fetch()
+                );
             }
+        },
+        onModelSync: function() {
+            this.model.parseRestrictions();
+            this.actions = this.model.testRestrictions();
+            if (!this.model.loadDefaults) {
+                this.json = JSON.stringify(this.model.toJSON());
+            }
+            this.model.loadDefaults = false;
+            this.setState({model: this.model});
+        },
+        onDefaultsModelSync: function() {
+            this.defaultModel.parseRestrictions();
+            this.defaultsJson = JSON.stringify(this.defaultModel.toJSON());
+            this.setState({defaultModel: this.defaultModel});
         },
         componentDidMount: function() {
             this.clusterId = this.props.cluster.id;
             this.model = this.props.cluster.get('vcenter');
             this.model.on('sync', function() {
-                this.model.parseRestrictions();
-                this.actions = this.model.testRestrictions();
-                if (!this.model.loadDefaults) {
-                    this.json = JSON.stringify(this.model.toJSON());
-                }
-                this.model.loadDefaults = false;
-                this.setState({model: this.model});
+                this.onModelSync();
             }, this);
-            this.defaultModel = new vmwareModels.VCenter({id: this.clusterId});
+            this.defaultModel = this.props.cluster.get('vcenter_defaults');;
+            this.defaultModel.loadDefaults = true;
             this.defaultModel.on('sync', function() {
-                this.defaultModel.parseRestrictions();
-                this.defaultsJson = JSON.stringify(this.defaultModel.toJSON());
-                this.setState({defaultModel: this.defaultModel});
+                this.onDefaultsModelSync();
             }, this);
             this.setState({model: this.model, defaultModel: this.defaultModel});
 
@@ -236,8 +254,8 @@ define(
                 networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters')
             });
 
-            this.readDefaultsData();
-            this.readData();
+            this.onModelSync();
+            this.onDefaultsModelSync();
             dispatcher.on('vcenter_model_update', _.bind(function() {
                 if (this.isMounted()) {
                     this.forceUpdate();
@@ -253,11 +271,11 @@ define(
             return {model: null};
         },
         readData: function() {
-            this.model.fetch();
+            return this.model.fetch();
         },
         readDefaultsData: function() {
             this.defaultModel.loadDefaults = true;
-            this.defaultModel.fetch();
+            return this.defaultModel.fetch();
         },
         saveData: function() {
             this.model.save();

@@ -262,14 +262,51 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         unbondInterfaces: function() {
             this.setState({actionInProgress: true});
             _.each(this.props.interfaces.where({checked: true}), function(bond) {
-                // assign all networks from the bond to the first slave interface
-                var ifc = this.props.interfaces.findWhere({name: bond.get('slaves')[0].name});
-                ifc.get('assigned_networks').add(bond.get('assigned_networks').models);
-                bond.get('assigned_networks').reset();
-                bond.set({checked: false});
-                this.props.interfaces.remove(bond);
+                this.removeInterfaceFromBond(bond.get('name'));
             }, this);
             this.setState({actionInProgress: false});
+        },
+        removeInterfaceFromBond: function(bondName, slaveInterfaceName) {
+            var networks = this.props.cluster.get('networkConfiguration').get('networks');
+            var bond = this.props.interfaces.find({name: bondName});
+            var bondHasUnmovableNetwork = bond.get('assigned_networks').any(function(interfaceNetwork) {
+                return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
+            });
+            var slaveInterfaceNames = _.pluck(bond.get('slaves'), 'name');
+            var targetInterface = bond;
+
+            // if PXE interface is being removed - place networks there
+            if (bondHasUnmovableNetwork) {
+                var pxeInterface = this.props.interfaces.find(function(ifc) {
+                    return ifc.get('pxe') && _.contains(slaveInterfaceNames, ifc.get('name'));
+                });
+                if (!slaveInterfaceName || pxeInterface && pxeInterface.get('name') == slaveInterfaceName) {
+                    targetInterface = pxeInterface;
+                }
+            }
+
+            // if slaveInterfaceName is set - remove it from slaves, otherwise remove all
+            if (slaveInterfaceName) {
+                bond.set('slaves', _.reject(bond.get('slaves'), {name: slaveInterfaceName}));
+            } else {
+                bond.set('slaves', []);
+            }
+
+            // destroy bond if all slave interfaces are being removed
+            if (!slaveInterfaceName && targetInterface === bond) {
+                targetInterface = this.props.interfaces.findWhere({name: slaveInterfaceNames[0]});
+            }
+
+            // move networks if needed
+            if (targetInterface !== bond) {
+                var interfaceNetworks = bond.get('assigned_networks').remove(bond.get('assigned_networks').models);
+                targetInterface.get('assigned_networks').add(interfaceNetworks);
+            }
+
+            // if no slaves left - remove the bond
+            if (!bond.get('slaves').length) {
+                this.props.interfaces.remove(bond);
+            }
         },
         validate: function() {
             var interfaceErrors = {},
@@ -370,6 +407,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     bondingAvailable={bondingAvailable}
                                     errors={this.state.interfaceErrors[ifcName]}
                                     validate={this.validate}
+                                    removeInterfaceFromBond={this.removeInterfaceFromBond}
                                     bondingProperties={this.props.bondingConfig.properties}
                                     bondType={this.getBondType()}
                                     interfaceSpeeds={interfaceSpeeds[index]}
@@ -488,10 +526,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         onLacpChange: function(name, value) {
             this.updateBondProperties({lacp_rate: value});
         },
-        bondingRemoveInterface: function(slaveName) {
-            var slaves = _.reject(this.props.interface.get('slaves'), {name: slaveName});
-            this.props.interface.set('slaves', slaves);
-        },
         getBondingOptions: function(bondingModes, attributeName) {
             return _.map(bondingModes, function(mode) {
                 return (
@@ -521,9 +555,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 slaveInterfaces = ifc.getSlaveInterfaces(),
                 assignedNetworks = ifc.get('assigned_networks'),
-                bondable = this.props.bondingAvailable && assignedNetworks && !assignedNetworks.find(function(interfaceNetwork) {
-                    return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
-                }),
                 connectionStatusClasses = function(slave) {
                     var slaveDown = slave.get('state') == 'down';
                     return {
@@ -593,7 +624,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                         <div className='networks-block row'>
                             <div className='col-xs-3'>
                                 <div className='ifc-checkbox pull-left'>
-                                    {!ifc.isBond() && bondable ?
+                                    {!ifc.isBond() && this.props.bondingAvailable ?
                                         <controls.Input
                                             type='checkbox'
                                             onChange={this.bondingChanged}
@@ -605,12 +636,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                 </div>
                                 <div className='pull-left'>
                                     {_.map(slaveInterfaces, function(slaveInterface, index) {
-                                        var ifcName = slaveInterface.get('name');
                                         return (
-                                            <div key={'info-' + ifcName} className='ifc-info-block clearfix'>
+                                            <div key={'info-' + slaveInterface.get('name')} className='ifc-info-block clearfix'>
                                                 <div className='ifc-connection pull-left'>
                                                     <div className={utils.classNames(connectionStatusClasses(slaveInterface))} />
-                                                    <div className='ifc-name'>{ifcName}</div>
+                                                    <div className='ifc-name'>{slaveInterface.get('name')}</div>
                                                 </div>
                                                 <div className='ifc-info pull-left'>
                                                     {this.props.nodes.length == 1 &&
@@ -620,7 +650,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                                         {i18n(ns + 'speed')}: {this.props.interfaceSpeeds[index].join(', ')}
                                                     </div>
                                                     {(this.props.bondingAvailable && slaveInterfaces.length >= 3) &&
-                                                        <button className='btn btn-link' onClick={_.partial(this.bondingRemoveInterface, ifcName)}>
+                                                        <button className='btn btn-link' onClick={_.partial(this.props.removeInterfaceFromBond, ifc.get('name'), slaveInterface.get('name'))}>
                                                             {i18n('common.remove_button')}
                                                         </button>
                                                     }

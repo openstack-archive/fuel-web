@@ -46,6 +46,8 @@ from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer61
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer70
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkTemplateSerializer70
 from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer
 from nailgun.orchestrator.nova_serializers import \
@@ -475,6 +477,13 @@ class DeploymentHASerializer70(DeploymentHASerializer):
     neutron_network_serializer = NeutronNetworkDeploymentSerializer70
 
 
+class DeploymentTemplateSerializer70(DeploymentHASerializer):
+    # nova_network_serializer is just for compatibility with current BVTs
+    # and other tests. It can be removed when tests are fixed.
+    nova_network_serializer = NovaNetworkDeploymentSerializer61
+    neutron_network_serializer = NeutronNetworkTemplateSerializer70
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -501,11 +510,17 @@ def get_serializer_for_cluster(cluster):
         '7.0': {
             # Multinode is not supported anymore
             'ha': DeploymentHASerializer70,
+            'template': DeploymentTemplateSerializer70
         }
     }
 
     env_version = utils.extract_env_version(cluster.release.version)
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
+    net_template = getattr(cluster.network_config,
+                           'configuration_template', None)
+    if net_template:
+        env_mode = 'template'
+
     for version, serializers in six.iteritems(serializers_map):
         if env_version.startswith(version):
             return serializers[env_mode]

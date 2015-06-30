@@ -52,9 +52,11 @@ def upgrade():
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
     migrate_volumes_into_extension_upgrade()
+    networking_templates_upgrade()
 
 
 def downgrade():
+    networking_templates_downgrade()
     migrate_volumes_into_extension_downgrade()
     extend_plugin_model_downgrade()
     extend_ip_addrs_model_downgrade()

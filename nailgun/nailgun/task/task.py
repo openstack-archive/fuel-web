@@ -803,6 +803,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_volumes(task)
         cls._check_public_network(task)
         cls._check_vmware_consistency(task)
+        cls._validate_network_template(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
             cls._check_mongo_nodes(task)
@@ -1011,6 +1012,28 @@ class CheckBeforeDeploymentTask(object):
 
             if errors_msg:
                 raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
+
+    @classmethod
+    def _validate_network_template(cls, task):
+        cluster = task.cluster
+        try:
+            template = cluster.network_config.configuration_template
+        except AttributeError:
+            return
+
+        template = objects.Cluster.parse_template(template, cluster.nodes[0])
+
+        template_roles = set(template['templates_for_node_role'].keys())
+        cluster_roles = set()
+        for n in cluster.nodes:
+            cluster_roles.update(n.all_roles)
+
+        missing_roles = cluster_roles - template_roles
+        if missing_roles:
+            error_roles = ','.join(list(missing_roles))
+            error_msg = ('Roles {0} are missing from network configuration'
+                         ' template').format(error_roles)
+            raise errors.CheckBeforeDeploymentError(error_msg)
 
 
 class DumpTask(object):

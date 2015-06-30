@@ -73,6 +73,7 @@ default_messages = {
     "CanNotFindInterface": "Cannot find interface",
     "CanNotDetermineEndPointIP": "Cannot determine end point IP",
     "CanNotFindNetworkForNode": "Cannot find network for node",
+    "NetworkTemplateMissingRoles": "Roles are missing from network template",
 
     # RPC errors
     "CannotFindTask": "Cannot find task",

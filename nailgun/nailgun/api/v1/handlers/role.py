@@ -108,3 +108,37 @@ class RoleCollectionHandler(base.CollectionHandler):
         release = self.get_object_or_404(objects.Release, release_id)
         role_names = six.iterkeys(release.roles_metadata)
         return [RoleSerializer.serialize(release, name) for name in role_names]
+
+
+class ClusterRolesHandler(base.BaseHandler):
+
+    def _check_role(self, cluster, role_name):
+        available_roles = six.iterkeys(objects.Cluster.get_roles(cluster))
+        if role_name not in available_roles:
+            raise self.http(404, 'Role is not found for the cluster')
+
+    @content
+    def GET(self, cluster_id, role_name):
+        """:returns: JSON-ed metadata for the role
+            :http:
+            * 200 (OK)
+            * 404 (no such object found)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self._check_role(cluster, role_name)
+        return RoleSerializer.serialize(cluster.release, role_name)
+
+
+class ClusterRolesCollectionHandler(base.BaseHandler):
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: collection of JSON-ed cluster roles metadata
+            :http:
+            * 200 (OK)
+            * 404 (no such object found)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        roles_names = six.iterkeys(objects.Cluster.get_roles(cluster))
+        return [RoleSerializer.serialize(cluster.release, name) for name in
+                roles_names]

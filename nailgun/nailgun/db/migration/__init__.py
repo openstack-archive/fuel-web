@@ -16,6 +16,8 @@
 
 import os
 
+import six
+
 from alembic import command as alembic_command
 from alembic import config as alembic_config
 from alembic import util as alembic_util
@@ -23,14 +25,24 @@ from alembic import util as alembic_util
 from nailgun.db.sqlalchemy import db_str
 
 
-def make_alembic_config(script_location, version_table):
+def make_alembic_config(script_location, version_table, **kwargs):
     config = alembic_config.Config(
         os.path.join(os.path.dirname(__file__), 'alembic.ini'))
     config.set_main_option('script_location', script_location)
     config.set_main_option('sqlalchemy.url', db_str)
     config.set_main_option('version_table', version_table)
 
+    for k, v in six.iteritems(kwargs):
+        config.set_main_option(k, v)
+
     return config
+
+
+def make_alembic_config_from_extension(extension):
+    return make_alembic_config(
+        extension.alembic_migrations_path(),
+        extension.alembic_table_version(),
+        table_prefix=extension.table_prefix())
 
 
 # Alembic config for core components
@@ -77,8 +89,22 @@ def do_upgrade_downgrade(cmd, config):
     do_alembic_command(cmd, config, revision, sql=params.sql)
 
 
-def do_upgrade_head(config=ALEMBIC_CONFIG):
-    do_alembic_command("upgrade", config, "head")
+def do_upgrade_head_extensions():
+    from nailgun.extensions import get_all_extensions
+
+    for extension in get_all_extensions():
+        if extension.alembic_migrations_path():
+            config = make_alembic_config_from_extension(extension)
+            do_alembic_command('upgrade', config, 'head')
+
+
+def do_upgrade_head_core():
+    do_alembic_command('upgrade', ALEMBIC_CONFIG, 'head')
+
+
+def do_upgrade_head():
+    do_upgrade_head_core()
+    do_upgrade_head_extensions()
 
 
 def action_migrate(config):
@@ -105,10 +131,7 @@ def action_migrate_alembic_core(params):
 
 
 def action_migrate_alembic_extension(params, extension):
-    config = make_alembic_config(
-        extension.alembic_migrations_path(),
-        extension.alembic_table_version())
-
+    config = make_alembic_config_from_extension(extension)
     config.params = params
     action_migrate(config)
 

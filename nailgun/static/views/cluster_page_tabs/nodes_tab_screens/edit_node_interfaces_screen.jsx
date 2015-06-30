@@ -261,9 +261,23 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         },
         unbondInterfaces: function() {
             this.setState({actionInProgress: true});
+            var networks = this.props.cluster.get('networkConfiguration').get('networks');
             _.each(this.props.interfaces.where({checked: true}), function(bond) {
-                // assign all networks from the bond to the first slave interface
-                var ifc = this.props.interfaces.findWhere({name: bond.get('slaves')[0].name});
+                var bondHasUnmovableNetwork = bond.get('assigned_networks').any(function(interfaceNetwork) {
+                    return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
+                });
+                var ifc;
+                if (bondHasUnmovableNetwork) {
+                    // if bond has unmovable network - assign all the networks from the bond to the interface with 'pxe' flag
+                    var slaveInterfaceNames = _.pluck(bond.get('slaves'), 'name');
+                    ifc = this.props.interfaces.find(function(ifc) {
+                        return ifc.get('pxe') && _.contains(slaveInterfaceNames, ifc.get('name'));
+                    });
+                }
+                if (!ifc) {
+                    // otherwise assign them the first slave interface
+                    ifc = this.props.interfaces.findWhere({name: bond.get('slaves')[0].name});
+                }
                 ifc.get('assigned_networks').add(bond.get('assigned_networks').models);
                 bond.get('assigned_networks').reset();
                 bond.set({checked: false});
@@ -521,9 +535,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 slaveInterfaces = ifc.getSlaveInterfaces(),
                 assignedNetworks = ifc.get('assigned_networks'),
-                bondable = this.props.bondingAvailable && assignedNetworks && !assignedNetworks.find(function(interfaceNetwork) {
-                    return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
-                }),
                 connectionStatusClasses = function(slave) {
                     var slaveDown = slave.get('state') == 'down';
                     return {
@@ -593,7 +604,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                         <div className='networks-block row'>
                             <div className='col-xs-3'>
                                 <div className='ifc-checkbox pull-left'>
-                                    {!ifc.isBond() && bondable ?
+                                    {!ifc.isBond() && this.props.bondingAvailable ?
                                         <controls.Input
                                             type='checkbox'
                                             onChange={this.bondingChanged}

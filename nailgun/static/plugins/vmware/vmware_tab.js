@@ -281,26 +281,35 @@ define(
         statics: {
             isVisible: function(cluster) {
                 return cluster.get('settings').get('common.use_vcenter').value;
+            },
+            fetchData: function(options) {
+                if (!options.cluster.get('vcenter_defaults')) {
+                    var defaultModel = new vmwareModels.VCenter({id: options.cluster.id});
+                    defaultModel.loadDefaults = true;
+                    options.cluster.set({vcenter_defaults: defaultModel});
+                }
+                return $.when(
+                    options.cluster.get('vcenter').fetch({cache: true}),
+                    options.cluster.get('vcenter_defaults').fetch({cache: true})
+                );
             }
+        },
+        onModelSync: function() {
+            this.model.parseRestrictions();
+            this.actions = this.model.testRestrictions();
+            if (!this.model.loadDefaults) {
+                this.json = JSON.stringify(this.model.toJSON());
+            }
+            this.model.loadDefaults = false;
+            this.setState({model: this.model});
         },
         componentDidMount: function() {
             this.clusterId = this.props.cluster.id;
             this.model = this.props.cluster.get('vcenter');
-            this.model.on('sync', function() {
-                this.model.parseRestrictions();
-                this.actions = this.model.testRestrictions();
-                if (!this.model.loadDefaults) {
-                    this.json = JSON.stringify(this.model.toJSON());
-                }
-                this.model.loadDefaults = false;
-                this.setState({model: this.model});
-            }, this);
-            this.defaultModel = new vmwareModels.VCenter({id: this.clusterId});
-            this.defaultModel.on('sync', function() {
-                this.defaultModel.parseRestrictions();
-                this.defaultsJson = JSON.stringify(this.defaultModel.toJSON());
-                this.setState({defaultModel: this.defaultModel});
-            }, this);
+            this.model.on('sync', this.onModelSync, this);
+            this.defaultModel = this.props.cluster.get('vcenter_defaults');
+            this.defaultModel.parseRestrictions();
+            this.defaultsJson = JSON.stringify(this.defaultModel.toJSON());
             this.setState({model: this.model, defaultModel: this.defaultModel});
 
             this.model.setModels({
@@ -309,8 +318,7 @@ define(
                 networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters')
             });
 
-            this.readDefaultsData();
-            this.readData();
+            this.onModelSync();
             dispatcher.on('vcenter_model_update', _.bind(function() {
                 if (this.isMounted()) {
                     this.forceUpdate();
@@ -328,10 +336,6 @@ define(
         readData: function() {
             return this.model.fetch();
         },
-        readDefaultsData: function() {
-            this.defaultModel.loadDefaults = true;
-            return this.defaultModel.fetch();
-        },
         saveData: function() {
             return this.model.save();
         },
@@ -340,14 +344,6 @@ define(
             this.model.fetch().done(_.bind(function() {
                 this.model.loadDefaults = false;
             }, this));
-        },
-        applyChanges: function() {
-            if (!this.isSavingPossible()) {
-                var result = $.Deferred();
-                result.reject();
-                return result;
-            }
-            return this.saveData();
         },
         revertChanges: function() {
             return this.readData();
@@ -435,7 +431,7 @@ define(
                                 <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!hasChanges}>
                                     {i18n('vmware.cancel')}
                                 </button>
-                                <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={saveDisabled}>
+                                <button className='btn btn-success btn-apply-changes' onClick={this.saveData} disabled={saveDisabled}>
                                     {i18n('vmware.apply')}
                                 </button>
                             </div>

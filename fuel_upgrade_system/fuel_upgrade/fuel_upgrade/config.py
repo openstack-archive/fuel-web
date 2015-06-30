@@ -335,13 +335,13 @@ def config(update_path, admin_password):
                                     'ro': False})],
 
         'volume_postgres_data': [
-            ('/var/lib/pgsql', {
-                'bind': '{0}/postgres'.format(container_data_path),
+            ('{0}/postgres'.format(container_data_path), {
+                'bind': '/var/lib/pgsql',
                 'ro': False})],
 
         'volume_cobbler_data': [
-            ('/var/lib/cobbler', {
-                'bind': '{0}/cobbler'.format(container_data_path),
+            ('{0}/cobbler'.format(container_data_path), {
+                'bind': '/var/lib/cobbler',
                 'ro': False})],
     }
 

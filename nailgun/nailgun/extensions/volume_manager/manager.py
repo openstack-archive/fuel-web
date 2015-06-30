@@ -578,7 +578,8 @@ class VolumeManager(object):
         self.node_name = node.name
 
         # Make sure that we don't change volumes directly from manager
-        self.volumes = deepcopy(node.attributes.volumes) or []
+        from .extension import VolumeManagerExtension
+        self.volumes = deepcopy(VolumeManagerExtension.get_volumes(node)) or []
         # For swap calculation
         self.ram = node.meta['memory']['total']
         self.allowed_volumes = []

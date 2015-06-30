@@ -56,6 +56,7 @@ from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
 
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
@@ -220,7 +221,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEqual(
             serialized_data['glance'],
             {'image_cache_max_size': manager.calc_glance_cache_size(
-                node_db.attributes.volumes)})
+                VolumeManagerExtension.get_volumes(node_db))})
 
     def test_node_list(self):
         node_list = self.serializer.get_common_attrs(self.cluster)['nodes']

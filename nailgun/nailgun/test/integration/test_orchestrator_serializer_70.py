@@ -24,6 +24,10 @@ from nailgun import objects
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkDeploymentSerializer70
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkTemplateSerializer70
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 
@@ -345,3 +349,227 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
                     v['network_roles'],
                     network_roles
                 )
+
+
+class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
+
+    @mock.patch.object(models.Release, 'environment_version',
+                       new_callable=mock.PropertyMock(return_value='7.0'))
+    def setUp(self, *args):
+        super(TestNetworkTemplateSerializer70, self).setUp()
+        self.cluster = self.create_env('ha_compact')
+
+        self.net_template = """
+            adv_net_template:
+              default:
+                nic_mapping:
+                  default:
+                    if1: eth0
+                    if2: eth1
+                    if3: eth2
+                    if4: eth3
+                templates_for_node_role:
+                    controller:
+                      - common
+                      - public
+                    compute:
+                      - common
+                      - private
+                      - storage
+                    cinder:
+                      - common
+                      - storage
+                network_assignments:
+                    storage:
+                      ep: br-storage
+                    private:
+                      ep: br-prv
+                    public:
+                      ep: br-ex
+                    management:
+                      ep: br-mgmt
+                    fuelweb_admin:
+                      ep: br-fw-admin
+                network_scheme:
+                  common:
+                    transformations:
+                      - action: add-br
+                        name: br-fw-admin
+                      - action: add-port
+                        bridge: br-fw-admin
+                        name: <% if1 %>
+                      - action: add-br
+                        name: br-mgmt
+                      - action: add-port
+                        bridge: br-mgmt
+                        name: <% if2 %>
+                    endpoints:
+                      - br-mgmt
+                      - br-fw-admin
+                    roles:
+                      management: br-mgmt
+                      admin/pxe: br-fw-admin
+                      swift/api: br-mgmt
+                      neutron/api: br-mgmt
+                      sahara/api: br-mgmt
+                      ceilometer/api: br-mgmt
+                      cinder/api: br-mgmt
+                      keystone/api: br-mgmt
+                      glance/api: br-mgmt
+                      heat/api: br-mgmt
+                      nova/api: br-mgmt
+                      murano/api: br-mgmt
+                      horizon: br-mgmt
+                      mgmt/api: br-mgmt
+                      mgmt/memcache: br-mgmt
+                      mgmt/database: br-mgmt
+                  public:
+                    transformations:
+                      - action: add-br
+                        name: br-ex
+                      - action: add-br
+                        name: br-floating
+                        provider: ovs
+                      - action: add-patch
+                        bridges:
+                        - br-floating
+                        - br-ex
+                        provider: ovs
+                        mtu: 65000
+                      - action: add-port
+                        bridge: br-ex
+                        name: <% if2 %>
+                    endpoints:
+                      - br-ex
+                    roles:
+                      public/vip: br-ex
+                      swift/public: br-ex
+                      neutron/floating: br-floating
+                      ceph/radosgw: br-ex
+                  storage:
+                    transformations:
+                      - action: add-br
+                        name: br-storage
+                      - action: add-port
+                        bridge: br-storage
+                        name: <% if5 %>
+                    endpoints:
+                      - br-storage
+                    roles:
+                      cinder/iscsi: br-storage
+                      swift/replication: br-storage
+                      ceph/replication: br-storage
+                  private:
+                    transformations:
+                      - action: add-br
+                        name: br-prv
+                        provider: ovs
+                      - action: add-br
+                        name: br-aux
+                      - action: add-patch
+                        bridges:
+                        - br-prv
+                        - br-aux
+                        provider: ovs
+                        mtu: 65000
+                      - action: add-port
+                        bridge: br-aux
+                        name: <% if4 %>
+                    endpoints:
+                      - br-prv
+                    roles:
+                      neutron/private: br-prv
+        """
+        objects.Cluster.set_network_template(self.cluster, self.net_template)
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        self.serialized_for_astute = serializer(
+            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+
+    def create_env(self, mode):
+        return self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'mode': mode,
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan'},
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'pending_addition': True,
+                 'name': self.node_name},
+                {'roles': ['compute', 'cinder'],
+                 'pending_addition': True,
+                 'name': self.node_name}
+            ])
+
+    @mock.patch.object(models.Release, 'environment_version',
+                       new_callable=mock.PropertyMock(return_value='7.0'))
+    def test_get_net_provider_serializer(self, _):
+        serializer = get_serializer_for_cluster(self.cluster)
+        self.cluster.network_config.configuration_template = None
+
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        self.assertEquals(net_serializer, NeutronNetworkDeploymentSerializer70)
+
+        self.cluster.network_config.configuration_template = \
+            self.net_template
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        self.assertEquals(net_serializer, NeutronNetworkTemplateSerializer70)
+
+    def test_multiple_node_roles_network_roles(self, *args):
+        expected_roles = {}
+        # controller node
+        expected_roles[self.cluster.nodes[0].fqdn] = {
+            'management': 'br-mgmt',
+            'admin/pxe': 'br-fw-admin',
+            'swift/api': 'br-mgmt',
+            'neutron/api': 'br-mgmt',
+            'sahara/api': 'br-mgmt',
+            'ceilometer/api': 'br-mgmt',
+            'cinder/api': 'br-mgmt',
+            'keystone/api': 'br-mgmt',
+            'glance/api': 'br-mgmt',
+            'heat/api': 'br-mgmt',
+            'nova/api': 'br-mgmt',
+            'murano/api': 'br-mgmt',
+            'horizon': 'br-mgmt',
+            'mgmt/api': 'br-mgmt',
+            'mgmt/memcache': 'br-mgmt',
+            'mgmt/database': 'br-mgmt',
+            'public/vip': 'br-ex',
+            'swift/public': 'br-ex',
+            'neutron/floating': 'br-floating',
+            'ceph/radosgw': 'br-ex'
+        }
+        # compute/cinder node
+        expected_roles[self.cluster.nodes[1].fqdn] = {
+            'management': 'br-mgmt',
+            'admin/pxe': 'br-fw-admin',
+            'swift/api': 'br-mgmt',
+            'neutron/api': 'br-mgmt',
+            'sahara/api': 'br-mgmt',
+            'ceilometer/api': 'br-mgmt',
+            'cinder/api': 'br-mgmt',
+            'keystone/api': 'br-mgmt',
+            'glance/api': 'br-mgmt',
+            'heat/api': 'br-mgmt',
+            'nova/api': 'br-mgmt',
+            'murano/api': 'br-mgmt',
+            'horizon': 'br-mgmt',
+            'mgmt/api': 'br-mgmt',
+            'mgmt/memcache': 'br-mgmt',
+            'mgmt/database': 'br-mgmt',
+            'cinder/iscsi': 'br-storage',
+            'swift/replication': 'br-storage',
+            'ceph/replication': 'br-storage',
+            'neutron/private': 'br-prv'
+        }
+
+        for node in self.serialized_for_astute:
+            roles = node['network_scheme']['roles']
+            self.assertEqual(roles, expected_roles[node['fqdn']])
+
+    def test_multiple_node_roles_transformations(self, *args):
+        pass

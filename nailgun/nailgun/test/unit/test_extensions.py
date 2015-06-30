@@ -32,12 +32,12 @@ class TestBaseExtension(BaseTestCase):
     def test_alembic_table_version(self):
         self.assertEqual(
             self.extension.alembic_table_version(),
-            'ext_name_1.0.0_alembic_version')
+            'ext_name_1_0_0_alembic_version')
 
     def test_table_prefix(self):
         self.assertEqual(
             self.extension.table_prefix(),
-            'ext_name_1.0.0_')
+            'ext_name_1_0_0_')
 
     def test_alembic_migrations_path_none_by_default(self):
         self.assertIsNone(self.extension.alembic_migrations_path())

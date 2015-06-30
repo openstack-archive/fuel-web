@@ -28,6 +28,10 @@ def get_all_extensions():
     return [VolumeManagerExtension]
 
 
+def find_extension(name, version=None):
+    pass
+
+
 @six.add_metaclass(abc.ABCMeta)
 class BaseExtension(object):
 
@@ -66,7 +70,7 @@ class BaseExtension(object):
 
     @classmethod
     def table_prefix(cls):
-        return '{0}_{1}_'.format(cls.name, cls.version)
+        return '{0}_'.format(cls.name)
 
     @classmethod
     def alembic_table_version(cls):

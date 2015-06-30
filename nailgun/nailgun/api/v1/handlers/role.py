@@ -15,6 +15,8 @@
 #    under the License.
 
 
+import six
+
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.role import RoleValidator
@@ -107,3 +109,29 @@ class RoleCollectionHandler(base.CollectionHandler):
         release = self.get_object_or_404(objects.Release, release_id)
         role_names = release.roles_metadata.keys()
         return [RoleSerializer.serialize(release, name) for name in role_names]
+
+
+class ClusterRolesHandler(base.SingleHandler):
+
+    @content
+    def GET(self, cluster_id, role_name):
+        """:http:
+            * 200 (OK)
+            * 404 (no such object found)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        return RoleSerializer.serialize(cluster.release, role_name)
+
+
+class ClusterRolesCollectionHandler(base.CollectionHandler):
+
+    @content
+    def GET(self, cluster_id):
+        """:http:
+            * 200 (OK)
+            * 404 (no such object found)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        roles_names = six.iterkeys(objects.Cluster.get_roles(cluster))
+        return [RoleSerializer.serialize(cluster.release, name) for name in
+                roles_names]

@@ -95,6 +95,7 @@ define([
             return deferred;
         }
     };
+    models.cacheMixin = cacheMixin;
 
     var restrictionMixin = models.restrictionMixin = {
         expandRestrictions: function(restrictions, path) {

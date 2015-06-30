@@ -22,11 +22,16 @@ from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
+from nailgun.orchestrator import stages
+from nailgun.test import base
+
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
-from nailgun.orchestrator import stages
-from nailgun.test import base
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkDeploymentSerializer70
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkTemplateSerializer70
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 
@@ -57,11 +62,11 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
         # NOTE: 'prepare_for_deployment' is going to be changed for 7.0
         objects.NodeCollection.prepare_for_deployment(
             self.env.nodes, self.segmentation_type)
-        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-        serializer_type = get_serializer_for_cluster(cluster_db)
-        self.serializer = serializer_type(AstuteGraph(cluster_db))
+        self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        serializer_type = get_serializer_for_cluster(self.cluster_db)
+        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
         self.serialized_for_astute = self.serializer.serialize(
-            cluster_db, cluster_db.nodes)
+            self.cluster_db, self.cluster_db.nodes)
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def create_env(self, mode):
@@ -134,6 +139,8 @@ class TestDeploymentAttributesSerialization70(
                                      changed_offloading_modes[iface_name])
 
     def test_network_metadata(self):
+        neutron_serializer = self.serializer.get_net_provider_serializer(
+            self.cluster_db)
         for node_data in self.serialized_for_astute:
             self.assertItemsEqual(
                 node_data['network_metadata'], ['nodes', 'vips'])
@@ -144,7 +151,6 @@ class TestDeploymentAttributesSerialization70(
                      'swift_zone', 'node_roles', 'network_roles']
                 )
                 node = objects.Node.get_by_uid(v['uid'])
-                neutron_serializer = self.serializer.neutron_network_serializer
                 ip_by_net = neutron_serializer.get_network_to_ip_mapping(node)
 
                 self.assertEqual(objects.Node.get_slave_name(node), k)
@@ -276,18 +282,19 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
         for node_data in self.serialized_for_astute:
             self.assertItemsEqual(
                 node_data['network_metadata'], ['nodes', 'vips'])
-            for k, v in six.iteritems(node_data['network_metadata']['nodes']):
+            nodes = node_data['network_metadata']['nodes']
+            for node_name, node_attrs in nodes.items():
                 self.assertItemsEqual(
-                    v,
+                    node_attrs,
                     ['uid', 'fqdn', 'name', 'user_node_name',
                      'swift_zone', 'node_roles', 'network_roles']
                 )
-                self.assertEqual(objects.Node.get_slave_name(node), k)
-                self.assertEqual(v['uid'], node.uid)
-                self.assertEqual(v['fqdn'], node.fqdn)
-                self.assertEqual(v['name'], k)
-                self.assertEqual(v['user_node_name'], node.name)
-                self.assertEqual(v['swift_zone'], node.uid)
+                self.assertEqual(objects.Node.get_slave_name(node), node_name)
+                self.assertEqual(node_attrs['uid'], node.uid)
+                self.assertEqual(node_attrs['fqdn'], node.fqdn)
+                self.assertEqual(node_attrs['name'], node_name)
+                self.assertEqual(node_attrs['user_node_name'], node.name)
+                self.assertEqual(node_attrs['swift_zone'], node.uid)
 
                 network_roles = {
                     'admin/pxe': ip_by_net['fuelweb_admin'],
@@ -326,7 +333,7 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
                     'ceph/radosgw': ip_by_net['public'],
                 }
                 self.assertEqual(
-                    v['network_roles'],
+                    node_attrs['network_roles'],
                     network_roles
                 )
 
@@ -742,3 +749,229 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer):
             'type': 'puppet',
             'uids': [self.cluster.nodes[0].uid],
         }])
+
+
+class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
+
+    def setUp(self, *args):
+        super(TestNetworkTemplateSerializer70, self).setUp()
+        self.cluster = self.create_env('ha_compact')
+        self.net_template = self.env.read_fixtures(['network_template'])[0]
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template
+        )
+        objects.NodeCollection.prepare_for_deployment(self.env.nodes)
+        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        self.serialized_for_astute = serializer(
+            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+
+    def create_env(self, mode):
+        return self.env.create(
+            release_kwargs={'version': '11111-7.0'},
+            cluster_kwargs={
+                'api': False,
+                'mode': mode,
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan'},
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'pending_addition': True,
+                 'name': self.node_name},
+                {'roles': ['compute', 'cinder'],
+                 'pending_addition': True,
+                 'name': self.node_name}
+            ])
+
+    def test_get_net_provider_serializer(self):
+        serializer = get_serializer_for_cluster(self.cluster)
+        self.cluster.network_config.configuration_template = None
+
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer70)
+
+        self.cluster.network_config.configuration_template = \
+            self.net_template
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        self.assertIs(net_serializer, NeutronNetworkTemplateSerializer70)
+
+    def test_multiple_node_roles_network_roles(self):
+        expected_roles = {
+            # controller node
+            self.cluster.nodes[0].fqdn: {
+                'management': 'br-mgmt',
+                'admin/pxe': 'br-fw-admin',
+                'swift/api': 'br-mgmt',
+                'neutron/api': 'br-mgmt',
+                'sahara/api': 'br-mgmt',
+                'ceilometer/api': 'br-mgmt',
+                'cinder/api': 'br-mgmt',
+                'keystone/api': 'br-mgmt',
+                'glance/api': 'br-mgmt',
+                'heat/api': 'br-mgmt',
+                'nova/api': 'br-mgmt',
+                'murano/api': 'br-mgmt',
+                'horizon': 'br-mgmt',
+                'mgmt/api': 'br-mgmt',
+                'mgmt/memcache': 'br-mgmt',
+                'mgmt/database': 'br-mgmt',
+                'public/vip': 'br-ex',
+                'swift/public': 'br-ex',
+                'neutron/floating': 'br-floating',
+                'ceph/radosgw': 'br-ex',
+                'mgmt/messaging': 'br-mgmt',
+                'neutron/mesh': 'br-mgmt',
+                'mgmt/vip': 'br-mgmt',
+                'mgmt/corosync': 'br-mgmt',
+                'mongo/db': 'br-mgmt',
+                'nova/migration': 'br-mgmt',
+                'fw-admin': 'br-fw-admin',
+                'ex': 'br-ex',
+                'ceph/public': 'br-ex',
+            },
+            # compute/cinder node
+            self.cluster.nodes[1].fqdn: {
+                'management': 'br-mgmt',
+                'admin/pxe': 'br-fw-admin',
+                'swift/api': 'br-mgmt',
+                'neutron/api': 'br-mgmt',
+                'sahara/api': 'br-mgmt',
+                'ceilometer/api': 'br-mgmt',
+                'cinder/api': 'br-mgmt',
+                'keystone/api': 'br-mgmt',
+                'glance/api': 'br-mgmt',
+                'heat/api': 'br-mgmt',
+                'nova/api': 'br-mgmt',
+                'murano/api': 'br-mgmt',
+                'horizon': 'br-mgmt',
+                'mgmt/api': 'br-mgmt',
+                'mgmt/memcache': 'br-mgmt',
+                'mgmt/database': 'br-mgmt',
+                'cinder/iscsi': 'br-storage',
+                'swift/replication': 'br-storage',
+                'ceph/replication': 'br-storage',
+                'neutron/private': 'br-prv',
+                'mgmt/messaging': 'br-mgmt',
+                'neutron/mesh': 'br-mgmt',
+                'mgmt/vip': 'br-mgmt',
+                'mgmt/corosync': 'br-mgmt',
+                'mongo/db': 'br-mgmt',
+                'nova/migration': 'br-mgmt',
+                'fw-admin': 'br-fw-admin',
+                'storage': 'br-storage'
+            }
+        }
+
+        for node in self.serialized_for_astute:
+            roles = node['network_scheme']['roles']
+            self.assertEqual(roles, expected_roles[node['fqdn']])
+
+    def test_multiple_node_roles_transformations(self):
+        node = self.cluster.nodes[1]
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+
+        transformations = net_serializer.generate_transformations(node)
+
+        # Two node roles with the same template should only generate one
+        # transformation.
+        admin_brs = filter(lambda t: t.get('name') == 'br-fw-admin',
+                           transformations)
+        self.assertEqual(1, len(admin_brs))
+
+        # Templates are applied in the order as defined in the template.
+        # storage network template is applied after the 4 transformations
+        # in common
+        self.assertEqual('br-storage', transformations[4]['name'])
+
+        # Ensure all ports connected to br-mgmt happen after the bridge
+        # has been created
+        port_seen = False
+        for tx in transformations:
+            if tx.get('name') == 'br-mgmt' and tx['action'] == 'add-br' \
+                    and port_seen:
+                self.fail('Port was added to br-mgmt prior to the bridge '
+                          'being created')
+            if tx.get('bridge') == 'br-mgmt' and tx['action'] == 'add-port':
+                port_seen = True
+
+    def test_multiple_node_roles_network_metadata(self):
+        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        ip_by_net = {
+            'fuelweb_admin': None,
+            'storage': None,
+            'management': None,
+            'public': None
+        }
+        for node_data in self.serialized_for_astute:
+            self.assertItemsEqual(
+                node_data['network_metadata'], ['nodes', 'vips'])
+            nodes = node_data['network_metadata']['nodes']
+            for node_name, node_attrs in nodes.items():
+                self.assertItemsEqual(
+                    node_attrs,
+                    ['uid', 'fqdn', 'name', 'user_node_name',
+                     'swift_zone', 'node_roles', 'network_roles']
+                )
+                node = objects.Node.get_by_uid(node_attrs['uid'])
+                for net in ip_by_net:
+                    netgroup = nm.get_node_network_by_netname(node, net)
+                    if netgroup.get('ip'):
+                        ip_by_net[net] = netgroup['ip'].split('/')[0]
+                self.assertEqual(objects.Node.get_slave_name(node), node_name)
+                self.assertEqual(node_attrs['uid'], node.uid)
+                self.assertEqual(node_attrs['fqdn'], node.fqdn)
+                self.assertEqual(node_attrs['name'], node_name)
+                self.assertEqual(node_attrs['user_node_name'], node.name)
+                self.assertEqual(node_attrs['swift_zone'], node.uid)
+                network_roles = {
+                    'management': ip_by_net['management'],
+                    'admin/pxe': ip_by_net['fuelweb_admin'],
+                    'swift/api': ip_by_net['management'],
+                    'neutron/api': ip_by_net['management'],
+                    'sahara/api': ip_by_net['management'],
+                    'ceilometer/api': ip_by_net['management'],
+                    'cinder/api': ip_by_net['management'],
+                    'keystone/api': ip_by_net['management'],
+                    'glance/api': ip_by_net['management'],
+                    'heat/api': ip_by_net['management'],
+                    'nova/api': ip_by_net['management'],
+                    'murano/api': ip_by_net['management'],
+                    'horizon': ip_by_net['management'],
+                    'mgmt/api': ip_by_net['management'],
+                    'mgmt/memcache': ip_by_net['management'],
+                    'mgmt/database': ip_by_net['management'],
+                    'mgmt/messaging': ip_by_net['management'],
+                    'neutron/mesh': ip_by_net['management'],
+                    'mgmt/vip': ip_by_net['management'],
+                    'mgmt/corosync': ip_by_net['management'],
+                    'mongo/db': ip_by_net['management'],
+                    'nova/migration': ip_by_net['management'],
+                    'fw-admin': ip_by_net['fuelweb_admin']
+                }
+
+                if node.all_roles == set(['controller']):
+                    network_roles.update({
+                        'public/vip': ip_by_net['public'],
+                        'swift/public': ip_by_net['public'],
+                        'neutron/floating': None,
+                        'ceph/radosgw': ip_by_net['public'],
+                        'ex': ip_by_net['public'],
+                        'ceph/public': ip_by_net['public'],
+                        })
+                else:
+                    network_roles.update({
+                        'cinder/iscsi': ip_by_net['storage'],
+                        'swift/replication': ip_by_net['storage'],
+                        'ceph/replication': ip_by_net['storage'],
+                        'storage': ip_by_net['storage'],
+                        'neutron/private': None
+                    })
+                self.assertEqual(
+                    node_attrs['network_roles'],
+                    network_roles
+                )

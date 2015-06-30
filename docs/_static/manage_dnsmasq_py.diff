@@ -1,0 +1,10 @@
+--- /usr/lib/python2.6/site-packages/cobbler/modules/manage_dnsmasq.py	2012-06-18 00:22:25.000000000 +0000
++++ /usr/lib/python2.6/site-packages/cobbler/modules/manage_dnsmasq.py	2013-12-27 14:04:25.930601378 +0000
+@@ -170,6 +170,7 @@
+         # dnsmasq knows how to read this database of MACs -> IPs, so we'll keep it up to date
+         # every time we add a system.
+         # read 'man ethers' for format info
++        return
+         fh = open("/etc/ethers","w+")
+         for system in self.systems:
+             if not system.is_management_supported(cidr_ok=False):

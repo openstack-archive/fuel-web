@@ -13,8 +13,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-from mock import patch
-from nailgun.api.v1.handlers.removed import RemovedIn51Handler as Handler
+
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -70,9 +69,3 @@ class TestRemovedResources(BaseTestRemovedResources):
 class RemovedIn51HandlerMeta(BaseTestDataProviderMeta):
     handlers = ('/api/v1/test/res/',)
     methods = ('get', 'head', 'post', 'put', 'delete')
-
-
-@patch('nailgun.api.v1.urls.RemovedIn51Handler', Handler, create=True)
-@patch('nailgun.api.v1.urls.urls', ['/test/res/?$', 'RemovedIn51Handler'])
-class TestRemovedIn51Handler(BaseTestRemovedResources):
-    __metaclass__ = RemovedIn51HandlerMeta

@@ -44,7 +44,17 @@ structure includes the following attributes::
 * *label* is a setting title that is displayed on UI
 * *weight* defines the order in which this setting is displayed in its group.
   This attribute is desirable
-* *type* defines the type of UI control to use for the setting
+* *type* defines the type of UI control to use for the setting. The following types are supported:
+
+  * *text* - single line input
+  * *password* - password input
+  * *textarea* - multiline input
+  * *checkbox* - multiple-options selector
+  * *radio* - single-option selector
+  * *select* - drop-down list
+  * *hidden* - invisible input
+  * *file* - file contents input
+
 * *regex* section is applicable for settings of "text" type. "regex.source"
   is used when validating with a regular expression. "regex.error" contains
   a warning displayed near invalid field

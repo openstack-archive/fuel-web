@@ -54,7 +54,8 @@ KS_SPACES_SCHEMA = {
                                         'type': {'enum': ['pv']},
                                         'size': {'type': 'integer'},
                                         'lvm_meta_size': {'type': 'integer'},
-                                        'vg': {'type': 'string'}
+                                        'vg': {'type': 'string'},
+                                        'keep': {'type': 'boolean'}
                                     }
                                 },
                                 {

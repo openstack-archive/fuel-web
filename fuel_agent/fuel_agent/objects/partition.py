@@ -49,6 +49,11 @@ class Parted(object):
         self.partitions.append(partition)
         return partition
 
+    def partition_by_name(self, name):
+        found = filter(lambda x: x.name == name, self.partitions)
+        if found:
+            return found[0]
+
     @property
     def logical(self):
         return filter(lambda x: x.type == 'logical', self.partitions)
@@ -102,7 +107,7 @@ class Parted(object):
 
 class Partition(object):
     def __init__(self, name, count, device, begin, end, partition_type,
-                 flags=None, guid=None, configdrive=False):
+                 flags=None, guid=None, configdrive=False, keep=False):
         self.name = name
         self.count = count
         self.device = device
@@ -113,6 +118,7 @@ class Partition(object):
         self.flags = flags or []
         self.guid = guid
         self.configdrive = configdrive
+        self.keep = keep
 
     def set_flag(self, flag):
         if flag not in self.flags:
@@ -123,41 +129,54 @@ class Partition(object):
 
 
 class Pv(object):
-    def __init__(self, name, metadatasize=16, metadatacopies=2):
+    def __init__(self, name, metadatasize=16, metadatacopies=2, pv_keep=False):
         self.name = name
         self.metadatasize = metadatasize
         self.metadatacopies = metadatacopies
+        self.pv_keep = pv_keep
+
+    def set_pv_keep(self, pv_keep):
+        self.pv_keep = pv_keep
 
 
 class Vg(object):
-    def __init__(self, name, pvnames=None):
+    def __init__(self, name, pvnames=None, vg_keep=False):
         self.name = name
         self.pvnames = pvnames or []
+        self.vg_keep = vg_keep
 
     def add_pv(self, pvname):
         if pvname not in self.pvnames:
             self.pvnames.append(pvname)
 
+    def set_vg_keep(self, vg_keep):
+        self.vg_keep = vg_keep
+
 
 class Lv(object):
-    def __init__(self, name, vgname, size):
+    def __init__(self, name, vgname, size, lv_keep=False):
         self.name = name
         self.vgname = vgname
         self.size = size
+        self.lv_keep = lv_keep
 
     @property
     def device_name(self):
         return '/dev/mapper/%s-%s' % (self.vgname.replace('-', '--'),
                                       self.name.replace('-', '--'))
 
+    def set_lv_keep(self, lv_keep):
+        self.lv_keep = lv_keep
+
 
 class Md(object):
     def __init__(self, name, level,
-                 devices=None, spares=None):
+                 devices=None, spares=None, md_keep=False):
         self.name = name
         self.level = level
         self.devices = devices or []
         self.spares = spares or []
+        self.md_keep = md_keep
 
     def add_device(self, device):
         if device in self.devices or device in self.spares:
@@ -173,15 +192,22 @@ class Md(object):
                 'device %s is already attached' % device)
         self.spares.append(device)
 
+    def set_md_keep(self, md_keep):
+        self.md_keep = md_keep
+
 
 class Fs(object):
     def __init__(self, device, mount=None,
-                 fs_type=None, fs_options=None, fs_label=None):
+                 fs_type=None, fs_options=None, fs_label=None, fs_keep=False):
         self.device = device
         self.mount = mount
         self.type = fs_type or 'xfs'
         self.options = fs_options or ''
         self.label = fs_label or ''
+        self.fs_keep = fs_keep
+
+    def set_fs_keep(self, fs_keep):
+        self.fs_keep = fs_keep
 
 
 class PartitionScheme(object):
@@ -225,6 +251,12 @@ class PartitionScheme(object):
         md = Md(**mdkwargs)
         self.mds.append(md)
         return md
+
+    def partition_by_name(self, name):
+        for parted in self.parteds:
+            found = parted.partition_by_name(name)
+            if found:
+                return found
 
     def md_by_name(self, name):
         found = filter(lambda x: x.name == name, self.mds)

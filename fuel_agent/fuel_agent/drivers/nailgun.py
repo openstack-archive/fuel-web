@@ -260,6 +260,8 @@ class Nailgun(BaseDataDriver):
                         LOG.debug('No need to create partition on disk %s. '
                                   'Skipping.', disk['name'])
                         continue
+                    if volume.get('keep', False):
+                        prt.set_flag('keep')
 
                 if volume['type'] == 'partition':
                     if 'partition_guid' in volume:
@@ -365,6 +367,43 @@ class Nailgun(BaseDataDriver):
                             device=lv.device_name, mount=volume['mount'],
                             fs_type=volume.get('file_system', 'xfs'),
                             fs_label=self._getlabel(volume.get('disk_label')))
+
+        partition_scheme = self.carry_keep_flags(partition_scheme)
+
+        return partition_scheme
+
+    def carry_keep_flags(self, partition_scheme):
+        LOG.debug('Carry keep flags')
+
+        for vg in partition_scheme.vgs:
+            partition = partition_scheme.partition_by_name(vg.name)
+            if partition and 'keep' in partition.flags:
+                partition.remove_flag('keep')
+                LOG.debug('Set keep flag to vg=%s' % vg.name)
+                vg.set_vg_keep(True)
+
+        for lv in partition_scheme.lvs:
+            vg = partition_scheme.vg_by_name(lv.vgname)
+            if vg.vg_keep:
+                lv.set_lv_keep(True)
+
+        # Need loop over lv again to remove keep flag from vg
+        for lv in partition_scheme.lvs:
+            vg = partition_scheme.vg_by_name(lv.vgname)
+            if vg.vg_keep and lv.lv_keep:
+                vg.set_vg_keep(False)
+
+        for fs in partition_scheme.fss:
+            lv = partition_scheme.lv_by_device_name(fs.device)
+            if lv:
+                if lv.lv_keep:
+                    lv.set_lv_keep(False)
+                    fs.set_fs_keep(True)
+                continue
+            partition = partition_scheme.partition_by_name(fs.device)
+            if partition and 'keep' in partition.flags:
+                partition.remove_flag('keep')
+                fs.set_fs_flag(True)
 
         return partition_scheme
 

@@ -18,6 +18,7 @@
 
 from collections import defaultdict
 import six
+import yaml
 
 from nailgun import consts
 from nailgun.db import db
@@ -804,52 +805,244 @@ class NeutronNetworkDeploymentSerializer61(
             phys = [netgroup['dev']]
         return phys
 
-
 class NeutronNetworkDeploymentSerializer70(
     NeutronNetworkDeploymentSerializer61
 ):
+
+    @classmethod
+    def get_roles(cls, node):
+        roles = {}
+        roles['neutron/api'] = 'br-mgmt'
+        roles['neutron/mesh'] = 'br-mgmt'
+        roles['neutron/private'] = 'br-prv'
+
+        roles['mgmt/corosync'] = 'br-mgmt'
+        roles['mgmt/database'] = 'br-mgmt'
+        roles['mgmt/messaging'] = 'br-mgmt'
+        roles['mgmt/api'] = 'br-mgmt'
+        roles['mgmt/vip'] = 'br-mgmt'
+
+        roles['nova/api'] = 'br-mgmt'
+        roles['murano/api'] = 'br-mgmt'
+        roles['sahara/api'] = 'br-mgmt'
+        roles['ceilometer/api'] = 'br-mgmt'
+        roles['heat/api'] = 'br-mgmt'
+        roles['keystone/api'] = 'br-mgmt'
+        roles['horizon'] = 'br-mgmt'
+        roles['glance/api'] = 'br-mgmt'
+
+        if Node.should_have_public(node):
+            roles['neutron/floating'] = 'br-floating'
+            roles['public/vip'] = 'br-ex'
+            roles['ceph/radosgw'] = 'br-ex'
+            roles['swift/public'] = 'br-ex'
+
+        roles['admin/pxe'] = 'br-fw-admin'
+
+        roles['ceph/replication'] = 'br-storage'
+        roles['ceph/public'] = 'br-mgmt'
+
+        roles['swift/replication'] = 'br-storage'
+        roles['swift/api'] = 'br-mgmt'
+
+        roles['cinder/iscsi'] = 'br-storage'
+        roles['cinder/api'] = 'br-mgmt'
+
+        roles['mongo/db'] = 'br-mgmt'
+
+        return roles
+
+    @classmethod
+    def generate_driver_information(cls, node, network_scheme, nm):
+        # Add interfaces drivers data
+        for iface in node.nic_interfaces:
+            if iface.driver or iface.bus_info:
+                iface_dict = network_scheme['interfaces'][iface.name]
+                if 'vendor_specific' not in iface_dict:
+                    iface_dict['vendor_specific'] = {}
+                if iface.driver:
+                    iface_dict['vendor_specific']['driver'] = iface.driver
+                if iface.bus_info:
+                    iface_dict['vendor_specific']['bus_info'] = iface.bus_info
+
+        return network_scheme
 
     @classmethod
     def generate_network_scheme(cls, node):
         attrs = super(NeutronNetworkDeploymentSerializer70,
                       cls).generate_network_scheme(node)
 
-        attrs['roles']['neutron/api'] = 'br-mgmt'
-        attrs['roles']['neutron/mesh'] = 'br-mgmt'
-        attrs['roles']['neutron/private'] = 'br-prv'
 
-        attrs['roles']['mgmt/corosync'] = 'br-mgmt'
-        attrs['roles']['mgmt/database'] = 'br-mgmt'
-        attrs['roles']['mgmt/messaging'] = 'br-mgmt'
-        attrs['roles']['mgmt/api'] = 'br-mgmt'
-        attrs['roles']['mgmt/vip'] = 'br-mgmt'
+        attrs['roles'] = cls.get_roles(node)
+        return attrs
 
-        attrs['roles']['nova/api'] = 'br-mgmt'
-        attrs['roles']['murano/api'] = 'br-mgmt'
-        attrs['roles']['sahara/api'] = 'br-mgmt'
-        attrs['roles']['ceilometer/api'] = 'br-mgmt'
-        attrs['roles']['heat/api'] = 'br-mgmt'
-        attrs['roles']['keystone/api'] = 'br-mgmt'
-        attrs['roles']['horizon'] = 'br-mgmt'
-        attrs['roles']['glance/api'] = 'br-mgmt'
 
-        if Node.should_have_public(node):
-            attrs['roles']['neutron/floating'] = 'br-floating'
-            attrs['roles']['public/vip'] = 'br-ex'
-            attrs['roles']['ceph/radosgw'] = 'br-ex'
-            attrs['roles']['swift/public'] = 'br-ex'
+class NeutronNetworkTemplateSerializer70(
+    NeutronNetworkDeploymentSerializer70
+):
 
-        attrs['roles']['admin/pxe'] = 'br-fw-admin'
+    @classmethod
+    def get_template_for_node(cls, node):
+        template = yaml.load(node.cluster.network_config.configuration_template)
 
-        attrs['roles']['ceph/replication'] = 'br-storage'
-        attrs['roles']['ceph/public'] = 'br-mgmt'
+        def collect_roles_and_ep(scheme):
+            roles = {}
+            endpoints = {}
+            for v in scheme.values():
+                for endpoint in v['endpoints']:
+                    endpoints[endpoint] = {}
+                for role, ep in v['roles'].items():
+                    roles[role] = ep
 
-        attrs['roles']['swift/replication'] = 'br-storage'
-        attrs['roles']['swift/api'] = 'br-mgmt'
+            return (roles, endpoints)
 
-        attrs['roles']['cinder/iscsi'] = 'br-storage'
-        attrs['roles']['cinder/api'] = 'br-mgmt'
+        output = {}
+        for tmpl in template['adv_net_template']:
+            ng = tmpl.copy()
+            del ng['network_scheme']
 
-        attrs['roles']['mongo/db'] = 'br-mgmt'
+            ng['templates'] = {k: v for k,v in tmpl['network_scheme'].items()}
+            ng['roles'], ng['endpoints'] = collect_roles_and_ep(ng['templates'])
+
+            output[tmpl['node_group']] = ng
+
+        key = node.group_id
+        if key not in output:
+            key = 'default'
+
+        return output[key]
+
+    @classmethod
+    def get_all_roles(cls, node):
+        return cls.get_template_for_node(node)['roles']
+
+    @classmethod
+    def get_roles(cls, node):
+        roles = {}
+        template = cls.get_template_for_node(node)
+        mappings = template['network_assignments']
+        for role in node.pending_roles:
+            templates = template['templates_for_node_role'][role]
+            for t in templates:
+                for role, ep in template['templates'][t]['roles'].items():
+                    roles[role] = ep
+
+        return roles
+
+    @classmethod
+    def get_endpoints(cls, node):
+        return cls.get_template_for_node(node)['endpoints']
+
+    @classmethod
+    def get_netgroup_mapping_by_role(cls, node):
+        output = []
+        eps = {}
+        template = cls.get_template_for_node(node)
+        mappings = template['network_assignments']
+        for role in node.pending_roles:
+            templates = template['templates_for_node_role'][role]
+            for t in templates:
+                for ep in template['templates'][t]['endpoints']:
+                    eps[ep] = {}
+
+        for ep in eps:
+            if ep in mappings:
+                ng = mappings[ep]['subnet']
+                output.append((ng, ep))
+
+        return output
+
+    @classmethod
+    def get_netgroup_mapping(cls, node):
+        output = []
+        eps = cls.get_endpoints(node)
+        mappings = cls.get_template_for_node(node)['network_assignments']
+
+        for ep in eps:
+            if ep in mappings:
+                ng = mappings[ep]['subnet']
+                output.append((ng, ep))
+
+        return output
+
+    @classmethod
+    def generate_transformations(cls, node, *args):
+        """Overrides default transformation generation.
+        Transformations are taken verbatim from each role template's
+        transformations section.
+        """
+        txs = []
+        template = cls.get_template_for_node(node)
+        for role in node.pending_roles:
+            templates = template['templates_for_node_role'][role]
+            for t in templates:
+                txs.append(template['templates'][t]['transformations'])
+
+        return txs
+
+    @classmethod
+    def generate_network_scheme(cls, node):
+
+        roles = cls.get_roles(node)
+        # Create a data structure and fill it with static values.
+        attrs = {
+            'version': '1.1',
+            'provider': 'lnx',
+            'interfaces': {},  # It's a list of physical interfaces.
+            'endpoints': {},
+            'roles': roles,
+        }
+
+        netgroup_mapping = cls.get_netgroup_mapping_by_role(node)
+        is_public = 'public/vip' in roles
+        # This can go away when we allow separate public and floating nets
+        if is_public:
+            floating_ep = roles['neutron/floating']
+            attrs['endpoints'][floating_ep] = {'IP': 'none'}
+
+        nm = Node.get_network_manager(node)
+
+        if node.cluster.network_config.segmentation_type == 'gre':
+            attrs['endpoints']['br-mesh'] = {}
+
+        netgroups = {}
+        nets_by_ifaces = defaultdict(list)
+        for ngname, brname in netgroup_mapping:
+            # Here we get a dict with network description for this particular
+            # node with its assigned IPs and device names for each network.
+            netgroup = nm.get_node_network_by_netname(node, ngname)
+            ip_addr = netgroup.get('ip', 'none')
+            attrs['endpoints'][brname] = {'IP': ip_addr}
+
+            netgroups[ngname] = netgroup
+            nets_by_ifaces[netgroup['dev']].append({
+                'br_name': brname,
+                'vlan_id': netgroup['vlan']
+            })
+
+        # TODO(rmoe): fix gateway selection
+        if is_public:
+            attrs['endpoints']['br-ex']['gateway'] = \
+                netgroups['public']['gateway']
+        else:
+            attrs['endpoints']['br-fw-admin']['gateway'] = settings.MASTER_IP
+
+        # Fill up interfaces.
+        for iface in node.nic_interfaces:
+            if iface.bond:
+                attrs['interfaces'][iface.name] = {}
+            else:
+                attrs['interfaces'][iface.name] = \
+                    nm.get_iface_properties(iface)
+
+        attrs['transformations'] = cls.generate_transformations(
+            node)
+
+        if NodeGroupCollection.get_by_cluster_id(
+                node.cluster.id).count() > 1:
+            cls.generate_routes(node, attrs, nm, netgroup_mapping, netgroups)
+
+        attrs = cls.generate_driver_information(node, attrs, nm)
 
         return attrs
+

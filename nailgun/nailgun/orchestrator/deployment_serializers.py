@@ -46,6 +46,8 @@ from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer61
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer70
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkTemplateSerializer70
 from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer
 from nailgun.orchestrator.nova_serializers import \
@@ -472,7 +474,7 @@ class DeploymentHASerializer70(DeploymentHASerializer):
     # nova_network_serializer is just for compatibility with current BVTs
     # and other tests. It can be removed when tests are fixed.
     nova_network_serializer = NovaNetworkDeploymentSerializer61
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer70
+    neutron_network_serializer = NeutronNetworkTemplateSerializer70
 
 
 def get_serializer_for_cluster(cluster):

@@ -295,6 +295,59 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             if net['name'] == name:
                 return net
 
+    def test_network_template_validation(self):
+        net_template = """
+            adv_net_template:
+              default:
+                nic_mapping:
+                  default:
+                    if1: eth0
+                    if2: eth1
+                    if3: eth2
+                    if4: eth3
+                templates_for_node_role:
+                    controller:
+                      - common
+                network_assignments:
+                    storage:
+                      ep: br-storage
+                    private:
+                      ep: br-prv
+                    public:
+                      ep: br-ex
+                    management:
+                      ep: br-mgmt
+                    fuelweb_admin:
+                      ep: br-fw-admin
+                network_scheme:
+                  common:
+                    transformations:
+                      - action: add-br
+                        name: br-mgmt
+                      - action: add-port
+                        bridge: br-mgmt
+                        name: <% if1 %>
+                    endpoints:
+                      - br-mgmt
+                    roles:
+                      management: br-mgmt
+        """
+        cluster = self.env.clusters[0]
+        cluster.network_config.configuration_template = net_template
+
+        self.assertNotRaises(
+            errors.NetworktemplateMissingRoles,
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
+    def test_network_template_validation_env_lt_7_0(self):
+        del self.env.clusters[0].network_config.configuration_template
+
+        with patch('objects.Cluster.parse_template') as parse_mock:
+            CheckBeforeDeploymentTask._validate_network_template(self.task)
+
+            self.assertFalse(parse_mock.called)
+
     def test_check_public_networks(self):
         cluster = self.env.clusters[0]
         self.env.create_nodes(

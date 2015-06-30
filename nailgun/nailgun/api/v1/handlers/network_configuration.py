@@ -210,10 +210,11 @@ class TemplateNetworkConfigurationHandler(ProviderHandler):
 
     @content
     def POST(self, cluster_id):
-        """:http:
-            * 201 (object successfully created)
-            * 400 (invalid object data specified)
-            * 409 (object with such parameters already exists)
+        """:returns: HTTP code
+        :http: * 201 (object successfully created)
+               * 400 (invalid object data specified)
+               * 404 (cluster not found in db)
+               * 409 (object with such parameters already exists)
         """
         template = web.data()
 
@@ -222,9 +223,13 @@ class TemplateNetworkConfigurationHandler(ProviderHandler):
         raise self.http(200)
 
     def DELETE(self, cluster_id):
+        """:returns: HTTP code
+        :http: * 204 (object successfully deleted)
+               * 404 (cluster not found in db)
+        """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         objects.Cluster.set_network_template(cluster, None)
-        raise self.http(200)
+        raise self.http(204)
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):

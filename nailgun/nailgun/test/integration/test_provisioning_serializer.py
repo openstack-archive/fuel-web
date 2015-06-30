@@ -16,6 +16,7 @@
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.orchestrator import provisioning_serializers as ps
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
@@ -132,7 +133,7 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             })
 
             self.assertDictEqual(node['ks_meta']['pm_data'], {
-                'ks_spaces': node_db.attributes.volumes,
+                'ks_spaces': VolumeManagerExtension.get_volumes(node_db),
                 'kernel_params': kernal_params
             })
             # Check node interfaces section

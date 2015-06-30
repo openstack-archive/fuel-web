@@ -24,13 +24,19 @@ Create Date: 2015-06-24 12:08:04.838393
 revision = '1e50a4903910'
 down_revision = '37608259013'
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
+from oslo.serialization import jsonutils
+from sqlalchemy.sql import text
+
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.extensions.consts import extensions_migration_buffer_table_name
 
 
 def upgrade():
+    connection = op.get_bind()
+
     op.create_foreign_key(
         None, 'network_groups', 'nodegroups', ['group_id'], ['id'])
     op.create_foreign_key(
@@ -42,6 +48,7 @@ def upgrade():
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
     extend_plugin_model_upgrade()
+    migrate_volumes_into_extension(connection)
 
 
 def downgrade():
@@ -53,6 +60,11 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+
+    op.drop_table(extensions_migration_buffer_table_name)
+    op.add_column(
+        'node_attributes',
+        sa.Column('volumes', fields.JSON(), nullable=True))
 
 
 def extend_plugin_model_upgrade():
@@ -109,3 +121,36 @@ def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'roles_metadata')
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
+
+
+def migrate_volumes_into_extension(connection):
+    """Migrate data into intermidiate table, from
+    which specific extensions will be able to retrieve
+    the data. It allows us not to hardcode extension's
+    tables in core migrations.
+    """
+    # Create migration buffer table for extensions
+    op.create_table(
+        extensions_migration_buffer_table_name,
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('extension_name', sa.Text()),
+        sa.Column('data', fields.JSON()),
+        sa.PrimaryKeyConstraint('id'))
+
+    select_query = text("SELECT node_id, volumes FROM node_attributes")
+    insert_query = text(
+        "INSERT INTO {0} (extension_name, data)"
+        "VALUES (:extension_name, :data)".format(
+            extensions_migration_buffer_table_name))
+
+    # Fill in the buffer
+    for volume_attr in connection.execute(select_query):
+        node_id = volume_attr[0]
+        volumes = volume_attr[1]
+        connection.execute(
+            insert_query,
+            data=jsonutils.dumps({'node_id': node_id, 'volumes': volumes}),
+            extension_name='volume_manager')
+
+    # Drop the table after the data were migrated
+    op.drop_column('node_attributes', 'volumes')

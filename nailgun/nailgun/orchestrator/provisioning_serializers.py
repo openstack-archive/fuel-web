@@ -22,6 +22,7 @@ import netaddr
 import six
 
 from nailgun import consts
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
@@ -104,7 +105,7 @@ class ProvisioningSerializer(object):
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'pm_data': {
-                    'ks_spaces': node.attributes.volumes,
+                    'ks_spaces': VolumeManagerExtension.get_volumes(node),
                     'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
                 'puppet_auto_setup': 1,

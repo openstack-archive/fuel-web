@@ -284,21 +284,6 @@ class Node(NailgunObject):
             logger.warning(traceback.format_exc())
 
     @classmethod
-    def set_volumes(cls, instance, volumes_data):
-        """Set volumes for Node instance from JSON data.
-        Adds pending "disks" changes for Cluster which Node belongs to
-
-        :param instance: Node instance
-        :param volumes_data: JSON with new volumes data
-        :returns: None
-        """
-        db().query(models.NodeAttributes).filter_by(
-            node_id=instance.id
-        ).update({'volumes': volumes_data})
-        db().flush()
-        db().refresh(instance)
-
-    @classmethod
     def update_volumes(cls, instance):
         """Update volumes for Node instance.
         Adds pending "disks" changes for Cluster which Node belongs to
@@ -311,7 +296,16 @@ class Node(NailgunObject):
             attrs = cls.create_attributes(instance)
 
         try:
-            attrs.volumes = instance.volume_manager.gen_volumes_info()
+            # TODO(eli): update volumes method should be moved
+            # into an extension
+            # Should be done as a part of blueprint:
+            # https://blueprints.launchpad.net/fuel/+spec
+            #                                 /volume-manager-refactoring
+            from nailgun.extensions.volume_manager.extension \
+                import VolumeManagerExtension
+            VolumeManagerExtension.set_volumes(
+                instance,
+                instance.volume_manager.gen_volumes_info())
         except Exception as exc:
             msg = (
                 u"Failed to generate volumes "

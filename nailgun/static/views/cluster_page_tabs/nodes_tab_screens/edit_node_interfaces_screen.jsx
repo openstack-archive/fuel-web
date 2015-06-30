@@ -521,9 +521,6 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 slaveInterfaces = ifc.getSlaveInterfaces(),
                 assignedNetworks = ifc.get('assigned_networks'),
-                bondable = this.props.bondingAvailable && assignedNetworks && !assignedNetworks.find(function(interfaceNetwork) {
-                    return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
-                }),
                 connectionStatusClasses = function(slave) {
                     var slaveDown = slave.get('state') == 'down';
                     return {
@@ -593,7 +590,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                         <div className='networks-block row'>
                             <div className='col-xs-3'>
                                 <div className='ifc-checkbox pull-left'>
-                                    {!ifc.isBond() && bondable ?
+                                    {!ifc.isBond() && this.props.bondingAvailable ?
                                         <controls.Input
                                             type='checkbox'
                                             onChange={this.bondingChanged}

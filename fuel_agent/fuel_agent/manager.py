@@ -98,8 +98,25 @@ class Manager(object):
     def __init__(self, data):
         self.driver = utils.get_driver(CONF.data_driver)(data)
 
+    @property
+    def skip_partitioning(self):
+        for fs in self.driver.partition_scheme.fss:
+            if fs.fs_keep:
+                return True
+
+    def clean_partitions(self):
+        for fs in self.driver.partition_scheme.fss:
+            if not fs.fs_keep:
+                fu.make_fs(fs.type, fs.options, fs.label, fs.device)
+        # TODO(cleaning): Add clean partitions
+
     def do_partitioning(self):
         LOG.debug('--- Partitioning disks (do_partitioning) ---')
+        # If exists keep flag partitioning should be skipped
+        if self.skip_partitioning:
+            LOG.debug('Skip partitioning')
+            self.clean_partitions()
+            return
         # If disks are not wiped out at all, it is likely they contain lvm
         # and md metadata which will prevent re-creating a partition table
         # with 'device is busy' error.

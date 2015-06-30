@@ -120,8 +120,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                                 return true;
                             }
                             var vcenter = new vmWare.vmWareModels.VCenter({id: id});
-                            cluster.set({vcenter: vcenter});
-                            return vcenter.fetch();
+                            var vcenterDefaults = new vmWare.vmWareModels.VCenter({id: id});
+                            vcenterDefaults.loadDefaults = true;
+                            cluster.set({vcenter: vcenter, vcenter_defaults: vcenterDefaults});
+                            return $.when(vcenter.fetch(), vcenterDefaults.fetch());
                         })
                         .then(function() {
                             return tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();

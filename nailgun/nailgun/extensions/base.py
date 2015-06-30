@@ -41,3 +41,13 @@ class BaseExtension(object):
     #   }
     # ]
     urls = []
+
+    @abc.abstractproperty
+    def name(self):
+        """Uniq name of the extension."""
+
+    @abc.abstractproperty
+    def version(self):
+        """Version of the extension, follow semantic
+        versioning schema (http://semver.org/)
+        """

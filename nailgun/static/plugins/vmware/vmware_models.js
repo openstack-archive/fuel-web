@@ -41,8 +41,9 @@ function($, _, i18n, Backbone, models) {
         return regexCache[regexText].test(value);
     }
 
-    var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.restrictionMixin).extend({
+    var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixin).extend(models.restrictionMixin).extend({
         constructorName: 'BaseModel',
+        cacheFor: 60 * 1000,
         toJSON: function() {
             return _.omit(this.attributes, 'metadata');
         },
@@ -97,9 +98,10 @@ function($, _, i18n, Backbone, models) {
         }
     });
 
-    var BaseCollection = Backbone.Collection.extend(models.superMixin).extend({
+    var BaseCollection = Backbone.Collection.extend(models.superMixin).extend(models.cacheMixin).extend({
         constructorName: 'BaseCollection',
         model: BaseModel,
+        cacheFor: 60 * 1000,
         isValid: function() {
             this.validationError = this.validate();
             return this.validationError;

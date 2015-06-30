@@ -143,7 +143,7 @@ log_file=/var/log/fuel-agent.log
 
 
 #
-# Options defined in fuel_agent.utils.artifact_utils
+# Options defined in fuel_agent.utils.artifact
 #
 
 # Size of data chunk to operate with images (integer value)
@@ -151,7 +151,7 @@ log_file=/var/log/fuel-agent.log
 
 
 #
-# Options defined in fuel_agent.utils.build_utils
+# Options defined in fuel_agent.utils.build
 #
 
 # Maximum allowed loop devices count to use (integer value)

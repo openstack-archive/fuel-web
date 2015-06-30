@@ -22,13 +22,13 @@ from oslo.config import cfg
 
 from fuel_agent import errors
 from fuel_agent.openstack.common import log as logging
-from fuel_agent.utils import artifact_utils as au
-from fuel_agent.utils import build_utils as bu
-from fuel_agent.utils import fs_utils as fu
-from fuel_agent.utils import grub_utils as gu
-from fuel_agent.utils import lvm_utils as lu
-from fuel_agent.utils import md_utils as mu
-from fuel_agent.utils import partition_utils as pu
+from fuel_agent.utils import artifact as au
+from fuel_agent.utils import build as bu
+from fuel_agent.utils import fs as fu
+from fuel_agent.utils import grub as gu
+from fuel_agent.utils import lvm as lu
+from fuel_agent.utils import md as mu
+from fuel_agent.utils import partition as pu
 from fuel_agent.utils import utils
 
 opts = [

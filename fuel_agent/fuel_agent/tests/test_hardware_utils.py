@@ -15,7 +15,7 @@
 import mock
 from oslotest import base as test_base
 
-from fuel_agent.utils import hardware_utils as hu
+from fuel_agent.utils import hardware as hu
 from fuel_agent.utils import utils
 
 
@@ -280,7 +280,7 @@ supports-register-dump: yes
         }
         self.assertFalse(hu.is_disk('/dev/fake', bspec=bspec))
 
-    @mock.patch('fuel_agent.utils.hardware_utils.utils.execute')
+    @mock.patch('fuel_agent.utils.hardware.utils.execute')
     def test_get_block_devices_from_udev_db(self, mock_exec):
         mock_exec.return_value = ("""P: /devices/virtual/block/loop0
 N: loop0

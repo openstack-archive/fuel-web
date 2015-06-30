@@ -21,7 +21,7 @@ import yaml
 from fuel_agent.drivers import nailgun
 from fuel_agent import errors
 from fuel_agent.objects import image
-from fuel_agent.utils import hardware_utils as hu
+from fuel_agent.utils import hardware as hu
 from fuel_agent.utils import utils
 
 

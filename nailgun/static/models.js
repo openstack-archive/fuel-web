@@ -98,6 +98,7 @@ define([
             delete this.lastSyncTime;
         }
     };
+    models.cacheMixin = cacheMixin;
 
     var restrictionMixin = models.restrictionMixin = {
         expandRestrictions: function(restrictions, path) {

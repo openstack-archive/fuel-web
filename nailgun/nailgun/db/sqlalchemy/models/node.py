@@ -164,6 +164,10 @@ class Node(Base):
 
     @property
     def volume_manager(self):
+        # TODO(eli): will be moved into an extension.
+        # Should be done as a part of blueprint:
+        # https://blueprints.launchpad.net/fuel/+spec
+        #                                 /volume-manager-refactoring
         return VolumeManager(self)
 
     @property
@@ -299,7 +303,6 @@ class NodeAttributes(Base):
     __tablename__ = 'node_attributes'
     id = Column(Integer, primary_key=True)
     node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'))
-    volumes = Column(JSON, default=[])
     interfaces = Column(JSON, default={})
 
 

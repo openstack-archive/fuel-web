@@ -21,6 +21,7 @@ import string
 from oslo.serialization import jsonutils
 
 from nailgun.errors import errors
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager.manager import Disk
 from nailgun.extensions.volume_manager.manager import DisksFormatConvertor
 from nailgun.extensions.volume_manager.manager import only_disks
@@ -249,7 +250,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         vgs_before_update = filter(
             lambda volume: volume.get('type') == 'vg',
-            node_db.attributes.volumes)
+            VolumeManagerExtension.get_volumes(node_db))
 
         new_volume_size = 4200
         updated_disks_count = 0
@@ -263,7 +264,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         vgs_after_update = filter(
             lambda volume: volume.get('type') == 'vg',
-            node_db.attributes.volumes)
+            VolumeManagerExtension.get_volumes(node_db))
 
         for vg_before, vg_after in zip(vgs_before_update, vgs_after_update):
             size_volumes_before = sum([
@@ -289,7 +290,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         self.put(node.id, disks)
         partitions_after_update = filter(
             lambda volume: volume.get('type') == 'partition',
-            node.attributes.volumes)
+            VolumeManagerExtension.get_volumes(node))
 
         for partition_after in partitions_after_update:
             self.assertEqual(partition_after['size'], new_volume_size)
@@ -584,8 +585,9 @@ class TestVolumeManager(BaseIntegrationTest):
         self.assertEqual(disks_size_sum - reserved_size,
                          os_sum_size + glance_sum_size)
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
-            node.attributes.volumes)
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+            VolumeManagerExtension.get_volumes(node))
+        self.check_disk_size_equal_sum_of_all_volumes(
+            VolumeManagerExtension.get_volumes(node))
 
     def test_allocates_all_free_space_for_vm_for_compute_role(self):
         node = self.create_node('compute')
@@ -593,15 +595,17 @@ class TestVolumeManager(BaseIntegrationTest):
         self.all_free_space_except_os_for_volume(
             node.volume_manager.volumes, 'vm')
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
-            node.attributes.volumes)
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+            VolumeManagerExtension.get_volumes(node))
+        self.check_disk_size_equal_sum_of_all_volumes(
+            VolumeManagerExtension.get_volumes(node))
 
     def test_allocates_all_free_space_for_vm_for_cinder_role(self):
         node = self.create_node('cinder')
         self.should_contain_os_with_minimal_size(node.volume_manager)
         self.all_free_space_except_os_for_volume(
             node.volume_manager.volumes, 'cinder')
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+        self.check_disk_size_equal_sum_of_all_volumes(
+            VolumeManagerExtension.get_volumes(node))
 
     def test_allocates_space_single_disk_for_ceph_for_ceph_role(self):
         node = self.create_node('ceph-osd')
@@ -609,7 +613,8 @@ class TestVolumeManager(BaseIntegrationTest):
         self.should_contain_os_with_minimal_size(node.volume_manager)
         self.all_free_space_except_os_for_volume(
             node.volume_manager.volumes, 'ceph')
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+        self.check_disk_size_equal_sum_of_all_volumes(
+            VolumeManagerExtension.get_volumes(node))
 
     def test_allocates_full_disks_for_ceph_for_ceph_role(self):
         node = self.create_node('ceph-osd')
@@ -652,8 +657,9 @@ class TestVolumeManager(BaseIntegrationTest):
         self.should_allocates_same_size(
             node.volume_manager.volumes, ['image', 'ceph'])
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
-            node.attributes.volumes)
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+            VolumeManagerExtension.get_volumes(node))
+        self.check_disk_size_equal_sum_of_all_volumes(
+            VolumeManagerExtension.get_volumes(node))
 
     def test_multirole_controller_cinder_ceph(self):
         node = self.create_node('controller', 'cinder', 'ceph-osd')
@@ -661,8 +667,9 @@ class TestVolumeManager(BaseIntegrationTest):
         self.should_allocates_same_size(
             node.volume_manager.volumes, ['image', 'cinder', 'ceph'])
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
-            node.attributes.volumes)
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+            VolumeManagerExtension.get_volumes(node))
+        self.check_disk_size_equal_sum_of_all_volumes(
+            VolumeManagerExtension.get_volumes(node))
 
     def create_node_and_calculate_min_size(
             self, role, space_info, volumes_metadata):

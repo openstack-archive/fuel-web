@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
+from nailgun.extensions.consts import extensions_migration_buffer_table_name
 from nailgun.test import base
 
 
@@ -78,6 +79,27 @@ def setup_module(module):
     alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
 
 
+def prepare_nodes_with_attributes(meta):
+    for i in range(2):
+        db.execute(
+            meta.tables['nodes'].insert(),
+            [{'uuid': 'uuid{0}'.format(i),
+              'status': 'ready',
+              'mac': 'mac:{0}'.format(i),
+              'timestamp': '12-12-2015'}])
+
+    ids = [i[0] for i in db.execute(
+        sa.select([meta.tables['nodes'].c.id]))]
+
+    for idx in ids:
+        db.execute(
+            meta.tables['node_attributes'].insert(),
+            [{'node_id': idx,
+              'volumes': jsonutils.dumps([{'volume': idx}])}])
+
+    return ids
+
+
 def prepare():
     meta = base.reflect_db_metadata()
 
@@ -101,21 +123,12 @@ def prepare():
 
     db.execute(meta.tables['releases'].insert(), [_RELEASE])
 
-    db.execute(
-        meta.tables['nodes'].insert(),
-        [{
-            'node_id': 1,
-            'uuid': 'test_uuid',
-            'status': 'ready',
-            'mac': '00:00:00:00:00:01',
-            'timestamp': '2015-07-01 12:34:56.123',
-
-        }])
+    node_ids = prepare_nodes_with_attributes(meta)
 
     db.execute(
         meta.tables['node_bond_interfaces'].insert(),
         [{
-            'node_id': 1,
+            'node_id': node_ids[0],
             'name': 'test_bond_interface',
             'mode': 'active-backup',
             'bond_properties': jsonutils.dumps(
@@ -125,7 +138,7 @@ def prepare():
     db.execute(
         meta.tables['node_nic_interfaces'].insert(),
         [{
-            'node_id': 1,
+            'node_id': node_ids[0],
             'name': 'test_interface',
             'mac': '00:00:00:00:00:01',
             'max_speed': 200,
@@ -232,6 +245,7 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
 
 
 class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
+
     def test_public_ip_required(self):
         result = db.execute(
             sa.select([self.meta.tables['releases'].c.roles_metadata]))
@@ -322,3 +336,33 @@ class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
                       .c.offloading_modes]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestMigrateVolumesIntoExtension(base.BaseAlembicMigrationTest):
+
+    def test_data_are_moved_into_buffer_table(self):
+        # "volumes" column got deleted
+        columns = [t.name for t in self.meta.tables['node_attributes'].columns]
+        self.assertItemsEqual(columns, ['id', 'node_id', 'interfaces'])
+
+        # The data are stored in the buffer
+        table_name = extensions_migration_buffer_table_name
+        result = db.execute(
+            sa.select([
+                self.meta.tables[table_name].c.id,
+                self.meta.tables[table_name].c.extension_name,
+                self.meta.tables[table_name].c.data]))
+        records = list(result)
+
+        # Extension name is volume_manager
+        names = [r[1] for r in records]
+        self.assertEqual(
+            list(names),
+            ['volume_manager'] * 2)
+
+        # Check the data, each dict has node_id and volumes
+        volumes = [jsonutils.loads(r[2]) for r in records]
+        for volume in volumes:
+            self.assertEqual(
+                volume['volumes'],
+                [{'volume': volume['node_id']}])

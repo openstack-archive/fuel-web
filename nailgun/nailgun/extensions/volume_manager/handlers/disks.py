@@ -21,10 +21,9 @@ Handlers dealing with disks
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.node import NodeDisksValidator
+from nailgun.extensions.volume_manager.manager import DisksFormatConvertor
 
 from nailgun import objects
-
-from nailgun.extensions.volume_manager.manager import DisksFormatConvertor
 
 
 class NodeDisksHandler(BaseHandler):
@@ -39,8 +38,11 @@ class NodeDisksHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
+        from nailgun.extensions.volume_manager.extension \
+            import VolumeManagerExtension
+
         node = self.get_object_or_404(objects.Node, node_id)
-        node_volumes = node.attributes.volumes
+        node_volumes = VolumeManagerExtension.get_volumes(node)
         return DisksFormatConvertor.format_disks_to_simple(node_volumes)
 
     @content
@@ -50,6 +52,9 @@ class NodeDisksHandler(BaseHandler):
                * 400 (invalid disks data specified)
                * 404 (node not found in db)
         """
+        from nailgun.extensions.volume_manager.extension \
+            import VolumeManagerExtension
+
         node = self.get_object_or_404(objects.Node, node_id)
         data = self.checked_data(
             self.validator.validate,
@@ -64,10 +69,10 @@ class NodeDisksHandler(BaseHandler):
             )
 
         volumes_data = DisksFormatConvertor.format_disks_to_full(node, data)
-        objects.Node.set_volumes(node, volumes_data)
+        VolumeManagerExtension.set_volumes(node, volumes_data)
 
         return DisksFormatConvertor.format_disks_to_simple(
-            node.attributes.volumes)
+            VolumeManagerExtension.get_volumes(node))
 
 
 class NodeDefaultsDisksHandler(BaseHandler):

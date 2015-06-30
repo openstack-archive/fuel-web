@@ -83,6 +83,9 @@ class ProvisioningSerializer(object):
     @classmethod
     def serialize_node(cls, cluster_attrs, node):
         """Serialize a single node."""
+        from nailgun.extensions.volume_manager.extension \
+            import VolumeManagerExtension
+
         serialized_node = {
             'uid': node.uid,
             'power_address': node.ip,
@@ -104,7 +107,7 @@ class ProvisioningSerializer(object):
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'pm_data': {
-                    'ks_spaces': node.attributes.volumes,
+                    'ks_spaces': VolumeManagerExtension.get_volumes(node),
                     'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
                 'puppet_auto_setup': 1,

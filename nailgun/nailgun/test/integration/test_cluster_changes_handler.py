@@ -27,6 +27,7 @@ from nailgun import objects
 
 from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
@@ -216,8 +217,8 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts.update(common_attrs)
                 individual_atts['glance']['image_cache_max_size'] = str(
-                    manager.calc_glance_cache_size(node.attributes.volumes)
-                )
+                    manager.calc_glance_cache_size(
+                        VolumeManagerExtension.get_volumes(node)))
                 deployment_info.append(deepcopy(individual_atts))
 
         controller_nodes = filter(
@@ -281,7 +282,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
                     'pm_data': {
-                        'ks_spaces': n.attributes.volumes,
+                        'ks_spaces': VolumeManagerExtension.get_volumes(n),
                         'kernel_params': objects.Node.get_kernel_params(n),
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
@@ -664,8 +665,8 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts.update(common_attrs)
                 individual_atts['glance']['image_cache_max_size'] = str(
-                    manager.calc_glance_cache_size(node.attributes.volumes)
-                )
+                    manager.calc_glance_cache_size(
+                        VolumeManagerExtension.get_volumes(node)))
                 deployment_info.append(deepcopy(individual_atts))
 
         controller_nodes = filter(
@@ -729,7 +730,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
                     'pm_data': {
-                        'ks_spaces': n.attributes.volumes,
+                        'ks_spaces': VolumeManagerExtension.get_volumes(n),
                         'kernel_params': objects.Node.get_kernel_params(n),
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
@@ -1129,8 +1130,8 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts.update(common_attrs)
                 individual_atts['glance']['image_cache_max_size'] = str(
-                    manager.calc_glance_cache_size(node.attributes.volumes)
-                )
+                    manager.calc_glance_cache_size(
+                        VolumeManagerExtension.get_volumes(node)))
                 deployment_info.append(deepcopy(individual_atts))
 
         controller_nodes = filter(
@@ -1194,7 +1195,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
                     'pm_data': {
-                        'ks_spaces': n.attributes.volumes,
+                        'ks_spaces': VolumeManagerExtension.get_volumes(n),
                         'kernel_params': objects.Node.get_kernel_params(n),
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),

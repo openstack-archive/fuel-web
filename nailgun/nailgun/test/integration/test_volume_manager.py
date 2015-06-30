@@ -17,6 +17,7 @@
 from mock import patch
 from oslo.serialization import jsonutils
 
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
 from nailgun.test import base
 from nailgun.test.base import reverse
@@ -32,7 +33,7 @@ class TestVolumeManagerHelpers(base.BaseIntegrationTest):
             ]
         )
         self.node = self.env.nodes[0]
-        self.volumes = self.node.attributes.volumes
+        self.volumes = VolumeManagerExtension.get_volumes(self.node)
 
     def test_get_volumes_by_name(self):
         result = manager.get_logical_volumes_by_name(

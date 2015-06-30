@@ -98,6 +98,7 @@ def guess_grub1_datadir(chroot='', arch='x86_64'):
 
 def guess_kernel(chroot='', regexp=None):
     """Tries to guess kernel by regexp
+
     :param chroot: Path to chroot
     :param regexp: (String) Regular expression (must have python syntax).
     Default is r'^vmlinuz.*'
@@ -115,6 +116,7 @@ def guess_kernel(chroot='', regexp=None):
 
 def guess_initrd(chroot='', regexp=None):
     """Tries to guess initrd by regexp
+
     :param chroot: Path to chroot
     :param regexp: (String) Regular expression (must have python syntax).
     Default is r'^(initrd|initramfs).*'

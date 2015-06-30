@@ -153,8 +153,7 @@ def suppress_services_start(chroot):
 
 
 def clean_dirs(chroot, dirs, delete=False):
-    """Method is used to clean directories content
-    or remove directories themselfs.
+    """Removes dirs and recreates them
 
     :param chroot: Root directory where to look for subdirectories
     :param dirs: List of directories to clean/remove (Relative to chroot)
@@ -218,6 +217,7 @@ def do_post_inst(chroot):
 def stop_chrooted_processes(chroot, signal=sig.SIGTERM,
                             attempts=10, attempts_delay=2):
     """Sends signal to all processes, which are running inside chroot.
+
     It tries several times until all processes die. If at some point there
     are no running processes found, it returns True.
 
@@ -354,8 +354,9 @@ def strip_filename(name):
 
 
 def get_release_file(uri, suite, section):
-    """Download repo's Release file, parse it and returns an apt
-    preferences line for this repo.
+    """Download and parse repo's Release file
+
+    It and returns an apt preferences line for specified repo.
 
     :param repo: a repo as dict
     :returns: a string with apt preferences rules

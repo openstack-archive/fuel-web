@@ -106,7 +106,7 @@ def mdcreate(mdname, level, device, *args):
             'Error while creating md: at least one of devices is '
             'already in belongs to some md')
 
-    #FIXME: mdadm will ask user to continue creating if any device appears to
+    # FIXME: mdadm will ask user to continue creating if any device appears to
     #       be a part of raid array. Superblock zeroing helps to avoid that.
     map(mdclean, devices)
     utils.execute('mdadm', '--create', '--force', mdname, '-e0.90',
@@ -120,7 +120,7 @@ def mdremove(mdname):
     if mdname not in get_mdnames():
         raise errors.MDNotFoundError(
             'Error while removing md: md %s not found' % mdname)
-    #FIXME: The issue faced was quiet hard to reproduce and to figure out the
+    # FIXME: The issue faced was quiet hard to reproduce and to figure out the
     #       root cause. For unknown reason already removed md device is
     #       unexpectedly returning back after a while from time to time making
     #       new md device creation to fail.

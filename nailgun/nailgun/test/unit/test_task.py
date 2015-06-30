@@ -295,6 +295,89 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             if net['name'] == name:
                 return net
 
+    def test_network_template_validation(self):
+        net_template = """
+            adv_net_template:
+              default:
+                nic_mapping:
+                  default:
+                    if1: eth0
+                    if2: eth1
+                    if3: eth2
+                    if4: eth3
+                templates_for_node_role:
+                    controller:
+                      - common
+                network_assignments:
+                    storage:
+                      ep: br-storage
+                    private:
+                      ep: br-prv
+                    public:
+                      ep: br-ex
+                    management:
+                      ep: br-mgmt
+                    fuelweb_admin:
+                      ep: br-fw-admin
+                network_scheme:
+                  common:
+                    transformations:
+                      - action: add-br
+                        name: br-mgmt
+                      - action: add-port
+                        bridge: br-mgmt
+                        name: <% if1 %>
+                    endpoints:
+                      - br-mgmt
+                    roles:
+                      management: br-mgmt
+                      admin/pxe: br-mgmt
+                      swift/api: br-mgmt
+                      neutron/api: br-mgmt
+                      sahara/api: br-mgmt
+                      ceilometer/api: br-mgmt
+                      cinder/api: br-mgmt
+                      keystone/api: br-mgmt
+                      glance/api: br-mgmt
+                      heat/api: br-mgmt
+                      nova/api: br-mgmt
+                      murano/api: br-mgmt
+                      horizon: br-mgmt
+                      mgmt/api: br-mgmt
+                      mgmt/memcache: br-mgmt
+                      mgmt/database: br-mgmt
+                      mgmt/messaging: br-mgmt
+                      mgmt/corosync: br-mgmt
+                      mgmt/vip: br-mgmt
+                      public/vip: br-mgmt
+                      neutron/private: br-mgmt
+                      neutron/mesh: br-mgmt
+                      neutron/floating: br-mgmt
+                      swift/replication: br-mgmt
+                      ceph/public: br-mgmt
+                      ceph/radosgw: br-mgmt
+                      ceph/replication: br-mgmt
+                      cinder/iscsi: br-mgmt
+                      mongo/db: br-mgmt
+                      fw-admin: br-mgmt
+                      management: br-mgmt
+                      ex: br-mgmt
+                      storage: br-mgmt
+        """
+        cluster = self.env.clusters[0]
+        objects.Cluster.set_network_template(cluster, net_template)
+
+        self.assertNotRaises(
+            errors.NetworktemplateMissingRoles,
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
+        self.env.nodes[0].roles = ['compute']
+        self.assertRaises(
+            errors.NetworkTemplateMissingRoles,
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
     def test_check_public_networks(self):
         cluster = self.env.clusters[0]
         self.env.create_nodes(

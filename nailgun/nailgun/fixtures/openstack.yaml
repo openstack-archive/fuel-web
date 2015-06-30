@@ -1069,11 +1069,11 @@
                   -
                     name: "vsphere_cluster"
                     type: "text"
-                    label: "VSphere cluster"
-                    description: "VSphere cluster"
+                    label: "vSphere cluster"
+                    description: "vSphere cluster"
                     regex:
                       source: *non_empty_string
-                      error: "Invalid VSphere cluster"
+                      error: "Invalid vSphere cluster"
                   -
                     name: "service_name"
                     type: "text"

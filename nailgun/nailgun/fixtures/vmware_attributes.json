@@ -32,9 +32,9 @@
                         "fields": [
                             {
                                 "type": "text",
-                                "description": "VSphere Cluster",
+                                "description": "vSphere Cluster",
                                 "name": "vsphere_cluster",
-                                "label": "VSphere Cluster",
+                                "label": "vSphere Cluster",
                                 "regex": {
                                     "source": "\\S",
                                     "error": "Empty cluster"

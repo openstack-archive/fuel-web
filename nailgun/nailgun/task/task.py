@@ -803,6 +803,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_volumes(task)
         cls._check_public_network(task)
         cls._check_vmware_consistency(task)
+        cls._validate_network_template(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
             cls._check_mongo_nodes(task)
@@ -1011,6 +1012,43 @@ class CheckBeforeDeploymentTask(object):
 
             if errors_msg:
                 raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
+
+    @classmethod
+    def _validate_network_template(cls, task):
+        cluster = task.cluster
+
+        if not cluster.network_config.configuration_template:
+            return
+
+        template = (cluster.network_config.configuration_template
+                    ['adv_net_template']['default'])
+
+        template_roles = set(template['templates_for_node_role'])
+        cluster_roles = objects.Cluster.get_assigned_roles(cluster)
+
+        for node in cluster.nodes:
+            cluster_roles.update(node.all_roles)
+
+        missing_roles = cluster_roles - template_roles
+        if missing_roles:
+            error_roles = ', '.join(missing_roles)
+            error_msg = ('Roles {0} are missing from network configuration'
+                         ' template').format(error_roles)
+            raise errors.NetworkTemplateMissingRoles(error_msg)
+
+        network_roles = set()
+        for net_template in template['network_scheme'].values():
+            network_roles.update(net_template['roles'])
+
+        cluster_net_roles = \
+            set(m['id'] for m in cluster.release.network_roles_metadata)
+        missing_net_roles = set(cluster_net_roles) - network_roles
+
+        if missing_net_roles:
+            error_roles = ', '.join(missing_net_roles)
+            error_msg = ('Network roles {0} are missing from network '
+                         'configuration template').format(error_roles)
+            raise errors.NetworkTemplateMissingNetRoles(error_msg)
 
 
 class DumpTask(object):

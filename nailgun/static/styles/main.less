@@ -1444,6 +1444,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 // CLUSTERS PAGE
 
 .login-page {
+  @login-indent: 20px;
   .login-box {
     position: relative;
     background-color: @white;
@@ -1469,7 +1470,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
     @logo-height: 260px;
     background: url(../img/fuel-big-logo.png) repeat scroll 0 0 rgba(0, 0, 0, 0);
     position: relative;
-    top: -@logo-height + 20px;
+    top: -@logo-height + @login-indent;
     width: @logo-width;
     height: @logo-height;
     margin: 0 auto -(@logo-height - 40px) auto;
@@ -1483,6 +1484,8 @@ button, .btn:not(.btn-link) {.font-semibold;}
       label {
         font-size: @base-font-size + 1;
         padding-top: 6px;
+        padding-right: 0;
+        text-align: right;
         .glyphicon {
           color: @gray;
         }
@@ -1490,8 +1493,21 @@ button, .btn:not(.btn-link) {.font-semibold;}
     }
   }
 
+  .login-btn {
+    margin-top: @login-indent + 10;
+    padding-left: @login-indent;
+    padding-right: @login-indent;
+  }
+
+  .login-error {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
   .login-footer {
-    margin-top: 20px;
+    margin-top: @login-indent;
     font-size: 12px;
     color: @base-dark-color + 60%;
   }

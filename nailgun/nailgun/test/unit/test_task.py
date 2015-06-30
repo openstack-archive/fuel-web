@@ -16,6 +16,8 @@
 from mock import patch
 from oslo.serialization import jsonutils
 
+import yaml
+
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
@@ -294,6 +296,44 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         for net in nets['networks']:
             if net['name'] == name:
                 return net
+
+    def test_network_template_validation(self):
+        net_template = self.env.read_fixtures(['network_template'])[0]
+        cluster = self.env.clusters[0]
+        objects.Cluster.set_network_template(
+            cluster,
+            net_template
+        )
+
+        self.assertNotRaises(
+            errors.NetworktemplateMissingRoles,
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
+        self.env.nodes[0].roles = ['ceph-osd']
+        self.assertRaises(
+            errors.NetworkTemplateMissingRoles,
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
+        self.env.nodes[0].roles = ['controller']
+        del (net_template['adv_net_template']['default']
+             ['network_scheme']['common']['roles']['murano/api'])
+        objects.Cluster.set_network_template(
+            cluster,
+            net_template
+        )
+
+        self.assertRaises(
+            errors.NetworkTemplateMissingNetRoles,
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
+
+        self.assertRaisesRegexp(
+            errors.NetworkTemplateMissingNetRoles,
+            "Network roles murano/api are missing",
+            CheckBeforeDeploymentTask._validate_network_template,
+            self.task)
 
     def test_check_public_networks(self):
         cluster = self.env.clusters[0]

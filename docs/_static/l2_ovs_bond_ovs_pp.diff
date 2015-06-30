@@ -1,0 +1,24 @@
+diff --git /etc/puppet/modules/l23network/lib/puppet/provider/l2_ovs_bond/ovs.rb /etc/puppet/modules/l23network/lib/puppet/provider/l2_ovs_bond/ovs.rb
+--- /etc/puppet/modules/l23network/lib/puppet/provider/l2_ovs_bond/ovs.rb
++++ /etc/puppet/modules/l23network/lib/puppet/provider/l2_ovs_bond/ovs.rb
+@@ -1,7 +1,8 @@
+ Puppet::Type.type(:l2_ovs_bond).provide(:ovs) do
+   optional_commands(
+     :vsctl  => "/usr/bin/ovs-vsctl",
+-    :appctl => "/usr/bin/ovs-appctl"
++    :appctl => "/usr/bin/ovs-appctl",
++    :iproute => "/sbin/ip"
+   )
+ 
+   def _exists?(bond)
+@@ -40,6 +41,10 @@ def create
+       bond_create_cmd += bond_properties
+     end
+     begin
++      @resource[:interfaces].each do |iface|
++        ip_addr_flush_cmd = ['addr', 'flush', 'dev', iface]
++        iproute(ip_addr_flush_cmd)
++      end
+       vsctl(bond_create_cmd)
+     rescue Puppet::ExecutionFailure => error
+       notice(">>>#{bond_create_cmd.join(',')}<<<")

@@ -306,12 +306,14 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         meta1 = self.env.default_metadata()
         meta2 = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta1, [
-            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth0", "mac": "00:00:00:00:00:66",
+             "pxe_interface": True},
             {"name": "eth1", "mac": "00:00:00:00:00:77"},
             {"name": "eth2", "mac": "00:00:00:00:00:88"}]
         )
         self.env.set_interfaces_in_meta(meta2, [
-            {"name": "eth0", "mac": "00:00:00:00:11:66", "current_speed": 100},
+            {"name": "eth0", "mac": "00:00:00:00:11:66", "current_speed": 100,
+             "pxe_interface": True},
             {"name": "eth1", "mac": "00:00:00:00:22:77", "current_speed": 100},
             {"name": "eth2", "mac": "00:00:00:00:33:88", "current_speed": 100}]
         )

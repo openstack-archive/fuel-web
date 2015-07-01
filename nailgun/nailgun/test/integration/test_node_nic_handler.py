@@ -182,14 +182,16 @@ class TestHandlers(BaseIntegrationTest):
             'name': 'eth0',
             'mac': mac_eth0,
             'current_speed': 1,
-            'state': 'up'
+            'state': 'up',
+            'pxe_interface': True
         }
 
         eth1 = {
             'name': 'eth1',
             'mac': mac_eth1,
             'current_speed': 1,
-            'state': 'up'
+            'state': 'up',
+            'pxe_interface': False
         }
 
         # prepare metadata with our interfaces
@@ -281,7 +283,7 @@ class TestHandlers(BaseIntegrationTest):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
-             'state': 'up'}])
+             'state': 'up', 'pxe_interface': True}])
         self.env.create_node(api=True, meta=meta)
         new_meta = deepcopy(meta)
         node = self.env.nodes[0]
@@ -315,7 +317,7 @@ class TestHandlers(BaseIntegrationTest):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
-             'state': 'up'}])
+             'pxe_interface': True, 'state': 'up'}])
         node = self.env.create_node(api=True, meta=meta)
         node_data = {'mac': node['mac'], 'meta': meta}
         # check default interface_properties values
@@ -356,7 +358,7 @@ class TestHandlers(BaseIntegrationTest):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
-             'state': 'up'}])
+             'pxe_interface': True, 'state': 'up'}])
         node = self.env.create_node(api=True, meta=meta)
 
         meta['interfaces'].append({
@@ -491,7 +493,8 @@ class TestHandlers(BaseIntegrationTest):
 
         meta = self.env.default_metadata()
         meta["interfaces"] = [
-            {'name': 'eth0', 'mac': self.env.generate_random_mac()},
+            {'name': 'eth0', 'mac': self.env.generate_random_mac(),
+             'pxe_interface': True},
             {'name': 'eth1', 'mac': self.env.generate_random_mac()},
             {'name': 'eth2', 'mac': self.env.generate_random_mac()},
             {'name': 'eth3', 'mac': self.env.generate_random_mac()},

@@ -20,7 +20,7 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import Text
-from sqlalchemy import Unicode
+from sqlalchemy import UnicodeText
 
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
@@ -71,7 +71,7 @@ class Cluster(Base):
         nullable=False,
         server_default='{"view_mode": "standard", "grouping": "roles"}'
     )
-    name = Column(Unicode(50), unique=True, nullable=False)
+    name = Column(UnicodeText, unique=True, nullable=False)
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
     pending_release_id = Column(Integer, ForeignKey('releases.id'))
     nodes = relationship(

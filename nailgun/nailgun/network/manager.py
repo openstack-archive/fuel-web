@@ -401,6 +401,37 @@ class NetworkManager(object):
         return ips.all()
 
     @classmethod
+    def _get_pxe_iface_name(cls, node):
+        """Returns appropriate pxe iface' name
+
+        In case when node has network scheme configured
+        we can not rely on its pxe interface calculation
+        algorithm anymore, because admin ip is moving to
+        bridge and 'pxe' property will have 'False' value
+        for all interfaces. In this case we should rely on
+        db where actual pxe interface was saved during the
+        bootstrap stage.
+        In case when node for some reason has no pxe interface
+        in db we should get pxe interface using appropriate
+        function `get_admin_physical_iface`.
+        """
+        db_interfaces = node.nic_interfaces
+        pxe = next((
+            i for i in node.meta['interfaces'] if i.get('pxe') or
+                i.get('mac') == node.mac),
+            None)
+        if pxe:
+            return pxe.get('name')
+        pxe_db = next((i for i in db_interfaces if i.pxe), None)
+        if pxe_db:
+            return pxe_db.name
+        if db_interfaces:
+            return objects.Node.get_admin_physical_iface(node).name
+        logger.warning(u'Cannot find pxe interface for node "%s"',
+                       node.full_name)
+        return None
+
+    @classmethod
     def clear_assigned_ips(cls, node):
         db().query(IPAddr).filter_by(node=node.id).delete()
 
@@ -694,8 +725,11 @@ class NetworkManager(object):
         except errors.InvalidInterfacesInfo as e:
             logger.debug("Cannot update interfaces: %s", e.message)
             return
-
+        pxe_iface_name = cls._get_pxe_iface_name(node)
         for interface in node.meta["interfaces"]:
+            # set 'pxe' property for appropriate iface
+            if interface['name'] == pxe_iface_name:
+                interface['pxe'] = True
             # try to get interface by mac address
             interface_db = next((
                 n for n in node.nic_interfaces
@@ -794,6 +828,7 @@ class NetworkManager(object):
         interface.state = interface_attrs.get('state')
         interface.driver = interface_attrs.get('driver')
         interface.bus_info = interface_attrs.get('bus_info')
+        interface.pxe = interface_attrs.get('pxe', False)
         if interface_attrs.get('interface_properties'):
             interface.interface_properties = \
                 interface_attrs['interface_properties']

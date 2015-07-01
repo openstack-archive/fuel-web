@@ -335,9 +335,10 @@ class EnvironmentManager(object):
             if_list = [
                 {
                     "name": "eth{0}".format(i),
-                    "mac": self.generate_random_mac()
+                    "mac": self.generate_random_mac(),
                 }
                 for i in range(if_count)]
+            if_list[0]['pxe'] = True
             self.set_interfaces_in_meta(meta, if_list)
             nodes.append(self.create_node(meta=meta, **kwargs))
         return nodes

@@ -286,6 +286,15 @@ class NetAssignmentValidator(BasicValidator):
                         " in DB".format(node['id'], iface['id']),
                         log_message=True
                     )
+                if not db_iface.pxe_interface:
+                    iface_net = [n['name'] for n in iface['assigned_networks']]
+                    if consts.NETWORKS.fuelweb_admin in iface_net:
+                        raise errors.InvalidData(
+                            "Node '{0}': admin network can not be assigned to"
+                            " non-pxe interface {1}".format(node['id'],
+                                                            iface['id']),
+                            log_message=True
+                        )
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 for slave in iface['slaves']:
                     iface_id = [i.id for i in db_interfaces

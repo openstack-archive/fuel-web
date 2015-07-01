@@ -326,6 +326,7 @@ class NodeNICInterface(Base):
     parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
     driver = Column(Text)
     bus_info = Column(Text)
+    pxe_interface = Column(Boolean, default=False, nullable=False)
 
     @property
     def type(self):

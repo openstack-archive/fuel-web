@@ -101,6 +101,87 @@ def prepare():
 
     db.execute(meta.tables['releases'].insert(), [_RELEASE])
 
+    db.execute(
+        meta.tables['nodes'].insert(),
+        [{
+            'id': 1,
+            'uuid': 'test_uuid',
+            'status': 'ready',
+            'mac': '00:00:00:00:00:01',
+            'timestamp': '2015-07-01 12:34:56.123',
+
+        }])
+
+    db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [
+            {
+                'id': 1,
+                'node_id': 1,
+                'name': 'test_interface',
+                'mac': '00:00:00:00:00:01',
+                'max_speed': 200,
+                'current_speed': 100,
+                'ip_addr': '10.20.0.2',
+                'netmask': '255.255.255.0',
+                'state': 'test_state',
+                'interface_properties': jsonutils.dumps(
+                    {'test_property': 'test_value'}),
+                'driver': 'test_driver',
+                'bus_info': 'some_test_info'
+            },
+            {
+                'id': 2,
+                'node_id': 1,
+                'name': 'test_interface_2',
+                'mac': '00:00:00:00:00:02',
+                'max_speed': 200,
+                'current_speed': 100,
+                'ip_addr': '10.30.0.2',
+                'netmask': '255.255.255.0',
+                'state': 'test_state',
+                'interface_properties': jsonutils.dumps(
+                    {'test_property': 'test_value'}),
+                'driver': 'test_driver',
+                'bus_info': 'some_test_info'
+            }
+        ]
+    )
+
+    db.execute(
+        meta.tables['network_groups'].insert(),
+        [
+            {
+                'id': 1,
+                'name': 'fuelweb_admin',
+                'vlan_start': None,
+                'cidr': '10.20.0.0/24',
+                'gateway': '10.20.0.200'
+            },
+            {
+                'id': 2,
+                'name': 'public',
+                'vlan_start': None,
+                'cidr': '10.30.0.0/24',
+                'gateway': '10.30.0.200'
+            }
+        ]
+    )
+
+    db.execute(
+        meta.tables['net_nic_assignments'].insert(),
+        [
+            {
+                'network_id': 1,
+                'interface_id': 1
+            },
+            {
+                'network_id': 2,
+                'interface_id': 2
+            }
+        ]
+    )
+
     db.commit()
 
 
@@ -202,3 +283,50 @@ class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
                 self.assertTrue(role_info['public_ip_required'])
             else:
                 self.assertFalse(role_info.get('public_ip_required'))
+
+
+class TestInterfacesPxePropertyMigration(base.BaseAlembicMigrationTest):
+
+    def test_old_fields_exists(self):
+        # check node_nic_interfaces fields
+        result = db.execute(
+            sa.select([self.meta.tables['network_groups'].c.name]))
+        self.assertEqual(
+            result.fetchone()[0], 'fuelweb_admin')
+
+        result = db.execute(
+            sa.select([self.meta.tables['network_groups'].c.vlan_start]))
+        self.assertEqual(
+            result.fetchone()[0], None)
+
+        result = db.execute(
+            sa.select([self.meta.tables['network_groups'].c.cidr]))
+        self.assertEqual(
+            result.fetchone()[0], '10.20.0.0/24')
+
+        result = db.execute(
+            sa.select([self.meta.tables['network_groups'].c.gateway]))
+        self.assertEqual(
+            result.fetchone()[0], '10.20.0.200')
+
+        nic_assign_table = self.meta.tables['net_nic_assignments']
+        result = db.execute(
+            sa.select([nic_assign_table.c.network_id]))
+        self.assertEqual(
+            result.fetchone()[0], 1)
+
+        result = db.execute(
+            sa.select([nic_assign_table.c.interface_id]))
+        self.assertEqual(
+            result.fetchone()[0], 1)
+
+    def test_new_field_exists_and_filled(self):
+        nic_table = self.meta.tables['node_nic_interfaces']
+        result = db.execute(
+            sa.select([nic_table.c.pxe]).where(nic_table.c.id == 1))
+        # check 'pxe' property is true for admin interfaces
+        self.assertEqual(result.fetchone()[0], True)
+        result = db.execute(
+            sa.select([nic_table.c.pxe]).where(nic_table.c.id != 1))
+        # check 'pxe' property is false for other interfaces
+        map(lambda pxe: self.assertEqual(pxe, False), result.fetchall()[0])

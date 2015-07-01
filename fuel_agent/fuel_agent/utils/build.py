@@ -74,6 +74,16 @@ bu_opts = [
         default='force_ipv4',
         help='File where to store apt setting for forcing IPv4 usage'
     ),
+    cfg.BoolOpt(
+        'http_pipelining',
+        default=False,
+        help='Flag to toggle on/off usage of HTTP pipelining for apt'
+    ),
+    cfg.StrOpt(
+        'http_pipelining_file',
+        default='http_pipelining',
+        help='File where to store apt setting for HTTP pipelining'
+    ),
 ]
 
 CONF = cfg.CONF
@@ -179,11 +189,13 @@ def remove_files(chroot, files):
 
 
 def clean_apt_settings(chroot, allow_unsigned_file=CONF.allow_unsigned_file,
-                       force_ipv4_file=CONF.force_ipv4_file):
+                       force_ipv4_file=CONF.force_ipv4_file,
+                       http_pipelining_file=CONF.http_pipelining_file):
     """Cleans apt settings such as package sources and repo pinning."""
     files = [DEFAULT_APT_PATH['sources_file'],
              DEFAULT_APT_PATH['preferences_file'],
              os.path.join(DEFAULT_APT_PATH['conf_dir'], force_ipv4_file),
+             os.path.join(DEFAULT_APT_PATH['conf_dir'], http_pipelining_file),
              os.path.join(DEFAULT_APT_PATH['conf_dir'], allow_unsigned_file)]
     remove_files(chroot, files)
     dirs = [DEFAULT_APT_PATH['preferences_dir'],
@@ -473,7 +485,9 @@ def add_apt_preference(name, priority, suite, section, chroot, uri):
 
 
 def pre_apt_get(chroot, allow_unsigned_file=CONF.allow_unsigned_file,
-                force_ipv4_file=CONF.force_ipv4_file):
+                force_ipv4_file=CONF.force_ipv4_file,
+                http_pipelining=CONF.http_pipelining,
+                http_pipelining_file=CONF.http_pipelining_file):
     """It must be called prior run_apt_get."""
     clean_apt_settings(chroot)
     # NOTE(agordeev): allow to install packages without gpg digest
@@ -483,6 +497,12 @@ def pre_apt_get(chroot, allow_unsigned_file=CONF.allow_unsigned_file,
     with open(os.path.join(chroot, DEFAULT_APT_PATH['conf_dir'],
                            force_ipv4_file), 'w') as f:
         f.write('Acquire::ForceIPv4 "true";\n')
+    # NOTE(agordeev): HTTP pipelining is turned on by default
+    if not http_pipelining:
+        with open(os.path.join(chroot, DEFAULT_APT_PATH['conf_dir'],
+                               http_pipelining_file), 'w') as f:
+            f.write('Acquire::http::Pipeline-Depth "0";\n')
+            f.write('Acquire::http::No-Cache "true";\n')
 
 
 def containerize(filename, container, chunk_size=CONF.data_chunk_size):

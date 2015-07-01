@@ -50,6 +50,18 @@ class TestMakeTask(base.BaseTestCase):
              'type': 'upload_file',
              'uids': [1, 2, 3]})
 
+    def test_make_ubuntu_apt_disable_http_pipelining(self):
+        result = tasks_templates.make_ubuntu_apt_disable_http_pipelining(
+            [1, 2, 3])
+        self.assertEqual(
+            result,
+            {'parameters': {
+                'data': 'Acquire::http::Pipeline-Depth "0";\n'
+                        'Acquire::http::No-Cache "true";\n',
+                'path': '/etc/apt/apt.conf.d/06disable-http-pipelining'},
+             'type': 'upload_file',
+             'uids': [1, 2, 3]})
+
     def test_make_ubuntu_apt_disable_ipv6(self):
         result = tasks_templates.make_ubuntu_apt_disable_ipv6([1, 2, 3])
         self.assertEqual(

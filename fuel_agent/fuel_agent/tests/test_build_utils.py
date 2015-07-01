@@ -158,6 +158,7 @@ class BuildUtilsTestCase(testtools.TestCase):
         mock_files.assert_called_once_with(
             'chroot', ['etc/apt/sources.list', 'etc/apt/preferences',
                        'etc/apt/apt.conf.d/%s' % 'force_ipv4',
+                       'etc/apt/apt.conf.d/%s' % 'http_pipelining',
                        'etc/apt/apt.conf.d/%s' % 'unsigned'])
 
     @mock.patch('fuel_agent.utils.build.open',
@@ -455,7 +456,7 @@ class BuildUtilsTestCase(testtools.TestCase):
     def test_pre_apt_get(self, mock_path, mock_clean):
         with mock.patch('six.moves.builtins.open', create=True) as mock_open:
             file_handle_mock = mock_open.return_value.__enter__.return_value
-            bu.pre_apt_get('chroot')
+            bu.pre_apt_get('chroot', http_pipelining=True)
             expected_calls = [
                 mock.call('APT::Get::AllowUnauthenticated 1;\n'),
                 mock.call('Acquire::ForceIPv4 "true";\n')]
@@ -467,6 +468,29 @@ class BuildUtilsTestCase(testtools.TestCase):
                       CONF.allow_unsigned_file),
             mock.call('chroot', 'etc/apt/apt.conf.d',
                       CONF.force_ipv4_file)]
+        self.assertEqual(expected_join_calls, mock_path.join.call_args_list)
+
+    @mock.patch.object(bu, 'clean_apt_settings')
+    @mock.patch.object(os, 'path')
+    def test_pre_apt_get_no_http_pipelining(self, mock_path, mock_clean):
+        with mock.patch('six.moves.builtins.open', create=True) as mock_open:
+            file_handle_mock = mock_open.return_value.__enter__.return_value
+            bu.pre_apt_get('chroot')
+            expected_calls = [
+                mock.call('APT::Get::AllowUnauthenticated 1;\n'),
+                mock.call('Acquire::ForceIPv4 "true";\n'),
+                mock.call('Acquire::http::Pipeline-Depth "0";\n'),
+                mock.call('Acquire::http::No-Cache "true";\n')]
+            self.assertEqual(expected_calls,
+                             file_handle_mock.write.call_args_list)
+        mock_clean.assert_called_once_with('chroot')
+        expected_join_calls = [
+            mock.call('chroot', 'etc/apt/apt.conf.d',
+                      CONF.allow_unsigned_file),
+            mock.call('chroot', 'etc/apt/apt.conf.d',
+                      CONF.force_ipv4_file),
+            mock.call('chroot', 'etc/apt/apt.conf.d',
+                      CONF.http_pipelining_file)]
         self.assertEqual(expected_join_calls, mock_path.join.call_args_list)
 
     @mock.patch('gzip.open')

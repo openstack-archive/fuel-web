@@ -791,6 +791,7 @@ class NetworkManager(object):
         interface.state = interface_attrs.get('state')
         interface.driver = interface_attrs.get('driver')
         interface.bus_info = interface_attrs.get('bus_info')
+        interface.pxe = interface_attrs.get('pxe', False)
         if interface_attrs.get('interface_properties'):
             interface.interface_properties = \
                 interface_attrs['interface_properties']

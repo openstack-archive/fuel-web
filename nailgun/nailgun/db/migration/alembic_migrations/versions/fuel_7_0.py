@@ -54,9 +54,11 @@ def upgrade():
     upgrade_node_roles_metadata()
     node_roles_as_plugin_upgrade()
     migrate_volumes_into_extension_upgrade()
+    extend_nic_model_upgrade()
 
 
 def downgrade():
+    extend_nic_model_downgrade()
     migrate_volumes_into_extension_downgrade()
     node_roles_as_plugin_downgrade()
     extend_plugin_model_downgrade()
@@ -350,3 +352,29 @@ def node_roles_as_plugin_downgrade():
     op.drop_column('nodes', 'primary_roles')
     op.drop_column('nodes', 'pending_roles')
     op.drop_column('nodes', 'roles')
+
+
+def extend_nic_model_upgrade():
+    connection = op.get_bind()
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('pxe',
+                  sa.Boolean,
+                  nullable=False,
+                  server_default='false'))
+    select_query = sa.sql.text(
+        "SELECT ni.id from node_nic_interfaces ni "
+        "join net_nic_assignments na on ni.id=na.interface_id "
+        "join network_groups ng on ng.id=na.network_id "
+        "WHERE ng.name = 'fuelweb_admin'")
+    update_query = sa.sql.text(
+        "UPDATE node_nic_interfaces SET pxe = true "
+        "WHERE id = :id")
+
+    # change 'pxe' property to 'true' value for admin ifaces
+    for iface_id in connection.execute(select_query):
+        connection.execute(update_query, id=iface_id[0])
+
+
+def extend_nic_model_downgrade():
+    op.drop_column('node_nic_interfaces', 'pxe')

@@ -175,7 +175,8 @@ casper.createNode = function(options) {
               "mac": "C8:0A:A9:A6:FF:28",
               "name": "eth1",
               "max_speed": 1000,
-              "current_speed": 1000
+              "current_speed": 1000,
+              "pxe": true
             },
             {
               "mac": "D4:56:C3:88:99:DF",

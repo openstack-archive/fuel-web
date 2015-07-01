@@ -313,12 +313,14 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
 ALL_ROLES = '*'
 MASTER_ROLE = 'master'
 
-# version of fuel when we added granular deploy support
+# version of Fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'
-# version of fuel when we added remote repos
+# version of Fuel when we added remote repos
 FUEL_REMOTE_REPOS = '6.1'
-# version of fuel when external mongo was added
+# version of Fuel when external mongo was added
 FUEL_EXTERNAL_MONGO = '6.1'
+# version of Fuel when Nova is not supported anymore. Neutron is left only.
+FUEL_NEUTRON_ONLY = '7.0'
 
 OSWL_RESOURCE_TYPES = Enum(
     'vm',

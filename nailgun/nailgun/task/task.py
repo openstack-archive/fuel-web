@@ -505,8 +505,8 @@ class StopDeploymentTask(object):
                         'uid': n.uid,
                         'roles': n.roles,
                         'slave_name': objects.Node.make_slave_name(n),
-                        'admin_ip': objects.Node.get_network_manager(
-                            n
+                        'admin_ip': objects.Cluster.get_network_manager(
+                            n.cluster
                         ).get_admin_ip_for_node(n.id)
                     } for n in nodes_to_stop
                 ],

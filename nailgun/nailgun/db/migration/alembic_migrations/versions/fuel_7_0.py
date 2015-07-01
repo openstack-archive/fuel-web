@@ -49,6 +49,7 @@ def upgrade():
     op.create_unique_constraint(
         'oswl_stats_cluster_id_created_date_resource_type_unique_key',
         'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
+    op.alter_column('clusters', 'name', type_=sa.VARCHAR())
 
     extend_ip_addrs_model_upgrade()
     extend_node_model_upgrade()
@@ -65,6 +66,8 @@ def downgrade():
     extend_node_model_downgrade()
     extend_ip_addrs_model_downgrade()
 
+    op.execute('UPDATE clusters SET name=LEFT(name, 50)')
+    op.alter_column('clusters', 'name', type_=sa.VARCHAR(50))
     op.drop_constraint(
         'oswl_stats_cluster_id_created_date_resource_type_unique_key',
         'oswl_stats', type_='unique')

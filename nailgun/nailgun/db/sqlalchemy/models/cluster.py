@@ -71,7 +71,7 @@ class Cluster(Base):
         nullable=False,
         default=consts.CLUSTER_GROUPING.roles
     )
-    name = Column(Unicode(50), unique=True, nullable=False)
+    name = Column(Unicode, unique=True, nullable=False)
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
     pending_release_id = Column(Integer, ForeignKey('releases.id'))
     nodes = relationship(

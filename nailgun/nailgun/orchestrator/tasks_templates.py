@@ -93,6 +93,13 @@ def make_ubuntu_apt_disable_ipv6(uids):
     return make_upload_task(uids, config_content, config_path)
 
 
+def make_ubuntu_apt_disable_http_pipelining(uids):
+    config_content = 'Acquire::http::Pipeline-Depth "0";\n'\
+                     'Acquire::http::No-Cache "true";\n'
+    config_path = '/etc/apt/apt.conf.d/06disable-http-pipelining'
+    return make_upload_task(uids, config_content, config_path)
+
+
 def make_ubuntu_unauth_repos_task(uids):
     # NOTE(kozhukalov): This task is to allow installing packages
     # from unauthenticated repositories. Apt has special

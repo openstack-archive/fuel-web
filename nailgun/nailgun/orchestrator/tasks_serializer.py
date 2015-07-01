@@ -179,6 +179,7 @@ class UploadMOSRepo(GenericRolesHook):
                     'timeout': 10
                 }})
             yield templates.make_ubuntu_apt_disable_ipv6(uids)
+            yield templates.make_ubuntu_apt_disable_http_pipelining(uids)
             # NOTE(kozhukalov):
             # This task is to allow installing packages from
             # unauthenticated repositories.

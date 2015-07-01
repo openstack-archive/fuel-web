@@ -31,7 +31,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         super(TestNodeNICsBonding, self).setUp()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
-            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth0", "mac": "00:00:00:00:00:66",
+             "pxe_interface": True},
             {"name": "eth1", "mac": "00:00:00:00:00:77"},
             {"name": "eth2", "mac": "00:00:00:00:00:88"}])
         self.env.create(
@@ -528,3 +529,25 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         resp = self.put_single()
         self.assertEqual(resp.status_code, 200)
+
+    def test_nics_bond_create_failed_admin_net_w_o_pxe_iface(self):
+        mode = BOND_MODES.balance_slb
+        bond_nets = [self.admin_nic["assigned_networks"].pop(0)] + \
+            self.other_nic["assigned_networks"]
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": mode,
+            "slaves": [
+                {"name": self.empty_nic["name"]},
+                {"name": self.other_nic["name"]}],
+            "assigned_networks": bond_nets
+        })
+
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}': interface 'ovs-bond0' belongs to admin network "
+            "and doesn't contain node's pxe interface 'eth0'".format(
+                self.env.nodes[0]["id"])
+        )

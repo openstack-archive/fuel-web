@@ -358,6 +358,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
                         {metadata.toggleable &&
                             <controls.Input
                                 type='checkbox'
+                                name='metadata'
                                 defaultChecked={metadata.enabled}
                                 disabled={isGroupDisabled}
                                 tooltipText={processedGroupRestrictions.message}

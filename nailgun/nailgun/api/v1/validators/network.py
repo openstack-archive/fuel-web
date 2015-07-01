@@ -22,6 +22,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
+import six
 
 
 class NetworkConfigurationValidator(BasicValidator):
@@ -274,22 +275,43 @@ class NetAssignmentValidator(BasicValidator):
         network_group_ids = net_manager.get_node_networkgroups_ids(db_node)
 
         bonded_eth_ids = set()
+        pxe_iface_name = net_manager._get_pxe_iface_name(db_node)
+        if not pxe_iface_name:
+            raise errors.InvalidData(
+                "Node '{0}': Interfaces configuration can't be changed if"
+                "there is no pxe interface in DB".format(node['id']),
+                log_message=True
+            )
+
         for iface in interfaces:
+            iface_nets = [n.get('name')
+                          for n in iface.get('assigned_networks')]
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
-                db_iface = filter(
+                db_iface = next(six.moves.filter(
                     lambda i: i.id == iface['id'],
                     db_interfaces
-                )
+                ), None)
                 if not db_iface:
                     raise errors.InvalidData(
                         "Node '{0}': there is no interface with ID '{1}'"
                         " in DB".format(node['id'], iface['id']),
                         log_message=True
                     )
+                if not db_iface.pxe:
+                    if consts.NETWORKS.fuelweb_admin in iface_nets:
+                        raise errors.InvalidData(
+                            "Node '{0}': admin network can not be assigned to"
+                            " non-pxe interface {1}".format(node['id'],
+                                                            iface['name']),
+                            log_message=True
+                        )
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
+                pxe_iface_present = False
                 for slave in iface['slaves']:
                     iface_id = [i.id for i in db_interfaces
                                 if i.name == slave['name']]
+                    if slave["name"] == pxe_iface_name:
+                        pxe_iface_present = True
                     if iface_id:
                         if iface_id[0] in bonded_eth_ids:
                             raise errors.InvalidData(
@@ -307,7 +329,6 @@ class NetAssignmentValidator(BasicValidator):
                             log_message=True
                         )
 
-                iface_nets = [n['name'] for n in iface['assigned_networks']]
                 if consts.NETWORKS.fuelweb_admin in iface_nets:
                     prohibited_modes = net_manager.\
                         get_prohibited_admin_bond_modes()
@@ -317,6 +338,14 @@ class NetAssignmentValidator(BasicValidator):
                             "Node '{0}': interface '{1}' belongs to "
                             "admin network and has lacp mode '{2}'".format(
                                 node['id'], iface['name'], bond_mode),
+                            log_message=True
+                        )
+                    if not pxe_iface_present:
+                        raise errors.InvalidData(
+                            "Node '{0}': interface '{1}' belongs to "
+                            "admin network and doesn't contain node's pxe "
+                            "interface '{2}'".format(
+                                node['id'], iface['name'], pxe_iface_name),
                             log_message=True
                         )
 

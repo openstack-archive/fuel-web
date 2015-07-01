@@ -246,7 +246,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     {(this.state.isInvalid || cluster.needsRedeployment()) ?
                         <div>
                             <div className='text-danger'>
-                                <i className='glyphicon glyphicon-warning-sign' />
+                                <i className='glyphicon glyphicon-danger-sign' />
                                 <span>{i18n(this.ns + (this.state.isInvalid ? 'warnings.no_deployment' : 'redeployment_needed'))}</span>
                             </div>
                             <hr />
@@ -385,7 +385,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <ul key={severity} className={'alert alert-' + severity}>
                                 {result[severity].map(function(line, index) {
                                     return (<li key={severity + index}>
-                                        {severity == 'danger' && index < blockers && <i className='glyphicon glyphicon-exclamation-sign' />}
+                                        {severity == 'danger' && index < blockers && <i className='glyphicon glyphicon-danger-sign' />}
                                         {line}
                                     </li>);
                                 })}
@@ -1127,7 +1127,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     {actionInProgress && <controls.ProgressBar />}
                     {error &&
                         <div className='text-danger'>
-                            <i className='glyphicon glyphicon-warning-sign' />
+                            <i className='glyphicon glyphicon-danger-sign' />
                             {error}
                         </div>
                     }
@@ -1243,7 +1243,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             {actionInProgress && <controls.ProgressBar />}
                             {error &&
                                 <div className='text-danger'>
-                                    <i className='glyphicon glyphicon-warning-sign' />
+                                    <i className='glyphicon glyphicon-danger-sign' />
                                     {error}
                                 </div>
                             }

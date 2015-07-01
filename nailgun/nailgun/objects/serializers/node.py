@@ -64,6 +64,7 @@ class NodeInterfacesSerializer(BasicSerializer):
         'assigned_networks',
         'driver',
         'bus_info',
+        'pxe_interface'
     )
     bond_fields = (
         'mac',
@@ -87,6 +88,7 @@ class NodeInterfacesSerializer(BasicSerializer):
         'assigned_networks',
         'driver',
         'bus_info',
+        'pxe_interface'
     )
     bond_fields_60 = (
         'mac',

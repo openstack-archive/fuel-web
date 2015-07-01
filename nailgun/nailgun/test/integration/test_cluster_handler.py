@@ -202,3 +202,16 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(get_resp.status_code, 200)
         self.datadiff(get_resp.json_body, cluster.attributes.generated)
+
+    def test_cluster_name_length(self):
+        long_name = u'ю' * 2048
+        cluster = self.env.create_cluster(api=False)
+
+        resp = self.app.put(
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
+            jsonutils.dumps({'name': long_name}),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.db.refresh(cluster)
+        self.assertEqual(long_name, cluster.name)

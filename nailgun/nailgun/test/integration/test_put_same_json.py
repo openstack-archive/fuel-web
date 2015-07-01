@@ -22,12 +22,16 @@ class TestPutSameJson(base.BaseIntegrationTest):
 
     def setUp(self):
         super(TestPutSameJson, self).setUp()
-
+        meta = self.env.default_metadata()
+        meta["interfaces"] = [
+            {'name': 'eth0', 'pxe_interface': True},
+            {'name': 'eth1'}, {'name': 'eth2'}
+        ]
         self.cluster = self.env.create(
             cluster_kwargs={'api': True},
             nodes_kwargs=[
-                {'api': True},
-                {'api': True, 'pending_addition': True},
+                {'api': True, 'meta': meta},
+                {'api': True, 'pending_addition': True, 'meta': meta},
             ]
         )
         self.cluster = self.env.clusters[0]

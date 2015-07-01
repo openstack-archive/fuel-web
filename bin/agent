@@ -206,6 +206,7 @@ class NodeAgent
       :memory => (_dmi_memory or _ohai_memory),
     }
 
+    admin_mac = _master_ip_and_mac[:mac] rescue nil
     begin
       (@os[:network][:interfaces] or {} rescue {}).each do |int, intinfo|
         # Send info about physical interfaces only
@@ -220,6 +221,7 @@ class NodeAgent
         (intinfo[:addresses] or {} rescue {}).each do |addr, addrinfo|
           if (addrinfo[:family] rescue nil) =~ /lladdr/
             int_meta[:mac] = addr
+            int_meta[:pxe_interface] = admin_mac == int_meta[:mac]
             begin
               int_info = Rethtool::InterfaceSettings.new(int)
               int_meta[:driver] = int_info.driver

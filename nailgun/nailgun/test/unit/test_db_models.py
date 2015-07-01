@@ -33,3 +33,13 @@ class TestDbModels(BaseTestCase):
         cluster = Cluster(**cluster_data)
         self.db.add(cluster)
         self.db.commit()
+
+    def test_cluster_name_length(self):
+        cluster_data = {
+            'name': u'ю' * 2048,
+            'fuel_version': '',
+            'release_id': self.env.create_release(api=False).id
+        }
+        cluster = Cluster(**cluster_data)
+        self.db.add(cluster)
+        self.db.commit()

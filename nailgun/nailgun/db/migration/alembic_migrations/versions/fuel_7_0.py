@@ -40,6 +40,7 @@ def upgrade():
         nullable=False)
     op.create_unique_constraint(
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
+    op.alter_column('clusters', 'name', type_=sa.VARCHAR())
 
     extend_plugin_model_upgrade()
 

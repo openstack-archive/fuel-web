@@ -19,8 +19,9 @@ define([
     'react',
     'jsx!views/layout',
     'dispatcher',
-    'jsx!component_mixins'
-], function(_, i18n, React, layoutComponents, dispatcher, componentMixins) {
+    'jsx!component_mixins',
+    'react-dnd'
+], function(_, i18n, React, layoutComponents, dispatcher, componentMixins, DND) {
     'use strict';
 
     var RootComponent = React.createClass({
@@ -66,5 +67,5 @@ define([
         }
     });
 
-    return RootComponent;
+    return DND.DragDropContext(DND.HTML5)(RootComponent);
 });

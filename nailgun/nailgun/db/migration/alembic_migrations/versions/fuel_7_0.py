@@ -21,6 +21,8 @@ Create Date: 2015-06-24 12:08:04.838393
 """
 
 # revision identifiers, used by Alembic.
+from nailgun.db.sqlalchemy.models import fields
+
 revision = '1e50a4903910'
 down_revision = '37608259013'
 
@@ -43,6 +45,11 @@ def upgrade():
 
     extend_plugin_model_upgrade()
 
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('pxe_interface',
+                  fields.Boolean,
+                  nullable=False)
 
 def downgrade():
     extend_plugin_model_downgrade()
@@ -53,7 +60,7 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
-
+    op.drop_column('node_nic_interfaces', 'pxe_interface')
 
 def extend_plugin_model_upgrade():
     op.add_column(
@@ -109,3 +116,6 @@ def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'roles_metadata')
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
+    ### end Alembic commands ###
+
+    op.drop_column('node_nic_interfaces', 'pxe_interface')

@@ -68,35 +68,44 @@ function(_, i18n, React, models, componentMixins, controls) {
 
     var LicenseUsage = React.createClass({
         render: function() {
-            var capacityReport = this.props.capacityLog.get('report'),
-                tableClassName = 'capacity-audit-table',
-                headClassName = 'name';
+            var capacityReport = this.props.capacityLog.get('report');
             return (
                 <div>
                     <h3>{i18n('capacity_page.license_usage')}</h3>
-                    <controls.Table
-                        head={[{label: i18n('capacity_page.fuel_version'), className: headClassName},
-                                {label: i18n('capacity_page.fuel_uuid')}]}
-                        body={[[capacityReport.fuel_data.release, capacityReport.fuel_data.uuid]]}
-                        tableClassName={tableClassName}
-                    />
-                    <controls.Table
-                        head={[{label: i18n('capacity_page.env_name'), className: headClassName},
-                            {label: i18n('capacity_page.node_count')}]}
-                        body={_.map(capacityReport.environment_stats, _.values)}
-                        tableClassName={tableClassName} />
-                    <controls.Table
-                        head={[{label: i18n('capacity_page.total_number_alloc_nodes'), className: headClassName},
-                                {label: i18n('capacity_page.total_number_unalloc_nodes')}]}
-                        body={[[capacityReport.allocation_stats.allocated,
-                                capacityReport.allocation_stats.unallocated]]}
-                        tableClassName={tableClassName} />
-                    <controls.Table
-                        head={[{label: i18n('capacity_page.node_role'), className: headClassName},
-                                {label: i18n('capacity_page.nodes_with_config')}]}
-                        body={_.zip(_.keys(capacityReport.roles_stat),
-                            _.values(capacityReport.roles_stat))}
-                        tableClassName={tableClassName} />
+                    <div className='row'>
+                        <div className='col-xs-3'>{i18n('capacity_page.fuel_version')}</div>
+                        <div className='col-xs-9'>{capacityReport.fuel_data.release}</div>
+                    </div>
+                    <div className='row'>
+                        <div className='col-xs-3'>{i18n('capacity_page.fuel_uuid')}</div>
+                        <div className='col-xs-9'>{capacityReport.fuel_data.uuid}</div>
+                    </div>
+                    <div className='row'>
+                        <div className='col-xs-3'>{i18n('capacity_page.env_name')}</div>
+                        <div className='col-xs-9'>
+                            {_.map(capacityReport.environment_stats, function(value) {
+                                    return <div>{value.cluster} ({i18n('capacity_page.node_count')}: {value.nodes})</div>;
+                                }
+                            )}
+                        </div>
+                    </div>
+                    <div className='row'>
+                        <div className='col-xs-3'>{i18n('capacity_page.total_number_alloc_nodes')}</div>
+                        <div className='col-xs-9'>{capacityReport.allocation_stats.allocated}</div>
+                    </div>
+                    <div className='row'>
+                        <div className='col-xs-3'>{i18n('capacity_page.total_number_unalloc_nodes')}</div>
+                        <div className='col-xs-9'>{capacityReport.allocation_stats.unallocated}</div>
+                    </div>
+                    <div className='row'>
+                        <div className='col-xs-3'>{i18n('capacity_page.node_role')}</div>
+                        <div className='col-xs-9'>
+                            {_.map(capacityReport.roles_stat, function(value, name) {
+                                    return <div>{name} ({value})</div>;
+                                }
+                            )}
+                        </div>
+                    </div>
                     <a href='/api/capacity/csv' target='_blank' className='btn btn-info'>
                         <i className='glyphicon glyphicon-download-alt' />{' '}
                         {i18n('capacity_page.download_report')}

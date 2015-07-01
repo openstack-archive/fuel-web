@@ -463,7 +463,8 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
                       self.env.generate_random_mac())
         meta = self.env.default_metadata()
         meta['interfaces'] = [{'name': 'eth0', 'mac': mac1},
-                              {'name': 'eth1', 'mac': mac2, 'ip': admin_ip}]
+                              {'name': 'eth1', 'mac': mac2, 'ip': admin_ip,
+                               'pxe': True}]
         self.env.create_node(api=True, meta=meta, mac=mac1,
                              cluster_id=cluster['id'])
         node_db = self.env.nodes[0]
@@ -517,7 +518,7 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
             {'name': 'eth3', 'mac': self.env.generate_random_mac()},
             {'name': 'eth2', 'mac': self.env.generate_random_mac()},
             {'name': 'eth0', 'mac': self.env.generate_random_mac(),
-                'ip': admin_ip},
+             'ip': admin_ip, 'pxe': True},
             {'name': 'eth1', 'mac': self.env.generate_random_mac()}
         ]
         node = self.env.create_node(api=True, meta=meta,
@@ -556,13 +557,19 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNodeNICsHandlersValidation, self).setUp()
+        meta = self.env.default_metadata()
+        meta["interfaces"] = [
+            {'name': 'eth0', 'mac': self.env.generate_random_mac(),
+             'pxe': True},
+            {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+        ]
         self.env.create(
             cluster_kwargs={
                 "net_provider": "neutron",
                 "net_segment_type": "gre"
             },
             nodes_kwargs=[
-                {"api": True, "pending_addition": True}
+                {"api": True, "pending_addition": True, 'meta': meta}
             ]
         )
         resp = self.app.get(
@@ -624,4 +631,13 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
         self.node_nics_put_check_error(
             "Node '{0}': there is no interface with ID '1234567'"
             " in DB".format(self.env.nodes[0]["id"])
+        )
+
+    def test_nic_assignment_failed_assign_admin_net_to_non_pxe_iface(self):
+        admin_net = self.nics_w_nets[0]["assigned_networks"][0]
+        del self.nics_w_nets[0]["assigned_networks"][0]
+        self.nics_w_nets[1]["assigned_networks"].append(admin_net)
+        self.node_nics_put_check_error(
+            "Node '{0}': admin network can not be assigned to non-pxe"
+            " interface eth1".format(self.env.nodes[0]["id"])
         )

@@ -148,7 +148,8 @@
                                 "state": null,
                                 "sub": []
                             }
-                        ]
+                        ],
+                        "pxe": false
                     },
                   {
                         "mac": "00:25:90:6a:b1:11",
@@ -185,7 +186,8 @@
                                 "state": null,
                                 "sub": []
                             }
-                        ]
+                        ],
+                        "pxe": true
                     }
                 ],
                 "disks": [
@@ -398,7 +400,8 @@
                                 "state": null,
                                 "sub": []
                             }
-                        ]
+                        ],
+                        "pxe": true
                     },
                     {
                         "ip": "192.168.70.234",
@@ -435,7 +438,8 @@
                                 "state": true,
                                 "sub": []
                             }
-                        ]
+                        ],
+                        "pxe": false
                     },
                     {
                         "mac": "54:78:ea:05:17:ba",
@@ -471,7 +475,8 @@
                                 "state": true,
                                 "sub": []
                             }
-                        ]
+                        ],
+                        "pxe": false
                     }
                 ],
                 "disks": [
@@ -588,7 +593,8 @@
                         "driver": "igb",
                         "bus_info": "0000:06:00.0",
                         "max_speed": 1000,
-                        "current_speed": 1000
+                        "current_speed": 1000,
+                        "pxe": false
                     },
                     {
                         "name": "eth2",
@@ -598,7 +604,8 @@
                         "driver": "igb",
                         "bus_info": "0000:07:00.0",
                         "max_speed": 1000,
-                        "current_speed": 1000
+                        "current_speed": 1000,
+                        "pxe": false
                     },
                     {
                         "name": "eth3",
@@ -608,7 +615,8 @@
                         "driver": "eth_ipoib",
                         "bus_info": "0000:08:00.0",
                         "max_speed": 56000,
-                        "current_speed": 56000
+                        "current_speed": 56000,
+                        "pxe": false
                     },
                     {
                         "ip": "10.20.0.5",
@@ -617,7 +625,8 @@
                         "name": "eth0",
                         "current_speed": null,
                         "driver": "igb",
-                        "bus_info": "0000:09:00.0"
+                        "bus_info": "0000:09:00.0",
+                        "pxe": true
                     }
                 ],
                 "disks": [
@@ -734,7 +743,8 @@
                         "name": "eth1",
                         "current_speed": null,
                         "driver": "mlx4_en",
-                        "bus_info": "0000:10:00.0"
+                        "bus_info": "0000:10:00.0",
+                        "pxe": false
                     },
                     {
                         "name": "eth0",
@@ -744,7 +754,8 @@
                         "bus_info": "0000:11:00.0",
                         "mac": "00:25:90:67:9d:24",
                         "max_speed": 1000,
-                        "current_speed": 1000
+                        "current_speed": 1000,
+                        "pxe": true
                     }
                 ],
                 "disks": [
@@ -863,7 +874,8 @@
                         "current_speed": null,
                         "ip": "10.20.0.7",
                         "driver": "igb",
-                        "bus_info": "0000:12:00.0"
+                        "bus_info": "0000:12:00.0",
+                        "pxe": true
                     },
                     {
                         "name": "eth0",
@@ -872,7 +884,8 @@
                         "driver": "igb",
                         "bus_info": "0000:13:00.0",
                         "max_speed": 1000,
-                        "current_speed": 1000
+                        "current_speed": 1000,
+                        "pxe": false
                     }
                 ],
                 "disks": [
@@ -966,7 +979,8 @@
                         "driver": "e1000",
                         "bus_info": "0000:14:00.0",
                         "max_speed": 100,
-                        "current_speed": 100
+                        "current_speed": 100,
+                        "pxe": true
                     },
                     {
                         "name": "eth1",
@@ -974,7 +988,8 @@
                         "max_speed": 1000,
                         "current_speed": 100,
                         "driver": "e1000",
-                        "bus_info": "0000:15:00.0"
+                        "bus_info": "0000:15:00.0",
+                        "pxe": false
                     },
                     {
                         "name": "eth2",
@@ -982,7 +997,8 @@
                         "max_speed": 100,
                         "current_speed": null,
                         "driver": "e1000",
-                        "bus_info": "0000:16:00.0"
+                        "bus_info": "0000:16:00.0",
+                        "pxe": false
                     },
                     {
                         "name": "eth3",
@@ -990,7 +1006,8 @@
                         "max_speed": 100,
                         "current_speed": null,
                         "driver": "e1000",
-                        "bus_info": "0000:17:00.0"
+                        "bus_info": "0000:17:00.0",
+                        "pxe": false
                     }
                 ],
                 "disks": [
@@ -1057,7 +1074,8 @@
                         "max_speed": 100,
                         "current_speed": 100,
                         "driver": "igb",
-                        "bus_info": "0000:18:00.0"
+                        "bus_info": "0000:18:00.0",
+                        "pxe": true
                     },
                     {
                         "name": "eth1",
@@ -1065,7 +1083,8 @@
                         "max_speed": 1000,
                         "current_speed": 1000,
                         "driver": "igb",
-                        "bus_info": "0000:19:00.0"
+                        "bus_info": "0000:19:00.0",
+                        "pxe": false
                     },
                     {
                         "name": "eth2",
@@ -1073,7 +1092,8 @@
                         "max_speed": 100,
                         "current_speed": null,
                         "driver": "igb",
-                        "bus_info": "0000:20:00.0"
+                        "bus_info": "0000:20:00.0",
+                        "pxe": false
                     },
                     {
                         "name": "eth3",
@@ -1081,7 +1101,8 @@
                         "max_speed": 1000,
                         "current_speed": 100,
                         "driver": "igb",
-                        "bus_info": "0000:21:00.0"
+                        "bus_info": "0000:21:00.0",
+                        "pxe": false
                     },
                     {
                         "name": "eth4",
@@ -1089,7 +1110,8 @@
                         "max_speed": 56000,
                         "current_speed": 56000,
                         "driver": "mlx4_en",
-                        "bus_info": "0000:22:00.0"
+                        "bus_info": "0000:22:00.0",
+                        "pxe": false
                     },
                     {
                         "name": "eth5",
@@ -1097,7 +1119,8 @@
                         "max_speed": 100,
                         "current_speed": 100,
                         "driver": "igb",
-                        "bus_info": "0000:23:00.0"
+                        "bus_info": "0000:23:00.0",
+                        "pxe": false
                     }
                 ],
                 "disks": [
@@ -1254,7 +1277,8 @@
                         "max_speed": 1000,
                         "current_speed": 1000,
                         "driver": "igb",
-                        "bus_info": "0000:24:00.0"
+                        "bus_info": "0000:24:00.0",
+                        "pxe": false
                     },
                     {
                         "ip": "10.20.0.7",
@@ -1263,7 +1287,8 @@
                         "name": "p2p2",
                         "current_speed": null,
                         "driver": "igb",
-                        "bus_info": "0000:25:00.0"
+                        "bus_info": "0000:25:00.0",
+                        "pxe": true
                     }
                 ],
                 "disks": [

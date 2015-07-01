@@ -45,6 +45,7 @@ single_schema = {
                             "name": {"type": "string"},
                             "driver": {"type": "string"},
                             "bus_info": {"type": "string"},
+                            "pxe": {"type": "boolean"}
                         }
                     }
                 },

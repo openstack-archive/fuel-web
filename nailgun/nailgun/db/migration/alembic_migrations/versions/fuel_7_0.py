@@ -45,9 +45,11 @@ def upgrade():
 
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
+    extend_nic_model_upgrade()
 
 
 def downgrade():
+    extend_nic_model_downgrade()
     extend_plugin_model_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
@@ -129,3 +131,26 @@ def upgrade_node_roles_metadata():
             update_query,
             id=id,
             roles_metadata=jsonutils.dumps(roles_metadata))
+
+
+def extend_nic_model_upgrade():
+    connection = op.get_bind()
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('pxe',
+                  sa.Boolean,
+                  nullable=False,
+                  server_default='false'))
+    update_query = sa.sql.text(
+        "UPDATE node_nic_interfaces SET pxe = true "
+        "FROM node_nic_interfaces AS ni "
+        "inner join net_nic_assignments AS na "
+        "on ni.id=na.interface_id "
+        "inner join network_groups AS ng "
+        "on ng.id=na.network_id "
+        "WHERE ng.name = 'fuelweb_admin'")
+    connection.execute(update_query)
+
+
+def extend_nic_model_downgrade():
+    op.drop_column('node_nic_interfaces', 'pxe')

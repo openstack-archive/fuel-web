@@ -204,24 +204,24 @@ class TestInstallationInfo(BaseTestCase):
 
     def test_nodes_info(self):
         info = InstallationInfo()
-        self.env.create(
+        #meta = self.env.default_metadata()
+        #meta['interfaces'] = [{'name': 'eth0', 'pxe_interface': True},
+        #                      {'name': 'eth1'},
+        #                      {'name': 'eth2'}]
+        cluster = self.env.create(
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.centos
-            },
-            nodes_kwargs=[
-                {'status': consts.NODE_STATUSES.discover,
-                 'roles': ['controller', 'compute'],
-                 'meta': {}},
-                {'roles': [],
-                 'pending_roles': ['compute'],
-                 'meta': {'cpu': {},
-                          'interfaces': [{'mac': 'x', 'name': 'eth0'}],
-                          'disks': [{'name': 'a', 'disk': 'a'}]}}
-            ]
-        )
+            })
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=2,
+            if_count=4,
+            roles=['controller', 'compute'],
+            pending_addition=True,
+            cluster_id=cluster['id'])
+
         self.env.make_bond_via_api(
             'bond0', consts.BOND_MODES.active_backup,
-            ['eth0', 'eth1'], node_id=self.env.nodes[0].id)
+            ['eth1', 'eth2'], node_id=self.env.nodes[0].id)
         nodes_info = info.get_nodes_info(self.env.nodes)
         self.assertEquals(len(self.env.nodes), len(nodes_info))
         for idx, node in enumerate(self.env.nodes):

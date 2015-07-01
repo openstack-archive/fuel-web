@@ -274,6 +274,7 @@ class NetAssignmentValidator(BasicValidator):
         network_group_ids = net_manager.get_node_networkgroups_ids(db_node)
 
         bonded_eth_ids = set()
+        admin_iface = [i for i in db_interfaces if i.pxe_interface][0]
         for iface in interfaces:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
                 db_iface = filter(
@@ -286,10 +287,21 @@ class NetAssignmentValidator(BasicValidator):
                         " in DB".format(node['id'], iface['id']),
                         log_message=True
                     )
+                if not db_iface[0].pxe_interface:
+                    iface_net = [n['name'] for n in iface['assigned_networks']]
+                    if consts.NETWORKS.fuelweb_admin in iface_net:
+                        raise errors.InvalidData(
+                            "Node '{0}': admin network can not be assigned to"
+                            " non-pxe interface {1}".format(node['id'],
+                                                            iface['id']),
+                            log_message=True
+                        )
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 for slave in iface['slaves']:
                     iface_id = [i.id for i in db_interfaces
                                 if i.name == slave['name']]
+                    if slave["name"] == admin_iface.name:
+                        admin_iface_present = True
                     if iface_id:
                         if iface_id[0] in bonded_eth_ids:
                             raise errors.InvalidData(
@@ -317,6 +329,13 @@ class NetAssignmentValidator(BasicValidator):
                             "Node '{0}': interface '{1}' belongs to "
                             "admin network and has lacp mode '{2}'".format(
                                 node['id'], iface['name'], bond_mode),
+                            log_message=True
+                        )
+                    if not admin_iface_present:
+                        raise errors.InvalidData(
+                            "Node '{0}': interface '{1}' belongs to "
+                            "admin network and doesn't contain node's pxe "
+                            "interface".format(node['id'], iface['name']),
                             log_message=True
                         )
 

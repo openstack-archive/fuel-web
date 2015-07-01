@@ -463,7 +463,8 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
                       self.env.generate_random_mac())
         meta = self.env.default_metadata()
         meta['interfaces'] = [{'name': 'eth0', 'mac': mac1},
-                              {'name': 'eth1', 'mac': mac2, 'ip': admin_ip}]
+                              {'name': 'eth1', 'mac': mac2, 'ip': admin_ip,
+                               'pxe_interface': True}]
         self.env.create_node(api=True, meta=meta, mac=mac1,
                              cluster_id=cluster['id'])
         node_db = self.env.nodes[0]
@@ -556,13 +557,18 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNodeNICsHandlersValidation, self).setUp()
+        meta = self.env.default_metadata()
+        meta["interfaces"] = [
+            {'name': 'eth0', 'pxe_interface': True}, {'name': 'eth1'},
+            {'name': 'eth2'}, {'name': 'eth3'}, {'name': 'eth4'}
+        ]
         self.env.create(
             cluster_kwargs={
                 "net_provider": "neutron",
                 "net_segment_type": "gre"
             },
             nodes_kwargs=[
-                {"api": True, "pending_addition": True}
+                {"api": True, "pending_addition": True, 'meta': meta}
             ]
         )
         resp = self.app.get(

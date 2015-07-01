@@ -156,7 +156,7 @@ class TestProvisioningSerializer(BaseIntegrationTest):
         admin_mac = self.env.generate_random_mac()
         meta = {
             'interfaces': [
-                {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+                {'name': 'eth1', 'mac': admin_mac, 'pxe': True},
                 {'name': 'eth2', 'mac': self.env.generate_random_mac()},
                 {'name': 'eth3', 'mac': self.env.generate_random_mac()},
                 {'name': 'eth4', 'mac': self.env.generate_random_mac()}

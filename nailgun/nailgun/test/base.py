@@ -334,9 +334,10 @@ class EnvironmentManager(object):
             if_list = [
                 {
                     "name": "eth{0}".format(i),
-                    "mac": self.generate_random_mac()
+                    "mac": self.generate_random_mac(),
                 }
                 for i in range(if_count)]
+            if_list[0]['pxe_interface'] = True
             self.set_interfaces_in_meta(meta, if_list)
             nodes.append(self.create_node(meta=meta, **kwargs))
         return nodes
@@ -407,7 +408,8 @@ class EnvironmentManager(object):
                     'name': 'eth{0}'.format(i),
                     'mac': self.generate_random_mac(),
                     'current_speed': 100,
-                    'max_speed': 1000
+                    'max_speed': 1000,
+                    'pxe_interface': False
                 }
             )
         self.set_admin_ip_for_for_single_interface(nics)

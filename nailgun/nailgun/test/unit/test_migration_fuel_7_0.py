@@ -194,6 +194,55 @@ def prepare():
         ])
 
     db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [
+            {
+                'id': 1,
+                'node_id': nodeid_a,
+                'name': 'test_interface',
+                'mac': '00:00:00:00:00:01',
+                'max_speed': 200,
+                'current_speed': 100,
+                'ip_addr': '10.20.0.2',
+                'netmask': '255.255.255.0',
+                'state': 'test_state',
+                'interface_properties': jsonutils.dumps(
+                    {'test_property': 'test_value'}),
+                'driver': 'test_driver',
+                'bus_info': 'some_test_info'
+            },
+            {
+                'id': 2,
+                'node_id': nodeid_a,
+                'name': 'test_interface_2',
+                'mac': '00:00:00:00:00:02',
+                'max_speed': 200,
+                'current_speed': 100,
+                'ip_addr': '10.30.0.2',
+                'netmask': '255.255.255.0',
+                'state': 'test_state',
+                'interface_properties': jsonutils.dumps(
+                    {'test_property': 'test_value'}),
+                'driver': 'test_driver',
+                'bus_info': 'some_test_info'
+            },
+            {
+                'id': 3,
+                'node_id': nodeid_a,
+                'name': 'test_interface_3',
+                'mac': '00:00:00:00:00:03',
+                'max_speed': 200,
+                'current_speed': 100,
+                'ip_addr': '10.30.0.2',
+                'netmask': '255.255.255.0',
+                'state': 'test_state',
+                'interface_properties': jsonutils.dumps(
+                    {'test_property': 'test_value'}),
+                'driver': 'test_driver',
+                'bus_info': 'some_test_info'
+            }])
+
+    db.execute(
         meta.tables['node_bond_interfaces'].insert(),
         [{
             'node_id': nodeid_a,
@@ -204,22 +253,42 @@ def prepare():
         }])
 
     db.execute(
-        meta.tables['node_nic_interfaces'].insert(),
-        [{
-            'node_id': nodeid_a,
-            'name': 'test_interface',
-            'mac': '00:00:00:00:00:01',
-            'max_speed': 200,
-            'current_speed': 100,
-            'ip_addr': '10.20.0.2',
-            'netmask': '255.255.255.0',
-            'state': 'test_state',
-            'interface_properties': jsonutils.dumps(
-                {'test_property': 'test_value'}),
-            'parent_id': 1,
-            'driver': 'test_driver',
-            'bus_info': 'some_test_info'
-        }])
+        meta.tables['network_groups'].insert(),
+        [
+            {
+                'id': 1,
+                'name': 'fuelweb_admin',
+                'vlan_start': None,
+                'cidr': '10.20.0.0/24',
+                'gateway': '10.20.0.200',
+            },
+            {
+                'id': 2,
+                'name': 'public',
+                'vlan_start': None,
+                'cidr': '10.30.0.0/24',
+                'gateway': '10.30.0.200'
+            }
+        ]
+    )
+
+    db.execute(
+        meta.tables['net_nic_assignments'].insert(),
+        [
+            {
+                'network_id': 1,
+                'interface_id': 1
+            },
+            {
+                'network_id': 2,
+                'interface_id': 2
+            },
+            {
+                'network_id': 2,
+                'interface_id': 3
+            }
+        ]
+    )
 
     db.commit()
 
@@ -328,68 +397,20 @@ class TestPublicIpRequired(base.BaseAlembicMigrationTest):
 class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
     def test_old_fields_exists(self):
         # check node_nic_interfaces fields
+        nic_table = self.meta.tables['node_nic_interfaces']
         result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.node_id]))
-        self.assertEqual(
-            result.fetchone()[0], 1)
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.name]))
-        self.assertEqual(
-            result.fetchone()[0], 'test_interface')
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.mac]))
-        self.assertEqual(
-            result.fetchone()[0], '00:00:00:00:00:01')
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.max_speed]))
-        self.assertEqual(
-            result.fetchone()[0], 200)
-
-        result = db.execute(
-            sa.select(
-                [self.meta.tables['node_nic_interfaces'].c.current_speed]))
-        self.assertEqual(
-            result.fetchone()[0], 100)
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.ip_addr]))
-        self.assertEqual(
-            result.fetchone()[0], '10.20.0.2')
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.netmask]))
-        self.assertEqual(
-            result.fetchone()[0], '255.255.255.0')
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.state]))
-        self.assertEqual(
-            result.fetchone()[0], 'test_state')
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces']
-                       .c.interface_properties]))
-        self.assertEqual(
-            jsonutils.loads(result.fetchone()[0]),
-            {'test_property': 'test_value'})
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.parent_id]))
-        self.assertEqual(
-            result.fetchone()[0], 1)
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.driver]))
-        self.assertEqual(
-            result.fetchone()[0], 'test_driver')
-
-        result = db.execute(
-            sa.select([self.meta.tables['node_nic_interfaces'].c.bus_info]))
-        self.assertEqual(
-            result.fetchone()[0], 'some_test_info')
+            sa.select([nic_table.c.node_id, nic_table.c.name, nic_table.c.mac,
+                       nic_table.c.max_speed, nic_table.c.current_speed,
+                       nic_table.c.ip_addr, nic_table.c.netmask,
+                       nic_table.c.state, nic_table.c.interface_properties,
+                       nic_table.c.driver, nic_table.c.bus_info]).
+            where(nic_table.c.id == 1))
+        res = result.fetchone()
+        check_res = [1, u'test_interface', u'00:00:00:00:00:01', 200, 100,
+                     u'10.20.0.2', u'255.255.255.0', u'test_state',
+                     u'{"test_property": "test_value"}',
+                     u'test_driver', u'some_test_info']
+        self.assertListEqual(list(res), check_res)
 
     def test_new_fields_exists_and_empty(self):
         # check node_nic_interfaces fields
@@ -404,6 +425,37 @@ class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
                       .c.offloading_modes]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestInterfacesPxePropertyMigration(base.BaseAlembicMigrationTest):
+
+    def test_old_fields_exists(self):
+        # check node_nic_interfaces fields
+        ng_table = self.meta.tables['network_groups']
+        result = db.execute(
+            sa.select([ng_table.c.name, ng_table.c.vlan_start,
+                       ng_table.c.cidr, ng_table.c.gateway]).
+            where(ng_table.c.id == 1))
+        res = result.fetchone()
+        check_res = [u'fuelweb_admin', None, u'10.20.0.0/24', u'10.20.0.200']
+        self.assertListEqual(list(res), check_res)
+
+        result = db.execute(
+            sa.select([self.meta.tables['net_nic_assignments'].c.network_id]))
+        self.assertEqual(
+            result.fetchone()[0], 1)
+
+    def test_new_field_exists_and_filled(self):
+        nic_table = self.meta.tables['node_nic_interfaces']
+        result = db.execute(
+            sa.select([nic_table.c.pxe]).where(nic_table.c.id == 1))
+        # check 'pxe' property is true for admin interfaces
+        self.assertTrue(result.fetchone()[0])
+        result = db.execute(
+            sa.select([nic_table.c.pxe]).where(nic_table.c.id != 1))
+        # and 'false' for any others
+        for res in result.fetchall():
+            self.assertFalse(res[0])
 
 
 class TestMigrateVolumesIntoExtension(base.BaseAlembicMigrationTest):

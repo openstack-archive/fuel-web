@@ -247,6 +247,7 @@ class NodeNICInterface(Base):
     parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
     driver = Column(Text)
     bus_info = Column(Text)
+    pxe = Column(Boolean, default=False, nullable=False)
 
     offloading_modes = Column(JSON, default=[], nullable=False,
                               server_default='[]')

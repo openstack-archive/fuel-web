@@ -45,9 +45,11 @@ def upgrade():
 
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
+    extend_nic_model_upgrade()
 
 
 def downgrade():
+    extend_nic_model_downgrade()
     extend_plugin_model_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
@@ -129,3 +131,16 @@ def upgrade_node_roles_metadata():
             update_query,
             id=id,
             roles_metadata=jsonutils.dumps(roles_metadata))
+
+
+def extend_nic_model_upgrade():
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('pxe_interface',
+                  sa.Boolean,
+                  nullable=False,
+                  server_default='false'))
+
+
+def extend_nic_model_downgrade():
+    op.drop_column('node_nic_interfaces', 'pxe_interface')

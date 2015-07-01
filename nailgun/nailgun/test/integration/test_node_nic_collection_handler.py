@@ -31,7 +31,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         mac = self.env.generate_random_mac()
         meta = {}
         self.env.set_interfaces_in_meta(meta, [
-            {'name': 'eth0', 'mac': mac},
+            {'name': 'eth0', 'mac': mac, 'pxe_interface': True},
             {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
@@ -63,10 +63,12 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         # Creating cluster with node
         self.env.create_cluster()
         cluster = self.env.clusters[0]
-        self.env.create_node(
+        self.env.create_nodes_w_interfaces_count(
             roles=['controller'],
             pending_addition=True,
-            cluster_id=cluster.id
+            cluster_id=cluster.id,
+            nodes_count=1,
+            if_count=4
         )
         # Deploying cluster
         deployment_task = self.env.launch_deployment()
@@ -108,8 +110,12 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             consts.NODE_STATUSES.deploying: True,
             consts.NODE_STATUSES.ready: True,
             consts.NODE_STATUSES.removing: True}
+        meta = self.env.default_metadata()
+        meta['interfaces'] = [{'name': 'eth0', 'pxe_interface': True},
+                              {'name': 'eth1'}]
         self.env.create_node(
             roles=['controller'],
+            meta=meta
         )
         node = self.env.nodes[0]
         for status, lock in six.iteritems(lock_vs_status):

@@ -43,6 +43,14 @@ def upgrade():
 
     extend_plugin_model_upgrade()
 
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('pxe_interface',
+                  sa.Boolean,
+                  nullable=False,
+                  default=False,
+                  server_default=False))
+
 
 def downgrade():
     extend_plugin_model_downgrade()
@@ -53,6 +61,7 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+    op.drop_column('node_nic_interfaces', 'pxe_interface')
 
 
 def extend_plugin_model_upgrade():
@@ -109,3 +118,4 @@ def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'roles_metadata')
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
+    ### end Alembic commands ###

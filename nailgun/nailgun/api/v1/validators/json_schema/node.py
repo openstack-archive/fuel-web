@@ -68,6 +68,7 @@ single_schema = {
 
                                 }
                             },
+                            "pxe": {"type": "boolean"}
                         }
                     }
                 },

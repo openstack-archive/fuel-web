@@ -637,7 +637,11 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return {modalClass: 'always-show-scrollbar'};
         },
         getInitialState: function() {
-            return {title: i18n('dialog.show_node.default_dialog_title')};
+            return {
+                title: i18n('dialog.show_node.default_dialog_title'),
+                changingHostname: false,
+                elementToFocus: null
+            };
         },
         goToConfigurationScreen: function(url) {
             this.close();
@@ -696,6 +700,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidUpdate: function() {
             this.assignAccordionEvents();
             this.setDialogTitle();
+            if (this.state.elementToFocus) {
+                $(this.refs[this.state.elementToFocus].getDOMNode()).focus();
+                this.setState({elementToFocus: null});
+            }
         },
         componentDidMount: function() {
             this.assignAccordionEvents();
@@ -713,6 +721,23 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         toggle: function(groupIndex) {
             $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
+        },
+        startHostnameChanging: function() {
+            this.setState({changingHostname: true, elementToFocus: 'hostname'});
+        },
+        endHostnameChanging: function() {
+            this.setState({changingHostname: false, actionInProgress: false});
+        },
+        onHostnameInputKeydown: function(e) {
+            if (e.key == 'Enter') {
+                this.setState({actionInProgress: true});
+                var hostname = this.refs.hostname.getDOMNode().value;
+                this.props.node.save({hostname: hostname}, {patch: true, wait: true}).always(this.endHostnameChanging);
+            } else if (e.key == 'Escape') {
+                this.endHostnameChanging();
+                e.stopPropagation();
+                this.getDOMNode().focus();
+            }
         },
         renderBody: function() {
             var node = this.props.node,
@@ -732,6 +757,25 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
+                            <div><strong>{i18n('dialog.show_node.hostname_label')}: </strong>
+                                {this.state.changingHostname ?
+                                    <input
+                                        ref='hostname'
+                                        className='form-control input-sm'
+                                        disabled={this.state.actionInProgress}
+                                        defaultValue={node.get('hostname')}
+                                        onKeyDown={this.onHostnameInputKeydown}
+                                    />
+                                :
+                                    <span>
+                                        {node.get('hostname') || i18n('common.not_available')}
+                                        <button
+                                            className='change-hostname-btn btn-link glyphicon glyphicon-pencil'
+                                            onClick={this.startHostnameChanging}
+                                        />
+                                    </span>
+                                }
+                            </div>
                         </div>
                     </div>
                     <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>

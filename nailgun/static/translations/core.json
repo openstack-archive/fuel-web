@@ -386,8 +386,15 @@
                             "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface",
                             "invalid_mtu": "Invalid MTU value"
                         },
-                        "disable_offloading": "Disable Offloading",
-                        "mtu": "MTU"
+                        "disable_offloading": "Offloading Disabled",
+                        "default_offloading": "Default Offloading",
+                        "offloading_modes": "Offloading Modes",
+                        "offloading_mode": "Mode",
+                        "offloading_enabled": "Enabled",
+                        "offloading_disabled": "Disabled",
+                        "offloading_default": "Default",
+                        "mtu": "MTU",
+                        "mtu_placeholder": "Default"
                     },
                     "configure_disks": {
                         "title": "Configure disks on __name__",

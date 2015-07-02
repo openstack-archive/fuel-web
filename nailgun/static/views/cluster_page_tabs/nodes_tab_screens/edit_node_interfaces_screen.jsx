@@ -25,9 +25,10 @@ define(
     'dispatcher',
     'jsx!views/controls',
     'jsx!component_mixins',
-    'react-dnd'
+    'react-dnd',
+    'jsx!views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control'
 ],
-function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins, DND) {
+function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, ComponentMixins, DND, OffloadingModes) {
     'use strict';
 
     var ns = 'cluster_page.nodes_tab.configure_interfaces.';
@@ -100,7 +101,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         },
         interfacesPickFromJSON: function(json) {
             // Pick certain interface fields that have influence on hasChanges.
-            return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties', 'interface_properties']);
+            return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties', 'interface_properties', 'offloading_modes']);
         },
         interfacesToJSON: function(interfaces, remainingNodesMode) {
             // Sometimes 'state' is sent from the API and sometimes not
@@ -175,14 +176,20 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
 
                 // Assigning networks according to user choice and interface properties
                 node.interfaces.each(function(ifc, index) {
+                    var updatedIfc = interfaces.at(index);
                     ifc.set({
-                        assigned_networks: new models.InterfaceNetworks(interfaces.at(index).get('assigned_networks').toJSON()),
-                        interface_properties: interfaces.at(index).get('interface_properties')
+                        assigned_networks: new models.InterfaceNetworks(updatedIfc.get('assigned_networks').toJSON()),
+                        interface_properties: updatedIfc.get('interface_properties')
                     });
                     if (ifc.isBond()) {
                         var bondProperties = ifc.get('bond_properties');
                         ifc.set({bond_properties: _.extend(bondProperties, {type__:
                             this.getBondType() == 'linux' ? 'linux' : 'ovs'})});
+                    };
+                    if (ifc.get('offloading_modes')) {
+                        ifc.set({
+                            offloading_modes: updatedIfc.get('offloading_modes')
+                        });
                     }
                 }, this);
 
@@ -534,6 +541,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     </option>);
             }, this);
         },
+        toggleOffloading: function() {
+            var interfaceProperties = this.props.interface.get('interface_properties'),
+                name = 'disable_offloading';
+            this.onInterfacePropertiesChange(name, !interfaceProperties[name]);
+        },
         onInterfacePropertiesChange: function(name, value) {
             function convertToNullIfNaN(value) {
                 var convertedValue = parseInt(value, 10);
@@ -564,7 +576,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     };
                 },
                 bondProperties = ifc.get('bond_properties'),
-                interfaceProperties = ifc.get('interface_properties') || null;
+                interfaceProperties = ifc.get('interface_properties') || null,
+                offloadingModes = ifc.get('offloading_modes') || [];
 
             return this.props.connectDropTarget(
                 <div className='ifc-container'>
@@ -684,26 +697,28 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                         {interfaceProperties &&
                             <div className='ifc-properties clearfix forms-box'>
                                 <controls.Input
-                                    type='checkbox'
-                                    label={i18n(ns + 'disable_offloading')}
-                                    checked={interfaceProperties.disable_offloading}
-                                    name='disable_offloading'
-                                    onChange={this.onInterfacePropertiesChange}
-                                    disabled={locked}
-                                    wrapperClassName='pull-right'
-                                />
-                                <controls.Input
                                     type='text'
                                     label={i18n(ns + 'mtu')}
                                     value={interfaceProperties.mtu || ''}
+                                    placeholder='Default'
                                     name='mtu'
                                     onChange={this.onInterfacePropertiesChange}
                                     disabled={locked}
                                     wrapperClassName='pull-right'
                                 />
+                                {offloadingModes.length ?
+                                    <OffloadingModes interface={ifc} />
+                                    :
+                                    <button
+                                        onClick={this.toggleOffloading}
+                                        disabled={locked}
+                                        className='btn btn-default toggle-offloading'>
+                                        {i18n(ns + (interfaceProperties.disable_offloading ? 'disable_offloading' : 'enable_offloading'))}
+                                    </button>
+                                }
                             </div>
-                        }
 
+                        }
                     </div>
                     {this.props.errors && <div className='ifc-error'>{this.props.errors}</div>}
                 </div>

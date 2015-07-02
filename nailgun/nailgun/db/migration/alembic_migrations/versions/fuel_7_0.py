@@ -171,6 +171,25 @@ def upgrade_node_roles_metadata():
         for role, role_info in six.iteritems(roles_metadata):
             if role in ['controller', 'zabbix-server']:
                 role_info['public_ip_required'] = True
+
+        # weight attribute is needed for UI to sort list of
+        # default roles
+        default_roles_weight = {
+            "controller": 10,
+            "compute": 20,
+            "cinder": 30,
+            "cinder-vmware": 40,
+            "ceph-osd": 50,
+            "mongo": 60,
+            "base-os": 70
+        }
+        for role_name in roles_metadata:
+            # if role is not in weight mapping, give it enormous value
+            # so it could be put at the end of the role list on UI
+            # (unless there is more than 1000 default roles in the system)
+            roles_metadata[role_name]['weight'] = \
+                default_roles_weight.get(role_name, 10000)
+
         connection.execute(
             update_query,
             id=id,

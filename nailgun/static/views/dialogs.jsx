@@ -669,7 +669,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return {
                 title: i18n('dialog.show_node.default_dialog_title'),
                 VMsConf: null,
-                VMsConfValidationError: null
+                VMsConfValidationError: null,
+                changingHostname: false,
+                hostnameChangingError: null
             };
         },
         goToConfigurationScreen: function(url) {
@@ -728,7 +730,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         componentDidUpdate: function() {
             this.assignAccordionEvents();
-            this.setDialogTitle();
         },
         componentDidMount: function() {
             this.assignAccordionEvents();
@@ -780,6 +781,33 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                     }, this));
             }
         },
+        startHostnameChanging: function() {
+            this.setState({changingHostname: true});
+        },
+        endHostnameChanging: function() {
+            this.setState({changingHostname: false, actionInProgress: false});
+        },
+        onHostnameInputKeydown: function(e) {
+            this.setState({hostnameChangingError: null});
+            if (e.key == 'Enter') {
+                this.setState({actionInProgress: true});
+                var hostname = _.trim(this.refs.hostname.getInputDOMNode().value);
+                (hostname != this.props.node.get('hostname') ?
+                    this.props.node.save({hostname: hostname}, {patch: true, wait: true}) :
+                    $.Deferred().resolve()
+                ).fail(_.bind(function(response) {
+                    this.setState({
+                        hostnameChangingError: utils.getResponseText(response),
+                        actionInProgress: false
+                    });
+                    this.refs.hostname.getInputDOMNode().focus();
+                }, this)).done(this.endHostnameChanging);
+            } else if (e.key == 'Escape') {
+                this.endHostnameChanging();
+                e.stopPropagation();
+                this.getDOMNode().focus();
+            }
+        },
         renderBody: function() {
             var node = this.props.node,
                 meta = node.get('meta');
@@ -796,10 +824,35 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className='node-details-popup'>
                     <div className='row'>
                         <div className='col-xs-5'><div className='node-image-outline' /></div>
-                        <div className='col-xs-7 enable-selection'>
+                        <div className='col-xs-7'>
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
+                            <div className='change-hostname'>
+                                <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
+                                {this.state.changingHostname ?
+                                    <controls.Input
+                                        ref='hostname'
+                                        type='text'
+                                        defaultValue={node.get('hostname')}
+                                        inputClassName={'input-sm'}
+                                        error={this.state.hostnameChangingError}
+                                        disabled={this.state.actionInProgress}
+                                        onKeyDown={this.onHostnameInputKeydown}
+                                        autoFocus
+                                    />
+                                :
+                                    <span>
+                                        {node.get('hostname') || i18n('common.not_available')}
+                                        {(node.get('pending_addition') || !node.get('cluster')) &&
+                                            <button
+                                                className='btn-link glyphicon glyphicon-pencil'
+                                                onClick={this.startHostnameChanging}
+                                            />
+                                        }
+                                    </span>
+                                }
+                            </div>
                         </div>
                     </div>
                     <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>

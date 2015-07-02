@@ -1105,7 +1105,7 @@
                 description: "VLAN interface"
                 regex:
                   source: *non_empty_string
-                  error: "Invalid Network Interface"
+                  error: "Invalid network interface"
           -
             name: "glance"
             type: "object"

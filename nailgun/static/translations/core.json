@@ -336,6 +336,10 @@
                             "invalid_mtu": "Invalid MTU value"
                         },
                         "disable_offloading": "Disable Offloading",
+                        "offloading_modes": "Offloading Modes",
+                        "offloading_enabled": "enabled",
+                        "offloading_disabled": "disabled",
+                        "offloading_default": "default",
                         "mtu": "MTU"
                     },
                     "configure_disks": {

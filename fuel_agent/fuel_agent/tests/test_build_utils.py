@@ -15,10 +15,10 @@
 import os
 import shutil
 import signal
-import testtools
 
 import mock
 from oslo.config import cfg
+import unittest2
 
 from fuel_agent import errors
 from fuel_agent.utils import build as bu
@@ -29,7 +29,7 @@ from fuel_agent.utils import utils
 CONF = cfg.CONF
 
 
-class BuildUtilsTestCase(testtools.TestCase):
+class BuildUtilsTestCase(unittest2.TestCase):
 
     _fake_ubuntu_release = '''
       Origin: TestOrigin

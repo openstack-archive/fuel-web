@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import mock
-from oslotest import base as test_base
+import unittest2
 
 from fuel_agent import errors
 from fuel_agent.utils import fs as fu
 from fuel_agent.utils import utils
 
 
-class TestFSUtils(test_base.BaseTestCase):
+class TestFSUtils(unittest2.TestCase):
 
     @mock.patch.object(utils, 'execute')
     def test_make_fs(self, mock_exec):

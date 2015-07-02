@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import mock
-
 import unittest2
 
 from fuel_agent import errors

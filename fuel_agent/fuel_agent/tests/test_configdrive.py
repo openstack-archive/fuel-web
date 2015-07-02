@@ -13,13 +13,13 @@
 # limitations under the License.
 
 
-from oslotest import base as test_base
+import unittest2
 
 from fuel_agent import errors
 from fuel_agent.objects import configdrive
 
 
-class TestConfigDriveScheme(test_base.BaseTestCase):
+class TestConfigDriveScheme(unittest2.TestCase):
 
     def setUp(self):
         super(TestConfigDriveScheme, self).setUp()

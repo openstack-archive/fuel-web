@@ -14,7 +14,7 @@
 
 import copy
 
-from oslotest import base as test_base
+import unittest2
 
 from fuel_agent.drivers import ks_spaces_validator as kssv
 from fuel_agent import errors
@@ -182,7 +182,7 @@ SAMPLE_SCHEME = [
 ]
 
 
-class TestKSSpacesValidator(test_base.BaseTestCase):
+class TestKSSpacesValidator(unittest2.TestCase):
     def setUp(self):
         super(TestKSSpacesValidator, self).setUp()
         self.fake_scheme = copy.deepcopy(SAMPLE_SCHEME)

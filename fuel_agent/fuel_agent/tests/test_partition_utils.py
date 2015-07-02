@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
-from oslotest import base as test_base
 import time
+
+import mock
+import unittest2
 
 from fuel_agent import errors
 from fuel_agent.utils import partition as pu
 from fuel_agent.utils import utils
 
 
-class TestPartitionUtils(test_base.BaseTestCase):
+class TestPartitionUtils(unittest2.TestCase):
     @mock.patch.object(pu, 'make_label')
     def test_wipe(self, mock_label):
         # should run call make_label method

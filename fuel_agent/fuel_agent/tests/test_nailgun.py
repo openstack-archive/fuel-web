@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import copy
-import mock
-from oslotest import base as test_base
 
+import mock
+import unittest2
 import yaml
 
 from fuel_agent.drivers import nailgun
@@ -578,7 +578,7 @@ MANY_HUGE_DISKS_KS_SPACES = [
 ]
 
 
-class TestNailgun(test_base.BaseTestCase):
+class TestNailgun(unittest2.TestCase):
 
     def test_match_device_by_id_matches(self):
         # matches by 'by-id' links

@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import mock
-from oslotest import base as test_base
+from oslo.config import cfg
+import unittest2
 import zlib
 
-from oslo.config import cfg
 
 from fuel_agent import errors
 from fuel_agent.utils import artifact as au
@@ -26,7 +26,7 @@ from fuel_agent.utils import utils
 CONF = cfg.CONF
 
 
-class TestTarget(test_base.BaseTestCase):
+class TestTarget(unittest2.TestCase):
     def setUp(self):
         super(TestTarget, self).setUp()
         self.tgt = au.Target()
@@ -50,7 +50,7 @@ class TestTarget(test_base.BaseTestCase):
         file_handle.flush.assert_called_once_with()
 
 
-class TestLocalFile(test_base.BaseTestCase):
+class TestLocalFile(unittest2.TestCase):
     def setUp(self):
         super(TestLocalFile, self).setUp()
         self.lf = au.LocalFile('/dev/null')
@@ -63,7 +63,7 @@ class TestLocalFile(test_base.BaseTestCase):
         self.assertRaises(StopIteration, self.lf.next)
 
 
-class TestHttpUrl(test_base.BaseTestCase):
+class TestHttpUrl(unittest2.TestCase):
     @mock.patch.object(utils, 'init_http_request')
     def test_httpurl_init_ok(self, mock_req):
         mock_req.return_value = mock.Mock(headers={'content-length': 123})
@@ -89,7 +89,7 @@ class TestHttpUrl(test_base.BaseTestCase):
             self.assertEqual(content[data[0]], data[1])
 
 
-class TestGunzipStream(test_base.BaseTestCase):
+class TestGunzipStream(unittest2.TestCase):
     def test_gunzip_stream_next(self):
         content = ['fake content #1']
         compressed_stream = [zlib.compress(data) for data in content]
@@ -98,7 +98,7 @@ class TestGunzipStream(test_base.BaseTestCase):
             self.assertEqual(content[data[0]], data[1])
 
 
-class TestChain(test_base.BaseTestCase):
+class TestChain(unittest2.TestCase):
     def setUp(self):
         super(TestChain, self).setUp()
         self.chain = au.Chain()

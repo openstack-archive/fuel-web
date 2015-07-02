@@ -19,6 +19,8 @@ from oslo.serialization import jsonutils
 import six
 import sqlalchemy as sa
 
+from nailgun import consts
+
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -320,3 +322,23 @@ class TestSchemalessRoles(base.BaseAlembicMigrationTest):
         self.assertNotIn('node_roles', self.meta.tables)
         self.assertNotIn('pending_node_roles', self.meta.tables)
         self.assertNotIn('roles', self.meta.tables)
+
+    def test_weight_is_injected_to_roles_meta(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.roles_metadata])
+        )
+        rel_row = result.fetchone()
+
+        r_meta = jsonutils.loads(rel_row[0])
+
+        for r_name in r_meta:
+            r_weight = r_meta[r_name].get('weight')
+            self.assertIsNotNone(r_weight)
+
+            if r_name in consts.DEFAULT_ROLES_WEIGHT:
+                self.assertEquals(
+                    r_weight, consts.DEFAULT_ROLES_WEIGHT.get(r_name)
+                )
+            # role which is not present in list of default ones
+            else:
+                self.assertEquals(r_weight, 10000)

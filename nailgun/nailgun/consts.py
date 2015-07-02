@@ -332,3 +332,19 @@ OSWL_RESOURCE_TYPES = Enum(
     'cluster_stats',
     'image',
 )
+
+# weight attribute is needed for UI to sort list of
+# default roles. The attribute is contained in `roles_metadata`
+# field of `roles` table and is taken from openstack.yaml fixture
+# for clusters with version >= 7.0. This section provides such
+# data to migration functions in order to update environments of versions
+# prior to 7.0
+DEFAULT_ROLES_WEIGHT = {
+    "controller": 10,
+    "compute": 20,
+    "cinder": 30,
+    "cinder-vmware": 40,
+    "ceph-osd": 50,
+    "mongo": 60,
+    "base-os": 70
+}

@@ -598,3 +598,25 @@ def upgrade_cluster_attributes_6_0_to_6_1(connection):
             update_query,
             editable=jsonutils.dumps(attributes),
             attr_id=attr_id)
+
+
+def upgrade_release_roles_metadata_6_1_to_7_0(connection):
+    select_query = text("""SELECT id, roles_metadata from releases""")
+    update_query = text(
+        """UPDATE releases SET roles_metadata = :r_meta WHERE id = :r_id""")
+
+    for r_id, r_meta in connection.execute(select_query):
+        r_meta = jsonutils.loads(r_meta)
+
+        for r_name in r_meta:
+            # if role is not in weight mapping, give it enormous value
+            # so it could be put at the end of the role list on UI
+            # (unless there is more than 1000 default roles in the system)
+            r_meta[r_name]['weight'] = \
+                consts.DEFAULT_ROLES_WEIGHT.get(r_name, 10000)
+
+        connection.execute(
+            update_query,
+            r_meta=jsonutils.dumps(r_meta),
+            r_id=r_id
+        )

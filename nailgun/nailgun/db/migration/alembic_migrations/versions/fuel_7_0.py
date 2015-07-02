@@ -30,6 +30,7 @@ import six
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import upgrade_release_roles_metadata_6_1_to_7_0
 
 
 def upgrade():
@@ -46,6 +47,13 @@ def upgrade():
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
     node_roles_as_plugin_upgrade()
+
+    upgrade_data()
+
+
+def upgrade_data():
+    connection = op.get_bind()
+    upgrade_release_roles_metadata_6_1_to_7_0(connection)
 
 
 def downgrade():

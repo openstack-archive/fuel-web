@@ -100,7 +100,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         },
         interfacesPickFromJSON: function(json) {
             // Pick certain interface fields that have influence on hasChanges.
-            return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties', 'interface_properties']);
+            return _.pick(json, ['assigned_networks', 'mode', 'type', 'slaves', 'bond_properties', 'interface_properties', 'offloading_modes']);
         },
         interfacesToJSON: function(interfaces, remainingNodesMode) {
             // Sometimes 'state' is sent from the API and sometimes not
@@ -175,14 +175,20 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
 
                 // Assigning networks according to user choice and interface properties
                 node.interfaces.each(function(ifc, index) {
+                    var updatedIfc = interfaces.at(index);
                     ifc.set({
-                        assigned_networks: new models.InterfaceNetworks(interfaces.at(index).get('assigned_networks').toJSON()),
-                        interface_properties: interfaces.at(index).get('interface_properties')
+                        assigned_networks: new models.InterfaceNetworks(updatedIfc.get('assigned_networks').toJSON()),
+                        interface_properties: updatedIfc.get('interface_properties')
                     });
                     if (ifc.isBond()) {
                         var bondProperties = ifc.get('bond_properties');
                         ifc.set({bond_properties: _.extend(bondProperties, {type__:
                             this.getBondType() == 'linux' ? 'linux' : 'ovs'})});
+                    };
+                    if (ifc.get('offloading_modes')) {
+                        ifc.set({
+                            offloading_modes: updatedIfc.get('offloading_modes')
+                        });
                     }
                 }, this);
 
@@ -564,7 +570,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     };
                 },
                 bondProperties = ifc.get('bond_properties'),
-                interfaceProperties = ifc.get('interface_properties') || null;
+                interfaceProperties = ifc.get('interface_properties') || null,
+                offloadingModes = ifc.get('offloading_modes') || [];
 
             return this.props.connectDropTarget(
                 <div className='ifc-container'>
@@ -683,15 +690,19 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
 
                         {interfaceProperties &&
                             <div className='ifc-properties clearfix forms-box'>
-                                <controls.Input
-                                    type='checkbox'
-                                    label={i18n(ns + 'disable_offloading')}
-                                    checked={interfaceProperties.disable_offloading}
-                                    name='disable_offloading'
-                                    onChange={this.onInterfacePropertiesChange}
-                                    disabled={locked}
-                                    wrapperClassName='pull-right'
-                                />
+
+                                {offloadingModes.length ?
+                                    <OffloadingModes interface={ifc} />
+                                    :
+                                    <controls.Input
+                                        type='checkbox'
+                                        label={i18n(ns + 'disable_offloading')}
+                                        checked={interfaceProperties.disable_offloading}
+                                        name='disable_offloading'
+                                        onChange={this.onInterfacePropertiesChange}
+                                        disabled={locked}
+                                        wrapperClassName='pull-right'
+                                    />}
                                 <controls.Input
                                     type='text'
                                     label={i18n(ns + 'mtu')}
@@ -702,8 +713,8 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     wrapperClassName='pull-right'
                                 />
                             </div>
-                        }
 
+                        }
                     </div>
                     {this.props.errors && <div className='ifc-error'>{this.props.errors}</div>}
                 </div>
@@ -759,6 +770,110 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
         }
     });
     var DraggableNetwork = DND.DragSource('network', Network.source, Network.collect)(Network);
+
+    var OffloadingModes = React.createClass({
+        propTypes: {
+            interface: React.PropTypes.object
+        },
+        getInitialState: function() {
+            return {
+                isVisible: false
+            };
+        },
+        toggleVisibility: function() {
+            this.setState({isVisible: !this.state.isVisible});
+        },
+        setModeState: function(mode, state) {
+            mode.state = state;
+            if (!_.isEmpty(mode.sub)) {
+                mode.sub.forEach((function(mode) {this.setModeState(mode, state)}).bind(this));
+            }
+        },
+        checkModes: function(mode, sub) {
+            var changedState = sub.reduce(
+                    (function(state, childMode) {
+                        if (!_.isEmpty(childMode.sub)) {
+                            this.checkModes(childMode, childMode.sub);
+                        }
+                        return (state === 0 || state === childMode.state) ? childMode.state : -1;
+                    }).bind(this),
+                    0
+                ),
+                oldState;
+
+            if (mode && mode.state != changedState) {
+                oldState = mode.state;
+                mode.state = oldState === false ? null : (changedState === false ? false : oldState);
+            }
+        },
+        findMode: function(name, modes) {
+            var result,
+                mode,
+                i,
+                l;
+            for (i = 0, l = modes.length; i < l; i++) {
+                mode = modes[i];
+                if (mode.name == name) {
+                    return mode;
+                } else if (!_.isEmpty(mode.sub)) {
+                    result = this.findMode(name, mode.sub);
+                    if (result) {
+                        break;
+                    }
+                }
+            }
+            return result;
+        },
+        rotateModeState: function(name) {
+            var rotate = {
+                    true: false,
+                    false: null,
+                    null: true
+                },
+                modes = _.deepClone(this.props.interface.get('offloading_modes') || []),
+                mode = this.findMode(name, modes);
+
+            return (function() {
+                if (!_.isEmpty(mode)) {
+                    this.setModeState(mode, rotate[mode.state]);
+                    this.checkModes(null, modes);
+                    this.props.interface.set('offloading_modes', modes);
+                }
+            }).bind(this);
+        },
+        renderChildModes: function(modes) {
+            var states = {
+                    true: i18n(ns + 'offloading_enabled'),
+                    false: i18n(ns + 'offloading_disabled'),
+                    null: i18n(ns + 'offloading_default')
+                };
+            return <ul>
+                {modes.map((function(mode) {
+                    var state = states[mode.state];
+                    return <li key={mode.name}>
+                        <div className={state} onClick={this.rotateModeState(mode.name)}>{state}</div>
+                        {mode.name}
+                        {mode.sub &&
+                            <ul>{this.renderChildModes(mode.sub)}</ul>
+                        }
+                    </li>
+                    }).bind(this))
+                }
+                </ul>
+        },
+        render: function() {
+            var ns = 'cluster_page.nodes_tab.configure_interfaces.',
+                modes = this.props.interface.get('offloading_modes') || [];
+            return <div className='offloading-modes pull-right'>
+                <div>
+                    <button className='btn btn-default' onClick={this.toggleVisibility}>{i18n(ns + 'offloading_modes')}</button>
+                    {this.state.isVisible &&
+                        this.renderChildModes(modes)
+                    }
+                </div>
+            </div>
+        }
+    });
 
     return EditNodeInterfacesScreen;
 });

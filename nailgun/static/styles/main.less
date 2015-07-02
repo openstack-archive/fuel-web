@@ -2540,6 +2540,48 @@ button, .btn:not(.btn-link) {.font-semibold;}
           }
         }
       }
+      // Offline modes control
+      .offloading-modes {
+        margin-right: 10px;
+
+        button {
+          float: right;
+        }
+        ul {
+          padding-left: 10px;
+          margin-bottom: 0;
+          clear: both;
+
+          li {
+            list-style: none;
+            padding: 2px 0;
+
+            div {
+              margin: 0;
+              clear: right;
+              font-weight: 600;
+              cursor: pointer;
+              text-transform: uppercase;
+              opacity: 0.8;
+              float: right;
+              width: 80px;
+              text-align: right;
+
+              &.enabled {
+                .text-success;
+              }
+
+              &.disabled {
+                .text-danger;
+              }
+
+              &:hover {
+                opacity: 1;
+              }
+            }
+          }
+        }
+      }
 
       .networks-block {
         padding: @base-ifc-indent * 2 0 @base-ifc-indent;

@@ -15,6 +15,7 @@
 
 import alembic
 from oslo.serialization import jsonutils
+import six
 import sqlalchemy as sa
 
 from nailgun.db import db
@@ -25,6 +26,49 @@ from nailgun.test import base
 
 _prepare_revision = '37608259013'
 _test_revision = '1e50a4903910'
+
+_RELEASE = {
+    'name': 'test_name',
+    'version': '2015.2-7.0',
+    'operating_system': 'ubuntu',
+    'state': 'available',
+    'roles_metadata': jsonutils.dumps({
+        "controller": {
+            "name": "Controller",
+            "description": "Controller role"
+        },
+        "zabbix-server": {
+            "name": "Zabbix Server",
+            "description": "Zabbix Server role"
+        },
+        "cinder": {
+            "name": "Cinder",
+            "description": "Cinder role"
+        }
+    }),
+    'attributes_metadata': jsonutils.dumps({
+        'editable': {
+            'storage': {
+                'volumes_lvm': {},
+            },
+            'common': {},
+        },
+        'generated': {
+            'cobbler': {'profile': {
+                'generator_arg': 'ubuntu_1204_x86_64'}}},
+    }),
+    'networks_metadata': jsonutils.dumps({
+        'neutron': {
+            'networks': [
+                {
+                    'assign_vip': True,
+                },
+            ]
+        }
+
+    }),
+    'is_deployable': True
+}
 
 
 def setup_module(module):
@@ -54,6 +98,8 @@ def prepare():
             ]),
             'fuel_version': jsonutils.dumps(['6.1', '7.0']),
         }])
+
+    db.execute(meta.tables['releases'].insert(), [_RELEASE])
 
     db.commit()
 
@@ -144,3 +190,15 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['plugins'].c.tasks]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+
+
+class TestReleaseNetworkRolesMetadataMigration(base.BaseAlembicMigrationTest):
+    def test_public_ip_required(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.roles_metadata]))
+        roles_metadata = jsonutils.loads(result.fetchone()[0])
+        for role, role_info in six.iteritems(roles_metadata):
+            if role in ['controller', 'zabbix-server']:
+                self.assertTrue(role_info['public_ip_required'])
+            else:
+                self.assertFalse(role_info.get('public_ip_required'))

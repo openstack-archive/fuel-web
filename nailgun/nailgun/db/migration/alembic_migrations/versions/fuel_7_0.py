@@ -25,6 +25,8 @@ revision = '1e50a4903910'
 down_revision = '37608259013'
 
 from alembic import op
+from oslo.serialization import jsonutils
+import six
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
@@ -42,6 +44,7 @@ def upgrade():
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
     extend_plugin_model_upgrade()
+    upgrade_node_roles_metadata()
 
 
 def downgrade():
@@ -109,3 +112,20 @@ def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'roles_metadata')
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
+
+
+def upgrade_node_roles_metadata():
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT id, roles_metadata FROM releases")
+    update_query = sa.sql.text(
+        "UPDATE releases SET roles_metadata = :roles_metadata WHERE id = :id")
+
+    for id, roles_metadata in connection.execute(select_query):
+        roles_metadata = jsonutils.loads(roles_metadata)
+        for role, role_info in six.iteritems(roles_metadata):
+            if role in ['controller', 'zabbix-server']:
+                role_info['public_ip_required'] = True
+        connection.execute(
+            update_query,
+            id=id,
+            roles_metadata=jsonutils.dumps(roles_metadata))

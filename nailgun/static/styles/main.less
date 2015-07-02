@@ -2140,7 +2140,21 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .node-image-outline {
     width: 200px;
     height: 58px;
+    margin-top: 10px;
     background: url("../img/node-image.svg") no-repeat 0 0 transparent;
+  }
+  .change-hostname-btn {
+    text-decoration: none;
+    font-size: @base-font-size - 2;
+  }
+  .change-hostname-form {
+    margin: 0;
+    label {display: none;}
+    .help-block {
+      .break-word;
+      margin-bottom: 0;
+      font-size: @base-font-size - 2;
+    }
   }
   .panel-group {
     margin-top: 10px;

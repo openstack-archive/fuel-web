@@ -12,23 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 import os
-from oslotest import base as test_base
-import six
 import StringIO
+
+import mock
+import six
+import unittest2
+
+from fuel_agent import errors
+from fuel_agent.utils import grub as gu
+from fuel_agent.utils import utils
 
 if six.PY2:
     OPEN_FUNCTION_NAME = '__builtin__.open'
 else:
     OPEN_FUNCTION_NAME = 'builtins.open'
 
-from fuel_agent import errors
-from fuel_agent.utils import grub as gu
-from fuel_agent.utils import utils
 
-
-class TestGrubUtils(test_base.BaseTestCase):
+class TestGrubUtils(unittest2.TestCase):
 
     @mock.patch.object(os.path, 'isdir')
     def test_guess_grub2_conf(self, mock_isdir):

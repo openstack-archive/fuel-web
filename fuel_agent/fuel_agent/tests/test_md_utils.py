@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import mock
-from oslotest import base as test_base
 import six
+import unittest2
 
 from fuel_agent import errors
 from fuel_agent.utils import hardware as hu
@@ -28,7 +28,7 @@ else:
     OPEN_FUNCTION_NAME = 'builtins.open'
 
 
-class TestMdUtils(test_base.BaseTestCase):
+class TestMdUtils(unittest2.TestCase):
 
     @mock.patch('fuel_agent.utils.md.utils.execute')
     def test_mddisplay_nostate_detail(self, mock_exec):

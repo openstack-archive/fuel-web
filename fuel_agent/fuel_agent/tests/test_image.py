@@ -13,13 +13,13 @@
 # limitations under the License.
 
 
-from oslotest import base as test_base
+import unittest2
 
 from fuel_agent import errors
 from fuel_agent.objects import image
 
 
-class TestImage(test_base.BaseTestCase):
+class TestImage(unittest2.TestCase):
 
     def test_unsupported_container(self):
         self.assertRaises(errors.WrongImageDataError, image.Image, 'uri',

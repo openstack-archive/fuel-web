@@ -13,13 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
+import socket
 
 import mock
 from oslo.config import cfg
 import requests
-import socket
 import stevedore
+import unittest2
 import urllib3
 
 from fuel_agent import errors
@@ -29,7 +29,7 @@ from fuel_agent.utils import utils
 CONF = cfg.CONF
 
 
-class ExecuteTestCase(testtools.TestCase):
+class ExecuteTestCase(unittest2.TestCase):
     """This class is partly based on the same class in openstack/ironic."""
 
     def setUp(self):

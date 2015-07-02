@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 import os
 import signal
 
+import mock
 from oslo.config import cfg
-from oslotest import base as test_base
+import unittest2
 
 from fuel_agent.drivers import nailgun
 from fuel_agent import errors
@@ -36,7 +36,7 @@ from fuel_agent.utils import utils
 CONF = cfg.CONF
 
 
-class TestManager(test_base.BaseTestCase):
+class TestManager(unittest2.TestCase):
 
     @mock.patch('yaml.load')
     @mock.patch.object(utils, 'init_http_request')
@@ -331,7 +331,7 @@ class TestManager(test_base.BaseTestCase):
                           self.mgr.do_copyimage)
 
 
-class TestImageBuild(test_base.BaseTestCase):
+class TestImageBuild(unittest2.TestCase):
 
     @mock.patch('yaml.load')
     @mock.patch.object(utils, 'init_http_request')

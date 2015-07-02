@@ -37,6 +37,8 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             message: React.PropTypes.node,
             modalClass: React.PropTypes.node,
             error: React.PropTypes.bool,
+            keyboard: React.PropTypes.bool,
+            background: React.PropTypes.bool,
             backdrop: React.PropTypes.oneOfType([
                 React.PropTypes.string,
                 React.PropTypes.bool
@@ -52,12 +54,14 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         componentDidMount: function() {
             Backbone.history.on('route', this.close, this);
-            var $el = $(this.getDOMNode()),
-                options = {background: true, keyboard: true};
+            var $el = $(this.getDOMNode());
             $el.on('hidden.bs.modal', this.handleHidden);
             $el.on('shown.bs.modal', function() {$el.find('[autofocus]:first').focus();});
-            if (this.props.backdrop) _.extend(options, {backdrop: this.props.backdrop});
-            $el.modal(options);
+            $el.modal(_.defaults(
+                {keyboard: false},
+                _.pick(this.props, ['background', 'backdrop']),
+                {background: true, backdrop: true}
+            ));
         },
         componentWillUnmount: function() {
             Backbone.history.off(null, null, this);
@@ -73,6 +77,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             // close dialogs on click of any internal link inside it
             if (e.target.tagName == 'A' && !e.target.target) this.close();
         },
+        closeOnEscapeKey: function(e) {
+            if (this.props.keyboard !== false && e.key == 'Escape') this.close();
+        },
         showError: function(response, message) {
             var props = {error: true};
             props.message = utils.getResponseText(response) || message;
@@ -85,7 +92,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             var classes = {'modal fade': true};
             classes[this.props.modalClass] = this.props.modalClass;
             return (
-                <div className={utils.classNames(classes)} tabIndex="-1" onClick={this.closeOnLinkClick}>
+                <div className={utils.classNames(classes)} tabIndex="-1" onClick={this.closeOnLinkClick} onKeyDown={this.closeOnEscapeKey}>
                     <div className='modal-dialog'>
                         <div className='modal-content'>
                             <div className='modal-header'>
@@ -626,8 +633,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             dialogMixin,
             componentMixins.backboneMixin('node')
         ],
+        getDefaultProps: function() {
+            return {modalClass: 'always-show-scrollbar'};
+        },
         getInitialState: function() {
-            return {title: i18n('dialog.show_node.default_dialog_title')};
+            return {
+                title: i18n('dialog.show_node.default_dialog_title'),
+                changingHostname: false,
+                elementToFocus: null
+            };
         },
         goToConfigurationScreen: function(url) {
             this.close();
@@ -686,6 +700,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidUpdate: function() {
             this.assignAccordionEvents();
             this.setDialogTitle();
+            if (this.state.elementToFocus) {
+                $(this.refs[this.state.elementToFocus].getDOMNode()).focus();
+                this.setState({elementToFocus: null});
+            }
         },
         componentDidMount: function() {
             this.assignAccordionEvents();
@@ -703,6 +721,23 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         },
         toggle: function(groupIndex) {
             $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
+        },
+        startHostnameChanging: function() {
+            this.setState({changingHostname: true, elementToFocus: 'hostname'});
+        },
+        endHostnameChanging: function() {
+            this.setState({changingHostname: false, actionInProgress: false});
+        },
+        onHostnameInputKeydown: function(e) {
+            if (e.key == 'Enter') {
+                this.setState({actionInProgress: true});
+                var hostname = this.refs.hostname.getDOMNode().value;
+                this.props.node.save({hostname: hostname}, {patch: true, wait: true}).always(this.endHostnameChanging);
+            } else if (e.key == 'Escape') {
+                this.endHostnameChanging();
+                e.stopPropagation();
+                this.getDOMNode().focus();
+            }
         },
         renderBody: function() {
             var node = this.props.node,
@@ -722,6 +757,27 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
+                            <div><strong>{i18n('dialog.show_node.hostname_label')}: </strong>
+                                {this.state.changingHostname ?
+                                    <input
+                                        ref='hostname'
+                                        className='form-control input-sm'
+                                        disabled={this.state.actionInProgress}
+                                        defaultValue={node.get('hostname')}
+                                        onKeyDown={this.onHostnameInputKeydown}
+                                    />
+                                :
+                                    <span>
+                                        {node.get('hostname') || i18n('common.not_available')}
+                                        <button
+                                            className='change-hostname-btn btn-link glyphicon glyphicon-pencil'
+                                            onClick={this.startHostnameChanging}
+                                        />
+                                    </span>
+                                }
+
+
+                            </div>
                         </div>
                     </div>
                     <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>

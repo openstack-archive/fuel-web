@@ -536,3 +536,34 @@ class TestSchemalessRoles(base.BaseAlembicMigrationTest):
             sa.select([self.meta.tables['releases'].c.network_roles_metadata]))
         # check attributes_metadata value is empty
         self.assertEqual(jsonutils.loads(result.fetchone()[0]), [])
+
+    def test_weight_is_injected_to_roles_meta(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.roles_metadata])
+        )
+        rel_row = result.fetchone()
+
+        r_meta = jsonutils.loads(rel_row[0])
+
+        default_roles_weight = {
+            "controller": 10,
+            "compute": 20,
+            "cinder": 30,
+            "cinder-vmware": 40,
+            "ceph-osd": 50,
+            "mongo": 60,
+            "base-os": 70,
+            "kvm-virt": 80
+        }
+
+        for r_name in r_meta:
+            r_weight = r_meta[r_name].get('weight')
+            self.assertIsNotNone(r_weight)
+
+            if r_name in default_roles_weight:
+                self.assertEquals(
+                    r_weight, default_roles_weight.get(r_name)
+                )
+            # role which is not present in list of default ones
+            else:
+                self.assertEquals(r_weight, 10000)

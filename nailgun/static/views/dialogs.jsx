@@ -637,7 +637,12 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             return {modalClass: 'always-show-scrollbar'};
         },
         getInitialState: function() {
-            return {title: i18n('dialog.show_node.default_dialog_title')};
+            return {
+                title: i18n('dialog.show_node.default_dialog_title'),
+                changingHostname: false,
+                hostnameChangingError: null,
+                elementToFocus: null
+            };
         },
         goToConfigurationScreen: function(url) {
             this.close();
@@ -696,6 +701,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         componentDidUpdate: function() {
             this.assignAccordionEvents();
             this.setDialogTitle();
+            if (this.state.elementToFocus) {
+                $(this.refs[this.state.elementToFocus].getDOMNode()).focus();
+                this.setState({elementToFocus: null});
+            }
         },
         componentDidMount: function() {
             this.assignAccordionEvents();
@@ -714,6 +723,33 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
         toggle: function(groupIndex) {
             $(this.refs['togglable_' + groupIndex].getDOMNode()).collapse('toggle');
         },
+        startHostnameChanging: function() {
+            this.setState({changingHostname: true, elementToFocus: 'hostname'});
+        },
+        endHostnameChanging: function() {
+            this.setState({changingHostname: false, actionInProgress: false});
+        },
+        onHostnameInputKeydown: function(e) {
+            this.setState({hostnameChangingError: null});
+            if (e.key == 'Enter') {
+                this.setState({actionInProgress: true});
+                var hostname = this.refs.hostname.getDOMNode().value;
+                (hostname != this.props.node.get('hostname') ?
+                    this.props.node.save({hostname: hostname}, {patch: true, wait: true}) :
+                    $.Deferred().resolve()
+                ).fail(_.bind(function(response) {
+                    this.setState({
+                        hostnameChangingError: utils.getResponseText(response),
+                        elementToFocus: 'hostname',
+                        actionInProgress: false
+                    });
+                }, this)).done(this.endHostnameChanging);
+            } else if (e.key == 'Escape') {
+                this.endHostnameChanging();
+                e.stopPropagation();
+                this.getDOMNode().focus();
+            }
+        },
         renderBody: function() {
             var node = this.props.node,
                 meta = node.get('meta');
@@ -728,10 +764,40 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                 <div className='node-details-popup'>
                     <div className='row'>
                         <div className='col-xs-5'><div className='node-image-outline' /></div>
-                        <div className='col-xs-7 enable-selection'>
+                        <div className='col-xs-7'>
                             <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
                             <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
+                            <div>
+                                <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
+                                {this.state.changingHostname ?
+                                    <div className={utils.classNames({
+                                        'form-group change-hostname-form': true,
+                                        'has-error': this.state.hostnameChangingError
+                                    })}>
+                                        <input
+                                            ref='hostname'
+                                            className='form-control input-sm'
+                                            disabled={this.state.actionInProgress}
+                                            defaultValue={node.get('hostname')}
+                                            onKeyDown={this.onHostnameInputKeydown}
+                                        />
+                                        {this.state.hostnameChangingError &&
+                                            <span className='help-block'>
+                                                {this.state.hostnameChangingError}
+                                            </span>
+                                        }
+                                    </div>
+                                :
+                                    <span>
+                                        {node.get('hostname') || i18n('common.not_available')}
+                                        <button
+                                            className='change-hostname-btn btn-link glyphicon glyphicon-pencil'
+                                            onClick={this.startHostnameChanging}
+                                        />
+                                    </span>
+                                }
+                            </div>
                         </div>
                     </div>
                     <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>

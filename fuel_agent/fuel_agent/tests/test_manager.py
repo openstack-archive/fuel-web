@@ -445,8 +445,10 @@ class TestManager(test_base.BaseTestCase):
                       chroot='/tmp/imgdir',
                       uri='http://fakemos')],
             mock_bu.add_apt_preference.call_args_list)
-        mock_utils.makedirs_if_not_exists.assert_called_once_with(
-            '/tmp/imgdir/proc')
+        self.assertEqual([
+            mock.call('/tmp'),
+            mock.call('/tmp/imgdir/proc')],
+            mock_utils.makedirs_if_not_exists.call_args_list)
         self.assertEqual([
             mock.call('tune2fs', '-O', '^has_journal', '/dev/loop0'),
             mock.call('tune2fs', '-O', 'has_journal', '/dev/loop0')],

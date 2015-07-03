@@ -690,7 +690,7 @@
             type: "text"
             regex:
               source: "^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
-              error: "Invalid Syslog port"
+              error: "Invalid syslog port"
         provision:
           metadata:
             label: "Provision"
@@ -1038,7 +1038,7 @@
                 description: "Availability zone name"
                 regex:
                   source: &availability_zone_blacklist '^(?!nova$)\w+$'
-                  error: "Invalid Availability zone name"
+                  error: "Invalid availability zone name"
               -
                 name: "vcenter_host"
                 type: "text"
@@ -1105,7 +1105,7 @@
                 description: "VLAN interface"
                 regex:
                   source: *non_empty_string
-                  error: "Invalid Network Interface"
+                  error: "Invalid network interface"
           -
             name: "glance"
             type: "object"
@@ -1144,7 +1144,7 @@
                 description: "Datacenter"
                 regex:
                   source: *non_empty_string
-                  error: "Invalid Datacenter"
+                  error: "Invalid datacenter"
               -
                 name: "datastore"
                 type: "text"
@@ -1152,7 +1152,7 @@
                 description: "Datastore"
                 regex:
                   source: *non_empty_string
-                  error: "Invalid Datastore"
+                  error: "Invalid datastore"
         value:
           availability_zones:
             -

@@ -14,16 +14,17 @@
 
 import mock
 
-from oslotest import base as test_base
+import unittest2
 
 from fuel_agent import errors
 from fuel_agent.objects import partition
 
 
-class TestMD(test_base.BaseTestCase):
+class TestMultipleDevice(unittest2.TestCase):
+
     def setUp(self):
-        super(TestMD, self).setUp()
-        self.md = partition.Md('name', 'level')
+        super(self.__class__, self).setUp()
+        self.md = partition.MD(name='name', level='level')
 
     def test_add_device_ok(self):
         self.assertEqual(0, len(self.md.devices))
@@ -59,8 +60,22 @@ class TestMD(test_base.BaseTestCase):
         self.assertRaises(errors.MDDeviceDuplicationError, self.md.add_spare,
                           'device')
 
+    def test_conversion(self):
+        self.md.add_device('device_a')
+        self.md.add_spare('device_b')
+        serialized = self.md.to_dict()
+        assert serialized == {
+            'name': 'name',
+            'level': 'level',
+            'devices': ['device_a', ],
+            'spares': ['device_b', ],
+        }
+        new_md = partition.MD.from_dict(serialized)
+        assert serialized == new_md.to_dict()
 
-class TestPartition(test_base.BaseTestCase):
+
+class TestPartition(unittest2.TestCase):
+
     def setUp(self):
         super(TestPartition, self).setUp()
         self.pt = partition.Partition('name', 'count', 'device', 'begin',
@@ -72,8 +87,27 @@ class TestPartition(test_base.BaseTestCase):
         self.assertEqual(1, len(self.pt.flags))
         self.assertIn('fake_flag', self.pt.flags)
 
+    def test_conversion(self):
+        self.pt.flags.append('some_flag')
+        self.pt.guid = 'some_guid'
+        serialized = self.pt.to_dict()
+        assert serialized == {
+            'begin': 'begin',
+            'configdrive': False,
+            'count': 'count',
+            'device': 'device',
+            'end': 'end',
+            'flags': ['some_flag', ],
+            'guid': 'some_guid',
+            'name': 'name',
+            'partition_type': 'partition_type',
+        }
+        new_pt = partition.Partition.from_dict(serialized)
+        assert serialized == new_pt.to_dict()
 
-class TestPartitionScheme(test_base.BaseTestCase):
+
+class TestPartitionScheme(unittest2.TestCase):
+
     def setUp(self):
         super(TestPartitionScheme, self).setUp()
         self.p_scheme = partition.PartitionScheme()
@@ -83,30 +117,30 @@ class TestPartitionScheme(test_base.BaseTestCase):
                           self.p_scheme.root_device)
 
     def test_fs_by_device(self):
-        expected_fs = partition.Fs('device')
+        expected_fs = partition.FS('device')
         self.p_scheme.fss.append(expected_fs)
-        self.p_scheme.fss.append(partition.Fs('wrong_device'))
+        self.p_scheme.fss.append(partition.FS('wrong_device'))
         actual_fs = self.p_scheme.fs_by_device('device')
         self.assertEqual(expected_fs, actual_fs)
 
     def test_fs_by_mount(self):
-        expected_fs = partition.Fs('d', mount='mount')
+        expected_fs = partition.FS('d', mount='mount')
         self.p_scheme.fss.append(expected_fs)
-        self.p_scheme.fss.append(partition.Fs('w_d', mount='wrong_mount'))
+        self.p_scheme.fss.append(partition.FS('w_d', mount='wrong_mount'))
         actual_fs = self.p_scheme.fs_by_mount('mount')
         self.assertEqual(expected_fs, actual_fs)
 
     def test_pv_by_name(self):
-        expected_pv = partition.Pv('pv')
+        expected_pv = partition.PV('pv')
         self.p_scheme.pvs.append(expected_pv)
-        self.p_scheme.pvs.append(partition.Pv('wrong_pv'))
+        self.p_scheme.pvs.append(partition.PV('wrong_pv'))
         actual_pv = self.p_scheme.pv_by_name('pv')
         self.assertEqual(expected_pv, actual_pv)
 
     def test_vg_by_name(self):
-        expected_vg = partition.Vg('vg')
+        expected_vg = partition.VG('vg')
         self.p_scheme.vgs.append(expected_vg)
-        self.p_scheme.vgs.append(partition.Vg('wrong_vg'))
+        self.p_scheme.vgs.append(partition.VG('wrong_vg'))
         actual_vg = self.p_scheme.vg_by_name('vg')
         self.assertEqual(expected_vg, actual_vg)
 
@@ -123,33 +157,33 @@ class TestPartitionScheme(test_base.BaseTestCase):
 
     def test_md_next_name_fail(self):
         self.p_scheme.mds = [
-            partition.Md('/dev/md%s' % x, 'level') for x in range(0, 128)]
+            partition.MD('/dev/md%s' % x, 'level') for x in range(0, 128)]
         self.assertRaises(errors.MDAlreadyExistsError,
                           self.p_scheme.md_next_name)
 
     def test_md_by_name(self):
         self.assertEqual(0, len(self.p_scheme.mds))
-        expected_md = partition.Md('name', 'level')
+        expected_md = partition.MD('name', 'level')
         self.p_scheme.mds.append(expected_md)
-        self.p_scheme.mds.append(partition.Md('wrong_name', 'level'))
+        self.p_scheme.mds.append(partition.MD('wrong_name', 'level'))
         self.assertEqual(expected_md, self.p_scheme.md_by_name('name'))
 
     def test_md_by_mount(self):
         self.assertEqual(0, len(self.p_scheme.mds))
         self.assertEqual(0, len(self.p_scheme.fss))
-        expected_md = partition.Md('name', 'level')
-        expected_fs = partition.Fs('name', mount='mount')
+        expected_md = partition.MD('name', 'level')
+        expected_fs = partition.FS('name', mount='mount')
         self.p_scheme.mds.append(expected_md)
         self.p_scheme.fss.append(expected_fs)
-        self.p_scheme.fss.append(partition.Fs('wrong_name',
+        self.p_scheme.fss.append(partition.FS('wrong_name',
                                  mount='wrong_mount'))
         self.assertEqual(expected_md, self.p_scheme.md_by_mount('mount'))
 
     def test_md_attach_by_mount_md_exists(self):
         self.assertEqual(0, len(self.p_scheme.mds))
         self.assertEqual(0, len(self.p_scheme.fss))
-        expected_md = partition.Md('name', 'level')
-        expected_fs = partition.Fs('name', mount='mount')
+        expected_md = partition.MD('name', 'level')
+        expected_fs = partition.FS('name', mount='mount')
         self.p_scheme.mds.append(expected_md)
         self.p_scheme.fss.append(expected_fs)
         actual_md = self.p_scheme.md_attach_by_mount('device', 'mount')
@@ -171,7 +205,7 @@ class TestPartitionScheme(test_base.BaseTestCase):
         self.assertEqual('-F', self.p_scheme.fss[0].options)
 
 
-class TestParted(test_base.BaseTestCase):
+class TestParted(unittest2.TestCase):
     def setUp(self):
         super(TestParted, self).setUp()
         self.prtd = partition.Parted('name', 'label')
@@ -254,3 +288,98 @@ class TestParted(test_base.BaseTestCase):
                                                    'begin', 'end', 'primary')]
         self.prtd.partitions.extend(expected_partitions)
         self.assertEqual(expected_partitions, self.prtd.primary)
+
+    def test_conversion(self):
+        prt = partition.Partition(
+            name='name',
+            count='count',
+            device='device',
+            begin='begin',
+            end='end',
+            partition_type='primary'
+        )
+        self.prtd.partitions.append(prt)
+        serialized = self.prtd.to_dict()
+        assert serialized == {
+            'label': 'label',
+            'name': 'name',
+            'partitions': [
+                prt.to_dict(),
+            ]
+        }
+        new_prtd = partition.Parted.from_dict(serialized)
+        assert serialized == new_prtd.to_dict()
+
+
+class TestLogicalVolume(unittest2.TestCase):
+
+    def test_conversion(self):
+        lv = partition.LV(
+            name='lv-name',
+            vgname='vg-name',
+            size=1234
+        )
+        serialized = lv.to_dict()
+        assert serialized == {
+            'name': 'lv-name',
+            'vgname': 'vg-name',
+            'size': 1234,
+        }
+        new_lv = partition.LV.from_dict(serialized)
+        assert serialized == new_lv.to_dict()
+
+
+class TestPhisicalVolume(unittest2.TestCase):
+
+    def test_conversion(self):
+        pv = partition.PV(
+            name='pv-name',
+            metadatasize=987,
+            metadatacopies=112,
+        )
+        serialized = pv.to_dict()
+        assert serialized == {
+            'name': 'pv-name',
+            'metadatasize': 987,
+            'metadatacopies': 112,
+        }
+        new_pv = partition.PV.from_dict(serialized)
+        assert serialized == new_pv.to_dict()
+
+
+class TestVolumesGroup(unittest2.TestCase):
+
+    def test_conversion(self):
+        vg = partition.VG(
+            name='vg-name',
+            pvnames=['pv-name-a', ]
+        )
+        serialized = vg.to_dict()
+        assert serialized == {
+            'name': 'vg-name',
+            'pvnames': ['pv-name-a', ]
+        }
+        new_vg = partition.VG.from_dict(serialized)
+        assert serialized == new_vg.to_dict()
+
+
+class TestFileSystem(unittest2.TestCase):
+
+    def test_conversion(self):
+        fs = partition.FS(
+            device='some-device',
+            mount='/mount',
+            fs_type='type',
+            fs_options='some-option',
+            fs_label='some-label',
+        )
+        serialized = fs.to_dict()
+        assert serialized == {
+            'device': 'some-device',
+            'mount': '/mount',
+            'fs_type': 'type',
+            'fs_options': 'some-option',
+            'fs_label': 'some-label',
+        }
+        new_fs = partition.FS.from_dict(serialized)
+        assert serialized == new_fs.to_dict()

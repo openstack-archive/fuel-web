@@ -28,3 +28,23 @@ class BaseDataDriver(object):
 
     def __init__(self, data):
         self.data = copy.deepcopy(data)
+
+    @abc.abstractproperty
+    def partition_scheme(self):
+        """Retruns instance of PartionScheme object"""
+
+    @abc.abstractproperty
+    def image_scheme(self):
+        """Returns instance of ImageScheme object"""
+
+    @abc.abstractproperty
+    def grub(self):
+        """Returns instance of Grub object"""
+
+    @abc.abstractproperty
+    def operating_system(self):
+        """Returns instance of OperatingSystem object"""
+
+    @abc.abstractproperty
+    def configdrive_scheme(self):
+        """Returns instance of ConfigDriveScheme object"""

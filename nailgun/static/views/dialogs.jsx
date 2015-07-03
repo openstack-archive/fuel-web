@@ -314,24 +314,24 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
             // Amount restrictions
             function(cluster) {
                 var configModels = this.getConfigModels(),
-                    roleModels = cluster.get('release').get('role_models'),
-                    validRoleModels = roleModels.filter(function(role) {
+                    roles = cluster.get('roles'),
+                    validRoles = roles.filter(function(role) {
                         return !role.checkRestrictions(configModels).result;
                     }),
-                    limitValidations = _.zipObject(validRoleModels.map(function(role) {
+                    limitValidations = _.zipObject(validRoles.map(function(role) {
                         return [role.get('name'), role.checkLimits(configModels)];
                     })),
-                    limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
+                    limitRecommendations = _.zipObject(validRoles.map(function(role) {
                         return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
                     }));
                 return {
-                    blocker: roleModels.map(_.bind(
+                    blocker: roles.map(_.bind(
                         function(role) {
                             var name = role.get('name'),
                                 limits = limitValidations[name];
                             return limits && !limits.valid && limits.message;
                     }, this)),
-                    warning: roleModels.map(_.bind(
+                    warning: roles.map(_.bind(
                         function(role) {
                             var name = role.get('name'),
                                 recommendation = limitRecommendations[name];

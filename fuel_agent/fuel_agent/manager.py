@@ -68,11 +68,6 @@ opts = [
         help='Correct empty rule for udev daemon',
     ),
     cfg.StrOpt(
-        'image_build_dir',
-        default='/tmp',
-        help='Directory where the image is supposed to be built',
-    ),
-    cfg.StrOpt(
         'image_build_suffix',
         default='.fuel-agent-image',
         help='Suffix which is used while creating temporary files',
@@ -84,6 +79,11 @@ cli_opts = [
         'data_driver',
         default='nailgun',
         help='Data driver'
+    ),
+    cfg.StrOpt(
+        'image_build_dir',
+        default='/tmp',
+        help='Directory where the image is supposed to be built',
     ),
 ]
 

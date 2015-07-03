@@ -69,7 +69,7 @@ opts = [
     ),
     cfg.StrOpt(
         'image_build_dir',
-        default='/tmp',
+        default='/var/lib/fuel/ibp',
         help='Directory where the image is supposed to be built',
     ),
     cfg.StrOpt(

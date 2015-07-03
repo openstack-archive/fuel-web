@@ -23,7 +23,7 @@ from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun import objects
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseTestCase
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestHelperUpdateClusterStatus(BaseTestCase):

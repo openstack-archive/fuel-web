@@ -19,7 +19,7 @@ from mock import patch
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 from nailgun import consts
 from nailgun import objects

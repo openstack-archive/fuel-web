@@ -1,0 +1,326 @@
+{
+    "hostname": "node-1.domain.tld",
+    "interfaces": {
+        "eth0": {
+            "dns_name": "node-1.domain.tld",
+            "ip_address": "10.20.0.3",
+            "mac_address": "08:00:27:79:da:80",
+            "netmask": "255.255.255.0",
+            "static": "0"
+        },
+        "eth1": {
+            "mac_address": "08:00:27:46:43:60",
+            "static": "0"
+        },
+        "eth2": {
+            "mac_address": "08:00:27:b1:d7:15",
+            "static": "0"
+        }
+    },
+    "interfaces_extra": {
+        "eth0": {
+            "onboot": "yes",
+            "peerdns": "no"
+        },
+        "eth1": {
+            "onboot": "no",
+            "peerdns": "no"
+        },
+        "eth2": {
+            "onboot": "no",
+            "peerdns": "no"
+        }
+    },
+    "kernel_options": {
+        "netcfg/choose_interface": "08:00:27:79:da:80",
+        "udevrules": "08:00:27:79:da:80_eth0,08:00:27:46:43:60_eth1,08:00:27:b1:d7:15_eth2"
+    },
+    "ks_meta": {
+        "auth_key": "fake_auth_key",
+        "authorized_keys": [
+            "fake_authorized_key1",
+            "fake_authorized_key2"
+        ],
+        "fuel_version": "5.0.1",
+        "gw": "10.20.0.1",
+        "image_data": {
+            "/": {
+                "container": "gzip",
+                "format": "ext4",
+                "uri": "http://fake.host.org:123/imgs/fake_image.img.gz"
+            }
+        },
+        "install_log_2_syslog": 1,
+        "master_ip": "10.20.0.2",
+        "mco_auto_setup": 1,
+        "mco_connector": "rabbitmq",
+        "mco_enable": 1,
+        "mco_host": "10.20.0.2",
+        "mco_password": "marionette",
+        "mco_pskey": "unset",
+        "mco_user": "mcollective",
+        "mco_vhost": "mcollective",
+        "pm_data": {
+            "kernel_params": "console=ttyS0,9600 console=tty0 rootdelay=90 nomodeset",
+            "ks_spaces": []
+        },
+        "puppet_auto_setup": 1,
+        "puppet_enable": 0,
+        "puppet_master": "fuel.domain.tld",
+        "repo_setup": {
+            "repos": [
+                {
+                    "name": "repo1",
+                    "priority": 1001,
+                    "section": "section",
+                    "suite": "suite",
+                    "type": "deb",
+                    "uri": "uri1"
+                },
+                {
+                    "name": "repo2",
+                    "priority": 1001,
+                    "section": "section",
+                    "suite": "suite",
+                    "type": "deb",
+                    "uri": "uri2"
+                }
+            ]
+        },
+        "timezone": "America/Los_Angeles"
+    },
+    "name": "node-1",
+    "name_servers": "\"10.20.0.2\"",
+    "name_servers_search": "\"domain.tld\"",
+    "netboot_enabled": "1",
+    "power_address": "10.20.0.253",
+    "power_pass": "/root/.ssh/bootstrap.rsa",
+    "power_type": "ssh",
+    "power_user": "root",
+    "profile": "pro_fi-le",
+    "slave_name": "node-1",
+    "uid": "1",
+    "partitioning": {
+        "fss": [
+            {
+                "device": "/dev/sda3",
+                "fs_label": "",
+                "fs_options": "",
+                "fs_type": "ext2",
+                "mount": "/boot"
+            },
+            {
+                "device": "/dev/sda4",
+                "fs_label": "",
+                "fs_options": "",
+                "fs_type": "ext2",
+                "mount": "/tmp"
+            },
+            {
+                "device": "/dev/mapper/os-root",
+                "fs_label": "",
+                "fs_options": "",
+                "fs_type": "ext4",
+                "mount": "/"
+            },
+            {
+                "device": "/dev/mapper/os-swap",
+                "fs_label": "",
+                "fs_options": "",
+                "fs_type": "swap",
+                "mount": "swap"
+            },
+            {
+                "device": "/dev/mapper/image-glance",
+                "fs_label": "",
+                "fs_options": "",
+                "fs_type": "xfs",
+                "mount": "/var/lib/glance"
+            }
+        ],
+        "lvs": [
+            {
+                "name": "root",
+                "size": 15360,
+                "vgname": "os"
+            },
+            {
+                "name": "swap",
+                "size": 4014,
+                "vgname": "os"
+            },
+            {
+                "name": "glance",
+                "size": 175347,
+                "vgname": "image"
+            }
+        ],
+        "mds": [],
+        "parteds": [
+            {
+                "label": "gpt",
+                "name": "/dev/sdb",
+                "partitions": [
+                    {
+                        "begin": 1,
+                        "configdrive": false,
+                        "count": 1,
+                        "device": "/dev/sdb",
+                        "end": 25,
+                        "flags": [
+                            "bios_grub"
+                        ],
+                        "guid": null,
+                        "name": "/dev/sdb1",
+                        "partition_type": "primary"
+                    },
+                    {
+                        "begin": 25,
+                        "configdrive": false,
+                        "count": 2,
+                        "device": "/dev/sdb",
+                        "end": 225,
+                        "flags": [],
+                        "guid": null,
+                        "name": "/dev/sdb2",
+                        "partition_type": "primary"
+                    },
+                    {
+                        "begin": 225,
+                        "configdrive": false,
+                        "count": 3,
+                        "device": "/dev/sdb",
+                        "end": 65196,
+                        "flags": [],
+                        "guid": null,
+                        "name": "/dev/sdb3",
+                        "partition_type": "primary"
+                    }
+                ]
+            },
+            {
+                "label": "gpt",
+                "name": "/dev/sda",
+                "partitions": [
+                    {
+                        "begin": 1,
+                        "configdrive": false,
+                        "count": 1,
+                        "device": "/dev/sda",
+                        "end": 25,
+                        "flags": [
+                            "bios_grub"
+                        ],
+                        "guid": null,
+                        "name": "/dev/sda1",
+                        "partition_type": "primary"
+                    },
+                    {
+                        "begin": 25,
+                        "configdrive": false,
+                        "count": 2,
+                        "device": "/dev/sda",
+                        "end": 225,
+                        "flags": [],
+                        "guid": null,
+                        "name": "/dev/sda2",
+                        "partition_type": "primary"
+                    },
+                    {
+                        "begin": 225,
+                        "configdrive": false,
+                        "count": 3,
+                        "device": "/dev/sda",
+                        "end": 425,
+                        "flags": [],
+                        "guid": null,
+                        "name": "/dev/sda3",
+                        "partition_type": "primary"
+                    },
+                    {
+                        "begin": 425,
+                        "configdrive": false,
+                        "count": 4,
+                        "device": "/dev/sda",
+                        "end": 625,
+                        "flags": [],
+                        "guid": "fake_guid",
+                        "name": "/dev/sda4",
+                        "partition_type": "primary"
+                    },
+                    {
+                        "begin": 625,
+                        "configdrive": false,
+                        "count": 5,
+                        "device": "/dev/sda",
+                        "end": 20063,
+                        "flags": [],
+                        "guid": null,
+                        "name": "/dev/sda5",
+                        "partition_type": "primary"
+                    },
+                    {
+                        "begin": 20063,
+                        "configdrive": false,
+                        "count": 6,
+                        "device": "/dev/sda",
+                        "end": 65660,
+                        "flags": [],
+                        "guid": null,
+                        "name": "/dev/sda6",
+                        "partition_type": "primary"
+                    },
+                    {
+                        "begin": 65660,
+                        "configdrive": true,
+                        "count": 7,
+                        "device": "/dev/sda",
+                        "end": 65680,
+                        "flags": [],
+                        "guid": null,
+                        "name": "/dev/sda7",
+                        "partition_type": "primary"
+                    }
+                ]
+            }
+        ],
+        "pvs": [
+            {
+                "metadatacopies": 2,
+                "metadatasize": 28,
+                "name": "/dev/sda5"
+            },
+            {
+                "metadatacopies": 2,
+                "metadatasize": 28,
+                "name": "/dev/sda6"
+            },
+            {
+                "metadatacopies": 2,
+                "metadatasize": 28,
+                "name": "/dev/sdb3"
+            },
+            {
+                "metadatacopies": 2,
+                "metadatasize": 28,
+                "name": "/dev/sdc3"
+            }
+        ],
+        "vgs": [
+            {
+                "name": "image",
+                "pvnames": [
+                    "/dev/sda6",
+                    "/dev/sdb3",
+                    "/dev/sdc3"
+                ]
+            },
+            {
+                "name": "os",
+                "pvnames": [
+                    "/dev/sda5"
+                ]
+            }
+        ]
+    }
+}

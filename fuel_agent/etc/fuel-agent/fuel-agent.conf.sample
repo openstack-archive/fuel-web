@@ -30,7 +30,7 @@
 #udev_rename_substr=.renamedrule
 
 # Directory where we build images (string value)
-#image_build_dir=/tmp
+#image_build_dir=/var/lib/fuel/ibp
 
 # Directory where we build images (string value)
 #image_build_suffix=.fuel-agent-image

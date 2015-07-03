@@ -634,7 +634,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
 
     @fake_tasks()
     def test_repo_availability_tasks_are_not_created(self):
-        self.env.clusters[0].fuel_version = '6.0'
+        self.env.clusters[0].release.version = '2014.1-6.0'
         self.db.flush()
 
         task = self.env.launch_verify_networks()

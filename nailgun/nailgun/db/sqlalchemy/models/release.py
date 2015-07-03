@@ -105,11 +105,25 @@ class Release(Base):
         return self.version.split('-')[0]
 
     @property
-    def fuel_version(self):
-        try:
-            version = self.version.split('-')[1]
-        except IndexError:
-            version = ''
+    def environment_version(self):
+        """Returns environment version based on release version.
+
+        A release version consists of 'OSt' and 'MOS' versions:
+            '2014.1.1-5.0.2'
+
+        so we need to extract 'MOS' version and returns it as result.
+
+        :returns: an environment version
+        """
+        # unfortunately, Fuel 5.0 didn't have an env version in release_version
+        # so we need to handle that special case
+        if self.version == '2014.1':
+            version = '5.0'
+        else:
+            try:
+                version = self.version.split('-')[1]
+            except IndexError:
+                version = ''
 
         return version
 
@@ -127,9 +141,9 @@ class Release(Base):
 
         :other: an instance of nailgun.db.sqlalchemy.models.release.Release
         """
-        if self.fuel_version < other.fuel_version:
+        if self.environment_version < other.environment_version:
             return -1
-        if self.fuel_version > other.fuel_version:
+        if self.environment_version > other.environment_version:
             return 1
 
         if self.openstack_version < other.openstack_version:

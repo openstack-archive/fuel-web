@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 import os
+
+import mock
 import six
 from six.moves.urllib.parse import urlsplit
-
-from oslotest import base as test_base
+import unittest2
 
 from fuel_agent.drivers.nailgun import NailgunBuildImage
 from fuel_agent import errors
@@ -100,51 +100,45 @@ IMAGE_DATA_SAMPLE = {
 }
 
 
-class TestNailgunBuildImage(test_base.BaseTestCase):
+class TestNailgunBuildImage(unittest2.TestCase):
 
     def test_default_trusty_packages(self):
         self.assertEqual(NailgunBuildImage.DEFAULT_TRUSTY_PACKAGES,
                          DEFAULT_TRUSTY_PACKAGES)
 
-    @mock.patch.object(NailgunBuildImage, '__init__')
-    def test_parse_operating_system_error_bad_codename(self, mock_init):
-        mock_init.return_value = None
-        driver = NailgunBuildImage()
-        driver.data = {'codename': 'not-trusty'}
-        self.assertRaises(errors.WrongInputDataError,
-                          driver.parse_operating_system)
+    @mock.patch.object(NailgunBuildImage, 'parse_schemes')
+    def test_parse_operating_system_error_bad_codename(self,
+                                                       mock_parse_schemes):
+        with self.assertRaises(errors.WrongInputDataError):
+            data = {'codename': 'not-trusty'}
+            NailgunBuildImage(data)
 
     @mock.patch('fuel_agent.objects.Ubuntu')
-    @mock.patch.object(NailgunBuildImage, '__init__')
-    def test_parse_operating_system_packages_given(self, mock_init, mock_ub):
-        mock_init.return_value = None
+    @mock.patch.object(NailgunBuildImage, 'parse_schemes')
+    def test_parse_operating_system_packages_given(self, mock_parse_schemes,
+                                                   mock_ub):
         data = {
             'repos': [],
             'codename': 'trusty',
             'packages': ['pack']
         }
-        driver = NailgunBuildImage()
-        driver.data = data
         mock_ub_instance = mock_ub.return_value
         mock_ub_instance.packages = data['packages']
-        driver.parse_operating_system()
+        driver = NailgunBuildImage(data)
         mock_ub.assert_called_once_with(repos=[], packages=data['packages'])
         self.assertEqual(driver.operating_system.packages, data['packages'])
 
     @mock.patch('fuel_agent.objects.Ubuntu')
-    @mock.patch.object(NailgunBuildImage, '__init__')
+    @mock.patch.object(NailgunBuildImage, 'parse_schemes')
     def test_parse_operating_system_packages_not_given(
-            self, mock_init, mock_ub):
-        mock_init.return_value = None
+            self, mock_parse_schemes, mock_ub):
         data = {
             'repos': [],
             'codename': 'trusty'
         }
-        driver = NailgunBuildImage()
-        driver.data = data
         mock_ub_instance = mock_ub.return_value
         mock_ub_instance.packages = NailgunBuildImage.DEFAULT_TRUSTY_PACKAGES
-        driver.parse_operating_system()
+        driver = NailgunBuildImage(data)
         mock_ub.assert_called_once_with(
             repos=[], packages=NailgunBuildImage.DEFAULT_TRUSTY_PACKAGES)
         self.assertEqual(driver.operating_system.packages,
@@ -152,15 +146,13 @@ class TestNailgunBuildImage(test_base.BaseTestCase):
 
     @mock.patch('fuel_agent.objects.DEBRepo')
     @mock.patch('fuel_agent.objects.Ubuntu')
-    @mock.patch.object(NailgunBuildImage, '__init__')
-    def test_parse_operating_system_repos(self, mock_init, mock_ub, mock_deb):
-        mock_init.return_value = None
+    @mock.patch.object(NailgunBuildImage, 'parse_schemes')
+    def test_parse_operating_system_repos(self, mock_parse_schemes, mock_ub,
+                                          mock_deb):
         data = {
             'repos': REPOS_SAMPLE,
             'codename': 'trusty'
         }
-        driver = NailgunBuildImage()
-        driver.data = data
 
         mock_deb_expected_calls = []
         repos = []
@@ -174,7 +166,7 @@ class TestNailgunBuildImage(test_base.BaseTestCase):
             }
             mock_deb_expected_calls.append(mock.call(**kwargs))
             repos.append(objects.DEBRepo(**kwargs))
-        driver.parse_operating_system()
+        driver = NailgunBuildImage(data)
         mock_ub_instance = mock_ub.return_value
         mock_ub_instance.repos = repos
         mock_ub.assert_called_once_with(
@@ -185,21 +177,18 @@ class TestNailgunBuildImage(test_base.BaseTestCase):
 
     @mock.patch('fuel_agent.drivers.nailgun.objects.Loop')
     @mock.patch('fuel_agent.objects.Image')
-    @mock.patch('fuel_agent.objects.Fs')
+    @mock.patch('fuel_agent.objects.FS')
     @mock.patch('fuel_agent.objects.PartitionScheme')
     @mock.patch('fuel_agent.objects.ImageScheme')
-    @mock.patch.object(NailgunBuildImage, '__init__')
+    @mock.patch.object(NailgunBuildImage, 'parse_operating_system')
     def test_parse_schemes(
-            self, mock_init, mock_imgsch, mock_partsch,
+            self, mock_parse_os, mock_imgsch, mock_partsch,
             mock_fs, mock_img, mock_loop):
-        mock_init.return_value = None
         data = {
             'image_data': IMAGE_DATA_SAMPLE,
             'output': '/some/local/path',
         }
-        driver = NailgunBuildImage()
-        driver.data = data
-        driver.parse_schemes()
+        driver = NailgunBuildImage(data)
 
         mock_fs_expected_calls = []
         mock_img_expected_calls = []
@@ -223,7 +212,7 @@ class TestNailgunBuildImage(test_base.BaseTestCase):
                 'fs_type': image['format']
             }
             mock_fs_expected_calls.append(mock.call(**fs_kwargs))
-            fss.append(objects.Fs(**fs_kwargs))
+            fss.append(objects.FS(**fs_kwargs))
 
             if mount == '/':
                 metadata_filename = filename.split('.', 1)[0] + '.yaml'

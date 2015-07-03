@@ -15,12 +15,12 @@
 import itertools
 import math
 import os
-import six
-import yaml
 
+import six
 from six.moves.urllib.parse import urljoin
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import urlsplit
+import yaml
 
 from fuel_agent.drivers.base import BaseDataDriver
 from fuel_agent.drivers import ks_spaces_validator
@@ -67,6 +67,8 @@ def match_device(hu_disk, ks_disk):
 
 
 class Nailgun(BaseDataDriver):
+    """Driver for parsing regular volumes metadata from Nailgun."""
+
     def __init__(self, data):
         super(Nailgun, self).__init__(data)
 
@@ -79,11 +81,31 @@ class Nailgun(BaseDataDriver):
         # get rid of md over all disks for /boot partition.
         self._boot_done = False
 
-        self.partition_scheme = self.parse_partition_scheme()
-        self.grub = self.parse_grub()
-        self.configdrive_scheme = self.parse_configdrive_scheme()
+        self._partition_scheme = self.parse_partition_scheme()
+        self._grub = self.parse_grub()
+        self._configdrive_scheme = self.parse_configdrive_scheme()
         # parsing image scheme needs partition scheme has been parsed
-        self.image_scheme = self.parse_image_scheme()
+        self._image_scheme = self.parse_image_scheme()
+
+    @property
+    def partition_scheme(self):
+        return self._partition_scheme
+
+    @property
+    def image_scheme(self):
+        return self._image_scheme
+
+    @property
+    def grub(self):
+        return self._grub
+
+    @property
+    def operating_system(self):
+        return None
+
+    @property
+    def configdrive_scheme(self):
+        return self._configdrive_scheme
 
     def partition_data(self):
         return self.data['ks_meta']['pm_data']['ks_spaces']
@@ -256,6 +278,7 @@ class Nailgun(BaseDataDriver):
                         prt = parted.add_partition(size=volume['size'])
                         LOG.debug('Partition name: %s', prt.name)
                         self._boot_partition_done = True
+                        # FIXME(prmtl): is it even possible to get here?
                     else:
                         LOG.debug('No need to create partition on disk %s. '
                                   'Skipping.', disk['name'])
@@ -346,7 +369,7 @@ class Nailgun(BaseDataDriver):
             for volume in vg['volumes']:
                 LOG.debug('Processing lv %s' % volume['name'])
                 if volume['size'] <= 0:
-                    LOG.debug('Lv size is zero. Skipping.')
+                    LOG.debug('LogicalVolume size is zero. Skipping.')
                     continue
 
                 if volume['type'] == 'lv':
@@ -543,8 +566,31 @@ class NailgunBuildImage(BaseDataDriver):
 
     def __init__(self, data):
         super(NailgunBuildImage, self).__init__(data)
+        self._image_scheme = objects.ImageScheme()
+        self._partition_scheme = objects.PartitionScheme()
+
         self.parse_schemes()
-        self.parse_operating_system()
+        self._operating_system = self.parse_operating_system()
+
+    @property
+    def partition_scheme(self):
+        return self._partition_scheme
+
+    @property
+    def image_scheme(self):
+        return self._image_scheme
+
+    @property
+    def grub(self):
+        return None
+
+    @property
+    def operating_system(self):
+        return self._operating_system
+
+    @property
+    def configdrive_scheme(self):
+        return None
 
     def parse_operating_system(self):
         if self.data.get('codename').lower() != 'trusty':
@@ -563,11 +609,9 @@ class NailgunBuildImage(BaseDataDriver):
                 section=repo['section'],
                 priority=repo['priority']))
 
-        self.operating_system = objects.Ubuntu(repos=repos, packages=packages)
+        return objects.Ubuntu(repos=repos, packages=packages)
 
     def parse_schemes(self):
-        self.image_scheme = objects.ImageScheme()
-        self.partition_scheme = objects.PartitionScheme()
 
         for mount, image in six.iteritems(self.data['image_data']):
             filename = os.path.basename(urlsplit(image['uri']).path)
@@ -575,13 +619,13 @@ class NailgunBuildImage(BaseDataDriver):
             # during initialization.
             device = objects.Loop()
 
-            self.image_scheme.add_image(
+            self._image_scheme.add_image(
                 uri='file://' + os.path.join(self.data['output'], filename),
                 format=image['format'],
                 container=image['container'],
                 target_device=device)
 
-            self.partition_scheme.add_fs(
+            self._partition_scheme.add_fs(
                 device=device,
                 mount=mount,
                 fs_type=image['format'])
@@ -590,3 +634,52 @@ class NailgunBuildImage(BaseDataDriver):
                 metadata_filename = filename.split('.', 1)[0] + '.yaml'
                 self.metadata_uri = 'file://' + os.path.join(
                     self.data['output'], metadata_filename)
+
+
+class NailgunSimpleDriver(Nailgun):
+    """Simple driver that do not make any computations.
+
+    This driver digest information that already has all required
+    information how to perform partitioning.
+    Service that sends data to fuel_agent is responsible for preparing
+    it in correct format.
+    """
+
+    @property
+    def partition_data(self):
+        return self.data.get('partitioning', {})
+
+    @classmethod
+    def parse_lv_data(cls, raw_lvs):
+        return [objects.LV.from_dict(lv) for lv in raw_lvs]
+
+    @classmethod
+    def parse_pv_data(cls, raw_pvs):
+        return [objects.PV.from_dict(pv) for pv in raw_pvs]
+
+    @classmethod
+    def parse_fs_data(cls, raw_fss):
+        return [objects.FS.from_dict(fs) for fs in raw_fss]
+
+    @classmethod
+    def parse_vg_data(cls, raw_vgs):
+        return [objects.VG.from_dict(vg) for vg in raw_vgs]
+
+    @classmethod
+    def parse_md_data(cls, raw_mds):
+        return [objects.MD.from_dict(md) for md in raw_mds]
+
+    @classmethod
+    def parse_parted_data(cls, raw_parteds):
+        return [objects.Parted.from_dict(parted) for parted in raw_parteds]
+
+    def parse_partition_scheme(self):
+        partition_scheme = objects.PartitionScheme()
+
+        for obj in ('lv', 'pv', 'fs', 'vg', 'md', 'parted'):
+            attr = '{0}s'.format(obj)
+            parse_method = getattr(self, 'parse_{0}_data'.format(obj))
+            raw = self.partition_data.get(attr, {})
+            setattr(partition_scheme, attr, parse_method(raw))
+
+        return partition_scheme

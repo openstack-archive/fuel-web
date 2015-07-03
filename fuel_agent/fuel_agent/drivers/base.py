@@ -28,3 +28,23 @@ class BaseDataDriver(object):
 
     def __init__(self, data):
         self.data = copy.deepcopy(data)
+
+    @abc.abstractproperty
+    def partition_scheme(self):
+        pass
+
+    @abc.abstractproperty
+    def image_scheme(self):
+        pass
+
+    @abc.abstractproperty
+    def grub(self):
+        pass
+
+    @abc.abstractproperty
+    def operating_system(self):
+        pass
+
+    @abc.abstractproperty
+    def configdrive_scheme(self):
+        pass

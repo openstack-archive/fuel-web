@@ -1845,6 +1845,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
       margin-left: 5px;
     }
   }
+  &.always-show-scrollbar {
+    overflow-y: scroll;
+  }
 }
 
 .display-changes-dialog {
@@ -1876,6 +1879,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .panel-group {
     margin-top: 10px;
     font-size: @base-font-size - 2;
+    .panel-heading {
+      cursor: pointer;
+    }
     .panel-title {
       font-size: @base-font-size;
     }

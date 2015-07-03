@@ -22,18 +22,19 @@ from fuel_agent.objects.image import Image
 from fuel_agent.objects.image import ImageScheme
 from fuel_agent.objects.operating_system import OperatingSystem
 from fuel_agent.objects.operating_system import Ubuntu
-from fuel_agent.objects.partition import Fs
-from fuel_agent.objects.partition import Lv
-from fuel_agent.objects.partition import Md
+from fuel_agent.objects.partition import FS
+from fuel_agent.objects.partition import LV
+from fuel_agent.objects.partition import MD
+from fuel_agent.objects.partition import Parted
 from fuel_agent.objects.partition import Partition
 from fuel_agent.objects.partition import PartitionScheme
-from fuel_agent.objects.partition import Pv
-from fuel_agent.objects.partition import Vg
+from fuel_agent.objects.partition import PV
+from fuel_agent.objects.partition import VG
 from fuel_agent.objects.repo import DEBRepo
 from fuel_agent.objects.repo import Repo
 
 __all__ = [
-    'Partition', 'Pv', 'Vg', 'Lv', 'Md', 'Fs', 'PartitionScheme',
+    'Partition', 'Parted', 'PV', 'VG', 'LV', 'MD', 'FS', 'PartitionScheme',
     'ConfigDriveCommon', 'ConfigDrivePuppet', 'ConfigDriveMcollective',
     'ConfigDriveScheme', 'Image', 'ImageScheme', 'Grub',
     'OperatingSystem', 'Ubuntu',

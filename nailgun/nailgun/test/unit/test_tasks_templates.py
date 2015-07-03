@@ -164,7 +164,8 @@ class TestMakeTask(base.BaseTestCase):
             }
         )
         cmd = result["parameters"]["cmd"].lstrip(
-            "fa_build_image --log-file /var/log/fuel-agent-env-123.log "
+            "fa_build_image --image_build_dir /var/lib/fuel/ibp "
+            "--log-file /var/log/fuel-agent-env-123.log "
             "--data_driver nailgun_build_image --input_data '").rstrip("'")
         self.assertEqual(jsonutils.loads(cmd), fuel_image_conf)
 

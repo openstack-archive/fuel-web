@@ -334,6 +334,10 @@ def config(update_path, admin_password):
             ('/var/lib/fuel/keys', {'bind': '/var/lib/fuel/keys',
                                     'ro': False})],
 
+        'volume_fuel_ibp': [
+            ('/var/lib/fuel/ibp', {'bind': '/var/lib/fuel/ipb',
+                                   'ro': False})],
+
         'volume_postgres_data': [
             ('{0}/postgres'.format(container_data_path), {
                 'bind': '/var/lib/pgsql',
@@ -429,6 +433,7 @@ def config(update_path, admin_password):
              'volume_ssh_keys',
              'volume_dump',
              'volume_fuel_configs',
+             'volume_fuel_ibp',
              'volume_keys']},
 
         {'id': 'rsync',

@@ -68,11 +68,6 @@ opts = [
         help='Correct empty rule for udev daemon',
     ),
     cfg.StrOpt(
-        'image_build_dir',
-        default='/tmp',
-        help='Directory where the image is supposed to be built',
-    ),
-    cfg.StrOpt(
         'image_build_suffix',
         default='.fuel-agent-image',
         help='Suffix which is used while creating temporary files',
@@ -84,6 +79,11 @@ cli_opts = [
         'data_driver',
         default='nailgun',
         help='Data driver'
+    ),
+    cfg.StrOpt(
+        'image_build_dir',
+        default='/tmp',
+        help='Directory where the image is supposed to be built',
     ),
 ]
 
@@ -508,6 +508,7 @@ class Manager(object):
                   'Starting build process.')
         try:
             LOG.debug('Creating temporary chroot directory')
+            utils.makedirs_if_not_exists(CONF.image_build_dir)
             chroot = tempfile.mkdtemp(
                 dir=CONF.image_build_dir, suffix=CONF.image_build_suffix)
             LOG.debug('Temporary chroot: %s', chroot)

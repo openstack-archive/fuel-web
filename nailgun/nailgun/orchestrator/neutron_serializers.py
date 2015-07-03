@@ -944,3 +944,19 @@ class NeutronNetworkDeploymentSerializer70(
                            cls).network_provider_node_attrs(cluster, node)
         node_attrs['network_metadata'] = cls.generate_network_metadata(cluster)
         return node_attrs
+
+    @classmethod
+    def _generate_internal_network(cls, cluster):
+        internal = super(NeutronNetworkDeploymentSerializer70,
+                         cls)._generate_internal_network(cluster)
+        if cluster.network_config.segmentation_type == "gre":
+            internal["L2"]["network_type"] = "tun"
+        return internal
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(NeutronNetworkDeploymentSerializer70,
+                   cls).generate_l2(cluster)
+        if cluster.network_config.segmentation_type == "gre":
+            l2["segmentation_type"] = "tun"
+        return l2

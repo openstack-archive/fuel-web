@@ -260,11 +260,19 @@ define([
     });
 
     models.Role = BaseModel.extend(restrictionMixin).extend({
-        constructorName: 'Role'
+        idAttribute: 'name',
+        constructorName: 'Role',
+        parse: function(response) {
+            _.extend(response, _.omit(response.meta, 'name'));
+            response.label = response.meta.name;
+            delete response.meta;
+            return response;
+        }
     });
 
     models.Roles = BaseCollection.extend(restrictionMixin).extend({
         constructorName: 'Roles',
+        comparator: 'weight',
         model: models.Role,
         processConflicts: function() {
             this.each(function(role) {
@@ -284,21 +292,7 @@ define([
 
     models.Release = BaseModel.extend({
         constructorName: 'Release',
-        urlRoot: '/api/releases',
-        parse: function(response) {
-            response.role_models = new models.Roles(_.map(response.roles, function(roleName) {
-                var roleData = response.roles_metadata[roleName];
-                roleData.label = roleData.name;
-                return _.extend(roleData, {name: roleName});
-            }));
-            response.role_models.each(function(role) {
-                role.expandRestrictions(role.get('restrictions'));
-                role.expandLimits(role.get('limits'));
-            });
-            response.role_models.processConflicts();
-            delete response.roles_metadata;
-            return response;
-        }
+        urlRoot: '/api/releases'
     });
 
     models.ReleaseNetworkProperties = BaseModel.extend({

@@ -98,14 +98,26 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     promise = tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();
                 } else {
                     cluster = new models.Cluster({id: id});
+
                     var settings = new models.Settings();
                     settings.url = _.result(cluster, 'url') + '/attributes';
                     cluster.set({settings: settings});
+
+                    var roles = new models.Roles();
+                    roles.url = _.result(cluster, 'url') + '/roles';
+                    cluster.set({roles: roles});
+
                     cluster.get('nodes').fetch = function(options) {
                         return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: id}}, options));
                     };
-                    promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'))
+                    promise = $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.get('roles').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'))
                         .then(function() {
+                            cluster.get('roles').each(function(role) {
+                                role.expandRestrictions(role.get('restrictions'));
+                                role.expandLimits(role.get('limits'));
+                            });
+                            cluster.get('roles').processConflicts();
+
                             var networkConfiguration = new models.NetworkConfiguration();
                             networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
                             cluster.set({

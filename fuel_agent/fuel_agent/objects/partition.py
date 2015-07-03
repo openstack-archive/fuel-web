@@ -15,16 +15,18 @@
 import os
 
 from fuel_agent import errors
+from fuel_agent.objects import base
 from fuel_agent.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 
 
-class Parted(object):
-    def __init__(self, name, label):
+class Parted(base.Serializable):
+
+    def __init__(self, name, label, partitions=None):
         self.name = name
         self.label = label
-        self.partitions = []
+        self.partitions = partitions or []
         self.install_bootloader = False
 
     def add_partition(self, **kwargs):
@@ -99,14 +101,29 @@ class Parted(object):
             separator = 'p'
         return '%s%s%s' % (self.name, separator, self.next_count())
 
+    def to_dict(self):
+        partitions = [partition.to_dict() for partition in self.partitions]
+        return {
+            'name': self.name,
+            'label': self.label,
+            'partitions': partitions,
+        }
 
-class Partition(object):
+    @classmethod
+    def from_dict(cls, data):
+        raw_partitions = data.pop('partitions')
+        partitions = [Partition.from_dict(partition)
+                      for partition in raw_partitions]
+        return cls(partitions=partitions, **data)
+
+
+class Partition(base.Serializable):
+
     def __init__(self, name, count, device, begin, end, partition_type,
                  flags=None, guid=None, configdrive=False):
         self.name = name
         self.count = count
         self.device = device
-        self.name = name
         self.begin = begin
         self.end = end
         self.type = partition_type
@@ -121,15 +138,48 @@ class Partition(object):
     def set_guid(self, guid):
         self.guid = guid
 
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'count': self.count,
+            'device': self.device,
+            'begin': self.begin,
+            'end': self.end,
+            'partition_type': self.type,
+            'flags': self.flags,
+            'guid': self.guid,
+            'configdrive': self.configdrive,
+        }
 
-class Pv(object):
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+
+class PhysicalVolume(base.Serializable):
+
     def __init__(self, name, metadatasize=16, metadatacopies=2):
         self.name = name
         self.metadatasize = metadatasize
         self.metadatacopies = metadatacopies
 
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'metadatasize': self.metadatasize,
+            'metadatacopies': self.metadatacopies,
+        }
 
-class Vg(object):
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+
+PV = PhysicalVolume
+
+
+class VolumeGroup(base.Serializable):
+
     def __init__(self, name, pvnames=None):
         self.name = name
         self.pvnames = pvnames or []
@@ -138,8 +188,22 @@ class Vg(object):
         if pvname not in self.pvnames:
             self.pvnames.append(pvname)
 
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'pvnames': self.pvnames
+        }
 
-class Lv(object):
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+
+VG = VolumeGroup
+
+
+class LogicalVolume(base.Serializable):
+
     def __init__(self, name, vgname, size):
         self.name = name
         self.vgname = vgname
@@ -150,8 +214,23 @@ class Lv(object):
         return '/dev/mapper/%s-%s' % (self.vgname.replace('-', '--'),
                                       self.name.replace('-', '--'))
 
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'vgname': self.vgname,
+            'size': self.size,
+        }
 
-class Md(object):
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+
+LV = LogicalVolume
+
+
+class MD(base.Serializable):
+
     def __init__(self, name, level,
                  devices=None, spares=None):
         self.name = name
@@ -173,8 +252,21 @@ class Md(object):
                 'device %s is already attached' % device)
         self.spares.append(device)
 
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'level': self.level,
+            'devices': self.devices,
+            'sparses': self.spares,
+        }
 
-class Fs(object):
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+
+class FileSystem(base.Serializable):
+
     def __init__(self, device, mount=None,
                  fs_type=None, fs_options=None, fs_label=None):
         self.device = device
@@ -182,6 +274,22 @@ class Fs(object):
         self.type = fs_type or 'xfs'
         self.options = fs_options or ''
         self.label = fs_label or ''
+
+    def to_dict(self):
+        return {
+            'device': self.device,
+            'mount': self.mount,
+            'fs_type': self.type,
+            'fs_options': self.options,
+            'fs_label': self.label,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+
+FS = FileSystem
 
 
 class PartitionScheme(object):
@@ -199,22 +307,22 @@ class PartitionScheme(object):
         return parted
 
     def add_pv(self, **kwargs):
-        pv = Pv(**kwargs)
+        pv = PV(**kwargs)
         self.pvs.append(pv)
         return pv
 
     def add_vg(self, **kwargs):
-        vg = Vg(**kwargs)
+        vg = VG(**kwargs)
         self.vgs.append(vg)
         return vg
 
     def add_lv(self, **kwargs):
-        lv = Lv(**kwargs)
+        lv = LV(**kwargs)
         self.lvs.append(lv)
         return lv
 
     def add_fs(self, **kwargs):
-        fs = Fs(**kwargs)
+        fs = FS(**kwargs)
         self.fss.append(fs)
         return fs
 
@@ -222,7 +330,7 @@ class PartitionScheme(object):
         mdkwargs = {}
         mdkwargs['name'] = kwargs.get('name') or self.md_next_name()
         mdkwargs['level'] = kwargs.get('level') or 'mirror'
-        md = Md(**mdkwargs)
+        md = MD(**mdkwargs)
         self.mds.append(md)
         return md
 
@@ -357,3 +465,13 @@ class PartitionScheme(object):
             for prt in parted.partitions:
                 if prt.configdrive:
                     return prt.name
+
+    def to_dict(self):
+        return {
+            'parted': [parted.to_dict() for parted in self.parteds],
+            'md': [md.to_dict() for md in self.mds],
+            'pv': [pv.to_dict() for pv in self.pvs],
+            'vg': [vg.to_dict() for vg in self.vgs],
+            'lv': [lv.to_dict() for lv in self.lvs],
+            'fs': [fs.to_dict() for fs in self.fss],
+        }

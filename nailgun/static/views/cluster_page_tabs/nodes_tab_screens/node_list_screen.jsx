@@ -105,7 +105,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
                 maxNumberOfNodes = [],
                 processedRoleLimits = {};
 
-            cluster.get('release').get('role_models').map(function(role) {
+            cluster.get('roles').map(function(role) {
                 if ((role.get('limits') || {}).max) {
                     var roleName = role.get('name'),
                         isRoleAlreadyAssigned = nodesForLimitCheck.any(function(node) {
@@ -454,7 +454,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             }, this);
         },
         assignRoles: function() {
-            var roles = this.props.cluster.get('release').get('role_models');
+            var roles = this.props.cluster.get('roles');
             this.props.nodes.each(function(node) {
                 if (this.props.selectedNodeIds[node.id]) roles.each(function(role) {
                     var roleName = role.get('name');
@@ -474,7 +474,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             var name = role.get('name'),
                 restrictionsCheck = role.checkRestrictions(models, 'disable'),
                 roleLimitsCheckResults = this.props.processedRoleLimits[name],
-                roles = this.props.cluster.get('release').get('role_models'),
+                roles = this.props.cluster.get('roles'),
                 conflicts = _.chain(this.props.selectedRoles)
                     .union(this.props.indeterminateRoles)
                     .map(function(role) {return roles.findWhere({name: role}).conflicts;})
@@ -496,7 +496,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return (
                 <div className='well role-panel'>
                     <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
-                    {this.props.cluster.get('release').get('role_models').map(function(role) {
+                    {this.props.cluster.get('roles').map(function(role) {
                         if (!role.checkRestrictions(this.props.configModels, 'hide').result) {
                             var name = role.get('name'),
                                 processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.props.configModels) : {};
@@ -558,15 +558,15 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, dialo
             return i18n(ns + 'no_nodes_in_environment');
         },
         groupNodes: function() {
-            var releaseRoles = this.props.cluster.get('release').get('role_models'),
+            var roles = this.props.cluster.get('roles'),
                 method = _.bind(function(node) {
-                    if (this.props.grouping == 'roles') return node.getRolesSummary(releaseRoles);
+                    if (this.props.grouping == 'roles') return node.getRolesSummary(roles);
                     if (this.props.grouping == 'hardware') return node.getHardwareSummary();
-                    return node.getRolesSummary(releaseRoles) + '; \u00A0' + node.getHardwareSummary();
+                    return node.getRolesSummary(roles) + '; \u00A0' + node.getHardwareSummary();
                 }, this),
                 groups = _.pairs(_.groupBy(this.props.nodes, method));
             if (this.props.grouping == 'hardware') return _.sortBy(groups, _.first);
-            var preferredOrder = releaseRoles.pluck('name');
+            var preferredOrder = roles.pluck('name');
             return groups.sort(function(group1, group2) {
                 var roles1 = group1[1][0].sortedRoles(preferredOrder),
                     roles2 = group2[1][0].sortedRoles(preferredOrder),

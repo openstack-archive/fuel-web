@@ -274,7 +274,7 @@ function($, _, i18n, React, utils, models, Expression, componentMixins, controls
             var valueAttribute = this.props.getValueAttribute(settingName),
                 valuesToCheck = this.getValuesToCheck(setting, valueAttribute),
                 pathToCheck = this.props.makePath(path, valueAttribute),
-                roles = this.props.cluster.get('release').get('role_models');
+                roles = this.props.cluster.get('roles');
             return _.compact(this.props.allocatedRoles.map(function(roleName) {
                 var role = roles.findWhere({name: roleName});
                 if (_.any(role.expandedRestrictions.restrictions, function(restriction) {

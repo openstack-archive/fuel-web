@@ -13,7 +13,9 @@
 #    under the License.
 
 import six
+from six.moves import map
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
@@ -76,7 +78,7 @@ class PluginManager(object):
         cluster_plugins = []
         for plugin_db in cluster.plugins:
             plugin_adapter = wrap_plugin(plugin_db)
-            plugin_adapter.set_cluster_tasks(cluster)
+            plugin_adapter.set_cluster_tasks()
             cluster_plugins.append(plugin_adapter)
         return cluster_plugins
 
@@ -93,3 +95,29 @@ class PluginManager(object):
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)
             plugin_adapter.sync_metadata_to_db()
+
+    @classmethod
+    def get_plugins_deployment_tasks(cls, cluster):
+        deployment_tasks = []
+
+        processed_tasks = {}
+        for plugin_adapter in map(wrap_plugin, cluster.plugins):
+            depl_tasks = plugin_adapter.deployment_tasks
+
+            for t in depl_tasks:
+                t_id = t['id']
+                if t_id in processed_tasks:
+                    raise errors.PluginsTasksOverlapping(
+                        'Plugin {0} is overlapping with plugin {1} '
+                        'by introducing the same deployment task with '
+                        'id {2}'
+                        .format(plugin_adapter.full_name,
+                                processed_tasks[t_id],
+                                t_id)
+                    )
+
+                processed_tasks[t_id] = plugin_adapter.full_name
+
+            deployment_tasks.extend(depl_tasks)
+
+        return deployment_tasks

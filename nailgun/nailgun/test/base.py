@@ -555,6 +555,25 @@ class EnvironmentManager(object):
         volumes.update(kwargs)
         return volumes
 
+    def get_default_network_roles_config(self, **kwargs):
+        network_roles = [
+            {
+                'id': 'test_network_role',
+                'default_mapping': 'public',
+                'properties': {
+                    'subnet': 'true',
+                    'gateway': 'false',
+                    'vip': [
+                        {'name': 'test_vip_1', 'shared': False},
+                        {'name': 'test_vip_2', 'shared': False}
+                    ]
+                }
+            }
+        ]
+
+        network_roles.update(kwargs)
+        return network_roles
+
     def get_default_plugin_deployment_tasks(self, **kwargs):
         deployment_tasks = [
             {

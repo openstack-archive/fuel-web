@@ -302,6 +302,11 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
             jsonutils.loads(result.fetchone()[0]), {})
 
         result = db.execute(
+            sa.select([self.meta.tables['plugins'].c.network_roles_metadata]))
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), [])
+
+        result = db.execute(
             sa.select([self.meta.tables['plugins'].c.deployment_tasks]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])

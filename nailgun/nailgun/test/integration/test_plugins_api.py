@@ -19,7 +19,7 @@ from oslo.serialization import jsonutils
 import yaml
 
 from nailgun import objects
-from nailgun.plugins import attr_plugin
+from nailgun.plugins import adaptors
 from nailgun.test import base
 
 
@@ -68,9 +68,9 @@ class BasePluginTest(base.BaseIntegrationTest):
 
     def create_cluster(self, nodes=None):
         nodes = nodes if nodes else []
-        with mock.patch('nailgun.plugins.attr_plugin.os') as os:
+        with mock.patch('nailgun.plugins.adaptors.os') as os:
             with mock.patch(
-                    'nailgun.plugins.attr_plugin.open',
+                    'nailgun.plugins.adaptors.open',
                     create=True,
                     side_effect=get_config(self.plugin_env_config)):
                 os.access.return_value = True
@@ -105,11 +105,11 @@ class BasePluginTest(base.BaseIntegrationTest):
         return self.modify_plugin(cluster, plugin_name, False)
 
     def get_pre_hooks(self, cluster):
-        with mock.patch('nailgun.plugins.attr_plugin.glob') as glob:
+        with mock.patch('nailgun.plugins.adaptors.glob') as glob:
             glob.glob.return_value = ['/some/path']
-            with mock.patch('nailgun.plugins.attr_plugin.os') as os:
+            with mock.patch('nailgun.plugins.adaptors.os') as os:
                 with mock.patch(
-                        'nailgun.plugins.attr_plugin.open',
+                        'nailgun.plugins.adaptors.open',
                         create=True,
                         side_effect=get_config(self.TASKS_CONFIG)):
                     os.access.return_value = True
@@ -121,9 +121,9 @@ class BasePluginTest(base.BaseIntegrationTest):
                 return resp
 
     def get_post_hooks(self, cluster):
-        with mock.patch('nailgun.plugins.attr_plugin.os') as os:
+        with mock.patch('nailgun.plugins.adaptors.os') as os:
             with mock.patch(
-                    'nailgun.plugins.attr_plugin.open',
+                    'nailgun.plugins.adaptors.open',
                     create=True,
                     side_effect=get_config(self.TASKS_CONFIG)):
                 os.access.return_value = True
@@ -253,8 +253,8 @@ class TestPluginsApi(BasePluginTest):
         resp = self.sync_plugins(params={'ids': ids}, expect_errors=True)
         self.assertEqual(resp.status_code, 404)
 
-    @mock.patch('nailgun.plugins.attr_plugin.open', create=True)
-    @mock.patch('nailgun.plugins.attr_plugin.os.access')
+    @mock.patch('nailgun.plugins.adaptors.open', create=True)
+    @mock.patch('nailgun.plugins.adaptors.os.access')
     def test_sync_with_invalid_yaml_files(self, maccess, mopen):
         maccess.return_value = True
 
@@ -332,7 +332,7 @@ class TestPrePostHooks(BasePluginTest):
         self._requests_mock.start()
 
         resp = self.create_plugin()
-        self.plugin = attr_plugin.wrap_plugin(
+        self.plugin = adaptors.wrap_plugin(
             objects.Plugin.get_by_uid(resp.json['id']))
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},

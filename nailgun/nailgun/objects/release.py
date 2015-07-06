@@ -177,6 +177,8 @@ class Release(NailgunObject):
         elif env_version.startswith('5.1') or env_version.startswith('6.0'):
             return yaml.load(graph_configuration.DEPLOYMENT_51_60)
 
+        return []
+
     @classmethod
     def get_min_controller_count(cls, instance):
         return instance.roles_metadata['controller']['limits']['min']

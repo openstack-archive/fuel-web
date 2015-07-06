@@ -34,6 +34,7 @@ DEFAULT_TRUSTY_PACKAGES = [
     "curl",
     "daemonize",
     "debconf-utils",
+    "ethtool",
     "gdisk",
     "grub-pc",
     "linux-firmware",

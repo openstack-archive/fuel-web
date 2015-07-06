@@ -136,6 +136,23 @@ class TestPluginBase(base.BaseTestCase):
                 self.assertEqual(
                     getattr(self.plugin, key), val)
 
+    def test_get_deployment_tasks(self):
+        self.plugin.deployment_tasks = \
+            self.env.get_default_plugin_deployment_tasks()
+
+        depl_task = self.plugin_adapter.deployment_tasks[0]
+        self.assertEqual(depl_task['parameters'].get('cwd'),
+                         self.plugin_adapter.slaves_scripts_path)
+
+    def test_get_deployment_tasks_params_not_changed(self):
+        expected = 'path/to/some/dir'
+        self.plugin.deployment_tasks = \
+            self.env.get_default_plugin_deployment_tasks(
+                parameters={'cwd': expected}
+            )
+        depl_task = self.plugin_adapter.deployment_tasks[0]
+        self.assertEqual(depl_task['parameters'].get('cwd'), expected)
+
 
 class TestPluginV1(TestPluginBase):
 

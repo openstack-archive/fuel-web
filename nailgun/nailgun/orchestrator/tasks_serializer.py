@@ -37,16 +37,24 @@ def get_uids_for_tasks(nodes, tasks):
     """
     roles = []
     for task in tasks:
-        if task['role'] == consts.ALL_ROLES:
+        # plugin tasks may store information about node
+        # role not only in `role` key but also in `groups`
+        task_role = task.get('role', task.get('groups'))
+        if task_role == consts.ALL_ROLES:
             return get_uids_for_roles(nodes, consts.ALL_ROLES)
-        elif task['role'] == consts.MASTER_ROLE:
+        elif task_role == consts.MASTER_ROLE:
             return ['master']
-        elif isinstance(task['role'], list):
-            roles.extend(task['role'])
+        elif isinstance(task_role, list):
+            roles.extend(task_role)
         else:
-            logger.warn(
-                'Wrong roles format, `roles` should be a list or "*" in %s',
-                task)
+            # if task has 'skipped' status it is allowed that 'roles' and
+            # 'groups' are not be specified
+            if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped:
+                logger.warn(
+                    'Wrong roles format in task %s: either '
+                    '`roles` or `groups` must be specified and contain '
+                    'a list of roles or "*"',
+                    task)
     return get_uids_for_roles(nodes, roles)
 
 

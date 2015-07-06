@@ -743,6 +743,14 @@ class TestClusterObject(BaseTestCase):
                 {'roles': ['compute']},
                 {'roles': ['cinder']}])
 
+    def _create_cluster_with_plugins(self, plugins_kw_list):
+        cluster = self.env.create_cluster(api=False)
+
+        for kw in plugins_kw_list:
+            cluster.plugins.append(objects.Plugin.create(kw))
+
+        return cluster
+
     def test_all_controllers(self):
         self.assertEqual(len(objects.Cluster.get_nodes_by_role(
             self.env.clusters[0], 'controller')), 2)
@@ -779,6 +787,46 @@ class TestClusterObject(BaseTestCase):
         self.assertEqual(
             objects.Cluster.get_network_roles(cluster),
             cluster.release.network_roles_metadata)
+
+    def test_get_deployment_tasks(self):
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        plugin_metadata = self.env.get_default_plugin_metadata(
+            deployment_tasks=deployment_tasks
+        )
+
+        cluster = self._create_cluster_with_plugins([plugin_metadata])
+
+        cluster_deployment_tasks = \
+            objects.Cluster.get_deployment_tasks(cluster)
+
+        tasks_ids = [t['id'] for t in cluster_deployment_tasks]
+        depl_task_id = deployment_tasks[0]['id']
+        self.assertIn(depl_task_id, tasks_ids)
+
+        default_tasks_count = len(cluster.release.deployment_tasks)
+        self.assertEquals(len(cluster_deployment_tasks),
+                          default_tasks_count +
+                          len(cluster.plugins[0].deployment_tasks))
+
+    def test_get_deployment_tasks_overlapping_error(self):
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        plugins_kw_list = [
+            self.env.get_default_plugin_metadata(
+                name=plugin_name,
+                deployment_tasks=deployment_tasks)
+            for plugin_name in ('test_plugin_first', 'test_plugin_second')
+        ]
+
+        cluster = self._create_cluster_with_plugins(plugins_kw_list)
+
+        expected_message = (
+            'Plugin test_plugin_second-0.1.0 is overlapping with plugin '
+            'test_plugin_first-0.1.0 by introducing the same '
+            'deployment task with id role-name'
+        )
+        with self.assertRaisesRegexp(errors.PluginsTasksOverlapping,
+                                     expected_message):
+            objects.Cluster.get_deployment_tasks(cluster)
 
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):

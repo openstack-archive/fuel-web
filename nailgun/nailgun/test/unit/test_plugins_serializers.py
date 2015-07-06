@@ -197,7 +197,12 @@ class TestPluginsPreDeploymentHooksSerializer(base.BaseTestCase):
         self.hook = PluginsPreDeploymentHooksSerializer(
             self.cluster,
             self.nodes)
-        self.plugins = [mock.Mock()]
+
+        plugin = mock.Mock()
+        plugin.tasks = []
+        plugin.deployment_tasks = []
+
+        self.plugins = [plugin]
 
     @mock.patch(
         'nailgun.orchestrator.plugins_serializers.get_uids_for_tasks',

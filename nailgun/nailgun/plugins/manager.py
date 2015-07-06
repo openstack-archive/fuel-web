@@ -79,3 +79,12 @@ class PluginManager(object):
             attr_pl.set_cluster_tasks(cluster)
             attr_plugins.append(attr_pl)
         return attr_plugins
+
+    @classmethod
+    def get_plugins_deployment_tasks(cls, cluster):
+        deployment_tasks = []
+
+        for plugin_db in cluster.plugins:
+            deployment_tasks.extend(plugin_db.deployment_tasks)
+
+        return deployment_tasks

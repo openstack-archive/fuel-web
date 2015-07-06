@@ -17,7 +17,7 @@ import six
 from nailgun.logger import logger
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
-from nailgun.plugins.attr_plugin import wrap_plugin
+from nailgun.plugins.adaptors import wrap_plugin
 
 
 class PluginManager(object):
@@ -64,21 +64,21 @@ class PluginManager(object):
 
     @classmethod
     def get_plugin_attributes(cls, cluster):
-        plugins_attrs = {}
+        plugin_attributes = {}
         for plugin_db in PluginCollection.all_newest():
-            attr_plugin = wrap_plugin(plugin_db)
-            attrs = attr_plugin.get_plugin_attributes(cluster)
-            plugins_attrs.update(attrs)
-        return plugins_attrs
+            plugin_adaptor = wrap_plugin(plugin_db)
+            attributes = plugin_adaptor.get_plugin_attributes(cluster)
+            plugin_attributes.update(attributes)
+        return plugin_attributes
 
     @classmethod
     def get_cluster_plugins_with_tasks(cls, cluster):
-        attr_plugins = []
+        cluster_plugins = []
         for plugin_db in cluster.plugins:
-            attr_pl = wrap_plugin(plugin_db)
-            attr_pl.set_cluster_tasks(cluster)
-            attr_plugins.append(attr_pl)
-        return attr_plugins
+            plugin_adaptor = wrap_plugin(plugin_db)
+            plugin_adaptor.set_cluster_tasks(cluster)
+            cluster_plugins.append(plugin_adaptor)
+        return cluster_plugins
 
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
@@ -88,8 +88,8 @@ class PluginManager(object):
         if plugin_ids:
             plugins = PluginCollection.get_by_uids(plugin_ids)
         else:
-            plugins = PluginCollection.all_newest()
+            plugins = PluginCollection.all()
 
         for plugin in plugins:
-            plugin_wrapper = wrap_plugin(plugin)
-            plugin_wrapper.sync_metadata_to_db()
+            plugin_adaptor = wrap_plugin(plugin)
+            plugin_adaptor.sync_metadata_to_db()

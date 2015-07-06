@@ -508,6 +508,7 @@ class NailgunBuildImage(BaseDataDriver):
         "curl",
         "daemonize",
         "debconf-utils",
+        "ethtool",
         "gdisk",
         "grub-pc",
         "linux-firmware",

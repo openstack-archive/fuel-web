@@ -134,7 +134,11 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
         repo_tasks = []
         for plugin in plugins:
-            uids = get_uids_for_tasks(self.nodes, plugin.tasks)
+            # TODO(aroma): remove this concatenation when unified way of
+            # processing will be introduced for deployment tasks and existing
+            # plugin tasks
+            tasks_of_plugin = plugin.tasks + plugin.deployment_tasks
+            uids = get_uids_for_tasks(self.nodes, tasks_of_plugin)
 
             # If there are no nodes for tasks execution
             # or if there are no files in repository
@@ -177,7 +181,11 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
     def sync_scripts(self, plugins):
         tasks = []
         for plugin in plugins:
-            uids = get_uids_for_tasks(self.nodes, plugin.tasks)
+            # TODO(aroma): remove this concatenation when unified way of
+            # processing will be introduced for deployment tasks and existing
+            # plugin tasks
+            tasks_of_plugin = plugin.tasks + plugin.deployment_tasks
+            uids = get_uids_for_tasks(self.nodes, tasks_of_plugin)
             if not uids:
                 continue
             tasks.append(

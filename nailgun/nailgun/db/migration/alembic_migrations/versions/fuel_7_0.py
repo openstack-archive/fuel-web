@@ -21,6 +21,7 @@ Create Date: 2015-06-24 12:08:04.838393
 """
 
 # revision identifiers, used by Alembic.
+
 revision = '1e50a4903910'
 down_revision = '37608259013'
 
@@ -47,6 +48,7 @@ def upgrade():
         None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
     extend_ip_addrs_model_upgrade()
+    extend_node_model_upgrade()
     extend_plugin_model_upgrade()
     upgrade_node_roles_metadata()
 
@@ -54,6 +56,7 @@ def upgrade():
 def downgrade():
     extend_plugin_model_downgrade()
     extend_ip_addrs_model_downgrade()
+    extend_node_model_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
     op.alter_column(
@@ -61,6 +64,26 @@ def downgrade():
         nullable=True)
     op.drop_constraint(None, 'nodes', type_='foreignkey')
     op.drop_constraint(None, 'network_groups', type_='foreignkey')
+
+
+def extend_node_model_upgrade():
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column('offloading_modes',
+                  fields.JSON(),
+                  nullable=False,
+                  server_default='[]'))
+    op.add_column(
+        'node_bond_interfaces',
+        sa.Column('offloading_modes',
+                  fields.JSON(),
+                  nullable=False,
+                  server_default='[]'))
+
+
+def extend_node_model_downgrade():
+    op.drop_column('node_bond_interfaces', 'offloading_modes')
+    op.drop_column('node_nic_interfaces', 'offloading_modes')
 
 
 def extend_ip_addrs_model_upgrade():

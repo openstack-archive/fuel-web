@@ -408,7 +408,25 @@ class EnvironmentManager(object):
                     'name': 'eth{0}'.format(i),
                     'mac': self.generate_random_mac(),
                     'current_speed': 100,
-                    'max_speed': 1000
+                    'max_speed': 1000,
+                    'offloading_modes': [
+                        {
+                            'name': 'enabled_offloading_mode',
+                            'state': True,
+                            "sub": [
+                                {
+                                    'name': 'disabled_offloading_sub_mode',
+                                    'state': False,
+                                    "sub": []
+                                }
+                            ]
+                        },
+                        {
+                            'name': 'disabled_offloading_mode',
+                            'state': False,
+                            "sub": []
+                        }
+                    ]
                 }
             )
         self.set_admin_ip_for_for_single_interface(nics)

@@ -18,6 +18,7 @@ import mock
 import six
 
 from nailgun.db.sqlalchemy import models
+from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
@@ -101,6 +102,29 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 'storage': 'br-storage',
             }
             self.assertEqual(roles, expected_roles)
+
+    def test_offloading_modes_serialize(self):
+        meta = self.env.default_metadata()
+        changed_offloading_modes = {}
+        for interface in meta['interfaces']:
+            changed_offloading_modes[interface['name']] = \
+                NetworkManager._get_modified_offloading_modes(
+                    interface.get('offloading_modes')
+                )
+
+        for node in self.serialized_for_astute:
+            interfaces = node['network_scheme']['interfaces']
+            for iface_name in interfaces:
+                ethtool_blk = interfaces[iface_name].get('ethtool', None)
+                self.assertIsNotNone(
+                    ethtool_blk,
+                    "There is no 'ethtool' block in deployment data")
+                offload_blk = ethtool_blk.get('offload', None)
+                self.assertIsNotNone(
+                    offload_blk,
+                    "There is no 'offload' block in deployment data")
+                self.assertDictEqual(offload_blk,
+                                     changed_offloading_modes[iface_name])
 
     def test_network_metadata(self):
         nm = objects.Cluster.get_network_manager(self.env.clusters[0])

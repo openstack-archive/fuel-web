@@ -19,10 +19,10 @@ import tempfile
 import zlib
 
 from oslo.config import cfg
+from oslo_log import log as logging
 import six
 
 from fuel_agent import errors
-from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import utils
 
 LOG = logging.getLogger(__name__)

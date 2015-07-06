@@ -24,6 +24,7 @@ import time
 
 import jinja2
 from oslo.config import cfg
+from oslo_log import log as logging
 import requests
 import stevedore.driver
 import urllib3
@@ -31,7 +32,6 @@ import urllib3
 from six.moves import zip_longest
 
 from fuel_agent import errors
-from fuel_agent.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

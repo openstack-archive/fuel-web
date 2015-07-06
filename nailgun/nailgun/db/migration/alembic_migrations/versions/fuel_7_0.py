@@ -39,14 +39,16 @@ from nailgun.utils.migration import drop_enum
 
 def upgrade():
     op.create_foreign_key(
-        None, 'network_groups', 'nodegroups', ['group_id'], ['id'])
+        'network_groups_nodegroups_fk', 'network_groups', 'nodegroups',
+        ['group_id'], ['id'])
     op.create_foreign_key(
-        None, 'nodes', 'nodegroups', ['group_id'], ['id'])
+        'nodes_nodegroups_fk', 'nodes', 'nodegroups', ['group_id'], ['id'])
     op.alter_column(
         'oswl_stats', 'resource_checksum', existing_type=sa.TEXT(),
         nullable=False)
     op.create_unique_constraint(
-        None, 'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
+        'oswl_stats_cluster_id_created_date_resource_type_unique_key',
+        'oswl_stats', ['cluster_id', 'created_date', 'resource_type'])
 
     extend_ip_addrs_model_upgrade()
     extend_node_model_upgrade()
@@ -63,12 +65,15 @@ def downgrade():
     extend_node_model_downgrade()
     extend_ip_addrs_model_downgrade()
 
-    op.drop_constraint(None, 'oswl_stats', type_='unique')
+    op.drop_constraint(
+        'oswl_stats_cluster_id_created_date_resource_type_unique_key',
+        'oswl_stats', type_='unique')
     op.alter_column(
         'oswl_stats', 'resource_checksum', existing_type=sa.TEXT(),
         nullable=True)
-    op.drop_constraint(None, 'nodes', type_='foreignkey')
-    op.drop_constraint(None, 'network_groups', type_='foreignkey')
+    op.drop_constraint('nodes_nodegroups_fk', 'nodes', type_='foreignkey')
+    op.drop_constraint('network_groups_nodegroups_fk', 'network_groups',
+                       type_='foreignkey')
 
 
 def extend_node_model_upgrade():
@@ -151,7 +156,9 @@ def extend_ip_addrs_model_downgrade():
     vrouter_enum = sa.Enum('haproxy', 'vrouter',
                            name='network_vip_types')
     vrouter_enum.create(op.get_bind(), checkfirst=False)
-    op.alter_column('ip_addrs', 'vip_type', type_=vrouter_enum)
+    op.execute('ALTER TABLE ip_addrs ALTER COLUMN vip_type '
+               'TYPE network_vip_types '
+               'USING vip_type::text::network_vip_types')
 
 
 def extend_plugin_model_downgrade():

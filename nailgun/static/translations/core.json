@@ -347,6 +347,7 @@
                         "vlan_id": "VLAN ID",
                         "vlan_id_plural": "VLAN IDs",
                         "mac": "MAC",
+                        "configuration_template_warning": "Configuration of bonding and networks is unavailable: configuration template is used",
                         "bond_button": "Bond Interfaces",
                         "unbond_button": "Unbond Interfaces",
                         "bond_speed_warning": "Bonding interfaces of different speeds is not recommended",

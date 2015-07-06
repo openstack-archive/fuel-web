@@ -704,9 +704,9 @@
               - data: "image"
                 label: "Image"
                 description: "Copying pre-built images on a disk."
-              - data: "cobbler"
-                label: "(DEPRECATED) Classic (use anaconda or debian-installer)"
-                description: "Install from scratch using anaconda or debian-installer."
+            restrictions:
+              - condition: "true"
+                action: "hide"
         external_dns:
           metadata:
             label: "Host OS DNS Servers"

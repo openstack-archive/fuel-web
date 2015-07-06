@@ -777,14 +777,19 @@ class Cluster(NailgunObject):
             - if there is deployment_graph defined by user - use it instead of
               defined
             - if instance assigned for patching - return custom patching graph
-            - else return default for release deployment graph
+            - else return default for release and enabled plugins
+              deployment graph
         """
         if instance.deployment_tasks:
             return instance.deployment_tasks
         elif instance.pending_release_id:
             return yaml.load(graph_configuration.PATCHING)
         else:
-            return Release.get_deployment_tasks(instance.release)
+            release_deployment_tasks = \
+                Release.get_deployment_tasks(instance.release)
+            plugin_deployment_tasks = \
+                PluginManager.get_plugins_deployment_tasks(instance)
+            return release_deployment_tasks + plugin_deployment_tasks
 
     @classmethod
     def create_vmware_attributes(cls, instance):

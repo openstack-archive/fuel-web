@@ -414,44 +414,44 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             _.each(sortedConfig, function(configEntry) {
                 var attribute = configEntry[0];
                 var attributeConfig = configEntry[1];
-                switch (attributeConfig.type) {
-                    case 'checkbox':
-                        var conditions = _.pluck(attributeConfig.restrictions, 'condition');
-                        controlsHtml += (controlTpl(_.extend(attributeConfig, {
-                            pane: attribute,
-                            labelClasses: configToUse.labelClasses,
-                            disabled: this.checkRestrictions(conditions) ? 'disabled' : '',
-                            descriptionClasses: configToUse.descriptionClasses,
-                            label: attributeConfig.label,
-                            hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription ,
-                            description: attributeConfig.description
-                        })));
-                        break;
-                    case 'radio':
-                        _.each(attributeConfig.values, function(value) {
-                            var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute,
-                                conditions = _.pluck(value.restrictions, 'condition');
-                            if (shouldBeAdded) {
+                if (!this.checkRestrictions(_.where(attributeConfig.restrictions, {action: 'hide'}))) {
+                    switch (attributeConfig.type) {
+                        case 'checkbox':
                                 controlsHtml += (controlTpl(_.extend(attributeConfig, {
-                                    value: value.data,
                                     pane: attribute,
-                                    labelClasses: configToUse.labelClasses || '',
-                                    disabled: this.checkRestrictions(conditions) ? 'disabled' : '',
-                                    descriptionClasses: configToUse.descriptionClasses || '',
-                                    label: value.label,
-                                    hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription,
-                                    description: value.description || ''
+                                    labelClasses: configToUse.labelClasses,
+                                    disabled: this.checkRestrictions(_.where(attributeConfig.restrictions, {action: 'disable'})) ? 'disabled' : '',
+                                    descriptionClasses: configToUse.descriptionClasses,
+                                    label: attributeConfig.label,
+                                    hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription ,
+                                    description: attributeConfig.description
                                 })));
-                            }
-                        }, this);
-                        break;
-                    case 'text':
-                    case 'password':
-                        var newControlTemplate = _.template(textInputTemplate);
-                        var newControlsHtml = '';
-                        newControlsHtml = (newControlTemplate(_.extend(attributeConfig, {attribute: attribute})));
-                        controlsHtml += newControlsHtml;
-                        break;
+                            break;
+                        case 'radio':
+                            _.each(attributeConfig.values, function(value) {
+                                var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
+                                if (shouldBeAdded && !this.checkRestrictions(_.where(value.restrictions, {action: 'hide'}))) {
+                                    controlsHtml += (controlTpl(_.extend(attributeConfig, {
+                                        value: value.data,
+                                        pane: attribute,
+                                        labelClasses: configToUse.labelClasses || '',
+                                        disabled: this.checkRestrictions(_.where(value.restrictions, {action: 'disable'})) ? 'disabled' : '',
+                                        descriptionClasses: configToUse.descriptionClasses || '',
+                                        label: value.label,
+                                        hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription,
+                                        description: value.description || ''
+                                    })));
+                                }
+                            }, this);
+                            break;
+                        case 'text':
+                        case 'password':
+                            var newControlTemplate = _.template(textInputTemplate);
+                            var newControlsHtml = '';
+                            newControlsHtml = (newControlTemplate(_.extend(attributeConfig, {attribute: attribute})));
+                            controlsHtml += newControlsHtml;
+                            break;
+                    }
                 }
             }, this);
             return controlsHtml;
@@ -491,16 +491,15 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
             }, this);
             this.stickit(this.wizard.model);
         },
-        checkRestrictions: function(conditions) {
-            return _.any(conditions, function(condition) {
-                return utils.evaluateExpression(condition, this.wizard.configModels).value;
+        checkRestrictions: function(restrictions) {
+            return _.any(restrictions, function(restriction) {
+                return utils.evaluateExpression(restriction.condition, this.wizard.configModels).value;
             }, this);
         },
         createRestrictionBindings: function(controlRestrictions, selectorOptions) {
             _.each(_.groupBy(controlRestrictions, 'action'), function(restrictions, action) {
-                var conditions = _.pluck(restrictions, 'condition');
-                var attributesToObserve = _.uniq(_.flatten(_.map(conditions, function(condition) {
-                    return _.keys(utils.evaluateExpression(condition, this.wizard.configModels).modelPaths);
+                var attributesToObserve = _.uniq(_.flatten(_.map(restrictions, function(restriction) {
+                    return _.keys(utils.evaluateExpression(restriction.condition, this.wizard.configModels).modelPaths);
                 }, this)));
                 var selector = _.map(selectorOptions, function(value, key) {
                     return '[' + key + '=' + value + ']';
@@ -512,7 +511,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                                 name: 'disabled',
                                 observe: attributesToObserve,
                                 onGet: function() {
-                                    return this.checkRestrictions(conditions);
+                                    return this.checkRestrictions(restrictions);
                                 }
                             }]
                         });
@@ -521,7 +520,7 @@ function(require, $, _, i18n, Backbone, utils, models, createClusterWizardTempla
                         this.bindings[selector] = _.extend(this.bindings[selector] || {}, {
                             observe: attributesToObserve,
                             visible: function() {
-                                return !this.checkRestrictions(conditions);
+                                return !this.checkRestrictions(restrictions);
                             }
                         });
                         break;

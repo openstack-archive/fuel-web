@@ -76,7 +76,7 @@ class PluginManager(object):
         cluster_plugins = []
         for plugin_db in cluster.plugins:
             plugin_adapter = wrap_plugin(plugin_db)
-            plugin_adapter.set_cluster_tasks(cluster)
+            plugin_adapter.set_cluster_tasks()
             cluster_plugins.append(plugin_adapter)
         return cluster_plugins
 
@@ -93,3 +93,13 @@ class PluginManager(object):
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)
             plugin_adapter.sync_metadata_to_db()
+
+    @classmethod
+    def get_plugins_deployment_tasks(cls, cluster):
+        deployment_tasks = []
+
+        for plugin_db in cluster.plugins:
+            plugin_adapter = wrap_plugin(plugin_db)
+            deployment_tasks.extend(plugin_adapter.deployment_tasks)
+
+        return deployment_tasks

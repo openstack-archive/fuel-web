@@ -774,6 +774,29 @@ class TestClusterObject(BaseTestCase):
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
 
+    def test_get_deployment_tasks(self):
+        cluster = self.env.create_cluster(api=False)
+
+        depl_task_id = 'test_depl_task'
+        plugin_metadata = self.env.get_default_plugin_metadata(
+            deployment_tasks=self.env.get_default_plugin_deployment_tasks(
+                id=depl_task_id
+            )
+        )
+
+        plugin = objects.Plugin.create(plugin_metadata)
+        cluster.plugins.append(plugin)
+
+        cluster_deployment_tasks = \
+            objects.Cluster.get_deployment_tasks(cluster)
+
+        tasks_ids = [t['id'] for t in cluster_deployment_tasks]
+        self.assertIn(depl_task_id, tasks_ids)
+
+        default_tasks_count = len(cluster.release.deployment_tasks)
+        self.assertEquals(len(cluster_deployment_tasks),
+                          default_tasks_count + len(plugin.deployment_tasks))
+
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):
     def setUp(self):

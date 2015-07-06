@@ -30,7 +30,8 @@ _test_revision = '37608259013'
 
 def setup_module(module):
     dropdb()
-    alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
+    alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
+    alembic.command.downgrade(ALEMBIC_CONFIG, _prepare_revision)
     prepare()
     alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
 

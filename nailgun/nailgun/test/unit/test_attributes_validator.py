@@ -12,6 +12,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from mock import Mock
+from mock import patch
 
 import yaml
 
@@ -270,6 +272,38 @@ class TestAttributesValidator(BaseTestCase):
         self.assertRaises(errors.InvalidData,
                           AttributesValidator.validate_editable_attributes,
                           yaml.load(attrs))
+
+    @patch('nailgun.objects.Cluster.get_updated_editable_attributes')
+    def test_invalid_provisioning_method(self, mock_cluster_attrs):
+        attrs = {'editable': {'provision': {'method':
+                 {'value': 'not_image'}}}}
+        mock_cluster_attrs.return_value = attrs
+        cluster_mock = Mock(fuel_version='7.0')
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          attrs,
+                          cluster_mock)
+
+    @patch('nailgun.objects.Cluster.get_updated_editable_attributes')
+    def test_provision_method_missing(self, mock_cluster_attrs):
+        attrs = {'editable': {'method': {'value': 'not_image'}}}
+        mock_cluster_attrs.return_value = attrs
+        cluster_mock = Mock(fuel_version='7.0')
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate,
+                          attrs,
+                          cluster_mock)
+
+    @patch('nailgun.objects.Cluster.get_updated_editable_attributes')
+    def test_provision_method_passed(self, mock_cluster_attrs):
+        attrs = {'editable': {'provision': {'method':
+                 {'value': 'image'}}}}
+        mock_cluster_attrs.return_value = attrs
+        cluster_mock = Mock(fuel_version='7.0')
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate,
+                             attrs,
+                             cluster_mock)
 
     def test_valid_attributes(self):
         valid_attibutes = [

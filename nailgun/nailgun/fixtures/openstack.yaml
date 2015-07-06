@@ -819,6 +819,16 @@
             regex:
               source: '^[1-9]\d*$'
               error: "Invalid number"
+        public_ssl:
+          metadata:
+            label: "HAProxy public SSL hostname"
+            weigth: 100
+          hostname:
+            value: "public.fuel.local"
+            label: "Hostname or IP"
+            type: "text"
+            weight: 10
+            description: "Configures hostname or IP for HAProxy SSL keys generation"
       generated:
         mysql:
           root_password:

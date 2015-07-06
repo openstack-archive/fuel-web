@@ -160,7 +160,7 @@ class ClusterAttributesPluginBase(object):
                 u'weight': 70, u'label': self.plugin.title,
                 'plugin_id': self.plugin.id}
 
-    def set_cluster_tasks(self, cluster):
+    def set_cluster_tasks(self):
         """Loads plugins provided tasks from tasks config file and
         sets them to instance tasks variable.
         """

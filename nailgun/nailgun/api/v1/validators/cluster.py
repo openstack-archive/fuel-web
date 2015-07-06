@@ -20,10 +20,14 @@ from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
 from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
 
+from nailgun import consts
+
 from nailgun.errors import errors
 
 from nailgun import objects
 from nailgun.utils import restrictions
+
+from distutils.version import StrictVersion
 
 
 class ClusterValidator(BasicValidator):
@@ -158,6 +162,21 @@ class AttributesValidator(BasicValidator):
         attrs = d
         if cluster is not None:
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
+            # NOTE(agordeev): disable classic provisioning for 7.0 or higher
+            if StrictVersion(cluster.release.environment_version) >= \
+                    StrictVersion(consts.FUEL_IMAGE_BASED_ONLY):
+                provision_data = attrs['editable'].get('provision')
+                if provision_data:
+                    if provision_data['method']['value'] != \
+                            consts.PROVISION_METHODS.image:
+                        raise errors.InvalidData(
+                            u"Cannot use classic provisioning for adding "
+                            u"nodes to environment",
+                            log_message=True)
+                else:
+                    raise errors.InvalidData(
+                        u"Provisioning method is not set. Unable to continue",
+                        log_message=True)
 
         cls.validate_editable_attributes(attrs)
 

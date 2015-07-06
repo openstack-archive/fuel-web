@@ -210,9 +210,12 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
             });
             return hasLockedNodes || this.isLockedScreen();
         },
+        configurationTemplateExists: function() {
+            return !_.isEmpty(this.props.cluster.get('networkConfiguration').get('networking_parameters').get('configuration_template'));
+        },
         bondingAvailable: function() {
             var availableBondTypes = this.getBondType();
-            return !this.isLocked() && !!availableBondTypes;
+            return !this.isLocked() && !!availableBondTypes && !this.configurationTemplateExists();
         },
         getBondType: function() {
             return _.compact(_.flatten(_.map(this.props.bondingConfig.availability, function(modeAvailabilityData) {
@@ -342,6 +345,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                 interfaces = this.props.interfaces,
                 locked = this.isLocked(),
                 bondingAvailable = this.bondingAvailable(),
+                configurationTemplateExists = this.configurationTemplateExists(),
                 checkedInterfaces = interfaces.filter(function(ifc) {return ifc.get('checked') && !ifc.isBond();}),
                 checkedBonds = interfaces.filter(function(ifc) {return ifc.get('checked') && ifc.isBond();}),
                 creatingNewBond = checkedInterfaces.length >= 2 && !checkedBonds.length,
@@ -377,6 +381,11 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                     <div className='title'>
                         {i18n(ns + 'title', {count: nodes.length, name: nodeNames.join(', ')})}
                     </div>
+                    {configurationTemplateExists &&
+                        <div className='col-xs-12'>
+                            <div className='alert alert-warning'>{i18n(ns + 'configuration_template_warning')}</div>
+                        </div>
+                    }
                     {bondingAvailable &&
                         <div className='col-xs-12'>
                             <div className='page-buttons'>
@@ -405,6 +414,7 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                     interface={ifc}
                                     locked={locked}
                                     bondingAvailable={bondingAvailable}
+                                    configurationTemplateExists={configurationTemplateExists}
                                     errors={this.state.interfaceErrors[ifcName]}
                                     validate={this.validate}
                                     removeInterfaceFromBond={this.removeInterfaceFromBond}
@@ -670,23 +680,25 @@ function($, _, Backbone, React, i18n, utils, models, dispatcher, controls, Compo
                                 </div>
                             </div>
                             <div className='col-xs-9'>
-                                <div className='ifc-networks'>
-                                    {assignedNetworks.length ?
-                                        assignedNetworks.map(function(interfaceNetwork) {
-                                            var network = interfaceNetwork.getFullNetwork(networks);
-                                            if (!network) return;
-                                            return <DraggableNetwork
-                                                key={'network-' + network.id}
-                                                {... _.pick(this.props, ['locked', 'interface'])}
-                                                networkingParameters={networkingParameters}
-                                                interfaceNetwork={interfaceNetwork}
-                                                network={network}
-                                            />;
-                                        }, this)
-                                    :
-                                        i18n(ns + 'drag_and_drop_description')
-                                    }
-                                </div>
+                                {!this.props.configurationTemplateExists &&
+                                    <div className='ifc-networks'>
+                                        {assignedNetworks.length ?
+                                            assignedNetworks.map(function(interfaceNetwork) {
+                                                var network = interfaceNetwork.getFullNetwork(networks);
+                                                if (!network) return;
+                                                return <DraggableNetwork
+                                                    key={'network-' + network.id}
+                                                    {... _.pick(this.props, ['locked', 'interface'])}
+                                                    networkingParameters={networkingParameters}
+                                                    interfaceNetwork={interfaceNetwork}
+                                                    network={network}
+                                                />;
+                                            }, this)
+                                        :
+                                            i18n(ns + 'drag_and_drop_description')
+                                        }
+                                    </div>
+                                }
                             </div>
                         </div>
 

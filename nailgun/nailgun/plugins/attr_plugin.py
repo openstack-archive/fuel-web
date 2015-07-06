@@ -286,6 +286,7 @@ class PluginAdapterV3(ClusterAttributesPluginV2):
     node_roles_config_name = 'node_roles.yaml'
     volumes_config_name = 'volumes.yaml'
     deployment_tasks_config_name = 'deployment_tasks.yaml'
+    network_roles_config_name = 'network_roles.yaml'
 
     def sync_metadata_to_db(self):
         super(PluginAdapterV3, self).sync_metadata_to_db()
@@ -295,6 +296,7 @@ class PluginAdapterV3(ClusterAttributesPluginV2):
             'attributes_metadata': self.environment_config_name,
             'roles_metadata': self.node_roles_config_name,
             'volumes_metadata': self.volumes_config_name,
+            'network_roles_metadata': self.network_roles_config_name,
             'deployment_tasks': self.deployment_tasks_config_name,
             'tasks': self.task_config_name
         }

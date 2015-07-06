@@ -103,6 +103,15 @@ def extend_plugin_model_upgrade():
     op.add_column(
         'plugins',
         sa.Column(
+            'network_roles_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+    op.add_column(
+        'plugins',
+        sa.Column(
             'attributes_metadata',
             fields.JSON(),
             nullable=False,
@@ -160,6 +169,7 @@ def extend_plugin_model_downgrade():
     op.drop_column('plugins', 'roles_metadata')
     op.drop_column('plugins', 'volumes_metadata')
     op.drop_column('plugins', 'attributes_metadata')
+    op.drop_column('plugins', 'network_roles_metadata')
 
 
 def upgrade_node_roles_metadata():

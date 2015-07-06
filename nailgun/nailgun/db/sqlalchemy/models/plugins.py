@@ -56,6 +56,7 @@ class Plugin(Base):
     attributes_metadata = Column(JSON, server_default='{}', nullable=False)
     volumes_metadata = Column(JSON, server_default='{}', nullable=False)
     roles_metadata = Column(JSON, server_default='{}', nullable=False)
+    network_roles_metadata = Column(JSON, server_default='{}', nullable=False)
     deployment_tasks = Column(JSON, server_default='[]', nullable=False)
     # TODO(apopovych): To support old plugins versions we need separate
     # tasks which runs directly during deployment(stored in `deployment_tasks`

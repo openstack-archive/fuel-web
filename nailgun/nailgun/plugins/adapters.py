@@ -160,7 +160,7 @@ class PluginAdapterBase(object):
                 u'weight': 70, u'label': self.plugin.title,
                 'plugin_id': self.plugin.id}
 
-    def set_cluster_tasks(self, cluster):
+    def set_cluster_tasks(self):
         """Loads plugins provided tasks from tasks config file and
         sets them to instance tasks variable.
         """
@@ -191,6 +191,14 @@ class PluginAdapterBase(object):
     def slaves_scripts_path(self):
         return settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
             plugin_name=self.path_name)
+
+    @property
+    def deployment_tasks(self):
+        deployment_tasks = []
+        for task in self.plugin.deployment_tasks:
+            task['parameters'].setdefault('cwd', self.slaves_scripts_path)
+            deployment_tasks.append(task)
+        return deployment_tasks
 
     def get_release_info(self, release):
         """Returns plugin release information which corresponds to

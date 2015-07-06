@@ -165,6 +165,14 @@ class TestPluginV2(TestPluginBase):
             '{0}-{1}'.format(self.plugin.name, '0.1'))
 
 
+class TestPluginV3(TestPluginBase):
+    """So far functinality provided by plugin of v3 version is
+    same as that of v2 so tests coverage should be same too
+    """
+
+    package_version = '3.0.0'
+
+
 class TestClusterCompatiblityValidation(base.BaseTestCase):
 
     def setUp(self):

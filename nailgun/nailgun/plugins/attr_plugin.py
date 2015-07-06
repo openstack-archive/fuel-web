@@ -263,9 +263,16 @@ class ClusterAttributesPluginV2(ClusterAttributesPluginBase):
         return major
 
 
+# NOTE(aroma): so far V3 plugin is almost the same as V2
+# by spectrum of provided fuctionality
+class ClusterAttributesPluginV3(ClusterAttributesPluginV2):
+    pass
+
+
 __version_mapping = {
     '1.0.': ClusterAttributesPluginV1,
-    '2.0.': ClusterAttributesPluginV2
+    '2.0.': ClusterAttributesPluginV2,
+    '3.0.': ClusterAttributesPluginV3,
 }
 
 

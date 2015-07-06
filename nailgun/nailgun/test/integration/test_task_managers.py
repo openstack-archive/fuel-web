@@ -34,6 +34,10 @@ from nailgun.settings import settings
 
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.orchestrator.deployment_graph import AstuteGraph
+from nailgun.orchestrator.deployment_serializers \
+    import get_serializer_for_cluster
+from nailgun.orchestrator import stages
 from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager
 from nailgun.task.task import DeletionTask
@@ -874,3 +878,235 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertItemsEqual(expected_nodes_to_deploy,
                                       actual_nodes_to_deploy)
                 self.assertEqual(202, resp.status_code)
+
+
+class TestPluginDeploymentTasksMixing(BaseIntegrationTest):
+
+    release_deployment_tasks = [
+        {'id': 'deploy_start',
+         'type': 'stage'},
+        {'id': 'deploy_end',
+         'requires': ['deploy_start'],
+         'type': 'stage'},
+        {'id': 'post_deployment_start',
+         'type': 'stage',
+         'requires': ['deploy_end']},
+        {'id': 'post_deployment_end',
+         'type': 'stage',
+         'requires': ['post_deployment_start']},
+        {'id': 'primary-controller',
+         'parameters': {'strategy': {'type': 'one_by_one'}},
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'role': ['primary-controller'],
+         'type': 'group'},
+        {'id': 'first-fake-depl-task',
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'first-fake-depl-task',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'groups': ['primary-controller']},
+        {'id': 'second-fake-depl-task',
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'second-fake-depl-task',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'groups': ['primary-controller']},
+    ]
+
+    def setUp(self):
+        super(TestPluginDeploymentTasksMixing, self).setUp()
+
+        self.cluster = self._prepare_cluster()
+
+    def _prepare_cluster(self):
+        self.env.create(
+            release_kwargs={
+                'version': '2015.1.0-7.0',
+                'deployment_tasks': self.release_deployment_tasks,
+            },
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan',
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'primary_roles': ['controller'],
+                 'pending_addition': True}
+            ]
+        )
+        return self.env.clusters[0]
+
+    def prepare_plugins_for_cluster(self, cluster, plugins_kw_list):
+        plugins = [
+            self._create_plugin(**kw)
+            for kw in plugins_kw_list
+        ]
+        cluster.plugins.extend(plugins)
+        self.db.flush()
+
+    def _create_plugin(self, **plugin_kwargs):
+        plugin_data = self.env.get_default_plugin_metadata(
+            **plugin_kwargs
+        )
+
+        return objects.Plugin.create(plugin_data)
+
+    def test_plugin_depl_tasks_proper_injections(self):
+        self.prepare_plugins_for_cluster(
+            self.cluster,
+            [
+                {
+                    'name': 'between_rel_tasks',
+                    'releases': [
+                        {
+                            'repository_path': 'repositories/ubuntu',
+                            'version': self.cluster.release.version,
+                            'os':
+                            self.cluster.release.operating_system.lower(),
+                            'mode': ['ha', 'multinode'],
+                            'deployment_scripts_path': 'deployment_scripts/'
+                        },
+                    ],
+                    'deployment_tasks': [
+                        {
+                            'id': 'between-rel-tasks',
+                            'type': 'puppet',
+                            'groups': ['primary-controller'],
+                            'requires': ['first-fake-depl-task'],
+                            'required_for': ['second-fake-depl-task'],
+                            'parameters': {
+                                'puppet_manifest': 'between-rel-tasks',
+                                'puppet_modules': 'test',
+                                'timeout': 0,
+                            }
+                        },
+                    ],
+                },
+            ]
+        )
+
+        graph = AstuteGraph(self.cluster)
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        serializer = \
+            get_serializer_for_cluster(self.cluster)(graph)
+        serialized = serializer.serialize(self.cluster, self.cluster.nodes)
+        pre_deployment = stages.pre_deployment_serialize(
+            graph, self.cluster, self.cluster.nodes)
+
+        serialized_tasks = serialized[0]['tasks']
+
+        expected_priority = {
+            100: 'first-fake-depl-task',
+            200: 'between-rel-tasks',
+            300: 'second-fake-depl-task',
+        }
+
+        for task in serialized_tasks:
+            task_identificator = task['parameters']['puppet_manifest']
+            self.assertEquals(
+                task_identificator, expected_priority[task['priority']]
+            )
+
+        expected_name = 'between_rel_tasks'
+        diagnostic_names = [
+            t['diagnostic_name'].split('-')[0] for t in pre_deployment]
+
+        self.assertIn(expected_name, diagnostic_names)
+
+    def test_plugin_depl_task_overwrite_from_rel(self):
+        self.prepare_plugins_for_cluster(
+            self.cluster,
+            [
+                {
+                    'name': 'between_rel_tasks',
+                    'releases': [
+                        {
+                            'repository_path': 'repositories/ubuntu',
+                            'version': self.cluster.release.version,
+                            'os':
+                            self.cluster.release.operating_system.lower(),
+                            'mode': ['ha', 'multinode'],
+                            'deployment_scripts_path': 'deployment_scripts/'
+                        },
+                    ],
+                    'deployment_tasks': [
+                        {
+                            'id': 'first-fake-depl-task',
+                            'type': 'puppet',
+                            'groups': ['primary-controller'],
+                            'requires': ['deploy_start'],
+                            'required_for': ['second-fake-depl-task'],
+                            'parameters': {
+                                'puppet_manifest': 'plugin_task',
+                                'puppet_modules': 'test',
+                                'timeout': 0,
+                            }
+                        },
+                    ],
+                },
+            ]
+        )
+
+        graph = AstuteGraph(self.cluster)
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        serializer = \
+            get_serializer_for_cluster(self.cluster)(graph)
+        serialized = serializer.serialize(self.cluster, self.cluster.nodes)
+
+        serialized_tasks = serialized[0]['tasks']
+
+        needed_task_priority = next(
+            t['priority'] for t in serialized_tasks
+            if t['parameters']['puppet_manifest'] == 'plugin_task'
+        )
+        # first task in graph has priority equal 100
+        self.assertEquals(needed_task_priority, 100)
+
+    def test_plugin_depl_task_in_pos_depl(self):
+        self.prepare_plugins_for_cluster(
+            self.cluster,
+            [
+                {
+                    'name': 'post-depl-plugin-task',
+                    'releases': [
+                        {
+                            'repository_path': 'repositories/ubuntu',
+                            'version': self.cluster.release.version,
+                            'os':
+                            self.cluster.release.operating_system.lower(),
+                            'mode': ['ha', 'multinode'],
+                            'deployment_scripts_path': 'deployment_scripts/'
+                        },
+                    ],
+                    'deployment_tasks': [
+                        {
+                            'id': 'post-depl-plugin-task',
+                            'type': 'puppet',
+                            'role': ['primary-controller'],
+                            'requires': ['post_deployment_start'],
+                            'required_for': ['post_deployment_end'],
+                            'parameters': {
+                                'puppet_manifest': 'post_depl_plugin_task',
+                                'puppet_modules': 'test',
+                                'timeout': 0,
+                            }
+                        },
+                    ],
+                },
+            ]
+        )
+
+        graph = AstuteGraph(self.cluster)
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        post_deployment = stages.post_deployment_serialize(
+            graph, self.cluster, self.cluster.nodes)
+
+        self.assertEquals(
+            post_deployment[0]['parameters']['puppet_manifest'],
+            'post_depl_plugin_task'
+        )

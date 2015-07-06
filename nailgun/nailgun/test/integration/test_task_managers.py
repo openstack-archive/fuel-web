@@ -18,6 +18,7 @@
 import nailgun
 import nailgun.rpc as rpc
 import time
+from uuid import uuid4
 
 import mock
 
@@ -874,3 +875,128 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertItemsEqual(expected_nodes_to_deploy,
                                       actual_nodes_to_deploy)
                 self.assertEqual(202, resp.status_code)
+
+
+class TestPluginDeploymentTasksMixing(BaseIntegrationTest):
+
+    release_deployment_tasks = [
+        {'id': 'deploy_start',
+         'type': 'stage'},
+        {'id': 'deploy_end',
+         'requires': ['deploy_start'],
+         'type': 'stage'},
+        {'id': 'primary-controller',
+         'parameters': {'strategy': {'type': 'one_by_one'}},
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'role': ['primary-controller'],
+         'type': 'group'},
+        {'id': 'first-fake-depl-task',
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'role': ['primary-controller'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'first-fake-depl-task',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'groups': ['primary-controller']},
+        {'id': 'second-fake-depl-task',
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'role': ['primary-controller'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'second-fake-depl-task',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'groups': ['primary-controller']},
+    ]
+
+    def prepare_cluster(self):
+        release = self.env.create_release(
+            deployment_tasks=self.release_deployment_tasks)
+
+        cluster = self.env.create_cluster(
+            api=False, release_id=release.id
+        )
+
+        self.env.create_node(
+            api=False,
+            cluster_id=cluster.id,
+            roles=['controller'],
+            pending_addition=True
+        )
+
+        return cluster
+
+    def prepare_plugins_for_cluster(self, cluster, depl_kw_list):
+        plugins = [
+            self._create_plugin_with_depl_task(**kw)
+            for kw in depl_kw_list
+        ]
+        cluster.plugins.extend(plugins)
+        self.db.flush()
+
+    def _create_plugin_with_depl_task(self, **depl_task_kwargs):
+        depl_task_kwargs.update({
+            'type': 'puppet',
+            'groups': ['primary-controller'],
+        })
+
+        depl_tasks = \
+            self.env.get_default_plugin_deployment_tasks(
+                **depl_task_kwargs)
+
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data.update(
+            {
+                'name': uuid4().get_hex(),
+                'deployment_tasks': depl_tasks
+            }
+        )
+
+        return objects.Plugin.create(plugin_data)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @mock.patch('nailgun.rpc.cast')
+    def test_plugin_depl_tasks_proper_injections(self, cast_mock):
+        between_rel_depl_task_kw = {
+            'id': 'between-rel-tasks',
+            'requires': ['first-fake-depl-task'],
+            'required_for': ['second-fake-depl-task'],
+            'parameters': {'puppet_manifest': 'between-rel-tasks',
+                           'puppet_modules': 'test',
+                           'timeout': 0}
+        }
+
+        after_second_rel_depl_task_kw = {
+            'id': 'after-second-rel-task',
+            'requires': ['second-fake-depl-task'],
+            'required_for': ['deploy_end'],
+            'parameters': {'puppet_manifest': 'after-second-rel-task',
+                           'puppet_modules': 'test',
+                           'timeout': 0}
+
+        }
+
+        cluster = self.prepare_cluster()
+        self.prepare_plugins_for_cluster(
+            cluster,
+            [between_rel_depl_task_kw, after_second_rel_depl_task_kw])
+
+        self.env.launch_deployment()
+
+        args, kwargs = cast_mock.call_args
+        serialized_tasks = args[1][1]['args']['deployment_info'][0]['tasks']
+
+        expected_priority = {
+            'first-fake-depl-task': 100,
+            'second-fake-depl-task': 300,
+            'between-rel-tasks': 200,
+            'after-second-rel-task': 400
+        }
+
+        for task in serialized_tasks:
+            task_identificator = task['parameters']['puppet_manifest']
+            self.assertEquals(
+                task['priority'], expected_priority[task_identificator]
+            )

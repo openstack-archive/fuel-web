@@ -8,7 +8,7 @@
 @default-label-width: 200px;
 
 // Base Palette
-@base-dark-color:  #394c59;
+@base-dark-color:  #415766;
 @base-light-color: @base-dark-color + #7a746c;
 @base-text-color:  #525960;
 
@@ -708,7 +708,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   li {
     display: inline-block;
     a {
-      color: @blue;
+      color: @blue + 60%;
     }
   }
   li + li {
@@ -897,7 +897,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .cluster-page {
   .page-title {
     .title-node-count {
-      color: @blue;
+      color: @blue + 60%;
       display: inline-block;
       font-size: @base-font-size + 4;
       left: 18px;
@@ -937,6 +937,9 @@ button, .btn:not(.btn-link) {.font-semibold;}
     padding-right: 0px;
     padding-top: 20px;
     box-sizing: border-box;
+  }
+  .deploy-btn {
+    padding: 4px 12px 7px;
   }
   .deploy-icon {
     position: relative;
@@ -1198,7 +1201,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .control-buttons-box {
     overflow: hidden;
     .btn-group {
-      margin-left: 5px;
+      margin-left: 10px;
       .glyphicon {
         margin-right: 5px;
       }

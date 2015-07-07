@@ -43,18 +43,6 @@ bu_opts = [
         help='Maximum allowed loop devices count to use'
     ),
     cfg.IntOpt(
-        'sparse_file_size',
-        # XXX: Apparently Fuel configures the node root filesystem to span
-        # the whole hard drive. However 2 GB filesystem created with default
-        # options can grow at most to 2 TB (1024x its initial size). This
-        # maximal size can be configured by mke2fs -E resize=NNN option,
-        # however the version of e2fsprogs shipped with CentOS 6.[65] seems
-        # to silently ignore the `resize' option. Therefore make the initial
-        # filesystem a bit bigger so it can grow to 8 TB.
-        default=8192,
-        help='Size of sparse file in MiBs'
-    ),
-    cfg.IntOpt(
         'loop_device_major_number',
         default=7,
         help='System-wide major number for loop device'
@@ -305,7 +293,7 @@ def get_free_loop_device(
     raise errors.NoFreeLoopDevices('Free loop device not found')
 
 
-def create_sparse_tmp_file(dir, suffix, size=CONF.sparse_file_size):
+def create_sparse_tmp_file(dir, suffix, size):
     """Creates sparse file.
 
     Creates file which consumes disk space more efficiently when the file

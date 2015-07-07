@@ -579,7 +579,8 @@ class NailgunBuildImage(BaseDataDriver):
                 uri='file://' + os.path.join(self.data['output'], filename),
                 format=image['format'],
                 container=image['container'],
-                target_device=device)
+                target_device=device,
+                size=image['min_fs_size'])
 
             self.partition_scheme.add_fs(
                 device=device,

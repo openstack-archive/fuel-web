@@ -1446,10 +1446,12 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64.img.gz"
               format: "ext4"
               container: "gzip"
+              min_fs_size: 8192
             /boot:
               uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
+              min_fs_size: 200
 - pk: 2
   extend: *base_release
   fields:
@@ -1543,7 +1545,9 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64.img.gz"
               format: "ext4"
               container: "gzip"
+              min_fs_size: 8192
             /boot:
               uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
+              min_fs_size: 200

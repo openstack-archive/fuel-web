@@ -13,9 +13,6 @@
 # limitations under the License.
 
 import mock
-import os
-import six
-from six.moves.urllib.parse import urlsplit
 
 from oslotest import base as test_base
 
@@ -88,11 +85,13 @@ REPOS_SAMPLE = [
 
 IMAGE_DATA_SAMPLE = {
     "/boot": {
+        "min_fs_size": 200,
         "container": "gzip",
         "uri": "http://10.20.0.2:8080/path/to/img-boot.img.gz",
         "format": "ext2"
     },
     "/": {
+        "min_fs_size": 8192,
         "container": "gzip",
         "uri": "http://10.20.0.2:8080/path/to/img.img.gz",
         "format": "ext4"
@@ -192,6 +191,11 @@ class TestNailgunBuildImage(test_base.BaseTestCase):
     def test_parse_schemes(
             self, mock_init, mock_imgsch, mock_partsch,
             mock_fs, mock_img, mock_loop):
+        mock_loop.return_value = 'fake_loop'
+        mock_images = mock.Mock()
+        mock_imgsch.return_value = mock_images
+        mock_fss = mock.Mock()
+        mock_partsch.return_value = mock_fss
         mock_init.return_value = None
         data = {
             'image_data': IMAGE_DATA_SAMPLE,
@@ -200,45 +204,19 @@ class TestNailgunBuildImage(test_base.BaseTestCase):
         driver = NailgunBuildImage()
         driver.data = data
         driver.parse_schemes()
-
-        mock_fs_expected_calls = []
-        mock_img_expected_calls = []
-        images = []
-        fss = []
-        data_length = len(data['image_data'].keys())
-        for mount, image in six.iteritems(data['image_data']):
-            filename = os.path.basename(urlsplit(image['uri']).path)
-            img_kwargs = {
-                'uri': 'file://' + os.path.join(data['output'], filename),
-                'format': image['format'],
-                'container': image['container'],
-                'target_device': None
-            }
-            mock_img_expected_calls.append(mock.call(**img_kwargs))
-            images.append(objects.Image(**img_kwargs))
-
-            fs_kwargs = {
-                'device': None,
-                'mount': mount,
-                'fs_type': image['format']
-            }
-            mock_fs_expected_calls.append(mock.call(**fs_kwargs))
-            fss.append(objects.Fs(**fs_kwargs))
-
-            if mount == '/':
-                metadata_filename = filename.split('.', 1)[0] + '.yaml'
-
-        mock_imgsch_instance = mock_imgsch.return_value
-        mock_imgsch_instance.images = images
-        mock_partsch_instance = mock_partsch.return_value
-        mock_partsch_instance.fss = fss
-
-        self.assertEqual(
-            driver.metadata_uri, 'file://' + os.path.join(
-                data['output'], metadata_filename))
-        self.assertEqual(mock_img_expected_calls,
-                         mock_img.call_args_list[:data_length])
-        self.assertEqual(mock_fs_expected_calls,
-                         mock_fs.call_args_list[:data_length])
-        self.assertEqual(driver.image_scheme.images, images)
-        self.assertEqual(driver.partition_scheme.fss, fss)
+        expected_add_images_calls = [
+            mock.call(target_device='fake_loop', format='ext2',
+                      container='gzip',
+                      uri='file:///some/local/path/img-boot.img.gz', size=200),
+            mock.call(target_device='fake_loop', format='ext4',
+                      container='gzip',
+                      uri='file:///some/local/path/img.img.gz', size=8192)]
+        self.assertEqual(expected_add_images_calls,
+                         mock_images.add_image.call_args_list)
+        expected_add_fs_calls = [
+            mock.call(device='fake_loop', mount='/boot', fs_type='ext2'),
+            mock.call(device='fake_loop', mount='/', fs_type='ext4')]
+        self.assertEqual(expected_add_fs_calls,
+                         mock_fss.add_fs.call_args_list)
+        self.assertEqual('file:///some/local/path/img.yaml',
+                         driver.metadata_uri)

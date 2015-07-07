@@ -102,7 +102,6 @@ def prepare_nodes_with_attributes(meta):
 
 def prepare():
     meta = base.reflect_db_metadata()
-
     db.execute(
         meta.tables['plugins'].insert(),
         [{

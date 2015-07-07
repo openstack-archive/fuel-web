@@ -530,6 +530,68 @@ class EnvironmentManager(object):
                     'weight': kwargs.get('weight', 25),
                     'label': kwargs.get('label', 'label')}}}
 
+    def get_default_plugin_node_roles_config(self, **kwargs):
+        node_roles = {
+            'test_node_role': {
+                'metadata': {
+                    'name': 'Some plugin role',
+                    'description': 'Some description'
+                }
+            }
+        }
+
+        node_roles.update(kwargs)
+        return node_roles
+
+    def get_default_plugin_volumes_config(self, **kwargs):
+        volumes = {
+            'volumes': [
+                {
+                    'id': 'test_node_volume',
+                    'type': 'vg'
+                }
+            ]
+        }
+
+        volumes.update(kwargs)
+        return volumes
+
+    def get_default_plugin_deployment_tasks(self, **kwargs):
+        deployment_tasks = [
+            {
+                'id': 'role-name',
+                'type': 'group',
+                'role': '[role-name]',
+                'requires': '[controller]',
+                'required_for': '[deploy_end]',
+                'parameters': {
+                    'strategy': {
+                        'type': 'parallel'
+                    }
+                }
+            }
+        ]
+
+        deployment_tasks[0].update(kwargs)
+        return deployment_tasks
+
+    def get_default_plugin_tasks(self, **kwargs):
+        default_tasks = [
+            {
+                'role': '[test_role]',
+                'stage': 'post_deployment',
+                'type': 'puppet',
+                'parameters': {
+                    'puppet_manifest': '/etc/puppet/modules/test_manigest.pp',
+                    'puppet_modules': '/etc/puppet/modules',
+                    'timeout': 720
+                }
+            }
+        ]
+
+        default_tasks[0].update(kwargs)
+        return default_tasks
+
     def get_default_plugin_metadata(self, **kwargs):
         sample_plugin = {
             'version': '0.1.0',

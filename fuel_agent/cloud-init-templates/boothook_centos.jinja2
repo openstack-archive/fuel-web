@@ -50,10 +50,12 @@ cloud-init-per instance conntrack_ipv4 /bin/sh -c 'echo nf_conntrack_ipv4 | tee 
 cloud-init-per instance conntrack_ipv6 /bin/sh -c 'echo nf_conntrack_ipv6 | tee -a /etc/rc.modules'
 cloud-init-per instance chmod_rc_modules chmod +x /etc/rc.modules
 cloud-init-per instance conntrack_max /bin/sh -c 'echo "net.nf_conntrack_max=1048576" | tee -a /etc/sysctl.conf'
+cloud-init-per instance kernel_panic /bin/sh -c 'echo "kernel.panic=60" | tee -a /etc/sysctl.conf'
 
 cloud-init-per instance conntrack_ipv4_load modprobe nf_conntrack_ipv4
 cloud-init-per instance conntrack_ipv6_load modprobe nf_conntrack_ipv6
 cloud-init-per instance conntrack_max_set sysctl -w "net.nf_conntrack_max=1048576"
+cloud-init-per instance kernel_panic_set sysctl -w "kernel.panic=60"
 
 cloud-init-per instance mkdir_coredump mkdir -p /var/log/coredump
 cloud-init-per instance set_coredump /bin/sh -c 'echo -e "kernel.core_pattern=/var/log/coredump/core.%e.%p.%h.%t" | tee -a /etc/sysctl.conf'

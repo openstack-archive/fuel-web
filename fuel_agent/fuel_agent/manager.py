@@ -454,8 +454,12 @@ class Manager(object):
                 # at fstab line. Currently we set it into 0 which means
                 # a corresponding file system will never be checked. We assume
                 # puppet or other configuration tool will care of it.
-                f.write('UUID=%s %s %s defaults 0 0\n' %
-                        (mount2uuid[fs.mount], fs.mount, fs.type))
+                if fs.mount == '/':
+                    f.write('UUID=%s %s %s defaults,errors=panic 0 0\n' %
+                            (mount2uuid[fs.mount], fs.mount, fs.type))
+                else:
+                    f.write('UUID=%s %s %s defaults 0 0\n' %
+                            (mount2uuid[fs.mount], fs.mount, fs.type))
 
         self.umount_target(chroot)
 

@@ -56,10 +56,12 @@ fi
 cloud-init-per instance conntrack_ipv4 /bin/sh -c 'echo nf_conntrack_ipv4 | tee -a /etc/modules'
 cloud-init-per instance conntrack_ipv6 /bin/sh -c 'echo nf_conntrack_ipv6 | tee -a /etc/modules'
 cloud-init-per instance conntrack_max /bin/sh -c 'echo "net.nf_conntrack_max=1048576" | tee -a /etc/sysctl.conf'
+cloud-init-per instance kernel_panic /bin/sh -c 'echo "kernel.panic=60" | tee -a /etc/sysctl.conf'
 
 cloud-init-per instance conntrack_ipv4_load modprobe nf_conntrack_ipv4
 cloud-init-per instance conntrack_ipv6_load modprobe nf_conntrack_ipv6
 cloud-init-per instance conntrack_max_set sysctl -w "net.nf_conntrack_max=1048576"
+cloud-init-per instance kernel_panic sysctl -w "kernel.panic=60"
 
 cloud-init-per instance dhclient /bin/sh -c 'echo "supersede routers 0;" | tee /etc/dhcp/dhclient.conf'
 

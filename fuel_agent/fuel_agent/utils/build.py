@@ -311,6 +311,8 @@ def create_sparse_tmp_file(dir, suffix, size=CONF.sparse_file_size):
     Creates file which consumes disk space more efficiently when the file
     itself is mostly empty.
     """
+    if size is None:
+        size = CONF.sparse_file_size
     tf = tempfile.NamedTemporaryFile(dir=dir, suffix=suffix, delete=False)
     utils.execute('truncate', '-s', '%sM' % size, tf.name)
     return tf.name

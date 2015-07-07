@@ -518,8 +518,10 @@ class Manager(object):
             for image in self.driver.image_scheme.images:
                 LOG.debug('Creating temporary sparsed file for the '
                           'image: %s', image.uri)
+                # NOTE(agordeev): expected size: 200M for /boot, 8G for /
                 img_tmp_file = bu.create_sparse_tmp_file(
-                    dir=CONF.image_build_dir, suffix=CONF.image_build_suffix)
+                    dir=CONF.image_build_dir, suffix=CONF.image_build_suffix,
+                    size=image.size)
                 LOG.debug('Temporary file: %s', img_tmp_file)
 
                 # we need to remember those files
@@ -651,9 +653,6 @@ class Manager(object):
                 LOG.debug('Deattaching loop device from file: %s',
                           image.img_tmp_file)
                 bu.deattach_loop(str(image.target_device))
-                LOG.debug('Shrinking temporary image file: %s',
-                          image.img_tmp_file)
-                bu.shrink_sparse_file(image.img_tmp_file)
 
                 raw_size = os.path.getsize(image.img_tmp_file)
                 raw_md5 = utils.calculate_md5(image.img_tmp_file, raw_size)

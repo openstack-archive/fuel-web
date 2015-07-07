@@ -575,11 +575,17 @@ class NailgunBuildImage(BaseDataDriver):
             # during initialization.
             device = objects.Loop()
 
+            # NOTE(agordeev): size is in MB. Will be passed to
+            # build utils in order to create sparse file of specified size.
+            # None means default value to be set.
+            size = 199 if mount == '/boot' else None
+
             self.image_scheme.add_image(
                 uri='file://' + os.path.join(self.data['output'], filename),
                 format=image['format'],
                 container=image['container'],
-                target_device=device)
+                target_device=device,
+                size=size)
 
             self.partition_scheme.add_fs(
                 device=device,

@@ -578,6 +578,73 @@ MANY_HUGE_DISKS_KS_SPACES = [
 ]
 
 
+BUILD_IMAGE_SAMPLE_DATA = {
+    'codename': 'trusty',
+    'image_data': {
+        '/': {
+            'container': 'gzip',
+            'format': 'ext4',
+            'uri': 'http://10.109.5.2:8080/targetimages/'
+                   'env_1_ubuntu_1404_amd64.img.gz'},
+        '/boot': {
+            'container': 'gzip',
+            'format': 'ext2',
+            'uri': 'http://10.109.5.2:8080/targetimages/'
+                   'env_1_ubuntu_1404_amd64-boot.img.gz'}},
+    'output': '/var/www/nailgun/targetimages',
+    'repos': [
+        {'name': 'ubuntu-0',
+         'priority': 1001,
+         'section': 'main universe multiverse',
+         'suite': 'trusty',
+         'type': 'deb',
+         'uri': 'http://mirror-pkgs.vm.mirantis.net/pkgs/'
+                'ubuntu-2015-06-28-170127/'},
+        {'name': 'ubuntu-1',
+         'priority': 1001,
+         'section': 'main universe multiverse',
+         'suite': 'trusty-updates',
+         'type': 'deb',
+         'uri': 'http://mirror-pkgs.vm.mirantis.net/pkgs/'
+                'ubuntu-2015-06-28-170127/'},
+        {'name': 'ubuntu-2',
+         'priority': 1001,
+         'section': 'main universe multiverse',
+         'suite': 'trusty-security',
+         'type': 'deb',
+         'uri': 'http://mirror-pkgs.vm.mirantis.net/pkgs/'
+                'ubuntu-2015-06-28-170127/'},
+        {'name': 'mos',
+         'priority': 1050,
+         'section': 'main restricted',
+         'suite': 'mos7.0',
+         'type': 'deb',
+         'uri': 'http://10.109.5.2:8080/2014.2.2-7.0/ubuntu/x86_64'},
+        {'name': 'mos-updates',
+         'priority': 1050,
+         'section': 'main restricted',
+         'suite': 'mos7.0-updates',
+         'type': 'deb',
+         'uri': 'http://mirror.fuel-infra.org/mos/ubuntu/'},
+        {'name': 'mos-security',
+         'priority': 1050,
+         'section': 'main restricted',
+         'suite': 'mos7.0-security',
+         'type': 'deb',
+         'uri': 'http://mirror.fuel-infra.org/mos/ubuntu/'},
+        {'name': 'mos-holdback',
+         'priority': 1100,
+         'section': 'main restricted',
+         'suite': 'mos7.0-holdback',
+         'type': 'deb',
+         'uri': 'http://mirror.fuel-infra.org/mos/ubuntu/'},
+        {'name': 'Auxiliary',
+         'priority': 1150,
+         'section': 'main restricted',
+         'suite': 'auxiliary',
+         'type': 'deb',
+         'uri': 'http://10.109.5.2:8080/2014.2.2-7.0/ubuntu/auxiliary'}]}
+
 class TestNailgun(test_base.BaseTestCase):
 
     def test_match_device_by_id_matches(self):
@@ -999,3 +1066,7 @@ class TestNailgun(test_base.BaseTestCase):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
         self.assertRaises(errors.WrongPartitionSchemeError,
                           nailgun.Nailgun, data)
+
+
+class TestNailgunBuildImage(test_base.BaseTestCase):
+

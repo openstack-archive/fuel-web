@@ -273,6 +273,20 @@ class BuildUtilsTestCase(testtools.TestCase):
         mock_exec.assert_called_once_with('truncate', '-s', '1M',
                                           tmp_file.name)
 
+    @mock.patch('tempfile.NamedTemporaryFile')
+    @mock.patch.object(utils, 'execute')
+    def test_create_sparse_tmp_file_none_sized(self, mock_exec, mock_temp):
+        tmp_file = mock.Mock()
+        tmp_file.name = 'fake_name'
+        CONF.sparse_file_size = 12345
+        mock_temp.return_value = tmp_file
+        bu.create_sparse_tmp_file('dir', 'suffix', size=None)
+        mock_temp.assert_called_once_with(dir='dir', suffix='suffix',
+                                          delete=False)
+        mock_exec.assert_called_once_with('truncate', '-s',
+                                          '%dM' % CONF.sparse_file_size,
+                                          tmp_file.name)
+
     @mock.patch.object(utils, 'execute')
     def test_attach_file_to_loop(self, mock_exec):
         bu.attach_file_to_loop('file', 'loop')

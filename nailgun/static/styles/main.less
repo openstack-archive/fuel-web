@@ -8,7 +8,7 @@
 @default-label-width: 200px;
 
 // Base Palette
-@base-dark-color:  #394c59;
+@base-dark-color:  #415766;
 @base-light-color: @base-dark-color + #7a746c;
 @base-text-color:  #525960;
 
@@ -52,6 +52,13 @@
 @alert-info-bg:    #c1d4e1;
 @alert-warning-bg: #f2e0b9;
 @alert-danger-bg:  #e8c6c6;
+
+@btn-default: #d4d5d6;
+@btn-success: #43a060;
+@btn-primary: #3879A5;
+@btn-warning: #cfa44e;
+@btn-danger:  #b3584c;
+@btn-info:    #7ab0cc;
 
 @link-color: saturate(lighten(@base-dark-color, 20%), 30%);
 @link-color-hover: saturate(lighten(@base-dark-color, 10%), 15%);
@@ -708,7 +715,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   li {
     display: inline-block;
     a {
-      color: @blue;
+      color: @blue + 60%;
     }
   }
   li + li {
@@ -897,7 +904,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .cluster-page {
   .page-title {
     .title-node-count {
-      color: @blue;
+      color: @blue + 60%;
       display: inline-block;
       font-size: @base-font-size + 4;
       left: 18px;
@@ -1198,7 +1205,7 @@ button, .btn:not(.btn-link) {.font-semibold;}
   .control-buttons-box {
     overflow: hidden;
     .btn-group {
-      margin-left: 5px;
+      margin-left: 10px;
       .glyphicon {
         margin-right: 5px;
       }
@@ -2753,3 +2760,151 @@ button, .btn:not(.btn-link) {.font-semibold;}
     margin-top: 10px;
   }
 }
+
+// BUTTONS
+
+.btn-default {
+    background-color: @btn-default + 10%;
+    border: 1px solid @btn-default - 30%;
+    color: @base-text-color;
+    &:hover {
+      background-color: @btn-default - 15%;
+      border: 1px solid @btn-default - 15%;
+      color: @base-text-color;
+    }
+    &:disabled {
+      background-color: @btn-default;
+      border-color: @btn-default;
+      color: @base-text-color + 20%;
+      .text-emboss;
+    }
+    &:active {
+      background-color: @btn-default - 15%;
+      border: 1px solid @btn-default - 15%;
+      color: @base-text-color;
+    }
+}
+.btn-success {
+    background-color: @btn-success;
+    border-color: @btn-success;
+    color: @white;
+    .text-shadow;
+    &:hover {
+      background-color: @btn-success - 15%;
+      border-color: @btn-success - 15%;
+      color: @white;
+      text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+    &:disabled {
+      background-color: @btn-success;
+      border-color: @btn-success;
+      color: @white - 20%;
+      text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+    &:active {
+      background-color: @btn-success - 15%;
+      border-color: @btn-success - 15%;
+      color: @white;
+    }
+}
+.btn-primary {
+    background-color: @btn-primary;
+    border-color: @btn-primary;
+    .text-shadow;
+    &:hover {
+      background-color: @btn-primary - 15%;
+      border-color: @btn-primary - 15%;
+      color: @white;
+    }
+    &:disabled {
+      background-color: @btn-primary;
+      border-color: @btn-primary;
+      color: @white - 20%;
+      text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+    &:active {
+      background-color: @btn-primary - 15%;
+      border-color: @btn-primary - 15%;
+      color: @white;
+    }
+}
+.btn-warning {
+    background-color: @btn-warning;
+    border-color: @btn-warning;
+    .text-shadow;
+    &:hover {
+      background-color: @btn-warning - 15%;
+      border-color: @btn-warning - 15%;
+      color: @white;
+    }
+    &:disabled {
+      background-color: @btn-warning;
+      border-color: @btn-warning;
+      color: @white - 20%;
+      text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+    &:active {
+      background-color: @btn-warning - 15%;
+      border-color: @btn-warning - 15%;
+      color: @white;
+    }
+}
+.btn-danger {
+    background-color: @btn-danger;
+    border-color: @btn-danger;
+    .text-shadow;
+    &:hover {
+      background-color: @btn-danger - 15%;
+      border-color: @btn-danger - 15%;
+      color: @white;
+    }
+    &:disabled {
+      background-color: @btn-danger;
+      border-color: @btn-danger;
+      color: @white - 20%;
+      text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+    &:active {
+      background-color: @btn-danger - 15%;
+      border-color: @btn-danger - 15%;
+      color: @white;
+    }
+}
+.btn-info {
+    background-color: @btn-info;
+    border-color: @btn-info;
+    .text-shadow;
+    &:hover {
+      background-color: @btn-info - 15%;
+      border-color: @btn-info - 15%;
+      color: @white;
+    }
+    &:disabled {
+      background-color: @btn-info;
+      border-color: @btn-info;
+      color: @white - 20%;
+      text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+    &:active {
+      background-color: @btn-info - 15%;
+      border-color: @btn-info - 15%;
+      color: @white;
+    }
+}
+.deploy-btn {
+    padding: 4px 12px 7px;
+}
+/**
+.btn-group .btn {
+  border-right: 1px solid @white;
+  margin-right: 1px;
+  &:last-child {
+    border-right: 0px;
+    margin-right: 0px;
+  }
+  &:only-of-type {
+    border-right: 0px;
+    margin-right: 0px;  
+  }
+}
+**/

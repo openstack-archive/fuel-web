@@ -53,6 +53,7 @@ class ReleaseSerializer(BasicSerializer):
             'ceph-osd',
             'mongo',
             'base-os',
+            'kvm-virt',
         ]
 
         return release_dict

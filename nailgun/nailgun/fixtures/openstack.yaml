@@ -93,6 +93,7 @@
       kvm-virt:
         name: "Virtual"
         description: "Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
+        public_ip_required: true
 
     network_roles_metadata:
       -

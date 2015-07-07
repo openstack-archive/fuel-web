@@ -868,7 +868,6 @@ class Cluster(NailgunObject):
             for vm in node.attributes.vms_conf:
                 if not vm.get('created'):
                     nodes.append(node)
-                    break
         return nodes
 
     @classmethod

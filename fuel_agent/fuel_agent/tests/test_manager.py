@@ -348,9 +348,10 @@ class TestManager(test_base.BaseTestCase):
         loops = [objects.Loop(), objects.Loop()]
 
         self.mgr.driver.image_scheme = objects.ImageScheme([
-            objects.Image('file:///fake/img.img.gz', loops[0], 'ext4', 'gzip'),
+            objects.Image('file:///fake/img.img.gz', loops[0], 'ext4', 'gzip',
+                          None),
             objects.Image('file:///fake/img-boot.img.gz',
-                          loops[1], 'ext2', 'gzip')])
+                          loops[1], 'ext2', 'gzip', 199)])
         self.mgr.driver.partition_scheme = objects.PartitionScheme()
         self.mgr.driver.partition_scheme.add_fs(
             device=loops[0], mount='/', fs_type='ext4')
@@ -389,7 +390,11 @@ class TestManager(test_base.BaseTestCase):
              mock.call('/fake/img-boot.img.gz')],
             mock_os.path.exists.call_args_list)
         self.assertEqual([mock.call(dir=CONF.image_build_dir,
-                                    suffix=CONF.image_build_suffix)] * 2,
+                                    suffix=CONF.image_build_suffix,
+                                    size=None),
+                          mock.call(dir=CONF.image_build_dir,
+                                    suffix=CONF.image_build_suffix,
+                                    size=199)],
                          mock_bu.create_sparse_tmp_file.call_args_list)
         self.assertEqual([mock.call()] * 2,
                          mock_bu.get_free_loop_device.call_args_list)
@@ -469,8 +474,7 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual(
             [mock.call('/dev/loop0'), mock.call('/dev/loop1')] * 2,
             mock_bu.deattach_loop.call_args_list)
-        self.assertEqual([mock.call('/tmp/img'), mock.call('/tmp/img-boot')],
-                         mock_bu.shrink_sparse_file.call_args_list)
+        self.assertFalse(mock_bu.shrink_sparse_file.called)
         self.assertEqual([mock.call('/tmp/img'),
                           mock.call('/fake/img.img.gz'),
                           mock.call('/tmp/img-boot'),

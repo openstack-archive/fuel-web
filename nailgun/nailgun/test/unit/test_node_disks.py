@@ -24,6 +24,7 @@ from nailgun.errors import errors
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager.manager import Disk
 from nailgun.extensions.volume_manager.manager import DisksFormatConvertor
+from nailgun.extensions.volume_manager.manager import get_node_spaces
 from nailgun.extensions.volume_manager.manager import only_disks
 from nailgun.extensions.volume_manager.manager import only_vg
 from nailgun.test.base import BaseIntegrationTest
@@ -835,6 +836,26 @@ class TestVolumeManager(BaseIntegrationTest):
         self.update_ram_and_assert_swap_size(node, 65537, 4096)
 
         self.update_ram_and_assert_swap_size(node, 81920, 4096)
+
+    def test_get_node_spaces(self):
+        node = self.create_node('controller')
+        expected_spaces = []
+
+        volumes_metadata = self.env.releases[0].volumes_metadata
+        roles_mapping = volumes_metadata['volumes_roles_mapping']
+        for role_map in roles_mapping['controller']:
+            volumes = filter(
+                lambda v: v['id'] == role_map['id'],
+                volumes_metadata['volumes'])
+            expected_space = volumes[0]
+            expected_space.update(
+                {'_allocate_size': role_map['allocate_size']})
+            expected_spaces.append(expected_space)
+
+        self.assertEqual(get_node_spaces(node), expected_spaces)
+
+    def test_get_node_spaces_with_plugins(self):
+        pass
 
 
 class TestDisks(BaseIntegrationTest):

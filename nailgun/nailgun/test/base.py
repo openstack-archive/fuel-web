@@ -545,6 +545,7 @@ class EnvironmentManager(object):
 
     def get_default_plugin_volumes_config(self, **kwargs):
         volumes = {
+            'volumes_roles_mapping': {},
             'volumes': [
                 {
                     'id': 'test_node_volume',

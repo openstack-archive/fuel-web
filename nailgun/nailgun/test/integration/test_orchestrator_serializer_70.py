@@ -126,19 +126,13 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 self.assertDictEqual(offload_blk,
                                      changed_offloading_modes[iface_name])
 
-    def test_network_metadata(self):
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
-        ip_by_net = {
-            'fuelweb_admin': None,
-            'storage': None,
-            'management': None,
-            'public': None
-        }
+    @mock.patch.object(models.Release, 'environment_version',
+                       new_callable=mock.PropertyMock(return_value='7.0'))
+    def test_network_metadata(self, *args):
+        cluster = self.env.clusters[0]
         node = self.env.nodes[0]
-        for net in ip_by_net:
-            netgroup = nm.get_node_network_by_netname(node, net)
-            if netgroup.get('ip'):
-                ip_by_net[net] = netgroup['ip'].split('/')[0]
+        serializer = \
+            get_serializer_for_cluster(cluster).neutron_network_serializer
         for node_data in self.serialized_for_astute:
             self.assertItemsEqual(
                 node_data['network_metadata'], ['nodes', 'vips'])
@@ -154,49 +148,8 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 self.assertEqual(v['name'], k)
                 self.assertEqual(v['user_node_name'], node.name)
                 self.assertEqual(v['swift_zone'], node.uid)
+                network_roles = serializer.get_network_role_mapping_to_ip(node)
 
-                network_roles = {
-                    'admin/pxe': ip_by_net['fuelweb_admin'],
-                    'fw-admin': ip_by_net['fuelweb_admin'],
-
-                    'keystone/api': ip_by_net['management'],
-                    'neutron/api': ip_by_net['management'],
-                    'swift/api': ip_by_net['management'],
-                    'sahara/api': ip_by_net['management'],
-                    'ceilometer/api': ip_by_net['management'],
-                    'cinder/api': ip_by_net['management'],
-                    'glance/api': ip_by_net['management'],
-                    'heat/api': ip_by_net['management'],
-                    'nova/api': ip_by_net['management'],
-                    'murano/api': ip_by_net['management'],
-                    'horizon': ip_by_net['management'],
-
-                    'management': ip_by_net['management'],
-                    'mgmt/api': ip_by_net['management'],
-                    'mgmt/database': ip_by_net['management'],
-                    'mgmt/messaging': ip_by_net['management'],
-                    'mgmt/corosync': ip_by_net['management'],
-                    'mgmt/memcache': ip_by_net['management'],
-                    'mgmt/vip': ip_by_net['management'],
-
-                    'mongo/db': ip_by_net['management'],
-
-                    'neutron/mesh': ip_by_net['management'],
-
-                    'ceph/public': ip_by_net['management'],
-
-                    'neutron/private': None,
-                    'neutron/floating': None,
-
-                    'storage': ip_by_net['storage'],
-                    'ceph/replication': ip_by_net['storage'],
-                    'swift/replication': ip_by_net['storage'],
-                    'cinder/iscsi': ip_by_net['storage'],
-
-                    'ex': ip_by_net['public'],
-                    'public/vip': ip_by_net['public'],
-                    'ceph/radosgw': ip_by_net['public'],
-                }
                 self.assertEqual(
                     v['network_roles'],
                     network_roles

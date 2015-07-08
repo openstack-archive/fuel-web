@@ -18,6 +18,7 @@ import copy
 import datetime
 import hashlib
 import jsonschema
+import mock
 import six
 import uuid
 
@@ -43,6 +44,7 @@ from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
 
 from nailgun import objects
+from nailgun.plugins.manager import PluginManager
 
 
 class TestObjects(BaseIntegrationTest):
@@ -773,6 +775,37 @@ class TestClusterObject(BaseTestCase):
         bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
+
+    def test_get_volumes_metadata(self):
+        plugin_volumes_metadata = {
+            'volumes': [
+                {'id': 'test_plugin_1', 'type': 'vg'},
+                {'id': 'test_plugin_2', 'type': 'vg'}
+            ],
+            'volumes_roles_mapping': {
+                'test_plugin_1': [
+                    {'allocate_size': 'min', 'id': 'test_plugin_1'}
+                ],
+                'test_plugin_2': [
+                    {'allocate_size': 'min', 'id': 'test_plugin_2'}
+                ],
+            }
+        }
+        with mock.patch.object(
+                PluginManager, 'get_volumes_metadata') as plugin_volumes:
+            plugin_volumes.return_value = plugin_volumes_metadata
+            expected_volumes_metadata = copy.deepcopy(
+                self.env.releases[0].volumes_metadata)
+            expected_volumes_metadata['volumes_roles_mapping'].update(
+                plugin_volumes_metadata['volumes_roles_mapping'])
+            expected_volumes_metadata['volumes'].extend(
+                plugin_volumes_metadata['volumes'])
+
+            volumes_metadata = objects.Cluster.get_volumes_metadata(
+                self.env.clusters[0])
+
+            self.assertDictEqual(
+                volumes_metadata, expected_volumes_metadata)
 
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):

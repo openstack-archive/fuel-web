@@ -52,10 +52,12 @@ from nailgun.logger import logger
 from nailgun.db.sqlalchemy.fixman import load_fake_deployment_tasks
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
+from nailgun.db.sqlalchemy.models import DashboardEntry
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
+
 
 # here come objects
 from nailgun.objects import Cluster
@@ -415,6 +417,23 @@ class EnvironmentManager(object):
             cluster.plugins.append(plugin)
 
         return plugin
+
+    def create_dashboard_entry(self, **kwargs):
+        dash_data = {
+            "title": "title",
+            "url": "url",
+            "description": "description",
+            "cluster_id": None
+        }
+        if kwargs:
+            dash_data.update(kwargs)
+        dashboard_entry = DashboardEntry()
+        dashboard_entry.cluster_id = dash_data.get("cluster_id")
+        for f, v in dash_data.iteritems():
+            setattr(dashboard_entry, f, v)
+        self.db.add(dashboard_entry)
+        self.db.commit()
+        return dashboard_entry
 
     def default_metadata(self):
         item = self.find_item_by_pk_model(

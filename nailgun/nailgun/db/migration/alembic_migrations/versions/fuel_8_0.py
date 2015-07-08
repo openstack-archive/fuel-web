@@ -106,6 +106,7 @@ def upgrade():
     task_names_upgrade()
     add_node_discover_error_upgrade()
     upgrade_neutron_parameters()
+    dashborad_entries_upgrade()
 
 
 def downgrade():
@@ -114,6 +115,7 @@ def downgrade():
     task_names_downgrade()
     task_statuses_downgrade()
     downgrade_release_state()
+    dashborad_entries_downgrade()
 
     op.drop_constraint('_name_cluster_uc', 'nodegroups',)
     op.drop_table('release_components')
@@ -320,3 +322,24 @@ def upgrade_neutron_parameters():
 def downgrade_neutron_parameters():
     op.drop_column('neutron_config', 'floating_name')
     op.drop_column('neutron_config', 'internal_name')
+
+
+def dashborad_entries_upgrade():
+    op.create_table(
+        'dashboard_entries',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'cluster_id', sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column(
+            'title', sa.VARCHAR(length=50), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('description', sa.Text()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('dashboard_entries_cluster_id_key',
+                    'dashboard_entries', ['cluster_id'])
+
+
+def dashborad_entries_downgrade():
+    op.drop_table('dashboard_entries')

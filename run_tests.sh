@@ -43,6 +43,7 @@ function usage {
   echo "      --no-ui-unit            Don't run UI unit tests"
   echo "      --ui-func               Run UI functional tests"
   echo "      --no-ui-func            Don't run UI functional tests"
+  echo "      --ui-selenium           Run UI functional selenium tests"
   echo ""
   echo "Note: with no options specified, the script will try to run all available"
   echo "      tests with all available checks."
@@ -74,6 +75,7 @@ function process_options {
       --ui-unit) ui_unit_tests=1;;
       --no-ui-unit) no_ui_unit_tests=1;;
       --ui-func) ui_func_tests=1;;
+      --ui-selenium) ui_func_selenium_tests=1;;
       --no-ui-func) no_ui_func_tests=1;;
       -t|--tests) certain_tests=1;;
       -*) testropts="$testropts $arg";;
@@ -110,7 +112,7 @@ ARTIFACTS=${ARTIFACTS:-`pwd`/test_run}
 TEST_WORKERS=${TEST_WORKERS:-0}
 mkdir -p $ARTIFACTS
 
-# disabled/enabled flags that are setted from the cli.
+# disabled/enabled flags that are set from the cli.
 # used for manipulating run logic.
 agent_tests=0
 no_agent_tests=0
@@ -132,7 +134,7 @@ no_ui_func_tests=0
 certain_tests=0
 tasklib_tests=0
 no_tasklib_tests=0
-
+ui_func_selenium_tests=0
 
 function run_tests {
   run_cleanup
@@ -163,6 +165,7 @@ function run_tests {
       $ui_lint_checks -eq 0 && \
       $ui_unit_tests -eq 0 && \
       $ui_func_tests -eq 0 && \
+      $ui_func_selenium_tests -eq 0 && \
       $upgrade_system -eq 0 && \
       $shotgun_tests -eq 0 && \
       $flake8_checks -eq 0 ]]; then
@@ -212,6 +215,11 @@ function run_tests {
   if [ $ui_func_tests -eq 1 ]; then
     echo "Starting UI functional tests..."
     run_ui_func_tests || errors+=" ui_func_tests"
+  fi
+
+  if [ $ui_func_selenium_tests -eq 1 ]; then
+    echo "Starting UI functional selenium tests..."
+    run_ui_func_selenium_tests || errors+=" ui_func_selenium_tests"
   fi
 
   if [ $upgrade_system -eq 1 ]; then
@@ -363,6 +371,66 @@ function run_ui_func_tests {
   return $result
 }
 
+# Run UI functional tests.
+#
+# Arguments:
+#
+#   $@ -- tests to be run; with no arguments all tests will be run
+function run_ui_func_selenium_tests {
+  local SERVER_PORT=$UI_SERVER_PORT
+  local TESTS_DIR=$ROOT/nailgun/static/tests/functional
+  local TESTS=$TESTS_DIR/test_*.js
+  local artifacts=$ARTIFACTS/ui_func
+  local config=$artifacts/test.yaml
+  prepare_artifacts $artifacts $config
+  local COMPRESSED_STATIC_DIR=$artifacts/static_compressed
+
+  if [ $# -ne 0 ]; then
+    TESTS=$@
+  fi
+
+  pushd $ROOT/nailgun >> /dev/null
+
+  # test compression
+  echo -n "Compressing UI... "
+  local output=$(${GULP} build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
+  if [ $? -ne 0 ]; then
+    echo "$output"
+    popd >> /dev/null
+    exit 1
+  fi
+  echo "done"
+
+  # run js testcases
+  local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
+  local result=0
+  local pid
+
+  for testcase in $TESTS; do
+
+    dropdb $config
+    syncdb $config true
+
+    run_server $SERVER_PORT $server_log $config || \
+      { echo 'Failed to start Nailgun'; return 1; }
+
+    SERVER_PORT=$SERVER_PORT \
+    ${GULP} functional-tests --suites=$testcase
+    if [ $? -ne 0 ]; then
+      result=1
+      break
+    fi
+
+    kill_server $SERVER_PORT
+
+  done
+
+  rm $server_log
+  popd >> /dev/null
+
+  return $result
+}
+
 
 # Run tests for fuel upgrade system
 #
@@ -484,6 +552,7 @@ function syncdb {
 
   if [[ $# -ne 0 && $defaults = true ]]; then
     NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddefault > /dev/null
+    NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddata nailgun/fixtures/sample_environment.json > /dev/null
   fi
 
   popd >> /dev/null
@@ -626,6 +695,8 @@ EOL
 function guess_test_run {
   if [[ $1 == *ui_tests* && $1 == *.js ]]; then
     run_ui_func_tests $1 || echo "ERROR: $1"
+  elif [[ $1 == *functional* && $1 == *.js ]]; then
+    run_ui_func_selenium_tests $1 || echo "ERROR: $1"
   elif [[ $1 == *fuel_upgrade_system* ]]; then
     run_upgrade_system_tests $1 || echo "ERROR: $1"
   elif [[ $1 == *shotgun* ]]; then

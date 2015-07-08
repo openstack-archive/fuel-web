@@ -38,7 +38,7 @@ casper.then(function() {
     this.click('.btn-add-nodes');
     this.test.assertSelectorAppears('.node', 'Add Nodes screen appeared and unallocated nodes loaded');
     this.then(function() {
-        this.test.assertEvalEquals(function() {return $('.node').length}, 1, 'Number of unallocated nodes is correct');
+        this.test.assertEvalEquals(function() {return $('.node').length}, 9, 'Number of unallocated nodes is correct');
         this.click('input[name=controller]');
         this.click('.node input[type=checkbox]');
         this.test.assertSelectorAppears('.node .role-list > ul', 'Controller role is applied to the node');

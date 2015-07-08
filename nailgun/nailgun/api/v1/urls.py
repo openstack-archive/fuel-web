@@ -191,6 +191,12 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/vmware_attributes/defaults/?$',
     VmwareAttributesDefaultsHandler,
 
+    r'/clusters/(?P<cluster_id>\d+)/dashboard_entries/?$',
+    DashboardEntryCollectionHandler,
+    r'/clusters/(?P<cluster_id>\d+)/dashboard_entries/'
+    '?$(?P<obj_id>\d+)/?$',
+    DashboardEntryHandler,
+
     r'/nodegroups/?$',
     NodeGroupCollectionHandler,
     r'/nodegroups/(?P<obj_id>\d+)/?$',

@@ -87,6 +87,7 @@ def upgrade():
     vms_conf_upgrade()
     extend_nic_model_upgrade()
     upgrade_cluster_ui_settings()
+    dashborad_entries_upgrade()
 
 
 def downgrade():
@@ -100,6 +101,7 @@ def downgrade():
     extend_ip_addrs_model_downgrade()
     downgrade_task_names()
     vms_conf_downgrade()
+    dashborad_entries_downgrade()
 
     op.drop_constraint(None, 'oswl_stats', type_='unique')
     op.alter_column(
@@ -490,3 +492,29 @@ def downgrade_cluster_ui_settings():
         )
     )
     op.drop_column('clusters', 'ui_settings')
+
+
+def dashborad_entries_upgrade():
+    op.create_table(
+        'dashborad_entries',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'cluster_id', sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column(
+            'title', sa.VARCHAR(length=50), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('description', sa.Text()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id'))
+#TODO(vsharshov): add index for cluster id selecting
+
+
+def dashborad_entries_downgrade():
+
+    # NOTE(vsharshov):
+    #
+    # WE DO NOT SUPPORT DOWNGRADE DATE MIGRATION BY HISTORICAL REASONS.
+    # SO ANY DOWNGRADE WILL LOST DATA.
+
+    op.drop_table('dashborad_entries')
+

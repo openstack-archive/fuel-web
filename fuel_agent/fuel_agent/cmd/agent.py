@@ -37,11 +37,6 @@ cli_opts = [
 
 CONF = cfg.CONF
 CONF.register_cli_opts(cli_opts)
-CONF(sys.argv[1:], project='fuel-agent',
-     version=version.version_info.release_string())
-
-logging.setup('fuel-agent')
-LOG = logging.getLogger(__name__)
 
 
 def provision():
@@ -74,6 +69,7 @@ def print_err(line):
 
 
 def handle_exception(exc):
+    LOG = logging.getLogger(__name__)
     LOG.exception(exc)
     print_err('Unexpected error')
     print_err(exc)
@@ -81,6 +77,12 @@ def handle_exception(exc):
 
 
 def main(actions=None):
+    CONF(sys.argv[1:], project='fuel-agent',
+         version=version.version_info.release_string())
+
+    logging.setup('fuel-agent')
+    LOG = logging.getLogger(__name__)
+
     try:
         if CONF.input_data:
             data = json.loads(CONF.input_data)

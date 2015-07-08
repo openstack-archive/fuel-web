@@ -86,6 +86,8 @@ class Cluster(Base):
     nodes = relationship(
         "Node", backref="cluster", cascade="delete", order_by='Node.id')
     tasks = relationship("Task", backref="cluster", cascade="delete")
+    dashboard_entries = relationship(
+        "DashboardEntry", backref="cluster", cascade="delete")
     attributes = relationship("Attributes", uselist=False,
                               backref="cluster", cascade="delete")
     changes_list = relationship("ClusterChanges", backref="cluster",

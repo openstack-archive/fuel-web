@@ -99,9 +99,12 @@ def upgrade():
     set_deployable_false_for_old_releases()
     upgrade_node_labels()
     extend_segmentation_type()
+    dashborad_entries_upgrade()
 
 
 def downgrade():
+    dashborad_entries_downgrade()
+    extend_segmentation_type_downgrade()
     downgrade_node_labels()
     extensions_field_downgrade()
     downgrade_cluster_ui_settings()
@@ -116,7 +119,6 @@ def downgrade():
     extend_ip_addrs_model_downgrade()
     downgrade_task_names()
     vms_conf_downgrade()
-    extend_segmentation_type_downgrade()
 
     op.execute('UPDATE clusters SET name=LEFT(name, 50)')
     op.alter_column('clusters', 'name', type_=sa.VARCHAR(50))
@@ -721,3 +723,24 @@ def upgrade_node_labels():
 
 def downgrade_node_labels():
     op.drop_column('nodes', 'labels')
+
+
+def dashborad_entries_upgrade():
+    op.create_table(
+        'dashboard_entries',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'cluster_id', sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column(
+            'title', sa.VARCHAR(length=50), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('description', sa.Text()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('dashboard_entries_cluster_id_key',
+                    'dashboard_entries', ['cluster_id'])
+
+
+def dashborad_entries_downgrade():
+    op.drop_table('dashboard_entries')

@@ -50,3 +50,6 @@ from nailgun.objects.node_group import NodeGroupCollection
 
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
+
+from nailgun.objects.dashboard_entry import DashboardEntry
+from nailgun.objects.dashboard_entry import DashboardEntryCollection

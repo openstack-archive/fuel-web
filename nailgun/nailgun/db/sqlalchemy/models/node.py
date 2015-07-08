@@ -25,6 +25,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import Unicode
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.dialects import postgresql as psql
 
@@ -54,6 +55,10 @@ class NodeGroup(Base):
 
 class Node(Base):
     __tablename__ = 'nodes'
+    __table_args__ = (
+        UniqueConstraint('cluster_id', 'hostname',
+                         name='_hostname_cluster_uc'),
+    )
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), nullable=False,
                   default=lambda: str(uuid.uuid4()), unique=True)
@@ -69,6 +74,8 @@ class Node(Base):
     mac = Column(LowercaseString(17), nullable=False, unique=True)
     ip = Column(String(15))
     fqdn = Column(String(255))
+    hostname = Column(String(255), nullable=False,
+                      default="", server_default="")
     manufacturer = Column(Unicode(50))
     platform_name = Column(String(150))
     kernel_params = Column(Text)

@@ -128,10 +128,37 @@ def extend_node_model_upgrade():
                   nullable=False,
                   server_default='[]'))
 
+    op.add_column(
+        'nodes',
+        sa.Column('hostname',
+                  sa.Text(),
+                  nullable=False,
+                  server_default='')
+    )
+    # upgrade data
+    connection = op.get_bind()
+
+    select = sa.text(
+        """SELECT id from nodes""")
+    update = sa.text(
+        """UPDATE nodes
+        SET hostname = :hostname
+        WHERE id = :id""")
+    nodes = connection.execute(select)
+
+    for node in nodes:
+        node_id = node[0]
+        connection.execute(
+            update,
+            id=node_id,
+            hostname=u"node-{node_id}".format(node_id=node_id)
+        )
+
 
 def extend_node_model_downgrade():
     op.drop_column('node_bond_interfaces', 'offloading_modes')
     op.drop_column('node_nic_interfaces', 'offloading_modes')
+    op.drop_column('nodes', 'hostname')
 
 
 def extend_ip_addrs_model_upgrade():

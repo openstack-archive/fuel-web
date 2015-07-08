@@ -24,6 +24,7 @@ from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
+from nailgun import objects
 from nailgun.test import base
 
 
@@ -459,6 +460,32 @@ class TestInterfacesPxePropertyMigration(base.BaseAlembicMigrationTest):
         # and 'false' for any others
         for res in result.fetchall():
             self.assertFalse(res[0])
+
+    def test_new_fields_exists_and_empty(self):
+        # check node_nic_interfaces fields
+        result = db.execute(
+            sa.select([self.meta.tables['node_nic_interfaces']
+                      .c.offloading_modes]))
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), [])
+        # the same for bond interfaces
+        result = db.execute(
+            sa.select([self.meta.tables['node_bond_interfaces']
+                      .c.offloading_modes]))
+        self.assertEqual(
+            jsonutils.loads(result.fetchone()[0]), [])
+        # check field for hostname
+        result = db.execute(
+            sa.select([self.meta.tables['nodes']
+                      .c.id,
+                       self.meta.tables['nodes']
+                      .c.hostname]))
+        result_row = result.fetchone()
+        while result_row:
+            self.assertEqual(
+                objects.Node.default_slave_name(result_row[0]),
+                result_row[1])
+            result_row = result.fetchone()
 
 
 class TestMigrateVolumesIntoExtension(base.BaseAlembicMigrationTest):

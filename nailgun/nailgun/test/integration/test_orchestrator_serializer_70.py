@@ -345,3 +345,4 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
                     v['network_roles'],
                     network_roles
                 )
+

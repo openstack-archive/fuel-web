@@ -65,7 +65,7 @@ class TestRoles(BaseIntegrationTest):
             headers=self.default_headers
         )
         new_roles = resp.json_body["roles_metadata"].keys()
-        self.assertEqual(expected_roles, new_roles)
+        self.assertItemsEqual(expected_roles, new_roles)
 
     def test_roles_add_duplicated_through_handler(self):
         self.env.create_release()

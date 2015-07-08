@@ -201,6 +201,10 @@ class PluginAdapterBase(object):
             deployment_tasks.append(task)
         return deployment_tasks
 
+    @property
+    def volumes_metadata(self):
+        return self.plugin.volumes_metadata
+
     def get_release_info(self, release):
         """Returns plugin release information which corresponds to
             a provided release.
@@ -289,7 +293,7 @@ class PluginAdapterV2(PluginAdapterBase):
 
 
 class PluginAdapterV3(PluginAdapterV2):
-    """Plugin wrapper class for package version >= 3.0.0
+    """Plugin wrapper class for package version 3.0.0
     """
 
     node_roles_config_name = 'node_roles.yaml'
@@ -298,6 +302,8 @@ class PluginAdapterV3(PluginAdapterV2):
     network_roles_config_name = 'network_roles.yaml'
 
     def sync_metadata_to_db(self):
+        """Sync metadata from all config yaml files to DB
+        """
         super(PluginAdapterV3, self).sync_metadata_to_db()
 
         data_to_update = {}

@@ -106,21 +106,6 @@ class PluginManager(object):
 
         return plugin_roles
 
-    @classmethod
-    def sync_plugins_metadata(cls, plugin_ids=None):
-        """Sync metadata for plugins by given ids. If there is not
-        ids all newest plugins will be synced
-        """
-        if plugin_ids:
-            plugins = PluginCollection.get_by_uids(plugin_ids)
-        else:
-            plugins = PluginCollection.all()
-
-        for plugin in plugins:
-            plugin_adapter = wrap_plugin(plugin)
-            plugin_adapter.sync_metadata_to_db()
-
-    @classmethod
     def get_plugins_deployment_tasks(cls, cluster):
         deployment_tasks = []
 
@@ -131,7 +116,7 @@ class PluginManager(object):
             for t in depl_tasks:
                 t_id = t['id']
                 if t_id in processed_tasks:
-                    raise errors.PluginsTasksOverlapping(
+                    raise errors.AlreadyExists(
                         'Plugin {0} is overlapping with plugin {1} '
                         'by introducing the same deployment task with '
                         'id {2}'
@@ -166,7 +151,7 @@ class PluginManager(object):
                 err_roles |= set(plugin_roles) & set(result)
 
             if err_roles:
-                raise errors.PluginRolesConflict(
+                raise errors.AlreadyExists(
                     "Plugin (ID={0}) is unable to register the following "
                     "node roles: {1}".format(plugin_db.id,
                                              ", ".join(err_roles))
@@ -177,3 +162,60 @@ class PluginManager(object):
             result.update(plugin_roles)
 
         return result
+
+    @classmethod
+    def get_volumes_metadata(cls, cluster):
+        """Get volumes metadata for specific cluster from all
+        plugins which enabled for it.
+
+        :param cluster: Cluster DB model
+        :returns: dict -- object with merged volumes data from plugins
+        """
+        volumes_metadata = {
+            'volumes': [],
+            'volumes_roles_mapping': {}
+        }
+        release_volumes = cluster.release.volumes_metadata.get('volumes', [])
+        release_volumes_ids = [v['id'] for v in release_volumes]
+        processed_volumes = {}
+
+        for plugin_adapter in map(wrap_plugin, cluster.plugins):
+            metadata = plugin_adapter.volumes_metadata
+
+            for volume in metadata.get('volumes', []):
+                volume_id = volume['id']
+                if volume_id in release_volumes_ids:
+                    raise errors.AlreadyExists(
+                        'Plugin {0} is overlapping with release '
+                        'by introducing the same volume with id "{1}"'
+                        .format(plugin_adapter.full_name, volume_id))
+                elif volume_id in processed_volumes:
+                    raise errors.AlreadyExists(
+                        'Plugin {0} is overlapping with plugin {1} '
+                        'by introducing the same volume with id "{2}"'
+                        .format(plugin_adapter.full_name,
+                                processed_volumes[volume_id],
+                                volume_id))
+
+                processed_volumes[volume_id] = plugin_adapter.full_name
+
+            volumes_metadata.get('volumes_roles_mapping', {}).update(
+                metadata.get('volumes_roles_mapping', {}))
+            volumes_metadata.get('volumes', []).extend(
+                metadata.get('volumes', []))
+
+        return volumes_metadata
+
+    @classmethod
+    def sync_plugins_metadata(cls, plugin_ids=None):
+        """Sync metadata for plugins by given ids. If there is not
+        ids all newest plugins will be synced
+        """
+        if plugin_ids:
+            plugins = PluginCollection.get_by_uids(plugin_ids)
+        else:
+            plugins = PluginCollection.all()
+
+        for plugin in plugins:
+            plugin_adapter = wrap_plugin(plugin)
+            plugin_adapter.sync_metadata_to_db()

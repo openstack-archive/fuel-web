@@ -56,3 +56,6 @@ from nailgun.objects.network_group import NetworkGroupCollection
 
 from nailgun.objects.component import Component
 from nailgun.objects.component import ComponentCollection
+
+from nailgun.objects.dashboard_entry import DashboardEntry
+from nailgun.objects.dashboard_entry import DashboardEntryCollection

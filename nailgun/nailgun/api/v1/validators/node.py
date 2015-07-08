@@ -218,6 +218,12 @@ class NodeValidator(BasicValidator):
                     log_message=True
                 )
 
+        if d.get("hostname", None) is not None:
+            if objects.Node.get_by_hostname(d["hostname"]):
+                raise errors.InvalidData(
+                    "Duplicate hostname '%s'." % d["hostname"]
+                )
+
         if "roles" in d:
             if instance:
                 node = instance

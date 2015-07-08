@@ -85,6 +85,36 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0].meta, new_metadata)
 
+    def test_node_hostname_gets_updated(self):
+        node = self.env.create_node(api=False)
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
+            jsonutils.dumps({'hostname': 'new-name'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.db.refresh(node)
+
+        nodes = self.db.query(Node).filter(
+            Node.id == node.id
+        ).all()
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0].hostname, 'new-name')
+
+        node_2 = self.env.create_node(api=False)
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node_2.id}),
+            jsonutils.dumps({'hostname': '!#invalid_%&name'}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node_2.id}),
+            jsonutils.dumps({'hostname': 'new-name'}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+
     def test_node_valid_status_gets_updated(self):
         node = self.env.create_node(api=False)
         params = {'status': 'error'}

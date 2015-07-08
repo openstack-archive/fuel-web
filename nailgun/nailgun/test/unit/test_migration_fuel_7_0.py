@@ -404,6 +404,11 @@ class TestInterfacesOffloadingModesMigration(base.BaseAlembicMigrationTest):
                       .c.offloading_modes]))
         self.assertEqual(
             jsonutils.loads(result.fetchone()[0]), [])
+        # check field for hostname
+        result = db.execute(
+            sa.select([self.meta.tables['nodes']
+                      .c.hostname]))
+        self.assertIsNone(result.fetchone()[0])
 
 
 class TestMigrateVolumesIntoExtension(base.BaseAlembicMigrationTest):

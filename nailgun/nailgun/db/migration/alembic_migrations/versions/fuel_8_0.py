@@ -106,9 +106,11 @@ def upgrade():
     upgrade_cluster_plugins()
     upgrade_add_baremetal_net()
     upgrade_with_components()
+    dashboard_entries_upgrade()
 
 
 def downgrade():
+    dashboard_entries_downgrade()
     downgrade_with_components()
     downgrade_add_baremetal_net()
     downgrade_cluster_plugins()
@@ -474,3 +476,22 @@ def downgrade_add_baremetal_net():
 def downgrade_with_components():
     op.drop_column('plugins', 'components_metadata')
     op.drop_column('releases', 'components_metadata')
+
+
+def dashboard_entries_upgrade():
+    op.create_table(
+        'dashboard_entries',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('cluster_id', sa.Integer(), nullable=False),
+        sa.Column('title', sa.Text(), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('description', sa.Text()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('dashboard_entries_cluster_id_key',
+                    'dashboard_entries', ['cluster_id'])
+
+
+def dashboard_entries_downgrade():
+    op.drop_table('dashboard_entries')

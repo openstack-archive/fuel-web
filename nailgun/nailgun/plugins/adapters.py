@@ -29,7 +29,7 @@ from nailgun.settings import settings
 
 
 @six.add_metaclass(abc.ABCMeta)
-class ClusterAttributesPluginBase(object):
+class PluginAdapterBase(object):
     """Implements wrapper for plugin db model to provide
     logic related to configuration files.
     1. Uploading plugin provided cluster attributes
@@ -236,7 +236,7 @@ class ClusterAttributesPluginBase(object):
             release_info['deployment_scripts_path'])
 
 
-class ClusterAttributesPluginV1(ClusterAttributesPluginBase):
+class PluginAdapterV1(PluginAdapterBase):
     """Plugins attributes class for package version 1.0.0
     """
 
@@ -249,7 +249,7 @@ class ClusterAttributesPluginV1(ClusterAttributesPluginBase):
         return self.full_name
 
 
-class ClusterAttributesPluginV2(ClusterAttributesPluginBase):
+class PluginAdapterV2(PluginAdapterBase):
     """Plugins attributes class for package version 2.0.0
     """
 
@@ -279,7 +279,7 @@ class ClusterAttributesPluginV2(ClusterAttributesPluginBase):
         return major
 
 
-class PluginAdapterV3(ClusterAttributesPluginV2):
+class PluginAdapterV3(PluginAdapterV2):
     """Plugin wrapper class for package version >= 3.0.0
     """
 
@@ -311,8 +311,8 @@ class PluginAdapterV3(ClusterAttributesPluginV2):
 
 
 __version_mapping = {
-    '1.0.': ClusterAttributesPluginV1,
-    '2.0.': ClusterAttributesPluginV2,
+    '1.0.': PluginAdapterV1,
+    '2.0.': PluginAdapterV2,
     '3.0.': PluginAdapterV3
 }
 

@@ -774,6 +774,12 @@ class TestClusterObject(BaseTestCase):
             self.env.clusters[0])
         self.assertEqual(len(bond_interfaces), 1)
 
+    def test_get_network_roles(self):
+        cluster = self.env.clusters[0]
+        self.assertEqual(
+            objects.Cluster.get_network_roles(cluster),
+            cluster.release.network_roles_metadata)
+
 
 class TestClusterObjectGetNetworkManager(BaseTestCase):
     def setUp(self):

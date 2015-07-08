@@ -810,47 +810,79 @@ class NeutronNetworkDeploymentSerializer70(
 ):
 
     @classmethod
+    def get_default_network_to_endpoint_mapping(cls, node):
+        mapping = {
+            consts.NETWORKS.fuelweb_admin: 'br-fw-admin',
+            consts.NETWORKS.storage: 'br-storage',
+            consts.NETWORKS.management: 'br-mgmt'}
+
+        if Node.should_have_public(node):
+            mapping[consts.NETWORKS.public] = 'br-ex'
+
+        return mapping
+
+    @classmethod
+    def get_network_to_ip_mapping(cls, node):
+        nm = Cluster.get_network_manager(node.cluster)
+
+        mapping = dict()
+        for net in cls.get_default_network_to_endpoint_mapping(node):
+            netgroup = nm.get_node_network_by_netname(node, net)
+            if netgroup.get('ip'):
+                mapping[net] = netgroup['ip'].split('/')[0]
+
+        return mapping
+
+    @classmethod
+    def _get_network_role_mapping(cls, node, mapping):
+        """Aggregates common logic for methods 'get_network_role_mapping_to_ip'
+        and 'get_network_role_mapping_to_interfaces'.
+        """
+        roles = dict()
+        for role in Cluster.get_network_roles(node.cluster):
+            roles[role['id']] = mapping.get(
+                role['default_mapping'], mapping[consts.NETWORKS.management])
+
+        if Node.should_have_public(node):
+            roles['ex'] = mapping[consts.NETWORKS.public]
+            roles['ceph/radosgw'] = mapping[consts.NETWORKS.public]
+
+        return roles
+
+    @classmethod
+    def get_network_role_mapping_to_interfaces(cls, node):
+        """Returns network roles mapping to interfaces.
+
+        :param node: instance of db.sqlalchemy.models.node.Node
+        :return: dict of network roles mapping
+        """
+        mapping = cls.get_default_network_to_endpoint_mapping(node)
+        roles = cls._get_network_role_mapping(node, mapping)
+        return roles
+
+    @classmethod
+    def get_network_role_mapping_to_ip(cls, node):
+        """Returns network roles mapping to IP addresses.
+
+        :param node: instance of db.sqlalchemy.models.node.Node
+        :return: dict of network roles mapping
+        """
+        mapping = cls.get_network_to_ip_mapping(node)
+        roles = cls._get_network_role_mapping(node, mapping)
+        roles['neutron/private'], roles['neutron/floating'] = None, None
+        return roles
+
+
+    @classmethod
     def generate_network_scheme(cls, node):
         attrs = super(NeutronNetworkDeploymentSerializer70,
                       cls).generate_network_scheme(node)
 
-        attrs['roles']['neutron/api'] = 'br-mgmt'
-        attrs['roles']['neutron/mesh'] = 'br-mgmt'
-        attrs['roles']['neutron/private'] = 'br-prv'
+        mapping = cls.get_network_role_mapping_to_interfaces(node)
 
-        attrs['roles']['mgmt/corosync'] = 'br-mgmt'
-        attrs['roles']['mgmt/database'] = 'br-mgmt'
-        attrs['roles']['mgmt/messaging'] = 'br-mgmt'
-        attrs['roles']['mgmt/api'] = 'br-mgmt'
-        attrs['roles']['mgmt/memcache'] = 'br-mgmt'
-        attrs['roles']['mgmt/vip'] = 'br-mgmt'
-
-        attrs['roles']['nova/api'] = 'br-mgmt'
-        attrs['roles']['murano/api'] = 'br-mgmt'
-        attrs['roles']['sahara/api'] = 'br-mgmt'
-        attrs['roles']['ceilometer/api'] = 'br-mgmt'
-        attrs['roles']['heat/api'] = 'br-mgmt'
-        attrs['roles']['keystone/api'] = 'br-mgmt'
-        attrs['roles']['horizon'] = 'br-mgmt'
-        attrs['roles']['glance/api'] = 'br-mgmt'
-
-        if Node.should_have_public(node):
-            attrs['roles']['neutron/floating'] = 'br-floating'
-            attrs['roles']['public/vip'] = 'br-ex'
-            attrs['roles']['ceph/radosgw'] = 'br-ex'
-
-        attrs['roles']['admin/pxe'] = 'br-fw-admin'
-
-        attrs['roles']['ceph/replication'] = 'br-storage'
-        attrs['roles']['ceph/public'] = 'br-mgmt'
-
-        attrs['roles']['swift/replication'] = 'br-storage'
-        attrs['roles']['swift/api'] = 'br-mgmt'
-
-        attrs['roles']['cinder/iscsi'] = 'br-storage'
-        attrs['roles']['cinder/api'] = 'br-mgmt'
-
-        attrs['roles']['mongo/db'] = 'br-mgmt'
+        old_mapping_6_1 = attrs['roles']
+        mapping.update(old_mapping_6_1)
+        attrs['roles'] = mapping
 
         return attrs
 
@@ -859,75 +891,19 @@ class NeutronNetworkDeploymentSerializer70(
         nodes = dict()
         nm = Cluster.get_network_manager(cluster)
 
-        for n in Cluster.get_nodes_not_for_deletion(cluster):
-            name = Node.make_slave_name(n)
-            node_roles = Node.all_roles(n)
-
-            ip_by_net = {
-                'fuelweb_admin': None,
-                'storage': None,
-                'management': None,
-                'public': None
-            }
-            for net in ip_by_net:
-                netgroup = nm.get_node_network_by_netname(n, net)
-                if netgroup.get('ip'):
-                    ip_by_net[net] = netgroup['ip'].split('/')[0]
-
-            netw_roles = {
-                'admin/pxe': ip_by_net['fuelweb_admin'],
-                'fw-admin': ip_by_net['fuelweb_admin'],
-
-                'keystone/api': ip_by_net['management'],
-                'neutron/api': ip_by_net['management'],
-                'swift/api': ip_by_net['management'],
-                'sahara/api': ip_by_net['management'],
-                'ceilometer/api': ip_by_net['management'],
-                'cinder/api': ip_by_net['management'],
-                'glance/api': ip_by_net['management'],
-                'heat/api': ip_by_net['management'],
-                'nova/api': ip_by_net['management'],
-                'murano/api': ip_by_net['management'],
-                'horizon': ip_by_net['management'],
-
-                'management': ip_by_net['management'],
-                'mgmt/api': ip_by_net['management'],
-                'mgmt/database': ip_by_net['management'],
-                'mgmt/messaging': ip_by_net['management'],
-                'mgmt/corosync': ip_by_net['management'],
-                'mgmt/memcache': ip_by_net['management'],
-                'mgmt/vip': ip_by_net['management'],
-
-                'mongo/db': ip_by_net['management'],
-
-                'neutron/mesh': ip_by_net['management'],
-
-                'ceph/public': ip_by_net['management'],
-
-                'neutron/private': None,
-                'neutron/floating': None,
-
-                'storage': ip_by_net['storage'],
-                'ceph/replication': ip_by_net['storage'],
-                'swift/replication': ip_by_net['storage'],
-                'cinder/iscsi': ip_by_net['storage'],
-
-            }
-            if Node.should_have_public(n):
-                netw_roles.update({
-                    'ex': ip_by_net['public'],
-                    'public/vip': ip_by_net['public'],
-                    'ceph/radosgw': ip_by_net['public'],
-                })
+        for node in Cluster.get_nodes_not_for_deletion(cluster):
+            name = Node.make_slave_name(node)
+            node_roles = Node.all_roles(node)
+            network_roles = cls.get_network_role_mapping_to_ip(node)
 
             nodes[name] = {
-                "uid": n.uid,
-                "fqdn": n.fqdn,
+                "uid": node.uid,
+                "fqdn": node.fqdn,
                 "name": name,
-                "user_node_name": n.name,
-                "swift_zone": n.uid,
+                "user_node_name": node.name,
+                "swift_zone": node.uid,
                 "node_roles": node_roles,
-                "network_roles": netw_roles
+                "network_roles": network_roles
             }
 
         return dict(

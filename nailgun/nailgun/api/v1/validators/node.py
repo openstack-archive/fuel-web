@@ -218,6 +218,22 @@ class NodeValidator(BasicValidator):
                     log_message=True
                 )
 
+        if d.get("hostname") is not None:
+            if instance:
+                node = instance
+            else:
+                node = objects.Node.get_by_mac_or_uid(
+                    mac=d.get("mac"),
+                    node_uid=d.get("id")
+                )
+            if d["hostname"] != getattr(node, 'hostname') and \
+                    objects.Node.get_by_hostname(
+                        d["hostname"],
+                        getattr(node, 'cluster_id')):
+                raise errors.InvalidData(
+                    "Duplicate hostname '%s'." % d["hostname"]
+                )
+
         if "roles" in d:
             if instance:
                 node = instance

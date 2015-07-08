@@ -51,13 +51,16 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'pending_addition': True,
-                 'name': self.node_name,
+                 },
+                {'roles': ['compute'],
+                 'pending_addition': True,
                  }
             ])
 
     def test_network_scheme(self):
         for node in self.serialized_for_astute:
             roles = node['network_scheme']['roles']
+            node = objects.Node.get_by_uid(node['uid'])
             expected_roles = {
                 'admin/pxe': 'br-fw-admin',
 
@@ -80,16 +83,12 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 'mgmt/memcache': 'br-mgmt',
                 'mgmt/vip': 'br-mgmt',
 
-                'public/vip': 'br-ex',
-
                 'neutron/private': 'br-prv',
                 'neutron/mesh': 'br-mgmt',
-                'neutron/floating': 'br-floating',
 
                 'swift/replication': 'br-storage',
 
                 'ceph/public': 'br-mgmt',
-                'ceph/radosgw': 'br-ex',
                 'ceph/replication': 'br-storage',
 
                 'cinder/iscsi': 'br-storage',
@@ -99,9 +98,15 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 # deprecated
                 'fw-admin': 'br-fw-admin',
                 'management': 'br-mgmt',
-                'ex': 'br-ex',
                 'storage': 'br-storage',
             }
+            if objects.Node.should_have_public(node):
+                expected_roles.update({
+                    'public/vip': 'br-ex',
+                    'ceph/radosgw': 'br-ex',
+                    'ex': 'br-ex',
+                    'neutron/floating': 'br-floating',
+                })
             self.assertEqual(roles, expected_roles)
 
     def test_offloading_modes_serialize(self):
@@ -135,11 +140,6 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
             'management': None,
             'public': None
         }
-        node = self.env.nodes[0]
-        for net in ip_by_net:
-            netgroup = nm.get_node_network_by_netname(node, net)
-            if netgroup.get('ip'):
-                ip_by_net[net] = netgroup['ip'].split('/')[0]
         for node_data in self.serialized_for_astute:
             self.assertItemsEqual(
                 node_data['network_metadata'], ['nodes', 'vips'])
@@ -149,6 +149,11 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                     ['uid', 'fqdn', 'name', 'user_node_name',
                      'swift_zone', 'node_roles', 'network_roles']
                 )
+                node = objects.Node.get_by_uid(v['uid'])
+                for net in ip_by_net:
+                    netgroup = nm.get_node_network_by_netname(node, net)
+                    if netgroup.get('ip'):
+                        ip_by_net[net] = netgroup['ip'].split('/')[0]
                 self.assertEqual(objects.Node.make_slave_name(node), k)
                 self.assertEqual(v['uid'], node.uid)
                 self.assertEqual(v['fqdn'], node.fqdn)
@@ -193,11 +198,13 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                     'ceph/replication': ip_by_net['storage'],
                     'swift/replication': ip_by_net['storage'],
                     'cinder/iscsi': ip_by_net['storage'],
-
-                    'ex': ip_by_net['public'],
-                    'public/vip': ip_by_net['public'],
-                    'ceph/radosgw': ip_by_net['public'],
                 }
+                if objects.Node.should_have_public(node):
+                    network_roles.update({
+                        'ex': ip_by_net['public'],
+                        'public/vip': ip_by_net['public'],
+                        'ceph/radosgw': ip_by_net['public'],
+                    })
                 self.assertEqual(
                     v['network_roles'],
                     network_roles

@@ -813,44 +813,38 @@ class NeutronNetworkDeploymentSerializer70(
     def generate_network_scheme(cls, node):
         attrs = super(NeutronNetworkDeploymentSerializer70,
                       cls).generate_network_scheme(node)
-
-        attrs['roles']['neutron/api'] = 'br-mgmt'
-        attrs['roles']['neutron/mesh'] = 'br-mgmt'
-        attrs['roles']['neutron/private'] = 'br-prv'
-
-        attrs['roles']['mgmt/corosync'] = 'br-mgmt'
-        attrs['roles']['mgmt/database'] = 'br-mgmt'
-        attrs['roles']['mgmt/messaging'] = 'br-mgmt'
-        attrs['roles']['mgmt/api'] = 'br-mgmt'
-        attrs['roles']['mgmt/memcache'] = 'br-mgmt'
-        attrs['roles']['mgmt/vip'] = 'br-mgmt'
-
-        attrs['roles']['nova/api'] = 'br-mgmt'
-        attrs['roles']['murano/api'] = 'br-mgmt'
-        attrs['roles']['sahara/api'] = 'br-mgmt'
-        attrs['roles']['ceilometer/api'] = 'br-mgmt'
-        attrs['roles']['heat/api'] = 'br-mgmt'
-        attrs['roles']['keystone/api'] = 'br-mgmt'
-        attrs['roles']['horizon'] = 'br-mgmt'
-        attrs['roles']['glance/api'] = 'br-mgmt'
+        netgroup_mapping = [
+            ('neutron/api', 'br-mgmt'),
+            ('neutron/mesh', 'br-mgmt'),
+            ('mgmt/corosync', 'br-mgmt'),
+            ('mgmt/database', 'br-mgmt'),
+            ('mgmt/messaging', 'br-mgmt'),
+            ('mgmt/api', 'br-mgmt'),
+            ('mgmt/memcache', 'br-mgmt'),
+            ('mgmt/vip', 'br-mgmt'),
+            ('nova/api', 'br-mgmt'),
+            ('murano/api', 'br-mgmt'),
+            ('sahara/api', 'br-mgmt'),
+            ('ceilometer/api', 'br-mgmt'),
+            ('heat/api', 'br-mgmt'),
+            ('keystone/api', 'br-mgmt'),
+            ('horizon', 'br-mgmt'),
+            ('glance/api', 'br-mgmt'),
+            ('admin/pxe', 'br-fw-admin'),
+            ('ceph/replication', 'br-storage'),
+            ('ceph/public', 'br-mgmt'),
+            ('swift/replication', 'br-storage'),
+            ('swift/api', 'br-mgmt'),
+            ('cinder/iscsi', 'br-storage'),
+            ('cinder/api', 'br-mgmt'),
+            ('mongo/db', 'br-mgmt')]
 
         if Node.should_have_public(node):
-            attrs['roles']['neutron/floating'] = 'br-floating'
-            attrs['roles']['public/vip'] = 'br-ex'
-            attrs['roles']['ceph/radosgw'] = 'br-ex'
+            netgroup_mapping.append(('public/vip', 'br-ex'))
+            netgroup_mapping.append(('ceph/radosgw', 'br-ex'))
 
-        attrs['roles']['admin/pxe'] = 'br-fw-admin'
-
-        attrs['roles']['ceph/replication'] = 'br-storage'
-        attrs['roles']['ceph/public'] = 'br-mgmt'
-
-        attrs['roles']['swift/replication'] = 'br-storage'
-        attrs['roles']['swift/api'] = 'br-mgmt'
-
-        attrs['roles']['cinder/iscsi'] = 'br-storage'
-        attrs['roles']['cinder/api'] = 'br-mgmt'
-
-        attrs['roles']['mongo/db'] = 'br-mgmt'
+        for ngname, brname in netgroup_mapping:
+            attrs['roles'][ngname] = brname
 
         return attrs
 

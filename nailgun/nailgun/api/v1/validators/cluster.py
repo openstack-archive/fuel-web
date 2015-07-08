@@ -15,6 +15,7 @@
 
 import copy
 from distutils.version import StrictVersion
+import sqlalchemy as sa
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
@@ -23,8 +24,9 @@ from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
 
 from nailgun import consts
 
+from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
-
 from nailgun import objects
 from nailgun.utils import restrictions
 
@@ -127,6 +129,10 @@ class ClusterValidator(BasicValidator):
                 )
 
         cls._validate_mode(d, instance.release)
+        if 'nodes' in d:
+            # Here d['nodes'] is list of node IDs
+            # to be assigned to the cluster.
+            cls._validate_nodes(d['nodes'], instance)
 
         return d
 
@@ -139,6 +145,29 @@ class ClusterValidator(BasicValidator):
                 " Need to be one of {1}".format(
                     mode, release.modes),
                 log_message=True
+            )
+
+    @classmethod
+    def _validate_nodes(cls, new_node_ids, instance):
+        set_new_node_ids = set(new_node_ids)
+        set_old_node_ids = set(objects.Cluster.get_nodes_ids(instance))
+        nodes_to_add = set_new_node_ids - set_old_node_ids
+        nodes_to_remove = set_old_node_ids - set_new_node_ids
+
+        hostnames_to_add = [x[0] for x in db.query(Node.hostname)
+                            .filter(Node.id.in_(nodes_to_add)).all()]
+
+        duplicated = [x[0] for x in db.query(Node.hostname).filter(
+            sa.and_(
+                Node.hostname.in_(hostnames_to_add),
+                Node.cluster_id == instance.id,
+                Node.id.notin_(nodes_to_remove)
+            )
+        ).all()]
+        if duplicated:
+            raise errors.AlreadyExists(
+                "Nodes with hostnames [{0}] already exist in cluster {1}."
+                .format(",".join(duplicated), instance.id)
             )
 
 

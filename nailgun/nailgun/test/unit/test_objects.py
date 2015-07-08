@@ -283,6 +283,8 @@ class TestNodeObject(BaseIntegrationTest):
         exclude_fields = [
             "group_id",
             "id",
+            "hostname",
+            "fqdn",
             "mac",
             "meta",
             "name",
@@ -290,7 +292,7 @@ class TestNodeObject(BaseIntegrationTest):
         ]
         fields = set(
             objects.Node.schema["properties"].keys()
-        ) ^ set(exclude_fields)
+        ) - set(exclude_fields)
 
         for f in fields:
             self.assertEqual(
@@ -424,6 +426,21 @@ class TestNodeObject(BaseIntegrationTest):
         self.env.create_nodes(nodes_count)
         nodes_db = objects.NodeCollection.eager_nodes_handlers(None)
         self.assertEqual(nodes_db.count(), nodes_count)
+
+    def test_make_slave_name(self):
+        node = self.env.create_node()
+
+        node.hostname = 'test-name'
+
+        self.assertEqual(
+            'test-name',
+            objects.Node.get_slave_name(node))
+
+        node.hostname = ''
+
+        self.assertEqual(
+            "node-{0}".format(node.id),
+            objects.Node.get_slave_name(node))
 
     def test_reset_to_discover(self):
         self.env.create(

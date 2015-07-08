@@ -147,7 +147,7 @@ class TestDeploymentAttributesSerialization70(
                 neutron_serializer = self.serializer.neutron_network_serializer
                 ip_by_net = neutron_serializer.get_network_to_ip_mapping(node)
 
-                self.assertEqual(objects.Node.make_slave_name(node), k)
+                self.assertEqual(objects.Node.get_slave_name(node), k)
                 self.assertEqual(v['uid'], node.uid)
                 self.assertEqual(v['fqdn'], node.fqdn)
                 self.assertEqual(v['name'], k)
@@ -282,7 +282,7 @@ class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):
                     ['uid', 'fqdn', 'name', 'user_node_name',
                      'swift_zone', 'node_roles', 'network_roles']
                 )
-                self.assertEqual(objects.Node.make_slave_name(node), k)
+                self.assertEqual(objects.Node.get_slave_name(node), k)
                 self.assertEqual(v['uid'], node.uid)
                 self.assertEqual(v['fqdn'], node.fqdn)
                 self.assertEqual(v['name'], k)

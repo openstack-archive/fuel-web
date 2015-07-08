@@ -25,6 +25,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import Unicode
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.dialects import postgresql as psql
 
@@ -37,6 +38,7 @@ from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun.logger import logger
+from nailgun.settings import settings
 
 
 class NodeGroup(Base):
@@ -54,6 +56,10 @@ class NodeGroup(Base):
 
 class Node(Base):
     __tablename__ = 'nodes'
+    __table_args__ = (
+        UniqueConstraint('cluster_id', 'hostname',
+                         name='_hostname_cluster_uc'),
+    )
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), nullable=False,
                   default=lambda: str(uuid.uuid4()), unique=True)
@@ -68,7 +74,8 @@ class Node(Base):
     meta = Column(JSON, default={})
     mac = Column(LowercaseString(17), nullable=False, unique=True)
     ip = Column(String(15))
-    fqdn = Column(String(255))
+    hostname = Column(String(255), nullable=False,
+                      default="", server_default="")
     manufacturer = Column(Unicode(50))
     platform_name = Column(String(150))
     kernel_params = Column(Text)
@@ -107,6 +114,16 @@ class Node(Base):
                               nullable=True)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+
+    @property
+    def fqdn(self):
+        return u"{instance_name}.{dns_domain}" \
+            .format(instance_name=self.hostname,
+                    dns_domain=settings.DNS_DOMAIN)
+
+    @fqdn.setter
+    def fqdn(self, value):
+        pass
 
     @property
     def interfaces(self):

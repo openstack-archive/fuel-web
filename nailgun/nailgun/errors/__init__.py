@@ -91,11 +91,6 @@ default_messages = {
 
     # Plugin errors
     "PackageVersionIsNotCompatible": "Package version is not compatible",
-    "PluginsTasksOverlapping":
-        "There is task with same id supplied by another plugin",
-    "PluginRolesConflict":
-        ("Plugin is unable to register its node role due to conflict with "
-         "core roles"),
 
     # unknown
     "UnknownError": "Unknown error"

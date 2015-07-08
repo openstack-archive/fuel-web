@@ -24,6 +24,7 @@ from nailgun.errors import errors
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager.manager import Disk
 from nailgun.extensions.volume_manager.manager import DisksFormatConvertor
+from nailgun.extensions.volume_manager.manager import get_node_spaces
 from nailgun.extensions.volume_manager.manager import only_disks
 from nailgun.extensions.volume_manager.manager import only_vg
 from nailgun.test.base import BaseIntegrationTest
@@ -835,6 +836,68 @@ class TestVolumeManager(BaseIntegrationTest):
         self.update_ram_and_assert_swap_size(node, 65537, 4096)
 
         self.update_ram_and_assert_swap_size(node, 81920, 4096)
+
+    def test_get_node_spaces(self):
+        cluster = self._prepare_env()
+        node = self.env.create_node(
+            api=False,
+            cluster_id=cluster.id,
+            roles=['controller'],
+            pending_addition=True
+        )
+
+        expected_spaces = [
+            {'id': 'os', 'type': 'vg', '_allocate_size': 'min'},
+            {'id': 'image', 'type': 'vg', '_allocate_size': 'all'}
+        ]
+
+        self.assertItemsEqual(get_node_spaces(node), expected_spaces)
+
+    def test_get_node_spaces_with_plugins(self):
+        cluster = self._prepare_env()
+        node = self.env.create_node(
+            api=False,
+            cluster_id=cluster.id,
+            roles=['controller', 'testing_plugin'],
+            pending_addition=True
+        )
+
+        self.env.create_plugin(
+            cluster=cluster,
+            package_version='3.0.0',
+            fuel_version=['7.0'],
+            volumes_metadata=self.env.get_default_plugin_volumes_config()
+        )
+
+        expected_spaces = [
+            {'id': 'os', 'type': 'vg', '_allocate_size': 'min'},
+            {'id': 'image', 'type': 'vg', '_allocate_size': 'all'},
+            {'id': 'test_volume', 'type': 'vg', '_allocate_size': 'all'}
+        ]
+
+        self.assertItemsEqual(get_node_spaces(node), expected_spaces)
+
+    def _prepare_env(self):
+        volumes_metadata = {
+            'volumes_roles_mapping': {
+                'controller': [
+                    {'allocate_size': 'min', 'id': 'os'},
+                    {'allocate_size': 'all', 'id': 'image'}
+                ]
+            },
+            'volumes': [
+                {'id': 'os', 'type': 'vg'},
+                {'id': 'image', 'type': 'vg'},
+                {'id': 'vm', 'type': 'vg'}
+            ]
+        }
+        release = self.env.create_release(
+            volumes_metadata=volumes_metadata)
+        cluster = self.env.create_cluster(
+            api=False, release_id=release.id
+        )
+
+        return cluster
 
 
 class TestDisks(BaseIntegrationTest):

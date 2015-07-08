@@ -110,9 +110,11 @@ def upgrade():
     upgrade_neutron_parameters()
     upgrade_cluster_plugins()
     upgrade_add_baremetal_net()
+    dashborad_entries_upgrade()
 
 
 def downgrade():
+    dashborad_entries_downgrade()
     downgrade_add_baremetal_net()
     downgrade_cluster_plugins()
     downgrade_neutron_parameters()
@@ -491,3 +493,24 @@ def upgrade_add_baremetal_net():
 def downgrade_add_baremetal_net():
     op.drop_column('neutron_config', 'baremetal_gateway')
     op.drop_column('neutron_config', 'baremetal_range')
+
+
+def dashborad_entries_upgrade():
+    op.create_table(
+        'dashboard_entries',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'cluster_id', sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column(
+            'title', sa.VARCHAR(length=50), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('description', sa.Text()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('dashboard_entries_cluster_id_key',
+                    'dashboard_entries', ['cluster_id'])
+
+
+def dashborad_entries_downgrade():
+    op.drop_table('dashboard_entries')

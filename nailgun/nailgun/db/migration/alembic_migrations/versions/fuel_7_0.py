@@ -28,6 +28,7 @@ down_revision = '37608259013'
 import six
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
+from sqlalchemy.sql import text
 
 from alembic import op
 from oslo.serialization import jsonutils
@@ -35,6 +36,7 @@ from oslo.serialization import jsonutils
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.extensions.consts import extensions_migration_buffer_table_name
+from nailgun import objects
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
 
@@ -123,10 +125,37 @@ def extend_node_model_upgrade():
                   nullable=False,
                   server_default='[]'))
 
+    op.add_column(
+        'nodes',
+        sa.Column('hostname',
+                  sa.Text(),
+                  nullable=False,
+                  server_default='')
+    )
+    # upgrade data
+    connection = op.get_bind()
+
+    select = text(
+        """SELECT id from nodes""")
+    update = text(
+        """UPDATE nodes
+        SET hostname = :hostname
+        WHERE id = :id""")
+    nodes = connection.execute(select)
+
+    for node in nodes:
+        node_id = node[0]
+        connection.execute(
+            update,
+            id=node_id,
+            hostname=objects.Node.default_slave_name(node_id)
+        )
+
 
 def extend_node_model_downgrade():
     op.drop_column('node_bond_interfaces', 'offloading_modes')
     op.drop_column('node_nic_interfaces', 'offloading_modes')
+    op.drop_column('nodes', 'hostname')
 
 
 def extend_ip_addrs_model_upgrade():

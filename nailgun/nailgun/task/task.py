@@ -307,6 +307,7 @@ class DeletionTask(object):
                 'pending_deletion',
                 'pending_addition',
                 'group_id',
+                'hostname',
             )
             for prop in object_mapper(node).iterate_properties:
                 if isinstance(

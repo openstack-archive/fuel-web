@@ -29,6 +29,18 @@ from nailgun.test.integration.test_orchestrator_serializer import \
 
 
 class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
+
+    management = ['keystone/api', 'neutron/api', 'swift/api', 'sahara/api',
+        'ceilometer/api', 'cinder/api', 'glance/api', 'heat/api', 'nova/api',
+        'murano/api', 'horizon', 'management', 'mgmt/api', 'mgmt/database',
+        'mgmt/messaging', 'mgmt/corosync', 'mgmt/memcache', 'mgmt/vip',
+        'mongo/db', 'neutron/mesh', 'ceph/public']
+    fuelweb_admin = ['admin/pxe', 'fw-admin']
+    neutron = ['neutron/private', 'neutron/floating']
+    storage = ['storage', 'ceph/replication', 'swift/replication',
+               'cinder/iscsi']
+    public = ['ex', 'public/vip', 'ceph/radosgw']
+
     @mock.patch.object(models.Release, 'environment_version',
                        new_callable=mock.PropertyMock(return_value='7.0'))
     def setUp(self, *args):
@@ -51,58 +63,31 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'pending_addition': True,
-                 'name': self.node_name,
+                 },
+                {'roles': ['compute'],
+                 'pending_addition': True,
                  }
             ])
 
     def test_network_scheme(self):
         for node in self.serialized_for_astute:
             roles = node['network_scheme']['roles']
-            expected_roles = {
-                'admin/pxe': 'br-fw-admin',
+            node = objects.Node.get_by_uid(node['uid'])
+            expected_roles = [
+                ('neutron/private', 'br-prv')]
+            expected_roles += zip(
+                self.management, ['br-mgmt'] * len(self.management))
+            expected_roles += zip(
+                self.fuelweb_admin, ['br-fw-admin'] * len(self.fuelweb_admin))
+            expected_roles += zip(
+                self.storage, ['br-storage'] * len(self.storage))
 
-                'keystone/api': 'br-mgmt',
-                'neutron/api': 'br-mgmt',
-                'swift/api': 'br-mgmt',
-                'sahara/api': 'br-mgmt',
-                'ceilometer/api': 'br-mgmt',
-                'cinder/api': 'br-mgmt',
-                'glance/api': 'br-mgmt',
-                'heat/api': 'br-mgmt',
-                'nova/api': 'br-mgmt',
-                'murano/api': 'br-mgmt',
-                'horizon': 'br-mgmt',
+            if objects.Node.should_have_public(node):
+                expected_roles += zip(self.public,
+                    ['br-ex'] * len(self.public))
+                expected_roles += [('neutron/floating', 'br-floating')]
 
-                'mgmt/api': 'br-mgmt',
-                'mgmt/database': 'br-mgmt',
-                'mgmt/messaging': 'br-mgmt',
-                'mgmt/corosync': 'br-mgmt',
-                'mgmt/memcache': 'br-mgmt',
-                'mgmt/vip': 'br-mgmt',
-
-                'public/vip': 'br-ex',
-
-                'neutron/private': 'br-prv',
-                'neutron/mesh': 'br-mgmt',
-                'neutron/floating': 'br-floating',
-
-                'swift/replication': 'br-storage',
-
-                'ceph/public': 'br-mgmt',
-                'ceph/radosgw': 'br-ex',
-                'ceph/replication': 'br-storage',
-
-                'cinder/iscsi': 'br-storage',
-
-                'mongo/db': 'br-mgmt',
-
-                # deprecated
-                'fw-admin': 'br-fw-admin',
-                'management': 'br-mgmt',
-                'ex': 'br-ex',
-                'storage': 'br-storage',
-            }
-            self.assertEqual(roles, expected_roles)
+            self.assertEqual(roles, dict(expected_roles))
 
     def test_offloading_modes_serialize(self):
         meta = self.env.default_metadata()
@@ -135,11 +120,6 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
             'management': None,
             'public': None
         }
-        node = self.env.nodes[0]
-        for net in ip_by_net:
-            netgroup = nm.get_node_network_by_netname(node, net)
-            if netgroup.get('ip'):
-                ip_by_net[net] = netgroup['ip'].split('/')[0]
         for node_data in self.serialized_for_astute:
             self.assertItemsEqual(
                 node_data['network_metadata'], ['nodes', 'vips'])
@@ -149,6 +129,11 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                     ['uid', 'fqdn', 'name', 'user_node_name',
                      'swift_zone', 'node_roles', 'network_roles']
                 )
+                node = objects.Node.get_by_uid(v['uid'])
+                for net in ip_by_net:
+                    netgroup = nm.get_node_network_by_netname(node, net)
+                    if netgroup.get('ip'):
+                        ip_by_net[net] = netgroup['ip'].split('/')[0]
                 self.assertEqual(objects.Node.make_slave_name(node), k)
                 self.assertEqual(v['uid'], node.uid)
                 self.assertEqual(v['fqdn'], node.fqdn)
@@ -156,52 +141,18 @@ class TestDeploymentAttributesSerialization70(BaseDeploymentSerializer):
                 self.assertEqual(v['user_node_name'], node.name)
                 self.assertEqual(v['swift_zone'], node.uid)
 
-                network_roles = {
-                    'admin/pxe': ip_by_net['fuelweb_admin'],
-                    'fw-admin': ip_by_net['fuelweb_admin'],
+                network_roles = zip(self.management,
+                    [ip_by_net['management']] * len(self.management))
+                network_roles += zip(self.fuelweb_admin,
+                    [ip_by_net['fuelweb_admin']] * len(self.fuelweb_admin))
+                network_roles += zip(
+                    self.storage, [ip_by_net['storage']] * len(self.storage))
+                network_roles += zip(self.neutron, [None] * len(self.neutron))
 
-                    'keystone/api': ip_by_net['management'],
-                    'neutron/api': ip_by_net['management'],
-                    'swift/api': ip_by_net['management'],
-                    'sahara/api': ip_by_net['management'],
-                    'ceilometer/api': ip_by_net['management'],
-                    'cinder/api': ip_by_net['management'],
-                    'glance/api': ip_by_net['management'],
-                    'heat/api': ip_by_net['management'],
-                    'nova/api': ip_by_net['management'],
-                    'murano/api': ip_by_net['management'],
-                    'horizon': ip_by_net['management'],
-
-                    'management': ip_by_net['management'],
-                    'mgmt/api': ip_by_net['management'],
-                    'mgmt/database': ip_by_net['management'],
-                    'mgmt/messaging': ip_by_net['management'],
-                    'mgmt/corosync': ip_by_net['management'],
-                    'mgmt/memcache': ip_by_net['management'],
-                    'mgmt/vip': ip_by_net['management'],
-
-                    'mongo/db': ip_by_net['management'],
-
-                    'neutron/mesh': ip_by_net['management'],
-
-                    'ceph/public': ip_by_net['management'],
-
-                    'neutron/private': None,
-                    'neutron/floating': None,
-
-                    'storage': ip_by_net['storage'],
-                    'ceph/replication': ip_by_net['storage'],
-                    'swift/replication': ip_by_net['storage'],
-                    'cinder/iscsi': ip_by_net['storage'],
-
-                    'ex': ip_by_net['public'],
-                    'public/vip': ip_by_net['public'],
-                    'ceph/radosgw': ip_by_net['public'],
-                }
-                self.assertEqual(
-                    v['network_roles'],
-                    network_roles
-                )
+                if objects.Node.should_have_public(node):
+                    network_roles += zip(self.public,
+                        [ip_by_net['public']] * len(self.public))
+                self.assertEqual(v['network_roles'], dict(network_roles))
 
 
 class TestDeploymentSerializationForNovaNetwork70(BaseDeploymentSerializer):

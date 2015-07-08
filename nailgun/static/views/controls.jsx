@@ -89,7 +89,9 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             return this.onInput();
         }, 10, {leading: true}),
         pickFile: function() {
-            this.getInputDOMNode().click();
+            if (!this.props.disabled) {
+                this.getInputDOMNode().click();
+            }
         },
         saveFile: function(fileName, content) {
             this.setState({
@@ -102,8 +104,10 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
             );
         },
         removeFile: function() {
-            this.refs.form.getDOMNode().reset();
-            this.saveFile(null, null);
+            if (!this.props.disabled) {
+                this.refs.form.getDOMNode().reset();
+                this.saveFile(null, null);
+            }
         },
         readFile: function() {
             var reader = new FileReader(),
@@ -170,9 +174,10 @@ define(['i18n', 'jquery', 'underscore', 'react', 'utils', 'jsx!component_mixins'
                                 placeholder={i18n('controls.file.placeholder')}
                                 value={this.state.fileName && '[' + utils.showSize(this.state.content.length) + '] ' + this.state.fileName}
                                 onClick={this.pickFile}
+                                disabled={this.props.disabled}
                                 readOnly />
                                 <div className='input-group-addon' onClick={this.state.fileName ? this.removeFile : this.pickFile}>
-                                    <i className={this.state.fileName ? 'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'} />
+                                    <i className={this.state.fileName && !this.props.disabled ? 'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'} />
                                 </div>
                         </div>
                     }

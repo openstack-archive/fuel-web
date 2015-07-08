@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.network.manager import NetworkManager
@@ -62,4 +63,18 @@ class NeutronManager(NetworkManager):
 
 
 class NeutronManager70(NeutronManager):
-    pass
+
+    default_network_to_endpoint_mapping = {
+        consts.NETWORKS.fuelweb_admin: 'br-fw-admin',
+        consts.NETWORKS.storage: 'br-storage',
+        consts.NETWORKS.management: 'br-mgmt',
+        consts.NETWORKS.public: 'br-ex'}
+
+    @classmethod
+    def get_network_to_ip_mapping(cls, node):
+        mapping = dict()
+        for net in cls.default_network_to_endpoint_mapping:
+            netgroup = cls.get_node_network_by_netname(node, net)
+            if netgroup.get('ip'):
+                mapping[net] = netgroup['ip'].split('/')[0]
+        return mapping

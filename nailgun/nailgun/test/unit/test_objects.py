@@ -424,6 +424,21 @@ class TestNodeObject(BaseIntegrationTest):
         nodes_db = objects.NodeCollection.eager_nodes_handlers(None)
         self.assertEqual(nodes_db.count(), nodes_count)
 
+    def test_make_slave_name(self):
+        node = self.env.create_node()
+
+        node.hostname = 'test-name'
+
+        self.assertEqual(
+            'test-name',
+            objects.Node.make_slave_name(node))
+
+        delattr(node, 'hostname')
+
+        self.assertEqual(
+            "node-%s" % node.id,
+            objects.Node.make_slave_name(node))
+
     def test_reset_to_discover(self):
         self.env.create(
             nodes_kwargs=[

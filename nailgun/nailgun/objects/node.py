@@ -112,6 +112,20 @@ class Node(NailgunObject):
         return node
 
     @classmethod
+    def get_by_hostname(cls, hostname):
+        """Get Node instance by hostname.
+
+        :param hostname: hostname as string
+        :returns: Node instance
+        """
+
+        if not hostname:
+            return None
+
+        q = db().query(cls.model)
+        return q.filter_by(hostname=hostname).first()
+
+    @classmethod
     def get_by_meta(cls, meta):
         """Search for instance using mac, node id or interfaces
 
@@ -220,6 +234,8 @@ class Node(NailgunObject):
             cls.update_pending_roles(new_node, pending_roles)
         if primary_roles is not None:
             cls.update_primary_roles(new_node, primary_roles)
+
+        new_node.hostname = cls.make_slave_name(new_node)
 
         # creating attributes
         cls.create_attributes(new_node)
@@ -766,7 +782,13 @@ class Node(NailgunObject):
 
     @classmethod
     def make_slave_name(cls, instance):
-        return u"node-{node_id}".format(node_id=instance.id)
+        if not getattr(instance, 'hostname', None):
+            return cls.default_slave_name(instance.id)
+        return instance.hostname
+
+    @classmethod
+    def default_slave_name(cls, instance_id):
+        return u"node-{node_id}".format(node_id=instance_id)
 
     @classmethod
     def make_slave_fqdn(cls, instance):

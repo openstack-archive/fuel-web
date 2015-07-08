@@ -69,6 +69,7 @@ class Node(Base):
     mac = Column(LowercaseString(17), nullable=False, unique=True)
     ip = Column(String(15))
     fqdn = Column(String(255))
+    hostname = Column(String(255), nullable=False, default="")
     manufacturer = Column(Unicode(50))
     platform_name = Column(String(150))
     kernel_params = Column(Text)

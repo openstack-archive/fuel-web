@@ -517,6 +517,23 @@ class TestNetworkingTemplatesMigration(base.BaseAlembicMigrationTest):
         self.assertIsNone(result.fetchone()[0])
 
 
+class TestNodeHostnamePropertyMigration(base.BaseAlembicMigrationTest):
+
+    def test_hostname_field_exists_and_contains_correct_values(self):
+        result = db.execute(
+            sa.select([self.meta.tables['nodes'].c.id,
+                       self.meta.tables['nodes'].c.hostname]))
+
+        for node_id, hostname in result:
+            self.assertEqual(
+                "node-%s" % node_id,
+                hostname)
+
+    def test_fqdn_field_is_dropped(self):
+        node_table = self.meta.tables['nodes']
+        self.assertNotIn('fqdn', node_table.c)
+
+
 class TestInterfacesPxePropertyMigration(base.BaseAlembicMigrationTest):
 
     def test_old_fields_exists(self):

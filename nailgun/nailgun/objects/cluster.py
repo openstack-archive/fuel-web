@@ -483,7 +483,8 @@ class Cluster(NailgunObject):
                     u"Cannot add offline node "
                     u"'{0}' to environment".format(node.id)
                 )
-
+        for node in nodes_to_remove:
+            node.hostname = 'node-%s' % node.id
         map(instance.nodes.remove, nodes_to_remove)
         map(instance.nodes.append, nodes_to_add)
 

@@ -282,7 +282,7 @@ class DeletionTask(object):
             'id': node.id,
             'uid': node.id,
             'roles': node.roles,
-            'slave_name': objects.Node.make_slave_name(node),
+            'slave_name': objects.Node.get_slave_name(node),
             'mclient_remove': mclient_remove,
         }
 
@@ -307,6 +307,7 @@ class DeletionTask(object):
                 'pending_deletion',
                 'pending_addition',
                 'group_id',
+                'hostname',
             )
             for prop in object_mapper(node).iterate_properties:
                 if isinstance(
@@ -503,7 +504,7 @@ class StopDeploymentTask(object):
                     {
                         'uid': n.uid,
                         'roles': n.roles,
-                        'slave_name': objects.Node.make_slave_name(n),
+                        'slave_name': objects.Node.get_slave_name(n),
                         'admin_ip': objects.Cluster.get_network_manager(
                             n.cluster
                         ).get_admin_ip_for_node(n.id)
@@ -552,7 +553,7 @@ class ResetEnvironmentTask(object):
                     {
                         'uid': n.uid,
                         'roles': n.roles,
-                        'slave_name': objects.Node.make_slave_name(n)
+                        'slave_name': objects.Node.get_slave_name(n)
                     } for n in nodes_to_reset
                 ],
                 "engine": {

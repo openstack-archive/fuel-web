@@ -363,7 +363,7 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
         nm = Cluster.get_network_manager(cluster)
 
         for n in Cluster.get_nodes_not_for_deletion(cluster):
-            name = Node.make_slave_name(n)
+            name = Node.get_slave_name(n)
             node_roles = Node.all_roles(n)
 
             ip_by_net = {

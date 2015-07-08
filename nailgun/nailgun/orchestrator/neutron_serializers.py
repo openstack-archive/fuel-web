@@ -889,7 +889,7 @@ class NeutronNetworkDeploymentSerializer70(
         nm = Cluster.get_network_manager(cluster)
 
         for node in Cluster.get_nodes_not_for_deletion(cluster):
-            name = Node.make_slave_name(node)
+            name = Node.get_slave_name(node)
             node_roles = Node.all_roles(node)
             network_roles = cls.get_network_role_mapping_to_ip(node)
 

@@ -22,6 +22,7 @@ import jinja2
 import operator
 from oslo.serialization import jsonutils
 import traceback
+import uuid
 
 from datetime import datetime
 
@@ -112,6 +113,23 @@ class Node(NailgunObject):
         else:
             node = q.get(node_uid)
         return node
+
+    @classmethod
+    def get_by_hostname(cls, hostname, cluster_id):
+        """Get Node instance by hostname.
+
+        :param hostname: hostname as string
+        :param cluster_id: Node will be searched \
+            only within the cluster with this ID.
+        :returns: Node instance
+        """
+
+        if not hostname:
+            return None
+
+        q = db().query(cls.model).filter_by(
+            hostname=hostname, cluster_id=cluster_id)
+        return q.first()
 
     @classmethod
     def get_by_meta(cls, meta):
@@ -205,6 +223,10 @@ class Node(NailgunObject):
         new_node_cluster_id = data.pop("cluster_id", None)
         new_node = super(Node, cls).create(data)
         new_node.create_meta(new_node_meta)
+
+        if 'hostname' not in data:
+            new_node.hostname = \
+                cls.get_unique_hostname(new_node, new_node_cluster_id)
         db().flush()
 
         # Add interfaces for node from 'meta'.
@@ -761,6 +783,7 @@ class Node(NailgunObject):
         instance.kernel_params = None
         instance.primary_roles = []
         instance.reset_name_to_default()
+        instance.hostname = cls.default_slave_name(instance)
         db().flush()
         db().refresh(instance)
 
@@ -774,13 +797,19 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def make_slave_name(cls, instance):
+    def get_slave_name(cls, instance):
+        if not instance.hostname:
+            return cls.default_slave_name(instance)
+        return instance.hostname
+
+    @classmethod
+    def default_slave_name(cls, instance):
         return u"node-{node_id}".format(node_id=instance.id)
 
     @classmethod
     def make_slave_fqdn(cls, instance):
         return u"{instance_name}.{dns_domain}" \
-            .format(instance_name=cls.make_slave_name(instance),
+            .format(instance_name=cls.get_slave_name(instance),
                     dns_domain=settings.DNS_DOMAIN)
 
     @classmethod
@@ -821,7 +850,7 @@ class Node(NailgunObject):
         if node_group not in template_body:
             node_group = 'default'
 
-        node_name = cls.make_slave_name(instance)
+        node_name = cls.get_slave_name(instance)
         nic_mapping = template_body[node_group]['nic_mapping']
         if node_name not in nic_mapping:
             node_name = 'default'
@@ -846,6 +875,15 @@ class Node(NailgunObject):
                 output['roles'][role] = ep
 
         instance.network_template = output
+
+    @classmethod
+    def get_unique_hostname(cls, node, cluster_id):
+        """Here explanation should be provided
+        """
+        hostname = cls.get_slave_name(node)
+        if cls.get_by_hostname(hostname, cluster_id):
+            hostname = 'node-{0}'.format(uuid.uuid4())
+        return hostname
 
 
 class NodeCollection(NailgunCollection):

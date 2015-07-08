@@ -484,6 +484,12 @@ class Cluster(NailgunObject):
                     u"'{0}' to environment".format(node.id)
                 )
 
+        # we should reset hostname to default value to guarantee
+        # hostnames uniqueness for nodes outside clusters
+        from nailgun.objects import Node
+        for node in nodes_to_remove:
+            node.hostname = Node.default_slave_name(node.id)
+
         map(instance.nodes.remove, nodes_to_remove)
         map(instance.nodes.append, nodes_to_add)
 

@@ -27,7 +27,7 @@ class PluginValidator(BasicValidator):
         if instance.clusters:
             raise errors.CannotDelete(
                 "Can't delete plugin which is enabled"
-                "for some environment."
+                " for some environment."
             )
 
     @classmethod

@@ -32,15 +32,12 @@ class RoleSerializer(BasicSerializer):
 
     @classmethod
     def serialize_from_cluster(cls, cluster, role_name):
-        meta = objects.Cluster.get_roles(cluster)[role_name]
-
-        # TODO(ikalnitsky): Use volumes mapping from both release and plugins.
-        # Currently, we try to retrieve them only from release and fallback
-        # to empty list if nothing is found.
-        volumes = cluster.release.volumes_metadata['volumes_roles_mapping']
-        volumes = volumes.get(role_name, [])
+        role_metadata = objects.Cluster.get_roles(cluster)[role_name]
+        volumes_metadata = objects.Cluster.get_volumes_metadata(cluster)
+        role_mapping = volumes_metadata.get('volumes_roles_mapping').get(
+            role_name, [])
 
         return {
             'name': role_name,
-            'meta': meta,
-            'volumes_roles_mapping': volumes}
+            'meta': role_metadata,
+            'volumes_roles_mapping': role_mapping}

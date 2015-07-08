@@ -114,6 +114,23 @@ class Node(NailgunObject):
         return node
 
     @classmethod
+    def get_by_hostname(cls, hostname, cluster_id):
+        """Get Node instance by hostname.
+
+        :param hostname: hostname as string
+        :param cluster_id: Node will be searched \
+            only within the cluster with this ID.
+        :returns: Node instance
+        """
+
+        if not hostname:
+            return None
+
+        q = db().query(cls.model).filter_by(
+            hostname=hostname, cluster_id=cluster_id)
+        return q.first()
+
+    @classmethod
     def get_by_meta(cls, meta):
         """Search for instance using mac, node id or interfaces
 
@@ -205,6 +222,27 @@ class Node(NailgunObject):
         new_node_cluster_id = data.pop("cluster_id", None)
         new_node = super(Node, cls).create(data)
         new_node.create_meta(new_node_meta)
+
+        new_hostname = cls.make_slave_name(new_node)
+
+        if 'hostname' not in data and \
+                cls.get_by_hostname(new_hostname, new_node_cluster_id):
+            # Trying to create node with default hostname,
+            # but earlier somebody else has set this hostname
+            # for another node manually.
+            # So we should delete created node.
+            logger.error("Trying to create node with existing hostname {0}"
+                         .format(new_hostname))
+            cls.delete(new_node)
+            message_correction = ""
+            if new_node_cluster_id:
+                message_correction = " in the cluster {0}" \
+                                     .format(new_node_cluster_id)
+            raise errors.CannotCreate(
+                "Node with hostname '{0}' already exists{1}."
+                .format(new_hostname, message_correction))
+        # all good. let's set new hostname
+        new_node.hostname = new_hostname
         db().flush()
 
         # Add interfaces for node from 'meta'.
@@ -761,6 +799,7 @@ class Node(NailgunObject):
         instance.kernel_params = None
         instance.primary_roles = []
         instance.reset_name_to_default()
+        instance.hostname = cls.default_slave_name(instance)
         db().flush()
         db().refresh(instance)
 
@@ -775,6 +814,12 @@ class Node(NailgunObject):
 
     @classmethod
     def make_slave_name(cls, instance):
+        if not instance.hostname:
+            return cls.default_slave_name(instance)
+        return instance.hostname
+
+    @classmethod
+    def default_slave_name(cls, instance):
         return u"node-{node_id}".format(node_id=instance.id)
 
     @classmethod

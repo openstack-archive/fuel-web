@@ -96,8 +96,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
     def test_cluster_node_list_update(self):
-        node1 = self.env.create_node(api=False)
-        node2 = self.env.create_node(api=False)
+        node1 = self.env.create_node(api=False, hostname='name1')
         cluster = self.env.create_cluster(api=False)
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
@@ -106,6 +105,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 200)
+        node2 = self.env.create_node(api=False, hostname='name1')
 
         nodes = self.db.query(Node).filter(Node.cluster == cluster).all()
         self.assertEqual(1, len(nodes))
@@ -113,10 +113,20 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
+            jsonutils.dumps({'nodes': [node1.id, node2.id]}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+
+        resp = self.app.put(
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             jsonutils.dumps({'nodes': [node2.id]}),
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 200)
+
+        self.assertEqual('node-{0}'.format(node1.id), node1.hostname)
 
         nodes = self.db.query(Node).filter(Node.cluster == cluster)
         self.assertEqual(1, nodes.count())
